@@ -645,3 +645,29 @@ class TestTwoSidedMarketMatchRecommendations:
         market.match_recommendations([
             recommendation.serializable_dict() for recommendation in recommendations])
         assert len(market.trades) == 0
+
+    @staticmethod
+    def test_validate_recommendation_requirement_price(market):
+        bid = Bid(
+            "bid_id1", pendulum.now(), price=35, energy=1, buyer="Buyer", buyer_id="buyer1",
+            time_slot="2021-10-06T12:00", requirements=[
+                {"trading_partners": ["seller1"], "price": 45}])
+        offer = Offer("offer_id1", pendulum.now(), price=35, energy=1, seller="Seller",
+                      seller_id="seller1", time_slot="2021-10-06T12:00")
+
+        market.bids = {"bid_id1": bid}
+        market.offers = {"offer_id1": offer}
+
+        # valid match
+        recommended_match = BidOfferMatch(
+            bid=bid.serializable_dict(), offer=offer.serializable_dict(),
+            trade_rate=35, selected_energy=1, market_id=market.id,
+            time_slot="2021-10-06T12:00", matching_requirements={
+                "bid_requirement": {"trading_partners": ["seller1"], "price": 45}
+            })
+        market.validate_bid_offer_match(recommended_match)
+        market.match_recommendations([
+            recommended_match.serializable_dict()
+        ])
+        assert len(market.trades) == 1
+        assert market.accumulated_trade_price == 45
