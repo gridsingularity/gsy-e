@@ -261,7 +261,8 @@ class TwoSidedMarket(OneSidedMarket):
                       buyer_origin=bid.buyer_origin, seller_origin=seller_origin,
                       fee_price=fee_price, seller_origin_id=seller_origin_id,
                       buyer_origin_id=bid.buyer_origin_id, seller_id=seller_id,
-                      buyer_id=bid.buyer_id, time_slot=bid.time_slot
+                      buyer_id=bid.buyer_id, time_slot=bid.time_slot,
+                      matching_requirements=trade_offer_info.matching_requirements
                       )
 
         if already_tracked is False:
@@ -357,7 +358,9 @@ class TwoSidedMarket(OneSidedMarket):
                 propagated_bid_rate=recommended_pair.bid_energy_rate,
                 original_offer_rate=market_offer.original_price / market_offer.energy,
                 propagated_offer_rate=market_offer.energy_rate,
-                trade_rate=trade_rate)
+                trade_rate=trade_rate,
+                matching_requirements=recommended_pair.matching_requirements
+            )
 
             bid_trade, offer_trade = self.accept_bid_offer_pair(
                 market_bid, market_offer, trade_rate,
