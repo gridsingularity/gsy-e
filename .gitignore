@@ -1,6 +1,7 @@
 # Redis dump files
 dump.rdb
 
+/node_modules
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
