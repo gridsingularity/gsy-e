@@ -49,6 +49,9 @@ from gsy_e.gsy_e_core.util import NonBlockingConsole, validate_const_settings_fo
 from gsy_e.models.area.event_deserializer import deserialize_events_to_areas
 from gsy_e.models.config import SimulationConfig
 
+from gsy_e.energyMarket import b4p
+b4p.init()
+
 if TYPE_CHECKING:
     from gsy_e.models.area import Area
     from gsy_e.gsy_e_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
