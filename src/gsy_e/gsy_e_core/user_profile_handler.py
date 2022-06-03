@@ -71,11 +71,11 @@ class ProfileDBConnectionHandler:
 
         """
         self._db.bind(provider="postgres",
-                      user=os.environ.get("PROFILE_DB_USER", "d3a_web"),
-                      password=os.environ.get("PROFILE_DB_PASSWORD", "d3a_web"),
+                      user=os.environ.get("PROFILE_DB_USER", "d3a"),
+                      password=os.environ.get("PROFILE_DB_PASSWORD", "d3a"),
                       host=os.environ.get("PROFILE_DB_HOST", "localhost"),
                       port=os.environ.get("PROFILE_DB_PORT", "5432"),
-                      database=os.environ.get("PROFILE_DB_NAME", "d3a_web"))
+                      database=os.environ.get("PROFILE_DB_NAME", "d3a"))
 
         self._db.generate_mapping(check_tables=True)
 

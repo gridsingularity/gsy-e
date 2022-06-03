@@ -817,14 +817,16 @@ class CoefficientSimulation(Simulation):
             global_objects.profiles_handler.update_time_and_buffer_profiles(
                 self._get_current_market_time_slot(slot_no))
 
-            aggregated_sell_energy_kWh = self.area.aggregate_sell_energy(
-                self.progress_info.current_slot_time)
+            from gsy_e.models.area.scm_manager import SCMManager
+            scm_manager = SCMManager(self.area.uuid)
 
-            self.area.trigger_energy_buy_trades(
-                self.progress_info.current_slot_time, aggregated_sell_energy_kWh)
+            self.area.calculate_home_after_meter_data(
+                self.progress_info.current_slot_time, scm_manager)
 
-            # residual_energy_production_kWh = self.area.trigger_energy_sell_trades(
-            #     self.progress_info.current_slot_time, aggregated_buy_energy_kWh)
+            scm_manager.calculate_community_after_meter_data()
+
+            self.area.trigger_energy_trades(
+                self.progress_info.current_slot_time, scm_manager)
 
             self._results.update_and_send_results(
                 self.current_state, self.progress_info, self.area, self._status.status)
