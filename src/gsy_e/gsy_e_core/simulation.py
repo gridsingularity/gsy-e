@@ -817,14 +817,14 @@ class CoefficientSimulation(Simulation):
             global_objects.profiles_handler.update_time_and_buffer_profiles(
                 self._get_current_market_time_slot(slot_no))
 
-            aggregated_sell_energy_kWh = self.area.aggregate_sell_energy(
+            after_meter_data = self.area.calculate_home_after_meter_data(
                 self.progress_info.current_slot_time)
 
-            self.area.trigger_energy_buy_trades(
-                self.progress_info.current_slot_time, aggregated_sell_energy_kWh)
+            aggregated_buy_energy = self.area.trigger_energy_buy_trades(
+                self.progress_info.current_slot_time, after_meter_data)
 
-            # residual_energy_production_kWh = self.area.trigger_energy_sell_trades(
-            #     self.progress_info.current_slot_time, aggregated_buy_energy_kWh)
+            self.area.trigger_energy_sell_trades(
+                self.progress_info.current_slot_time, aggregated_buy_energy)
 
             self._results.update_and_send_results(
                 self.current_state, self.progress_info, self.area, self._status.status)
