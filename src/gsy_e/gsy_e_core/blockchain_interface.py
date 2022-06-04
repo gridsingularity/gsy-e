@@ -1,5 +1,5 @@
 import uuid
-from gsy_e.energyMarket import b4p
+import b4p
 
 class NonBlockchainInterface:
     def __init__(self, market_id, simulation_id=None):
