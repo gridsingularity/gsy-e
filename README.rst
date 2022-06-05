@@ -42,7 +42,9 @@ After cloning this project setup a Python 3.10 virtualenv or conda env and insta
     conda create -n bc4p python=3.10
     conda activate bc4p
     pip install -e .
-    cd gsy-framework && pip install -e . && cd .. && pip install ./energyMarket
+    cd gsy-framework && pip install -e .
+    
+To Properly setup the b4p package follow the instructions here: https://github.com/BC4P/energyMarket#setup (with the exeption that the repository is already cloned).
 
 
 The Simulation
