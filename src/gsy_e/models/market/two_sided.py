@@ -130,7 +130,7 @@ class TwoSidedMarket(OneSidedMarket):
         if add_to_history is True:
             self.bid_history.append(bid)
         log.debug("%s[BID][NEW][%s] %s", self._debug_log_market_type_identifier,
-                  self.time_slot_str, bid)
+                  self.time_slot_str or bid.time_slot, bid)
         return bid
 
     @lock_market_action
@@ -141,7 +141,7 @@ class TwoSidedMarket(OneSidedMarket):
         if not bid:
             raise BidNotFoundException(bid_or_id)
         log.debug("%s[BID][DEL][%s] %s",
-                  self._debug_log_market_type_identifier, self.time_slot_str, bid)
+                  self._debug_log_market_type_identifier, self.time_slot_str or bid.time_slot, bid)
         self._notify_listeners(MarketEvent.BID_DELETED, bid=bid)
 
     def split_bid(self, original_bid: Bid, energy: float, orig_bid_price: float):
@@ -185,7 +185,8 @@ class TwoSidedMarket(OneSidedMarket):
                                 time_slot=original_bid.time_slot)
 
         log.debug("%s[BID][SPLIT][%s, %s] (%s into %s and %s",
-                  self._debug_log_market_type_identifier, self.time_slot_str, self.name,
+                  self._debug_log_market_type_identifier,
+                  self.time_slot_str or residual_bid.time_slot, self.name,
                   short_offer_bid_log_str(original_bid), short_offer_bid_log_str(accepted_bid),
                   short_offer_bid_log_str(residual_bid))
 

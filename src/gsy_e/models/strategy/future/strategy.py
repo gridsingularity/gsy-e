@@ -53,7 +53,7 @@ class FutureTemplateStrategyBidUpdater(TemplateStrategyBidUpdater):
         for time_slot in strategy.area.future_markets.market_time_slots:
             if self.time_for_price_update(strategy, time_slot):
                 if strategy.are_bids_posted(market.id, time_slot):
-                    strategy.update_bid_rates(market, self.get_updated_rate(time_slot))
+                    strategy.update_bid_rates(market, self.get_updated_rate(time_slot), time_slot)
 
 
 class FutureTemplateStrategyOfferUpdater(TemplateStrategyOfferUpdater):
@@ -80,7 +80,8 @@ class FutureTemplateStrategyOfferUpdater(TemplateStrategyOfferUpdater):
         for time_slot in strategy.area.future_markets.market_time_slots:
             if self.time_for_price_update(strategy, time_slot):
                 if strategy.are_offers_posted(market.id):
-                    strategy.update_offer_rates(market, self.get_updated_rate(time_slot))
+                    strategy.update_offer_rates(
+                        market, self.get_updated_rate(time_slot), time_slot)
 
 
 class FutureMarketStrategyInterface:
@@ -142,6 +143,7 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
     def __init__(self, asset_type: AssetType,
                  initial_buying_rate: float, final_buying_rate: float,
                  initial_selling_rate: float, final_selling_rate: float):
+        # pylint: disable=too-many-arguments
         """
         Args:
             initial_buying_rate: Initial rate of the future bids
@@ -200,9 +202,6 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
                 assert False, ("Strategy %s has to be producer or consumer to be able to "
                                "participate in the future market.", strategy.owner.name)
 
-        self._bid_updater.increment_update_counter_all_markets(strategy)
-        self._offer_updater.increment_update_counter_all_markets(strategy)
-
     def _post_consumer_first_bid(
             self, strategy: "BaseStrategy", time_slot: DateTime,
             available_buy_energy_kWh: float) -> None:
@@ -214,7 +213,13 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
             market=strategy.area.future_markets,
             energy=available_buy_energy_kWh,
             price=available_buy_energy_kWh * self._bid_updater.initial_rate[time_slot],
-            time_slot=time_slot)
+            time_slot=time_slot,
+            replace_existing=False
+        )
+        if self._bid_updater.update_counter[time_slot] == 0:
+            # update_counter is 0 only for the very first bid that hast not been updated
+            # has to be increased because the first price counts as a price update
+            self._bid_updater.increment_update_counter(strategy, time_slot)
 
     def _post_producer_first_offer(
             self, strategy: "BaseStrategy", time_slot: DateTime,
@@ -230,6 +235,10 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
             price=available_sell_energy_kWh * self._offer_updater.initial_rate[time_slot],
             time_slot=time_slot
         )
+        if self._offer_updater.update_counter[time_slot] == 0:
+            # update_counter is 0 only for the very first bid that hast not been updated
+            # has to be increased because the first price counts as a price update
+            self._offer_updater.increment_update_counter(strategy, time_slot)
 
     def event_tick(self, strategy: "BaseStrategy") -> None:
         """

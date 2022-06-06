@@ -41,9 +41,8 @@ class TemplateStrategyUpdaterInterface:
     def update_and_populate_price_settings(self, area: "Area") -> None:
         """Update the price settings. Usually called during the market cycle event"""
 
-    def increment_update_counter_all_markets(self, strategy: "BaseStrategy") -> bool:
+    def increment_update_counter_all_markets(self, strategy: "BaseStrategy") -> None:
         """Increment the update counter for all markets. Usually called during the tick event"""
-        return False
 
     def set_parameters(self, *, initial_rate: float = None, final_rate: float = None,
                        energy_rate_change_per_update: float = None, fit_to_limit: bool = None,
@@ -60,11 +59,14 @@ class TemplateStrategyUpdaterInterface:
 class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
     """Manage template strategy bid / offer posting. Updates periodically the energy rate
     of the posted bids or offers. Base class"""
+
+    # pylint: disable=too-many-instance-attributes
     def __init__(self, initial_rate: float, final_rate: float, fit_to_limit: bool = True,
                  energy_rate_change_per_update: float = None,
                  update_interval: Duration = duration(
                     minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
                  rate_limit_object: Callable = max):
+        # pylint: disable=too-many-arguments
         self.fit_to_limit = fit_to_limit
 
         # initial input values (currently of type float)
@@ -91,6 +93,7 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
         self.rate_limit_object = rate_limit_object
 
     def serialize(self):
+        """Return dict with configuration parameters."""
         return {
             "fit_to_limit": self.fit_to_limit,
             "update_interval": self.update_interval
@@ -99,7 +102,6 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
     def _read_or_rotate_rate_profiles(self) -> None:
         """ Creates a new chunk of profiles if the current_timestamp is not in the profile buffers
         """
-        # TODO: this needs to be implemented to except profile UUIDs and DB connection
         self.initial_rate_profile_buffer = global_objects.profiles_handler.rotate_profile(
             InputProfileTypes.IDENTITY, self.initial_rate_input)
         self.final_rate_profile_buffer = global_objects.profiles_handler.rotate_profile(
@@ -222,22 +224,17 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
                 self._time_slot_duration_in_seconds / strategy.area.config.tick_length.seconds)
         return current_tick_number * strategy.area.config.tick_length.seconds
 
-    def increment_update_counter_all_markets(self, strategy: "BaseStrategy") -> bool:
+    def increment_update_counter_all_markets(self, strategy: "BaseStrategy") -> None:
         """Update method of the class. Should be called on each tick and increments the
         update counter in order to validate whether an update in the posted energy rates
         is required."""
-        should_update = [
-            self._increment_update_counter(strategy, time_slot)
-            for time_slot in self._get_all_time_slots(strategy.area)
-        ]
-        return any(should_update)
+        for time_slot in self._get_all_time_slots(strategy.area):
+            self.increment_update_counter(strategy, time_slot)
 
-    def _increment_update_counter(self, strategy: "BaseStrategy", time_slot) -> bool:
+    def increment_update_counter(self, strategy: "BaseStrategy", time_slot) -> None:
         """Increment the counter of the number of times in which prices have been updated."""
         if self.time_for_price_update(strategy, time_slot):
             self.update_counter[time_slot] += 1
-            return True
-        return False
 
     def time_for_price_update(self, strategy: "BaseStrategy", time_slot: DateTime) -> bool:
         """Check if the prices of bids/offers should be updated."""

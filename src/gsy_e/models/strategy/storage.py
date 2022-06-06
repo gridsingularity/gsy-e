@@ -365,8 +365,9 @@ class StorageStrategy(BidEnabledStrategy):
             self.offer_update.update(market, self)
 
         self.bid_update.increment_update_counter_all_markets(self)
-        if self.offer_update.increment_update_counter_all_markets(self):
-            self._buy_energy_one_sided_spot_market(market)
+        self.offer_update.increment_update_counter_all_markets(self)
+
+        self._buy_energy_one_sided_spot_market(market)
 
         self._future_market_strategy.event_tick(self)
 
@@ -480,6 +481,8 @@ class StorageStrategy(BidEnabledStrategy):
 
     def _buy_energy_one_sided_spot_market(self, market, offer=None):
         if not market:
+            return
+        if ConstSettings.MASettings.MARKET_TYPE != SpotMarketTypeEnum.ONE_SIDED.value:
             return
         max_affordable_offer_rate = self.bid_update.get_updated_rate(market.time_slot)
 
