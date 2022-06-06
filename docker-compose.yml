@@ -1,0 +1,26 @@
+services:
+
+  gsy-e:
+    build: ${GSY_E_TARGET_REPO:-https://github.com/gridsingularity/gsy-e.git}
+    container_name: ${CONTAINER_NAME:-gsy-e-tests-master}
+    entrypoint: ["gsy-e"]
+    command: ${COMMAND:-}
+    environment:
+      - REDIS_URL=redis://redis.container:6379/
+    volumes:
+      - ${GSY_E_VOLUME:-gsy-e}:/app
+
+  redis:
+    image: redis:6.2.5
+    restart: always
+    container_name: gsy-e-tests-redis
+    ports:
+      - "6379:6379"
+    hostname: redis.container
+
+volumes:
+  gsy-e:
+
+networks:
+  default:
+    name: integtestnet
