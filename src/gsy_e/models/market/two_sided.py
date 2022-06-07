@@ -470,7 +470,7 @@ class TwoSidedMarket(OneSidedMarket):
             if bid_matching_requirement not in bid_requirements:
                 raise InvalidBidOfferPairException(
                     f"Matching requirement {bid_matching_requirement} doesn't exist in the Bid"
-                    f" object.")
+                    " object.")
 
         offer_matching_requirement = recommendation.matching_requirements.get("offer_requirement")
         if offer_matching_requirement:
