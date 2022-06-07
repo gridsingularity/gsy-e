@@ -521,8 +521,6 @@ class TestTwoSidedMarketMatchRecommendations:
                 "offer_requirement": {}
             })
 
-        market.validate_bid_offer_match(recommended_match)
-
         recommendations = [recommended_match.serializable_dict()]
         market.match_recommendations(recommendations)
         assert len(market.trades) == 1
