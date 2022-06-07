@@ -319,7 +319,9 @@ class OneSidedMarket(MarketBase):
                       seller_origin=offer.seller_origin, buyer_origin=buyer_origin,
                       fee_price=fee_price, buyer_origin_id=buyer_origin_id,
                       seller_origin_id=offer.seller_origin_id,
-                      seller_id=offer.seller_id, buyer_id=buyer_id, time_slot=offer.time_slot
+                      seller_id=offer.seller_id, buyer_id=buyer_id, time_slot=offer.time_slot,
+                      matching_requirements=offer_bid_trade_info.matching_requirements
+                      if offer_bid_trade_info else None
                       )
 
         self.bc_interface.track_trade_event(self.time_slot, trade)

@@ -155,8 +155,6 @@ class TwoSidedEngine(MAEngine):
             assert abs(source_rate) + FLOATING_POINT_TOLERANCE >= abs(target_rate), \
                 f"bid: source_rate ({source_rate}) is not lower than target_rate ({target_rate})"
 
-            trade_rate = (bid_trade.trade_price/bid_trade.traded_energy)
-
             if bid_trade.offer_bid_trade_info is not None:
                 # Adapt trade_offer_info received by the trade to include source market grid fees,
                 # which was skipped when accepting the bid during the trade operation.
@@ -176,7 +174,6 @@ class TwoSidedEngine(MAEngine):
                 energy=bid_trade.traded_energy,
                 seller=self.owner.name,
                 already_tracked=False,
-                trade_rate=trade_rate,
                 trade_offer_info=trade_offer_info,
                 seller_origin=bid_trade.seller_origin,
                 seller_origin_id=bid_trade.seller_origin_id,
