@@ -38,7 +38,6 @@ from gsy_e.models.area.event_dispatcher import DispatcherFactory
 from gsy_e.models.area.events import Events
 from gsy_e.models.area.markets import AreaMarkets
 from gsy_e.models.area.redis_external_market_connection import RedisMarketExternalConnection
-from gsy_e.models.area.scm_manager import HomeAfterMeterData
 from gsy_e.models.area.stats import AreaStats
 from gsy_e.models.area.throughput_parameters import ThroughputParameters
 from gsy_e.models.config import SimulationConfig
@@ -290,7 +289,7 @@ class CoefficientArea(AreaBase):
                    for child in self.children)
 
     def _calculate_home_after_meter_data(
-            self, current_time_slot: DateTime, scm_manager) -> HomeAfterMeterData:
+            self, current_time_slot: DateTime, scm_manager) -> None:
         production_kWh = sum(child.strategy.get_energy_to_sell_kWh(current_time_slot)
                              for child in self.children)
         consumption_kWh = sum(child.strategy.get_energy_to_buy_kWh(current_time_slot)
@@ -298,7 +297,7 @@ class CoefficientArea(AreaBase):
         scm_manager.add_home_data(self.uuid, production_kWh, consumption_kWh)
 
     def calculate_home_after_meter_data(
-            self, current_time_slot: DateTime, scm_manager) -> Dict[str, HomeAfterMeterData]:
+            self, current_time_slot: DateTime, scm_manager) -> None:
         if self._is_home_area():
             self._calculate_home_after_meter_data(current_time_slot, scm_manager)
         for child in self.children:
@@ -322,7 +321,6 @@ class CoefficientArea(AreaBase):
 
     def trigger_energy_trades(
             self, current_time_slot: DateTime, scm_manager) -> float:
-
         pass
         # if self._is_home_area():
         #     total_home_consumption_kWh = sum(
