@@ -588,7 +588,7 @@ class Simulation:
 
                 # reset tick_resume after possible resume
                 tick_resume = 0
-                log.trace("Tick %s of %s in slot %s (%.1f)", tick_no + 1,
+                log.trace("Tick %s of %s in slot %s (%.1f%%)", tick_no + 1,
                           self._setup.config.ticks_per_slot,
                           slot_no + 1, (tick_no + 1) / self._setup.config.ticks_per_slot * 100)
 
