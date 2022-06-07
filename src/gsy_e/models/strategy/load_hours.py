@@ -317,7 +317,6 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self.bid_update.update_and_populate_price_settings(self.area)
         if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
             self.bid_update.reset(self)
-        self._set_alternative_pricing_scheme()
         self._post_first_bid()
         self._settlement_market_strategy.event_market_cycle(self)
         self._future_market_strategy.event_market_cycle(self)
@@ -490,13 +489,6 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
     def _offer_comes_from_different_seller(self, offer):
         return offer.seller not in [self.owner.name, self.area.name]
-
-    def _set_alternative_pricing_scheme(self):
-        if ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME != 0:
-            time_slot = self.area.spot_market.time_slot
-            final_rate = self.simulation_config.market_maker_rate[time_slot]
-            self.bid_update.set_parameters(initial_rate=0,
-                                           final_rate=final_rate)
 
     def _post_first_bid(self):
         if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
