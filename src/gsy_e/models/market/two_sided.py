@@ -51,6 +51,7 @@ class TwoSidedMarket(OneSidedMarket):
     def __init__(self, time_slot=None, bc=None, notification_listener=None, readonly=False,
                  grid_fee_type=ConstSettings.MASettings.GRID_FEE_TYPE,
                  grid_fees=None, name=None, in_sim_duration=True):
+        # pylint: disable=too-many-arguments
         super().__init__(time_slot, bc, notification_listener, readonly, grid_fee_type,
                          grid_fees, name, in_sim_duration=in_sim_duration)
 
@@ -104,6 +105,8 @@ class TwoSidedMarket(OneSidedMarket):
             attributes: Optional[Dict] = None,
             requirements: Optional[List[Dict]] = None,
             time_slot: Optional[DateTime] = None) -> Bid:
+        """Create bid object."""
+        # pylint: disable=too-many-arguments
         if energy <= 0:
             raise InvalidBid()
 
@@ -135,6 +138,7 @@ class TwoSidedMarket(OneSidedMarket):
 
     @lock_market_action
     def delete_bid(self, bid_or_id: Union[str, Bid]):
+        """Delete bid object."""
         if isinstance(bid_or_id, Bid):
             bid_or_id = bid_or_id.id
         bid = self.bids.pop(bid_or_id, None)
@@ -197,9 +201,10 @@ class TwoSidedMarket(OneSidedMarket):
 
         return accepted_bid, residual_bid
 
-    def determine_bid_price(self, trade_offer_info, energy):
+    def _determine_bid_price(self, trade_offer_info, energy):
         _, grid_fee_rate, final_trade_rate = self.fee_class.calculate_trade_price_and_fees(
             trade_offer_info)
+
         return grid_fee_rate * energy, energy * final_trade_rate
 
     @lock_market_action
@@ -208,11 +213,12 @@ class TwoSidedMarket(OneSidedMarket):
                    seller: Optional[str] = None,
                    buyer: Optional[str] = None,
                    already_tracked: bool = False,
-                   trade_rate: Optional[float] = None,
                    trade_offer_info: Optional[TradeBidOfferInfo] = None,
                    seller_origin: Optional[str] = None,
                    seller_origin_id: Optional[str] = None,
                    seller_id: Optional[str] = None) -> Trade:
+        """Accept bid and create Trade object."""
+        # pylint: disable=too-many-arguments, too-many-locals
         market_bid = self.bids.pop(bid.id, None)
         if market_bid is None:
             raise BidNotFoundException("During accept bid: " + str(bid))
@@ -230,7 +236,7 @@ class TwoSidedMarket(OneSidedMarket):
         if energy > market_bid.energy:
             raise InvalidTrade(f"Traded energy ({energy}) cannot be more than the "
                                f"bid energy ({market_bid.energy}).")
-        elif energy < market_bid.energy:
+        if energy < market_bid.energy:
             # partial bid trade
             accepted_bid, residual_bid = self.split_bid(market_bid, energy, orig_price)
             bid = accepted_bid
@@ -245,7 +251,7 @@ class TwoSidedMarket(OneSidedMarket):
             # full bid trade, nothing further to do here
             pass
 
-        fee_price, trade_price = self.determine_bid_price(trade_offer_info, energy)
+        fee_price, trade_price = self._determine_bid_price(trade_offer_info, energy)
         bid.update_price(trade_price)
 
         # Do not adapt grid fees when creating the bid_trade_info structure, to mimic
@@ -261,7 +267,8 @@ class TwoSidedMarket(OneSidedMarket):
                       buyer_origin=bid.buyer_origin, seller_origin=seller_origin,
                       fee_price=fee_price, seller_origin_id=seller_origin_id,
                       buyer_origin_id=bid.buyer_origin_id, seller_id=seller_id,
-                      buyer_id=bid.buyer_id, time_slot=bid.time_slot
+                      buyer_id=bid.buyer_id, time_slot=bid.time_slot,
+                      matching_requirements=trade_offer_info.matching_requirements
                       )
 
         if already_tracked is False:
@@ -275,6 +282,8 @@ class TwoSidedMarket(OneSidedMarket):
     def accept_bid_offer_pair(self, bid: Bid, offer: Offer, clearing_rate: float,
                               trade_bid_info: TradeBidOfferInfo,
                               selected_energy: float) -> Tuple[Trade, Trade]:
+        """Accept bid and offers in pair when a trade is happening."""
+        # pylint: disable=too-many-arguments
         already_tracked = bid.buyer == offer.seller
         trade = self.accept_offer(offer_or_id=offer,
                                   buyer=bid.buyer,
@@ -291,7 +300,6 @@ class TwoSidedMarket(OneSidedMarket):
                                     seller=offer.seller,
                                     buyer=bid.buyer,
                                     already_tracked=True,
-                                    trade_rate=clearing_rate,
                                     trade_offer_info=trade_bid_info,
                                     seller_origin=offer.seller_origin,
                                     seller_origin_id=offer.seller_origin_id,
@@ -368,7 +376,9 @@ class TwoSidedMarket(OneSidedMarket):
                 propagated_bid_rate=recommended_pair.bid_energy_rate,
                 original_offer_rate=market_offer.original_price / market_offer.energy,
                 propagated_offer_rate=market_offer.energy_rate,
-                trade_rate=trade_rate)
+                trade_rate=trade_rate,
+                matching_requirements=recommended_pair.matching_requirements
+            )
 
             bid_trade, offer_trade = self.accept_bid_offer_pair(
                 market_bid, market_offer, trade_rate,
