@@ -8,7 +8,7 @@
     # via -r requirements/blockchain.in
 -e ./gsy-framework
     # via -r requirements/base.txt
-attrs==21.2.0
+attrs==21.4.0
     # via
     #   -r requirements/base.txt
     #   gsy-dex
@@ -16,7 +16,6 @@ attrs==21.2.0
     #   jsonschema
 awesome-slugify==1.6.5
     # via -r requirements/base.txt
-backports-entry-points-selectable==1.1.0
     # via
     #   -r requirements/base.txt
     #   gsy-dex
@@ -29,7 +28,7 @@ base58==2.1.1
     #   substrate-interface
 cached-property==1.5.2
     # via -r requirements/base.txt
-certifi==2021.10.8
+certifi==2022.5.18.1
     # via
     #   -r requirements/base.txt
     #   gsy-dex
@@ -113,14 +112,14 @@ identify==2.3.3
     #   gsy-dex
     #   gsy-framework
     #   pre-commit
-idna==2.10
+idna==3.3
     # via
     #   -r requirements/base.txt
     #   gsy-dex
     #   gsy-framework
     #   requests
     #   substrate-interface
-jsonschema==4.1.2
+jsonschema==3.2.0
     # via
     #   -r requirements/base.txt
     #   gsy-dex
@@ -148,7 +147,7 @@ nodeenv==1.6.0
     #   pre-commit
 numpy==1.22.3
     # via -r requirements/base.txt
-packaging==21.2
+packaging==21.3
     # via
     #   -r requirements/base.txt
     #   gsy-dex
@@ -159,7 +158,7 @@ pendulum==2.1.2
     #   -r requirements/base.txt
     #   gsy-dex
     #   gsy-framework
-platformdirs==2.4.0
+platformdirs==2.5.2
     # via
     #   -r requirements/base.txt
     #   gsy-dex
@@ -180,7 +179,7 @@ pre-commit==2.15.0
     #   -r requirements/base.txt
     #   gsy-dex
     #   gsy-framework
-py==1.10.0
+py==1.11.0
     # via
     #   -r requirements/base.txt
     #   gsy-dex
@@ -214,19 +213,19 @@ pyflakes==2.4.0
     #   flake8
     #   gsy-dex
     #   gsy-framework
-pyparsing==2.4.7
+pyparsing==3.0.9
     # via
     #   -r requirements/base.txt
     #   gsy-dex
     #   gsy-framework
     #   packaging
-pyrsistent==0.18.0
+pyrsistent==0.18.1
     # via
     #   -r requirements/base.txt
     #   gsy-dex
     #   gsy-framework
     #   jsonschema
-python-dateutil==2.8.2
+python-dateutil==2.8.1
     # via
     #   -r requirements/base.txt
     #   gsy-dex
@@ -242,7 +241,7 @@ pytzdata==2020.1
     #   gsy-dex
     #   gsy-framework
     #   pendulum
-pyyaml==6.0
+pyyaml==5.4.1
     # via
     #   -r requirements/base.txt
     #   gsy-dex
@@ -254,11 +253,11 @@ redis==3.5.3
     #   gsy-dex
     #   gsy-framework
     #   rq
-regex==2022.4.24
+regex==2021.8.28
     # via
     #   -r requirements/base.txt
     #   awesome-slugify
-requests==2.25.1
+requests==2.27.1
     # via
     #   -r requirements/base.txt
     #   gsy-dex
@@ -315,7 +314,7 @@ unidecode==0.4.21
     # via
     #   -r requirements/base.txt
     #   awesome-slugify
-urllib3==1.26.7
+urllib3==1.26.9
     # via
     #   -r requirements/base.txt
     #   gsy-dex
@@ -332,7 +331,7 @@ websocket-client==1.3.2
     # via
     #   gsy-dex
     #   substrate-interface
-websockets==10.0
+websockets==9.1
     # via
     #   -r requirements/base.txt
     #   gsy-dex
