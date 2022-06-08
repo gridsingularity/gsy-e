@@ -33,26 +33,14 @@ current_dir = os.path.dirname(__file__)
 
 
 def get_setup(config):
-    ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS = (
-        False  # De-activate Settlement Market
-    )
     GlobalConfig.FUTURE_MARKET_DURATION_HOURS = (
-        2  # This flag controls the number of open future markets (4 in this case)
+        1
     )
     ConstSettings.FutureMarketSettings.FUTURE_MARKET_CLEARING_INTERVAL_MINUTES = (
-        15
-        # The frequency at which Futures market is cleared -
-        # doesn't impact the calculation of the rate
+        5
     )
     ConstSettings.MASettings.MARKET_TYPE = 2
-
-    # FutureTemplateStrategiesConstants.INITIAL_BUYING_RATE = 0
-    FutureTemplateStrategiesConstants.FINAL_BUYING_RATE = 30  # 60
-    # for FINAL_BUYING_RATE = 30, seems like the buying rate is not the
-    # top most value in the results, but 50 cts/kWh is the highest bidding/selling energy rate.
-    FutureTemplateStrategiesConstants.UPDATE_INTERVAL_MIN = 15
-    FutureTemplateStrategiesConstants.INITIAL_SELLING_RATE = 30
-    # FutureTemplateStrategiesConstants.FINAL_SELLING_RATE = 0
+    FutureTemplateStrategiesConstants.UPDATE_INTERVAL_MIN = 5
 
     area = Area(
         "Grid",
