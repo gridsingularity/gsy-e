@@ -42,7 +42,7 @@ After cloning this project setup a Python 3.10 virtualenv or conda env and insta
     conda create -n bc4p python=3.10
     conda activate bc4p
     pip install .
-    cd gsy-framework && pip install -e . && cd ..
+    cd gsy-framework && pip install . && cd ..
 
 
 The Simulation
