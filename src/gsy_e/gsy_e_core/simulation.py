@@ -47,6 +47,7 @@ from gsy_e.gsy_e_core.sim_results.endpoint_buffer import endpoint_buffer_class_f
 from gsy_e.gsy_e_core.sim_results.file_export_endpoints import FileExportEndpoints
 from gsy_e.gsy_e_core.util import NonBlockingConsole, validate_const_settings_for_simulation
 from gsy_e.models.area.event_deserializer import deserialize_events_to_areas
+from gsy_e.models.area.scm_manager import SCMManager
 from gsy_e.models.config import SimulationConfig
 
 if TYPE_CHECKING:
@@ -817,7 +818,6 @@ class CoefficientSimulation(Simulation):
             global_objects.profiles_handler.update_time_and_buffer_profiles(
                 self._get_current_market_time_slot(slot_no))
 
-            from gsy_e.models.area.scm_manager import SCMManager
             scm_manager = SCMManager(self.area.uuid)
 
             self.area.calculate_home_after_meter_data(

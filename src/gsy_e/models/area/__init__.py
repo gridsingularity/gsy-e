@@ -51,6 +51,7 @@ log = getLogger(__name__)
 
 if TYPE_CHECKING:
     from gsy_e.models.market import MarketBase
+    from gsy_e.models.area.scm_manager import SCMManager
 
 
 def check_area_name_exists_in_parent_area(parent_area, name):
@@ -289,7 +290,7 @@ class CoefficientArea(AreaBase):
                    for child in self.children)
 
     def _calculate_home_after_meter_data(
-            self, current_time_slot: DateTime, scm_manager) -> None:
+            self, current_time_slot: DateTime, scm_manager: "SCMManager") -> None:
         production_kWh = sum(child.strategy.get_energy_to_sell_kWh(current_time_slot)
                              for child in self.children)
         consumption_kWh = sum(child.strategy.get_energy_to_buy_kWh(current_time_slot)
@@ -297,7 +298,7 @@ class CoefficientArea(AreaBase):
         scm_manager.add_home_data(self.uuid, production_kWh, consumption_kWh)
 
     def calculate_home_after_meter_data(
-            self, current_time_slot: DateTime, scm_manager) -> None:
+            self, current_time_slot: DateTime, scm_manager: "SCMManager") -> None:
         if self._is_home_area():
             self._calculate_home_after_meter_data(current_time_slot, scm_manager)
         for child in self.children:
@@ -320,8 +321,10 @@ class CoefficientArea(AreaBase):
         return trade
 
     def trigger_energy_trades(
-            self, current_time_slot: DateTime, scm_manager) -> float:
-        pass
+            self, current_time_slot: DateTime, scm_manager: "SCMManager") -> float:
+
+        scm_manager.calculate_home_energy_bills(self.uuid, self.grid_fee_constant)
+
         # if self._is_home_area():
         #     total_home_consumption_kWh = sum(
         #         child.strategy.get_energy_to_buy_kWh(current_time_slot)
@@ -360,6 +363,7 @@ class CoefficientArea(AreaBase):
 
     def trigger_energy_sell_trades(
             self, current_time_slot: DateTime, total_buy_energy_kWh: float) -> float:
+
         if not self.children:
             if not isinstance(self.strategy, SCMStrategy):
                 return 0.0
