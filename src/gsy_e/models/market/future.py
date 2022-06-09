@@ -190,21 +190,27 @@ class FutureMarkets(TwoSidedMarket):
         self.trades = self._remove_old_orders_from_list(
             self.trades, current_market_time_slot)
 
-    def create_future_markets(self, current_market_time_slot: DateTime,
-                              slot_length: duration,
-                              config: "SimulationConfig") -> None:
-        """Add sub dicts in order dictionaries for future market slots."""
-        if not GlobalConfig.FUTURE_MARKET_DURATION_HOURS:
-            return
-        future_time_slot = current_market_time_slot.add(minutes=slot_length.total_minutes())
+    def _create_future_markets(self, current_market_time_slot: DateTime,
+                               market_length: duration, time_window_hours: int,
+                               config: "SimulationConfig"):
+        future_time_slot = current_market_time_slot.add(minutes=market_length.total_minutes())
         most_future_slot = (current_market_time_slot +
-                            duration(hours=GlobalConfig.FUTURE_MARKET_DURATION_HOURS))
+                            duration(hours=time_window_hours))
         while future_time_slot <= most_future_slot:
             if (future_time_slot not in self.slot_bid_mapping and
                     is_time_slot_in_simulation_duration(future_time_slot, config)):
                 self.bids.slot_order_mapping[future_time_slot] = []
                 self.offers.slot_order_mapping[future_time_slot] = []
-            future_time_slot = future_time_slot.add(minutes=slot_length.total_minutes())
+            future_time_slot = future_time_slot.add(minutes=market_length.total_minutes())
+
+    def create_future_markets(self, current_market_time_slot: DateTime,
+                              config: "SimulationConfig") -> None:
+        """Add sub dicts in order dictionaries for future market slots."""
+        if not GlobalConfig.FUTURE_MARKET_DURATION_HOURS:
+            return
+        self._create_future_markets(
+            current_market_time_slot, config.slot_length,
+            GlobalConfig.FUTURE_MARKET_DURATION_HOURS, config)
 
     @lock_market_action
     def bid(self, price: float, energy: float, buyer: str, buyer_origin: str,

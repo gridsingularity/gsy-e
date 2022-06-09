@@ -441,8 +441,7 @@ class Area(AreaBase):
 
         # create new future markets:
         if self.future_markets:
-            self.future_markets.create_future_markets(
-                now_value, self.config.slot_length, self.config)
+            self.future_markets.create_future_markets(now_value, self.config)
 
         self.dispatcher.event_market_cycle()
 
