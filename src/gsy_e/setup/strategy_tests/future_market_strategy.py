@@ -34,29 +34,29 @@ current_dir = os.path.dirname(__file__)
 def get_setup(config):
     ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS = True
     GlobalConfig.FUTURE_MARKET_DURATION_HOURS = (
-        os.environ.get("FUTURE_MARKET_DURATION_HOURS", 1)
+        int(os.environ.get("FUTURE_MARKET_DURATION_HOURS", 1))
     )
     ConstSettings.FutureMarketSettings.FUTURE_MARKET_CLEARING_INTERVAL_MINUTES = (
-        os.environ.get("FUTURE_MARKET_CLEARING_INTERVAL_MINUTES", 15)
+        int(os.environ.get("FUTURE_MARKET_CLEARING_INTERVAL_MINUTES", 15))
     )
     ConstSettings.MASettings.MARKET_TYPE = 2
 
-    FutureTemplateStrategiesConstants.INITIAL_BUYING_RATE = os.environ.get(
+    FutureTemplateStrategiesConstants.INITIAL_BUYING_RATE = int(os.environ.get(
         "INITIAL_BUYING_RATE", 0
-    )
-    FutureTemplateStrategiesConstants.FINAL_BUYING_RATE = os.environ.get(
+    ))
+    FutureTemplateStrategiesConstants.FINAL_BUYING_RATE = int(os.environ.get(
         "FINAL_BUYING_RATE", 50
-    )
-    FutureTemplateStrategiesConstants.INITIAL_SELLING_RATE = os.environ.get(
+    ))
+    FutureTemplateStrategiesConstants.INITIAL_SELLING_RATE = int(os.environ.get(
         "INITIAL_SELLING_RATE", 50
-    )
-    FutureTemplateStrategiesConstants.FINAL_SELLING_RATE = os.environ.get(
+    ))
+    FutureTemplateStrategiesConstants.FINAL_SELLING_RATE = int(os.environ.get(
         "FINAL_SELLING_RATE", 0
-    )
+    ))
 
-    FutureTemplateStrategiesConstants.UPDATE_INTERVAL_MIN = os.environ.get(
+    FutureTemplateStrategiesConstants.UPDATE_INTERVAL_MIN = int(os.environ.get(
         "UPDATE_INTERVAL_MIN", 5
-    )
+    ))
 
     area = Area(
         "Grid-Community",
