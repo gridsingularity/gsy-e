@@ -34,62 +34,60 @@ current_dir = os.path.dirname(__file__)
 
 def get_setup(config):
     GlobalConfig.FUTURE_MARKET_DURATION_HOURS = (
-        1
+        os.environ.get("FUTURE_MARKET_DURATION_HOURS", 1)
     )
     ConstSettings.FutureMarketSettings.FUTURE_MARKET_CLEARING_INTERVAL_MINUTES = (
-        5
+        os.environ.get("FUTURE_MARKET_CLEARING_INTERVAL_MINUTES", 15)
     )
     ConstSettings.MASettings.MARKET_TYPE = 2
-    FutureTemplateStrategiesConstants.UPDATE_INTERVAL_MIN = 5
+
+    FutureTemplateStrategiesConstants.INITIAL_BUYING_RATE = os.environ.get(
+        "INITIAL_BUYING_RATE", 0
+    )
+    FutureTemplateStrategiesConstants.FINAL_BUYING_RATE = os.environ.get(
+        "FINAL_BUYING_RATE", 50
+    )
+    FutureTemplateStrategiesConstants.INITIAL_SELLING_RATE = os.environ.get(
+        "INITIAL_SELLING_RATE", 50
+    )
+    FutureTemplateStrategiesConstants.FINAL_SELLING_RATE = os.environ.get(
+        "FINAL_SELLING_RATE", 0
+    )
+
+    FutureTemplateStrategiesConstants.UPDATE_INTERVAL_MIN = os.environ.get(
+        "UPDATE_INTERVAL_MIN", 5
+    )
 
     area = Area(
-        "Grid",
+        "Grid-Community",
         [
             Area(
-                "Community",
-                [
-                    Area(
-                        "House 1",
-                        [
-                            Area(
-                                "H1 Load",
-                                strategy=LoadHoursStrategy(
-                                    avg_power_W=200,
-                                    hrs_per_day=6,
-                                    hrs_of_day=list(range(12, 18)),
-                                    final_buying_rate=35,
-                                ),
-                            ),
-                            Area("H1 PV", strategy=PVStrategy(panel_count=4)),
-                        ],
-                    ),
-                    Area(
-                        "House 2",
-                        [
-                            Area(
-                                "H2 Load",
-                                strategy=LoadHoursStrategy(
-                                    avg_power_W=200,
-                                    hrs_per_day=24,
-                                    hrs_of_day=list(range(0, 24)),
-                                    final_buying_rate=35,
-                                ),
-                            ),
-                            Area(
-                                "H2 ESS",
-                                strategy=StorageStrategy(
-                                    initial_soc=100, battery_capacity_kWh=20
-                                ),
-                            ),
-                            Area("H2 PV", strategy=PVStrategy(panel_count=4)),
-                        ],
-                    ),
-                ],
+                "Load",
+                strategy=LoadHoursStrategy(
+                    avg_power_W=1000,
+                    hrs_per_day=24,
+                    hrs_of_day=list(range(0, 24)),
+                    initial_buying_rate=15,
+                    final_buying_rate=25,
+                ),
+            ),
+            Area(
+                "PV", strategy=PVStrategy(
+                    panel_count=4, initial_selling_rate=30, final_selling_rate=15)
             ),
             Area(
                 "Market Maker",
-                strategy=InfiniteBusStrategy(energy_buy_rate=21, energy_sell_rate=22),
+                strategy=InfiniteBusStrategy(
+                    energy_buy_rate=28, energy_sell_rate=30),
             ),
+            Area(
+                "ESS",
+                strategy=StorageStrategy(
+                    initial_soc=100, battery_capacity_kWh=20,
+                    initial_selling_rate=30, final_selling_rate=20,
+                    initial_buying_rate=15, final_buying_rate=20)
+            )
+
         ],
         config=config,
     )
