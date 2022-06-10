@@ -33,6 +33,7 @@ current_dir = os.path.dirname(__file__)
 
 
 def get_setup(config):
+    ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS = True
     GlobalConfig.FUTURE_MARKET_DURATION_HOURS = (
         os.environ.get("FUTURE_MARKET_DURATION_HOURS", 1)
     )
