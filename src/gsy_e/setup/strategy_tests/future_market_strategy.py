@@ -27,7 +27,6 @@ from gsy_e.models.strategy.external_strategies.pv import PVStrategy
 from gsy_e.models.strategy.external_strategies.storage import (
     StorageStrategy,
 )
-from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
 
 current_dir = os.path.dirname(__file__)
 
@@ -62,34 +61,32 @@ def get_setup(config):
     area = Area(
         "Grid-Community",
         [
-            Area(
-                "Load",
-                strategy=LoadHoursStrategy(
-                    avg_power_W=1000,
-                    hrs_per_day=24,
-                    hrs_of_day=list(range(0, 24)),
-                    initial_buying_rate=15,
-                    final_buying_rate=25,
-                ),
-            ),
-            Area(
-                "PV", strategy=PVStrategy(
-                    panel_count=4, initial_selling_rate=30, final_selling_rate=15)
-            ),
-            Area(
-                "Market Maker",
-                strategy=InfiniteBusStrategy(
-                    energy_buy_rate=28, energy_sell_rate=30),
-            ),
-            Area(
-                "ESS",
-                strategy=StorageStrategy(
-                    initial_soc=100, battery_capacity_kWh=20,
-                    initial_selling_rate=30, final_selling_rate=20,
-                    initial_buying_rate=15, final_buying_rate=20)
-            )
-
-        ],
-        config=config,
+            Area("House 1",
+                 [
+                     Area(
+                         "Load",
+                         strategy=LoadHoursStrategy(
+                             avg_power_W=1000,
+                             hrs_per_day=24,
+                             hrs_of_day=list(range(0, 24)),
+                             initial_buying_rate=15,
+                             final_buying_rate=25,
+                         ),
+                     ),
+                     Area(
+                         "PV", strategy=PVStrategy(
+                             panel_count=4, initial_selling_rate=30, final_selling_rate=15)
+                     ),
+                     Area(
+                         "ESS",
+                         strategy=StorageStrategy(
+                             initial_soc=100, battery_capacity_kWh=20,
+                             initial_selling_rate=30, final_selling_rate=20,
+                             initial_buying_rate=15, final_buying_rate=20)
+                     )
+                 ]
+                 )
+        ], config=config,
     )
+
     return area
