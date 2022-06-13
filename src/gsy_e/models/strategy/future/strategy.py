@@ -219,6 +219,7 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
         if self._bid_updater.update_counter[time_slot] == 0:
             # update_counter is 0 only for the very first bid that hast not been updated
             # has to be increased because the first price counts as a price update
+            # pylint: disable=no-member
             self._bid_updater.increment_update_counter(strategy, time_slot)
 
     def _post_producer_first_offer(
@@ -238,6 +239,7 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
         if self._offer_updater.update_counter[time_slot] == 0:
             # update_counter is 0 only for the very first bid that hast not been updated
             # has to be increased because the first price counts as a price update
+            # pylint: disable=no-member
             self._offer_updater.increment_update_counter(strategy, time_slot)
 
     def event_tick(self, strategy: "BaseStrategy") -> None:
