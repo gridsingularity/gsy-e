@@ -263,10 +263,10 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
 
 def future_market_strategy_factory(
         asset_type: AssetType,
-        initial_buying_rate: float = FutureTemplateStrategiesConstants.INITIAL_BUYING_RATE,
-        final_buying_rate: float = FutureTemplateStrategiesConstants.FINAL_BUYING_RATE,
-        initial_selling_rate: float = FutureTemplateStrategiesConstants.INITIAL_SELLING_RATE,
-        final_selling_rate: float = FutureTemplateStrategiesConstants.FINAL_SELLING_RATE
+        initial_buying_rate: float = None,
+        final_buying_rate: float = None,
+        initial_selling_rate: float = None,
+        final_selling_rate: float = None
 ) -> FutureMarketStrategyInterface:
     """
     Factory method for creating the future market trading strategy. Creates an object of a
@@ -281,6 +281,14 @@ def future_market_strategy_factory(
     Returns: Future strategy object
 
     """
+    initial_buying_rate = (initial_buying_rate or
+                           FutureTemplateStrategiesConstants.INITIAL_BUYING_RATE)
+    final_buying_rate = (final_buying_rate or
+                         FutureTemplateStrategiesConstants.FINAL_BUYING_RATE)
+    initial_selling_rate = (initial_selling_rate or
+                            FutureTemplateStrategiesConstants.INITIAL_SELLING_RATE)
+    final_selling_rate = (final_selling_rate or
+                          FutureTemplateStrategiesConstants.FINAL_SELLING_RATE)
     if GlobalConfig.FUTURE_MARKET_DURATION_HOURS > 0:
         return FutureMarketStrategy(
             asset_type, initial_buying_rate, final_buying_rate,
