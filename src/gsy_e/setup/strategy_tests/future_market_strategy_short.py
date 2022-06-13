@@ -33,25 +33,30 @@ current_dir = os.path.dirname(__file__)
 
 
 def get_setup(config):
-    ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS = (
-        False  # De-activate Settlement Market
-    )
     GlobalConfig.FUTURE_MARKET_DURATION_HOURS = (
-        1  # This flag controls the number of open future markets (4 in this case)
+        os.environ.get("FUTURE_MARKET_DURATION_HOURS", 1)
     )
     ConstSettings.FutureMarketSettings.FUTURE_MARKET_CLEARING_INTERVAL_MINUTES = (
-        5  # The frequency at which Futures market is cleared
-           # - doesn't impact the calculation of the rate
+        os.environ.get("FUTURE_MARKET_CLEARING_INTERVAL_MINUTES", 15)
     )
     ConstSettings.MASettings.MARKET_TYPE = 2
 
-    # FutureTemplateStrategiesConstants.INITIAL_BUYING_RATE = 0
-    FutureTemplateStrategiesConstants.FINAL_BUYING_RATE = 30  # 60
-    # for FINAL_BUYING_RATE = 30, seems like the buying rate is not the
-    # top most value in the results, but 50 cts/kWh is the highest bidding/selling energy rate.
-    FutureTemplateStrategiesConstants.UPDATE_INTERVAL_MIN = 5
-    FutureTemplateStrategiesConstants.INITIAL_SELLING_RATE = 30
-    # FutureTemplateStrategiesConstants.FINAL_SELLING_RATE = 0
+    FutureTemplateStrategiesConstants.INITIAL_BUYING_RATE = os.environ.get(
+        "INITIAL_BUYING_RATE", 0
+    )
+    FutureTemplateStrategiesConstants.FINAL_BUYING_RATE = os.environ.get(
+        "FINAL_BUYING_RATE", 50
+    )
+    FutureTemplateStrategiesConstants.INITIAL_SELLING_RATE = os.environ.get(
+        "INITIAL_SELLING_RATE", 50
+    )
+    FutureTemplateStrategiesConstants.FINAL_SELLING_RATE = os.environ.get(
+        "FINAL_SELLING_RATE", 0
+    )
+
+    FutureTemplateStrategiesConstants.UPDATE_INTERVAL_MIN = os.environ.get(
+        "UPDATE_INTERVAL_MIN", 5
+    )
 
     area = Area(
         "Grid-Community",
@@ -76,7 +81,7 @@ def get_setup(config):
                     energy_buy_rate=28, energy_sell_rate=30),
             ),
             Area(
-                "H2 ESS",
+                "ESS",
                 strategy=StorageStrategy(
                     initial_soc=100, battery_capacity_kWh=20,
                     initial_selling_rate=30, final_selling_rate=20,
