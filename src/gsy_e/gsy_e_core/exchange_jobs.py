@@ -20,7 +20,7 @@ from os import environ, getpid
 
 from gsy_e.gsy_e_core.util import get_simulation_queue_name
 from pendulum import now
-from redis import StrictRedis
+from redis import Redis
 from rq import Connection, Worker, get_current_job
 from rq.decorators import job
 
@@ -37,8 +37,12 @@ def start(scenario, settings, events, aggregator_device_mapping, saved_state):
 
 
 def main():
-    with Connection(StrictRedis.from_url(environ.get('REDIS_URL', 'redis://localhost'),
-                                         retry_on_timeout=True)):
+    with Connection(
+        Redis.from_url(
+            environ.get('REDIS_URL', 'redis://localhost'),
+            retry_on_timeout=True
+        )
+    ):
         worker = Worker(
             [get_simulation_queue_name()],
             name=f'simulation.{getpid()}.{now().timestamp()}', log_job_description=False

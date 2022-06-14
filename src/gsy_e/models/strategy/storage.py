@@ -51,11 +51,18 @@ BalancingSettings = ConstSettings.BalancingSettings
 class StorageStrategy(BidEnabledStrategy):
     """Template strategy for storage assets."""
 
-    parameters = ("initial_soc", "min_allowed_soc", "battery_capacity_kWh",
-                  "max_abs_battery_power_kW", "cap_price_strategy", "initial_selling_rate",
-                  "final_selling_rate", "initial_buying_rate", "final_buying_rate", "fit_to_limit",
-                  "energy_rate_increase_per_update", "energy_rate_decrease_per_update",
-                  "update_interval", "initial_energy_origin", "balancing_energy_ratio")
+    def serialize(self):
+        return {
+            "initial_soc": self.state.initial_soc,
+            "min_allowed_soc": self.state.min_allowed_soc_ratio * 100.0,
+            "battery_capacity_kWh": self.state.capacity,
+            "max_abs_battery_power_kW": self.state.max_abs_battery_power_kW,
+            "cap_price_strategy": self.cap_price_strategy,
+            "initial_energy_origin": self.state.initial_energy_origin,
+            "balancing_energy_ratio": self.balancing_energy_ratio,
+            **self.bid_update.serialize(),
+            **self.offer_update.serialize(),
+        }
 
     def __init__(  # pylint: disable=too-many-arguments, too-many-locals
         self, initial_soc: float = StorageSettings.MIN_ALLOWED_SOC,
@@ -205,7 +212,7 @@ class StorageStrategy(BidEnabledStrategy):
             update_interval=update_interval
         )
 
-    def area_reconfigure_event(self, **kwargs):
+    def area_reconfigure_event(self, *args, **kwargs):
         """Reconfigure the device properties at runtime using the provided arguments."""
         self._area_reconfigure_prices(**kwargs)
         self._update_profiles_with_default_values()
@@ -358,8 +365,9 @@ class StorageStrategy(BidEnabledStrategy):
             self.offer_update.update(market, self)
 
         self.bid_update.increment_update_counter_all_markets(self)
-        if self.offer_update.increment_update_counter_all_markets(self):
-            self._buy_energy_one_sided_spot_market(market)
+        self.offer_update.increment_update_counter_all_markets(self)
+
+        self._buy_energy_one_sided_spot_market(market)
 
         self._future_market_strategy.event_tick(self)
 
@@ -473,6 +481,8 @@ class StorageStrategy(BidEnabledStrategy):
 
     def _buy_energy_one_sided_spot_market(self, market, offer=None):
         if not market:
+            return
+        if ConstSettings.MASettings.MARKET_TYPE != SpotMarketTypeEnum.ONE_SIDED.value:
             return
         max_affordable_offer_rate = self.bid_update.get_updated_rate(market.time_slot)
 

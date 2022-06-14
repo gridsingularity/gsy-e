@@ -392,9 +392,6 @@ class PVForecastExternalStrategy(ForecastExternalMixin, PVPredefinedExternalStra
     """
     Strategy responsible for reading forecast and measurement production data via hardware API
     """
-    parameters = ("energy_forecast_Wh", "panel_count", "initial_selling_rate",
-                  "final_selling_rate", "fit_to_limit", "update_interval",
-                  "energy_rate_decrease_per_update", "use_market_maker_rate")
 
     # pylint: disable=too-many-arguments
     def __init__(
@@ -405,7 +402,10 @@ class PVForecastExternalStrategy(ForecastExternalMixin, PVPredefinedExternalStra
             update_interval=duration(
                 minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
             energy_rate_decrease_per_update=None,
-            use_market_maker_rate: bool = False):
+            use_market_maker_rate: bool = False,
+            cloud_coverage: int = None,
+            capacity_kW: float = None
+    ):
         """
         Constructor of PVForecastStrategy
         """

@@ -25,7 +25,6 @@ Creates a WindStrategy that uses a profile as input for its power values.
 
 
 class WindUserProfileStrategy(PVUserProfileStrategy):
-    parameters = ('power_profile', 'panel_count')
 
     def __init__(self, power_profile,
                  initial_selling_rate:

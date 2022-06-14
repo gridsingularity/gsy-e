@@ -121,6 +121,7 @@ class AreaBase:
         self._config = config
         self._set_grid_fees(grid_fee_constant, grid_fee_percentage)
         self._current_time_slot = None
+        self.display_type = "Area" if self.strategy is None else self.strategy.__class__.__name__
 
     @property
     def now(self) -> DateTime:
@@ -278,7 +279,6 @@ class Area(AreaBase):
         self._bc = None
         self._markets = None
         self.dispatcher = DispatcherFactory(self)()
-        self.display_type = "Area" if self.strategy is None else self.strategy.__class__.__name__
         self._markets = AreaMarkets(self.log)
         self.stats = AreaStats(self._markets, self)
         log.debug("External connection %s for area %s", external_connection_available, self.name)
@@ -542,7 +542,7 @@ class Area(AreaBase):
         self._consume_commands_from_aggregator()
         if self.children:
             self.spot_market.update_clock(self.now)
-
+            self.future_markets.update_clock(self.now)
             for market in self._markets.settlement_markets.values():
                 market.update_clock(self.now)
         for child in self.children:

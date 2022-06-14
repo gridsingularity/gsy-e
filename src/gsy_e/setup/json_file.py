@@ -24,8 +24,7 @@ def get_setup(config):
         setup_path = os.environ["D3A_SETUP_PATH"]
         with open(setup_path, "r") as area_file:
             area_str = area_file.read().replace("\n", '')
-        recovered_area = area_from_string(area_str)
-        recovered_area._config = config
+        recovered_area = area_from_string(area_str, config)
         return recovered_area
     except KeyError as d3a_key_error:
         raise RuntimeError("D3_SETUP_PATH environment variable not found.") from d3a_key_error
