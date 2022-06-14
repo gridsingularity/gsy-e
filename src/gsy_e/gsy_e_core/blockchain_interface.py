@@ -1,21 +1,13 @@
 import uuid
-import b4p
 
 class NonBlockchainInterface:
     def __init__(self, market_id, simulation_id=None):
         self.market_id = market_id
         self.simulation_id = simulation_id
-        b4p.Markets.new(market_id, "admin")
         print(f"new market created with id: {market_id}")
 
 
     def create_new_offer(self, energy, price, seller):
-        if not b4p.Accounts[seller+"_account"]:
-            print(f"new account created: {seller}_account")
-            b4p.Accounts.new(seller+"_account")
-        if not b4p.ProducingAssets[seller]:
-            print(f"new producing asset created: {seller} for market: {self.market_id}")
-            b4p.ProducingAssets.new(seller, seller+"_account", self.market_id)
         return str(uuid.uuid4())
 
     def cancel_offer(self, offer):
@@ -36,7 +28,9 @@ class NonBlockchainInterface:
 
 def blockchain_interface_factory(should_use_bc, market_id, simulation_id):
     if should_use_bc:
-        from gsy_dex.trade_store.market_interface import SubstrateBlockchainInterface
-        return SubstrateBlockchainInterface(market_id, simulation_id)
+        import b4p
+        if not b4p.started():
+            b4p.init()
+        return b4p.BC4PBlockchainInterface(market_id, simulation_id)
     else:
         return NonBlockchainInterface(market_id, simulation_id)
