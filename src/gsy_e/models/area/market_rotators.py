@@ -43,7 +43,8 @@ class FutureMarketRotator:
 
     def rotate(self, current_time: DateTime) -> None:
         """Delete orders in expired future markets."""
-        self.markets.delete_orders_in_old_future_markets(current_market_time_slot=current_time)
+        self.markets.delete_orders_in_old_future_markets(
+            most_recent_slot_to_be_deleted=current_time)
 
 
 class DayAheadMarketRotator:
@@ -52,9 +53,15 @@ class DayAheadMarketRotator:
     def __init__(self, markets: DayAheadMarkets):
         self.markets = markets
 
+    @staticmethod
+    def _get_most_recent_slot_to_be_deleted(current_market_time_slot: DateTime) -> DateTime:
+        """Return most recent time_slot that will be deleted from the day-ahead market buffers."""
+        return current_market_time_slot.set(hour=0, minute=0).add(days=1)
+
     def rotate(self, current_time: DateTime) -> None:
         """Delete orders in expired day-ahead markets."""
-        self.markets.delete_orders_in_old_future_markets(current_market_time_slot=current_time)
+        self.markets.delete_orders_in_old_future_markets(
+            most_recent_slot_to_be_deleted=self._get_most_recent_slot_to_be_deleted(current_time))
 
 
 class DefaultMarketRotator(BaseRotator):
