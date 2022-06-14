@@ -31,8 +31,7 @@ from gsy_framework.utils import limit_float_precision
 from pendulum import DateTime
 
 from gsy_e import constants
-from gsy_e.constants import FLOATING_POINT_TOLERANCE
-from gsy_e.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT
+from gsy_e.constants import FLOATING_POINT_TOLERANCE, REDIS_PUBLISH_RESPONSE_TIMEOUT, DATE_TIME_FORMAT
 from gsy_e.events import EventMixin
 from gsy_e.events.event_structures import AreaEvent, MarketEvent
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
@@ -134,7 +133,7 @@ class MarketStrategyConnectionRedisAdapter:
         self._offer_buffer: Optional[Offer] = None
         self._event_response_uuids: List[str] = []
 
-    def offer(self, market: Union["OneSidedMarket", str], offer_args: dict) -> Offer:
+    def offer(self, market: Union["OneSidedMarket", str], **offer_args: dict) -> Offer:
         """
         Send offer to a market through Redis.
         Args:
@@ -191,6 +190,7 @@ class MarketStrategyConnectionRedisAdapter:
         market_channel = f"{market_id}/{event_type_str}"
 
         data["transaction_uuid"] = str(uuid4())
+        data["time_slot"] = data["time_slot"].format(DATE_TIME_FORMAT)
         self.redis.sub_to_channel(response_channel, callback)
         self.redis.publish(market_channel, json.dumps(data))
 

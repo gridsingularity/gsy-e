@@ -20,9 +20,10 @@ from gsy_e.models.strategy.commercial_producer import CommercialStrategy
 from gsy_e.models.strategy.pv import PVStrategy
 from gsy_e.models.strategy.storage import StorageStrategy
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
-
+from gsy_framework.constants_limits import ConstSettings
 
 def get_setup(config):
+    ConstSettings.GeneralSettings.RUN_IN_REALTIME = True
     area = Area(
         "Grid",
         [

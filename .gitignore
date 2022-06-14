@@ -110,3 +110,5 @@ Cargo.lock
 
 # iSort configuration
 .isort.cfg
+.vscode
+.spyproject

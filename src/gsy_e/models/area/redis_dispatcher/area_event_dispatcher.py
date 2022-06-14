@@ -37,16 +37,16 @@ class RedisAreaEventDispatcher(RedisEventDispatcherBase):
             self.root_dispatcher.market_event_dispatcher.wait_for_futures()
             self.root_dispatcher.market_notify_event_dispatcher.wait_for_futures()
 
-        for time_slot, agents in self.root_dispatcher.spot_agents.items():
+        for time_slot, agent in self.root_dispatcher.spot_agents.items():
             if time_slot not in self.area._markets.markets:
                 # exclude past MAs
                 continue
 
             if not self.area.events.is_connected:
                 break
-            for area_name in sorted(agents, key=lambda _: random()):
-                agents[area_name].event_listener(event_type, **kwargs)
-                self.root_dispatcher.market_notify_event_dispatcher.wait_for_futures()
+            
+            agent.event_listener(event_type, **kwargs)
+            self.root_dispatcher.market_notify_event_dispatcher.wait_for_futures()
 
     def event_listener_redis(self, payload):
         data = json.loads(payload["data"])
