@@ -150,7 +150,8 @@ class TestAreaDispatcher:
         """Test if the future agent is correctly created."""
         area_dispatcher.area.parent = Mock()
         area_dispatcher.area.parent.future_markets = MagicMock(autospec=FutureMarkets)
-        area_dispatcher.create_market_agents_for_future_markets(MagicMock(autospec=FutureMarkets))
+        area_dispatcher.create_market_agents_for_future_markets(MagicMock(autospec=FutureMarkets),
+                                                                AvailableMarketTypes.FUTURE)
         assert isinstance(area_dispatcher.future_agent, FutureAgent)
 
     @pytest.mark.parametrize("market_type, market_class", [

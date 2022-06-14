@@ -32,7 +32,8 @@ from gsy_e.gsy_e_core.blockchain_interface import blockchain_interface_factory
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.exceptions import AreaException, GSyException
 from gsy_e.gsy_e_core.myco_singleton import bid_offer_matcher
-from gsy_e.gsy_e_core.util import TaggedLogWrapper, is_external_matching_enabled
+from gsy_e.gsy_e_core.util import TaggedLogWrapper
+from gsy_e.gsy_e_core.market_utils import is_external_matching_enabled
 from gsy_e.models.area.event_dispatcher import DispatcherFactory
 from gsy_e.models.area.events import Events
 from gsy_e.models.area.markets import AreaMarkets
@@ -41,6 +42,7 @@ from gsy_e.models.area.stats import AreaStats
 from gsy_e.models.area.throughput_parameters import ThroughputParameters
 from gsy_e.models.config import SimulationConfig
 from gsy_e.models.market.future import FutureMarkets
+from gsy_e.models.market.day_ahead import DayAheadMarkets
 from gsy_e.models.market.market_structures import AvailableMarketTypes
 from gsy_e.models.strategy import BaseStrategy
 from gsy_e.models.strategy.external_strategies import ExternalMixin
@@ -443,6 +445,10 @@ class Area(AreaBase):
         if self.future_markets:
             self.future_markets.create_future_markets(now_value, self.config)
 
+        # create new day ahead markets:
+        if self.day_ahead_markets:
+            self.day_ahead_markets.create_future_markets(now_value, self.config)
+
         self.dispatcher.event_market_cycle()
 
         # area_market_stats have to updated when cycling market of each area:
@@ -527,6 +533,7 @@ class Area(AreaBase):
                 self.uuid: {"markets": [self.spot_market],
                             "settlement_markets": list(self.settlement_markets.values()),
                             "future_markets": self.future_markets,
+                            "day_ahead_markets": self.day_ahead_markets,
                             "current_time": self.now}})
 
     def execute_actions_after_tick_event(self) -> None:
@@ -676,6 +683,11 @@ class Area(AreaBase):
     def future_markets(self) -> FutureMarkets:
         """Return the future markets of the area."""
         return self._markets.future_markets
+
+    @property
+    def day_ahead_markets(self) -> DayAheadMarkets:
+        """Return the day ahead markets of the area."""
+        return self._markets.day_ahead_markets
 
     @property
     def settlement_markets(self) -> Dict:

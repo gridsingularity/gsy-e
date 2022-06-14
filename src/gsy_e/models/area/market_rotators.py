@@ -23,6 +23,7 @@ from pendulum import DateTime
 
 from gsy_e import constants
 from gsy_e.models.market.future import FutureMarkets
+from gsy_e.models.market.day_ahead import DayAheadMarkets
 
 log = getLogger(__name__)
 
@@ -35,11 +36,24 @@ class BaseRotator:
 
 
 class FutureMarketRotator:
+    """Handle rotation of future markets."""
 
     def __init__(self, markets: FutureMarkets):
         self.markets = markets
 
     def rotate(self, current_time: DateTime) -> None:
+        """Delete orders in expired future markets."""
+        self.markets.delete_orders_in_old_future_markets(current_market_time_slot=current_time)
+
+
+class DayAheadMarketRotator:
+    """Handle rotation of day-ahead markets."""
+
+    def __init__(self, markets: DayAheadMarkets):
+        self.markets = markets
+
+    def rotate(self, current_time: DateTime) -> None:
+        """Delete orders in expired day-ahead markets."""
         self.markets.delete_orders_in_old_future_markets(current_market_time_slot=current_time)
 
 
@@ -50,7 +64,7 @@ class DefaultMarketRotator(BaseRotator):
         self.markets = markets
         self.past_markets = past_markets
 
-    def rotate(self, current_time_slot: DateTime, **kwargs) -> None:
+    def rotate(self, current_time_slot: DateTime) -> None:
         """Move markets to past and delete old past markets."""
         self._move_markets_to_past(self.markets, self.past_markets, current_time_slot)
         self._delete_past_markets(self.past_markets, current_time_slot)
@@ -62,17 +76,18 @@ class DefaultMarketRotator(BaseRotator):
 
         if constants.RETAIN_PAST_MARKET_STRATEGIES_STATE:
             return False
-        else:
-            if ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS:
-                # if the settlement markets are enabled, the same amount as the active
-                # settlement markets has to be kept in the past_market buffer
-                return (time_slot < current_time_slot.subtract(
-                    hours=ConstSettings.SettlementMarketSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS))
-            else:
-                return time_slot < current_time_slot.subtract(
-                    minutes=GlobalConfig.slot_length.total_minutes())
 
-    def _is_it_time_to_rotate_market(self, current_time_slot: DateTime,
+        if ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS:
+            # if the settlement markets are enabled, the same amount as the active
+            # settlement markets has to be kept in the past_market buffer
+            return (time_slot < current_time_slot.subtract(
+                hours=ConstSettings.SettlementMarketSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS))
+
+        return time_slot < current_time_slot.subtract(
+            minutes=GlobalConfig.slot_length.total_minutes())
+
+    @staticmethod
+    def _is_it_time_to_rotate_market(current_time_slot: DateTime,
                                      time_slot: DateTime) -> bool:
         """Check if it is time to move market for time_slot into past markets."""
         return time_slot < current_time_slot

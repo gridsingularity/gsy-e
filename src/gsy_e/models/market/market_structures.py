@@ -17,14 +17,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import json
 from enum import Enum
-from typing import Dict, List, Tuple, Union  # noqa
+from typing import Dict, Tuple
 
 from gsy_framework.data_classes import Trade, BaseBidOffer
 
 from gsy_e.events import MarketEvent
 
 
-def parse_event_and_parameters_from_json_string(payload) -> Tuple:
+def parse_event_and_parameters_from_json_string(payload: Dict) -> Tuple[MarketEvent, Dict]:
+    """Parse event parameters from json data string in payload['data']."""
     data = json.loads(payload["data"])
     kwargs = data["kwargs"]
     for key in ["offer", "existing_offer", "new_offer"]:
@@ -42,10 +43,13 @@ def parse_event_and_parameters_from_json_string(payload) -> Tuple:
 
 
 class AvailableMarketTypes(Enum):
+    """Collection of available market types"""
+
     SPOT = 0
     BALANCING = 1
     SETTLEMENT = 2
     FUTURE = 3
+    DAY_AHEAD = 4
 
 
 PAST_MARKET_TYPE_FILE_SUFFIX_MAPPING = {
@@ -53,4 +57,5 @@ PAST_MARKET_TYPE_FILE_SUFFIX_MAPPING = {
     AvailableMarketTypes.BALANCING: "-balancing",
     AvailableMarketTypes.SETTLEMENT: "-settlement",
     AvailableMarketTypes.FUTURE: "-future",
+    AvailableMarketTypes.DAY_AHEAD: "-day-ahead",
 }

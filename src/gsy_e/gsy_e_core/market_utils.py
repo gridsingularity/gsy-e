@@ -64,3 +64,13 @@ class ExternalTickCounter:
     def is_it_time_for_external_tick(self, current_tick_in_slot: int) -> bool:
         """Boolean return if time for external tick."""
         return current_tick_in_slot % self._dispatch_tick_frequency == 0
+
+
+class DayAheadMarketCounter:
+    """Handles timing of day-ahead clearing"""
+
+    @staticmethod
+    def is_time_for_clearing(current_time: DateTime) -> bool:
+        """Return if it is time for clearing according to DAY_AHEAD_CLEARING_DAYTIME_HOUR."""
+        return (current_time.hour ==
+                ConstSettings.FutureMarketSettings.DAY_AHEAD_CLEARING_DAYTIME_HOUR)

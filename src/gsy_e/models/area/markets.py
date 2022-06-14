@@ -24,7 +24,8 @@ from gsy_framework.utils import is_time_slot_in_simulation_duration
 from pendulum import DateTime
 
 from gsy_e.models.area.market_rotators import (BaseRotator, DefaultMarketRotator,
-                                               SettlementMarketRotator, FutureMarketRotator)
+                                               SettlementMarketRotator, FutureMarketRotator,
+                                               DayAheadMarketRotator)
 from gsy_e.models.market import GridFee, MarketBase
 from gsy_e.models.market.balancing import BalancingMarket
 from gsy_e.models.market.future import FutureMarkets
@@ -32,6 +33,7 @@ from gsy_e.models.market.market_structures import AvailableMarketTypes
 from gsy_e.models.market.one_sided import OneSidedMarket
 from gsy_e.models.market.settlement import SettlementMarket
 from gsy_e.models.market.two_sided import TwoSidedMarket
+from gsy_e.models.market.day_ahead import DayAheadMarkets
 
 if TYPE_CHECKING:
     from gsy_e.models.area import Area
@@ -55,11 +57,13 @@ class AreaMarkets:
         self.indexed_future_markets = {}
         # Future markets:
         self.future_markets: Optional[FutureMarkets] = None
+        self.day_ahead_markets: Optional[DayAheadMarkets] = None
 
         self._spot_market_rotator = BaseRotator()
         self._balancing_market_rotator = BaseRotator()
         self._settlement_market_rotator = BaseRotator()
         self._future_market_rotator = BaseRotator()
+        self._day_ahead_market_rotator = BaseRotator()
 
         self.spot_market_ids: List = []
         self.balancing_market_ids: List = []
@@ -75,6 +79,11 @@ class AreaMarkets:
                                             for market in self.settlement_markets.values()]
 
     def activate_future_markets(self, area: "Area") -> None:
+        """Wrapper for activation methods for all future market types."""
+        self._activate_future_markets(area)
+        self._activate_day_ahead_markets(area)
+
+    def _activate_future_markets(self, area: "Area") -> None:
         """
         Create FutureMarkets instance and create MAs that communicate to the parent FutureMarkets.
         """
@@ -86,7 +95,24 @@ class AreaMarkets:
                               grid_fee_const=area.grid_fee_constant),
             name=area.name)
         self.future_markets = market
-        area.dispatcher.create_market_agents_for_future_markets(market)
+        area.dispatcher.create_market_agents_for_future_markets(
+            market, AvailableMarketTypes.FUTURE)
+
+    def _activate_day_ahead_markets(self, area: "Area") -> None:
+        """
+        Create DayAheadMarkets instance and create MAs that communicate to the parent
+        DayAheadMarkets.
+        """
+        market = DayAheadMarkets(
+            bc=area.bc,
+            notification_listener=area.dispatcher.broadcast_notification,
+            grid_fee_type=area.config.grid_fee_type,
+            grid_fees=GridFee(grid_fee_percentage=area.grid_fee_percentage,
+                              grid_fee_const=area.grid_fee_constant),
+            name=area.name)
+        self.day_ahead_markets = market
+        area.dispatcher.create_market_agents_for_future_markets(
+            market, AvailableMarketTypes.DAY_AHEAD)
 
     def activate_market_rotators(self):
         """The user specific ConstSettings are not available when the class is constructed,
@@ -100,6 +126,8 @@ class AreaMarkets:
                 SettlementMarketRotator(self.settlement_markets, self.past_settlement_markets))
         if self.future_markets:
             self._future_market_rotator = FutureMarketRotator(self.future_markets)
+        if self.day_ahead_markets:
+            self._day_ahead_market_rotator = DayAheadMarketRotator(self.day_ahead_markets)
 
     def _update_indexed_future_markets(self) -> None:
         """Update the indexed_future_markets mapping."""
@@ -111,6 +139,7 @@ class AreaMarkets:
         self._balancing_market_rotator.rotate(current_time)
         self._settlement_market_rotator.rotate(current_time)
         self._future_market_rotator.rotate(current_time)
+        self._day_ahead_market_rotator.rotate(current_time)
 
         self._update_indexed_future_markets()
 
@@ -142,7 +171,7 @@ class AreaMarkets:
 
     def create_new_spot_market(self, current_time: DateTime,
                                market_type: AvailableMarketTypes, area: "Area") -> bool:
-        """Create future markets according to the market count."""
+        """Create spot markets according to the market count."""
         markets = self.get_market_instances_from_class_type(market_type)
         market_class = self._select_market_class(market_type)
 

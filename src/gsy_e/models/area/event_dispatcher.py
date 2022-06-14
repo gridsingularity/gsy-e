@@ -61,6 +61,7 @@ class AreaDispatcher:
         self._balancing_agents: Dict[DateTime, BalancingAgent] = {}
         self._settlement_agents: Dict[DateTime, SettlementAgent] = {}
         self._future_agent: Optional[FutureAgent] = None
+        self._day_ahead_agent: Optional[FutureAgent] = None
         self.area = area
 
     @property
@@ -248,7 +249,7 @@ class AreaDispatcher:
             return SettlementAgent(**agent_constructor_arguments)
         if market_type == AvailableMarketTypes.BALANCING:
             return BalancingAgent(**agent_constructor_arguments)
-        if market_type == AvailableMarketTypes.FUTURE:
+        if market_type in [AvailableMarketTypes.FUTURE, AvailableMarketTypes.DAY_AHEAD]:
             return FutureAgent(**agent_constructor_arguments)
 
         assert False, f"Market type not supported {market_type}"
@@ -277,19 +278,31 @@ class AreaDispatcher:
             return False
         return True
 
-    def create_market_agents_for_future_markets(self, market: MarketBase) -> None:
+    def create_market_agents_for_future_markets(
+            self, market: MarketBase,
+            market_type: AvailableMarketTypes
+    ) -> None:
         """Create area agents for future markets; There should only be one per Area at any time."""
         if not self._should_agent_be_created:
             return
 
+        if market_type == AvailableMarketTypes.FUTURE:
+            higher_market = self.area.parent.future_markets
+        elif market_type == AvailableMarketTypes.DAY_AHEAD:
+            higher_market = self.area.parent.day_ahead_markets
+        else:
+            raise ValueError("Provided market_type is not compatible.")
+
         market_agent = self._create_agent_object(
             owner=self.area,
-            higher_market=self.area.parent.future_markets,
+            higher_market=higher_market,
             lower_market=market,
-            market_type=AvailableMarketTypes.FUTURE
+            market_type=market_type
         )
-
-        self._future_agent = market_agent
+        if market_type == AvailableMarketTypes.FUTURE:
+            self._future_agent = market_agent
+        elif market_type == AvailableMarketTypes.DAY_AHEAD:
+            self._day_ahead_agent = market_agent
 
     def create_market_agents(self, market_type: AvailableMarketTypes, market: MarketBase) -> None:
         """

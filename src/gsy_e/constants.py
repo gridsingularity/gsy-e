@@ -75,3 +75,7 @@ class SettlementTemplateStrategiesConstants:
 
 class FutureTemplateStrategiesConstants(SettlementTemplateStrategiesConstants):
     """Constants related to the configuration of future template strategies"""
+
+
+class DayAheadTemplateStrategiesConstants(FutureTemplateStrategiesConstants):
+    """Constants related to the configuration of day ahead template strategies"""
