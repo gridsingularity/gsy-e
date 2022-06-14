@@ -33,7 +33,7 @@ To fetch and update the submodules:
 .. code-block::
     
     cd gsy-e
-    git submodule update --init
+    git submodule update --init --recursive
 
 After cloning this project setup a Python 3.10 virtualenv or conda env and install gsy-e using pip:
     
@@ -41,8 +41,11 @@ After cloning this project setup a Python 3.10 virtualenv or conda env and insta
     
     conda create -n bc4p python=3.10
     conda activate bc4p
-    pip install .
-    cd gsy-framework && pip install . && cd ..
+    pip install -e .
+    cd gsy-framework && pip install -e . && cd ..
+    cd energyMarket && pip install -e .
+    
+To Properly setup the b4p package follow the instructions here: https://github.com/BC4P/energyMarket#setup (with the exeption that the repository is already cloned).
 
 
 The Simulation

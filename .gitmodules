@@ -1,6 +1,6 @@
-[submodule "gsy-dex"]
-	path = gsy-dex
-	url = ../gsy-dex.git
 [submodule "gsy-framework"]
 	path = gsy-framework
 	url = ../gsy-framework.git
+[submodule "energyMarket"]
+	path = energyMarket
+	url = ../energyMarket.git
