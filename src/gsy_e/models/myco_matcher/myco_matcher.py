@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from typing import Optional, Dict
 
-from gsy_e.gsy_e_core.util import is_external_matching_enabled
+from gsy_e.gsy_e_core.market_utils import is_external_matching_enabled
 from gsy_e.models.myco_matcher import MycoExternalMatcher, MycoInternalMatcher
 from gsy_e.models.myco_matcher.myco_matcher_interface import MycoMatcherInterface
 
@@ -41,8 +41,7 @@ class MycoMatcher:
         """Return a myco matcher instance based on the global BidOffer match type."""
         if is_external_matching_enabled():
             return MycoExternalMatcher()
-        else:
-            return MycoInternalMatcher()
+        return MycoInternalMatcher()
 
     def update_area_uuid_markets_mapping(self, area_uuid_markets_mapping: Dict[str, Dict]) -> None:
         """Interface for updating the area_uuid_markets_mapping of Myco matchers."""

@@ -25,10 +25,11 @@ from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.utils import (
     convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict, convert_kW_to_kWh,
     limit_float_precision)
-from pendulum import DateTime
+from pendulum import DateTime, duration
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
-from gsy_e.gsy_e_core.util import is_time_slot_in_past_markets, write_default_to_dict
+from gsy_e.gsy_e_core.util import write_default_to_dict
+from gsy_e.gsy_e_core.market_utils import is_time_slot_in_past_markets
 
 StorageSettings = ConstSettings.StorageSettings
 
@@ -588,7 +589,7 @@ class StorageState(StateInterface):
         assert energy_kWh >= -FLOATING_POINT_TOLERANCE
         return energy_kWh
 
-    def activate(self, slot_length: int, current_time_slot: DateTime) -> None:
+    def activate(self, slot_length: duration, current_time_slot: DateTime) -> None:
         """Set the battery energy in kWh per current time_slot."""
         self._battery_energy_per_slot = convert_kW_to_kWh(self.max_abs_battery_power_kW,
                                                           slot_length)
