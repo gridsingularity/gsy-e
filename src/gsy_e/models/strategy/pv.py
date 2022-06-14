@@ -37,6 +37,7 @@ from gsy_e.models.base import AssetType
 from gsy_e.models.strategy import BidEnabledStrategy, utils
 from gsy_e.models.strategy.future.strategy import future_market_strategy_factory
 from gsy_e.models.strategy.settlement.strategy import settlement_market_strategy_factory
+from gsy_e.models.strategy.future.day_ahead import day_ahead_strategy_factory
 from gsy_e.models.strategy.update_frequency import TemplateStrategyOfferUpdater
 
 log = getLogger(__name__)
@@ -152,6 +153,9 @@ class PVStrategy(BidEnabledStrategy):
 
     def _create_future_market_strategy(self):
         return future_market_strategy_factory(self.asset_type)
+
+    def _create_day_ahead_market_strategy(self):
+        return day_ahead_strategy_factory()
 
     @property
     def state(self) -> PVState:

@@ -461,8 +461,10 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
         self._market_adapter = market_strategy_connection_adapter_factory()
         self._settlement_market_strategy = self._create_settlement_market_strategy()
         self._future_market_strategy = self._create_future_market_strategy()
+        self._day_ahead_strategy = self._create_day_ahead_market_strategy()
 
     def serialize(self):
+        """Return dict of strategy parameters that represent the strategy."""
         return {}
 
     @property
@@ -480,6 +482,10 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
 
     @classmethod
     def _create_future_market_strategy(cls):
+        return FutureMarketStrategyInterface()
+
+    @classmethod
+    def _create_day_ahead_market_strategy(cls):
         return FutureMarketStrategyInterface()
 
     def energy_traded(self, market_id: str, time_slot: DateTime = None) -> float:

@@ -13,7 +13,7 @@ You should have received a copy of the GNU General Public License along with thi
 see <http://www.gnu.org/licenses/>.
 """
 
-from typing import TYPE_CHECKING, List, Union
+from typing import TYPE_CHECKING, List, Union, Optional
 
 from gsy_framework.constants_limits import GlobalConfig
 from pendulum import duration, DateTime
@@ -27,6 +27,7 @@ if TYPE_CHECKING:
     from gsy_e.models.area import Area
     from gsy_e.models.strategy import BaseStrategy
     from gsy_e.models.market.future import FutureMarkets
+    from gsy_e.models.market.day_ahead import DayAheadMarkets
 
 
 class FutureTemplateStrategyBidUpdater(TemplateStrategyBidUpdater):
@@ -100,40 +101,77 @@ class FutureMarketStrategyInterface:
     def update_and_populate_price_settings(self, strategy: "BaseStrategy") -> None:
         """Base class method for updating/populating price settings"""
 
+    def _post_first_offers_on_markets(
+            self, markets: Union["FutureMarkets", "DayAheadMarkets"],
+            strategy: "BaseStrategy") -> None:
+        if not markets:
+            return
+
+        for time_slot in markets.market_time_slots:
+            if strategy.asset_type == AssetType.CONSUMER:
+                required_energy_kWh = strategy.state.get_energy_requirement_Wh(time_slot) / 1000.0
+                self._post_consumer_first_bid(strategy, time_slot, required_energy_kWh)
+            elif strategy.asset_type == AssetType.PRODUCER:
+                available_energy_kWh = strategy.state.get_available_energy_kWh(time_slot)
+                self._post_producer_first_offer(strategy, time_slot, available_energy_kWh)
+            elif strategy.asset_type == AssetType.PROSUMER:
+                available_energy_sell_kWh = strategy.state.get_available_energy_to_sell_kWh(
+                    time_slot)
+                available_energy_buy_kWh = strategy.state.get_available_energy_to_buy_kWh(
+                    time_slot)
+                self._post_producer_first_offer(strategy, time_slot, available_energy_sell_kWh)
+                self._post_consumer_first_bid(strategy, time_slot, available_energy_buy_kWh)
+                strategy.state.register_energy_from_posted_bid(available_energy_buy_kWh, time_slot)
+                strategy.state.register_energy_from_posted_offer(
+                    available_energy_sell_kWh, time_slot)
+            else:
+                assert False, ("Strategy %s has to be producer or consumer to be able to "
+                               "participate in the future market.", strategy.owner.name)
+
+    def _post_producer_first_offer(
+            self, strategy: "BaseStrategy", time_slot: DateTime, available_sell_energy_kWh: float
+    ) -> None:
+        """"""
+
+    def _post_consumer_first_bid(
+            self, strategy: "BaseStrategy", time_slot: DateTime, available_buy_energy_kWh: float
+    ) -> None:
+        """"""
+
 
 def future_strategy_bid_updater_factory(
-        initial_buying_rate: float, final_buying_rate: float, asset_type: AssetType
+        initial_buying_rate: float, final_buying_rate: float, asset_type: AssetType,
+        update_interval: duration
 ) -> Union[TemplateStrategyUpdaterInterface, FutureTemplateStrategyBidUpdater]:
     """
     Factory method for the bid updater, disables the updater if the strategy does not support bids
     """
-    _update_interval = FutureTemplateStrategiesConstants.UPDATE_INTERVAL_MIN
     if asset_type in [AssetType.CONSUMER, AssetType.PROSUMER]:
         return FutureTemplateStrategyBidUpdater(
             initial_rate=initial_buying_rate,
             final_rate=final_buying_rate,
             fit_to_limit=True,
             energy_rate_change_per_update=None,
-            update_interval=duration(minutes=_update_interval),
+            update_interval=update_interval,
             rate_limit_object=min)
     return TemplateStrategyUpdaterInterface()
 
 
 def future_strategy_offer_updater_factory(
-        initial_selling_rate: float, final_selling_rate: float, asset_type: AssetType
+        initial_selling_rate: float, final_selling_rate: float, asset_type: AssetType,
+        update_interval: duration
 ) -> Union[TemplateStrategyUpdaterInterface, FutureTemplateStrategyOfferUpdater]:
     """
     Factory method for the offer updater, disables the updater if the strategy does not support
     offers
     """
-    _update_interval = FutureTemplateStrategiesConstants.UPDATE_INTERVAL_MIN
     if asset_type in [AssetType.PRODUCER, AssetType.PROSUMER]:
         return FutureTemplateStrategyOfferUpdater(
             initial_rate=initial_selling_rate,
             final_rate=final_selling_rate,
             fit_to_limit=True,
             energy_rate_change_per_update=None,
-            update_interval=duration(minutes=_update_interval),
+            update_interval=update_interval,
             rate_limit_object=max)
     return TemplateStrategyUpdaterInterface()
 
@@ -141,8 +179,10 @@ def future_strategy_offer_updater_factory(
 class FutureMarketStrategy(FutureMarketStrategyInterface):
     """Manages bid/offer trading strategy for the future markets, for a single asset."""
     def __init__(self, asset_type: AssetType,
-                 initial_buying_rate: float, final_buying_rate: float,
-                 initial_selling_rate: float, final_selling_rate: float):
+                 initial_buying_rate: Optional[float], final_buying_rate: Optional[float],
+                 initial_selling_rate: Optional[float], final_selling_rate: Optional[float],
+                 update_interval: duration =
+                 duration(minutes=FutureTemplateStrategiesConstants.UPDATE_INTERVAL_MIN)):
         # pylint: disable=too-many-arguments
         """
         Args:
@@ -153,11 +193,11 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
         """
         super().__init__()
         self._offer_updater = future_strategy_offer_updater_factory(
-            initial_selling_rate, final_selling_rate, asset_type
+            initial_selling_rate, final_selling_rate, asset_type, update_interval
         )
 
         self._bid_updater = future_strategy_bid_updater_factory(
-            initial_buying_rate, final_buying_rate, asset_type
+            initial_buying_rate, final_buying_rate, asset_type, update_interval
         )
 
     def update_and_populate_price_settings(self, strategy):
@@ -181,26 +221,7 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
         if not strategy.area.future_markets:
             return
         self.update_and_populate_price_settings(strategy)
-        for time_slot in strategy.area.future_markets.market_time_slots:
-            if strategy.asset_type == AssetType.CONSUMER:
-                required_energy_kWh = strategy.state.get_energy_requirement_Wh(time_slot) / 1000.0
-                self._post_consumer_first_bid(strategy, time_slot, required_energy_kWh)
-            elif strategy.asset_type == AssetType.PRODUCER:
-                available_energy_kWh = strategy.state.get_available_energy_kWh(time_slot)
-                self._post_producer_first_offer(strategy, time_slot, available_energy_kWh)
-            elif strategy.asset_type == AssetType.PROSUMER:
-                available_energy_sell_kWh = strategy.state.get_available_energy_to_sell_kWh(
-                    time_slot)
-                available_energy_buy_kWh = strategy.state.get_available_energy_to_buy_kWh(
-                    time_slot)
-                self._post_producer_first_offer(strategy, time_slot, available_energy_sell_kWh)
-                self._post_consumer_first_bid(strategy, time_slot, available_energy_buy_kWh)
-                strategy.state.register_energy_from_posted_bid(available_energy_buy_kWh, time_slot)
-                strategy.state.register_energy_from_posted_offer(
-                    available_energy_sell_kWh, time_slot)
-            else:
-                assert False, ("Strategy %s has to be producer or consumer to be able to "
-                               "participate in the future market.", strategy.owner.name)
+        self._post_first_offers_on_markets(strategy.area.future_markets, strategy)
 
     def _post_consumer_first_bid(
             self, strategy: "BaseStrategy", time_slot: DateTime,

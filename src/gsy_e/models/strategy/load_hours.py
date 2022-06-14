@@ -43,6 +43,7 @@ from gsy_e.models.state import LoadState
 from gsy_e.models.strategy import BidEnabledStrategy, utils
 from gsy_e.models.strategy.future.strategy import future_market_strategy_factory
 from gsy_e.models.strategy.settlement.strategy import settlement_market_strategy_factory
+from gsy_e.models.strategy.future.day_ahead import day_ahead_strategy_factory
 from gsy_e.models.strategy.update_frequency import TemplateStrategyBidUpdater
 
 log = getLogger(__name__)
@@ -248,6 +249,9 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
     def _create_future_market_strategy(self):
         return future_market_strategy_factory(self.asset_type)
+
+    def _create_day_ahead_market_strategy(self):
+        return day_ahead_strategy_factory()
 
     def _init_price_update(self, fit_to_limit, energy_rate_increase_per_update, update_interval,
                            initial_buying_rate, final_buying_rate):
