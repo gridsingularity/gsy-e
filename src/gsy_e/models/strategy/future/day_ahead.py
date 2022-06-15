@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from typing import TYPE_CHECKING, Optional
 
-from gsy_framework.constants_limits import GlobalConfig
+from gsy_framework.constants_limits import ConstSettings
 from pendulum import DateTime
 
 from gsy_e.constants import DayAheadTemplateStrategiesConstants
@@ -85,7 +85,7 @@ def day_ahead_strategy_factory(
 ) -> FutureMarketStrategyInterface:
     """Create day-ahead market template strategy if day-ahead markets are enabled."""
 
-    if GlobalConfig.DAY_AHEAD_DURATION_DAYS > 0:
+    if ConstSettings.FutureMarketSettings.DAY_AHEAD_DURATION_DAYS > 0:
         return DayAheadMarketStrategy(
             initial_buying_rate, final_buying_rate,
             initial_selling_rate, final_selling_rate)

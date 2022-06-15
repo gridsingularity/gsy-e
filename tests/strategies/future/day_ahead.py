@@ -19,7 +19,7 @@ import uuid
 from typing import TYPE_CHECKING
 from unittest.mock import Mock, MagicMock
 
-from gsy_framework.constants_limits import GlobalConfig
+from gsy_framework.constants_limits import GlobalConfig, ConstSettings
 from pendulum import duration, datetime
 
 from gsy_e.models.market.day_ahead import DayAheadMarkets
@@ -38,7 +38,8 @@ class TestDayAheadMarketStrategy:
     # pylint: disable = attribute-defined-outside-init
 
     def setup_method(self) -> None:
-        self._original_day_ahead_duration_days = GlobalConfig.DAY_AHEAD_DURATION_DAYS
+        self._original_day_ahead_duration_days = (
+            ConstSettings.FutureMarketSettings.DAY_AHEAD_DURATION_DAYS)
         GlobalConfig.DAY_AHEAD_DURATION_DAYS = 1
         self.time_slot = DEFAULT_CURRENT_MARKET_SLOT.add(days=1)
         self.area_mock = Mock()
@@ -51,7 +52,8 @@ class TestDayAheadMarketStrategy:
         self.day_ahead_markets.id = str(uuid.uuid4())
 
     def teardown_method(self) -> None:
-        GlobalConfig.DAY_AHEAD_DURATION_DAYS = self._original_day_ahead_duration_days
+        ConstSettings.FutureMarketSettings.DAY_AHEAD_DURATION_DAYS = (
+            self._original_day_ahead_duration_days)
 
     def _setup_strategy_fixture(self, day_ahead_strategy_fixture: "BaseStrategy") -> None:
         day_ahead_strategy_fixture.owner = self.area_mock

@@ -221,7 +221,7 @@ class SimulationEndpointBuffer:
             if ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS:
                 core_stats_dict["settlement_market_stats"] = (
                     self._read_settlement_markets_stats_to_dict(area))
-            if GlobalConfig.FUTURE_MARKET_DURATION_HOURS > 0:
+            if ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS > 0:
                 core_stats_dict["future_market_stats"] = (
                     self._read_future_markets_stats_to_dict(area)
                 )

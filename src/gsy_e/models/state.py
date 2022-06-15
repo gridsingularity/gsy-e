@@ -21,15 +21,15 @@ from enum import Enum
 from math import isclose, copysign
 from typing import Dict, Optional, List
 
-from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.utils import (
     convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict, convert_kW_to_kWh,
     limit_float_precision)
 from pendulum import DateTime, duration
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
-from gsy_e.gsy_e_core.util import write_default_to_dict
 from gsy_e.gsy_e_core.market_utils import is_time_slot_in_past_markets
+from gsy_e.gsy_e_core.util import write_default_to_dict
 
 StorageSettings = ConstSettings.StorageSettings
 
@@ -721,7 +721,7 @@ class StorageState(StateInterface):
         used_storage
         """
         self._current_market_slot = current_time_slot
-        if GlobalConfig.FUTURE_MARKET_DURATION_HOURS:
+        if ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS:
             # In case the future market is enabled, the future orders have to be deleted once
             # the market becomes a spot market
             self.offered_buy_kWh[current_time_slot] = 0

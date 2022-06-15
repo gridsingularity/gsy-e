@@ -44,12 +44,14 @@ def setup_function():
 
 @pytest.fixture(scope="function", autouse=True)
 def auto_fixture():
-    original_future_market_duration = GlobalConfig.FUTURE_MARKET_DURATION_HOURS
-    GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 0
+    original_future_market_duration = (
+        ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS)
+    ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS = 0
     yield
     GlobalConfig.sim_duration = duration(days=GlobalConfig.DURATION_D)
     GlobalConfig.slot_length = duration(minutes=GlobalConfig.SLOT_LENGTH_M)
-    GlobalConfig.FUTURE_MARKET_DURATION_HOURS = original_future_market_duration
+    ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS = (
+        original_future_market_duration)
 
 
 ENERGY_FORECAST = {}  # type: Dict[datetime, float]

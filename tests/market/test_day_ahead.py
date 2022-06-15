@@ -18,15 +18,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from unittest.mock import patch, MagicMock
 
 import pytest
-from gsy_framework.constants_limits import GlobalConfig
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.data_classes import Bid, Offer, Trade
 from pendulum import datetime
 
 from gsy_e.models.area import Area
 from gsy_e.models.area.market_rotators import DayAheadMarketRotator
 from gsy_e.models.market import GridFee
-from gsy_e.models.market.day_ahead import (DayAheadMarkets, DAY_AHEAD_MARKET_LENGTH_MINUTES,
-                                           DAY_AHEAD_HOUR_OF_ROTATION)
+from gsy_e.models.market.day_ahead import DayAheadMarkets
 from gsy_e.models.market.future import FutureMarketException
 from tests.market.test_future import count_orders_in_buffers
 
@@ -36,9 +35,9 @@ DEFAULT_CURRENT_MARKET_SLOT = datetime(2022, 6, 13, 0, 0)
 @pytest.fixture(name="day_ahead_markets")
 def active_day_ahead_market() -> DayAheadMarkets:
     """Fixture for activated day-ahead market."""
-    orig_day_ahead_duration = GlobalConfig.DAY_AHEAD_DURATION_DAYS
+    orig_day_ahead_duration = ConstSettings.FutureMarketSettings.DAY_AHEAD_DURATION_DAYS
     orig_start_date = GlobalConfig.start_date
-    GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 1
+    ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS = 1
     area = Area("test_area")
     area.config.start_date = DEFAULT_CURRENT_MARKET_SLOT
     area.config.end_date = area.config.start_date.add(days=5)
@@ -53,7 +52,7 @@ def active_day_ahead_market() -> DayAheadMarkets:
     day_ahead_markets.create_future_markets(DEFAULT_CURRENT_MARKET_SLOT, area.config)
     yield day_ahead_markets
 
-    GlobalConfig.DAY_AHEAD_DURATION_DAYS = orig_day_ahead_duration
+    ConstSettings.FutureMarketSettings.DAY_AHEAD_DURATION_DAYS = orig_day_ahead_duration
     GlobalConfig.start_date = orig_start_date
 
 
@@ -65,7 +64,7 @@ class TestDayAhead:
         day_ahead_markets.offers = {}
         day_ahead_markets.bids = {}
         area = Area("test_area")
-        with patch("gsy_e.models.market.day_ahead.GlobalConfig."
+        with patch("gsy_e.models.market.day_ahead.ConstSettings.FutureMarketSettings."
                    "DAY_AHEAD_DURATION_DAYS", 0):
             day_ahead_markets.create_future_markets(DEFAULT_CURRENT_MARKET_SLOT, area.config)
         for buffer in [day_ahead_markets.slot_bid_mapping,
@@ -73,7 +72,7 @@ class TestDayAhead:
                        day_ahead_markets.slot_trade_mapping]:
             assert len(buffer.keys()) == 0
 
-        with patch("gsy_e.models.market.day_ahead.GlobalConfig."
+        with patch("gsy_e.models.market.day_ahead.ConstSettings.FutureMarketSettings."
                    "DAY_AHEAD_DURATION_DAYS", 1):
             day_ahead_markets.create_future_markets(DEFAULT_CURRENT_MARKET_SLOT, area.config)
             for buffer in [day_ahead_markets.slot_bid_mapping,
@@ -82,8 +81,8 @@ class TestDayAhead:
                 assert len(buffer.keys()) == 24
                 day_ahead_time_slot = DEFAULT_CURRENT_MARKET_SLOT.add(days=1)
                 most_future_slot = (day_ahead_time_slot.add(
-                    days=GlobalConfig.DAY_AHEAD_DURATION_DAYS,
-                    minutes=-DAY_AHEAD_MARKET_LENGTH_MINUTES))
+                    days=ConstSettings.FutureMarketSettings.DAY_AHEAD_DURATION_DAYS,
+                    minutes=-ConstSettings.FutureMarketSettings.DAY_AHEAD_MARKET_LENGTH_MINUTES))
                 assert all(day_ahead_time_slot <= time_slot <= most_future_slot
                            for time_slot in buffer)
 
@@ -161,5 +160,6 @@ class TestDayAheadMarketRotator:
         count_orders_in_buffers(day_ahead_markets, 24)
         first_future_market = next(iter(day_ahead_markets.slot_bid_mapping))
         # mimic rotation of markets at the DAY_AHEAD_HOUR_OF_ROTATION:
-        rotator.rotate(first_future_market.add(hours=DAY_AHEAD_HOUR_OF_ROTATION))
+        rotator.rotate(first_future_market.add(
+            hours=ConstSettings.FutureMarketSettings.DAY_AHEAD_HOUR_OF_ROTATION))
         count_orders_in_buffers(day_ahead_markets, 0)

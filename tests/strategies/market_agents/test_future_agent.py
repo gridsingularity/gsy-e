@@ -20,7 +20,7 @@ from typing import Generator
 from unittest.mock import MagicMock
 
 import pytest
-from gsy_framework.constants_limits import GlobalConfig
+from gsy_framework.constants_limits import ConstSettings
 
 from gsy_e.models.area import Area
 from gsy_e.models.market.future import FutureMarkets
@@ -31,13 +31,15 @@ from gsy_e.models.strategy.market_agents.future_engine import FutureEngine
 @pytest.fixture(name="future_agent")
 def future_agent_fixture() -> Generator[FutureAgent, None, None]:
     """Return FutureAgent object"""
-    original_future_markets_duration = GlobalConfig.FUTURE_MARKET_DURATION_HOURS
-    GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 24
+    original_future_markets_duration = (
+        ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS)
+    ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS = 24
     area = MagicMock(autospec=Area)
     higher_market = FutureMarkets()
     lower_market = FutureMarkets()
     yield FutureAgent(owner=area, higher_market=higher_market, lower_market=lower_market)
-    GlobalConfig.FUTURE_MARKET_DURATION_HOURS = original_future_markets_duration
+    ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS = (
+        original_future_markets_duration)
 
 
 class TestFutureAgent:

@@ -20,7 +20,7 @@ from typing import TYPE_CHECKING
 from unittest.mock import Mock, MagicMock
 
 import pytest
-from gsy_framework.constants_limits import GlobalConfig
+from gsy_framework.constants_limits import GlobalConfig, ConstSettings
 from pendulum import today, duration
 
 from gsy_e.constants import TIME_ZONE, FutureTemplateStrategiesConstants
@@ -40,8 +40,9 @@ class TestFutureMarketStrategy:
 
     def setup_method(self) -> None:
         """Preparation for the tests execution"""
-        self._original_future_markets_duration = GlobalConfig.FUTURE_MARKET_DURATION_HOURS
-        GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 24
+        self._original_future_markets_duration = (
+            ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS)
+        ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS = 24
         self.time_slot = today(tz=TIME_ZONE).at(hour=12, minute=0, second=0)
         self.area_mock = Mock()
         self.area_mock.name = "test_name"
@@ -54,7 +55,8 @@ class TestFutureMarketStrategy:
 
     def teardown_method(self) -> None:
         """Test cleanup"""
-        GlobalConfig.FUTURE_MARKET_DURATION_HOURS = self._original_future_markets_duration
+        ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS = (
+            self._original_future_markets_duration)
 
     def _setup_strategy_fixture(self, future_strategy_fixture: "BaseStrategy") -> None:
         future_strategy_fixture.owner = self.area_mock
@@ -157,8 +159,9 @@ class TestFutureMarketStrategy:
         future_strategy.event_tick(future_strategy_fixture)
         future_strategy_fixture.area.current_tick = ticks_for_update
         future_strategy.event_tick(future_strategy_fixture)
-        number_of_updates = ((GlobalConfig.FUTURE_MARKET_DURATION_HOURS * 60 /
-                             FutureTemplateStrategiesConstants.UPDATE_INTERVAL_MIN) - 1)
+        number_of_updates = (
+                (ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS * 60 /
+                 FutureTemplateStrategiesConstants.UPDATE_INTERVAL_MIN) - 1)
         bid_energy_rate = (50 - 10) / number_of_updates
         offer_energy_rate = (50 - 20) / number_of_updates
         if isinstance(future_strategy_fixture, LoadHoursStrategy):

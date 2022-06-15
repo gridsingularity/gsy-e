@@ -20,7 +20,7 @@ import traceback
 from logging import getLogger
 
 import pendulum
-from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.exceptions import GSyException
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from gsy_framework.utils import (
@@ -32,12 +32,12 @@ from pendulum.datetime import DateTime
 from gsy_e import constants
 from gsy_e.gsy_e_core.exceptions import MarketException
 from gsy_e.gsy_e_core.util import get_market_maker_rate_from_config
-from gsy_e.models.state import PVState
 from gsy_e.models.base import AssetType
+from gsy_e.models.state import PVState
 from gsy_e.models.strategy import BidEnabledStrategy, utils
+from gsy_e.models.strategy.future.day_ahead import day_ahead_strategy_factory
 from gsy_e.models.strategy.future.strategy import future_market_strategy_factory
 from gsy_e.models.strategy.settlement.strategy import settlement_market_strategy_factory
-from gsy_e.models.strategy.future.day_ahead import day_ahead_strategy_factory
 from gsy_e.models.strategy.update_frequency import TemplateStrategyOfferUpdater
 
 log = getLogger(__name__)
@@ -297,7 +297,7 @@ class PVStrategy(BidEnabledStrategy):
         # They can be found in the tools folder
         # A fit of a gaussian function to those data results in a formula Energy(time)
         time_slots = [self.area.spot_market.time_slot]
-        if GlobalConfig.FUTURE_MARKET_DURATION_HOURS:
+        if ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS:
             time_slots.extend(self.area.future_market_time_slots)
         for time_slot in time_slots:
             self._energy_params.set_produced_energy_forecast(

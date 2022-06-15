@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from typing import TYPE_CHECKING
 
-from gsy_framework.constants_limits import GlobalConfig
+from gsy_framework.constants_limits import ConstSettings
 from pendulum import DateTime, duration
 
 from gsy_e.models.market.future import FutureMarkets
@@ -25,20 +25,19 @@ from gsy_e.models.market.future import FutureMarkets
 if TYPE_CHECKING:
     from gsy_e.models.config import SimulationConfig
 
-DAY_AHEAD_MARKET_LENGTH_MINUTES = 60
-DAY_AHEAD_HOUR_OF_ROTATION = 13
-
 
 class DayAheadMarkets(FutureMarkets):
     """Day-ahead market class"""
 
     def create_future_markets(self, current_market_time_slot: DateTime,
                               config: "SimulationConfig") -> None:
-        if not GlobalConfig.DAY_AHEAD_DURATION_DAYS:
+        if not ConstSettings.FutureMarketSettings.DAY_AHEAD_DURATION_DAYS:
             return
         start_time = current_market_time_slot.set(hour=0, minute=0).add(days=1)
         # add one day minus one time_slot
-        end_time = start_time.add(days=GlobalConfig.DAY_AHEAD_DURATION_DAYS,
-                                  minutes=-DAY_AHEAD_MARKET_LENGTH_MINUTES)
-        self._create_future_markets(duration(minutes=DAY_AHEAD_MARKET_LENGTH_MINUTES),
+        end_time = start_time.add(
+            days=ConstSettings.FutureMarketSettings.DAY_AHEAD_DURATION_DAYS,
+            minutes=-ConstSettings.FutureMarketSettings.DAY_AHEAD_MARKET_LENGTH_MINUTES)
+        self._create_future_markets(duration(
+            minutes=ConstSettings.FutureMarketSettings.DAY_AHEAD_MARKET_LENGTH_MINUTES),
                                     start_time, end_time, config)

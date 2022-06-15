@@ -19,7 +19,7 @@ from collections import namedtuple
 from logging import getLogger
 from typing import Union, Dict, List, Optional  # NOQA
 
-from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Offer
 from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.exceptions import GSyDeviceException
@@ -41,9 +41,9 @@ from gsy_e.models.base import AssetType
 from gsy_e.models.market import MarketBase
 from gsy_e.models.state import LoadState
 from gsy_e.models.strategy import BidEnabledStrategy, utils
+from gsy_e.models.strategy.future.day_ahead import day_ahead_strategy_factory
 from gsy_e.models.strategy.future.strategy import future_market_strategy_factory
 from gsy_e.models.strategy.settlement.strategy import settlement_market_strategy_factory
-from gsy_e.models.strategy.future.day_ahead import day_ahead_strategy_factory
 from gsy_e.models.strategy.update_frequency import TemplateStrategyBidUpdater
 
 log = getLogger(__name__)
@@ -608,7 +608,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
                  market.time_slot >= self.area.current_market.time_slot))
 
     def _update_energy_requirement_future_markets(self):
-        if not GlobalConfig.FUTURE_MARKET_DURATION_HOURS:
+        if not ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS:
             return
         for time_slot in self.area.future_market_time_slots:
             self._energy_params.update_energy_requirement(time_slot)

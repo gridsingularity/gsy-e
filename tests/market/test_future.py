@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from unittest.mock import patch, MagicMock
 
 import pytest
-from gsy_framework.constants_limits import GlobalConfig, DATE_TIME_FORMAT
+from gsy_framework.constants_limits import GlobalConfig, DATE_TIME_FORMAT, ConstSettings
 from gsy_framework.data_classes import Bid, Offer, Trade, TradeBidOfferInfo
 from gsy_framework.utils import datetime_to_string_incl_seconds
 from pendulum import datetime, duration, now
@@ -34,9 +34,9 @@ DEFAULT_SLOT_LENGTH = duration(minutes=15)
 @pytest.fixture(name="future_market")
 def active_future_market() -> FutureMarkets:
     """Return future market object."""
-    orig_future_market_duration = GlobalConfig.FUTURE_MARKET_DURATION_HOURS
+    orig_future_market_duration = ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS
     orig_start_date = GlobalConfig.start_date
-    GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 1
+    ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS = 1
     area = Area("test_area")
     area.config.start_date = DEFAULT_CURRENT_MARKET_SLOT
     area.config.end_date = area.config.start_date + area.config.sim_duration
@@ -52,7 +52,7 @@ def active_future_market() -> FutureMarkets:
     future_market.create_future_markets(DEFAULT_CURRENT_MARKET_SLOT, area.config)
     yield future_market
 
-    GlobalConfig.FUTURE_MARKET_DURATION_HOURS = orig_future_market_duration
+    ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS = orig_future_market_duration
     GlobalConfig.start_date = orig_start_date
 
 
@@ -95,7 +95,7 @@ class TestFutureMarkets:
         area = Area("test_area")
         area.config.slot_length = DEFAULT_SLOT_LENGTH
 
-        with patch("gsy_e.models.market.future.GlobalConfig."
+        with patch("gsy_e.models.market.future.ConstSettings.FutureMarketSettings."
                    "FUTURE_MARKET_DURATION_HOURS", 0):
             future_market.create_future_markets(DEFAULT_CURRENT_MARKET_SLOT, area.config)
         for buffer in [future_market.slot_bid_mapping,
@@ -103,7 +103,7 @@ class TestFutureMarkets:
                        future_market.slot_trade_mapping]:
             assert len(buffer.keys()) == 0
 
-        with patch("gsy_e.models.market.future.GlobalConfig."
+        with patch("gsy_e.models.market.future.ConstSettings.FutureMarketSettings."
                    "FUTURE_MARKET_DURATION_HOURS", 1):
             future_market.create_future_markets(DEFAULT_CURRENT_MARKET_SLOT, area.config)
         for buffer in [future_market.slot_bid_mapping,
@@ -112,8 +112,8 @@ class TestFutureMarkets:
             assert len(buffer.keys()) == 4
             future_time_slot = DEFAULT_CURRENT_MARKET_SLOT.add(
                 minutes=DEFAULT_SLOT_LENGTH.total_minutes())
-            most_future_slot = (future_time_slot +
-                                duration(hours=GlobalConfig.FUTURE_MARKET_DURATION_HOURS))
+            most_future_slot = (future_time_slot + duration(
+                hours=ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS))
             assert all(future_time_slot <= time_slot <= most_future_slot for time_slot in buffer)
 
     @staticmethod
