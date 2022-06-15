@@ -263,34 +263,19 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
         self._offer_updater.increment_update_counter_all_markets(strategy)
 
 
-def future_market_strategy_factory(
-        asset_type: AssetType,
-        initial_buying_rate: float = None,
-        final_buying_rate: float = None,
-        initial_selling_rate: float = None,
-        final_selling_rate: float = None
-) -> FutureMarketStrategyInterface:
+def future_market_strategy_factory(asset_type: AssetType) -> FutureMarketStrategyInterface:
     """
     Factory method for creating the future market trading strategy. Creates an object of a
     class with empty implementation if the future market is disabled, with the real
     implementation otherwise
-    Args:
-        initial_buying_rate: Initial rate of the future bids
-        final_buying_rate: Final rate of the future bids
-        initial_selling_rate: Initial rate of the future offers
-        final_selling_rate: Final rate of the future offers
 
     Returns: Future strategy object
 
     """
-    initial_buying_rate = (initial_buying_rate or
-                           FutureTemplateStrategiesConstants.INITIAL_BUYING_RATE)
-    final_buying_rate = (final_buying_rate or
-                         FutureTemplateStrategiesConstants.FINAL_BUYING_RATE)
-    initial_selling_rate = (initial_selling_rate or
-                            FutureTemplateStrategiesConstants.INITIAL_SELLING_RATE)
-    final_selling_rate = (final_selling_rate or
-                          FutureTemplateStrategiesConstants.FINAL_SELLING_RATE)
+    initial_buying_rate = FutureTemplateStrategiesConstants.INITIAL_BUYING_RATE
+    final_buying_rate = FutureTemplateStrategiesConstants.FINAL_BUYING_RATE
+    initial_selling_rate = FutureTemplateStrategiesConstants.INITIAL_SELLING_RATE
+    final_selling_rate = FutureTemplateStrategiesConstants.FINAL_SELLING_RATE
     if GlobalConfig.FUTURE_MARKET_DURATION_HOURS > 0:
         return FutureMarketStrategy(
             asset_type, initial_buying_rate, final_buying_rate,
