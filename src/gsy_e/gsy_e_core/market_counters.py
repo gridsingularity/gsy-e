@@ -1,8 +1,21 @@
 """
-Has to stay in this package because of otherwise circualr imports
+Copyright 2018 Grid Singularity
+This file is part of D3A.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.enums import BidOfferMatchAlgoEnum
 from pendulum import DateTime
 
 
@@ -10,17 +23,17 @@ class MarketCounter:
     """Base class for market counters"""
 
     def __init__(self, clearing_interval: int):
-        self._last_time_dispatched = None
+        self._last_clearing_time = None
         self.clearing_interval = clearing_interval
 
     def is_time_for_clearing(self, current_time: DateTime) -> bool:
         """Return if it is time for clearing according to self.clearing_interval."""
-        if not self._last_time_dispatched:
-            self._last_time_dispatched = current_time
+        if not self._last_clearing_time:
+            self._last_clearing_time = current_time
             return True
-        duration_in_min = (current_time - self._last_time_dispatched).minutes
+        duration_in_min = (current_time - self._last_clearing_time).minutes
         if duration_in_min >= self.clearing_interval:
-            self._last_time_dispatched = current_time
+            self._last_clearing_time = current_time
             return True
         return False
 
@@ -34,22 +47,6 @@ class FutureMarketCounter(MarketCounter):
         super().__init__(
             clearing_interval=ConstSettings.FutureMarketSettings.
             FUTURE_MARKET_CLEARING_INTERVAL_MINUTES)
-
-
-def is_time_slot_in_past_markets(time_slot: DateTime, current_time_slot: DateTime):
-    """Checks if the time_slot should be in the area.past_markets."""
-    if ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS:
-        return (time_slot < current_time_slot.subtract(
-            hours=ConstSettings.SettlementMarketSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS))
-    return time_slot < current_time_slot
-
-
-def is_external_matching_enabled():
-    """Checks if the bid offer match type is set to external
-    Returns True if both are matched
-    """
-    return (ConstSettings.MASettings.BID_OFFER_MATCH_TYPE ==
-            BidOfferMatchAlgoEnum.EXTERNAL.value)
 
 
 class ExternalTickCounter:
@@ -73,4 +70,6 @@ class DayAheadMarketCounter:
     def is_time_for_clearing(current_time: DateTime) -> bool:
         """Return if it is time for clearing according to DAY_AHEAD_CLEARING_DAYTIME_HOUR."""
         return (current_time.hour ==
-                ConstSettings.FutureMarketSettings.DAY_AHEAD_CLEARING_DAYTIME_HOUR)
+                ConstSettings.FutureMarketSettings.DAY_AHEAD_CLEARING_DAYTIME_HOUR and
+                current_time.minute == 0 and
+                current_time.second == 0)

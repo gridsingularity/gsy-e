@@ -24,7 +24,7 @@ from gsy_framework.matching_algorithms import (
 from gsy_e.gsy_e_core.exceptions import WrongMarketTypeException
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.models.myco_matcher.myco_matcher_interface import MycoMatcherInterface
-from gsy_e.gsy_e_core.market_utils import DayAheadMarketCounter
+from gsy_e.gsy_e_core.market_counters import DayAheadMarketCounter
 
 
 class MycoInternalMatcher(MycoMatcherInterface):

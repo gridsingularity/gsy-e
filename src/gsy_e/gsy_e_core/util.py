@@ -29,11 +29,12 @@ from typing import TYPE_CHECKING
 
 from click.types import ParamType
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig, RangeLimit
+from gsy_framework.enums import BidOfferMatchAlgoEnum
 from gsy_framework.exceptions import GSyException
 from gsy_framework.utils import (
     area_name_from_area_or_ma_name, iterate_over_all_modules, str_to_pendulum_datetime,
     find_object_of_same_weekday_and_time)
-from pendulum import duration, from_format, instance
+from pendulum import duration, from_format, instance, DateTime
 from rex import rex
 
 import gsy_e
@@ -488,3 +489,19 @@ def should_read_profile_from_db(profile_uuid):
 
 class StrategyProfileConfigurationException(Exception):
     """Exception raised when neither a profile nor a profile_uuid are provided for a strategy."""
+
+
+def is_time_slot_in_past_markets(time_slot: DateTime, current_time_slot: DateTime):
+    """Checks if the time_slot should be in the area.past_markets."""
+    if ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS:
+        return (time_slot < current_time_slot.subtract(
+            hours=ConstSettings.SettlementMarketSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS))
+    return time_slot < current_time_slot
+
+
+def is_external_matching_enabled():
+    """Checks if the bid offer match type is set to external
+    Returns True if both are matched
+    """
+    return (ConstSettings.MASettings.BID_OFFER_MATCH_TYPE ==
+            BidOfferMatchAlgoEnum.EXTERNAL.value)

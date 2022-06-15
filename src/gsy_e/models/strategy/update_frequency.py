@@ -27,7 +27,7 @@ from pendulum import duration, DateTime, Duration
 import gsy_e.constants
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.gsy_e_core.util import write_default_to_dict
-from gsy_e.gsy_e_core.market_utils import is_time_slot_in_past_markets
+from gsy_e.gsy_e_core.util import is_time_slot_in_past_markets
 
 if TYPE_CHECKING:
     from gsy_e.models.area import Area

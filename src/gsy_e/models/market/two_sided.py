@@ -30,8 +30,7 @@ from pendulum import DateTime
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.exceptions import (
     BidNotFoundException, InvalidBid, InvalidBidOfferPairException, InvalidTrade, MarketException)
-from gsy_e.gsy_e_core.util import short_offer_bid_log_str
-from gsy_e.gsy_e_core.market_utils import is_external_matching_enabled
+from gsy_e.gsy_e_core.util import short_offer_bid_log_str, is_external_matching_enabled
 from gsy_e.events.event_structures import MarketEvent
 from gsy_e.models.market import lock_market_action
 from gsy_e.models.market.one_sided import OneSidedMarket

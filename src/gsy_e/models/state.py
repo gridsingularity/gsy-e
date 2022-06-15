@@ -28,7 +28,7 @@ from gsy_framework.utils import (
 from pendulum import DateTime, duration
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
-from gsy_e.gsy_e_core.market_utils import is_time_slot_in_past_markets
+from gsy_e.gsy_e_core.util import is_time_slot_in_past_markets
 from gsy_e.gsy_e_core.util import write_default_to_dict
 
 StorageSettings = ConstSettings.StorageSettings

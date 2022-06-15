@@ -33,7 +33,7 @@ from gsy_e.gsy_e_core.util import (validate_const_settings_for_simulation, retry
                                    get_simulation_queue_name, get_market_maker_rate_from_config,
                                    export_default_settings_to_json_file, constsettings_to_dict,
                                    convert_str_to_pause_after_interval)
-from gsy_e.gsy_e_core.market_utils import FutureMarketCounter
+from gsy_e.gsy_e_core.market_counters import FutureMarketCounter
 
 
 @pytest.fixture(scope="function", autouse=True)

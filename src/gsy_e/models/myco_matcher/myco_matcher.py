@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from typing import Optional, Dict
 
-from gsy_e.gsy_e_core.market_utils import is_external_matching_enabled
+from gsy_e.gsy_e_core.util import is_external_matching_enabled
 from gsy_e.models.myco_matcher import MycoExternalMatcher, MycoInternalMatcher
 from gsy_e.models.myco_matcher.myco_matcher_interface import MycoMatcherInterface
 
