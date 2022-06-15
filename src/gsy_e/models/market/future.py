@@ -178,18 +178,18 @@ class FutureMarkets(TwoSidedMarket):
             if time_slot <= current_market_time_slot:
                 del orders.slot_order_mapping[time_slot]
 
-    def delete_orders_in_old_future_markets(self, most_recent_slot_to_be_deleted: DateTime
+    def delete_orders_in_old_future_markets(self, last_slot_to_be_deleted: DateTime
                                             ) -> None:
         """Delete order and trade buffers."""
-        self._expire_orders(self.offers, most_recent_slot_to_be_deleted)
-        self._expire_orders(self.bids, most_recent_slot_to_be_deleted)
+        self._expire_orders(self.offers, last_slot_to_be_deleted)
+        self._expire_orders(self.bids, last_slot_to_be_deleted)
 
         self.offer_history = self._remove_old_orders_from_list(
-            self.offer_history, most_recent_slot_to_be_deleted)
+            self.offer_history, last_slot_to_be_deleted)
         self.bid_history = self._remove_old_orders_from_list(
-            self.bid_history, most_recent_slot_to_be_deleted)
+            self.bid_history, last_slot_to_be_deleted)
         self.trades = self._remove_old_orders_from_list(
-            self.trades, most_recent_slot_to_be_deleted)
+            self.trades, last_slot_to_be_deleted)
 
     def _create_future_markets(self,
                                market_length: duration, start_time: DateTime, end_time: DateTime,

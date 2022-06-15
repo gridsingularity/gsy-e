@@ -158,8 +158,10 @@ class TestDayAheadMarketRotator:
 
         rotator = DayAheadMarketRotator(day_ahead_markets)
         count_orders_in_buffers(day_ahead_markets, 24)
-        first_future_market = next(iter(day_ahead_markets.slot_bid_mapping))
-        # mimic rotation of markets at the DAY_AHEAD_HOUR_OF_ROTATION:
-        rotator.rotate(first_future_market.add(
-            hours=ConstSettings.FutureMarketSettings.DAY_AHEAD_HOUR_OF_ROTATION))
+        # Markets should not be deleted when it is not time
+        rotator.rotate(DEFAULT_CURRENT_MARKET_SLOT)
+        count_orders_in_buffers(day_ahead_markets, 24)
+        # Market should be deleted if the DAY_AHEAD_CLEARING_DAYTIME_HOUR is reached
+        rotator.rotate(DEFAULT_CURRENT_MARKET_SLOT.set(
+            hour=ConstSettings.FutureMarketSettings.DAY_AHEAD_CLEARING_DAYTIME_HOUR))
         count_orders_in_buffers(day_ahead_markets, 0)
