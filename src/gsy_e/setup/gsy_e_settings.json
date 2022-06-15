@@ -225,13 +225,7 @@
       ],
       "PAY_AS_CLEAR_AGGREGATION_ALGORITHM": 1,
       "MIN_OFFER_AGE": 2,
-      "MIN_BID_AGE": 2,
-      "AlternativePricing": {
-        "COMPARE_PRICING_SCHEMES": false,
-        "PRICING_SCHEME": 0,
-        "FEED_IN_TARIFF_PERCENTAGE": 50,
-        "ALT_PRICING_MARKET_MAKER_NAME": "AGENT"
-      }
+      "MIN_BID_AGE": 2
     },
     "BlockchainSettings": {
       "BC_INSTALLED": true,

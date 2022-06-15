@@ -37,8 +37,6 @@ from gsy_e.models.market.market_structures import AvailableMarketTypes
 from gsy_e.models.strategy.market_agents.balancing_agent import BalancingAgent
 from gsy_e.models.strategy.market_agents.future_agent import FutureAgent
 from gsy_e.models.strategy.market_agents.one_sided_agent import OneSidedAgent
-from gsy_e.models.strategy.market_agents.one_sided_alternative_pricing_agent import (
-    OneSidedAlternativePricingAgent)
 from gsy_e.models.strategy.market_agents.settlement_agent import SettlementAgent
 from gsy_e.models.strategy.market_agents.two_sided_agent import TwoSidedAgent
 
@@ -234,8 +232,6 @@ class AreaDispatcher:
 
         if market_type == AvailableMarketTypes.SPOT:
             if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
-                if ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME != 0:
-                    return OneSidedAlternativePricingAgent(**agent_constructor_arguments)
                 return OneSidedAgent(**agent_constructor_arguments)
             if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value:
                 return TwoSidedAgent(
