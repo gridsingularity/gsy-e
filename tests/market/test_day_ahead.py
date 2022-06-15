@@ -37,7 +37,6 @@ def active_day_ahead_market() -> DayAheadMarkets:
     """Fixture for activated day-ahead market."""
     orig_day_ahead_duration = ConstSettings.FutureMarketSettings.DAY_AHEAD_DURATION_DAYS
     orig_start_date = GlobalConfig.start_date
-    ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS = 1
     area = Area("test_area")
     area.config.start_date = DEFAULT_CURRENT_MARKET_SLOT
     area.config.end_date = area.config.start_date.add(days=5)
