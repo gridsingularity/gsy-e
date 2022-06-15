@@ -348,8 +348,6 @@ Options:
 
   --enable-bc                   Run simulation on Blockchain
 
-  --compare-alt-pricing         Compare alternative pricing schemes
-
   --start-date DATE             Start date of the Simulation (YYYY-MM-DD)  [default: 2019-09-27]
 
   --help                        Show this message and exit.

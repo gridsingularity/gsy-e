@@ -22,26 +22,16 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
-from gsy_framework.enums import SpotMarketTypeEnum
-from parameterized import parameterized
 from pendulum import datetime
 
 from gsy_e import setup as d3a_setup
 from gsy_e.gsy_e_core import util
 from gsy_e.gsy_e_core.cli import available_simulation_scenarios
-from gsy_e.gsy_e_core.util import (validate_const_settings_for_simulation, retry_function,
+from gsy_e.gsy_e_core.util import (retry_function,
                                    get_simulation_queue_name, get_market_maker_rate_from_config,
                                    export_default_settings_to_json_file, constsettings_to_dict,
                                    convert_str_to_pause_after_interval)
 from gsy_e.gsy_e_core.market_counters import FutureMarketCounter
-
-
-@pytest.fixture(scope="function", autouse=True)
-def alternative_pricing_auto_fixture():
-    yield
-    ConstSettings.MASettings.AlternativePricing.COMPARE_PRICING_SCHEMES = False
-    ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME = 0
-    ConstSettings.MASettings.MARKET_TYPE = 1
 
 
 class TestD3ACoreUtil:
@@ -54,48 +44,20 @@ class TestD3ACoreUtil:
         GlobalConfig.market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
         os.environ.pop("LISTEN_TO_CANARY_NETWORK_REDIS_QUEUE", None)
 
-    def test_validate_all_setup_scenarios_are_available(self):
+    @staticmethod
+    def test_validate_all_setup_scenarios_are_available():
         file_list = []
-        root_path = d3a_setup.__path__[0] + '/'
+        root_path = d3a_setup.__path__[0] + "/"
         for path, _, files in os.walk(root_path):
             for name in files:
                 if name.endswith(".py") and name != "__init__.py":
                     module_name = os.path.join(path, name[:-3]).\
-                        replace(root_path, '').replace("/", ".")
+                        replace(root_path, "").replace("/", ".")
                     file_list.append(module_name)
         assert set(file_list) == set(available_simulation_scenarios)
 
-    @parameterized.expand([(2, 1),
-                           (2, 2),
-                           (2, 3),
-                           (3, 1),
-                           (3, 2),
-                           (3, 3)])
-    def test_validate_alternate_pricing_only_for_one_sided_market(
-            self, market_type, alternative_pricing):
-        ConstSettings.MASettings.AlternativePricing.COMPARE_PRICING_SCHEMES = False
-        ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME = alternative_pricing
-        ConstSettings.MASettings.MARKET_TYPE = market_type
-        with pytest.raises(AssertionError):
-            validate_const_settings_for_simulation()
-
-    @parameterized.expand([(2, 1),
-                           (2, 2),
-                           (2, 3),
-                           (3, 1),
-                           (3, 2),
-                           (3, 3)])
-    def test_validate_one_sided_market_when_pricing_scheme_on_comparison(
-            self, market_type, alt_pricing):
-        ConstSettings.MASettings.AlternativePricing.COMPARE_PRICING_SCHEMES = True
-        ConstSettings.MASettings.MARKET_TYPE = market_type
-        ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME = alt_pricing
-        validate_const_settings_for_simulation()
-        assert ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value
-        assert ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME == alt_pricing
-        assert ConstSettings.MASettings.AlternativePricing.COMPARE_PRICING_SCHEMES
-
-    def test_retry_function(self):
+    @staticmethod
+    def test_retry_function():
         retry_counter = 0
 
         @retry_function(max_retries=2)
@@ -109,14 +71,16 @@ class TestD3ACoreUtil:
 
         assert retry_counter == 3
 
-    def test_get_simulation_queue_name(self):
+    @staticmethod
+    def test_get_simulation_queue_name():
         assert get_simulation_queue_name() == "exchange"
         os.environ["LISTEN_TO_CANARY_NETWORK_REDIS_QUEUE"] = "no"
         assert get_simulation_queue_name() == "exchange"
         os.environ["LISTEN_TO_CANARY_NETWORK_REDIS_QUEUE"] = "yes"
         assert get_simulation_queue_name() == "canary_network"
 
-    def test_get_market_maker_rate_from_config(self):
+    @staticmethod
+    def test_get_market_maker_rate_from_config():
         assert get_market_maker_rate_from_config(None, 2) == 2
         market = MagicMock()
         market.time_slot = datetime(year=2019, month=2, day=3)
@@ -127,7 +91,8 @@ class TestD3ACoreUtil:
         GlobalConfig.market_maker_rate = 4321
         assert get_market_maker_rate_from_config(market, None) == 4321
 
-    def test_export_default_settings_to_json_file(self):
+    @staticmethod
+    def test_export_default_settings_to_json_file():
         temp_dir = tempfile.TemporaryDirectory()
         util.d3a_path = temp_dir.name
         os.mkdir(os.path.join(temp_dir.name, "setup"))
@@ -144,13 +109,15 @@ class TestD3ACoreUtil:
         assert "advanced_settings" in file_contents
         temp_dir.cleanup()
 
-    def test_convert_str_to_pause_after_interval(self):
+    @staticmethod
+    def test_convert_str_to_pause_after_interval():
         starttime = datetime(year=2020, month=3, day=12)
         input_str = "2020-03-12T15:00"
         interval = convert_str_to_pause_after_interval(starttime, input_str)
         assert interval.hours == 15
 
-    def test_constsettings_to_dict(self):
+    @staticmethod
+    def test_constsettings_to_dict():
         settings_dict = constsettings_to_dict()
         assert (settings_dict["GeneralSettings"]["DEFAULT_MARKET_MAKER_RATE"] ==
                 ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE)
@@ -160,10 +127,9 @@ class TestD3ACoreUtil:
                 ConstSettings.StorageSettings.CAPACITY)
         assert (settings_dict["MASettings"]["MARKET_TYPE"] ==
                 ConstSettings.MASettings.MARKET_TYPE)
-        assert (settings_dict["MASettings"]["AlternativePricing"]["COMPARE_PRICING_SCHEMES"] ==
-                ConstSettings.MASettings.AlternativePricing.COMPARE_PRICING_SCHEMES)
 
-    def test_future_market_counter(self):
+    @staticmethod
+    def test_future_market_counter():
         """Test the counter of future market clearing."""
         with patch("gsy_framework.constants_limits.ConstSettings.FutureMarketSettings."
                    "FUTURE_MARKET_CLEARING_INTERVAL_MINUTES", 15):

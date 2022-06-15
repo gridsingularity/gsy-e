@@ -825,10 +825,6 @@ def run_simulation(setup_module_name: str = "", simulation_config: SimulationCon
     """Initiate simulation class and start simulation."""
     # pylint: disable=too-many-arguments
     try:
-        if "pricing_scheme" in kwargs:
-            ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME = (
-                kwargs.pop("pricing_scheme"))
-
         if saved_sim_state is None:
             simulation = simulation_class_factory()(
                 setup_module_name=setup_module_name,

@@ -384,9 +384,6 @@ class Area(AreaBase):
             self._markets.activate_future_markets(self)
             self._markets.activate_market_rotators()
 
-        if ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME != 0:
-            self._set_grid_fees(0, 0)
-
         # Cycle markets without triggering it's own event chain.
         self.cycle_markets(_trigger_event=False)
 
