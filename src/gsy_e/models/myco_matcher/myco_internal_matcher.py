@@ -37,14 +37,10 @@ class MycoInternalMatcher(MycoMatcherInterface):
 
     def activate(self):
         self.match_algorithm = self.get_matching_algorithm()
-        self.match_algorithm_day_ahead = PayAsClearMatchingAlgorithm()
 
     def _get_matches_recommendations(self, data):
         """Wrapper for matching algorithm's matches recommendations."""
         return self.match_algorithm.get_matches_recommendations(data)
-
-    def _get_matches_recommendations_day_ahead(self, data):
-        return self.match_algorithm_day_ahead.get_matches_recommendations(data)
 
     @staticmethod
     def get_matching_algorithm():
@@ -99,8 +95,9 @@ class MycoInternalMatcher(MycoMatcherInterface):
                                         self._get_matches_recommendations)
 
             if DayAheadMarketCounter.is_time_for_clearing(area_data["current_time"]):
-                self._match_recommendations(area_uuid, area_data, [area_data["day_ahead_markets"]],
-                                            self._get_matches_recommendations_day_ahead)
+                self._match_recommendations(
+                    area_uuid, area_data, [area_data["day_ahead_markets"]],
+                    PayAsClearMatchingAlgorithm().get_matches_recommendations)
 
         self.area_uuid_markets_mapping = {}
 
