@@ -818,15 +818,13 @@ class CoefficientSimulation(Simulation):
             global_objects.profiles_handler.update_time_and_buffer_profiles(
                 self._get_current_market_time_slot(slot_no))
 
-            scm_manager = SCMManager(self.area.uuid)
+            scm_manager = SCMManager(self.area.uuid, self._get_current_market_time_slot(slot_no))
 
             self.area.calculate_home_after_meter_data(
                 self.progress_info.current_slot_time, scm_manager)
 
             scm_manager.calculate_community_after_meter_data()
-
-            self.area.trigger_energy_trades(
-                self.progress_info.current_slot_time, scm_manager)
+            self.area.trigger_energy_trades(scm_manager)
 
             self._results.update_and_send_results(
                 self.current_state, self.progress_info, self.area, self._status.status)

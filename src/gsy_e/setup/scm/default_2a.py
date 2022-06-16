@@ -23,9 +23,10 @@ from gsy_e.models.strategy.scm.pv import SCMPVStrategy
 from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
 from gsy_e.models.strategy.scm.smart_meter import SCMSmartMeterStrategy
 
+ConstSettings.MASettings.MARKET_TYPE = SpotMarketTypeEnum.COEFFICIENTS.value
+
 
 def get_setup(config):
-    ConstSettings.MASettings.MARKET_TYPE = SpotMarketTypeEnum.COEFFICIENTS.value
     area = CoefficientArea(
         "Grid",
         [
@@ -37,11 +38,11 @@ def get_setup(config):
                                                                   hrs_per_day=6,
                                                                   hrs_of_day=list(
                                                                     range(12, 18)))),
-                    CoefficientArea("H1 PV", strategy=SCMPVStrategy(capacity_kW=0.9)),
+                    CoefficientArea("H1 PV", strategy=SCMPVStrategy(capacity_kW=1000)),
                     CoefficientArea("H1 Storage1", strategy=SCMStorageStrategy(initial_soc=50)),
                     CoefficientArea("H1 Storage2", strategy=SCMStorageStrategy(initial_soc=50)),
                 ],
-                grid_fee_percentage=0, grid_fee_constant=0,
+                grid_fee_percentage=0, grid_fee_constant=0, coefficient_percent=0.6
             ),
             CoefficientArea(
                 "House 2",
@@ -55,7 +56,7 @@ def get_setup(config):
                     CoefficientArea("H2 Smart Meter",
                                     strategy=SCMSmartMeterStrategy(smart_meter_profile={0: 100})),
                 ],
-                grid_fee_percentage=0, grid_fee_constant=0,
+                grid_fee_percentage=0, grid_fee_constant=0, coefficient_percent=0.4
 
             ),
             CoefficientArea("Cell Tower",

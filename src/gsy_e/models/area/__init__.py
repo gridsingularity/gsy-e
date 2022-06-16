@@ -145,7 +145,6 @@ class AreaBase:
             grid_fee_const = None
         self.grid_fee_constant = grid_fee_const
         self.grid_fee_percentage = grid_fee_percentage
-        self._trades = {}
 
     @property
     def config(self) -> Union[SimulationConfig, GlobalConfig]:
@@ -251,6 +250,7 @@ class AreaBase:
 
 
 class CoefficientArea(AreaBase):
+    """Area class for the coefficient matching mechanism."""
     def __init__(self, name: str = None, children: List["CoefficientArea"] = None,
                  uuid: str = None,
                  strategy: BaseStrategy = None,
@@ -258,15 +258,22 @@ class CoefficientArea(AreaBase):
                  grid_fee_percentage: float = None,
                  grid_fee_constant: float = None,
                  coefficient_percent: float = 0.0,
+                 market_maker_rate_eur: float = (
+                         ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE / 100.),
+                 feed_in_tariff_eur: float = GlobalConfig.FEED_IN_TARIFF / 100.,
                  trade_rate: float = 0.0
                  ):
+        # pylint: disable=too-many-arguments
         super().__init__(name, children, uuid, strategy, config, grid_fee_percentage,
                          grid_fee_constant)
         self._coefficient_percent = coefficient_percent
+        self._market_maker_rate_eur = market_maker_rate_eur
+        self._feed_in_tariff_eur = feed_in_tariff_eur
         self._trade_rate = trade_rate
         self.past_market_time_slot = None
 
     def activate_coefficients(self, current_time_slot: DateTime) -> None:
+        """Activate the coefficient-based area parameters."""
         self._current_market_time_slot = current_time_slot
 
         if self.strategy:
@@ -295,107 +302,24 @@ class CoefficientArea(AreaBase):
                              for child in self.children)
         consumption_kWh = sum(child.strategy.get_energy_to_buy_kWh(current_time_slot)
                               for child in self.children)
-        scm_manager.add_home_data(self.uuid, production_kWh, consumption_kWh)
+        scm_manager.add_home_data(self.uuid, self.name,
+                                  self.grid_fee_constant, self._coefficient_percent,
+                                  self._market_maker_rate_eur, self._feed_in_tariff_eur,
+                                  production_kWh, consumption_kWh)
 
     def calculate_home_after_meter_data(
             self, current_time_slot: DateTime, scm_manager: "SCMManager") -> None:
+        """Recursive function that calculates the home after meter data."""
         if self._is_home_area():
             self._calculate_home_after_meter_data(current_time_slot, scm_manager)
         for child in self.children:
-            child.calculate_home_after_meter_data(current_time_slot)
+            child.calculate_home_after_meter_data(current_time_slot, scm_manager)
 
-    def _create_trade_object(self, current_time_slot, seller_name, traded_energy_kWh):
-        trade = Trade(
-            str(uuid4()), current_time_slot, None,
-            seller_name, self.name,
-            traded_energy=traded_energy_kWh, trade_price=self._trade_rate, residual=None,
-            offer_bid_trade_info=None,
-            seller_origin=seller_name,
-            buyer_origin=self.name, fee_price=0., buyer_origin_id=self.uuid,
-            seller_origin_id=None, seller_id=None, buyer_id=self.uuid,
-            time_slot=current_time_slot)
-        if not self._trades.get(current_time_slot):
-            self._trades[current_time_slot] = []
-        self._trades[current_time_slot].append(trade)
-        log.info("[SCM][TRADE][OFFER] [%s] [%s] %s", self.name, trade.time_slot, trade)
-        return trade
-
-    def trigger_energy_trades(
-            self, current_time_slot: DateTime, scm_manager: "SCMManager") -> float:
-
-        scm_manager.calculate_home_energy_bills(self.uuid, self.grid_fee_constant)
-
-        # if self._is_home_area():
-        #     total_home_consumption_kWh = sum(
-        #         child.strategy.get_energy_to_buy_kWh(current_time_slot)
-        #         for child in self.children)
-        #     total_home_production_kWh = sum(
-        #         child.strategy.get_energy_to_sell_kWh(current_time_slot)
-        #         for child in self.children)
-        #     community_energy_kWh = total_sell_energy_kWh
-        #
-        # if not self.children:
-        #     if not isinstance(self.strategy, SCMStrategy):
-        #         return 0.0
-        #     available_production_kWh = total_sell_energy_kWh * self._coefficient_percent
-        #     strategy_energy_kWh = self.strategy.get_energy_to_buy_kWh(current_time_slot)
-        #     if available_production_kWh >= strategy_energy_kWh:
-        #         self._create_trade_object(
-        #             current_time_slot, gsy_e.constants.DEFAULT_SCM_SELLER_STRING,
-        #             strategy_energy_kWh)
-        #         return strategy_energy_kWh
-        #     else:
-        #         external_energy_kWh = strategy_energy_kWh - available_production_kWh
-        #         if available_production_kWh > 0.0:
-        #             self._create_trade_object(
-        #                 current_time_slot, gsy_e.constants.DEFAULT_SCM_SELLER_STRING,
-        #                 available_production_kWh)
-        #         self._create_trade_object(
-        #             current_time_slot, gsy_e.constants.DEFAULT_GRID_SELLER_STRING,
-        #             external_energy_kWh)
-        #         return available_production_kWh
-        #
-        # else:
-        #     return sum(
-        #         child.trigger_energy_buy_trades(current_time_slot, total_sell_energy_kWh)
-        #         for child in self.children
-        #     )
-
-    def trigger_energy_sell_trades(
-            self, current_time_slot: DateTime, total_buy_energy_kWh: float) -> float:
-
-        if not self.children:
-            if not isinstance(self.strategy, SCMStrategy):
-                return 0.0
-            sell_energy_kWh = self.strategy.get_energy_to_sell_kWh(current_time_slot)
-            # if total_buy_energy_kWh >= sell_energy_kWh:
-            #     buyer_name = gsy_e.constants.DEFAULT_SCM_SELLER_STRING
-            #     total_buy_energy_kWh -= sell_energy_kWh
-            # else:
-            #     buyer_name = gsy_e.constants.DEFAULT_GRID_SELLER_STRING
-
-            if sell_energy_kWh > 0.0:
-                trade = Trade(
-                    str(uuid4()), current_time_slot, None,
-                    self.name, gsy_e.constants.DEFAULT_SCM_SELLER_STRING,
-                    traded_energy=sell_energy_kWh, trade_price=self._trade_rate, residual=None,
-                    offer_bid_trade_info=None,
-                    seller_origin=self.name,
-                    buyer_origin=gsy_e.constants.DEFAULT_SCM_SELLER_STRING,
-                    fee_price=0.,
-                    seller_origin_id=self.uuid, buyer_origin_id=None,
-                    seller_id=self.uuid, buyer_id=None,
-                    time_slot=current_time_slot)
-                if not self._trades.get(current_time_slot):
-                    self._trades[current_time_slot] = []
-                self._trades[current_time_slot].append(trade)
-                log.info("[SCM][TRADE][OFFER] [%s] [%s] %s", self.name, trade.time_slot, trade)
-                return total_buy_energy_kWh - sell_energy_kWh
-        else:
-            return sum(
-                child.trigger_energy_buy_trades(current_time_slot, total_buy_energy_kWh)
-                for child in self.children
-            )
+    def trigger_energy_trades(self, scm_manager: "SCMManager") -> None:
+        """Recursive function that triggers energy trading on all children of the root area."""
+        scm_manager.calculate_home_energy_bills(self.uuid)
+        for child in self.children:
+            child.trigger_energy_trades(scm_manager)
 
 
 class Area(AreaBase):
