@@ -29,7 +29,7 @@ def launch_simulation_from_rq_job(scenario: bytes, settings: Optional[Dict],
                                   events: Optional[str], aggregator_device_mapping: str,
                                   saved_state: bytes, job_id: str):
     """Launch simulation from rq job."""
-    logging.getLogger().setLevel(logging.ERROR)
+    logging.getLogger().setLevel(logging.WARNING)
     scenario = decompress_and_decode_queued_strings(scenario)
     gsy_e.constants.CONFIGURATION_ID = scenario.pop("configuration_uuid")
     if "collaboration_uuid" in scenario:
@@ -37,8 +37,9 @@ def launch_simulation_from_rq_job(scenario: bytes, settings: Optional[Dict],
         GlobalConfig.IS_CANARY_NETWORK = scenario.pop("is_canary_network", False)
         gsy_e.constants.RUN_IN_REALTIME = GlobalConfig.IS_CANARY_NETWORK
     saved_state = decompress_and_decode_queued_strings(saved_state)
-    log.error("Starting simulation with job_id: %s and configuration id: %s",
-              job_id, gsy_e.constants.CONFIGURATION_ID)
+    log.warning(
+        "Starting simulation with job_id: %s and configuration id: %s",
+        job_id, gsy_e.constants.CONFIGURATION_ID)
 
     try:
         if settings is None:
@@ -132,7 +133,7 @@ def launch_simulation_from_rq_job(scenario: bytes, settings: Optional[Dict],
                        slot_length_realtime=slot_length_realtime,
                        kwargs=kwargs)
 
-        log.info(
+        log.warning(
             "Finishing simulation with job_id: %s and configuration id: %s",
             job_id, gsy_e.constants.CONFIGURATION_ID)
 

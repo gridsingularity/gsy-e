@@ -613,7 +613,7 @@ class Simulation:
                 self._time.handle_slowdown_and_realtime(tick_no, self._setup.config)
 
                 if self._status.stopped:
-                    log.info(
+                    log.warning(
                         "Received stop command for configuration id %s and job id %s.",
                         gsy_e.constants.CONFIGURATION_ID, self._simulation_id)
                     sleep(5)
@@ -796,7 +796,7 @@ class CoefficientSimulation(Simulation):
             self._time.handle_slowdown_and_realtime(0, self._setup.config)
 
             if self._status.stopped:
-                log.info(
+                log.warning(
                     "Received stop command for configuration id %s and job id %s.",
                     gsy_e.constants.CONFIGURATION_ID, self._simulation_id)
                 sleep(5)
