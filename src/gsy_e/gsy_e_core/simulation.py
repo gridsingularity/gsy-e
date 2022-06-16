@@ -597,7 +597,7 @@ class Simulation:
 
                 # reset tick_resume after possible resume
                 tick_resume = 0
-                log.trace("Tick %s of %s in slot %s (%.1f%)", tick_no + 1,
+                log.trace("Tick %s of %s in slot %s (%.1f%%)", tick_no + 1,
                           self._setup.config.ticks_per_slot,
                           slot_no + 1, (tick_no + 1) / self._setup.config.ticks_per_slot * 100)
 
@@ -868,10 +868,6 @@ def run_simulation(setup_module_name: str = "", simulation_config: SimulationCon
     """Initiate simulation class and start simulation."""
     # pylint: disable=too-many-arguments
     try:
-        if "pricing_scheme" in kwargs:
-            ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME = (
-                kwargs.pop("pricing_scheme"))
-
         if saved_sim_state is None:
             simulation = simulation_class_factory()(
                 setup_module_name=setup_module_name,

@@ -219,6 +219,7 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
         if self._bid_updater.update_counter[time_slot] == 0:
             # update_counter is 0 only for the very first bid that hast not been updated
             # has to be increased because the first price counts as a price update
+            # pylint: disable=no-member
             self._bid_updater.increment_update_counter(strategy, time_slot)
 
     def _post_producer_first_offer(
@@ -238,6 +239,7 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
         if self._offer_updater.update_counter[time_slot] == 0:
             # update_counter is 0 only for the very first bid that hast not been updated
             # has to be increased because the first price counts as a price update
+            # pylint: disable=no-member
             self._offer_updater.increment_update_counter(strategy, time_slot)
 
     def event_tick(self, strategy: "BaseStrategy") -> None:
@@ -261,26 +263,19 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
         self._offer_updater.increment_update_counter_all_markets(strategy)
 
 
-def future_market_strategy_factory(
-        asset_type: AssetType,
-        initial_buying_rate: float = FutureTemplateStrategiesConstants.INITIAL_BUYING_RATE,
-        final_buying_rate: float = FutureTemplateStrategiesConstants.FINAL_BUYING_RATE,
-        initial_selling_rate: float = FutureTemplateStrategiesConstants.INITIAL_SELLING_RATE,
-        final_selling_rate: float = FutureTemplateStrategiesConstants.FINAL_SELLING_RATE
-) -> FutureMarketStrategyInterface:
+def future_market_strategy_factory(asset_type: AssetType) -> FutureMarketStrategyInterface:
     """
     Factory method for creating the future market trading strategy. Creates an object of a
     class with empty implementation if the future market is disabled, with the real
     implementation otherwise
-    Args:
-        initial_buying_rate: Initial rate of the future bids
-        final_buying_rate: Final rate of the future bids
-        initial_selling_rate: Initial rate of the future offers
-        final_selling_rate: Final rate of the future offers
 
     Returns: Future strategy object
 
     """
+    initial_buying_rate = FutureTemplateStrategiesConstants.INITIAL_BUYING_RATE
+    final_buying_rate = FutureTemplateStrategiesConstants.FINAL_BUYING_RATE
+    initial_selling_rate = FutureTemplateStrategiesConstants.INITIAL_SELLING_RATE
+    final_selling_rate = FutureTemplateStrategiesConstants.FINAL_SELLING_RATE
     if GlobalConfig.FUTURE_MARKET_DURATION_HOURS > 0:
         return FutureMarketStrategy(
             asset_type, initial_buying_rate, final_buying_rate,

@@ -51,6 +51,7 @@ class TwoSidedMarket(OneSidedMarket):
     def __init__(self, time_slot=None, bc=None, notification_listener=None, readonly=False,
                  grid_fee_type=ConstSettings.MASettings.GRID_FEE_TYPE,
                  grid_fees=None, name=None, in_sim_duration=True):
+        # pylint: disable=too-many-arguments
         super().__init__(time_slot, bc, notification_listener, readonly, grid_fee_type,
                          grid_fees, name, in_sim_duration=in_sim_duration)
 
@@ -104,6 +105,8 @@ class TwoSidedMarket(OneSidedMarket):
             attributes: Optional[Dict] = None,
             requirements: Optional[List[Dict]] = None,
             time_slot: Optional[DateTime] = None) -> Bid:
+        """Create bid object."""
+        # pylint: disable=too-many-arguments
         if energy <= 0:
             raise InvalidBid()
 
@@ -135,6 +138,7 @@ class TwoSidedMarket(OneSidedMarket):
 
     @lock_market_action
     def delete_bid(self, bid_or_id: Union[str, Bid]):
+        """Delete bid object."""
         if isinstance(bid_or_id, Bid):
             bid_or_id = bid_or_id.id
         bid = self.bids.pop(bid_or_id, None)
@@ -197,9 +201,10 @@ class TwoSidedMarket(OneSidedMarket):
 
         return accepted_bid, residual_bid
 
-    def determine_bid_price(self, trade_offer_info, energy):
+    def _determine_bid_price(self, trade_offer_info, energy):
         _, grid_fee_rate, final_trade_rate = self.fee_class.calculate_trade_price_and_fees(
             trade_offer_info)
+
         return grid_fee_rate * energy, energy * final_trade_rate
 
     @lock_market_action
@@ -208,11 +213,12 @@ class TwoSidedMarket(OneSidedMarket):
                    seller: Optional[str] = None,
                    buyer: Optional[str] = None,
                    already_tracked: bool = False,
-                   trade_rate: Optional[float] = None,
                    trade_offer_info: Optional[TradeBidOfferInfo] = None,
                    seller_origin: Optional[str] = None,
                    seller_origin_id: Optional[str] = None,
                    seller_id: Optional[str] = None) -> Trade:
+        """Accept bid and create Trade object."""
+        # pylint: disable=too-many-arguments, too-many-locals
         market_bid = self.bids.pop(bid.id, None)
         if market_bid is None:
             raise BidNotFoundException("During accept bid: " + str(bid))
@@ -230,7 +236,7 @@ class TwoSidedMarket(OneSidedMarket):
         if energy > market_bid.energy:
             raise InvalidTrade(f"Traded energy ({energy}) cannot be more than the "
                                f"bid energy ({market_bid.energy}).")
-        elif energy < market_bid.energy:
+        if energy < market_bid.energy:
             # partial bid trade
             accepted_bid, residual_bid = self.split_bid(market_bid, energy, orig_price)
             bid = accepted_bid
@@ -245,7 +251,7 @@ class TwoSidedMarket(OneSidedMarket):
             # full bid trade, nothing further to do here
             pass
 
-        fee_price, trade_price = self.determine_bid_price(trade_offer_info, energy)
+        fee_price, trade_price = self._determine_bid_price(trade_offer_info, energy)
         bid.update_price(trade_price)
 
         # Do not adapt grid fees when creating the bid_trade_info structure, to mimic
@@ -261,7 +267,8 @@ class TwoSidedMarket(OneSidedMarket):
                       buyer_origin=bid.buyer_origin, seller_origin=seller_origin,
                       fee_price=fee_price, seller_origin_id=seller_origin_id,
                       buyer_origin_id=bid.buyer_origin_id, seller_id=seller_id,
-                      buyer_id=bid.buyer_id, time_slot=bid.time_slot
+                      buyer_id=bid.buyer_id, time_slot=bid.time_slot,
+                      matching_requirements=trade_offer_info.matching_requirements
                       )
 
         if already_tracked is False:
@@ -275,6 +282,8 @@ class TwoSidedMarket(OneSidedMarket):
     def accept_bid_offer_pair(self, bid: Bid, offer: Offer, clearing_rate: float,
                               trade_bid_info: TradeBidOfferInfo,
                               selected_energy: float) -> Tuple[Trade, Trade]:
+        """Accept bid and offers in pair when a trade is happening."""
+        # pylint: disable=too-many-arguments
         already_tracked = bid.buyer == offer.seller
         trade = self.accept_offer(offer_or_id=offer,
                                   buyer=bid.buyer,
@@ -291,7 +300,6 @@ class TwoSidedMarket(OneSidedMarket):
                                     seller=offer.seller,
                                     buyer=bid.buyer,
                                     already_tracked=True,
-                                    trade_rate=clearing_rate,
                                     trade_offer_info=trade_bid_info,
                                     seller_origin=offer.seller_origin,
                                     seller_origin_id=offer.seller_origin_id,
@@ -300,11 +308,20 @@ class TwoSidedMarket(OneSidedMarket):
 
     def _get_offer_from_seller_origin_id(self, seller_origin_id):
         """Get the first offer that has the same seller_origin_id."""
+        if seller_origin_id is None:
+            # Many offers may have seller_origin_id=None; Avoid looking for them as it is
+            # inaccurate.
+            return None
+
         return next(iter(
             [offer for offer in self.offers.values()
              if offer.seller_origin_id == seller_origin_id]), None)
 
     def _get_bid_from_buyer_origin_id(self, buyer_origin_id):
+        if buyer_origin_id is None:
+            # Many bids may have buyer_origin_id=None; Avoid looking for them as it is inaccurate.
+            return None
+
         return next(iter(
             [bid for bid in self.bids.values()
              if bid.buyer_origin_id == buyer_origin_id]), None)
@@ -316,9 +333,8 @@ class TwoSidedMarket(OneSidedMarket):
         were_trades_performed = False
         while recommendations:
             recommended_pair = BidOfferMatch.from_dict(recommendations.pop(0))
-            market_offer = self.offers.get(recommended_pair.offer["id"])
-            market_bid = self.bids.get(recommended_pair.bid["id"])
 
+            market_offer = self.offers.get(recommended_pair.offer["id"])
             # TODO: This is a temporary solution based on the fact that trading strategies do not
             # post multiple bids or offers on the same market at the moment. Will be shortly
             # replaced by a global offer / bid identifier instead of tracking the original order
@@ -328,13 +344,15 @@ class TwoSidedMarket(OneSidedMarket):
                     recommended_pair.offer["seller_origin_id"])
                 if market_offer is None:
                     raise InvalidBidOfferPairException("Offer does not exist in the market")
-                recommended_pair.offer = market_offer.serializable_dict()
+            recommended_pair.offer = market_offer.serializable_dict()
+
+            market_bid = self.bids.get(recommended_pair.bid["id"])
             if not market_bid:
                 market_bid = self._get_bid_from_buyer_origin_id(
                     recommended_pair.bid["buyer_origin_id"])
                 if market_bid is None:
                     raise InvalidBidOfferPairException("Bid does not exist in the market")
-                recommended_pair.bid = market_bid.serializable_dict()
+            recommended_pair.bid = market_bid.serializable_dict()
 
             try:
                 self.validate_bid_offer_match(recommended_pair)
@@ -347,7 +365,8 @@ class TwoSidedMarket(OneSidedMarket):
                 continue
             original_bid_rate = recommended_pair.bid_energy_rate + (
                     market_bid.accumulated_grid_fees / recommended_pair.bid_energy)
-            if ConstSettings.MASettings.BID_OFFER_MATCH_TYPE == BidOfferMatchAlgoEnum.PAY_AS_BID:
+            if ConstSettings.MASettings.BID_OFFER_MATCH_TYPE == \
+                    BidOfferMatchAlgoEnum.PAY_AS_BID.value:
                 trade_rate = original_bid_rate
             else:
                 trade_rate = self.fee_class.calculate_original_trade_rate_from_clearing_rate(
@@ -357,7 +376,9 @@ class TwoSidedMarket(OneSidedMarket):
                 propagated_bid_rate=recommended_pair.bid_energy_rate,
                 original_offer_rate=market_offer.original_price / market_offer.energy,
                 propagated_offer_rate=market_offer.energy_rate,
-                trade_rate=trade_rate)
+                trade_rate=trade_rate,
+                matching_requirements=recommended_pair.matching_requirements
+            )
 
             bid_trade, offer_trade = self.accept_bid_offer_pair(
                 market_bid, market_offer, trade_rate,
@@ -411,6 +432,9 @@ class TwoSidedMarket(OneSidedMarket):
             raise InvalidBidOfferPairException("Not all bids and offers exist in the market.")
         bid_energy = recommendation.bid_energy
         offer_energy = market_offer.energy
+        if selected_energy <= 0:
+            raise InvalidBidOfferPairException(
+                f"Energy traded {selected_energy} should be more than 0.")
         if selected_energy > bid_energy:
             raise InvalidBidOfferPairException(
                 f"Energy traded {selected_energy} is higher than bids energy {bid_energy}.")
@@ -423,10 +447,38 @@ class TwoSidedMarket(OneSidedMarket):
                 f"{recommendation.bid_energy_rate}.")
         if market_offer.energy_rate > clearing_rate + FLOATING_POINT_TOLERANCE:
             raise InvalidBidOfferPairException(
-                f"Trade rate {clearing_rate} is higher than offer energy rate "
+                f"Trade rate {clearing_rate} is lower than offer energy rate "
                 f"{market_offer.energy_rate}.")
 
+        self._validate_matching_requirements(recommendation)
         self._validate_requirements_satisfied(recommendation)
+
+    @staticmethod
+    def _validate_matching_requirements(recommendation: BidOfferMatch) -> None:
+        """Validate a matching_requirement actually exists in the Bid/Offer object.
+
+        Raises:
+            InvalidBidOfferPairException: matching_requirement doesn't exist in the Bid/Offer
+            object.
+        """
+        if not recommendation.matching_requirements:
+            return
+
+        bid_matching_requirement = recommendation.matching_requirements.get("bid_requirement")
+        if bid_matching_requirement:
+            bid_requirements = recommendation.bid.get("requirements") or []
+            if bid_matching_requirement not in bid_requirements:
+                raise InvalidBidOfferPairException(
+                    f"Matching requirement {bid_matching_requirement} doesn't exist in the Bid"
+                    " object.")
+
+        offer_matching_requirement = recommendation.matching_requirements.get("offer_requirement")
+        if offer_matching_requirement:
+            offer_requirements = recommendation.offer.get("requirements") or []
+            if offer_matching_requirement not in offer_requirements:
+                raise InvalidBidOfferPairException(
+                    f"Matching requirement {offer_matching_requirement} doesn't exist in the Offer"
+                    f" object.")
 
     @classmethod
     def _replace_offers_bids_with_residual_in_recommendations_list(
