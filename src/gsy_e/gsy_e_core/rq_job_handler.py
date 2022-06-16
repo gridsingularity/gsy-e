@@ -24,10 +24,10 @@ def decompress_and_decode_queued_strings(queued_string: bytes) -> Dict:
     return pickle.loads(decompress(queued_string))
 
 
+# pylint: disable-next=too-many-statements, too-many-arguments, too-many-locals
 def launch_simulation_from_rq_job(scenario: bytes, settings: Optional[Dict],
                                   events: Optional[str], aggregator_device_mapping: str,
                                   saved_state: bytes, job_id: str):
-    # pylint: disable=too-many-arguments, too-many-locals
     """Launch simulation from rq job."""
     logging.getLogger().setLevel(logging.ERROR)
     scenario = decompress_and_decode_queued_strings(scenario)
@@ -132,11 +132,11 @@ def launch_simulation_from_rq_job(scenario: bytes, settings: Optional[Dict],
                        slot_length_realtime=slot_length_realtime,
                        kwargs=kwargs)
 
-        log.error("Finishing simulation with job_id: %s and configuration id: %s",
-                  job_id, gsy_e.constants.CONFIGURATION_ID)
+        log.info(
+            "Finishing simulation with job_id: %s and configuration id: %s",
+            job_id, gsy_e.constants.CONFIGURATION_ID)
 
-    # pylint: disable=broad-except
-    except Exception:
+    except Exception:  # pylint: disable=broad-except
         # pylint: disable=import-outside-toplevel
         from gsy_e.gsy_e_core.redis_connections.simulation import publish_job_error_output
         publish_job_error_output(job_id, traceback.format_exc())
