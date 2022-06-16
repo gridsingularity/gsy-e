@@ -35,12 +35,6 @@ class FutureTemplateStrategyBidUpdater(TemplateStrategyBidUpdater):
     def _time_slot_duration_in_seconds(self) -> int:
         return GlobalConfig.FUTURE_MARKET_DURATION_HOURS * 60 * 60
 
-    def _elapsed_seconds(self, strategy: "BaseStrategy") -> int:
-        current_tick_number = strategy.area.current_tick % (
-                self._time_slot_duration_in_seconds / strategy.area.config.tick_length.seconds
-        ) * (strategy.area.current_slot + 1)
-        return current_tick_number * strategy.area.config.tick_length.seconds
-
     @staticmethod
     def get_all_markets(area: "Area") -> List["FutureMarkets"]:
         """Override to return list of future markets"""
@@ -72,12 +66,6 @@ class FutureTemplateStrategyOfferUpdater(TemplateStrategyOfferUpdater):
     def _time_slot_duration_in_seconds(self) -> int:
         return GlobalConfig.FUTURE_MARKET_DURATION_HOURS * 60 * 60
 
-    def _elapsed_seconds(self, strategy: "BaseStrategy") -> int:
-        current_tick_number = strategy.area.current_tick % (
-                self._time_slot_duration_in_seconds / strategy.area.config.tick_length.seconds
-        ) * (strategy.area.current_slot + 1)
-        return current_tick_number * strategy.area.config.tick_length.seconds
-
     @staticmethod
     def get_all_markets(area: "Area") -> List["FutureMarkets"]:
         """Override to return list of future markets"""
@@ -98,6 +86,7 @@ class FutureTemplateStrategyOfferUpdater(TemplateStrategyOfferUpdater):
                 if strategy.are_offers_posted(market.id):
                     strategy.update_offer_rates(
                         market, self.get_updated_rate(time_slot), time_slot)
+                    did_update_rates = True
         if did_update_rates:
             self.increment_update_counter_all_markets(strategy)
 
