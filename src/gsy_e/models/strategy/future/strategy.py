@@ -12,7 +12,6 @@ General Public License for more details.
 You should have received a copy of the GNU General Public License along with this program. If not,
 see <http://www.gnu.org/licenses/>.
 """
-
 from typing import TYPE_CHECKING, List, Union
 
 from gsy_framework.constants_limits import GlobalConfig
@@ -36,6 +35,12 @@ class FutureTemplateStrategyBidUpdater(TemplateStrategyBidUpdater):
     def _time_slot_duration_in_seconds(self) -> int:
         return GlobalConfig.FUTURE_MARKET_DURATION_HOURS * 60 * 60
 
+    def _elapsed_seconds(self, strategy: "BaseStrategy") -> int:
+        current_tick_number = strategy.area.current_tick % (
+                self._time_slot_duration_in_seconds / strategy.area.config.tick_length.seconds
+        ) * (strategy.area.current_slot + 1)
+        return current_tick_number * strategy.area.config.tick_length.seconds
+
     @staticmethod
     def get_all_markets(area: "Area") -> List["FutureMarkets"]:
         """Override to return list of future markets"""
@@ -50,10 +55,14 @@ class FutureTemplateStrategyBidUpdater(TemplateStrategyBidUpdater):
 
     def update(self, market: "FutureMarkets", strategy: "BaseStrategy") -> None:
         """Update the price of existing bids to reflect the new rates."""
+        did_update_rates = False
         for time_slot in strategy.area.future_markets.market_time_slots:
             if self.time_for_price_update(strategy, time_slot):
                 if strategy.are_bids_posted(market.id, time_slot):
                     strategy.update_bid_rates(market, self.get_updated_rate(time_slot), time_slot)
+                    did_update_rates = True
+        if did_update_rates:
+            self.increment_update_counter_all_markets(strategy)
 
 
 class FutureTemplateStrategyOfferUpdater(TemplateStrategyOfferUpdater):
@@ -62,6 +71,12 @@ class FutureTemplateStrategyOfferUpdater(TemplateStrategyOfferUpdater):
     @property
     def _time_slot_duration_in_seconds(self) -> int:
         return GlobalConfig.FUTURE_MARKET_DURATION_HOURS * 60 * 60
+
+    def _elapsed_seconds(self, strategy: "BaseStrategy") -> int:
+        current_tick_number = strategy.area.current_tick % (
+                self._time_slot_duration_in_seconds / strategy.area.config.tick_length.seconds
+        ) * (strategy.area.current_slot + 1)
+        return current_tick_number * strategy.area.config.tick_length.seconds
 
     @staticmethod
     def get_all_markets(area: "Area") -> List["FutureMarkets"]:
@@ -77,11 +92,14 @@ class FutureTemplateStrategyOfferUpdater(TemplateStrategyOfferUpdater):
 
     def update(self, market: "FutureMarkets", strategy: "BaseStrategy") -> None:
         """Update the price of existing offers to reflect the new rates."""
+        did_update_rates = False
         for time_slot in strategy.area.future_markets.market_time_slots:
             if self.time_for_price_update(strategy, time_slot):
                 if strategy.are_offers_posted(market.id):
                     strategy.update_offer_rates(
                         market, self.get_updated_rate(time_slot), time_slot)
+        if did_update_rates:
+            self.increment_update_counter_all_markets(strategy)
 
 
 class FutureMarketStrategyInterface:
@@ -258,9 +276,6 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
             return
         self._bid_updater.update(strategy.area.future_markets, strategy)
         self._offer_updater.update(strategy.area.future_markets, strategy)
-
-        self._bid_updater.increment_update_counter_all_markets(strategy)
-        self._offer_updater.increment_update_counter_all_markets(strategy)
 
 
 def future_market_strategy_factory(asset_type: AssetType) -> FutureMarketStrategyInterface:
