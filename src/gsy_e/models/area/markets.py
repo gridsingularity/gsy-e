@@ -86,6 +86,7 @@ class AreaMarkets:
                               grid_fee_const=area.grid_fee_constant),
             name=area.name)
         self.future_markets = market
+        self.future_markets.update_clock(area.now)
         area.dispatcher.create_market_agents_for_future_markets(market)
 
     def activate_market_rotators(self):
