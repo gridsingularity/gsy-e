@@ -162,8 +162,8 @@ class SCMManager:
     def calculate_home_energy_bills(
             self, home_uuid: str) -> None:
         """Calculate energy bills for one home."""
-        if home_uuid not in self._home_data:
-            return
+        assert home_uuid in self._home_data
+
         home_data = self._home_data[home_uuid]
 
         market_maker_rate_eur = home_data.market_maker_rate_eur

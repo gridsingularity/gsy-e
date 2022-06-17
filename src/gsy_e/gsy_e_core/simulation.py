@@ -496,7 +496,7 @@ class Simulation:
         validate_const_settings_for_simulation()
 
     def _init(self, redis_job_id: str) -> None:
-        # has to be called before get_setup():
+        # has to be called before load_setup_module():
         global_objects.profiles_handler.activate()
 
         self.area = self._setup.load_setup_module()
@@ -777,7 +777,7 @@ class CoefficientSimulation(Simulation):
     """Start and control a simulation with coefficient trading."""
 
     def _init(self, redis_job_id: str) -> None:
-        # has to be called before get_setup():
+        # has to be called before load_setup_module():
         global_objects.profiles_handler.activate()
 
         self.area = self._setup.load_setup_module()

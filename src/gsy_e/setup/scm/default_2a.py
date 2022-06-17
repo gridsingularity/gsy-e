@@ -17,25 +17,26 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from gsy_framework.constants_limits import ConstSettings, SpotMarketTypeEnum
+
+from gsy_e.constants import DEFAULT_SCM_SELLER_STRING
 from gsy_e.models.area import CoefficientArea
 from gsy_e.models.strategy.scm.load import SCMLoadHoursStrategy
 from gsy_e.models.strategy.scm.pv import SCMPVStrategy
-from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
 from gsy_e.models.strategy.scm.smart_meter import SCMSmartMeterStrategy
+from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
 
 ConstSettings.MASettings.MARKET_TYPE = SpotMarketTypeEnum.COEFFICIENTS.value
 
 
 def get_setup(config):
     area = CoefficientArea(
-        "Grid",
+        DEFAULT_SCM_SELLER_STRING,
         [
             CoefficientArea(
                 "House 1",
                 [
                     CoefficientArea("H1 General Load",
                                     strategy=SCMLoadHoursStrategy(avg_power_W=200,
-                                                                  hrs_per_day=6,
                                                                   hrs_of_day=list(
                                                                     range(12, 18)))),
                     CoefficientArea("H1 PV", strategy=SCMPVStrategy(capacity_kW=1000)),
@@ -49,7 +50,6 @@ def get_setup(config):
                 [
                     CoefficientArea("H2 General Load",
                                     strategy=SCMLoadHoursStrategy(avg_power_W=200,
-                                                                  hrs_per_day=4,
                                                                   hrs_of_day=list(
                                                                       range(12, 16)))),
                     CoefficientArea("H2 PV", strategy=SCMPVStrategy(capacity_kW=0.9)),
@@ -61,7 +61,6 @@ def get_setup(config):
             ),
             CoefficientArea("Cell Tower",
                             strategy=SCMLoadHoursStrategy(avg_power_W=100,
-                                                          hrs_per_day=24,
                                                           hrs_of_day=list(range(0, 24)))),
         ],
         config=config

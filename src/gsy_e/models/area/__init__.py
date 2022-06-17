@@ -253,7 +253,7 @@ class CoefficientArea(AreaBase):
     """Area class for the coefficient matching mechanism."""
     def __init__(self, name: str = None, children: List["CoefficientArea"] = None,
                  uuid: str = None,
-                 strategy: BaseStrategy = None,
+                 strategy: SCMStrategy = None,
                  config: SimulationConfig = None,
                  grid_fee_percentage: float = None,
                  grid_fee_constant: float = None,
@@ -293,8 +293,9 @@ class CoefficientArea(AreaBase):
             child.cycle_coefficients_trading(current_time_slot)
 
     def _is_home_area(self):
-        return all(child.strategy and isinstance(child.strategy, SCMStrategy)
-                   for child in self.children)
+        return self.children and all(
+            child.strategy and isinstance(child.strategy, SCMStrategy)
+            for child in self.children)
 
     def _calculate_home_after_meter_data(
             self, current_time_slot: DateTime, scm_manager: "SCMManager") -> None:
@@ -317,7 +318,8 @@ class CoefficientArea(AreaBase):
 
     def trigger_energy_trades(self, scm_manager: "SCMManager") -> None:
         """Recursive function that triggers energy trading on all children of the root area."""
-        scm_manager.calculate_home_energy_bills(self.uuid)
+        if self._is_home_area():
+            scm_manager.calculate_home_energy_bills(self.uuid)
         for child in self.children:
             child.trigger_energy_trades(scm_manager)
 
