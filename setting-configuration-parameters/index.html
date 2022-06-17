@@ -580,8 +580,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../summary/" title="Summary" class="md-nav__link">
-      Summary
+    <a href="../aggregate-market-summary/" title="Aggregate Market Summary" class="md-nav__link">
+      Aggregate Market Summary
     </a>
   </li>
 
@@ -618,6 +618,18 @@
   <li class="md-nav__item">
     <a href="../results-download/" title="Results Download" class="md-nav__link">
       Results Download
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../duplicating-simulations" title="Duplicating simulations" class="md-nav__link">
+      Duplicating simulations
     </a>
   </li>
 
@@ -702,8 +714,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../vm-installation-instructions/" title="Virtual Machine Installation Instructions" class="md-nav__link">
-      Virtual Machine Installation Instructions
+    <a href="../vm-installation-instructions/" title="Windows Installation Instructions" class="md-nav__link">
+      Windows Installation Instructions
     </a>
   </li>
 
@@ -1981,7 +1993,7 @@ return market
 </code></pre>
 
 <h4 id="simulation-launch">Simulation launch<a class="headerlink" href="#simulation-launch" title="Permanent link">&para;</a></h4>
-<p>Once the entire grid architecture is modelled, including energy assets, the user can launch the trading simulation by running a command line including desired setup features:</p>
+<p>Once the entire market architecture is modelled, including energy assets, the user can launch the trading simulation by running a command line including desired setup features:</p>
 <ul>
 <li>-d, --duration: simulated duration of simulation [default: 1d]</li>
 <li>-t, --tick-length: simulated duration of a tick [default: 1s]</li>
@@ -2135,8 +2147,6 @@ Options:
   --export-path TEXT            Specify a path for the csv export files (default: ~/d3a-simulation)
 
   --enable-bc                   Run simulation on Blockchain
-
-  --compare-alt-pricing         Compare alternative pricing schemes
 
   --start-date DATE             Start date of the Simulation (YYYY-MM-DD)  [default: 2019-09-27]
 

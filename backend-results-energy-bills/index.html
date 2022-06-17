@@ -576,8 +576,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../summary/" title="Summary" class="md-nav__link">
-      Summary
+    <a href="../aggregate-market-summary/" title="Aggregate Market Summary" class="md-nav__link">
+      Aggregate Market Summary
     </a>
   </li>
 
@@ -614,6 +614,18 @@
   <li class="md-nav__item">
     <a href="../results-download/" title="Results Download" class="md-nav__link">
       Results Download
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../duplicating-simulations" title="Duplicating simulations" class="md-nav__link">
+      Duplicating simulations
     </a>
   </li>
 
@@ -698,8 +710,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../vm-installation-instructions/" title="Virtual Machine Installation Instructions" class="md-nav__link">
-      Virtual Machine Installation Instructions
+    <a href="../vm-installation-instructions/" title="Windows Installation Instructions" class="md-nav__link">
+      Windows Installation Instructions
     </a>
   </li>
 
@@ -1887,10 +1899,10 @@
                 
                 <p>The cumulative energy bills for each market and energy asset are reported on the UI Results page and in a JSON file bills.json for a backend simulation. The bills are reported as the cash flow through each market.</p>
 <p><img alt="alt_text" src="../img/backend-results-1.png" /></p>
-<p><strong><em>Figure 2.30</em></strong>. <em>Example grid setup showing connection to the grid.</em></p>
+<p><strong><em>Figure 2.31</em></strong>. <em>Example grid setup showing connection to the grid.</em></p>
 <p>This configuration is simulated for one day using the Pay-as-Bid market type and the load bidding to buy energy at 12:00, leading to the propagation of the load bid and the grid operator offer until they are matched as shown in the figure below:</p>
 <p><img alt="alt_text" src="../img/backend-results-2.png" /></p>
-<p><strong><em>Figure 2.31</em></strong>. <em>Example grid setup with bid and offers.</em></p>
+<p><strong><em>Figure 2.32</em></strong>. <em>Example grid setup with bid and offers.</em></p>
 <p>The bid and the offer are forwarded to the higher-level Grid market and are matched in this market with a clearing price (and trade price) of €0.45. For more information on how grid fees are calculated, please read the <a href="../grid-fees/">grid fees documentation</a>.</p>
 <p>In the bills.json file, the cash flow in each market is reported as follows:</p>
 <p>"Parent market": {
@@ -1907,15 +1919,15 @@
 },</p>
 <p>Shown below are the results of the previous example. The first set of results is from the highest market, in this case the Grid market:</p>
 <p><img alt="alt_text" src="../img/backend-results-example-1.png" /> <img alt="alt_text" src="../img/backend-results-example-2.png" /></p>
-<p><strong><em>Figure 2.32</em></strong>. <em>Results example.</em></p>
+<p><strong><em>Figure 2.33</em></strong>. <em>Results example.</em></p>
 <p>In the Grid market, Home 1 has bought 1 kWh from the Gris and spent €0.375 for this trade. Home 1 also pays the €0.075 grid fee that the Grid market is charging. The total cost of 1 kWh of energy is €0.375 + €0.075 = €0.45</p>
 <p>One level down the hierarchy, the Home 1 market is displayed in the figure below:</p>
 <p><img alt="alt_text" src="../img/backend-results-example-3.png" /> <img alt="alt_text" src="../img/backend-results-example-4.png" /></p>
-<p><strong><em>Figure 2.33</em></strong>. <em>Results example.</em></p>
+<p><strong><em>Figure 2.34</em></strong>. <em>Results example.</em></p>
 <p>The Home 1 market has no information on the other markets’ grid fees, so only considers its own fees in the bills table. Therefore, the Load spends €0.45 (€0.0375 + €0.075) for 1 kWh of energy that is externally supplied to Home 1, with no grid fee added since House 1 has no fees.</p>
 <p>Finally, the bills of each energy asset are shown:</p>
 <p><img alt="alt_text" src="../img/backend-results-example-5.png" /></p>
-<p><strong><em>Figure 2.34</em></strong>. <em>Results example.</em></p>
+<p><strong><em>Figure 2.35</em></strong>. <em>Results example.</em></p>
                 
                   
                 

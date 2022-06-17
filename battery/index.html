@@ -625,8 +625,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../summary/" title="Summary" class="md-nav__link">
-      Summary
+    <a href="../aggregate-market-summary/" title="Aggregate Market Summary" class="md-nav__link">
+      Aggregate Market Summary
     </a>
   </li>
 
@@ -663,6 +663,18 @@
   <li class="md-nav__item">
     <a href="../results-download/" title="Results Download" class="md-nav__link">
       Results Download
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../duplicating-simulations" title="Duplicating simulations" class="md-nav__link">
+      Duplicating simulations
     </a>
   </li>
 
@@ -745,8 +757,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../vm-installation-instructions/" title="Virtual Machine Installation Instructions" class="md-nav__link">
-      Virtual Machine Installation Instructions
+    <a href="../vm-installation-instructions/" title="Windows Installation Instructions" class="md-nav__link">
+      Windows Installation Instructions
     </a>
   </li>
 
@@ -1959,12 +1971,12 @@
                 
                   <h1>Battery (Storage)</h1>
                 
-                <p>Batteries also known as energy storage are energy assets that save excess energy produced and store it for use at a later time. Adding a battery to a home or community will increase its self consumption and self sufficiency, as well as offering flexibility services to grid operators, by reducing imported and exported energy from/to the grid.</p>
+                <p>Batteries (also known as energy storage) are energy assets that save the surplus energy produced and store it for use at a later time. Adding a battery to a home or community will increase the self-consumption and self-sufficiency levels and enhance the potential of flexibility service for grid operators.</p>
 <h2 id="asset-configuration-options">Asset Configuration Options<a class="headerlink" href="#asset-configuration-options" title="Permanent link">&para;</a></h2>
 <p><strong>Express Mode</strong></p>
 <ol>
 <li>Name - Must be unique</li>
-<li>Geo-tag - This automatically loads for the location a user selects</li>
+<li>Geo-tag - This automatically uploads the location a user selects</li>
 </ol>
 <p><strong>Advanced Mode</strong></p>
 <ol>
@@ -1978,26 +1990,25 @@
 <li>Initial buying rate - Users can choose the initial rate for buying energy at the beginning of each market slot in cents/kWh.</li>
 <li>Final buying rate - Users can choose the final rate for buying energy at the end of each market slot in cents/kWh.</li>
 <li>Rate increase - Users can choose the explicit rate increase increment in cents/kWh.</li>
-<li>Fit to Limits - If activated, a rate decrease per time is calculated, starting at initial Selling Rate and ending at final Selling Rate while updating the rate at each Update Interval Bidding behavior is derived from a linear fitted curve of a buying rate between initial_buying_rate and final_buying_rate and a selling rate between initial_selling_rate and final_selling_rate within the bidding interval. If activated: energy_rate_increase = (final_buying_rate - initial_buying_rate) / max(int((slot_length / update_interval) -1), 1) energy_rate_decrease_per_update = (initial_selling_rate - final_selling_rate) / max(int((slot_length / update_interval) -1), 1)</li>
+<li>Fit to Limits - If activated, a rate decrease per time is calculated, starting at initial Selling Rate and ending at final Selling Rate while updating the rate at each Update Interval Bidding behaviour is derived from a linear fitted curve of a buying rate between initial_buying_rate and final_buying_rate and a selling rate between initial_selling_rate and final_selling_rate within the bidding interval. If activated: energy_rate_increase = (final_buying_rate - initial_buying_rate) / max(int((slot_length / update_interval) -1), 1) energy_rate_decrease_per_update = (initial_selling_rate - final_selling_rate) / max(int((slot_length / update_interval) -1), 1)</li>
 <li>Update interval - Users can choose the frequency at which the rate is updated.</li>
 <li>Capacity based method - If activated, energy will be sold at lower prices during high state of charge - SOC (when the battery has more energy stored) and at higher prices during low SOC (when the battery can afford to sell its stored energy for less). If chosen, the offer price for the storage is calculated according to:</li>
 </ol>
 <pre class="codehilite"><code>offer_rate = initial_selling_rate - ((initial_selling_rate - final_selling_rate)\*soc/100)
 </code></pre>
 
-<p>As an example, considering an initial_selling_rate of 30 cents/kWh and a final_selling_rate of 20 cents/kWh, a storage with an SOC of 1% would sell its energy at 29.9 cents/kWh, and a battery at 100% SOC would sell its energy at 20 cents/kWh.
-The storage can trade energy based on a capacity dependent sell price (see this page for more information).</p>
-<p><em>Note: For the time being, the battery component has a 100% electric-to-electric efficiency by default. Changing this characteristic is not possible at the moment but it will be possible in the near future. Users are welcome to add additional features to our open source code base on GitHub.</em></p>
+<p>As an example, considering an initial_selling_rate of 30 cents/kWh and a final_selling_rate of 20 cents/kWh, a storage with an SOC of 1% would sell its energy at 29.9 cents/kWh, and a battery at 100% SOC would sell its energy at 20 cents/kWh.</p>
+<p><em>Note: The current default setting of  the battery component is 100% energy conversion efficiency.  It is not possible to change this setting at the moment but it may be in the future versions of the software. Interested contributors may propose such additions to our open source code on <a href="https://github.com/gridsingularity/gsy-e">GitHub</a>.</em></p>
 <p><img alt="alt_text" src="../img/battery-advanced.png" /></p>
-<p><strong><em>Figure 2.9</em></strong>. <em>Advanced Configuration options of a Battery.</em></p>
+<p><strong><em>Figure 2.12</em></strong>. <em>Battery (Storage) Advanced Configuration Options</em></p>
 <h2 id="storage-behaviour-in-local-energy-markets">Storage Behaviour in Local Energy Markets<a class="headerlink" href="#storage-behaviour-in-local-energy-markets" title="Permanent link">&para;</a></h2>
-<p>In general, all bids and offers follow the physical constraint of the set <code>max_abs_battery_power_kW value</code>. The accumulated energy per market slot cannot exceed this power value times the length of the market slot. Energy sold and bought cancel each other out, meaning that if 2kWh are both sold and bought in the same market slot, the relative power remains 0kW.</p>
+<p>In general, all bids and offers follow the physical constraint of the set <code>max_abs_battery_power_kW value</code>. The accumulated energy per market slot cannot exceed this power value times the length of the market slot, in hours. Energy sold and bought cancel each other out, meaning that if 2kWh are both sold and bought in the same market slot, the relative power remains 0kW.</p>
 <p>For the buying rate increase and selling rate decrease behaviour, please see the <a href="../default-trading-strategy/">Trading Strategies page</a>.</p>
-<p><strong>Buying Energy in <a href="../one-sided-pay-as-offer/">One-Sided Market</a></strong></p>
+<p><strong>Buying energy in the <a href="../one-sided-pay-as-offer/">One-Sided Market</a></strong></p>
 <p>On each tick, the storage scans the connected market for affordable offers* if there is storage space to be filled (if the current SOC is lower than 100%). Affordable offers are offers that have a price lower or equal to the current acceptable energy rate. The acceptable energy rate changes during a market slot depending on the initial_buying_rate, final_buying_rate, energy_rate_decrease_per_update and update_interval setting. Once an offer is found, it is either fully or partially accepted, depending on the demand. The storage always seeks 100% SOC when buying energy.</p>
-<p><strong>Buying Energy in <a href="../two-sided-pay-as-bid/">Two-Sided Market</a></strong></p>
+<p><strong>Buying energy in the <a href="../two-sided-pay-as-bid/">Two-Sided Market</a></strong></p>
 <p>On each tick, the storage either places a bid for the quantity of energy it needs to reach 100% SOC or updates the price of an existing bid in the market where the bid rate depends on the initial_buying_rate, final_buying_rate, energy_rate_decrease_per_update and update_interval setting.</p>
-<p><strong>Selling Energy</strong></p>
+<p><strong>Selling energy</strong></p>
 <p>At the beginning of each market slot, the storage places an offer for all the energy it has stored (not including the energy that is needed to keep the storage at least at min_allowed_soc). This offer is updated at each update_interval pursuant to the rate decrease settings. This mechanism applies in both one and two-sided market types. Consequently, it is possible for the storage to have both an offer and a bid placed in the same market.</p>
                 
                   

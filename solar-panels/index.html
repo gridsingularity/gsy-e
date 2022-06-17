@@ -618,8 +618,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../summary/" title="Summary" class="md-nav__link">
-      Summary
+    <a href="../aggregate-market-summary/" title="Aggregate Market Summary" class="md-nav__link">
+      Aggregate Market Summary
     </a>
   </li>
 
@@ -656,6 +656,18 @@
   <li class="md-nav__item">
     <a href="../results-download/" title="Results Download" class="md-nav__link">
       Results Download
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../duplicating-simulations" title="Duplicating simulations" class="md-nav__link">
+      Duplicating simulations
     </a>
   </li>
 
@@ -738,8 +750,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../vm-installation-instructions/" title="Virtual Machine Installation Instructions" class="md-nav__link">
-      Virtual Machine Installation Instructions
+    <a href="../vm-installation-instructions/" title="Windows Installation Instructions" class="md-nav__link">
+      Windows Installation Instructions
     </a>
   </li>
 
@@ -1945,28 +1957,54 @@
                 
                   <h1>Solar Panels (PVs)</h1>
                 
-                <p>A photovoltaic module (PV) is an energy asset that converts solar irradiation into electricity. In our software, each PV component can represent a single panel, array of panels or an entire Solar park. They can be added to homes or added to a community on their own, with the electricity they produce available for self consumption by the asset owners, sold to another member of the community, sold back to the grid, or stored in a battery for use at a later time, depending on what options are available to the owner. In the Singularity Map, template PV generation profiles from different cities are available to users.  These templates were generated using data from <a href="https://energydatamap.com/">Energy Data Map</a> and users can choose the PV generation profiles from the options available by selecting the option that is closest to the area they are building their community in, in terms of geography and weather profile. This asset option can be altered to represent everything from a single solar panel to an entire Solar park by changing the panel count in the advanced settings. Users can either add template PV profiles to their homes or communities or they can upload their own PV data by using the ‘override profile’ section in the PV advanced settings, after initially selecting a template PV.</p>
+                <p>A photovoltaic (PV) module is an energy asset that converts solar irradiation into electricity. In our software, each PV component already includes the DC to AC conversion, and can represent a single module, array of modules or an entire solar park (users can select the total capacity in the advanced PV settings). They can be added to homes or a community. PVs produce electricity to be self-consumed by the asset owners, sold to another member of the community, sold back to the grid, or stored in a battery for use at a later time, depending on what options are available to the owner. In the Singularity Map, the “Custom PV” tool allows users to quickly simulate a PV generation at a specific location and orientation. This tool uses the backend code of the <a href="https://energydatamap.com/">Energy Data Map</a> provided by <a href="https://www.rebase.energy/">rebase.energy</a>. Additionally template PV generation profiles from different cities are available to users (also generated using data from the <a href="https://energydatamap.com/">Energy Data Map</a> based on the selected geographical location and weather profile). Users can either add template PV profiles to their homes or communities or they can upload their own PV data by using the ‘override profile’ section in the PV advanced settings, after initially selecting a template PV.</p>
 <p><img alt="alt_text" src="../img/PV-options.png" /></p>
-<p><strong><em>Figure 2.6</em></strong>. <em>The 6 different PV options available to users in the express mode.</em></p>
+<p><strong><em>Figure 2.8</em></strong>. <em>Express Mode PV Options</em></p>
 <h2 id="asset-configuration-options">Asset Configuration Options<a class="headerlink" href="#asset-configuration-options" title="Permanent link">&para;</a></h2>
 <p><strong><em>Express Mode</em></strong></p>
 <ol>
 <li>Name - Must be unique</li>
-<li>Geo-tag - This automatically loads for the location a user selects</li>
+<li>Geo-tag - This automatically uploads the location a user selects</li>
 </ol>
 <p><strong><em>Advanced Mode</em></strong></p>
 <ol>
-<li>Panel count - Users can change the amount of solar panels you want to include in this asset. In this case, 1 panel has a power of 250W.</li>
-<li>Solar Profile - Users can choose a solar profile template of either sunny, partially cloudy, cloudy, Gaussian, or upload their own custom generation profile.</li>
-<li>Override Profile -  Users can upload a custom solar profile by providing a <a href="./">csv file</a>.</li>
-<li>Initial selling rate - Users can choose the initial (and maximum) rate that the PV offers at the beginning of each market slot in cents/kWh. Select the Market Maker rate or create your own custom rate by selecting ‘user input’.</li>
+<li>
+<p>Capacity and Profile</p>
+<ol>
+<li>Capacity - Total kW capacity of the PV system</li>
+<li>Solar Profile - Users can choose one of the following options:<ol>
+<li>Local generation profile - This is the default setting and represents the PV production based on asset location,  derived by connecting to the <a href="https://energydatamap.com/">Energy Data Map</a> API provided by <a href="https://www.rebase.energy/">rebase.energy</a>.</li>
+<li>Sunny, partially cloudy, cloudy - Template profile representing one of the 3 different weather types (1 day profile).</li>
+<li>Gaussian - PV profile where the maximum generation value is the defined PV capacity.</li>
+<li>Upload their own custom generation profile by providing a <a href="../data-requirements/">csv file</a>.</li>
+</ol>
+</li>
+</ol>
+</li>
+<li>
+<p>Trading Strategy</p>
+<ol>
+<li>Initial selling rate - Users can choose the initial (and maximum) rate that the PV offers at the beginning of each market slot in cents/kWh. Select the <a href="../grid-market-settings/">Market Maker</a> rate or create your own custom rate by selecting ‘user input’.</li>
 <li>Final selling rate - Users can choose the final rate that the PV offers at the end of each market slot in cents/kWh.</li>
 <li>Rate decrease - Users can enter a value for the explicit rate decrease increment in cents/kWh.</li>
 <li>Fit to limits - If activated, a rate decrease per time is calculated, starting at Initial Selling Rate and ending at final Selling Rate, while updating the rate at each Update Interval. Users can derive <a href="../default-trading-strategy/">bidding behaviour</a> from a linear fitted curve of a selling rate ranging from initial_selling_rate to final_selling_rate within the bidding interval. If activated, energy_rate_decrease_per_update = (initial_selling_rate - final_selling_rate) / max(int((slot_length / update_interval) -1), 1)</li>
 <li>Update interval - Choose the frequency at which the rate is updated.</li>
 </ol>
-<p><img alt="alt_text" src="../img/PV-advanced.png" /></p>
-<p><strong><em>Figure 2.7</em></strong>. <em>Advanced Configuration options of a Solar Panel.</em></p>
+</li>
+<li>
+<p>Orientation - If the Local Generation Profile is selected as a Solar Profile, the parameters describing the orientation of the solar panels can be set. There are 2 options:</p>
+<ol>
+<li>Basic: User select one of the 3 options (Flat, Tilted or Facade)</li>
+<li>Advanced: User sets the tilt and azimuth in degrees</li>
+</ol>
+</li>
+</ol>
+<p><img alt="alt_text" src="../img/PV-basic.png" style="height:500px;width:300px" /></p>
+<p><strong><em>Figure 2.9</em></strong>. <em>Selection of PV orientation</em></p>
+<p><img alt="alt_text" src="../img/PV-advanced1.png" />
+<img alt="alt_text" src="../img/PV-advanced2.png" style="height:500px;width:300px" /></p>
+<p><strong><em>Figure 2.10</em></strong>. <em>PV Advanced Configuration Options</em></p>
+<p>The integration of the Energy Data Map API with the Grid Singularity Exchange (Custom PV tool feature) was designed and developed in the scope of the EU-supported <a href="https://gridsingularity.medium.com/grid-singularity-and-rebase-energy-awarded-2021-ai4cities-grant-4e0aa1cf3240">AI4Cities</a> project.</p>
                 
                   
                 

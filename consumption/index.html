@@ -618,8 +618,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../summary/" title="Summary" class="md-nav__link">
-      Summary
+    <a href="../aggregate-market-summary/" title="Aggregate Market Summary" class="md-nav__link">
+      Aggregate Market Summary
     </a>
   </li>
 
@@ -656,6 +656,18 @@
   <li class="md-nav__item">
     <a href="../results-download/" title="Results Download" class="md-nav__link">
       Results Download
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../duplicating-simulations" title="Duplicating simulations" class="md-nav__link">
+      Duplicating simulations
     </a>
   </li>
 
@@ -738,8 +750,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../vm-installation-instructions/" title="Virtual Machine Installation Instructions" class="md-nav__link">
-      Virtual Machine Installation Instructions
+    <a href="../vm-installation-instructions/" title="Windows Installation Instructions" class="md-nav__link">
+      Windows Installation Instructions
     </a>
   </li>
 
@@ -1945,12 +1957,12 @@
                 
                   <h1>Consumption (Load Profiles)</h1>
                 
-                <p>The load is an energy asset that consumes energy over time. It is possible to use a single load to represent an entire building’s consumption, as well as to configure multiple loads to represent different assets within a building (e.g. washing machine, air-conditioner, etc.).. Users are provided with template consumption load profiles from which they can choose those that are most suitable for the homes in their communities. The template consumption profiles are modeled using data from <a href="https://www.loadprofilegenerator.de/">Load Profile Generator</a>. Users who want to upload their own consumption profile data can do so in the ‘upload profile’ section in the PV advanced settings, after initially selecting a template consumption profile.</p>
+                <p>The load is an energy asset that consumes energy over time. It is possible to use a single load to represent an entire building’s consumption, as well as to configure multiple loads to represent different assets within a building (e.g. washing machine, air-conditioner, etc.).. Users are provided with template consumption load profiles from which they can choose those that are most suitable for the homes in their communities. The template consumption profiles are modelled using data from <a href="https://www.loadprofilegenerator.de/">Load Profile Generator</a>. Users who want to upload their own consumption profile data can do so in the ‘upload profile’ section in the PV advanced settings, after initially selecting a template consumption profile.</p>
 <h2 id="asset-configuration-options">Asset Configuration Options<a class="headerlink" href="#asset-configuration-options" title="Permanent link">&para;</a></h2>
 <p><strong><em>Express Mode</em></strong></p>
 <ol>
 <li>Name - Must be unique</li>
-<li>Geo-tag - This automatically loads for the location a user selects</li>
+<li>Geo-tag - This automatically uploads the location a user selects</li>
 </ol>
 <p><strong><em>Advanced Mode</em></strong></p>
 <ol>
@@ -1964,10 +1976,10 @@
 3. Initial buying rate - Users can choose the initial energy buying rate for the beginning of each market slot in cents/kWh.
 4. Final buying rate: Users can choose the final energy buying rate at the end of each market slot in cents/kWh. Users can enter a custom value or choose the Market Maker rate.
 5. Rate increase - Explicit rate increase increment per update interval in cents/kWh
-6. Fit to limits: If activated, a rate decrease per time is calculated, starting at initial buying rate and ending at final buying rate while updating the rate at each Update Interval. The bidding behavior is derived from a linear fitted curve of a buying rate between initial_buying_rate and final_buying_rate within the bidding interval. If activated, energy rate_increase = (final_buying_rate - initial_buying_rate) / max(int((slot_length / update_interval) -1), 1)
+6. Fit to limits: If activated, a rate decrease per time is calculated, starting at initial buying rate and ending at final buying rate while updating the rate at each Update Interval. The bidding behaviour is derived from a linear fitted curve of a buying rate between initial_buying_rate and final_buying_rate within the bidding interval. If activated, energy rate_increase = (final_buying_rate - initial_buying_rate) / max(int((slot_length / update_interval) -1), 1)
 7.Update interval - Users can choose the frequency at which the rate is updated.</p>
 <p><img alt="alt_text" src="../img/consumption-advanced.png" /></p>
-<p><strong><em>Figure 2.8</em></strong>. <em>Advanced Configuration Options of a Consumption Load Profile.</em></p>
+<p><strong><em>Figure 2.11</em></strong>. <em>Consumption Load Profile Advanced Configuration Options</em></p>
                 
                   
                 

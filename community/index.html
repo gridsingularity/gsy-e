@@ -585,8 +585,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../summary/" title="Summary" class="md-nav__link">
-      Summary
+    <a href="../aggregate-market-summary/" title="Aggregate Market Summary" class="md-nav__link">
+      Aggregate Market Summary
     </a>
   </li>
 
@@ -623,6 +623,18 @@
   <li class="md-nav__item">
     <a href="../results-download/" title="Results Download" class="md-nav__link">
       Results Download
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../duplicating-simulations" title="Duplicating simulations" class="md-nav__link">
+      Duplicating simulations
     </a>
   </li>
 
@@ -705,8 +717,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../vm-installation-instructions/" title="Virtual Machine Installation Instructions" class="md-nav__link">
-      Virtual Machine Installation Instructions
+    <a href="../vm-installation-instructions/" title="Windows Installation Instructions" class="md-nav__link">
+      Windows Installation Instructions
     </a>
   </li>
 
@@ -1883,7 +1895,7 @@
                 
                   <h1>Build a community</h1>
                 
-                <p>The Singularity Map is an interactive Grid Singularity exchange simulation platform where users can model and simulate digital twins (digital representations) of their communities. Users add household (or buildings) energy assets such as, consumption profiles, solar panels and or storages (batteries), which are represented by trading agents, trading energy according to the user preferences. The purpose of the simulation is to configure and optimise the local energy market structure digitally before bringing the energy communities to reality through a physical deployment.</p>
+                <p>The Singularity Map is an interactive Grid Singularity exchange simulation platform where users can model and simulate digital twins (digital representations) of their communities. Users add household (or buildings) energy assets such as, consumption profiles, solar panels (PVs), and / or storages (batteries), which are represented by trading agents, trading energy according to  user preferences. The purpose of the simulation is to configure and optimise the local energy market structure digitally before bringing the energy communities to reality through a physical deployment.</p>
 <p><img alt="alt_text" src="../img/community.png" /></p>
 <p><strong><em>Figure 2.1</em></strong>. <em>The Singularity Map - Grid Singularity Exchange web-based interface at <a href="https://gridsingularity.com/singularity-map">https://map.gridsingularity.com/singularity-map</a>.</em></p>
 <p>The map includes a search bar in the top left corner, a list of simulations in the extendable panel below the search bar, user icons on the right hand side of the screen (explained below) and coloured dots representing different simulations on the map.</p>
@@ -1892,17 +1904,26 @@
 <p><img alt="alt_text" src="../img/icon-2.png" /> These icons allow users to zoom in and out of the map.</p>
 <p><img alt="alt_text" src="../img/icon-3.png" /> This icon allows access to the user's location.</p>
 <p><img alt="alt_text" src="../img/icon-4.png" /> These icons allow users a change of view between birds eye view (straight down/2D) and 3D.</p>
-<p><strong>Colors</strong></p>
-<p>The coloured dots on the map represent energy community simulations.</p>
+<p><img alt="alt_text" src="../img/icon-7.png" /> This icon allows the user to see their assets in a list view and to click on the items in the list in order to navigate the map and results views</p>
+<p><img alt="alt_text" src="../img/icon-6.png" /> This icon allows the user to request upgrading their simulation to the Canary Network</p>
+<p><strong>Legend</strong></p>
+<p><img alt="alt_text" src="../img/community1.png" /></p>
+<p><strong><em>Figure 2.2</em></strong>. <em>Legend explaining colouring for the energy import / export</em></p>
+<p>The coloured dots on the map represent energy community simulations. A legend on the top right</p>
 <p>🟢 Green dots are communities that have a net export of energy.</p>
 <p>🔴 Red dots are communities that have a net import of energy.</p>
 <p>🔵 Blue dots are communities that have a neutral energy balance (neither net import/export) or haven’t been simulated yet.</p>
-<p>To build a community, the user must take the following steps:</p>
+<p><strong>Profile configuration</strong></p>
+<p>By clicking on the icon in the top right corner next to “Run Simulation”, users can see their profile, edit their password, and change their profile picture by clicking on the image and uploading a file from their computer (as shown in the picture below).</p>
+<p><img alt="alt_text" src="../img/icon-8.png" /></p>
+<p><strong><em>Figure2.3.</em></strong> <em>User profile in the Singularity Map</em></p>
+<p><strong><em>Building a Community to simulate</em></strong></p>
+<p>To build a community, the user should take the following steps:</p>
 <ol>
-<li>
-<p>Choose location - The first step is to choose the location for the community. Users can find their location by manually navigating the map or by typing their location in the search bar.
-   <img alt="alt_text" src="../img/search-bar.png" /></p>
-</li>
+<li>Choose location - The first step is to choose the location for the community. Users can find their location by manually navigating the map or by typing their location in the search bar.</li>
+</ol>
+<p><img alt="alt_text" src="../img/search-bar.png" /></p>
+<ol>
 <li>
 <p>Add homes (or other buildings) and energy assets - Once a location has been selected, users can start building their community by adding homes and energy assets. A community must have at least two homes before it can be saved and local energy trading simulated.</p>
 </li>
@@ -1910,7 +1931,7 @@
 <p>Log in or register an account.</p>
 </li>
 <li>
-<p>Name the community and save it.</p>
+<p>Name the community, set the simulation period and save it.</p>
 </li>
 <li>
 <p>Run the simulation and view the results.</p>
@@ -1918,10 +1939,10 @@
 </ol>
 <p>A guided onboarding of this process launches automatically on the top right hand side of the screen for new users.</p>
 <p><img alt="alt_text" src="../img/onboarding.png" /></p>
-<p><strong><em>Figure 2.2</em></strong>: <em>Guided Onboarding Feature</em></p>
+<p><strong><em>Figure 2.4</em></strong>: <em>Guided Onboarding Feature</em></p>
 <p>Users can show/hide this feature by clicking on the <img alt="alt_text" src="../img/icon-5.png" /> icon at the top of the icon list on the right hand side of the screen. This icon and feature only appear after a user has chosen their location and selected the first button to start building their community.</p>
 <p><img alt="alt_text" src="../img/first-button.png" /></p>
-<p><strong><em>Figure 2.3</em></strong>: <em>The first button a user selects to start building their community.</em></p>
+<p><strong><em>Figure 2.5</em></strong>: <em>The first button a user selects to start building their community.</em></p>
                 
                   
                 

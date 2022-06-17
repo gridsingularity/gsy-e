@@ -618,8 +618,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../summary/" title="Summary" class="md-nav__link">
-      Summary
+    <a href="../aggregate-market-summary/" title="Aggregate Market Summary" class="md-nav__link">
+      Aggregate Market Summary
     </a>
   </li>
 
@@ -656,6 +656,18 @@
   <li class="md-nav__item">
     <a href="../results-download/" title="Results Download" class="md-nav__link">
       Results Download
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../duplicating-simulations" title="Duplicating simulations" class="md-nav__link">
+      Duplicating simulations
     </a>
   </li>
 
@@ -738,8 +750,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../vm-installation-instructions/" title="Virtual Machine Installation Instructions" class="md-nav__link">
-      Virtual Machine Installation Instructions
+    <a href="../vm-installation-instructions/" title="Windows Installation Instructions" class="md-nav__link">
+      Windows Installation Instructions
     </a>
   </li>
 
@@ -1945,28 +1957,28 @@
                 
                   <h1>Home</h1>
                 
-                <p>Users can add homes/buildings to their community by selecting the custom home or one of the template home types. The custom home represents an empty home where the user has to manually add all assets inside, while the template home types have various other assets already included. The number of assets included in the template homes can be seen in the individual listings. All template homes have at least one consumption profile attached by default, with some template homes having generation profiles from PVs and batteries. For example, the retired couple's home has 1 asset attached already, as shown in the Figure below, which is the retired couple's consumption profile. The 6 apartments building+PV home has 7 assets included, which includes consumption profiles representing a 6 apartment building and a generation profile from a  PV. To see the exact assets included in a template home, a user must add the home to their community.</p>
-<p><img alt="alt_text" src="../img/home-types.png" /></p>
-<p><strong><em>Figure 2.4</em></strong>. <em>A selection of the different template home types available.</em></p>
-<p>A home functions as a market, inside of which multiple assets can trade with each other or trade together as a single entity. The custom home has no assets included initially and so it is more suited to users who would prefer to configure the details of the energy assets added to their home or upload their own energy data. Building a community using custom homes gives users a greater degree of control over the details and more customised results.
-The template homes are suitable for users who are interested in quickly building a prototype of an energy community using template data to represent the homes and assets. They can also have assets added, removed and edited within them, which can show users the impact that different configurations can have on results, however this is not necessary and results of communities built with template homes provide value to users interested in template data representing homes and understanding the impact of changes in asset configuration.</p>
-<p>The template homes have been created using data from Load Profile Generator and Energy Data Map to represent the typical consumption and generation behaviour for different types of homes in an active energy community.</p>
+                <p>Users can add homes/buildings to their community by selecting the custom home or one of the template home types. For the custom home the user has to manually add all assets, while the template home types have diverse assets included. The number of assets included in template homes can be seen in the individual listings. All template homes have at least one consumption profile by default, while some others also have PV generation profiles or batteries. For example, the template of a retired couple's home has 1 asset included, as shown in the Figure below. The 6-apartments building + PV template has 7 assets, including consumption profiles representing a 6-apartment building and a PV generation profile.</p>
+<p><img alt="alt_text" src="../img/home-types.png" style="height:500px;width:300px" /></p>
+<p><strong><em>Figure 2.6</em></strong>. <em>A selection of template home types</em></p>
+<p>A home functions as a market, where multiple assets can trade with each other or trade together as a single entity. The custom home has no assets included initially and it is suited for users who would prefer to configure the  energy assets manually or upload their own energy data.
+The template homes are suitable for users who are interested in quickly building a prototype of an energy community using template data to represent the homes and assets. They can still add, remove or edit assets to assess the impact of different configurations.</p>
+<p>The template homes have been created using data from <a href="https://www.loadprofilegenerator.de/">Load Profile Generator</a> and <a href="https://energydatamap.com/">Energy Data Map</a> to represent the typical consumption and generation behaviour for different types of homes in an active energy community.</p>
 <h2 id="configuration-options">Configuration options<a class="headerlink" href="#configuration-options" title="Permanent link">&para;</a></h2>
-<p>The Homes can be configured using the express and advanced mode:</p>
+<p>Homes can be configured using the express and advanced mode:</p>
 <p><strong>Express Mode</strong></p>
 <ol>
 <li>Name - Must be unique</li>
-<li>Geo-tag - This automatically loads for the location a user selects</li>
+<li>Geo-tag - This automatically uploads the location a user selects</li>
 </ol>
 <p><strong>Advanced Mode</strong></p>
 <ol>
 <li>Exchange Information; Users can choose between different <a href="../market-types/">market types</a> where the market can clear bids and offers. At the moment only the spot market is available.</li>
 <li>Grid Fees - Users can choose to switch this on ✅ or off 🆇. If switched on, users can enter a <a href="../constant-fees/">constant grid fee</a> value expressed in cents/kWh. This value will then function as a fee that will be applied to each trade that passes through or is cleared in this market.</li>
 <li>Transformer Capacity -  Users can choose to switch this on ✅ or off 🆇. If switched on, users can choose import and export limits of the transformer in kVA. In the current implementation these limits are purely visual indicators and do not limit actual import/export of the market.</li>
-<li>Energy Peak Percentage - The energy peak imports/exports is the maximum value of the aggregate imports/exports of each asset inside a market. The user has the possibility to set a baseline_peak_energy_import_kWh and a baseline_peak_energy_export_kWh that they may have gotten from another simulation in order to calculate the energy peak percentage. The peak percentage is  a tool used to measure how much the peak imports or exports have changed between a defined baseline and the current simulation. Users can choose to switch this on ✅ or off 🆇. If switched on, users can choose baseline peak import and export. These two values will be used for the calculation of the peak percentage.</li>
+<li>Energy Peak Percentage - The energy peak imports/exports is the maximum value of the aggregate imports/exports of each asset inside a market. The user has the possibility to set a baseline_peak_energy_import_kWh and a baseline_peak_energy_export_kWh that they may have gotten from another simulation in order to calculate the energy peak percentage. The peak percentage is a tool used to measure how much the peak imports or exports have changed between a defined baseline and the current simulation. Users can choose to switch this on ✅ or off 🆇. If switched on, users can choose baseline peak import and export. These two values will be used for the calculation of the <a href="../trade-profile/">peak percentage</a>.</li>
 </ol>
 <p><img alt="alt_text" src="../img/home-advanced.png" /></p>
-<p><strong><em>Figure 2.5</em></strong>. <em>Advanced Home Configuration Options</em></p>
+<p><strong><em>Figure 2.7</em></strong>. <em>Advanced Home Configuration Options</em></p>
                 
                   
                 
