@@ -107,10 +107,40 @@ class CommunityData:
 @dataclass
 class HomeEnergyBills:
     """Represents home energy bills."""
-    base_energy_bill: float
-    gsy_energy_bill: float
-    savings_euro: float
-    savings_percent: float
+    base_energy_bill: float = 0.
+    gsy_energy_bill: float = 0.
+    bought_from_community: float = 0.
+    spent_to_community: float = 0.
+    bought_from_grid: float = 0.
+    spent_to_grid: float = 0.
+    sold_to_grid: float = 0.
+    earned_from_grid: float = 0.
+
+    def set_bought_from_community(self, energy_kWh, energy_rate):
+        self.bought_from_community += energy_kWh
+        self.spent_to_community += energy_kWh * energy_rate
+        self.gsy_energy_bill += energy_kWh * energy_rate
+
+    def set_bought_from_grid(self, energy_kWh, energy_rate):
+        self.bought_from_grid += energy_kWh
+        self.spent_to_grid += energy_kWh * energy_rate
+        self.gsy_energy_bill += energy_kWh * energy_rate
+
+    def set_sold_to_grid(self, energy_kWh, energy_rate):
+        self.sold_to_grid += energy_kWh
+        self.earned_from_grid += energy_kWh * energy_rate
+        self.gsy_energy_bill -= energy_kWh * energy_rate
+
+    @property
+    def savings_eur(self):
+        return self.base_energy_bill - self.gsy_energy_bill
+
+    @property
+    def savings_percent(self):
+        return (
+            ((self.base_energy_bill - self.gsy_energy_bill) / self.base_energy_bill) * 100.0
+            if self.base_energy_bill else 0.
+        )
 
 
 class SCMManager:
@@ -174,18 +204,23 @@ class SCMManager:
                 market_maker_rate_eur + grid_fees_eur * self._grid_fees_reduction)
         market_maker_rate_normal_fees = market_maker_rate_eur + grid_fees_eur
 
+        home_bill = HomeEnergyBills()
+
         base_energy_bill = (
                 home_data.energy_need_kWh * market_maker_rate_normal_fees -
                 home_data.energy_surplus_kWh * feed_in_tariff_eur)
+        home_bill.base_energy_bill = base_energy_bill
 
         if home_data.allocated_community_energy_kWh > home_data.energy_need_kWh:
             if home_data.energy_surplus_kWh > 0.0:
                 bought_from_community_kWh = (
                     self.community_data.energy_bought_from_community_kWh -
                     home_data.energy_bought_from_community_kWh)
-                gsy_energy_bill = -(
-                    bought_from_community_kWh * market_maker_rate_decreased_fees +
-                    self.community_data.energy_sold_to_grid_kWh * feed_in_tariff_eur)
+
+                home_bill.set_bought_from_community(
+                    bought_from_community_kWh, market_maker_rate_decreased_fees)
+                home_bill.set_sold_to_grid(
+                    self.community_data.energy_sold_to_grid_kWh, feed_in_tariff_eur)
 
                 if bought_from_community_kWh > 0.:
                     home_data.create_buy_trade(
@@ -198,16 +233,21 @@ class SCMManager:
                         self.community_data.energy_sold_to_grid_kWh,
                         self.community_data.energy_sold_to_grid_kWh * feed_in_tariff_eur)
             else:
-                gsy_energy_bill = home_data.energy_need_kWh * market_maker_rate_decreased_fees
+                home_bill.set_bought_from_community(
+                    home_data.energy_need_kWh, market_maker_rate_decreased_fees)
                 home_data.create_buy_trade(
                     self._time_slot, DEFAULT_SCM_SELLER_STRING, home_data.energy_need_kWh,
                     home_data.energy_need_kWh * market_maker_rate_decreased_fees
                 )
         else:
-            gsy_energy_bill = (
-                    home_data.allocated_community_energy_kWh * market_maker_rate_decreased_fees +
-                    (home_data.energy_need_kWh - home_data.allocated_community_energy_kWh) *
-                    market_maker_rate_normal_fees)
+
+            home_bill.set_bought_from_community(
+                home_data.allocated_community_energy_kWh, market_maker_rate_decreased_fees)
+
+            energy_from_grid_kWh = (
+                    home_data.energy_need_kWh - home_data.allocated_community_energy_kWh)
+            home_bill.set_bought_from_grid(energy_from_grid_kWh, market_maker_rate_normal_fees)
+
             if home_data.allocated_community_energy_kWh > 0.0:
                 home_data.create_buy_trade(
                     self._time_slot, DEFAULT_SCM_SELLER_STRING,
@@ -215,25 +255,14 @@ class SCMManager:
                     home_data.allocated_community_energy_kWh * market_maker_rate_decreased_fees
                 )
 
-            energy_from_grid_kWh = (
-                    home_data.energy_need_kWh - home_data.allocated_community_energy_kWh)
             if energy_from_grid_kWh > 0.:
                 home_data.create_buy_trade(
                     self._time_slot, DEFAULT_GRID_SELLER_STRING,
                     energy_from_grid_kWh,
-                    energy_from_grid_kWh * market_maker_rate_decreased_fees
+                    energy_from_grid_kWh * market_maker_rate_normal_fees
                 )
 
-        savings_percent = (
-                ((base_energy_bill - gsy_energy_bill) / base_energy_bill) * 100.0
-                if base_energy_bill else 0.
-        )
-
-        self._bills[home_uuid] = HomeEnergyBills(
-            base_energy_bill=base_energy_bill,
-            gsy_energy_bill=gsy_energy_bill,
-            savings_euro=(base_energy_bill - gsy_energy_bill),
-            savings_percent=savings_percent)
+        self._bills[home_uuid] = home_bill
 
     @property
     def community_bills(self):
