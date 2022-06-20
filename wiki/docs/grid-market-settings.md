@@ -1,11 +1,11 @@
-Energy markets are spaces in which energy assets can buy, sell and trade energy. In the Grid Singularity Exchange, as a user builds an energy community, that community by default exists in one market. Its participants include the homes in the community and the grid market, if configured, which mimics the behaviour of a typical energy utility and can be used as a price reference point. Energy can be exchanged between the assets in this market, and this market can contain submarkets. For example, if the energy assets within a home in a community exchange energy (e.g. a solar panel supplying a fridge and a battery, the battery supplying a television…) then this home can be considered a market in and of itself, with trading strategies implemented if the user/asset owner chooses to do so. Energy assets can trade by posting bids and offers in the market(s) in which they exist, the details of which can be configured in the advanced settings of each asset in a community on the Singularity Map. Markets are interconnected by market agents in a hierarchical network, which pass bids and offers between markets until they are matched, following a select market clearing mechanism.
+Energy markets are regulated exchange systems in which energy assets can buy, sell and trade energy. In the Grid Singularity Exchange, as a user builds an energy community, that community by default exists in one market. Its participants include the homes in the community and the grid market, if configured, which mimics the behaviour of a typical energy utility and can be used as a price reference point. Energy can be exchanged between the assets in this market, and this market can contain submarkets. For example, if the energy assets within a home in a community exchange energy (e.g. a solar panel supplying a fridge and a battery, the battery supplying a television…) then this home can be considered a market in and of itself, with trading strategies implemented if the user/asset owner chooses to do so. Energy assets can trade by posting bids and offers in the market(s) in which they exist, the details of which can be configured in the advanced settings of each asset in a community on the Singularity Map. Markets are modelled following a hierarchical structure and are interconnected, allowing bids and offers to pass between markets until they are matched, following a select market clearing mechanism.
 Only one Grid Market can be set per simulation in the User Interface. The grid can be configured to sell an infinite amount of energy and/or to buy an infinite amount of energy, which can simulate a Feed-in Tariff scheme. By connecting through the [Asset API](asset-api-template-script.md), more than one grid market can be configured representing an example of a single energy community supplied by more than one energy retailer.
 
 Users can configure the grid market settings by selecting the black dot on the circle surrounding their energy community on the Singularity Map.
 
 ![alt_text](img/market-settings-map.png)
 
-***Figure 2.12***. *Map view of the grid market settings.*
+***Figure 2.15***. *Map view of the grid market settings.*
 
 
 ##Grid Market Configuration Options
@@ -24,4 +24,4 @@ Users can configure the grid market settings by selecting the black dot on the c
 
 ![alt_text](img/grid-market-settings.png)
 
-***Figure 2.13***. *Advanced Configuration Options of the Grid Market.*
+***Figure 2.16***. *Advanced Configuration Options of the Grid Market.*
