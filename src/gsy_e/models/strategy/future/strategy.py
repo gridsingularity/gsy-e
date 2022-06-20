@@ -47,16 +47,19 @@ class FutureTemplateStrategyBidUpdater(TemplateStrategyBidUpdater):
             return []
         return area.future_markets.market_time_slots
 
+    def time_for_price_update(self, strategy: "BaseStrategy", time_slot: DateTime) -> bool:
+        """Check if the prices of bids/offers should be updated."""
+        return (
+                self._elapsed_seconds(strategy.area)
+                - self.market_slot_added_time_mapping[time_slot] >= (
+                        self.update_interval.seconds * self.update_counter[time_slot]))
+
     def update(self, market: "FutureMarkets", strategy: "BaseStrategy") -> None:
         """Update the price of existing bids to reflect the new rates."""
-        did_update_rates = False
         for time_slot in strategy.area.future_markets.market_time_slots:
             if self.time_for_price_update(strategy, time_slot):
                 if strategy.are_bids_posted(market.id, time_slot):
                     strategy.update_bid_rates(market, self.get_updated_rate(time_slot), time_slot)
-                    did_update_rates = True
-        if did_update_rates:
-            self.increment_update_counter_all_markets(strategy)
 
 
 class FutureTemplateStrategyOfferUpdater(TemplateStrategyOfferUpdater):
@@ -78,17 +81,20 @@ class FutureTemplateStrategyOfferUpdater(TemplateStrategyOfferUpdater):
             return []
         return area.future_markets.market_time_slots
 
+    def time_for_price_update(self, strategy: "BaseStrategy", time_slot: DateTime) -> bool:
+        """Check if the prices of bids/offers should be updated."""
+        return (
+                self._elapsed_seconds(strategy.area)
+                - self.market_slot_added_time_mapping[time_slot] >= (
+                        self.update_interval.seconds * self.update_counter[time_slot]))
+
     def update(self, market: "FutureMarkets", strategy: "BaseStrategy") -> None:
         """Update the price of existing offers to reflect the new rates."""
-        did_update_rates = False
         for time_slot in strategy.area.future_markets.market_time_slots:
             if self.time_for_price_update(strategy, time_slot):
                 if strategy.are_offers_posted(market.id):
                     strategy.update_offer_rates(
                         market, self.get_updated_rate(time_slot), time_slot)
-                    did_update_rates = True
-        if did_update_rates:
-            self.increment_update_counter_all_markets(strategy)
 
 
 class FutureMarketStrategyInterface:
@@ -265,6 +271,9 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
             return
         self._bid_updater.update(strategy.area.future_markets, strategy)
         self._offer_updater.update(strategy.area.future_markets, strategy)
+
+        self._bid_updater.increment_update_counter_all_markets(strategy)
+        self._offer_updater.increment_update_counter_all_markets(strategy)
 
 
 def future_market_strategy_factory(asset_type: AssetType) -> FutureMarketStrategyInterface:
