@@ -32,7 +32,7 @@ setup(
     version=VERSION,
     packages=find_packages(where="src", exclude=["tests"]),
     package_dir={"": "src"},
-    package_data={"gsy_e": ["resources/*.csv"]},
+    package_data={"gsy_e": ["resources/*.csv", "setup/gsy_e_settings.json"]},
     install_requires=REQUIREMENTS,
     entry_points={
         "console_scripts": [

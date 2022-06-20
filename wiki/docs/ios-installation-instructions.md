@@ -57,7 +57,7 @@ git clone "https://github.com/gridsingularity/gsy-e.git"
 cd gsy-e
 ```
 
-###Step 11: Create and initialize gsy-e virtualenv
+###Step 11: Create and initialise gsy-e virtualenv
 
 ```
 brew install npm

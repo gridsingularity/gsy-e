@@ -38,7 +38,7 @@ return market
 
 ####Simulation launch
 
-Once the entire grid architecture is modelled, including energy assets, the user can launch the trading simulation by running a command line including desired setup features:
+Once the entire market architecture is modelled, including energy assets, the user can launch the trading simulation by running a command line including desired setup features:
 
 *   -d, --duration: simulated duration of simulation [default: 1d]
 *   -t, --tick-length: simulated duration of a tick [default: 1s]
@@ -196,8 +196,6 @@ Options:
   --export-path TEXT            Specify a path for the csv export files (default: ~/d3a-simulation)
 
   --enable-bc                   Run simulation on Blockchain
-
-  --compare-alt-pricing         Compare alternative pricing schemes
 
   --start-date DATE             Start date of the Simulation (YYYY-MM-DD)  [default: 2019-09-27]
 

@@ -120,7 +120,6 @@ def launch_simulation_from_rq_job(scenario: bytes, settings: Optional[Dict],
             config.area = scenario
 
         kwargs = {"no_export": True,
-                  "pricing_scheme": 0,
                   "seed": settings.get("random_seed", 0)}
 
         gsy_e.constants.CONNECT_TO_PROFILES_DB = True

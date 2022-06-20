@@ -310,19 +310,6 @@ def change_global_config(**kwargs):
 
 def validate_const_settings_for_simulation():
     """Validate constant settings for simulation."""
-    # If schemes are not compared and an individual scheme is selected
-    # And the market type is not single sided market
-    # This is a wrong configuration and an exception is raised
-    if not ConstSettings.MASettings.AlternativePricing.COMPARE_PRICING_SCHEMES and \
-       ConstSettings.MASettings.MARKET_TYPE != 1 and \
-       ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME != 0:
-        assert False, "Alternate pricing schemes are only usable with an one sided market."
-
-    # If an alternate price is selected on compare schemes
-    # There should be a single sided market
-    if ConstSettings.MASettings.AlternativePricing.COMPARE_PRICING_SCHEMES and \
-       ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME != 0:
-        ConstSettings.MASettings.MARKET_TYPE = 1
 
 
 def round_floats_for_ui(number):

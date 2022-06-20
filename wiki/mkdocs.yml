@@ -28,15 +28,16 @@ nav:
             - 'Bills and traded energy': 'bills-traded-energy.md'
             - 'Self-Sufficiency and Self-Consumption': 'self-sufficiency-self-consumption.md'
             - 'Trade profile': 'trade-profile.md'
-            - 'Summary': 'summary.md'
+            - 'Aggregate Market Summary': 'aggregate-market-summary.md'
             - 'Price': 'price.md'
             - 'Trades': 'trades.md'
             - 'Results Download': 'results-download.md'
+            - 'Duplicating simulations': 'duplicating-simulations'
     - 'Instructions for researchers on backend code':
         - 'Backend Installation Instructions':
             - 'Linux Installation Instructions': 'linux-installation-instructions.md'
             - 'Mac Installation Instructions': 'ios-installation-instructions.md'
-            - 'Virtual Machine Installation Instructions': 'vm-installation-instructions.md'
+            - 'Windows Installation Instructions': 'vm-installation-instructions.md'
             - 'Version Updates': 'version-update.md'
         - 'Backend Simulation Configuration':
             - 'Setup Configuration': 'setup-configuration.md'
