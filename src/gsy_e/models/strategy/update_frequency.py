@@ -90,7 +90,8 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
         self.update_interval = update_interval
         self.update_counter = {}
 
-        # Keeps track of the elapsed seconds at the time of insertion of the slot (relevant to future markets)
+        # Keeps track of the elapsed seconds at the time of insertion of
+        # the slot (relevant to future markets)
         self.market_slot_added_time_mapping: Dict[DateTime: int] = {}
 
         self.number_of_available_updates = 0
