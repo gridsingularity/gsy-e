@@ -231,8 +231,6 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
         return updated_rate
 
     def _elapsed_seconds(self, area: "Area") -> int:
-        # todo: deduct the elapsed time of passed slots in the _time_slot_duration_in_seconds
-        # we may need an _elapsed_seconds_per_slot
         current_tick_number = area.current_tick % (
                 self._time_slot_duration_in_seconds / area.config.tick_length.seconds)
         return current_tick_number * area.config.tick_length.seconds
@@ -310,8 +308,6 @@ class TemplateStrategyOfferUpdater(TemplateStrategyUpdaterBase):
         """Reset the price of all offers based to use their initial rate."""
         for market in self.get_all_markets(strategy.area):
             self.update_counter[market.time_slot] = 0
-            if market.__class__.__name__ == "FutureMarkets":
-                logging.error(f"resetting")
             strategy.update_offer_rates(market, self.get_updated_rate(market.time_slot))
 
     def update(self, market: "OneSidedMarket", strategy: "BaseStrategy") -> None:
