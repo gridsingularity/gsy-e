@@ -231,7 +231,13 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
         updated_rate = self.rate_limit_object(calculated_rate, self.final_rate[time_slot])
         return updated_rate
 
-    def _elapsed_seconds(self, area: "Area") -> int:
+    @staticmethod
+    def _elapsed_seconds(area: "Area") -> int:
+        """Return the elapsed seconds since the very beginning of the simulation."""
+        return area.current_tick * area.config.tick_length.seconds
+
+    def _elapsed_seconds_per_slot(self, area: "Area") -> int:
+        """Return the elapsed seconds since the beginning of the market slot."""
         current_tick_number = area.current_tick % (
                 self._time_slot_duration_in_seconds / area.config.tick_length.seconds)
         return current_tick_number * area.config.tick_length.seconds
@@ -250,7 +256,7 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
 
     def time_for_price_update(self, strategy: "BaseStrategy", time_slot: DateTime) -> bool:
         """Check if the prices of bids/offers should be updated."""
-        return self._elapsed_seconds(strategy.area) >= (
+        return self._elapsed_seconds_per_slot(strategy.area) >= (
             self.update_interval.seconds * self.update_counter[time_slot])
 
     def set_parameters(self, *, initial_rate: float = None, final_rate: float = None,
