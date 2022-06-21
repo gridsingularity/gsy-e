@@ -36,6 +36,7 @@ if TYPE_CHECKING:
     from gsy_e.models.area import Area, AreaBase
     from gsy_e.models.market import MarketBase
     from gsy_e.gsy_e_core.simulation import SimulationProgressInfo
+    from gsy_e.models.area.scm_manager import SCMManager
 
 _NO_VALUE = {
     "min": None,
@@ -309,6 +310,18 @@ class SimulationEndpointBuffer:
 class CoefficientEndpointBuffer(SimulationEndpointBuffer):
     """Calculate the endpoint results for the Coefficient based market."""
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._scm_manager = None
+
+    def update_coefficient_stats(
+            self, area: "AreaBase", simulation_status: str,
+            progress_info: "SimulationProgressInfo", sim_state: Dict,
+            calculate_results: bool, scm_manager: "SCMManager") -> None:
+        self._scm_manager = scm_manager
+        super().update_stats(
+            area, simulation_status, progress_info, sim_state, calculate_results)
+
     def _calculate_and_update_last_market_time_slot(self, area):
         pass
 
@@ -318,9 +331,7 @@ class CoefficientEndpointBuffer(SimulationEndpointBuffer):
         if self.current_market_time_slot_str == "":
             return
 
-        core_stats_dict = {"trades": []}
-        for trade in area.trades:
-            core_stats_dict["trades"].append(trade.serializable_dict())
+        core_stats_dict = {}
 
         if isinstance(area.strategy, CommercialStrategy):
             if isinstance(area.strategy, FinitePowerPlant):
@@ -329,6 +340,8 @@ class CoefficientEndpointBuffer(SimulationEndpointBuffer):
                 if area.parent.current_market is not None:
                     core_stats_dict["energy_rate"] = (
                         area.strategy.energy_rate.get(area.now, None))
+        elif not area.strategy:
+            core_stats_dict.update(self._scm_manager.get_area_results())
         else:
             core_stats_dict.update(area.get_results_dict())
 

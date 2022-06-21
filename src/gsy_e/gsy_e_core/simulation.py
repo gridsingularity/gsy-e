@@ -358,19 +358,6 @@ class SimulationResultsManager:
         """
         assert self._endpoint_buffer is not None
 
-        if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
-            if not self._should_send_results_to_broker:
-                return
-            self._endpoint_buffer.update_stats(
-                area, simulation_status, progress_info, current_state,
-                calculate_results=False)
-
-            results = self._endpoint_buffer.prepare_results_for_publish()
-            if results is None:
-                return
-            self.kafka_connection.publish(results, current_state["simulation_id"])
-            return
-
         if self._should_send_results_to_broker:
             self._endpoint_buffer.update_stats(
                 area, simulation_status, progress_info, current_state,
@@ -402,9 +389,6 @@ class SimulationResultsManager:
 
     @classmethod
     def _update_area_stats(cls, area: "Area", endpoint_buffer: "SimulationEndpointBuffer") -> None:
-        # TODO: Fix in the context of GSYE-258
-        if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
-            return
         for child in area.children:
             cls._update_area_stats(child, endpoint_buffer)
         bills = endpoint_buffer.results_handler.all_ui_results["bills"].get(area.uuid, {})
@@ -419,14 +403,76 @@ class SimulationResultsManager:
 
     def save_csv_results(self, area: "Area") -> None:
         """Update the CSV results on finish, and write the CSV files."""
-        # TODO: Fix with GSYE-258
-        if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
-            return
         if self.export_results_on_finish:
             log.info("Exporting simulation data.")
             self._export.data_to_csv(area, False)
             self._export.area_tree_summary_to_json(self._endpoint_buffer.area_result_dict)
             self._export.export(power_flow=None)
+
+
+class CoefficientSimulationResultsManager(SimulationResultsManager):
+
+    def update_results(
+            self, current_state: dict, progress_info: SimulationProgressInfo,
+            area: "Area", simulation_status: str) -> None:
+        raise NotImplementedError
+
+    @classmethod
+    def _update_area_stats(cls, area: "Area", endpoint_buffer: "SimulationEndpointBuffer") -> None:
+        return
+
+    def save_csv_results(self, area: "Area") -> None:
+        """Update the CSV results on finish, and write the CSV files."""
+        # TODO: fix this
+        return
+        if self.export_results_on_finish:
+            log.info("Exporting simulation data.")
+            self._export.data_to_csv(area, False)
+            self._export.area_tree_summary_to_json(self._endpoint_buffer.area_result_dict)
+            self._export.export(power_flow=None)
+
+    def update_send_coefficient_results(
+            self, current_state: dict, progress_info: SimulationProgressInfo,
+            area: "Area", simulation_status: str, scm_manager: "SCMManager") -> None:
+        """
+        Update the coefficient simulation results.
+        """
+        assert self._endpoint_buffer is not None
+
+        if self._should_send_results_to_broker:
+            self._endpoint_buffer.update_coefficient_stats(
+                area, simulation_status, progress_info, current_state,
+                False, scm_manager)
+            results = self._endpoint_buffer.prepare_results_for_publish()
+            if results is None:
+                return
+            self.kafka_connection.publish(results, current_state["simulation_id"])
+
+        elif (gsy_e.constants.RETAIN_PAST_MARKET_STRATEGIES_STATE or
+              self.export_results_on_finish):
+
+            self._endpoint_buffer.update_stats(
+                area, current_state["sim_status"], progress_info, current_state,
+                calculate_results=True)
+            self._update_area_stats(area, self._endpoint_buffer)
+
+            if self.export_results_on_finish:
+                assert self._export is not None
+                if (area.current_market is not None
+                        and gsy_e.constants.RETAIN_PAST_MARKET_STRATEGIES_STATE):
+                    # for integration tests:
+                    self._export.raw_data_to_json(
+                        area.current_market.time_slot_str,
+                        self._endpoint_buffer.flattened_area_core_stats_dict
+                    )
+
+                self._export.file_stats_endpoint(area)
+
+
+def simulation_results_manager_factory():
+    if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
+        return CoefficientSimulationResultsManager
+    return SimulationResultsManager
 
 
 class SimulationExternalEvents:
@@ -476,7 +522,7 @@ class Simulation:
             config=simulation_config
         )
 
-        self._results = SimulationResultsManager(
+        self._results = simulation_results_manager_factory()(
             export_results_on_finish=not no_export,
             export_path=export_path,
             export_subdir=export_subdir,

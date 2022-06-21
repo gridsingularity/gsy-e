@@ -1,5 +1,5 @@
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from typing import Dict
 from uuid import uuid4
 
@@ -26,6 +26,15 @@ class HomeAfterMeterData:
     energy_need_kWh: float = 0.
     community_production_kWh: float = 0.
     trades = None
+
+    def to_dict(self) -> Dict:
+        output_dict = asdict(self)
+        output_dict.update({
+            "allocated_community_energy_kWh": self.allocated_community_energy_kWh,
+            "energy_bought_from_community_kWh": self.energy_bought_from_community_kWh,
+            "energy_sold_to_grid_kWh": self.energy_sold_to_grid_kWh
+        })
+        return output_dict
 
     def __post_init__(self):
         self.self_consumed_energy_kWh = min(self.consumption_kWh, self.production_kWh)
@@ -103,9 +112,12 @@ class CommunityData:
     energy_bought_from_community_kWh: float = 0.
     energy_sold_to_grid_kWh: float = 0.
 
+    def to_dict(self) -> Dict:
+        return asdict(self)
+
 
 @dataclass
-class HomeEnergyBills:
+class AreaEnergyBills:
     """Represents home energy bills."""
     base_energy_bill: float = 0.
     gsy_energy_bill: float = 0.
@@ -115,6 +127,16 @@ class HomeEnergyBills:
     spent_to_grid: float = 0.
     sold_to_grid: float = 0.
     earned_from_grid: float = 0.
+
+    def to_dict(self) -> Dict:
+        output_dict = asdict(self)
+        output_dict.update({
+            "savings_eur": self.savings_eur,
+            "savings_percent": self.savings_percent,
+            "home_balance_kWh": self.home_balance_kWh,
+            "home_balance_eur": self.home_balance_eur
+        })
+        return output_dict
 
     def set_bought_from_community(self, energy_kWh, energy_rate):
         self.bought_from_community += energy_kWh
@@ -139,8 +161,15 @@ class HomeEnergyBills:
     def savings_percent(self):
         return (
             ((self.base_energy_bill - self.gsy_energy_bill) / self.base_energy_bill) * 100.0
-            if self.base_energy_bill else 0.
-        )
+            if self.base_energy_bill else 0.)
+
+    @property
+    def home_balance_kWh(self):
+        return self.bought_from_grid + self.bought_from_community - self.sold_to_grid
+
+    @property
+    def home_balance_eur(self):
+        return self.spent_to_grid + self.spent_to_community - self.earned_from_grid
 
 
 class SCMManager:
@@ -149,8 +178,9 @@ class SCMManager:
         self._home_data: Dict[str, HomeAfterMeterData] = {}
         self.community_data = CommunityData(community_uuid)
         self._time_slot = time_slot
-        self._bills: Dict[str, HomeEnergyBills] = {}
+        self._bills: Dict[str, AreaEnergyBills] = {}
         self._grid_fees_reduction = 0.28
+        self._community_uuid = community_uuid
 
     def add_home_data(self, home_uuid: str, home_name: str,
                       grid_fees_eur: float, coefficient_percent: float,
@@ -204,7 +234,7 @@ class SCMManager:
                 market_maker_rate_eur + grid_fees_eur * self._grid_fees_reduction)
         market_maker_rate_normal_fees = market_maker_rate_eur + grid_fees_eur
 
-        home_bill = HomeEnergyBills()
+        home_bill = AreaEnergyBills()
 
         base_energy_bill = (
                 home_data.energy_need_kWh * market_maker_rate_normal_fees -
@@ -240,7 +270,6 @@ class SCMManager:
                     home_data.energy_need_kWh * market_maker_rate_decreased_fees
                 )
         else:
-
             home_bill.set_bought_from_community(
                 home_data.allocated_community_energy_kWh, market_maker_rate_decreased_fees)
 
@@ -264,15 +293,30 @@ class SCMManager:
 
         self._bills[home_uuid] = home_bill
 
+    def get_area_results(self, area_uuid):
+        if area_uuid == self._community_uuid:
+            return {
+                "bills": self.community_bills,
+                "after_meter_data": {}
+            }
+
+        if area_uuid not in self._bills:
+            return {"bills": {}, "after_meter_data": {}}
+        return {
+            "bills": self._bills[area_uuid].to_dict(),
+            "after_meter_data": self._home_data[area_uuid].to_dict()
+        }
+
     @property
     def community_bills(self):
         """Calculate bills for the community."""
-        return HomeEnergyBills(
-            base_energy_bill=sum(
-                data.base_energy_bill for data in self._bills.values()),
-            gsy_energy_bill=sum(
-                data.gsy_energy_bill for data in self._bills.values()),
-            savings_euro=sum(
-                data.savings_euro for data in self._bills.values()),
-            savings_percent=sum(
-                data.savings_percent for data in self._bills.values()))
+        member_to_sum = ["base_energy_bill", "gsy_energy_bill", "bought_from_community",
+                         "spent_to_community", "bought_from_grid", "spent_to_grid",
+                         "sold_to_grid", "earned_from_grid"]
+
+        community_bills = AreaEnergyBills()
+        for member in member_to_sum:
+            setattr(community_bills, member,
+                    sum(getattr(home_bill, member) for home_bill in self._bills.values()))
+
+        return asdict(community_bills)
