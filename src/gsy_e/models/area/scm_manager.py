@@ -6,7 +6,7 @@ from uuid import uuid4
 from gsy_framework.data_classes import Trade
 from pendulum import DateTime
 
-from gsy_e.constants import DEFAULT_GRID_SELLER_STRING, DEFAULT_SCM_SELLER_STRING
+from gsy_e.constants import DEFAULT_SCM_GRID_NAME, DEFAULT_SCM_COMMUNITY_NAME
 
 
 @dataclass
@@ -180,27 +180,26 @@ class SCMManager:
 
         if home_data.allocated_community_energy_kWh > home_data.energy_need_kWh:
             if home_data.energy_surplus_kWh > 0.0:
-                bought_from_community_kWh = (
-                    self.community_data.energy_bought_from_community_kWh -
-                    home_data.energy_bought_from_community_kWh)
                 gsy_energy_bill = -(
-                    bought_from_community_kWh * market_maker_rate_decreased_fees +
+                    home_data.energy_bought_from_community_kWh * market_maker_rate_decreased_fees +
                     self.community_data.energy_sold_to_grid_kWh * feed_in_tariff_eur)
 
-                if bought_from_community_kWh > 0.:
+                if home_data.energy_bought_from_community_kWh > 0.:
                     home_data.create_buy_trade(
-                        self._time_slot, DEFAULT_SCM_SELLER_STRING, bought_from_community_kWh,
-                        bought_from_community_kWh * market_maker_rate_decreased_fees
+                        self._time_slot, DEFAULT_SCM_COMMUNITY_NAME,
+                        home_data.energy_bought_from_community_kWh,
+                        (home_data.energy_bought_from_community_kWh *
+                         market_maker_rate_decreased_fees)
                     )
                 if self.community_data.energy_sold_to_grid_kWh > 0.:
                     home_data.create_sell_trade(
-                        self._time_slot, DEFAULT_GRID_SELLER_STRING,
+                        self._time_slot, DEFAULT_SCM_GRID_NAME,
                         self.community_data.energy_sold_to_grid_kWh,
                         self.community_data.energy_sold_to_grid_kWh * feed_in_tariff_eur)
             else:
                 gsy_energy_bill = home_data.energy_need_kWh * market_maker_rate_decreased_fees
                 home_data.create_buy_trade(
-                    self._time_slot, DEFAULT_SCM_SELLER_STRING, home_data.energy_need_kWh,
+                    self._time_slot, DEFAULT_SCM_COMMUNITY_NAME, home_data.energy_need_kWh,
                     home_data.energy_need_kWh * market_maker_rate_decreased_fees
                 )
         else:
@@ -210,7 +209,7 @@ class SCMManager:
                     market_maker_rate_normal_fees)
             if home_data.allocated_community_energy_kWh > 0.0:
                 home_data.create_buy_trade(
-                    self._time_slot, DEFAULT_SCM_SELLER_STRING,
+                    self._time_slot, DEFAULT_SCM_COMMUNITY_NAME,
                     home_data.allocated_community_energy_kWh,
                     home_data.allocated_community_energy_kWh * market_maker_rate_decreased_fees
                 )
@@ -219,7 +218,7 @@ class SCMManager:
                     home_data.energy_need_kWh - home_data.allocated_community_energy_kWh)
             if energy_from_grid_kWh > 0.:
                 home_data.create_buy_trade(
-                    self._time_slot, DEFAULT_GRID_SELLER_STRING,
+                    self._time_slot, DEFAULT_SCM_GRID_NAME,
                     energy_from_grid_kWh,
                     energy_from_grid_kWh * market_maker_rate_decreased_fees
                 )
