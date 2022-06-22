@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.enums import SpotMarketTypeEnum
 
 from gsy_e.models.area import Area
@@ -26,7 +26,7 @@ from gsy_e.models.strategy.storage import StorageStrategy
 
 def get_setup(config):
     ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS = True
-    GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 24
+    ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS = 24
     ConstSettings.MASettings.MARKET_TYPE = SpotMarketTypeEnum.TWO_SIDED.value
 
     area = Area(

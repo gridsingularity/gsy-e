@@ -257,7 +257,8 @@ class ExportAndPlot:
 
     def _export_future_markets_stats(self, area: Area, directory: dir, is_first: bool) -> None:
         """Export bids, offers, trades, statistics csv-files for all settlement markets."""
-        if GlobalConfig.FUTURE_MARKET_DURATION_HOURS <= 0 or not area.future_markets:
+        if (ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS <= 0 or
+                not area.future_markets):
             return
         self._export_area_stats_csv_file(area, directory, AvailableMarketTypes.FUTURE,
                                          is_first)

@@ -20,7 +20,7 @@ from typing import Generator
 from unittest.mock import MagicMock
 
 import pytest
-from gsy_framework.constants_limits import GlobalConfig
+from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Offer, Bid
 from pendulum import datetime, now
 
@@ -36,15 +36,17 @@ CURRENT_TIME_SLOT = datetime(2021, 10, 21, 0, 0)
 @pytest.fixture(name="future_engine")
 def future_engine_fixture() -> Generator[FutureEngine, None, None]:
     """Return FutureAgent object"""
-    original_future_markets_duration = GlobalConfig.FUTURE_MARKET_DURATION_HOURS
-    GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 24
+    original_future_markets_duration = (
+        ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS)
+    ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS = 24
     market_agent = MagicMock(autospec=FutureAgent)
     higher_market = MagicMock(autospec=FutureMarkets)
     lower_market = MagicMock(autospec=FutureMarkets)
     future_engine = FutureEngine(name="test_engine", min_bid_age=1, min_offer_age=1,
                                  owner=market_agent, market_1=higher_market, market_2=lower_market)
     yield future_engine
-    GlobalConfig.FUTURE_MARKET_DURATION_HOURS = original_future_markets_duration
+    ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS = (
+        original_future_markets_duration)
 
 
 class TestFutureEngine:

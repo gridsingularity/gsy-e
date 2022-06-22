@@ -207,13 +207,13 @@ class FutureMarkets(TwoSidedMarket):
     def create_future_markets(self, current_market_time_slot: DateTime,
                               config: "SimulationConfig") -> None:
         """Add sub dicts in order dictionaries for future market slots."""
-        if not GlobalConfig.FUTURE_MARKET_DURATION_HOURS:
+        if not ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS:
             return
         self._create_future_markets(
             config.slot_length,
             current_market_time_slot.add(minutes=config.slot_length.total_minutes()),
             current_market_time_slot.add(
-                hours=GlobalConfig.FUTURE_MARKET_DURATION_HOURS),
+                hours=ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS),
             config)
 
     @lock_market_action
