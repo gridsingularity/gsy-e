@@ -1,12 +1,17 @@
 import logging
 from dataclasses import dataclass
-from typing import Dict
+from math import isclose
+from typing import Dict, TYPE_CHECKING
 from uuid import uuid4
 
+from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Trade
 from pendulum import DateTime
 
 from gsy_e.constants import DEFAULT_SCM_GRID_NAME, DEFAULT_SCM_COMMUNITY_NAME
+
+if TYPE_CHECKING:
+    from gsy_e.models.area import CoefficientArea
 
 
 @dataclass
@@ -115,12 +120,21 @@ class HomeEnergyBills:
 
 class SCMManager:
     """Handle the community manager coefficient trade."""
-    def __init__(self, community_uuid: str, time_slot: DateTime):
+    def __init__(self, area: "CoefficientArea", time_slot: DateTime):
+        self._validate_community(area)
         self._home_data: Dict[str, HomeAfterMeterData] = {}
+        # Community is always the root area in the context of SCM.
+        community_uuid = area.uuid
         self.community_data = CommunityData(community_uuid)
         self._time_slot = time_slot
         self._bills: Dict[str, HomeEnergyBills] = {}
-        self._grid_fees_reduction = 0.28
+        self._grid_fees_reduction = ConstSettings.SCMSettings.GRID_FEES_REDUCTION
+
+    @staticmethod
+    def _validate_community(community_area: "CoefficientArea") -> None:
+        assert isclose(
+            sum(home.coefficient_percent for home in community_area.children), 1.0
+        ), "Coefficients from all homes should sum up to 1."
 
     def add_home_data(self, home_uuid: str, home_name: str,
                       grid_fees_eur: float, coefficient_percent: float,
