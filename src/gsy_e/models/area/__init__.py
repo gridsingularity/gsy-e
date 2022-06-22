@@ -258,17 +258,17 @@ class CoefficientArea(AreaBase):
                  grid_fee_percentage: float = None,
                  grid_fee_constant: float = None,
                  coefficient_percent: float = 0.0,
-                 market_maker_rate_eur: float = (
+                 market_maker_rate: float = (
                          ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE / 100.),
-                 feed_in_tariff_eur: float = GlobalConfig.FEED_IN_TARIFF / 100.,
+                 feed_in_tariff: float = GlobalConfig.FEED_IN_TARIFF / 100.,
                  trade_rate: float = 0.0
                  ):
         # pylint: disable=too-many-arguments
         super().__init__(name, children, uuid, strategy, config, grid_fee_percentage,
                          grid_fee_constant)
         self._coefficient_percent = coefficient_percent
-        self._market_maker_rate_eur = market_maker_rate_eur
-        self._feed_in_tariff_eur = feed_in_tariff_eur
+        self._market_maker_rate = market_maker_rate
+        self._feed_in_tariff = feed_in_tariff
         self._trade_rate = trade_rate
         self.past_market_time_slot = None
 
@@ -293,9 +293,7 @@ class CoefficientArea(AreaBase):
             child.cycle_coefficients_trading(current_time_slot)
 
     def _is_home_area(self):
-        return self.children and all(
-            isinstance(child.strategy, SCMStrategy)
-            for child in self.children)
+        return self.children and all(child.strategy for child in self.children)
 
     def _calculate_home_after_meter_data(
             self, current_time_slot: DateTime, scm_manager: "SCMManager") -> None:
@@ -305,7 +303,7 @@ class CoefficientArea(AreaBase):
                               for child in self.children)
         scm_manager.add_home_data(self.uuid, self.name,
                                   self.grid_fee_constant, self._coefficient_percent,
-                                  self._market_maker_rate_eur, self._feed_in_tariff_eur,
+                                  self._market_maker_rate, self._feed_in_tariff,
                                   production_kWh, consumption_kWh)
 
     def calculate_home_after_meter_data(
