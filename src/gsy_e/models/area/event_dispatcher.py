@@ -59,6 +59,7 @@ class AreaDispatcher:
         self._balancing_agents: Dict[DateTime, BalancingAgent] = {}
         self._settlement_agents: Dict[DateTime, SettlementAgent] = {}
         self._future_agent: Optional[FutureAgent] = None
+        self._forward_agents: Optional[Dict[AvailableMarketTypes, FutureAgent]] = {}
         self.area = area
 
     @property
@@ -244,7 +245,11 @@ class AreaDispatcher:
             return SettlementAgent(**agent_constructor_arguments)
         if market_type == AvailableMarketTypes.BALANCING:
             return BalancingAgent(**agent_constructor_arguments)
-        if market_type == AvailableMarketTypes.FUTURE:
+        if market_type in [AvailableMarketTypes.FUTURE,
+                           AvailableMarketTypes.HOUR_FORWARD,
+                           AvailableMarketTypes.WEEK_FORWARD,
+                           AvailableMarketTypes.MONTH_FORWARD,
+                           AvailableMarketTypes.YEAR_FORWARD]:
             return FutureAgent(**agent_constructor_arguments)
 
         assert False, f"Market type not supported {market_type}"
@@ -272,6 +277,24 @@ class AreaDispatcher:
         if not self.area.children:
             return False
         return True
+
+    def create_market_agents_for_forward_markets(
+            self, market: MarketBase, market_type: AvailableMarketTypes
+    ) -> None:
+        """Create area agents for future markets; There should only be one per Area at any time."""
+        if not self._should_agent_be_created:
+            return
+        if market_type not in self.area.parent.forward_markets:
+            return
+        higher_market = self.area.parent.forward_markets[market_type]
+
+        market_agent = self._create_agent_object(
+            owner=self.area,
+            higher_market=higher_market,
+            lower_market=market,
+            market_type=market_type
+        )
+        self._forward_agents[market_type] = market_agent
 
     def create_market_agents_for_future_markets(self, market: MarketBase) -> None:
         """Create area agents for future markets; There should only be one per Area at any time."""

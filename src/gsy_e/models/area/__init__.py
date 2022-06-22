@@ -41,6 +41,7 @@ from gsy_e.models.area.stats import AreaStats
 from gsy_e.models.area.throughput_parameters import ThroughputParameters
 from gsy_e.models.config import SimulationConfig
 from gsy_e.models.market.future import FutureMarkets
+from gsy_e.models.market.forward import ForwardMarketBase
 from gsy_e.gsy_e_core.enums import AvailableMarketTypes
 from gsy_e.models.strategy import BaseStrategy
 from gsy_e.models.strategy.external_strategies import ExternalMixin
@@ -440,6 +441,11 @@ class Area(AreaBase):
         if self.future_markets:
             self.future_markets.create_future_markets(now_value, self.config)
 
+        # create new day ahead markets:
+        if self.forward_markets:
+            for forward_market in self.forward_markets.values():
+                forward_market.create_future_markets(now_value, self.config)
+
         self.dispatcher.event_market_cycle()
 
         # area_market_stats have to updated when cycling market of each area:
@@ -524,6 +530,16 @@ class Area(AreaBase):
             AvailableMarketTypes.SPOT: [self.spot_market],
             AvailableMarketTypes.SETTLEMENT: list(self.settlement_markets.values()),
             AvailableMarketTypes.FUTURE: self.future_markets}
+        if ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS:
+            markets_mapping.update({
+                AvailableMarketTypes.HOUR_FORWARD:
+                    self.forward_markets[AvailableMarketTypes.HOUR_FORWARD],
+                AvailableMarketTypes.WEEK_FORWARD:
+                    self.forward_markets[AvailableMarketTypes.WEEK_FORWARD],
+                AvailableMarketTypes.MONTH_FORWARD:
+                    self.forward_markets[AvailableMarketTypes.MONTH_FORWARD],
+                AvailableMarketTypes.YEAR_FORWARD:
+                    self.forward_markets[AvailableMarketTypes.YEAR_FORWARD]})
         bid_offer_matcher.update_area_uuid_markets_mapping(
             area_uuid_markets_mapping={self.uuid: markets_mapping})
 
@@ -674,6 +690,11 @@ class Area(AreaBase):
     def future_markets(self) -> FutureMarkets:
         """Return the future markets of the area."""
         return self._markets.future_markets
+
+    @property
+    def forward_markets(self) -> Optional[Dict[AvailableMarketTypes, ForwardMarketBase]]:
+        """Return the day ahead markets of the area."""
+        return self._markets.forward_markets
 
     @property
     def settlement_markets(self) -> Dict:

@@ -23,6 +23,7 @@ from pendulum import DateTime
 
 from gsy_e import constants
 from gsy_e.models.market.future import FutureMarkets
+from gsy_e.models.market.forward import ForwardMarketBase
 
 log = getLogger(__name__)
 
@@ -41,8 +42,89 @@ class FutureMarketRotator:
         self.markets = markets
 
     def rotate(self, current_time: DateTime) -> None:
-        """Rotate future markets."""
-        self.markets.delete_orders_in_old_future_markets(last_slot_to_be_deleted=current_time)
+        """Delete orders in expired future markets."""
+        self.markets.delete_orders_in_old_future_markets(
+            last_slot_to_be_deleted=current_time)
+
+
+class ForwardMarketRotatorBase:
+    """Handle rotation of day-ahead markets."""
+
+    def __init__(self, markets: ForwardMarketBase):
+        self.markets = markets
+
+    @staticmethod
+    def _get_last_slot_to_be_deleted(current_time: DateTime) -> DateTime:
+        """
+        Return last time_slot that will be deleted from the ahead market buffer.
+        """
+
+    @staticmethod
+    def _is_it_time_to_rotate(current_time: DateTime) -> bool:
+        """Return True if it is time to rotate markets."""
+
+    def rotate(self, current_time: DateTime) -> None:
+        """Delete orders in expired day-ahead markets."""
+        if self._is_it_time_to_rotate(current_time):
+            self.markets.delete_orders_in_old_future_markets(
+                last_slot_to_be_deleted=self._get_last_slot_to_be_deleted(
+                    current_time))
+
+
+class HourForwardMarketRotator(ForwardMarketRotatorBase):
+    """Handles market rotation for the hour forward market block"""
+
+    @staticmethod
+    def _get_last_slot_to_be_deleted(current_time: DateTime) -> DateTime:
+        return current_time
+
+    @staticmethod
+    def _is_it_time_to_rotate(current_time: DateTime) -> bool:
+        return current_time.minute == 0
+
+
+class WeekForwardMarketRotator(ForwardMarketRotatorBase):
+    """Handles market rotation for the week forward market block"""
+
+    @staticmethod
+    def _get_last_slot_to_be_deleted(current_time: DateTime) -> DateTime:
+        return current_time.add(weeks=1)
+
+    @staticmethod
+    def _is_it_time_to_rotate(current_time: DateTime) -> bool:
+        return (current_time.day_of_week == 1 and
+                current_time.day == 1 and
+                current_time.hour == 0 and
+                current_time.minute == 0)
+
+
+class MonthForwardMarketRotator(ForwardMarketRotatorBase):
+    """Handles market rotation for the month forward market block"""
+
+    @staticmethod
+    def _get_last_slot_to_be_deleted(current_time: DateTime) -> DateTime:
+        return current_time.add(months=1)
+
+    @staticmethod
+    def _is_it_time_to_rotate(current_time: DateTime) -> bool:
+        return (current_time.day == 1 and
+                current_time.hour == 0 and
+                current_time.minute == 0)
+
+
+class YearForwardMarketRotator(ForwardMarketRotatorBase):
+    """Handles market rotation for the year forward market block"""
+
+    @staticmethod
+    def _get_last_slot_to_be_deleted(current_time: DateTime) -> DateTime:
+        return current_time.add(years=1)
+
+    @staticmethod
+    def _is_it_time_to_rotate(current_time: DateTime) -> bool:
+        return (current_time.month == 1 and
+                current_time.day == 1 and
+                current_time.hour == 0 and
+                current_time.minute == 0)
 
 
 class DefaultMarketRotator(BaseRotator):
