@@ -16,11 +16,13 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from gsy_framework.enums import BidOfferMatchAlgoEnum
 from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.enums import BidOfferMatchAlgoEnum
 from gsy_framework.matching_algorithms import (
     PayAsBidMatchingAlgorithm, PayAsClearMatchingAlgorithm,
     AttributedMatchingAlgorithm)
+
+from gsy_e.gsy_e_core.enums import AvailableMarketTypes
 from gsy_e.gsy_e_core.exceptions import WrongMarketTypeException
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.models.myco_matcher.myco_matcher_interface import MycoMatcherInterface
@@ -62,10 +64,11 @@ class MycoInternalMatcher(MycoMatcherInterface):
     def match_recommendations(self, **kwargs):
         """Request trade recommendations and match them in the relevant market."""
         for area_uuid, area_data in self.area_uuid_markets_mapping.items():
-            markets = [*area_data["markets"], *area_data["settlement_markets"]]
+            markets = [*area_data[AvailableMarketTypes.SPOT],
+                       *area_data[AvailableMarketTypes.SETTLEMENT]]
             if global_objects.future_market_counter.is_time_for_clearing(
                     area_data["current_time"]):
-                markets.append(area_data["future_markets"])
+                markets.append(area_data[AvailableMarketTypes.FUTURE])
             for market in markets:
                 if not market:
                     continue

@@ -519,12 +519,13 @@ class Area(AreaBase):
 
     def _update_myco_matcher(self) -> None:
         """Update the markets cache that the myco matcher will request"""
+        markets_mapping = {
+            "current_time": self.now,
+            AvailableMarketTypes.SPOT: [self.spot_market],
+            AvailableMarketTypes.SETTLEMENT: list(self.settlement_markets.values()),
+            AvailableMarketTypes.FUTURE: self.future_markets}
         bid_offer_matcher.update_area_uuid_markets_mapping(
-            area_uuid_markets_mapping={
-                self.uuid: {"markets": [self.spot_market],
-                            "settlement_markets": list(self.settlement_markets.values()),
-                            "future_markets": self.future_markets,
-                            "current_time": self.now}})
+            area_uuid_markets_mapping={self.uuid: markets_mapping})
 
     def execute_actions_after_tick_event(self) -> None:
         """
