@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import Dict
 from uuid import uuid4
 
+from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Trade
 from pendulum import DateTime
 
@@ -120,7 +121,7 @@ class SCMManager:
         self.community_data = CommunityData(community_uuid)
         self._time_slot = time_slot
         self._bills: Dict[str, HomeEnergyBills] = {}
-        self._grid_fees_reduction = 0.28
+        self._grid_fees_reduction = ConstSettings.SCMSettings.GRID_FEES_REDUCTION
 
     def add_home_data(self, home_uuid: str, home_name: str,
                       grid_fees_eur: float, coefficient_percent: float,

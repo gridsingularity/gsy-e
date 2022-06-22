@@ -272,14 +272,14 @@ class CoefficientArea(AreaBase):
         self._trade_rate = trade_rate
         self.past_market_time_slot = None
 
-    def activate_coefficients(self, current_time_slot: DateTime) -> None:
+    def activate_energy_parameters(self, current_time_slot: DateTime) -> None:
         """Activate the coefficient-based area parameters."""
         self._current_market_time_slot = current_time_slot
 
         if self.strategy:
             self.strategy.activate(self)
         for child in self.children:
-            child.activate_coefficients(current_time_slot)
+            child.activate_energy_parameters(current_time_slot)
 
     def cycle_coefficients_trading(self, current_time_slot: DateTime) -> None:
         """Perform operations that should be executed on coefficients trading cycle."""

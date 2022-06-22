@@ -789,7 +789,7 @@ class CoefficientSimulation(Simulation):
 
         log.debug("Starting simulation with config %s", self._setup.config)
 
-        self.area.activate_coefficients(self._setup.config.start_date)
+        self.area.activate_energy_parameters(self._setup.config.start_date)
 
     @property
     def _time_since_start(self) -> Duration:
