@@ -173,9 +173,15 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
 
             self._set_or_update_energy_rate_change_per_update(time_slot)
             write_default_to_dict(self.update_counter, time_slot, 0)
-            if time_slot not in self.market_slot_added_time_mapping:
-                elapsed_seconds = self._elapsed_seconds(area)
-                self.market_slot_added_time_mapping[time_slot] = elapsed_seconds
+
+            # todo: homogenize the calculation of elapsed seconds for spot and future markets
+            self._add_slot_to_mapping(area, time_slot)
+
+    def _add_slot_to_mapping(self, area, time_slot):
+        """keep track of the elapsed time of simulation at the addition of a new slot."""
+        if time_slot not in self.market_slot_added_time_mapping:
+            elapsed_seconds = self._elapsed_seconds(area)
+            self.market_slot_added_time_mapping[time_slot] = elapsed_seconds
 
     def _set_or_update_energy_rate_change_per_update(self, time_slot: DateTime) -> None:
         energy_rate_change_per_update = {}
