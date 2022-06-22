@@ -1,3 +1,4 @@
+# pylint: disable=broad-except,fixme
 """
 Copyright 2018 Grid Singularity
 This file is part of Grid Singularity Exchange.
@@ -15,14 +16,18 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import json
+import logging
+from typing import TYPE_CHECKING, Callable, Dict, List
 
-from typing import Dict, List, TYPE_CHECKING
-
-from gsy_e.models.strategy.external_strategies import ExternalMixin, IncomingRequest
-from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
 from gsy_e.models.market import MarketBase
+from gsy_e.models.strategy.external_strategies import (ExternalMixin,
+                                                       ExternalStrategyConnectionManager,
+                                                       IncomingRequest)
+from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
 
 if TYPE_CHECKING:
+    from gsy_e.models.strategy import Offers
     from gsy_e.models.strategy.smart_meter import SmartMeterState
 
 
@@ -33,15 +38,17 @@ class SmartMeterExternalMixin(ExternalMixin):
     """
 
     state: "SmartMeterState"
+    offers: "Offers"
+    is_bid_posted: Callable
 
     @property
     def _device_info_dict(self) -> Dict:
         """Return the asset info."""
-        raise NotImplementedError()
+        raise NotImplementedError()  # TODO
 
     def event_activate(self, **kwargs) -> None:
         """Activate the device."""
-        super().event_activate(**kwargs)
+        super().event_activate(**kwargs) # noqa
         self.redis.sub_to_multiple_channels({
             **super().channel_dict,
             f"{self.channel_prefix}/offer": self.offer,
@@ -54,35 +61,155 @@ class SmartMeterExternalMixin(ExternalMixin):
 
     def event_market_cycle(self) -> None:
         """Handler for the market cycle event."""
-        raise NotImplementedError()
+        self._reject_all_pending_requests()
+        self._update_connection_status()
+        if not self.should_use_default_strategy:
+            raise NotImplementedError()  # TODO
+        super().event_market_cycle()
 
     def event_tick(self) -> None:
         """Process aggregator requests on market tick. Extends super implementation."""
-        raise NotImplementedError()
+        if not self.connected and not self.is_aggregator_controlled:
+            super().event_tick() # noqa
+        else:
+            # TODO: self.state.check_state(self.spot_market.time_slot)
+            while self.pending_requests:
+                # We want to process requests as First-In-First-Out, so we use popleft
+                req = self.pending_requests.popleft()
+                self._incoming_commands_callback_selection(req)
+            self._dispatch_event_tick_to_external_agent()
 
     def offer(self, payload: Dict) -> None:
         """Callback for offer Redis endpoint."""
-        raise NotImplementedError()
+        transaction_id = self._get_transaction_id(payload)
+        required_args = {"price", "energy", "transaction_id"}
+        allowed_args = required_args.union({"replace_existing",
+                                            "time_slot",
+                                            "attributes",
+                                            "requirements"})
+        offer_response_channel = f"{self.channel_prefix}/response/offer"
+        if not ExternalStrategyConnectionManager.check_for_connected_and_reply(
+                self.redis, offer_response_channel, self.connected):
+            return
+        try:
+            arguments = json.loads(payload["data"])
+            # Check that all required arguments have been provided
+            assert all(arg in arguments.keys() for arg in required_args)
+            # Check that every provided argument is allowed
+            assert all(arg in allowed_args for arg in arguments.keys())
+        except Exception: # noqa
+            logging.exception("Incorrect offer request. Payload %s.", payload)
+            self.redis.publish_json(
+                offer_response_channel,
+                {"command": "offer",
+                 "error": (
+                     "Incorrect offer request. "
+                     "Available parameters: ('price', 'energy', 'replace_existing')."),
+                 "transaction_id": transaction_id})
+        else:
+            self.pending_requests.append(
+                IncomingRequest("offer", arguments, offer_response_channel))
 
     def delete_offer(self, payload: Dict) -> None:
         """Callback for delete offer Redis endpoint."""
-        raise NotImplementedError()
+        transaction_id = self._get_transaction_id(payload)
+        delete_offer_response_channel = f"{self.channel_prefix}/response/delete_offer"
+        if not ExternalStrategyConnectionManager.check_for_connected_and_reply(
+                self.redis, delete_offer_response_channel, self.connected):
+            return
+        try:
+            arguments = json.loads(payload["data"])
+            market = self._get_market_from_command_argument(arguments)
+            if arguments.get("offer") and not self.offers.is_offer_posted(
+                    market.id, arguments["offer"]):
+                raise Exception("Offer_id is not associated with any posted offer.")
+        except Exception: # noqa
+            logging.exception("Error when handling delete offer request. Payload %s", payload)
+            self.redis.publish_json(
+                delete_offer_response_channel,
+                {"command": "offer_delete",
+                 "error": "Incorrect delete offer request. Available parameters: (offer).",
+                 "transaction_id": transaction_id})
+        else:
+            self.pending_requests.append(
+                IncomingRequest("delete_offer", arguments, delete_offer_response_channel))
 
     def list_offers(self, payload: Dict) -> None:
         """Callback for list offers Redis endpoint."""
-        raise NotImplementedError()
+        assert self._get_transaction_id(payload)
+        list_offers_response_channel = f"{self.channel_prefix}/response/list_offers"
+        if not ExternalStrategyConnectionManager.check_for_connected_and_reply(
+                self.redis, list_offers_response_channel, self.connected):
+            return
+        arguments = json.loads(payload["data"])
+        self.pending_requests.append(
+            IncomingRequest("list_offers", arguments, list_offers_response_channel))
 
     def bid(self, payload: Dict) -> None:
         """Callback for bid Redis endpoint."""
-        raise NotImplementedError()
+        transaction_id = self._get_transaction_id(payload)
+        required_args = {"price", "energy", "transaction_id"}
+        allowed_args = required_args.union({"replace_existing",
+                                            "time_slot",
+                                            "attributes",
+                                            "requirements"})
+        bid_response_channel = f"{self.channel_prefix}/response/bid"
+        if not ExternalStrategyConnectionManager.check_for_connected_and_reply(
+                self.redis, bid_response_channel, self.connected):
+            return
+        try:
+            arguments = json.loads(payload["data"])
+
+            # Check that all required arguments have been provided
+            assert all(arg in arguments.keys() for arg in required_args)
+            # Check that every provided argument is allowed
+            assert all(arg in allowed_args for arg in arguments.keys())
+        except Exception: # noqa
+            self.redis.publish_json(
+                bid_response_channel,
+                {"command": "bid",
+                 "error": (
+                     "Incorrect bid request. "
+                     "Available parameters: ('price', 'energy', 'replace_existing')."),
+                 "transaction_id": transaction_id})
+        else:
+            self.pending_requests.append(
+                IncomingRequest("bid", arguments, bid_response_channel))
 
     def delete_bid(self, payload: Dict) -> None:
         """Callback for delete bid Redis endpoint."""
-        raise NotImplementedError()
+        transaction_id = self._get_transaction_id(payload)
+        delete_bid_response_channel = f"{self.channel_prefix}/response/delete_bid"
+        if not ExternalStrategyConnectionManager.check_for_connected_and_reply(
+                self.redis, delete_bid_response_channel, self.connected):
+            return
+        try:
+            arguments = json.loads(payload["data"])
+            market = self._get_market_from_command_argument(arguments)
+            if arguments.get("bid") and not self.is_bid_posted(market, arguments["bid"]):
+                raise Exception("Bid_id is not associated with any posted bid.")
+        except Exception as e:
+            self.redis.publish_json(
+                delete_bid_response_channel,
+                {"command": "bid_delete",
+                 "error": "Incorrect delete bid request. Available parameters: (bid)."
+                          f"Exception: {str(e)}",
+                 "transaction_id": transaction_id}
+            )
+        else:
+            self.pending_requests.append(
+                IncomingRequest("delete_bid", arguments, delete_bid_response_channel))
 
     def list_bids(self, payload: Dict) -> None:
         """Callback for list bids Redis endpoint."""
-        raise NotImplementedError()
+        assert self._get_transaction_id(payload)
+        list_bids_response_channel = f"{self.channel_prefix}/response/list_bids"
+        if not ExternalStrategyConnectionManager.check_for_connected_and_reply(
+                self.redis, list_bids_response_channel, self.connected):
+            return
+        arguments = json.loads(payload["data"])
+        self.pending_requests.append(
+            IncomingRequest("list_bids", arguments, list_bids_response_channel))
 
     def _incoming_commands_callback_selection(self, req: IncomingRequest) -> None:
         """
@@ -107,12 +234,14 @@ class SmartMeterExternalMixin(ExternalMixin):
         else:
             assert False, f"Incorrect incoming request name: {req}"
 
-    def _bid_impl(self, arguments: Dict, response_channel: str) -> None:
-        """Post the bid to the market."""
-        raise NotImplementedError()
+    def filtered_market_offers(self, market: MarketBase) -> List[Dict]:
+        """
+        Get a representation of each of the asset's offers from the market.
+        Args:
+            market: Market object that will read the offers from
 
-    def _delete_bid_impl(self, arguments: Dict, response_channel: str) -> None:
-        """Delete a bid from the market."""
+        Returns: List of offers for the strategy asset
+        """
         raise NotImplementedError()
 
     def filtered_market_bids(self, market: MarketBase) -> List[Dict]:
@@ -125,6 +254,14 @@ class SmartMeterExternalMixin(ExternalMixin):
         """
         raise NotImplementedError()
 
+    def _bid_impl(self, arguments: Dict, response_channel: str) -> None:
+        """Post the bid to the market."""
+        raise NotImplementedError()
+
+    def _delete_bid_impl(self, arguments: Dict, response_channel: str) -> None:
+        """Delete a bid from the market."""
+        raise NotImplementedError()
+
     def _list_bids_impl(self, arguments: Dict, response_channel: str) -> None:
         """List sent bids to the market."""
         raise NotImplementedError()
@@ -135,16 +272,6 @@ class SmartMeterExternalMixin(ExternalMixin):
 
     def _delete_offer_impl(self, arguments: Dict, response_channel: str) -> None:
         """Delete an offer from the market."""
-        raise NotImplementedError()
-
-    def filtered_market_offers(self, market: MarketBase) -> List[Dict]:
-        """
-        Get a representation of each of the asset's offers from the market.
-        Args:
-            market: Market object that will read the offers from
-
-        Returns: List of offers for the strategy asset
-        """
         raise NotImplementedError()
 
     def _list_offers_impl(self, arguments: Dict, response_channel: str) -> None:
