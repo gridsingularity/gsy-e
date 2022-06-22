@@ -43,8 +43,7 @@ from gsy_e.gsy_e_core.sim_results.plotly_graph import PlotlyGraph
 from gsy_e.gsy_e_core.util import constsettings_to_dict, round_floats_for_ui
 from gsy_e.data_classes import PlotDescription
 from gsy_e.models.area import Area
-from gsy_e.models.market.market_structures import (AvailableMarketTypes,
-                                                   PAST_MARKET_TYPE_FILE_SUFFIX_MAPPING)
+from gsy_e.gsy_e_core.enums import (AvailableMarketTypes, PAST_MARKET_TYPE_FILE_SUFFIX_MAPPING)
 from gsy_e.models.state import ESSEnergyOrigin
 from gsy_e.models.strategy.storage import StorageStrategy
 

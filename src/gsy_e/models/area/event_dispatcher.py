@@ -33,7 +33,7 @@ from gsy_e.models.area.redis_dispatcher.market_event_dispatcher import (
 from gsy_e.models.area.redis_dispatcher.market_notify_event_subscriber import (
     MarketNotifyEventSubscriber)
 from gsy_e.models.market import MarketBase
-from gsy_e.models.market.market_structures import AvailableMarketTypes
+from gsy_e.gsy_e_core.enums import AvailableMarketTypes
 from gsy_e.models.strategy.market_agents.balancing_agent import BalancingAgent
 from gsy_e.models.strategy.market_agents.future_agent import FutureAgent
 from gsy_e.models.strategy.market_agents.one_sided_agent import OneSidedAgent

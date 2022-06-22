@@ -29,7 +29,7 @@ from gsy_e.events.event_structures import AreaEvent, MarketEvent
 from gsy_e.models.area import Area, Asset, Market, check_area_name_exists_in_parent_area
 from gsy_e.models.area.events import Events
 from gsy_e.models.config import SimulationConfig
-from gsy_e.models.market.market_structures import AvailableMarketTypes
+from gsy_e.gsy_e_core.enums import AvailableMarketTypes
 from gsy_e.models.strategy.storage import StorageStrategy
 
 

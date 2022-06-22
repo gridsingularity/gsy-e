@@ -21,9 +21,9 @@ from typing import List, Dict
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.enums import BidOfferMatchAlgoEnum, SpotMarketTypeEnum
 
+from gsy_e.gsy_e_core.enums import AvailableMarketTypes
 from gsy_e.gsy_e_core.myco_singleton import bid_offer_matcher
 from gsy_e.models.area import Area
-from gsy_e.models.market.market_structures import AvailableMarketTypes
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_e.models.strategy.pv import PVStrategy
 from gsy_e.models.strategy.storage import StorageStrategy

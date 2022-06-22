@@ -31,7 +31,7 @@ from gsy_e.models.area.event_dispatcher import AreaDispatcher
 from gsy_e.models.market import MarketBase
 from gsy_e.models.market.balancing import BalancingMarket
 from gsy_e.models.market.future import FutureMarkets
-from gsy_e.models.market.market_structures import AvailableMarketTypes
+from gsy_e.gsy_e_core.enums import AvailableMarketTypes
 from gsy_e.models.market.one_sided import OneSidedMarket
 from gsy_e.models.market.settlement import SettlementMarket
 from gsy_e.models.market.two_sided import TwoSidedMarket

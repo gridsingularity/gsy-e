@@ -41,7 +41,7 @@ from gsy_e.models.area.stats import AreaStats
 from gsy_e.models.area.throughput_parameters import ThroughputParameters
 from gsy_e.models.config import SimulationConfig
 from gsy_e.models.market.future import FutureMarkets
-from gsy_e.models.market.market_structures import AvailableMarketTypes
+from gsy_e.gsy_e_core.enums import AvailableMarketTypes
 from gsy_e.models.strategy import BaseStrategy
 from gsy_e.models.strategy.external_strategies import ExternalMixin
 
