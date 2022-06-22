@@ -40,6 +40,7 @@ def active_future_market() -> FutureMarkets:
     area = Area("test_area")
     area.config.start_date = DEFAULT_CURRENT_MARKET_SLOT
     area.config.end_date = area.config.start_date + area.config.sim_duration
+    area.config.slot_length = DEFAULT_SLOT_LENGTH
     area.activate()
     future_market = FutureMarkets(
             bc=area.bc,
@@ -49,7 +50,7 @@ def active_future_market() -> FutureMarkets:
                               grid_fee_const=area.grid_fee_constant),
             name=area.name)
     future_market.create_future_markets(
-        DEFAULT_CURRENT_MARKET_SLOT, DEFAULT_SLOT_LENGTH, area.config)
+        DEFAULT_CURRENT_MARKET_SLOT, area.config)
     yield future_market
 
     GlobalConfig.FUTURE_MARKET_DURATION_HOURS = orig_future_market_duration
@@ -92,11 +93,13 @@ class TestFutureMarkets:
         """Test if all future time_slots are created in the order buffers."""
         future_market.offers = {}
         future_market.bids = {}
+        area = Area("test_area")
+        area.config.slot_length = DEFAULT_SLOT_LENGTH
 
         with patch("gsy_e.models.market.future.GlobalConfig."
                    "FUTURE_MARKET_DURATION_HOURS", 0):
             future_market.create_future_markets(
-                DEFAULT_CURRENT_MARKET_SLOT, DEFAULT_SLOT_LENGTH, MagicMock()
+                DEFAULT_CURRENT_MARKET_SLOT, area.config
             )
         for buffer in [future_market.slot_bid_mapping,
                        future_market.slot_offer_mapping,
@@ -106,7 +109,7 @@ class TestFutureMarkets:
         with patch("gsy_e.models.market.future.GlobalConfig."
                    "FUTURE_MARKET_DURATION_HOURS", 1):
             future_market.create_future_markets(
-                DEFAULT_CURRENT_MARKET_SLOT, DEFAULT_SLOT_LENGTH, MagicMock()
+                DEFAULT_CURRENT_MARKET_SLOT, area.config
             )
         for buffer in [future_market.slot_bid_mapping,
                        future_market.slot_offer_mapping,
