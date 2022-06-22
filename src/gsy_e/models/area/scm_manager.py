@@ -9,6 +9,7 @@ from gsy_framework.data_classes import Trade
 from pendulum import DateTime
 
 from gsy_e.constants import DEFAULT_SCM_GRID_NAME, DEFAULT_SCM_COMMUNITY_NAME
+from gsy_e.models.strategy.scm import SCMStrategy
 
 if TYPE_CHECKING:
     from gsy_e.models.area import CoefficientArea
@@ -21,9 +22,10 @@ class HomeAfterMeterData:
     home_uuid: str
     home_name: str
     sharing_coefficient_percent: float = 0.
-    grid_fees_eur: float = 0.
-    market_maker_rate_eur: float = 0.
-    feed_in_tariff_eur: float = 0.
+    # grid_fees, market_maker_rate and feed_in_tariff units are the selected currency (e.g. Euro)
+    grid_fees: float = 0.
+    market_maker_rate: float = 0.
+    feed_in_tariff: float = 0.
     consumption_kWh: float = 0.
     production_kWh: float = 0.
     self_consumed_energy_kWh: float = 0.
@@ -33,6 +35,12 @@ class HomeAfterMeterData:
     trades = None
 
     def __post_init__(self):
+        # Self consumed energy of a home is the amount of energy that it consumes from its own
+        # production. If the home production is larger than its consumption, self consumed energy
+        # will be equal to the consumption, and if the consumption is larger than the production,
+        # self consumed energy will be equal to the production. Hence, the upper limit of the
+        # self consumed energy is the minimum of the production and consumption energy values
+        # of the home.
         self.self_consumed_energy_kWh = min(self.consumption_kWh, self.production_kWh)
         self.energy_surplus_kWh = self.production_kWh - self.self_consumed_energy_kWh
         self.energy_need_kWh = self.consumption_kWh - self.self_consumed_energy_kWh
@@ -112,10 +120,10 @@ class CommunityData:
 @dataclass
 class HomeEnergyBills:
     """Represents home energy bills."""
-    base_energy_bill: float
-    gsy_energy_bill: float
-    savings_euro: float
-    savings_percent: float
+    base_energy_bill: float = 0.
+    gsy_energy_bill: float = 0.
+    savings: float = 0.
+    savings_percent: float = 0.
 
 
 class SCMManager:
@@ -124,8 +132,8 @@ class SCMManager:
         self._validate_community(area)
         self._home_data: Dict[str, HomeAfterMeterData] = {}
         # Community is always the root area in the context of SCM.
-        community_uuid = area.uuid
-        self.community_data = CommunityData(community_uuid)
+        self._community_uuid = area.uuid
+        self.community_data = CommunityData(self._community_uuid)
         self._time_slot = time_slot
         self._bills: Dict[str, HomeEnergyBills] = {}
         self._grid_fees_reduction = ConstSettings.SCMSettings.GRID_FEES_REDUCTION
@@ -135,43 +143,46 @@ class SCMManager:
         assert isclose(
             sum(home.coefficient_percent for home in community_area.children), 1.0
         ), "Coefficients from all homes should sum up to 1."
+        for home in community_area.children:
+            assert all(isinstance(asset.strategy, SCMStrategy) for asset in home.children), \
+                f"Home {home.name} has assets with non-SCM strategies."
 
     def add_home_data(self, home_uuid: str, home_name: str,
-                      grid_fees_eur: float, coefficient_percent: float,
-                      market_maker_rate_eur: float, feed_in_tariff_eur: float,
+                      grid_fees: float, coefficient_percent: float,
+                      market_maker_rate: float, feed_in_tariff: float,
                       production_kWh: float, consumption_kWh: float):
         # pylint: disable=too-many-arguments
         """Import data for one individual home."""
-        if grid_fees_eur is None:
-            grid_fees_eur = 0.0
+        if grid_fees is None:
+            grid_fees = 0.0
         self._home_data[home_uuid] = HomeAfterMeterData(
             home_uuid, home_name,
-            grid_fees_eur=grid_fees_eur,
+            grid_fees=grid_fees,
             sharing_coefficient_percent=coefficient_percent,
-            market_maker_rate_eur=market_maker_rate_eur,
-            feed_in_tariff_eur=feed_in_tariff_eur,
+            market_maker_rate=market_maker_rate,
+            feed_in_tariff=feed_in_tariff,
             production_kWh=production_kWh, consumption_kWh=consumption_kWh)
 
     def calculate_community_after_meter_data(self):
         """Calculate community data by aggregating all single home data."""
-        self.community_data.production_kWh = sum(
-            data.production_kWh for data in self._home_data.values())
-        self.community_data.consumption_kWh = sum(
-            data.consumption_kWh for data in self._home_data.values())
-        self.community_data.self_consumed_energy_kWh = sum(
-            data.self_consumed_energy_kWh for data in self._home_data.values())
-        self.community_data.energy_surplus_kWh = sum(
-            data.energy_surplus_kWh for data in self._home_data.values())
-        self.community_data.energy_need_kWh = sum(
-            data.energy_need_kWh for data in self._home_data.values())
+
+        # Reset the community data in order to generate correct results even after consecutive
+        # calls of this method.
+        self.community_data = CommunityData(self._community_uuid)
+        for data in self._home_data.values():
+            self.community_data.production_kWh += data.production_kWh
+            self.community_data.consumption_kWh += data.consumption_kWh
+            self.community_data.self_consumed_energy_kWh += data.self_consumed_energy_kWh
+            self.community_data.energy_surplus_kWh += data.energy_surplus_kWh
+            self.community_data.energy_need_kWh += data.energy_need_kWh
 
         for home_data in self._home_data.values():
             home_data.set_community_production(self.community_data.energy_surplus_kWh)
 
-        self.community_data.energy_bought_from_community_kWh = sum(
-            data.energy_bought_from_community_kWh for data in self._home_data.values())
-        self.community_data.energy_sold_to_grid_kWh = sum(
-            data.energy_sold_to_grid_kWh for data in self._home_data.values())
+        for data in self._home_data.values():
+            self.community_data.energy_bought_from_community_kWh += (
+                data.energy_bought_from_community_kWh)
+            self.community_data.energy_sold_to_grid_kWh += data.energy_sold_to_grid_kWh
 
     def calculate_home_energy_bills(
             self, home_uuid: str) -> None:
@@ -180,23 +191,23 @@ class SCMManager:
 
         home_data = self._home_data[home_uuid]
 
-        market_maker_rate_eur = home_data.market_maker_rate_eur
-        grid_fees_eur = home_data.grid_fees_eur
-        feed_in_tariff_eur = home_data.feed_in_tariff_eur
+        market_maker_rate = home_data.market_maker_rate
+        grid_fees = home_data.grid_fees
+        feed_in_tariff = home_data.feed_in_tariff
 
         market_maker_rate_decreased_fees = (
-                market_maker_rate_eur + grid_fees_eur * self._grid_fees_reduction)
-        market_maker_rate_normal_fees = market_maker_rate_eur + grid_fees_eur
+                market_maker_rate + grid_fees * self._grid_fees_reduction)
+        market_maker_rate_normal_fees = market_maker_rate + grid_fees
 
         base_energy_bill = (
                 home_data.energy_need_kWh * market_maker_rate_normal_fees -
-                home_data.energy_surplus_kWh * feed_in_tariff_eur)
+                home_data.energy_surplus_kWh * feed_in_tariff)
 
         if home_data.allocated_community_energy_kWh > home_data.energy_need_kWh:
             if home_data.energy_surplus_kWh > 0.0:
                 gsy_energy_bill = -(
                     home_data.energy_bought_from_community_kWh * market_maker_rate_decreased_fees +
-                    self.community_data.energy_sold_to_grid_kWh * feed_in_tariff_eur)
+                    self.community_data.energy_sold_to_grid_kWh * feed_in_tariff)
 
                 if home_data.energy_bought_from_community_kWh > 0.:
                     home_data.create_buy_trade(
@@ -209,7 +220,7 @@ class SCMManager:
                     home_data.create_sell_trade(
                         self._time_slot, DEFAULT_SCM_GRID_NAME,
                         self.community_data.energy_sold_to_grid_kWh,
-                        self.community_data.energy_sold_to_grid_kWh * feed_in_tariff_eur)
+                        self.community_data.energy_sold_to_grid_kWh * feed_in_tariff)
             else:
                 gsy_energy_bill = home_data.energy_need_kWh * market_maker_rate_decreased_fees
                 home_data.create_buy_trade(
@@ -245,18 +256,16 @@ class SCMManager:
         self._bills[home_uuid] = HomeEnergyBills(
             base_energy_bill=base_energy_bill,
             gsy_energy_bill=gsy_energy_bill,
-            savings_euro=(base_energy_bill - gsy_energy_bill),
+            savings=(base_energy_bill - gsy_energy_bill),
             savings_percent=savings_percent)
 
     @property
     def community_bills(self):
         """Calculate bills for the community."""
-        return HomeEnergyBills(
-            base_energy_bill=sum(
-                data.base_energy_bill for data in self._bills.values()),
-            gsy_energy_bill=sum(
-                data.gsy_energy_bill for data in self._bills.values()),
-            savings_euro=sum(
-                data.savings_euro for data in self._bills.values()),
-            savings_percent=sum(
-                data.savings_percent for data in self._bills.values()))
+        home_bills = HomeEnergyBills()
+        for data in self._bills.values():
+            home_bills.base_energy_bill += data.base_energy_bill
+            home_bills.gsy_energy_bill += data.gsy_energy_bill
+            home_bills.savings += data.savings
+            home_bills.savings_percent += data.savings_percent
+        return home_bills
