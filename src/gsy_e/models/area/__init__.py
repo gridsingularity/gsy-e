@@ -272,14 +272,14 @@ class CoefficientArea(AreaBase):
         self._trade_rate = trade_rate
         self.past_market_time_slot = None
 
-    def activate_coefficients(self, current_time_slot: DateTime) -> None:
+    def activate_energy_parameters(self, current_time_slot: DateTime) -> None:
         """Activate the coefficient-based area parameters."""
         self._current_market_time_slot = current_time_slot
 
         if self.strategy:
             self.strategy.activate(self)
         for child in self.children:
-            child.activate_coefficients(current_time_slot)
+            child.activate_energy_parameters(current_time_slot)
 
     def cycle_coefficients_trading(self, current_time_slot: DateTime) -> None:
         """Perform operations that should be executed on coefficients trading cycle."""
@@ -294,7 +294,7 @@ class CoefficientArea(AreaBase):
 
     def _is_home_area(self):
         return self.children and all(
-            child.strategy and isinstance(child.strategy, SCMStrategy)
+            isinstance(child.strategy, SCMStrategy)
             for child in self.children)
 
     def _calculate_home_after_meter_data(

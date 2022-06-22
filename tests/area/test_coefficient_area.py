@@ -78,7 +78,7 @@ class TestCoefficientArea:
         house1 = grid_area.children[0]
         house2 = grid_area.children[1]
         time_slot = now()
-        scm = SCMManager(grid_area.uuid, time_slot)
+        scm = SCMManager(grid_area, time_slot)
         grid_area.calculate_home_after_meter_data(time_slot, scm)
         assert scm._home_data[house1.uuid].sharing_coefficient_percent == 0.6
         assert scm._home_data[house1.uuid].feed_in_tariff_eur == 0.1
@@ -104,7 +104,7 @@ class TestCoefficientArea:
         house1 = grid_area.children[0]
         house2 = grid_area.children[1]
         time_slot = now()
-        scm = SCMManager(grid_area.uuid, time_slot)
+        scm = SCMManager(grid_area, time_slot)
         grid_area.calculate_home_after_meter_data(time_slot, scm)
         scm.calculate_community_after_meter_data()
 
@@ -124,7 +124,7 @@ class TestCoefficientArea:
         house1 = grid_area.children[0]
         house2 = grid_area.children[1]
         time_slot = now()
-        scm = SCMManager(grid_area.uuid, time_slot)
+        scm = SCMManager(grid_area, time_slot)
         grid_area.calculate_home_after_meter_data(time_slot, scm)
         scm.calculate_community_after_meter_data()
         grid_area.trigger_energy_trades(scm)

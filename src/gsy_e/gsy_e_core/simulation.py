@@ -827,7 +827,6 @@ class CoefficientSimulation(Simulation):
         global_objects.profiles_handler.activate()
 
         self.area = self._setup.load_setup_module()
-        bid_offer_matcher.activate()
 
         self._results.init_results(redis_job_id, self.area, self._setup)
         self._results.update_and_send_results(
@@ -835,7 +834,7 @@ class CoefficientSimulation(Simulation):
 
         log.debug("Starting simulation with config %s", self._setup.config)
 
-        self.area.activate_coefficients(self._setup.config.start_date)
+        self.area.activate_energy_parameters(self._setup.config.start_date)
 
     @property
     def _time_since_start(self) -> Duration:
@@ -864,7 +863,7 @@ class CoefficientSimulation(Simulation):
             global_objects.profiles_handler.update_time_and_buffer_profiles(
                 self._get_current_market_time_slot(slot_no))
 
-            scm_manager = SCMManager(self.area.uuid, self._get_current_market_time_slot(slot_no))
+            scm_manager = SCMManager(self.area, self._get_current_market_time_slot(slot_no))
 
             self.area.calculate_home_after_meter_data(
                 self.progress_info.current_slot_time, scm_manager)

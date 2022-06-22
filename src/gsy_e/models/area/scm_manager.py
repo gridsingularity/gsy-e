@@ -1,12 +1,17 @@
 import logging
 from dataclasses import dataclass, asdict
-from typing import Dict
+from math import isclose
+from typing import Dict, TYPE_CHECKING
 from uuid import uuid4
 
+from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Trade
 from pendulum import DateTime
 
-from gsy_e.constants import DEFAULT_GRID_SELLER_STRING, DEFAULT_SCM_SELLER_STRING
+from gsy_e.constants import DEFAULT_SCM_GRID_NAME, DEFAULT_SCM_COMMUNITY_NAME
+
+if TYPE_CHECKING:
+    from gsy_e.models.area import CoefficientArea
 
 
 @dataclass
@@ -174,13 +179,22 @@ class AreaEnergyBills:
 
 class SCMManager:
     """Handle the community manager coefficient trade."""
-    def __init__(self, community_uuid: str, time_slot: DateTime):
+    def __init__(self, area: "CoefficientArea", time_slot: DateTime):
+        self._validate_community(area)
         self._home_data: Dict[str, HomeAfterMeterData] = {}
+        # Community is always the root area in the context of SCM.
+        community_uuid = area.uuid
         self.community_data = CommunityData(community_uuid)
         self._time_slot = time_slot
         self._bills: Dict[str, AreaEnergyBills] = {}
-        self._grid_fees_reduction = 0.28
+        self._grid_fees_reduction = ConstSettings.SCMSettings.GRID_FEES_REDUCTION
         self._community_uuid = community_uuid
+
+    @staticmethod
+    def _validate_community(community_area: "CoefficientArea") -> None:
+        assert isclose(
+            sum(home.coefficient_percent for home in community_area.children), 1.0
+        ), "Coefficients from all homes should sum up to 1."
 
     def add_home_data(self, home_uuid: str, home_name: str,
                       grid_fees_eur: float, coefficient_percent: float,
@@ -243,30 +257,28 @@ class SCMManager:
 
         if home_data.allocated_community_energy_kWh > home_data.energy_need_kWh:
             if home_data.energy_surplus_kWh > 0.0:
-                bought_from_community_kWh = (
-                    self.community_data.energy_bought_from_community_kWh -
-                    home_data.energy_bought_from_community_kWh)
-
                 home_bill.set_bought_from_community(
-                    bought_from_community_kWh, market_maker_rate_decreased_fees)
+                    home_data.energy_bought_from_community_kWh, market_maker_rate_decreased_fees)
                 home_bill.set_sold_to_grid(
                     self.community_data.energy_sold_to_grid_kWh, feed_in_tariff_eur)
 
-                if bought_from_community_kWh > 0.:
+                if home_data.energy_bought_from_community_kWh > 0.:
                     home_data.create_buy_trade(
-                        self._time_slot, DEFAULT_SCM_SELLER_STRING, bought_from_community_kWh,
-                        bought_from_community_kWh * market_maker_rate_decreased_fees
+                        self._time_slot, DEFAULT_SCM_COMMUNITY_NAME,
+                        home_data.energy_bought_from_community_kWh,
+                        (home_data.energy_bought_from_community_kWh *
+                         market_maker_rate_decreased_fees)
                     )
                 if self.community_data.energy_sold_to_grid_kWh > 0.:
                     home_data.create_sell_trade(
-                        self._time_slot, DEFAULT_GRID_SELLER_STRING,
+                        self._time_slot, DEFAULT_SCM_GRID_NAME,
                         self.community_data.energy_sold_to_grid_kWh,
                         self.community_data.energy_sold_to_grid_kWh * feed_in_tariff_eur)
             else:
                 home_bill.set_bought_from_community(
                     home_data.energy_need_kWh, market_maker_rate_decreased_fees)
                 home_data.create_buy_trade(
-                    self._time_slot, DEFAULT_SCM_SELLER_STRING, home_data.energy_need_kWh,
+                    self._time_slot, DEFAULT_SCM_COMMUNITY_NAME, home_data.energy_need_kWh,
                     home_data.energy_need_kWh * market_maker_rate_decreased_fees
                 )
         else:
@@ -279,14 +291,14 @@ class SCMManager:
 
             if home_data.allocated_community_energy_kWh > 0.0:
                 home_data.create_buy_trade(
-                    self._time_slot, DEFAULT_SCM_SELLER_STRING,
+                    self._time_slot, DEFAULT_SCM_COMMUNITY_NAME,
                     home_data.allocated_community_energy_kWh,
                     home_data.allocated_community_energy_kWh * market_maker_rate_decreased_fees
                 )
 
             if energy_from_grid_kWh > 0.:
                 home_data.create_buy_trade(
-                    self._time_slot, DEFAULT_GRID_SELLER_STRING,
+                    self._time_slot, DEFAULT_SCM_GRID_NAME,
                     energy_from_grid_kWh,
                     energy_from_grid_kWh * market_maker_rate_normal_fees
                 )

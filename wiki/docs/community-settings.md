@@ -2,14 +2,14 @@ Users can configure the overall settings for their communities by selecting the 
 
 ![alt_text](img/community-settings-1.png)
 
-***Figure 2.10***. *Map view community settings.*
+***Figure 2.13***. *Map view of community settings.*
 
 ##Community Configuration Options
 
 1. Name: Must be unique.
 2. Currency: Choose the currency used by the community.
-3. Simulation Length: Users can choose the length of time they want to run their simulation for, as well as corresponding dates. By default, simulations are set to run for one week starting from the current date. If users upload their own data, they should set the simulation length, start date and end date according to the ones in their profile.
-4. Show community on the Map: Users can choose whether or not their community will be publicly visible on the Singularity Map for others to see. If visible, the name, approximate location (circle outline) and simulation results will be available for anyone to see. This information will be kept private to the user if not.
+3. Simulation Length: Users can choose the length of time of their simulation, as well as corresponding dates. By default, simulations are set to run for one week starting from the current date. If users upload their own data, they should set the simulation length, start date and end date according to the used profile.
+4. Show community on the Map: Users can choose whether or not their community will be publicly visible on the Singularity Map. If visible, the name, approximate location (circle outline) and simulation results will be available for anyone to see. This information will be kept private to the user if the user selects otherwise.
 5. Description: Users can add an optional description of their community.
 6. Solar profile: Users can choose between the template solar profiles of either sunny, partially cloudy, cloudy, Gaussian (each profile generated with a 250W panel), or upload their own custom generation profile ([see format required](data-requirements.md)).
 7. Spot market type - Users can select either the one-sided or two-sided market type.
@@ -24,4 +24,4 @@ Users can configure the overall settings for their communities by selecting the 
 
 ![alt_text](img/community-settings-2.png)
 
-***Figure 2.11***. *Some of the configuration options available in Community Settings.*
+***Figure 2.14***. *Community Settings Configuration Options*

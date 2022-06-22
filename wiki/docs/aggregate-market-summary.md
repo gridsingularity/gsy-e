@@ -2,4 +2,4 @@ This market summary shows the net energy and volume in kWh for each 15 minute ma
 
 ![alt_text](img/summary.png)
 
-***Figure 2.27***. *Summary of Results.*
+***Figure 2.27***. *Summary of volume traded, net energy, average price and grid fee.*
