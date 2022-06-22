@@ -191,18 +191,21 @@ class FutureMarkets(TwoSidedMarket):
         self.trades = self._remove_old_orders_from_list(
             self.trades, last_slot_to_be_deleted)
 
+    @staticmethod
+    def _adapt_market_length(market_length: duration, _time_slot: DateTime) -> duration:
+        return market_length
+
     def _create_future_markets(self,
                                market_length: duration, start_time: DateTime, end_time: DateTime,
                                config: "SimulationConfig"):
         future_time_slot = start_time
-        most_future_slot = end_time
-
-        while future_time_slot <= most_future_slot:
+        while future_time_slot <= end_time:
             if (future_time_slot not in self.slot_bid_mapping and
                     is_time_slot_in_simulation_duration(future_time_slot, config)):
                 self.bids.slot_order_mapping[future_time_slot] = []
                 self.offers.slot_order_mapping[future_time_slot] = []
-            future_time_slot = future_time_slot.add(minutes=market_length.total_minutes())
+            future_time_slot = future_time_slot.add(
+                minutes=self._adapt_market_length(market_length, future_time_slot).total_minutes())
 
     def create_future_markets(self, current_market_time_slot: DateTime,
                               config: "SimulationConfig") -> None:
