@@ -25,6 +25,8 @@ from gsy_e.gsy_e_core.exceptions import WrongMarketTypeException
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.models.myco_matcher.myco_matcher_interface import MycoMatcherInterface
 from gsy_e.gsy_e_core.enums import AvailableMarketTypes
+from gsy_e.gsy_e_core.market_counters import (HourForwardMarketCounter, WeekForwardMarketCounter,
+                                              MonthForwardMarketCounter, YearForwardMarketCounter)
 
 
 class MycoInternalMatcher(MycoMatcherInterface):
@@ -39,6 +41,12 @@ class MycoInternalMatcher(MycoMatcherInterface):
             AvailableMarketTypes.WEEK_FORWARD: PayAsClearMatchingAlgorithm,
             AvailableMarketTypes.MONTH_FORWARD: PayAsClearMatchingAlgorithm,
             AvailableMarketTypes.YEAR_FORWARD: PayAsClearMatchingAlgorithm,
+        }
+        self._forward_market_counters = {
+            AvailableMarketTypes.HOUR_FORWARD: HourForwardMarketCounter,
+            AvailableMarketTypes.WEEK_FORWARD: WeekForwardMarketCounter,
+            AvailableMarketTypes.MONTH_FORWARD: MonthForwardMarketCounter,
+            AvailableMarketTypes.YEAR_FORWARD: YearForwardMarketCounter
         }
 
     def activate(self):
@@ -109,7 +117,7 @@ class MycoInternalMatcher(MycoMatcherInterface):
         if not ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS:
             return
         for market_type, matching_algorithm in self._forward_match_algorithms.items():
-            if global_objects.forward_market_counters.counters[market_type].is_time_for_clearing(
+            if self._forward_market_counters[market_type].is_time_for_clearing(
                     area_data["current_time"]):
                 self._match_recommendations(
                     area_uuid, area_data, [area_data[market_type]],
