@@ -467,6 +467,13 @@ class SmartMeterState(ConsumptionState, ProductionState):
             "smart_meter_profile_kWh": self.get_energy_at_market_slot(current_time_slot)
         }
 
+    def to_dict(self, time_slot: DateTime) -> Dict:
+        """Return a dict of the current stats of the smart meter according to timeslot."""
+        return {
+            "energy_requirement_kWh": self.get_energy_requirement_Wh(time_slot) / 1000.0,
+            "available_energy_kWh": self.get_available_energy_kWh(time_slot)
+        }
+
 
 class ESSEnergyOrigin(Enum):
     """Enum for the storage's possible sources of energy."""

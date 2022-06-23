@@ -44,7 +44,10 @@ class SmartMeterExternalMixin(ExternalMixin):
     @property
     def _device_info_dict(self) -> Dict:
         """Return the asset info."""
-        raise NotImplementedError()  # TODO
+        return {
+            **super()._device_info_dict,
+            **self.state.to_dict(self.spot_market.time_slot)
+        }
 
     def event_activate(self, **kwargs) -> None:
         """Activate the device."""
