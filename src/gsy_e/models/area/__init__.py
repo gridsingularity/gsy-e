@@ -261,7 +261,6 @@ class CoefficientArea(AreaBase):
                  market_maker_rate: float = (
                          ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE / 100.),
                  feed_in_tariff: float = GlobalConfig.FEED_IN_TARIFF / 100.,
-                 trade_rate: float = 0.0
                  ):
         # pylint: disable=too-many-arguments
         super().__init__(name, children, uuid, strategy, config, grid_fee_percentage,
@@ -269,7 +268,6 @@ class CoefficientArea(AreaBase):
         self._coefficient_percent = coefficient_percent
         self._market_maker_rate = market_maker_rate
         self._feed_in_tariff = feed_in_tariff
-        self._trade_rate = trade_rate
         self.past_market_time_slot = None
 
     def activate_energy_parameters(self, current_time_slot: DateTime) -> None:
