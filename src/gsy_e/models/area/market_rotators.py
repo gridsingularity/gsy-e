@@ -80,7 +80,8 @@ class IntradayMarketRotator(ForwardMarketRotatorBase):
 
     @staticmethod
     def _is_it_time_to_rotate(current_time: DateTime) -> bool:
-        return current_time.minute % 15 == 0
+        return (current_time.minute % 15 == 0 and
+                current_time.second == 0)
 
 
 class HourForwardMarketRotator(ForwardMarketRotatorBase):
@@ -92,7 +93,7 @@ class HourForwardMarketRotator(ForwardMarketRotatorBase):
 
     @staticmethod
     def _is_it_time_to_rotate(current_time: DateTime) -> bool:
-        return current_time.minute == 0
+        return current_time.minute == 0 and current_time.second == 0
 
 
 class WeekForwardMarketRotator(ForwardMarketRotatorBase):
@@ -106,7 +107,8 @@ class WeekForwardMarketRotator(ForwardMarketRotatorBase):
     def _is_it_time_to_rotate(current_time: DateTime) -> bool:
         return (current_time.day_of_week == 1 and
                 current_time.hour == 0 and
-                current_time.minute == 0)
+                current_time.minute == 0 and
+                current_time.second == 0)
 
 
 class MonthForwardMarketRotator(ForwardMarketRotatorBase):
@@ -120,7 +122,8 @@ class MonthForwardMarketRotator(ForwardMarketRotatorBase):
     def _is_it_time_to_rotate(current_time: DateTime) -> bool:
         return (current_time.day == 1 and
                 current_time.hour == 0 and
-                current_time.minute == 0)
+                current_time.minute == 0 and
+                current_time.second == 0)
 
 
 class YearForwardMarketRotator(ForwardMarketRotatorBase):
@@ -135,7 +138,8 @@ class YearForwardMarketRotator(ForwardMarketRotatorBase):
         return (current_time.month == 1 and
                 current_time.day == 1 and
                 current_time.hour == 0 and
-                current_time.minute == 0)
+                current_time.minute == 0 and
+                current_time.second == 0)
 
 
 class DefaultMarketRotator(BaseRotator):

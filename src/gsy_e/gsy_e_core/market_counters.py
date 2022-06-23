@@ -18,8 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from gsy_framework.constants_limits import ConstSettings
 from pendulum import DateTime
 
-from gsy_e.gsy_e_core.enums import AvailableMarketTypes
-
 
 class MarketCounter:
     """Base class for market counters"""
@@ -65,58 +63,60 @@ class ExternalTickCounter:
         return current_tick_in_slot % self._dispatch_tick_frequency == 0
 
 
-class IntradayMarketCounter(MarketCounter):
+class ForwardMarketCounter:
+    """Base class for forward market counters."""
+
+    @staticmethod
+    def is_time_for_clearing(current_time: DateTime) -> bool:
+        """Return True if it is time for market clearing"""
+
+
+class HourForwardMarketCounter(ForwardMarketCounter):
+    """Market counter for hour-forward markets."""
+
+    @staticmethod
+    def is_time_for_clearing(current_time: DateTime) -> bool:
+        return current_time.minute == 0 and current_time.second == 0
+
+
+class WeekForwardMarketCounter(ForwardMarketCounter):
+    """Market counter for week-forward markets."""
+
+    @staticmethod
+    def is_time_for_clearing(current_time: DateTime) -> bool:
+        return (current_time.day_of_week == 1 and
+                current_time.hour == 0 and
+                current_time.minute == 0 and
+                current_time.second == 0)
+
+
+class MonthForwardMarketCounter(ForwardMarketCounter):
+    """Market counter for month-forward markets."""
+
+    @staticmethod
+    def is_time_for_clearing(current_time: DateTime) -> bool:
+        return (current_time.day == 1 and
+                current_time.hour == 0 and
+                current_time.minute == 0 and
+                current_time.second == 0)
+
+
+class YearForwardMarketCounter(ForwardMarketCounter):
+    """Market counter for year-forward markets."""
+
+    @staticmethod
+    def is_time_for_clearing(current_time: DateTime) -> bool:
+        return (current_time.month == 1 and
+                current_time.day == 1 and
+                current_time.hour == 0 and
+                current_time.minute == 0 and
+                current_time.second == 0)
+
+
+class IntradayMarketCounter(ForwardMarketCounter):
     """Handle timing of intraday market clearing"""
 
-    def __init__(self):
-        super().__init__(
-            clearing_interval_min=ConstSettings.ForwardMarketSettings.
-            INTRADAY_CLEARING_INTERVAL_MINUTES)
-
-
-class HourForwardMarketCounter(MarketCounter):
-    """Handle timing of hour-forward market clearing"""
-
-    def __init__(self):
-        super().__init__(
-            clearing_interval_min=ConstSettings.ForwardMarketSettings.
-            HOUR_FORWARD_CLEARING_INTERVAL_MINUTES)
-
-
-class WeekForwardMarketCounter(MarketCounter):
-    """Handle timing of week-forward market clearing"""
-
-    def __init__(self):
-        super().__init__(
-            clearing_interval_min=ConstSettings.ForwardMarketSettings.
-            WEEK_FORWARD_CLEARING_INTERVAL_MINUTES)
-
-
-class MonthForwardMarketCounter(MarketCounter):
-    """Handle timing of month-forward market clearing"""
-
-    def __init__(self):
-        super().__init__(
-            clearing_interval_min=ConstSettings.ForwardMarketSettings.
-            MONTH_FORWARD_CLEARING_INTERVAL_MINUTES)
-
-
-class YearForwardMarketCounter(MarketCounter):
-    """Handle timing of year-forward market clearing"""
-
-    def __init__(self):
-        super().__init__(
-            clearing_interval_min=ConstSettings.ForwardMarketSettings.
-            YEAR_FORWARD_CLEARING_INTERVAL_MINUTES)
-
-
-class ForwardMarketCounters:
-    """Collection of all market counters of forward markets"""
-
-    def __init__(self):
-        self.counters = {
-            AvailableMarketTypes.HOUR_FORWARD: HourForwardMarketCounter(),
-            AvailableMarketTypes.WEEK_FORWARD: WeekForwardMarketCounter(),
-            AvailableMarketTypes.MONTH_FORWARD: MonthForwardMarketCounter(),
-            AvailableMarketTypes.YEAR_FORWARD: YearForwardMarketCounter()
-        }
+    @staticmethod
+    def is_time_for_clearing(current_time: DateTime) -> bool:
+        return (current_time.minute % 15 == 0 and
+                current_time.second == 0)
