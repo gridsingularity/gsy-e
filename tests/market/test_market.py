@@ -195,9 +195,6 @@ def test_orders_per_slot(market):
                                            "type": "Offer"}]}}
 
 
-@pytest.mark.skip(
-    reason="Due to Trade validator rejecting trades with negative price. This test should be "
-           "reactivated when there is a business need for negative prices.")
 def test_balancing_market_negative_offer_trade(market=BalancingMarket(
         bc=NonBlockchainInterface(str(uuid4())))):  # NOQA
     offer = market.balancing_offer(20, -10, "A", "A")
