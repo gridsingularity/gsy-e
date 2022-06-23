@@ -26,19 +26,21 @@ def decompress_and_decode_queued_strings(queued_string: bytes) -> Dict:
 
 def launch_simulation_from_rq_job(scenario: bytes, settings: Optional[Dict],
                                   events: Optional[str], aggregator_device_mapping: str,
-                                  saved_state: bytes, job_id: str):
+                                  saved_state: bytes, job_id: str,
+                                  connect_to_profiles_db: bool = True):
     # pylint: disable=too-many-arguments, too-many-locals
     """Launch simulation from rq job."""
     logging.getLogger().setLevel(logging.ERROR)
     scenario = decompress_and_decode_queued_strings(scenario)
-    gsy_e.constants.CONFIGURATION_ID = scenario.pop("configuration_uuid")
-    if "collaboration_uuid" in scenario:
-        gsy_e.constants.EXTERNAL_CONNECTION_WEB = True
-        GlobalConfig.IS_CANARY_NETWORK = scenario.pop("is_canary_network", False)
-        gsy_e.constants.RUN_IN_REALTIME = GlobalConfig.IS_CANARY_NETWORK
+    if isinstance(scenario, dict):
+        gsy_e.constants.CONFIGURATION_ID = scenario.pop("configuration_uuid")
+        if "collaboration_uuid" in scenario:
+            gsy_e.constants.EXTERNAL_CONNECTION_WEB = True
+            GlobalConfig.IS_CANARY_NETWORK = scenario.pop("is_canary_network", False)
+            gsy_e.constants.RUN_IN_REALTIME = GlobalConfig.IS_CANARY_NETWORK
     saved_state = decompress_and_decode_queued_strings(saved_state)
-    log.error("Starting simulation with job_id: %s and configuration id: %s",
-              job_id, gsy_e.constants.CONFIGURATION_ID)
+    log.info("Starting simulation with job_id: %s and configuration id: %s",
+             job_id, gsy_e.constants.CONFIGURATION_ID)
 
     try:
         if settings is None:
@@ -122,8 +124,7 @@ def launch_simulation_from_rq_job(scenario: bytes, settings: Optional[Dict],
         kwargs = {"no_export": True,
                   "seed": settings.get("random_seed", 0)}
 
-        gsy_e.constants.CONNECT_TO_PROFILES_DB = True
-
+        gsy_e.constants.CONNECT_TO_PROFILES_DB = connect_to_profiles_db
         run_simulation(setup_module_name=scenario_name,
                        simulation_config=config,
                        simulation_events=events,
@@ -132,8 +133,8 @@ def launch_simulation_from_rq_job(scenario: bytes, settings: Optional[Dict],
                        slot_length_realtime=slot_length_realtime,
                        kwargs=kwargs)
 
-        log.error("Finishing simulation with job_id: %s and configuration id: %s",
-                  job_id, gsy_e.constants.CONFIGURATION_ID)
+        log.info("Finishing simulation with job_id: %s and configuration id: %s",
+                 job_id, gsy_e.constants.CONFIGURATION_ID)
 
     # pylint: disable=broad-except
     except Exception:
@@ -142,3 +143,4 @@ def launch_simulation_from_rq_job(scenario: bytes, settings: Optional[Dict],
         publish_job_error_output(job_id, traceback.format_exc())
         logging.getLogger().exception("Error on jobId, %s, configuration id: %s",
                                       job_id, gsy_e.constants.CONFIGURATION_ID)
+        raise
