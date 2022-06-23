@@ -22,15 +22,15 @@ from gsy_framework.data_classes import Bid, Offer, Trade
 from pendulum import datetime
 
 from gsy_e.models.area import Area
-from gsy_e.models.area.market_rotators import (HourForwardMarketRotator,
+from gsy_e.models.area.market_rotators import (HourForwardMarketRotator, IntradayMarketRotator,
                                                WeekForwardMarketRotator, MonthForwardMarketRotator,
                                                YearForwardMarketRotator)
 from gsy_e.models.market import GridFee
-from gsy_e.models.market.forward import (ForwardMarketBase, HourForwardMarket,
+from gsy_e.models.market.forward import (ForwardMarketBase, HourForwardMarket, IntradayMarket,
                                          WeekForwardMarket, MonthForwardMarket, YearForwardMarket)
 from tests.market.test_future import count_orders_in_buffers
 
-CURRENT_MARKET_SLOT = datetime(2022, 6, 19, 0, 15)
+CURRENT_MARKET_SLOT = datetime(2022, 6, 19, 0, 10)
 
 
 class TestForwardMarkets:
@@ -53,7 +53,8 @@ class TestForwardMarkets:
         return forward_markets
 
     @pytest.mark.parametrize("market_class, expected_market_count",
-                             [[HourForwardMarket, 24 * 7],
+                             [[IntradayMarket, 24 * 4],
+                              [HourForwardMarket, 24 * 7],
                               [WeekForwardMarket, 52],
                               [MonthForwardMarket, 24],
                               [YearForwardMarket, 5]])
@@ -83,7 +84,9 @@ class TestForwardMarkets:
                            for time_slot in buffer)
 
     @pytest.mark.parametrize("market_class, rotator_class, expected_market_count, rotation_time",
-                             [[HourForwardMarket, HourForwardMarketRotator, 24 * 7,
+                             [[IntradayMarket, IntradayMarketRotator, 24 * 4,
+                               CURRENT_MARKET_SLOT.set(minute=15)],
+                              [HourForwardMarket, HourForwardMarketRotator, 24 * 7,
                                CURRENT_MARKET_SLOT.set(minute=0)],
                               [WeekForwardMarket, WeekForwardMarketRotator, 52,
                                datetime(2022, 6, 20, 0, 0)],

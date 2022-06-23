@@ -68,6 +68,22 @@ class ForwardMarketBase(FutureMarkets):
                                     self._get_end_time(current_market_time_slot), config)
 
 
+class IntradayMarket(ForwardMarketBase):
+    """Intraday market block implementation"""
+
+    @staticmethod
+    def _get_start_time(current_time: DateTime) -> DateTime:
+        return current_time.add(minutes=15)
+
+    @staticmethod
+    def _get_end_time(current_time: DateTime) -> DateTime:
+        return current_time.add(days=1)
+
+    @staticmethod
+    def _get_market_slot_duration() -> duration:
+        return duration(minutes=15)
+
+
 class HourForwardMarket(ForwardMarketBase):
     """Hour forward market implementation"""
 

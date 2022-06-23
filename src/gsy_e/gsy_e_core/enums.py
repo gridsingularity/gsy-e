@@ -14,6 +14,7 @@ class AvailableMarketTypes(Enum):
     WEEK_FORWARD = 5
     MONTH_FORWARD = 6
     YEAR_FORWARD = 7
+    INTRADAY = 8
 
 
 PAST_MARKET_TYPE_FILE_SUFFIX_MAPPING = {
@@ -25,4 +26,5 @@ PAST_MARKET_TYPE_FILE_SUFFIX_MAPPING = {
     AvailableMarketTypes.WEEK_FORWARD: "-week-ahead",
     AvailableMarketTypes.MONTH_FORWARD: "-month-ahead",
     AvailableMarketTypes.YEAR_FORWARD: "-year-ahead",
+    AvailableMarketTypes.INTRADAY: "-intraday"
 }

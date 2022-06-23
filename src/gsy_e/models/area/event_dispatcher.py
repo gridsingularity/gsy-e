@@ -249,7 +249,8 @@ class AreaDispatcher:
                            AvailableMarketTypes.HOUR_FORWARD,
                            AvailableMarketTypes.WEEK_FORWARD,
                            AvailableMarketTypes.MONTH_FORWARD,
-                           AvailableMarketTypes.YEAR_FORWARD]:
+                           AvailableMarketTypes.YEAR_FORWARD,
+                           AvailableMarketTypes.INTRADAY]:
             return FutureAgent(**agent_constructor_arguments)
 
         assert False, f"Market type not supported {market_type}"

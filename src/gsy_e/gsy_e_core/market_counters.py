@@ -65,6 +65,15 @@ class ExternalTickCounter:
         return current_tick_in_slot % self._dispatch_tick_frequency == 0
 
 
+class IntradayMarketCounter(MarketCounter):
+    """Handle timing of intraday market clearing"""
+
+    def __init__(self):
+        super().__init__(
+            clearing_interval_min=ConstSettings.ForwardMarketSettings.
+            INTRADAY_CLEARING_INTERVAL_MINUTES)
+
+
 class HourForwardMarketCounter(MarketCounter):
     """Handle timing of hour-forward market clearing"""
 
