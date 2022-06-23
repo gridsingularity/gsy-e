@@ -43,12 +43,6 @@ if TYPE_CHECKING:
 
 IncomingRequest = namedtuple("IncomingRequest", ("request_type", "arguments", "response_channel"))
 
-default_market_info = {"device_info": None,
-                       "asset_bill": None,
-                       "event": None,
-                       "grid_stats_tree": None,
-                       "area_uuid": None}
-
 
 class CommandTypeNotSupported(Exception):
     """Exception raised when a unsupported command is received."""

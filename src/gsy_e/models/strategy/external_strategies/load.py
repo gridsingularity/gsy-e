@@ -25,7 +25,7 @@ from pendulum import duration
 from gsy_e.gsy_e_core.exceptions import GSyException
 from gsy_e.gsy_e_core.util import get_market_maker_rate_from_config
 from gsy_e.models.strategy.external_strategies import (
-    ExternalMixin, IncomingRequest, default_market_info, ExternalStrategyConnectionManager,
+    ExternalMixin, IncomingRequest, ExternalStrategyConnectionManager,
     CommandTypeNotSupported, OrderCanNotBePosted)
 from gsy_e.models.strategy.external_strategies.forecast_mixin import ForecastExternalMixin
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
@@ -241,8 +241,6 @@ class LoadExternalMixin(ExternalMixin):
             if not self.is_aggregator_controlled:
                 market_event_channel = f"{self.channel_prefix}/events/market"
                 market_info = self.spot_market.info
-                if self.is_aggregator_controlled:
-                    market_info.update(default_market_info)
                 market_info["device_info"] = self._device_info_dict
                 market_info["event"] = "market"
                 market_info["area_uuid"] = self.device.uuid
