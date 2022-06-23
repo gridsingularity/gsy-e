@@ -12,7 +12,6 @@ General Public License for more details.
 You should have received a copy of the GNU General Public License along with this program. If not,
 see <http://www.gnu.org/licenses/>.
 """
-
 from typing import TYPE_CHECKING, List, Union
 
 from gsy_framework.constants_limits import GlobalConfig
@@ -48,6 +47,13 @@ class FutureTemplateStrategyBidUpdater(TemplateStrategyBidUpdater):
             return []
         return area.future_markets.market_time_slots
 
+    def time_for_price_update(self, strategy: "BaseStrategy", time_slot: DateTime) -> bool:
+        """Check if the prices of bids/offers should be updated."""
+        return (
+                self._elapsed_seconds(strategy.area)
+                - self.market_slot_added_time_mapping[time_slot] >= (
+                        self.update_interval.seconds * self.update_counter[time_slot]))
+
     def update(self, market: "FutureMarkets", strategy: "BaseStrategy") -> None:
         """Update the price of existing bids to reflect the new rates."""
         for time_slot in strategy.area.future_markets.market_time_slots:
@@ -74,6 +80,13 @@ class FutureTemplateStrategyOfferUpdater(TemplateStrategyOfferUpdater):
         if not area.future_markets:
             return []
         return area.future_markets.market_time_slots
+
+    def time_for_price_update(self, strategy: "BaseStrategy", time_slot: DateTime) -> bool:
+        """Check if the prices of bids/offers should be updated."""
+        return (
+                self._elapsed_seconds(strategy.area)
+                - self.market_slot_added_time_mapping[time_slot] >= (
+                        self.update_interval.seconds * self.update_counter[time_slot]))
 
     def update(self, market: "FutureMarkets", strategy: "BaseStrategy") -> None:
         """Update the price of existing offers to reflect the new rates."""
