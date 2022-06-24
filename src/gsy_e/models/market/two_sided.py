@@ -29,7 +29,8 @@ from pendulum import DateTime
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.exceptions import (
-    BidNotFoundException, InvalidBid, InvalidBidOfferPairException, InvalidTrade, MarketException)
+    BidNotFoundException, InvalidBidOfferPairException, InvalidTrade,
+    NegativePriceOrdersException, NegativeEnergyOrderException, NegativeEnergyTradeException)
 from gsy_e.gsy_e_core.util import short_offer_bid_log_str, is_external_matching_enabled
 from gsy_e.events.event_structures import MarketEvent
 from gsy_e.models.market import lock_market_action
@@ -108,7 +109,7 @@ class TwoSidedMarket(OneSidedMarket):
         """Create bid object."""
         # pylint: disable=too-many-arguments
         if energy <= 0:
-            raise InvalidBid()
+            raise NegativeEnergyOrderException("Energy value for bid can not be negative.")
 
         if not time_slot:
             time_slot = self.time_slot
@@ -121,7 +122,8 @@ class TwoSidedMarket(OneSidedMarket):
                 price/energy, original_price/energy) * energy
 
         if price < 0.0:
-            raise MarketException("Negative price after taxes, bid cannot be posted.")
+            raise NegativePriceOrdersException(
+                "Negative price after taxes, bid cannot be posted.")
 
         bid = Bid(str(uuid.uuid4()) if bid_id is None else bid_id,
                   self.now, price, energy, buyer, original_price, buyer_origin,
@@ -232,7 +234,7 @@ class TwoSidedMarket(OneSidedMarket):
         residual_bid = None
 
         if energy <= 0:
-            raise InvalidTrade("Energy cannot be negative or zero.")
+            raise NegativeEnergyTradeException("Energy cannot be negative or zero.")
         if energy > market_bid.energy:
             raise InvalidTrade(f"Traded energy ({energy}) cannot be more than the "
                                f"bid energy ({market_bid.energy}).")
