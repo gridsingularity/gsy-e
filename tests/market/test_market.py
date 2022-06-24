@@ -51,14 +51,16 @@ device_registry_dict = {
 
 @pytest.fixture(scope="function", autouse=True)
 def device_registry_auto_fixture():
+    """Fixture for device registry."""
     DeviceRegistry.REGISTRY = device_registry_dict
     ConstSettings.MASettings.MARKET_TYPE = 1
     yield
     DeviceRegistry.REGISTRY = {}
 
 
-@pytest.fixture
-def market():
+@pytest.fixture(name="market")
+def market_fixture():
+    """Fixture for two sided market."""
     return TwoSidedMarket(time_slot=now())
 
 
@@ -184,7 +186,6 @@ def test_orders_per_slot(market):
                                            "id": "offer1",
                                            "original_price": 10,
                                            "requirements": None,
-                                           "time_slot": "",
                                            "seller": "seller",
                                            "seller_id": None,
                                            "seller_origin": None,
@@ -419,6 +420,7 @@ def test_market_listeners_offer(market, offer, add_listener, event, called):
      MarketEvent.OFFER_SPLIT),
 ])
 def test_market_listeners_offer_split(market, offer, accept_offer, add_listener, event, called):
+    # pylint: disable=too-many-arguments
     getattr(market, add_listener)(called)
     e_offer = getattr(market, offer)(10., 20, "A", "A")
     getattr(market, accept_offer)(e_offer, "B", energy=3.)
@@ -448,6 +450,7 @@ def test_market_listeners_offer_split(market, offer, accept_offer, add_listener,
      "add_listener", MarketEvent.OFFER_DELETED),
 ])
 def test_market_listeners_offer_deleted(market, offer, delete_offer, add_listener, event, called):
+    # pylint: disable=too-many-arguments
     getattr(market, add_listener)(called)
     e_offer = getattr(market, offer)(10, 20, "A", "A")
     getattr(market, delete_offer)(e_offer)
@@ -486,6 +489,7 @@ def test_market_issuance_acct_reverse(last_offer_size, traded_energy):
      "accept_offer")
 ])
 def test_market_accept_offer_yields_partial_trade(market, offer, accept_offer):
+    """Test market accept offer returns partial trade."""
     e_offer = getattr(market, offer)(2.0, 4, "seller", "seller")
     trade = getattr(market, accept_offer)(e_offer, "buyer", energy=1)
     assert (trade.offer_bid.id == e_offer.id
@@ -494,6 +498,8 @@ def test_market_accept_offer_yields_partial_trade(market, offer, accept_offer):
 
 
 class MarketStateMachine(RuleBasedStateMachine):
+    """State machine for Market"""
+    # pylint: disable=missing-function-docstring
     offers = Bundle("Offers")
     actors = Bundle("Actors")
 
@@ -501,9 +507,10 @@ class MarketStateMachine(RuleBasedStateMachine):
         self.market = OneSidedMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now())
         super().__init__()
 
+    @staticmethod
     @rule(target=actors, actor=st.text(min_size=1, max_size=3,
                                        alphabet=string.ascii_letters + string.digits))
-    def new_actor(self, actor):
+    def new_actor(actor):
         return actor
 
     @rule(target=offers, seller=actors, energy=st.integers(min_value=1),
