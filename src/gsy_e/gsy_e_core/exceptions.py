@@ -81,3 +81,15 @@ class MycoValidationException(GSyException):
 
 class LiveEventException(GSyException):
     """Exception type for live event errors."""
+
+
+class NegativePriceOrdersException(MarketException):
+    """Exception type for errors regarding negative order prices."""
+
+
+class NegativeEnergyOrderException(MarketException):
+    """Exception type for errors of negative energy value in orders."""
+
+
+class NegativeEnergyTradeException(MarketException):
+    """Exception type for errors of negative energy value in Trades."""
