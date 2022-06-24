@@ -507,10 +507,10 @@ class MarketStateMachine(RuleBasedStateMachine):
         self.market = OneSidedMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now())
         super().__init__()
 
-    @staticmethod
     @rule(target=actors, actor=st.text(min_size=1, max_size=3,
                                        alphabet=string.ascii_letters + string.digits))
-    def new_actor(actor):
+    def new_actor(self, actor):
+        # pylint: disable=no-self-use
         return actor
 
     @rule(target=offers, seller=actors, energy=st.integers(min_value=1),
