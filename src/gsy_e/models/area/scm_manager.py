@@ -265,7 +265,7 @@ class SCMManager:
         feed_in_tariff = home_data.feed_in_tariff
 
         market_maker_rate_decreased_fees = (
-                market_maker_rate + grid_fees * self._grid_fees_reduction)
+                market_maker_rate + grid_fees * (1.0 - self._grid_fees_reduction))
         market_maker_rate_normal_fees = market_maker_rate + grid_fees
 
         home_bill = AreaEnergyBills()
