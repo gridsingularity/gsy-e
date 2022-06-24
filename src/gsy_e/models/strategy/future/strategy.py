@@ -63,11 +63,7 @@ class FutureTemplateStrategyBidUpdater(TemplateStrategyBidUpdater):
 
     def delete_past_state_values(self, current_market_time_slot: DateTime) -> None:
         """Delete irrelevant values from buffers for unneeded markets."""
-        self.initial_rate.pop(current_market_time_slot, None)
-        self.final_rate.pop(current_market_time_slot, None)
-        self.energy_rate_change_per_update.pop(current_market_time_slot, None)
-        self.update_counter.pop(current_market_time_slot, None)
-        self.market_slot_added_time_mapping.pop(current_market_time_slot, None)
+        self._delete_market_slot_data(current_market_time_slot)
 
 
 class FutureTemplateStrategyOfferUpdater(TemplateStrategyOfferUpdater):
@@ -106,11 +102,7 @@ class FutureTemplateStrategyOfferUpdater(TemplateStrategyOfferUpdater):
 
     def delete_past_state_values(self, current_market_time_slot: DateTime) -> None:
         """Delete irrelevant values from buffers for unneeded markets."""
-        self.initial_rate.pop(current_market_time_slot, None)
-        self.final_rate.pop(current_market_time_slot, None)
-        self.energy_rate_change_per_update.pop(current_market_time_slot, None)
-        self.update_counter.pop(current_market_time_slot, None)
-        self.market_slot_added_time_mapping.pop(current_market_time_slot, None)
+        self._delete_market_slot_data(current_market_time_slot)
 
 
 class FutureMarketStrategyInterface:

@@ -120,6 +120,13 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
                     InputProfileTypes.IDENTITY, self.energy_rate_change_per_update_input)
             )
 
+    def _delete_market_slot_data(self, market_time_slot: DateTime) -> None:
+        self.initial_rate.pop(market_time_slot, None)
+        self.final_rate.pop(market_time_slot, None)
+        self.energy_rate_change_per_update.pop(market_time_slot, None)
+        self.update_counter.pop(market_time_slot, None)
+        self.market_slot_added_time_mapping.pop(market_time_slot, None)
+
     def delete_past_state_values(self, current_market_time_slot: DateTime) -> None:
         """Delete values from buffers before the current_market_time_slot"""
         to_delete = []
@@ -127,11 +134,7 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
             if is_time_slot_in_past_markets(market_slot, current_market_time_slot):
                 to_delete.append(market_slot)
         for market_slot in to_delete:
-            self.initial_rate.pop(market_slot, None)
-            self.final_rate.pop(market_slot, None)
-            self.energy_rate_change_per_update.pop(market_slot, None)
-            self.update_counter.pop(market_slot, None)
-            self.market_slot_added_time_mapping.pop(market_slot, None)
+            self._delete_market_slot_data(market_slot)
 
     @staticmethod
     def get_all_markets(area: "Area") -> List["OneSidedMarket"]:
