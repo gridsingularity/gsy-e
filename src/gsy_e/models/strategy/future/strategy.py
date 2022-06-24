@@ -113,6 +113,9 @@ class FutureMarketStrategyInterface:
     def update_and_populate_price_settings(self, strategy: "BaseStrategy") -> None:
         """Base class method for updating/populating price settings"""
 
+    def delete_past_state_values(self, current_market_time_slot: DateTime) -> None:
+        """Base class method for deleting the state of past or spot markets."""
+
 
 def future_strategy_bid_updater_factory(
         initial_buying_rate: float, final_buying_rate: float, asset_type: AssetType
@@ -274,6 +277,17 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
 
         self._bid_updater.increment_update_counter_all_markets(strategy)
         self._offer_updater.increment_update_counter_all_markets(strategy)
+
+    def delete_past_state_values(self, current_market_time_slot: DateTime) -> None:
+        def _delete_past_state_values(updater, market_slot):
+            updater.initial_rate.pop(market_slot, None)
+            updater.final_rate.pop(market_slot, None)
+            updater.energy_rate_change_per_update.pop(market_slot, None)
+            updater.update_counter.pop(market_slot, None)
+            updater.market_slot_added_time_mapping.pop(market_slot, None)
+
+        _delete_past_state_values(self._bid_updater, current_market_time_slot)
+        _delete_past_state_values(self._offer_updater, current_market_time_slot)
 
 
 def future_market_strategy_factory(asset_type: AssetType) -> FutureMarketStrategyInterface:

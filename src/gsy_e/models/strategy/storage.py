@@ -543,6 +543,10 @@ class StorageStrategy(BidEnabledStrategy):
         self.bid_update.delete_past_state_values(self.area.current_market.time_slot)
         self.state.delete_past_state_values(self.area.current_market.time_slot)
 
+        # Delete the state of the current slot from the future market cache
+        self._future_market_strategy.delete_past_state_values(
+            self.area.current_market.time_slot)
+
     @property
     def asset_type(self):
         return AssetType.PROSUMER

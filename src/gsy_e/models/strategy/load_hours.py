@@ -340,6 +340,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
         self.state.delete_past_state_values(self.area.current_market.time_slot)
         self.bid_update.delete_past_state_values(self.area.current_market.time_slot)
+        self._future_market_strategy.delete_past_state_values(
+            self.area.current_market.time_slot)
 
     def _area_reconfigure_prices(self, **kwargs):
         if kwargs.get("initial_buying_rate") is not None:
