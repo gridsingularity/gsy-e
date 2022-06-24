@@ -285,9 +285,10 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
             updater.energy_rate_change_per_update.pop(market_slot, None)
             updater.update_counter.pop(market_slot, None)
             updater.market_slot_added_time_mapping.pop(market_slot, None)
-
-        _delete_past_state_values(self._bid_updater, current_market_time_slot)
-        _delete_past_state_values(self._offer_updater, current_market_time_slot)
+        if not isinstance(self._bid_updater, TemplateStrategyUpdaterInterface):
+            _delete_past_state_values(self._bid_updater, current_market_time_slot)
+        if not isinstance(self._offer_updater, TemplateStrategyUpdaterInterface):
+            _delete_past_state_values(self._offer_updater, current_market_time_slot)
 
 
 def future_market_strategy_factory(asset_type: AssetType) -> FutureMarketStrategyInterface:
