@@ -18,7 +18,7 @@ from gsy_e.events import MarketEvent
 from gsy_e.gsy_e_core.blockchain_interface import NonBlockchainInterface
 from gsy_e.gsy_e_core.exceptions import (
     BidNotFoundException, NegativeEnergyOrderException, InvalidBidOfferPairException,
-    InvalidTrade)
+    InvalidTrade, NegativeEnergyTradeException)
 from gsy_e.models.market import Bid, Offer
 from gsy_e.models.market.two_sided import TwoSidedMarket
 
@@ -360,8 +360,14 @@ class TestTwoSidedMarket:
             energy, market=TwoSidedMarket(bc=MagicMock(), time_slot=pendulum.now())):
         bid = market.bid(20, 20, "A", "A")
         trade_offer_info = TradeBidOfferInfo(1, 1, 1, 1, 1)
-        with pytest.raises(InvalidTrade):
-            market.accept_bid(bid, energy=energy, seller="A", trade_offer_info=trade_offer_info)
+        if energy <= 0:
+            with pytest.raises(NegativeEnergyTradeException):
+                market.accept_bid(
+                    bid, energy=energy, seller="A", trade_offer_info=trade_offer_info)
+        else:
+            with pytest.raises(InvalidTrade):
+                market.accept_bid(
+                    bid, energy=energy, seller="A", trade_offer_info=trade_offer_info)
 
     @staticmethod
     def test_market_accept_bid_yields_partial_bid_trade(
