@@ -33,8 +33,8 @@ from gsy_e.constants import TIME_ZONE
 from gsy_e.gsy_e_core.blockchain_interface import NonBlockchainInterface
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.exceptions import (DeviceNotInRegistryError, InvalidBalancingTradeException,
-                                         InvalidOffer, InvalidTrade, MarketReadOnlyException,
-                                         OfferNotFoundException)
+                                         NegativeEnergyOrderException, InvalidTrade,
+                                         MarketReadOnlyException, OfferNotFoundException)
 from gsy_e.gsy_e_core.util import add_or_create_key, subtract_or_create_key
 from gsy_e.events.event_structures import MarketEvent
 from gsy_e.models.market.balancing import BalancingMarket
@@ -101,7 +101,7 @@ def test_market_bid(market):
 
 
 def test_market_offer_invalid(market: OneSidedMarket):
-    with pytest.raises(InvalidOffer):
+    with pytest.raises(NegativeEnergyOrderException):
         market.offer(10, -1, "someone", "someone")
 
 

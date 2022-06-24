@@ -14,10 +14,11 @@ from gsy_framework.matching_algorithms import (
 )
 from pendulum import now
 
+from gsy_e.events import MarketEvent
 from gsy_e.gsy_e_core.blockchain_interface import NonBlockchainInterface
 from gsy_e.gsy_e_core.exceptions import (
-    BidNotFoundException, InvalidBid, InvalidBidOfferPairException, InvalidTrade, MarketException)
-from gsy_e.events import MarketEvent
+    BidNotFoundException, NegativeEnergyOrderException, InvalidBidOfferPairException,
+    InvalidTrade)
 from gsy_e.models.market import Bid, Offer
 from gsy_e.models.market.two_sided import TwoSidedMarket
 
@@ -83,11 +84,11 @@ class TestTwoSidedMarket:
         # if energy < 0
         market.fee_class.update_incoming_bid_with_fee = MagicMock(return_value=5/2)
         assert len(market.bids) == 0
-        with pytest.raises(InvalidBid):
+        with pytest.raises(NegativeEnergyOrderException):
             market.bid(5, -2, "buyer", "buyer_origin")
             assert len(market.bids) == 0
         # if price < 0
-        with pytest.raises(MarketException) as exception:
+        with pytest.raises(NegativeEnergyOrderException) as exception:
             market.bid(-5, -2, "buyer", "buyer_origin")
             assert exception.value == "Negative price after taxes, bid cannot be posted."
             assert len(market.bids) == 0
@@ -258,7 +259,7 @@ class TestTwoSidedMarket:
 
     @staticmethod
     def test_market_bid_invalid(market: TwoSidedMarket):
-        with pytest.raises(InvalidBid):
+        with pytest.raises(NegativeEnergyOrderException):
             market.bid(10, -1, "someone", "someone")
 
     @staticmethod
