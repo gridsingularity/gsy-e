@@ -55,6 +55,9 @@ class TemplateStrategyUpdaterInterface:
     def update(self, market: "OneSidedMarket", strategy: "BaseStrategy") -> None:
         """Update the price of existing orders to reflect the new rates."""
 
+    def delete_past_state_values(self, current_market_time_slot: DateTime) -> None:
+        """Delete irrelevant values from buffers for unneeded markets."""
+
 
 class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
     """Manage template strategy bid / offer posting. Updates periodically the energy rate
