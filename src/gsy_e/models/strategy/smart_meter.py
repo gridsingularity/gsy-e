@@ -506,6 +506,9 @@ class SmartMeterStrategy(BidEnabledStrategy):
         self.bid_update.delete_past_state_values(self.area.current_market.time_slot)
         # Delete offer rates for previous market slots
         self.offer_update.delete_past_state_values(self.area.current_market.time_slot)
+        # Delete the state of the current slot from the future market cache
+        self._future_market_strategy.delete_past_state_values(
+            self.area.current_market.time_slot)
 
     def _replace_rates_with_market_maker_rates(self):
         # Reconfigure the final buying rate (for energy consumption)

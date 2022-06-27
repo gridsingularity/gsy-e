@@ -61,6 +61,10 @@ class FutureTemplateStrategyBidUpdater(TemplateStrategyBidUpdater):
                 if strategy.are_bids_posted(market.id, time_slot):
                     strategy.update_bid_rates(market, self.get_updated_rate(time_slot), time_slot)
 
+    def delete_past_state_values(self, current_market_time_slot: DateTime) -> None:
+        """Delete irrelevant values from buffers for unneeded markets."""
+        self._delete_market_slot_data(current_market_time_slot)
+
 
 class FutureTemplateStrategyOfferUpdater(TemplateStrategyOfferUpdater):
     """Version of TemplateStrategyOfferUpdater class for future markets"""
@@ -96,6 +100,10 @@ class FutureTemplateStrategyOfferUpdater(TemplateStrategyOfferUpdater):
                     strategy.update_offer_rates(
                         market, self.get_updated_rate(time_slot), time_slot)
 
+    def delete_past_state_values(self, current_market_time_slot: DateTime) -> None:
+        """Delete irrelevant values from buffers for unneeded markets."""
+        self._delete_market_slot_data(current_market_time_slot)
+
 
 class FutureMarketStrategyInterface:
     """Dummy/empty class that does not provide concrete implementation of the methods.
@@ -112,6 +120,9 @@ class FutureMarketStrategyInterface:
 
     def update_and_populate_price_settings(self, strategy: "BaseStrategy") -> None:
         """Base class method for updating/populating price settings"""
+
+    def delete_past_state_values(self, current_market_time_slot: DateTime) -> None:
+        """Base class method for deleting the state of past or spot markets."""
 
 
 def future_strategy_bid_updater_factory(
@@ -274,6 +285,10 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
 
         self._bid_updater.increment_update_counter_all_markets(strategy)
         self._offer_updater.increment_update_counter_all_markets(strategy)
+
+    def delete_past_state_values(self, current_market_time_slot: DateTime) -> None:
+        self._bid_updater.delete_past_state_values(current_market_time_slot)
+        self._offer_updater.delete_past_state_values(current_market_time_slot)
 
 
 def future_market_strategy_factory(asset_type: AssetType) -> FutureMarketStrategyInterface:
