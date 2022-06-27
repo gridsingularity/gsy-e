@@ -106,7 +106,7 @@ class YearForwardMarketCounter(ForwardMarketCounter):
 
     @staticmethod
     def is_time_for_clearing(current_time: DateTime) -> bool:
-        return (current_time.month == 1 and
+        return (current_time.month in [1, 7] and
                 current_time.day == 1 and
                 current_time.hour == 0 and
                 current_time.minute == 0 and
