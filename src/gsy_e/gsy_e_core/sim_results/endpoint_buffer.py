@@ -343,5 +343,5 @@ class CoefficientEndpointBuffer(SimulationEndpointBuffer):
 def endpoint_buffer_class_factory() -> Type[SimulationEndpointBuffer]:
     """Class factory for endpoint buffer classes."""
     return (CoefficientEndpointBuffer
-            if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS
+            if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value
             else SimulationEndpointBuffer)

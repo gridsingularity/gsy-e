@@ -62,6 +62,9 @@ RUN_IN_REALTIME = False
 CONNECT_TO_PROFILES_DB = False
 SEND_EVENTS_RESPONSES_TO_SDK_VIA_RQ = False
 
+DEFAULT_SCM_COMMUNITY_NAME = "Community"
+DEFAULT_SCM_GRID_NAME = "Grid"
+
 
 class SettlementTemplateStrategiesConstants:
     """Constants related to the configuration of settlement template strategies"""

@@ -321,6 +321,8 @@ class PVStrategy(BidEnabledStrategy):
 
         self.state.delete_past_state_values(self.area.current_market.time_slot)
         self.offer_update.delete_past_state_values(self.area.current_market.time_slot)
+        self._future_market_strategy.delete_past_state_values(
+            self.area.current_market.time_slot)
 
     def event_market_cycle_price(self):
         """Manage price parameters during the market cycle event."""
