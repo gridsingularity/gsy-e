@@ -34,10 +34,10 @@ class TestRQJobUtils:
         process = Process(target=fn, args=(results_queue,), kwargs={
             "scenario": zlib.compress(pickle.dumps("default_2a")),
             "settings": {
-                           "duration": duration(days=1),
-                           "slot_length": duration(hours=1),
-                           "tick_length": duration(minutes=6)
-                       },
+               "duration": duration(days=1),
+               "slot_length": duration(hours=1),
+               "tick_length": duration(minutes=6)
+            },
             "events": None,
             "aggregator_device_mapping": "null",
             "saved_state": zlib.compress(pickle.dumps(None)),
