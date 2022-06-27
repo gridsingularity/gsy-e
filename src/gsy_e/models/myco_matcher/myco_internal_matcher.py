@@ -26,7 +26,8 @@ from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.models.myco_matcher.myco_matcher_interface import MycoMatcherInterface
 from gsy_e.gsy_e_core.enums import AvailableMarketTypes
 from gsy_e.gsy_e_core.market_counters import (DayForwardMarketCounter, WeekForwardMarketCounter,
-                                              MonthForwardMarketCounter, YearForwardMarketCounter)
+                                              MonthForwardMarketCounter, YearForwardMarketCounter,
+                                              IntraDayMarketCounter)
 
 
 class MycoInternalMatcher(MycoMatcherInterface):
@@ -35,14 +36,15 @@ class MycoInternalMatcher(MycoMatcherInterface):
     def __init__(self):
         super().__init__()
         self.match_algorithm = None
-        # TBD: Which matching algorithm is applied for which forward market type
         self._forward_match_algorithms = {
+            AvailableMarketTypes.INTRADAY: PayAsBidMatchingAlgorithm,
             AvailableMarketTypes.DAY_FORWARD: PayAsClearMatchingAlgorithm,
             AvailableMarketTypes.WEEK_FORWARD: PayAsClearMatchingAlgorithm,
             AvailableMarketTypes.MONTH_FORWARD: PayAsClearMatchingAlgorithm,
             AvailableMarketTypes.YEAR_FORWARD: PayAsClearMatchingAlgorithm,
         }
         self._forward_market_counters = {
+            AvailableMarketTypes.INTRADAY: IntraDayMarketCounter,
             AvailableMarketTypes.DAY_FORWARD: DayForwardMarketCounter,
             AvailableMarketTypes.WEEK_FORWARD: WeekForwardMarketCounter,
             AvailableMarketTypes.MONTH_FORWARD: MonthForwardMarketCounter,

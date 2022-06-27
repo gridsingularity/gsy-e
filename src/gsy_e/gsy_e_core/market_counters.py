@@ -71,6 +71,15 @@ class ForwardMarketCounter:
         """Return True if it is time for market clearing"""
 
 
+class IntraDayMarketCounter(ForwardMarketCounter):
+    """Market counter for intra-day markets."""
+
+    @staticmethod
+    def is_time_for_clearing(current_time: DateTime) -> bool:
+        """Always return True because intra-day markets clear continuously."""
+        return True
+
+
 class DayForwardMarketCounter(ForwardMarketCounter):
     """Market counter for day-forward markets."""
 
