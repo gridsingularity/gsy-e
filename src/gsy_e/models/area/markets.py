@@ -31,7 +31,7 @@ from gsy_e.models.area.market_rotators import (BaseRotator, DefaultMarketRotator
 from gsy_e.models.market import GridFee, MarketBase
 from gsy_e.models.market.balancing import BalancingMarket
 from gsy_e.models.market.future import FutureMarkets
-from gsy_e.gsy_e_core.enums import AvailableMarketTypes
+from gsy_e.gsy_e_core.enums import AvailableMarketTypes, FORWARD_MARKET_TYPES
 from gsy_e.models.market.one_sided import OneSidedMarket
 from gsy_e.models.market.settlement import SettlementMarket
 from gsy_e.models.market.two_sided import TwoSidedMarket
@@ -102,8 +102,10 @@ class AreaMarkets:
 
     def activate_future_markets(self, area: "Area") -> None:
         """Wrapper for activation methods for all future market types."""
+        if ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS:
+            self._activate_forward_markets(area)
+
         self._activate_future_markets(area)
-        self._activate_forward_markets(area)
 
     def _activate_future_markets(self, area: "Area") -> None:
         """
@@ -160,8 +162,6 @@ class AreaMarkets:
         self.indexed_future_markets = {m.id: m for m in self.markets.values()}
 
     def _rotate_forward_markets(self, current_time: DateTime) -> None:
-        if not ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS:
-            return
         for rotator in self._forward_market_rotators.values():
             rotator.rotate(current_time)
 
@@ -172,7 +172,8 @@ class AreaMarkets:
         self._settlement_market_rotator.rotate(current_time)
         self._future_market_rotator.rotate(current_time)
 
-        self._rotate_forward_markets(current_time)
+        if ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS:
+            self._rotate_forward_markets(current_time)
 
         self._update_indexed_future_markets()
 
@@ -199,6 +200,8 @@ class AreaMarkets:
             return self.settlement_markets
         if market_type == AvailableMarketTypes.BALANCING:
             return self.balancing_markets
+        if market_type in FORWARD_MARKET_TYPES:
+            return self.forward_markets
 
         assert False, f"Market type not supported {market_type}"
 

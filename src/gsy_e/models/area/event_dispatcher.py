@@ -33,7 +33,7 @@ from gsy_e.models.area.redis_dispatcher.market_event_dispatcher import (
 from gsy_e.models.area.redis_dispatcher.market_notify_event_subscriber import (
     MarketNotifyEventSubscriber)
 from gsy_e.models.market import MarketBase
-from gsy_e.gsy_e_core.enums import AvailableMarketTypes
+from gsy_e.gsy_e_core.enums import AvailableMarketTypes, FORWARD_MARKET_TYPES
 from gsy_e.models.strategy.market_agents.balancing_agent import BalancingAgent
 from gsy_e.models.strategy.market_agents.future_agent import FutureAgent
 from gsy_e.models.strategy.market_agents.one_sided_agent import OneSidedAgent
@@ -76,6 +76,11 @@ class AreaDispatcher:
     def future_agent(self):
         """Return the future agent."""
         return self._future_agent
+
+    @property
+    def forward_agents(self):
+        """Return the forward agents."""
+        return self._forward_agents
 
     @property
     def settlement_agents(self) -> Dict[DateTime, SettlementAgent]:
@@ -171,6 +176,13 @@ class AreaDispatcher:
         for child in sorted(self.area.children, key=lambda _: random()):
             child.dispatcher.event_listener(event_type, **kwargs)
 
+        # TODO: Enable the following block once GSYE-340 is implemented
+        # if ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS:
+        #     for forward_market_type in self._forward_agents:
+        #         self._broadcast_notification_to_area_and_child_agents(
+        #             forward_market_type, event_type, **kwargs)
+        #     return
+
         market_id = kwargs.get("market_id")
         if not market_id and isinstance(event_type, MarketEvent):
             assert False, "MarketEvent should always provide a market_id."
@@ -245,12 +257,7 @@ class AreaDispatcher:
             return SettlementAgent(**agent_constructor_arguments)
         if market_type == AvailableMarketTypes.BALANCING:
             return BalancingAgent(**agent_constructor_arguments)
-        if market_type in [AvailableMarketTypes.FUTURE,
-                           AvailableMarketTypes.DAY_FORWARD,
-                           AvailableMarketTypes.WEEK_FORWARD,
-                           AvailableMarketTypes.MONTH_FORWARD,
-                           AvailableMarketTypes.YEAR_FORWARD,
-                           AvailableMarketTypes.INTRADAY]:
+        if market_type in [AvailableMarketTypes.FUTURE, *FORWARD_MARKET_TYPES]:
             return FutureAgent(**agent_constructor_arguments)
 
         assert False, f"Market type not supported {market_type}"

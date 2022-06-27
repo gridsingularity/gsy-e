@@ -28,3 +28,9 @@ PAST_MARKET_TYPE_FILE_SUFFIX_MAPPING = {
     AvailableMarketTypes.MONTH_FORWARD: "-month-forward",
     AvailableMarketTypes.YEAR_FORWARD: "-year-forward",
 }
+
+FORWARD_MARKET_TYPES = [AvailableMarketTypes.INTRADAY,
+                        AvailableMarketTypes.DAY_FORWARD,
+                        AvailableMarketTypes.WEEK_FORWARD,
+                        AvailableMarketTypes.MONTH_FORWARD,
+                        AvailableMarketTypes.YEAR_FORWARD]
