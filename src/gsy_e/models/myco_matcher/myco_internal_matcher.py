@@ -37,7 +37,7 @@ class MycoInternalMatcher(MycoMatcherInterface):
         self.match_algorithm = None
         # TBD: Which matching algorithm is applied for which forward market type
         self._forward_match_algorithms = {
-            AvailableMarketTypes.DAY_FORWARD: PayAsClearMatchingAlgorithm,
+            AvailableMarketTypes.DAY_FORWARD: PayAsBidMatchingAlgorithm,
             AvailableMarketTypes.WEEK_FORWARD: PayAsClearMatchingAlgorithm,
             AvailableMarketTypes.MONTH_FORWARD: PayAsClearMatchingAlgorithm,
             AvailableMarketTypes.YEAR_FORWARD: PayAsClearMatchingAlgorithm,
