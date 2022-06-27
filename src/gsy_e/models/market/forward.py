@@ -68,8 +68,8 @@ class ForwardMarketBase(FutureMarkets):
                                     self._get_end_time(current_market_time_slot), config)
 
 
-class HourForwardMarket(ForwardMarketBase):
-    """Hour forward market implementation"""
+class DayForwardMarket(ForwardMarketBase):
+    """Day forward market implementation"""
 
     @staticmethod
     def _get_start_time(current_time: DateTime) -> DateTime:

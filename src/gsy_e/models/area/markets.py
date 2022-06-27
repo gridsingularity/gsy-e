@@ -25,7 +25,7 @@ from pendulum import DateTime
 
 from gsy_e.models.area.market_rotators import (BaseRotator, DefaultMarketRotator,
                                                SettlementMarketRotator, FutureMarketRotator,
-                                               ForwardMarketRotatorBase, HourForwardMarketRotator,
+                                               ForwardMarketRotatorBase, DayForwardMarketRotator,
                                                WeekForwardMarketRotator, MonthForwardMarketRotator,
                                                YearForwardMarketRotator)
 from gsy_e.models.market import GridFee, MarketBase
@@ -36,20 +36,20 @@ from gsy_e.models.market.one_sided import OneSidedMarket
 from gsy_e.models.market.settlement import SettlementMarket
 from gsy_e.models.market.two_sided import TwoSidedMarket
 from gsy_e.models.market.forward import (
-    ForwardMarketBase, HourForwardMarket, WeekForwardMarket, MonthForwardMarket, YearForwardMarket)
+    ForwardMarketBase, DayForwardMarket, WeekForwardMarket, MonthForwardMarket, YearForwardMarket)
 
 if TYPE_CHECKING:
     from gsy_e.models.area import Area
 
 _FORWARD_MARKET_TYPE_MAPPING = {
-    AvailableMarketTypes.HOUR_FORWARD: HourForwardMarket,
+    AvailableMarketTypes.DAY_FORWARD: DayForwardMarket,
     AvailableMarketTypes.WEEK_FORWARD: WeekForwardMarket,
     AvailableMarketTypes.MONTH_FORWARD: MonthForwardMarket,
     AvailableMarketTypes.YEAR_FORWARD: YearForwardMarket
 }
 
 _FORWARD_MARKET_ROTATOR_MAPPING = {
-    AvailableMarketTypes.HOUR_FORWARD: HourForwardMarketRotator,
+    AvailableMarketTypes.DAY_FORWARD: DayForwardMarketRotator,
     AvailableMarketTypes.WEEK_FORWARD: WeekForwardMarketRotator,
     AvailableMarketTypes.MONTH_FORWARD: MonthForwardMarketRotator,
     AvailableMarketTypes.YEAR_FORWARD: YearForwardMarketRotator
