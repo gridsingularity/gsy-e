@@ -60,22 +60,23 @@ class TestForwardMarkets:
     @patch("gsy_e.models.market.future.is_time_slot_in_simulation_duration", MagicMock())
     def test_create_forward_future_markets(self, market_class, expected_market_count):
         # pylint: disable=protected-access
-        forward_markets = self._create_forward_market(market_class)
+
         area = Area("test_area")
         with patch("gsy_e.models.market.forward.ConstSettings.ForwardMarketSettings."
                    "ENABLE_FORWARD_MARKETS", False):
+            forward_markets = self._create_forward_market(market_class)
             forward_markets.create_future_markets(CURRENT_MARKET_SLOT, area.config)
-        for buffer in [forward_markets.slot_bid_mapping,
-                       forward_markets.slot_offer_mapping,
-                       forward_markets.slot_trade_mapping]:
-            assert len(buffer.keys()) == 0
+            assert not hasattr(forward_markets, "_bids")
+            assert not hasattr(forward_markets, "_offers")
 
         with patch("gsy_e.models.market.forward.ConstSettings.ForwardMarketSettings."
                    "ENABLE_FORWARD_MARKETS", True):
+            forward_markets = self._create_forward_market(market_class)
             forward_markets.create_future_markets(CURRENT_MARKET_SLOT, area.config)
             for buffer in [forward_markets.slot_bid_mapping,
                            forward_markets.slot_offer_mapping,
                            forward_markets.slot_trade_mapping]:
+
                 assert len(buffer.keys()) == expected_market_count
                 day_ahead_time_slot = market_class._get_start_time(CURRENT_MARKET_SLOT)
                 most_future_slot = market_class._get_end_time(CURRENT_MARKET_SLOT)
@@ -111,6 +112,6 @@ class TestForwardMarkets:
         # Markets should not be deleted when it is not time
         rotator.rotate(CURRENT_MARKET_SLOT)
         count_orders_in_buffers(forward_markets, expected_market_count)
-        # Market should be deleted if the DAY_AHEAD_CLEARING_DAYTIME_HOUR is reached
+        # Market should be deleted if the rotation time has been reached
         rotator.rotate(rotation_time)
         count_orders_in_buffers(forward_markets, expected_market_count - 1)
