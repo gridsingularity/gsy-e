@@ -71,8 +71,8 @@ class ForwardMarketCounter:
         """Return True if it is time for market clearing"""
 
 
-class HourForwardMarketCounter(ForwardMarketCounter):
-    """Market counter for hour-forward markets."""
+class DayForwardMarketCounter(ForwardMarketCounter):
+    """Market counter for day-forward markets."""
 
     @staticmethod
     def is_time_for_clearing(current_time: DateTime) -> bool:
@@ -106,7 +106,7 @@ class YearForwardMarketCounter(ForwardMarketCounter):
 
     @staticmethod
     def is_time_for_clearing(current_time: DateTime) -> bool:
-        return (current_time.month == 1 and
+        return (current_time.month in [1, 7] and
                 current_time.day == 1 and
                 current_time.hour == 0 and
                 current_time.minute == 0 and

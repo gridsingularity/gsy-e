@@ -22,11 +22,12 @@ from gsy_framework.data_classes import Bid, Offer, Trade
 from pendulum import datetime
 
 from gsy_e.models.area import Area
-from gsy_e.models.area.market_rotators import (HourForwardMarketRotator, IntradayMarketRotator,
+
+from gsy_e.models.area.market_rotators import (DayForwardMarketRotator, IntradayMarketRotator,
                                                WeekForwardMarketRotator, MonthForwardMarketRotator,
                                                YearForwardMarketRotator)
 from gsy_e.models.market import GridFee
-from gsy_e.models.market.forward import (ForwardMarketBase, HourForwardMarket, IntradayMarket,
+from gsy_e.models.market.forward import (ForwardMarketBase, DayForwardMarket, IntradayMarket,
                                          WeekForwardMarket, MonthForwardMarket, YearForwardMarket)
 from tests.market.test_future import count_orders_in_buffers
 
@@ -54,7 +55,7 @@ class TestForwardMarkets:
 
     @pytest.mark.parametrize("market_class, expected_market_count",
                              [[IntradayMarket, 24 * 4],
-                              [HourForwardMarket, 24 * 7],
+                              [DayForwardMarket, 24 * 7],
                               [WeekForwardMarket, 52],
                               [MonthForwardMarket, 24],
                               [YearForwardMarket, 5]])
@@ -86,7 +87,7 @@ class TestForwardMarkets:
     @pytest.mark.parametrize("market_class, rotator_class, expected_market_count, rotation_time",
                              [[IntradayMarket, IntradayMarketRotator, 24 * 4,
                                CURRENT_MARKET_SLOT.set(minute=15)],
-                              [HourForwardMarket, HourForwardMarketRotator, 24 * 7,
+                              [DayForwardMarket, DayForwardMarketRotator, 24 * 7,
                                CURRENT_MARKET_SLOT.set(minute=0)],
                               [WeekForwardMarket, WeekForwardMarketRotator, 52,
                                datetime(2022, 6, 20, 0, 0)],

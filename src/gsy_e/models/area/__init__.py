@@ -532,8 +532,8 @@ class Area(AreaBase):
             AvailableMarketTypes.FUTURE: self.future_markets}
         if ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS:
             markets_mapping.update({
-                AvailableMarketTypes.HOUR_FORWARD:
-                    self.forward_markets[AvailableMarketTypes.HOUR_FORWARD],
+                AvailableMarketTypes.DAY_FORWARD:
+                    self.forward_markets[AvailableMarketTypes.DAY_FORWARD],
                 AvailableMarketTypes.WEEK_FORWARD:
                     self.forward_markets[AvailableMarketTypes.WEEK_FORWARD],
                 AvailableMarketTypes.MONTH_FORWARD:

@@ -25,7 +25,7 @@ from gsy_e.gsy_e_core.exceptions import WrongMarketTypeException
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.models.myco_matcher.myco_matcher_interface import MycoMatcherInterface
 from gsy_e.gsy_e_core.enums import AvailableMarketTypes
-from gsy_e.gsy_e_core.market_counters import (HourForwardMarketCounter, WeekForwardMarketCounter,
+from gsy_e.gsy_e_core.market_counters import (DayForwardMarketCounter, WeekForwardMarketCounter,
                                               MonthForwardMarketCounter, YearForwardMarketCounter)
 
 
@@ -37,13 +37,13 @@ class MycoInternalMatcher(MycoMatcherInterface):
         self.match_algorithm = None
         # TBD: Which matching algorithm is applied for which forward market type
         self._forward_match_algorithms = {
-            AvailableMarketTypes.HOUR_FORWARD: PayAsClearMatchingAlgorithm,
+            AvailableMarketTypes.DAY_FORWARD: PayAsClearMatchingAlgorithm,
             AvailableMarketTypes.WEEK_FORWARD: PayAsClearMatchingAlgorithm,
             AvailableMarketTypes.MONTH_FORWARD: PayAsClearMatchingAlgorithm,
             AvailableMarketTypes.YEAR_FORWARD: PayAsClearMatchingAlgorithm,
         }
         self._forward_market_counters = {
-            AvailableMarketTypes.HOUR_FORWARD: HourForwardMarketCounter,
+            AvailableMarketTypes.DAY_FORWARD: DayForwardMarketCounter,
             AvailableMarketTypes.WEEK_FORWARD: WeekForwardMarketCounter,
             AvailableMarketTypes.MONTH_FORWARD: MonthForwardMarketCounter,
             AvailableMarketTypes.YEAR_FORWARD: YearForwardMarketCounter

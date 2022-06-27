@@ -84,8 +84,8 @@ class IntradayMarketRotator(ForwardMarketRotatorBase):
                 current_time.second == 0)
 
 
-class HourForwardMarketRotator(ForwardMarketRotatorBase):
-    """Handles market rotation for the hour forward market block"""
+class DayForwardMarketRotator(ForwardMarketRotatorBase):
+    """Handles market rotation for the day-forward market block"""
 
     @staticmethod
     def _get_last_slot_to_be_deleted(current_time: DateTime) -> DateTime:
@@ -97,7 +97,7 @@ class HourForwardMarketRotator(ForwardMarketRotatorBase):
 
 
 class WeekForwardMarketRotator(ForwardMarketRotatorBase):
-    """Handles market rotation for the week forward market block"""
+    """Handles market rotation for the week-forward market block"""
 
     @staticmethod
     def _get_last_slot_to_be_deleted(current_time: DateTime) -> DateTime:
@@ -112,7 +112,7 @@ class WeekForwardMarketRotator(ForwardMarketRotatorBase):
 
 
 class MonthForwardMarketRotator(ForwardMarketRotatorBase):
-    """Handles market rotation for the month forward market block"""
+    """Handles market rotation for the month-forward market block"""
 
     @staticmethod
     def _get_last_slot_to_be_deleted(current_time: DateTime) -> DateTime:
@@ -127,7 +127,7 @@ class MonthForwardMarketRotator(ForwardMarketRotatorBase):
 
 
 class YearForwardMarketRotator(ForwardMarketRotatorBase):
-    """Handles market rotation for the year forward market block"""
+    """Handles market rotation for the year-forward market block"""
 
     @staticmethod
     def _get_last_slot_to_be_deleted(current_time: DateTime) -> DateTime:

@@ -84,8 +84,8 @@ class IntradayMarket(ForwardMarketBase):
         return duration(minutes=15)
 
 
-class HourForwardMarket(ForwardMarketBase):
-    """Hour forward market implementation"""
+class DayForwardMarket(ForwardMarketBase):
+    """Day forward market implementation"""
 
     @staticmethod
     def _get_start_time(current_time: DateTime) -> DateTime:

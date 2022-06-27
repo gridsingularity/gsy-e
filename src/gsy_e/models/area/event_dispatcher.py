@@ -246,7 +246,7 @@ class AreaDispatcher:
         if market_type == AvailableMarketTypes.BALANCING:
             return BalancingAgent(**agent_constructor_arguments)
         if market_type in [AvailableMarketTypes.FUTURE,
-                           AvailableMarketTypes.HOUR_FORWARD,
+                           AvailableMarketTypes.DAY_FORWARD,
                            AvailableMarketTypes.WEEK_FORWARD,
                            AvailableMarketTypes.MONTH_FORWARD,
                            AvailableMarketTypes.YEAR_FORWARD,
