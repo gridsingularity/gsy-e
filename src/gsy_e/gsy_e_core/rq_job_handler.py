@@ -16,7 +16,8 @@ from gsy_e.gsy_e_core.simulation import run_simulation
 from gsy_e.gsy_e_core.util import available_simulation_scenarios, update_advanced_settings
 from gsy_e.models.config import SimulationConfig
 
-log = logging.getLogger()
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 
 def decompress_and_decode_queued_strings(queued_string: bytes) -> Dict:
@@ -30,7 +31,6 @@ def launch_simulation_from_rq_job(scenario: bytes, settings: Optional[Dict],
                                   connect_to_profiles_db: bool = True):
     # pylint: disable=too-many-arguments, too-many-locals
     """Launch simulation from rq job."""
-    logging.getLogger().setLevel(logging.ERROR)
     scenario = decompress_and_decode_queued_strings(scenario)
     if isinstance(scenario, dict):
         gsy_e.constants.CONFIGURATION_ID = scenario.pop("configuration_uuid")
@@ -39,8 +39,8 @@ def launch_simulation_from_rq_job(scenario: bytes, settings: Optional[Dict],
             GlobalConfig.IS_CANARY_NETWORK = scenario.pop("is_canary_network", False)
             gsy_e.constants.RUN_IN_REALTIME = GlobalConfig.IS_CANARY_NETWORK
     saved_state = decompress_and_decode_queued_strings(saved_state)
-    log.info("Starting simulation with job_id: %s and configuration id: %s",
-             job_id, gsy_e.constants.CONFIGURATION_ID)
+    logger.info("Starting simulation with job_id: %s and configuration id: %s",
+                job_id, gsy_e.constants.CONFIGURATION_ID)
 
     try:
         if settings is None:
@@ -133,14 +133,14 @@ def launch_simulation_from_rq_job(scenario: bytes, settings: Optional[Dict],
                        slot_length_realtime=slot_length_realtime,
                        kwargs=kwargs)
 
-        log.info("Finishing simulation with job_id: %s and configuration id: %s",
-                 job_id, gsy_e.constants.CONFIGURATION_ID)
+        logger.info("Finishing simulation with job_id: %s and configuration id: %s",
+                    job_id, gsy_e.constants.CONFIGURATION_ID)
 
     # pylint: disable=broad-except
     except Exception:
         # pylint: disable=import-outside-toplevel
         from gsy_e.gsy_e_core.redis_connections.simulation import publish_job_error_output
         publish_job_error_output(job_id, traceback.format_exc())
-        logging.getLogger().exception("Error on jobId, %s, configuration id: %s",
-                                      job_id, gsy_e.constants.CONFIGURATION_ID)
+        logger.exception("Error on jobId, %s, configuration id: %s",
+                         job_id, gsy_e.constants.CONFIGURATION_ID)
         raise
