@@ -17,7 +17,6 @@ from gsy_e.gsy_e_core.util import available_simulation_scenarios, update_advance
 from gsy_e.models.config import SimulationConfig
 
 logger = logging.getLogger()
-logger.setLevel(logging.INFO)
 
 
 def decompress_and_decode_queued_strings(queued_string: bytes) -> Dict:
