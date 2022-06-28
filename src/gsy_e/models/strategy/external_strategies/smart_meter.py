@@ -42,7 +42,9 @@ class SmartMeterExternalMixin(ExternalMixin):
     is_bid_posted: Callable
     _delete_past_state: Callable
     post_bid: Callable
+    post_offer: Callable
     can_bid_be_posted: Callable
+    can_offer_be_posted: Callable
     remove_bid_from_pending: Callable
 
     @property
@@ -346,15 +348,71 @@ class SmartMeterExternalMixin(ExternalMixin):
 
     def _offer_impl(self, arguments: Dict, response_channel: str) -> None:
         """Post the offer to the market."""
-        raise NotImplementedError()
+        market = self._get_market_from_command_argument(arguments)
+        try:
+            replace_existing = arguments.pop("replace_existing", True)
+            assert self.can_offer_be_posted(
+                arguments["energy"],
+                arguments["price"],
+                self.state.get_available_energy_kWh(market.time_slot),
+                market,
+                replace_existing=replace_existing)
+
+            offer_arguments = {
+                k: v for k, v in arguments.items() if k not in ["transaction_id", "time_slot"]}
+            offer = self.post_offer(
+                market, replace_existing=replace_existing, **offer_arguments)
+
+            self.redis.publish_json(
+                response_channel,
+                {"command": "offer", "status": "ready",
+                 "market_type": market.type_name,
+                 "offer": offer.to_json_string(replace_existing=replace_existing),
+                 "transaction_id": arguments.get("transaction_id")})
+        except Exception: # noqa
+            error_message = (f"Error when handling offer create on area {self.device.name}: "
+                             f"Offer Arguments: {arguments}")
+            logging.exception(error_message)
+            self.redis.publish_json(
+                response_channel,
+                {"command": "offer", "status": "error",
+                 "market_type": market.type_name,
+                 "error_message": error_message,
+                 "transaction_id": arguments.get("transaction_id")})
 
     def _delete_offer_impl(self, arguments: Dict, response_channel: str) -> None:
         """Delete an offer from the market."""
-        raise NotImplementedError()
+        try:
+            market = self._get_market_from_command_argument(arguments)
+            to_delete_offer_id = arguments.get("offer")
+            deleted_offers = self.offers.remove_offer_from_cache_and_market(
+                market, to_delete_offer_id)
+            response = {"command": "offer_delete", "status": "ready",
+                        "deleted_offers": deleted_offers,
+                        "transaction_id": arguments.get("transaction_id")}
+        except Exception: # noqa
+            error_message = (f"Error when handling offer delete on area {self.device.name}: "
+                             f"Offer Arguments: {arguments}")
+            logging.exception(error_message)
+            response = {"command": "offer_delete", "status": "error",
+                        "error_message": error_message,
+                        "transaction_id": arguments.get("transaction_id")}
+        self.redis.publish_json(response_channel, response)
 
     def _list_offers_impl(self, arguments: Dict, response_channel: str) -> None:
         """List sent offers to the market."""
-        raise NotImplementedError()
+        try:
+            market = self._get_market_from_command_argument(arguments)
+            response = {"command": "list_offers", "status": "ready",
+                        "offer_list": self.filtered_market_offers(market),
+                        "transaction_id": arguments.get("transaction_id")}
+        except Exception: # noqa
+            error_message = f"Error when handling list offers on area {self.device.name}"
+            logging.exception(error_message)
+            response = {"command": "list_offers", "status": "error",
+                        "error_message": error_message,
+                        "transaction_id": arguments.get("transaction_id")}
+        self.redis.publish_json(response_channel, response)
 
 
 class SmartMeterExternalStrategy(SmartMeterExternalMixin, SmartMeterStrategy):
