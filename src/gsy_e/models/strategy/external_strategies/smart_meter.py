@@ -40,6 +40,9 @@ class SmartMeterExternalMixin(ExternalMixin):
     state: "SmartMeterState"
     offers: "Offers"
     is_bid_posted: Callable
+    _delete_past_state: Callable
+    post_bid: Callable
+    can_bid_be_posted: Callable
 
     @property
     def _device_info_dict(self) -> Dict:
@@ -67,15 +70,18 @@ class SmartMeterExternalMixin(ExternalMixin):
         self._reject_all_pending_requests()
         self._update_connection_status()
         if not self.should_use_default_strategy:
-            raise NotImplementedError()  # TODO
-        super().event_market_cycle()
+            # TODO: Update states?
+            if not self.is_aggregator_controlled:
+                self.populate_market_info_to_connected_user()
+            self._delete_past_state()
+        else:
+            super().event_market_cycle()
 
     def event_tick(self) -> None:
         """Process aggregator requests on market tick. Extends super implementation."""
         if not self.connected and not self.is_aggregator_controlled:
             super().event_tick() # noqa
         else:
-            # TODO: self.state.check_state(self.spot_market.time_slot)
             while self.pending_requests:
                 # We want to process requests as First-In-First-Out, so we use popleft
                 req = self.pending_requests.popleft()
@@ -245,7 +251,10 @@ class SmartMeterExternalMixin(ExternalMixin):
 
         Returns: List of offers for the strategy asset
         """
-        raise NotImplementedError()
+        return [
+            {"id": v.id, "price": v.price, "energy": v.energy}
+            for _, v in market.get_offers().items()
+            if v.seller == self.device.name]
 
     def filtered_market_bids(self, market: MarketBase) -> List[Dict]:
         """
@@ -255,11 +264,48 @@ class SmartMeterExternalMixin(ExternalMixin):
 
         Returns: List of bids for the strategy asset
         """
-        raise NotImplementedError()
+        return [
+            {"id": bid.id, "price": bid.price, "energy": bid.energy}
+            for _, bid in market.get_bids().items()
+            if bid.buyer == self.device.name]
 
     def _bid_impl(self, arguments: Dict, response_channel: str) -> None:
         """Post the bid to the market."""
-        raise NotImplementedError()
+        market = self._get_market_from_command_argument(arguments)
+        try:
+            response_message = ""
+            arguments, filtered_fields = self.filter_degrees_of_freedom_arguments(arguments)
+            if filtered_fields:
+                response_message = (
+                    "The following arguments are not supported for this market and have been "
+                    f"removed from your order: {filtered_fields}.")
+            replace_existing = arguments.get("replace_existing", True)
+            assert self.can_bid_be_posted(market.time_slot, **arguments)
+            bid = self.post_bid(
+                market,
+                arguments["price"],
+                arguments["energy"],
+                replace_existing=replace_existing,
+                attributes=arguments.get("attributes"),
+                requirements=arguments.get("requirements")
+            )
+            response = {
+                "command": "bid",
+                "status": "ready",
+                "bid": bid.to_json_string(replace_existing=replace_existing),
+                "market_type": market.type_name,
+                "transaction_id": arguments.get("transaction_id"),
+                "message": response_message}
+        except Exception: # noqa
+            logging.exception("Error when handling bid create on area %s: Bid Arguments: %s",
+                              self.device.name, arguments)
+            response = {"command": "bid", "status": "error",
+                        "market_type": market.type_name,
+                        "error_message": "Error when handling bid create "
+                                         f"on area {self.device.name} with arguments {arguments}.",
+                        "transaction_id": arguments.get("transaction_id")}
+
+        self.redis.publish_json(response_channel, response)
 
     def _delete_bid_impl(self, arguments: Dict, response_channel: str) -> None:
         """Delete a bid from the market."""
