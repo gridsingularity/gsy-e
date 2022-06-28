@@ -43,6 +43,7 @@ class SmartMeterExternalMixin(ExternalMixin):
     _delete_past_state: Callable
     post_bid: Callable
     can_bid_be_posted: Callable
+    remove_bid_from_pending: Callable
 
     @property
     def _device_info_dict(self) -> Dict:
@@ -309,11 +310,39 @@ class SmartMeterExternalMixin(ExternalMixin):
 
     def _delete_bid_impl(self, arguments: Dict, response_channel: str) -> None:
         """Delete a bid from the market."""
-        raise NotImplementedError()
+        try:
+            market = self._get_market_from_command_argument(arguments)
+            to_delete_bid_id = arguments.get("bid")
+            deleted_bids = self.remove_bid_from_pending(market.id, bid_id=to_delete_bid_id)
+            self.redis.publish_json(
+                response_channel,
+                {"command": "bid_delete", "status": "ready", "deleted_bids": deleted_bids,
+                 "transaction_id": arguments.get("transaction_id")})
+        except Exception: # noqa
+            logging.exception("Error when handling bid delete on area %s: Bid Arguments: %s",
+                              self.device.name, arguments)
+            self.redis.publish_json(
+                response_channel,
+                {"command": "bid_delete", "status": "error",
+                 "error_message": "Error when handling bid delete "
+                                  f"on area {self.device.name} with arguments {arguments}.",
+                 "transaction_id": arguments.get("transaction_id")})
 
     def _list_bids_impl(self, arguments: Dict, response_channel: str) -> None:
         """List sent bids to the market."""
-        raise NotImplementedError()
+        try:
+            market = self._get_market_from_command_argument(arguments)
+            response = {
+                "command": "list_bids", "status": "ready",
+                "bid_list": self.filtered_market_bids(market),
+                "transaction_id": arguments.get("transaction_id")}
+        except Exception: # noqa
+            error_message = f"Error when handling list bids on area {self.device.name}"
+            logging.exception(error_message)
+            response = {"command": "list_bids", "status": "error",
+                        "error_message": error_message,
+                        "transaction_id": arguments.get("transaction_id")}
+        self.redis.publish_json(response_channel, response)
 
     def _offer_impl(self, arguments: Dict, response_channel: str) -> None:
         """Post the offer to the market."""
