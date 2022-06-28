@@ -19,7 +19,7 @@ import json
 import logging
 from collections import deque, namedtuple
 from threading import Lock
-from typing import Callable, Dict, List, Tuple, TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple
 
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Trade
@@ -29,10 +29,11 @@ from pendulum import DateTime
 from redis import RedisError
 
 import gsy_e.constants
-from gsy_e.gsy_e_core.exceptions import MarketException, GSyException
+from gsy_e.gsy_e_core.exceptions import GSyException, MarketException
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
-from gsy_e.gsy_e_core.redis_connections.area_market import (
-    ResettableCommunicator, ExternalConnectionCommunicator)
+from gsy_e.gsy_e_core.redis_connections.area_market import (ExternalConnectionCommunicator,
+                                                            ResettableCommunicator)
+from gsy_e.gsy_e_core.util import get_market_maker_rate_from_config
 from gsy_e.models.market import MarketBase
 from gsy_e.models.strategy.external_strategies.dof_filter import DegreesOfFreedomFilter
 from gsy_e.models.strategy.future.strategy import FutureMarketStrategyInterface
@@ -687,6 +688,20 @@ class ExternalMixin:
                 "asset_bill": self.device.stats.aggregated_stats.get("bills"),
 
                 }
+
+    def populate_market_info_to_connected_user(self) -> None:
+        """Publish market info to the user who is connected directly from SDK."""
+        market_event_channel = f"{self.channel_prefix}/events/market"
+        market_info = self.spot_market.info
+        market_info["device_info"] = self._device_info_dict
+        market_info["event"] = "market"
+        market_info["area_uuid"] = self.device.uuid
+        market_info["device_bill"] = self.device.stats.aggregated_stats.get("bills")
+        market_info["last_market_maker_rate"] = (
+            get_market_maker_rate_from_config(self.area.current_market))
+        market_info["last_market_stats"] = (
+            self.area.stats.get_price_stats_current_market())
+        self.redis.publish_json(market_event_channel, market_info)
 
     def filter_degrees_of_freedom_arguments(self, order_arguments: Dict) -> Tuple[Dict, List[str]]:
         """Filter the arguments of an incoming order to remove Degrees of Freedom if necessary."""
