@@ -63,13 +63,13 @@ class TestCoefficientArea:
         load2 = CoefficientArea(name="load 2", strategy=strategy)
 
         house1 = CoefficientArea(name="House 1", children=[load, pv],
-                                 coefficient_percent=0.6,
-                                 feed_in_tariff_eur=0.1,
-                                 market_maker_rate_eur=0.3)
+                                 coefficient_percentage=0.6,
+                                 feed_in_tariff=0.1,
+                                 market_maker_rate=0.3)
         house2 = CoefficientArea(name="House 2", children=[load2, pv2],
-                                 coefficient_percent=0.4,
-                                 feed_in_tariff_eur=0.05,
-                                 market_maker_rate_eur=0.24)
+                                 coefficient_percentage=0.4,
+                                 feed_in_tariff=0.05,
+                                 market_maker_rate=0.24)
         return CoefficientArea(name="Grid", children=[house1, house2])
 
     @classmethod
@@ -81,8 +81,8 @@ class TestCoefficientArea:
         scm = SCMManager(grid_area, time_slot)
         grid_area.calculate_home_after_meter_data(time_slot, scm)
         assert scm._home_data[house1.uuid].sharing_coefficient_percent == 0.6
-        assert scm._home_data[house1.uuid].feed_in_tariff_eur == 0.1
-        assert scm._home_data[house1.uuid].market_maker_rate_eur == 0.3
+        assert scm._home_data[house1.uuid].feed_in_tariff == 0.1
+        assert scm._home_data[house1.uuid].market_maker_rate == 0.3
         assert isclose(scm._home_data[house1.uuid].consumption_kWh, 0.7)
         assert isclose(scm._home_data[house1.uuid].production_kWh, 0.5)
         assert isclose(scm._home_data[house1.uuid].self_consumed_energy_kWh, 0.5)
@@ -90,8 +90,8 @@ class TestCoefficientArea:
         assert isclose(scm._home_data[house1.uuid].energy_need_kWh, 0.2)
 
         assert scm._home_data[house2.uuid].sharing_coefficient_percent == 0.4
-        assert scm._home_data[house2.uuid].feed_in_tariff_eur == 0.05
-        assert scm._home_data[house2.uuid].market_maker_rate_eur == 0.24
+        assert scm._home_data[house2.uuid].feed_in_tariff == 0.05
+        assert scm._home_data[house2.uuid].market_maker_rate == 0.24
         assert isclose(scm._home_data[house2.uuid].consumption_kWh, 0.1)
         assert isclose(scm._home_data[house2.uuid].production_kWh, 0.2)
         assert isclose(scm._home_data[house2.uuid].self_consumed_energy_kWh, 0.1)
@@ -132,12 +132,12 @@ class TestCoefficientArea:
         # energy need * normal market maker fees for the case of positive energy need
         assert isclose(scm._bills[house1.uuid].base_energy_bill, 0.06)
         assert isclose(scm._bills[house1.uuid].gsy_energy_bill, 0.06)
-        assert isclose(scm._bills[house1.uuid].savings_euro, 0.0)
+        assert isclose(scm._bills[house1.uuid].savings, 0.0)
         assert isclose(scm._bills[house1.uuid].savings_percent, 0.0)
         # energy surplus * feed in tariff for the case of positive energy surplus
         assert isclose(scm._bills[house2.uuid].base_energy_bill, -0.005)
         assert isclose(scm._bills[house2.uuid].gsy_energy_bill, -0.0164)
-        assert isclose(scm._bills[house2.uuid].savings_euro, 0.0114)
+        assert isclose(scm._bills[house2.uuid].savings, 0.0114)
         assert isclose(scm._bills[house2.uuid].savings_percent, -228.0)
         assert len(scm._home_data[house1.uuid].trades) == 2
         trades = scm._home_data[house1.uuid].trades
