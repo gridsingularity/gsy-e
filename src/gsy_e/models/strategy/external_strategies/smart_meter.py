@@ -229,22 +229,8 @@ class SmartMeterExternalMixin(ExternalMixin):
         e.g. New bids are first checked by the `bid` function and put into the `pending_requests`
         queue. Then, requests are handled on each tick using this dispatcher function.
         """
-        if req.request_type == "bid":
-            self._bid_impl(req.arguments, req.response_channel)
-        elif req.request_type == "delete_bid":
-            self._delete_bid_impl(req.arguments, req.response_channel)
-        elif req.request_type == "list_bids":
-            self._list_bids_impl(req.arguments, req.response_channel)
-        elif req.request_type == "offer":
-            self._offer_impl(req.arguments, req.response_channel)
-        elif req.request_type == "delete_offer":
-            self._delete_offer_impl(req.arguments, req.response_channel)
-        elif req.request_type == "list_offers":
-            self._list_offers_impl(req.arguments, req.response_channel)
-        elif req.request_type == "device_info":
-            self._device_info_impl(req.arguments, req.response_channel)
-        else:
-            assert False, f"Incorrect incoming request name: {req}"
+        response = self.trigger_aggregator_commands(req.arguments)
+        self.redis.publish_json(req.response_channel, response)
 
     def filtered_market_offers(self, market: MarketBase) -> List[Dict]:
         """
@@ -272,7 +258,7 @@ class SmartMeterExternalMixin(ExternalMixin):
             for _, bid in market.get_bids().items()
             if bid.buyer == self.device.name]
 
-    def _bid_impl(self, arguments: Dict, response_channel: str) -> None:
+    def _bid_aggregator(self, arguments: Dict) -> Dict:
         """Post the bid to the market."""
         market = self._get_market_from_command_argument(arguments)
         try:
@@ -307,30 +293,26 @@ class SmartMeterExternalMixin(ExternalMixin):
                         "error_message": "Error when handling bid create "
                                          f"on area {self.device.name} with arguments {arguments}.",
                         "transaction_id": arguments.get("transaction_id")}
+        return response
 
-        self.redis.publish_json(response_channel, response)
-
-    def _delete_bid_impl(self, arguments: Dict, response_channel: str) -> None:
+    def _delete_bid_aggregator(self, arguments: Dict) -> Dict:
         """Delete a bid from the market."""
         try:
             market = self._get_market_from_command_argument(arguments)
             to_delete_bid_id = arguments.get("bid")
             deleted_bids = self.remove_bid_from_pending(market.id, bid_id=to_delete_bid_id)
-            self.redis.publish_json(
-                response_channel,
-                {"command": "bid_delete", "status": "ready", "deleted_bids": deleted_bids,
-                 "transaction_id": arguments.get("transaction_id")})
+            response = {"command": "bid_delete", "status": "ready", "deleted_bids": deleted_bids,
+                        "transaction_id": arguments.get("transaction_id")}
         except Exception: # noqa
             logging.exception("Error when handling bid delete on area %s: Bid Arguments: %s",
                               self.device.name, arguments)
-            self.redis.publish_json(
-                response_channel,
-                {"command": "bid_delete", "status": "error",
-                 "error_message": "Error when handling bid delete "
-                                  f"on area {self.device.name} with arguments {arguments}.",
-                 "transaction_id": arguments.get("transaction_id")})
+            response = {"command": "bid_delete", "status": "error",
+                        "error_message": "Error when handling bid delete "
+                                         f"on area {self.device.name} with arguments {arguments}.",
+                        "transaction_id": arguments.get("transaction_id")}
+        return response
 
-    def _list_bids_impl(self, arguments: Dict, response_channel: str) -> None:
+    def _list_bids_aggregator(self, arguments: Dict) -> Dict:
         """List sent bids to the market."""
         try:
             market = self._get_market_from_command_argument(arguments)
@@ -344,9 +326,9 @@ class SmartMeterExternalMixin(ExternalMixin):
             response = {"command": "list_bids", "status": "error",
                         "error_message": error_message,
                         "transaction_id": arguments.get("transaction_id")}
-        self.redis.publish_json(response_channel, response)
+        return response
 
-    def _offer_impl(self, arguments: Dict, response_channel: str) -> None:
+    def _offer_aggregator(self, arguments: Dict) -> Dict:
         """Post the offer to the market."""
         market = self._get_market_from_command_argument(arguments)
         try:
@@ -363,24 +345,21 @@ class SmartMeterExternalMixin(ExternalMixin):
             offer = self.post_offer(
                 market, replace_existing=replace_existing, **offer_arguments)
 
-            self.redis.publish_json(
-                response_channel,
-                {"command": "offer", "status": "ready",
-                 "market_type": market.type_name,
-                 "offer": offer.to_json_string(replace_existing=replace_existing),
-                 "transaction_id": arguments.get("transaction_id")})
+            response = {"command": "offer", "status": "ready",
+                        "market_type": market.type_name,
+                        "offer": offer.to_json_string(replace_existing=replace_existing),
+                        "transaction_id": arguments.get("transaction_id")}
         except Exception: # noqa
             error_message = (f"Error when handling offer create on area {self.device.name}: "
                              f"Offer Arguments: {arguments}")
             logging.exception(error_message)
-            self.redis.publish_json(
-                response_channel,
-                {"command": "offer", "status": "error",
-                 "market_type": market.type_name,
-                 "error_message": error_message,
-                 "transaction_id": arguments.get("transaction_id")})
+            response = {"command": "offer", "status": "error",
+                        "market_type": market.type_name,
+                        "error_message": error_message,
+                        "transaction_id": arguments.get("transaction_id")}
+        return response
 
-    def _delete_offer_impl(self, arguments: Dict, response_channel: str) -> None:
+    def _delete_offer_aggregator(self, arguments: Dict) -> Dict:
         """Delete an offer from the market."""
         try:
             market = self._get_market_from_command_argument(arguments)
@@ -397,9 +376,9 @@ class SmartMeterExternalMixin(ExternalMixin):
             response = {"command": "offer_delete", "status": "error",
                         "error_message": error_message,
                         "transaction_id": arguments.get("transaction_id")}
-        self.redis.publish_json(response_channel, response)
+        return response
 
-    def _list_offers_impl(self, arguments: Dict, response_channel: str) -> None:
+    def _list_offers_aggregator(self, arguments: Dict) -> Dict:
         """List sent offers to the market."""
         try:
             market = self._get_market_from_command_argument(arguments)
@@ -412,7 +391,7 @@ class SmartMeterExternalMixin(ExternalMixin):
             response = {"command": "list_offers", "status": "error",
                         "error_message": error_message,
                         "transaction_id": arguments.get("transaction_id")}
-        self.redis.publish_json(response_channel, response)
+        return response
 
 
 class SmartMeterExternalStrategy(SmartMeterExternalMixin, SmartMeterStrategy):
