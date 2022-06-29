@@ -505,45 +505,44 @@ class StorageExternalMixin(ExternalMixin):
                                             "attributes",
                                             "requirements"})
 
-        with self._lock:
-            try:
-                # Check that all required arguments have been provided
-                assert all(arg in arguments.keys() for arg in required_args)
-                # Check that every provided argument is allowed
-                assert all(arg in allowed_args for arg in arguments.keys())
-                market = self._get_market_from_command_argument(arguments)
+        try:
+            # Check that all required arguments have been provided
+            assert all(arg in arguments.keys() for arg in required_args)
+            # Check that every provided argument is allowed
+            assert all(arg in allowed_args for arg in arguments.keys())
+            market = self._get_market_from_command_argument(arguments)
 
-                offer_arguments = {
-                    k: v for k, v in arguments.items()
-                    if k not in ["transaction_id", "type", "time_slot"]}
+            offer_arguments = {
+                k: v for k, v in arguments.items()
+                if k not in ["transaction_id", "type", "time_slot"]}
 
-                assert self.can_offer_be_posted(market.time_slot, offer_arguments)
+            assert self.can_offer_be_posted(market.time_slot, offer_arguments)
 
-                replace_existing = offer_arguments.pop("replace_existing", True)
+            replace_existing = offer_arguments.pop("replace_existing", True)
 
-                offer = self.post_offer(
-                    market, replace_existing=replace_existing, **offer_arguments)
+            offer = self.post_offer(
+                market, replace_existing=replace_existing, **offer_arguments)
 
-                self.state.reset_offered_sell_energy(
-                    self.offers.open_offer_energy(market.id), market.time_slot)
+            self.state.reset_offered_sell_energy(
+                self.offers.open_offer_energy(market.id), market.time_slot)
 
-                response = {
-                    "command": "offer",
-                    "area_uuid": self.device.uuid,
-                    "market_type": market.type_name,
-                    "status": "ready",
-                    "offer": offer.to_json_string(replace_existing=replace_existing),
-                    "transaction_id": arguments.get("transaction_id"),
-                    "message": response_message}
-            except Exception:
-                response = {
-                    "command": "offer", "status": "error",
-                    "market_type": market.type_name,
-                    "area_uuid": self.device.uuid,
-                    "error_message": "Error when handling offer create "
-                                     f"on area {self.device.name} with arguments {arguments}.",
-                    "transaction_id": arguments.get("transaction_id")}
-            return response
+            response = {
+                "command": "offer",
+                "area_uuid": self.device.uuid,
+                "market_type": market.type_name,
+                "status": "ready",
+                "offer": offer.to_json_string(replace_existing=replace_existing),
+                "transaction_id": arguments.get("transaction_id"),
+                "message": response_message}
+        except Exception:
+            response = {
+                "command": "offer", "status": "error",
+                "market_type": market.type_name,
+                "area_uuid": self.device.uuid,
+                "error_message": "Error when handling offer create "
+                                 f"on area {self.device.name} with arguments {arguments}.",
+                "transaction_id": arguments.get("transaction_id")}
+        return response
 
     def _bid_aggregator(self, arguments: Dict) -> Dict:
         response_message = ""

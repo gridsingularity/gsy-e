@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import json
 import logging
 from collections import deque, namedtuple
-from threading import Lock
 from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple
 
 from gsy_framework.constants_limits import ConstSettings
@@ -151,7 +150,6 @@ class ExternalMixin:
 
         super().__init__(*args, **kwargs)
         self.pending_requests: deque = deque()
-        self._lock: Lock = Lock()
 
     # pylint: disable=no-self-use
     def _create_future_market_strategy(self):
