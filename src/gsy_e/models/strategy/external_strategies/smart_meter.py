@@ -1,4 +1,4 @@
-# pylint: disable=broad-except,fixme
+# pylint: disable=broad-except
 """
 Copyright 2018 Grid Singularity
 This file is part of Grid Singularity Exchange.
@@ -27,8 +27,10 @@ from gsy_e.models.strategy.external_strategies import (ExternalMixin,
 from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
 
 if TYPE_CHECKING:
+    from pendulum import DateTime
+
     from gsy_e.models.strategy import Offers
-    from gsy_e.models.strategy.smart_meter import SmartMeterState
+    from gsy_e.models.strategy.smart_meter import SmartMeterEnergyParameters, SmartMeterState
 
 
 class SmartMeterExternalMixin(ExternalMixin):
@@ -37,14 +39,20 @@ class SmartMeterExternalMixin(ExternalMixin):
     Should always be inherited together with a superclass of SmartMeterStrategy.
     """
 
+    # state
     state: "SmartMeterState"
-    offers: "Offers"
-    is_bid_posted: Callable
     _delete_past_state: Callable
-    post_bid: Callable
+    _energy_params: "SmartMeterEnergyParameters"
+    _set_energy_measurement_of_last_market: Callable
+    spot_market_time_slot: "DateTime"
+    # offer
+    offers: "Offers"
     post_offer: Callable
-    can_bid_be_posted: Callable
     can_offer_be_posted: Callable
+    # bid
+    post_bid: Callable
+    can_bid_be_posted: Callable
+    is_bid_posted: Callable
     remove_bid_from_pending: Callable
 
     @property
@@ -73,7 +81,10 @@ class SmartMeterExternalMixin(ExternalMixin):
         self._reject_all_pending_requests()
         self._update_connection_status()
         if not self.should_use_default_strategy:
-            # TODO: Update states?
+            self._energy_params.set_energy_forecast_for_future_markets(
+                [self.spot_market_time_slot, *self.area.future_market_time_slots],
+                reconfigure=False)
+            self._set_energy_measurement_of_last_market()
             if not self.is_aggregator_controlled:
                 self.populate_market_info_to_connected_user()
             self._delete_past_state()
