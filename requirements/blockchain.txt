@@ -4,7 +4,7 @@
 #
 #    pip-compile --max-rounds=100 --no-emit-index-url requirements/blockchain.in
 #
--e ./gsy-dex
+-e ./energyMarket
     # via -r requirements/blockchain.in
 -e ./gsy-framework
     # via -r requirements/base.txt
@@ -119,7 +119,7 @@ idna==3.3
     #   gsy-framework
     #   requests
     #   substrate-interface
-jsonschema==3.2.0
+jsonschema==4.1.2
     # via
     #   -r requirements/base.txt
     #   gsy-dex

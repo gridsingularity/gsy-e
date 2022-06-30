@@ -3,7 +3,7 @@
 behave
 coverage
 deepdiff
-hypothesis==4.38.0
+hypothesis==6.24.1
 isort
 parameterized
 pytest
