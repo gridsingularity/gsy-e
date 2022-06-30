@@ -356,15 +356,13 @@ class SmartMeterExternalMixin(ExternalMixin):
                 self.state.get_available_energy_kWh(market.time_slot),
                 market,
                 replace_existing)
-
+            offer_arguments = {
+                k: v for k, v in arguments.items()
+                if k not in ["transaction_id", "type", "time_slot"]}
             offer = self.post_offer(
                 market,
-                arguments["price"],
-                arguments["energy"],
-                replace_existing=replace_existing,
-                attributes=arguments.get("attributes"),
-                requirements=arguments.get("requirements"))
-
+                replace_existing,
+                **offer_arguments)
             response = {"command": "offer", "status": "ready",
                         "market_type": market.type_name,
                         "offer": offer.to_json_string(replace_existing=replace_existing),
