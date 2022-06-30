@@ -280,7 +280,13 @@ class SmartMeterExternalMixin(ExternalMixin):
                     "The following arguments are not supported for this market and have been "
                     f"removed from your order: {filtered_fields}.")
             replace_existing = arguments.get("replace_existing", True)
-            assert self.can_bid_be_posted(market.time_slot, **arguments)
+            assert self.can_bid_be_posted(
+                arguments["energy"],
+                arguments["price"],
+                self.state.get_desired_energy_Wh(market.time_slot) / 1000,
+                market,
+                replace_existing
+            )
             bid = self.post_bid(
                 market,
                 arguments["price"],
@@ -349,12 +355,15 @@ class SmartMeterExternalMixin(ExternalMixin):
                 arguments["price"],
                 self.state.get_available_energy_kWh(market.time_slot),
                 market,
-                replace_existing=replace_existing)
+                replace_existing)
 
-            offer_arguments = {
-                k: v for k, v in arguments.items() if k not in ["transaction_id", "time_slot"]}
             offer = self.post_offer(
-                market, replace_existing=replace_existing, **offer_arguments)
+                market,
+                arguments["price"],
+                arguments["energy"],
+                replace_existing=replace_existing,
+                attributes=arguments.get("attributes"),
+                requirements=arguments.get("requirements"))
 
             response = {"command": "offer", "status": "ready",
                         "market_type": market.type_name,
