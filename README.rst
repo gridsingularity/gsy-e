@@ -44,8 +44,12 @@ After cloning this project setup a Python 3.10 virtualenv or conda env and insta
     pip install -e .
     pip install -e gsy-framework
     pip install -e energyMarket
-    
+    pip install eth-brownie # needed for blockchain
+
 To Properly setup the b4p package follow the instructions here: https://github.com/BC4P/energyMarket#setup (with the exeption that the repository is already cloned).
+
+Unfortunatley, fixing versions through `pip-compile` from `pip-tools` does make things worse, as e.g. eth-brownie has other fixed versions, as gsy-framework, resulting in an unresolvable situation.
+Install with pip only helps here, as it ignores those hard fixed versions.
 
 
 The Simulation
@@ -69,6 +73,15 @@ To run the BC4P simulation use:
     
     gsy-e run --setup bc4p --enable-bc
 
+
+This would start the simulation with the integrated ganache-cli and blockchain integration - which does not work yet.
+
+One can let the simulation run in real-time by setting the slot-length-realtime to the same intervall as the slot-length `-s`.
+To allow the integration of other workers through the redis connection, one can use `--enable-external-connection`
+
+.. code-block::
+    
+    gsy-e run --setup bc4p -t 6m -s 15m --slot-length-realtime 15m --enable-external-connection --start-date 2022-07-01
 
 Controlling the simulation
 --------------------------

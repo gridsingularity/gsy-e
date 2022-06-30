@@ -32,22 +32,19 @@ services:
   
   gsy-market:
     image: gsy-e
-    build: .
-    command:
-      - run
-      - --setup
-#      - api_setup.default_community
-      - grid_fees.constant_grid_fees
-      - --enable-bc
+    build:
+      context: .
+      dockerfile: Dockerfile.bc
+    command: run --setup bc4p -t 6m -s 15m --slot-length-realtime 10s --enable-external-connection --start-date 2022-07-01 #--enable-bc
     volumes:
       - ./gsy_e-simulation/:/root/gsy_e-simulation # ~/gsy_e-simulation
+      - ./src/gsy_e/setup:/app/gsy-e/src/gsy_e/setup
     environment:
       - KAFKA_URL=kafka:9092
       - KAFKA_USERNAME=user
       - KAFKA_PASSWORD=bitnami
       - KAFKA_COMMUNICATION_SECURITY_PROTOCOL=PLAINTEXT
       - REDIS_URL=redis://redis
-      - DEFAULT_SUBSTRATE_URL=ws://substrate1:9944
     depends_on:
       - kafka
       - redis
