@@ -4,7 +4,7 @@
     "slot_length": "15m",
     "tick_length": "15s",
     "cloud_coverage": 0,
-    "start_date": "2022-06-17"
+    "start_date": "2022-06-30"
   },
   "advanced_settings": {
     "GeneralSettings": {
@@ -239,6 +239,9 @@
       "OFFER_DEMAND_RATIO": 0.1,
       "OFFER_SUPPLY_RATIO": 0.1,
       "FLEXIBLE_LOADS_SUPPORT": true
+    },
+    "SCMSettings": {
+      "GRID_FEES_REDUCTION": 0.28
     }
   }
 }

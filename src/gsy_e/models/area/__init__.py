@@ -257,19 +257,23 @@ class CoefficientArea(AreaBase):
                  config: SimulationConfig = None,
                  grid_fee_percentage: float = None,
                  grid_fee_constant: float = None,
-                 coefficient_percent: float = 0.0,
+                 coefficient_percentage: float = 0.0,
+                 taxes_surcharges: float = 0.0,
+                 fixed_monthly_fee: float = 0.0,
+                 marketplace_monthly_fee: float = 0.0,
                  market_maker_rate: float = (
                          ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE / 100.),
                  feed_in_tariff: float = GlobalConfig.FEED_IN_TARIFF / 100.,
-                 trade_rate: float = 0.0
                  ):
         # pylint: disable=too-many-arguments
         super().__init__(name, children, uuid, strategy, config, grid_fee_percentage,
                          grid_fee_constant)
-        self._coefficient_percent = coefficient_percent
+        self.coefficient_percentage = coefficient_percentage
+        self._taxes_surcharges = taxes_surcharges
+        self._fixed_monthly_fee = fixed_monthly_fee
+        self._marketplace_monthly_fee = marketplace_monthly_fee
         self._market_maker_rate = market_maker_rate
         self._feed_in_tariff = feed_in_tariff
-        self._trade_rate = trade_rate
         self.past_market_time_slot = None
 
     def activate_energy_parameters(self, current_time_slot: DateTime) -> None:
@@ -301,10 +305,10 @@ class CoefficientArea(AreaBase):
                              for child in self.children)
         consumption_kWh = sum(child.strategy.get_energy_to_buy_kWh(current_time_slot)
                               for child in self.children)
-        scm_manager.add_home_data(self.uuid, self.name,
-                                  self.grid_fee_constant, self._coefficient_percent,
-                                  self._market_maker_rate, self._feed_in_tariff,
-                                  production_kWh, consumption_kWh)
+        scm_manager.add_home_data(
+            self.uuid, self.name, self.grid_fee_constant, self.coefficient_percentage,
+            self._taxes_surcharges, self._fixed_monthly_fee, self._marketplace_monthly_fee,
+            self._market_maker_rate, self._feed_in_tariff, production_kWh, consumption_kWh)
 
     def calculate_home_after_meter_data(
             self, current_time_slot: DateTime, scm_manager: "SCMManager") -> None:
