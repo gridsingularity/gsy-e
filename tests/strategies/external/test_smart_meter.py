@@ -152,3 +152,86 @@ class TestSmartMeterExternalStrategy:
     def test_delete_offer_succeeds(external_smart_meter: SmartMeterExternalStrategy):
         check_external_command_endpoint_with_correct_payload_succeeds(
             external_smart_meter, "delete_offer", {})
+
+    @staticmethod
+    def test_offer_aggregator(external_smart_meter: SmartMeterExternalStrategy):
+        external_smart_meter.state.set_available_energy(
+            0.5, external_smart_meter.spot_market.time_slot, overwrite=True)
+        return_value = external_smart_meter.trigger_aggregator_commands({
+            "type": "offer",
+            "price": 200.0,
+            "energy": 0.5,
+            "transaction_id": str(uuid.uuid4())
+        })
+        assert_bid_offer_aggregator_commands_return_value(return_value, is_offer=True)
+
+    @staticmethod
+    def test_offer_aggregator_places_settlement_offer(
+            external_smart_meter: SmartMeterExternalStrategy, settlement_market):
+        unsettled_energy_kWh = 0.5
+        external_smart_meter.area._markets.settlement_market_ids = [settlement_market.id]
+        external_smart_meter.area._markets.settlement_markets = {
+            settlement_market.time_slot: settlement_market}
+        external_smart_meter.state._forecast_measurement_deviation_kWh[
+            settlement_market.time_slot] = (-1 * unsettled_energy_kWh)
+        external_smart_meter.state._unsettled_deviation_kWh[settlement_market.time_slot] = (
+            unsettled_energy_kWh)
+        return_value = external_smart_meter.trigger_aggregator_commands({
+            "type": "offer",
+            "price": 200.0,
+            "energy": 0.5,
+            "time_slot": settlement_market.time_slot.format(DATE_TIME_FORMAT),
+            "transaction_id": str(uuid.uuid4())
+        })
+        assert return_value["status"] == "ready"
+        assert len(settlement_market.offers.values()) == 1
+        assert list(settlement_market.offers.values())[0].energy == unsettled_energy_kWh
+
+    @staticmethod
+    def test_offer_aggregator_succeeds_with_warning_if_dof_are_disabled(
+            external_smart_meter: SmartMeterExternalStrategy):
+        """
+        The offer_aggregator command succeeds, but it shows a warning if Degrees of Freedom are
+        disabled and nevertheless provided.
+        """
+        external_smart_meter.simulation_config.enable_degrees_of_freedom = False
+        external_smart_meter.state.set_available_energy(
+            1.0, external_smart_meter.spot_market.time_slot, overwrite=True)
+        return_value = external_smart_meter.trigger_aggregator_commands({
+            "type": "offer",
+            "price": 200.0,
+            "energy": 0.5,
+            "attributes": {"energy_type": "Green"},
+            "requirements": [{"price": 12}],
+            "transaction_id": str(uuid.uuid4())
+        })
+        assert_bid_offer_aggregator_commands_return_value(return_value, is_offer=True)
+        assert return_value["message"] == (
+            "The following arguments are not supported for this market and have been removed from "
+            "your order: ['requirements', 'attributes'].")
+
+    @staticmethod
+    def test_delete_offer_aggregator(external_smart_meter: SmartMeterExternalStrategy):
+        offer = external_smart_meter.post_offer(
+            external_smart_meter.spot_market, False, price=200.0, energy=1.0)
+        return_value = external_smart_meter.trigger_aggregator_commands({
+            "type": "delete_offer",
+            "offer": str(offer.id),
+            "transaction_id": str(uuid.uuid4())
+        })
+        assert return_value["status"] == "ready"
+        assert return_value["command"] == "offer_delete"
+        assert return_value["deleted_offers"] == [offer.id]
+
+    @staticmethod
+    def test_list_offers_aggregator(external_smart_meter: SmartMeterExternalStrategy):
+        offer = external_smart_meter.post_offer(
+            external_smart_meter.spot_market, False, price=200.0, energy=1.0)
+        return_value = external_smart_meter.trigger_aggregator_commands({
+            "type": "list_offers",
+            "transaction_id": str(uuid.uuid4())
+        })
+        assert return_value["status"] == "ready"
+        assert return_value["command"] == "list_offers"
+        assert return_value["offer_list"] == [
+            {"id": offer.id, "price": offer.price, "energy": offer.energy}]
