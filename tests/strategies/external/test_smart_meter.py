@@ -67,6 +67,20 @@ class TestSmartMeterExternalStrategy:
         assert_bid_offer_aggregator_commands_return_value(return_value, is_offer=False)
 
     @staticmethod
+    def test_bid_aggregator_fails_to_place_bid_more_than_desired_energy(
+        external_smart_meter: SmartMeterExternalStrategy
+    ):
+        external_smart_meter.state.set_desired_energy(
+            500.0, external_smart_meter.spot_market.time_slot, overwrite=True)
+        return_value = external_smart_meter.trigger_aggregator_commands({
+            "type": "bid",
+            "price": 200.0,
+            "energy": 0.6,
+            "transaction_id": str(uuid.uuid4())
+        })
+        assert return_value["status"] == "error"
+
+    @staticmethod
     def test_bid_aggregator_places_settlement_bid(
             external_smart_meter: SmartMeterExternalStrategy, settlement_market):
         unsettled_energy_kWh = 0.2
@@ -164,6 +178,20 @@ class TestSmartMeterExternalStrategy:
             "transaction_id": str(uuid.uuid4())
         })
         assert_bid_offer_aggregator_commands_return_value(return_value, is_offer=True)
+
+    @staticmethod
+    def test_offer_aggregator_fails_to_place_offer_more_than_available_energy(
+        external_smart_meter: SmartMeterExternalStrategy
+    ):
+        external_smart_meter.state.set_available_energy(
+            0.5, external_smart_meter.spot_market.time_slot, overwrite=True)
+        return_value = external_smart_meter.trigger_aggregator_commands({
+            "type": "offer",
+            "price": 200.0,
+            "energy": 0.6,
+            "transaction_id": str(uuid.uuid4())
+        })
+        assert return_value["status"] == "error"
 
     @staticmethod
     def test_offer_aggregator_places_settlement_offer(
