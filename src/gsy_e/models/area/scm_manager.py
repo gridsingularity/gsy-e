@@ -24,6 +24,9 @@ class HomeAfterMeterData:
     sharing_coefficient_percent: float = 0.
     # grid_fees, market_maker_rate and feed_in_tariff units are the selected currency (e.g. Euro)
     grid_fees: float = 0.
+    taxes_surcharges: float = 0.
+    fixed_monthly_fee: float = 0.
+    marketplace_monthly_fee: float = 0.
     market_maker_rate: float = 0.
     feed_in_tariff: float = 0.
     consumption_kWh: float = 0.
@@ -141,14 +144,16 @@ class SCMManager:
     @staticmethod
     def _validate_community(community_area: "CoefficientArea") -> None:
         assert isclose(
-            sum(home.coefficient_percent for home in community_area.children), 1.0
+            sum(home.coefficient_percentage for home in community_area.children), 1.0
         ), "Coefficients from all homes should sum up to 1."
         for home in community_area.children:
             assert all(isinstance(asset.strategy, SCMStrategy) for asset in home.children), \
                 f"Home {home.name} has assets with non-SCM strategies."
 
     def add_home_data(self, home_uuid: str, home_name: str,
-                      grid_fees: float, coefficient_percent: float,
+                      grid_fees: float, coefficient_percentage: float,
+                      taxes_surcharges: float, fixed_monthly_fee: float,
+                      marketplace_monthly_fee: float,
                       market_maker_rate: float, feed_in_tariff: float,
                       production_kWh: float, consumption_kWh: float):
         # pylint: disable=too-many-arguments
@@ -158,7 +163,10 @@ class SCMManager:
         self._home_data[home_uuid] = HomeAfterMeterData(
             home_uuid, home_name,
             grid_fees=grid_fees,
-            sharing_coefficient_percent=coefficient_percent,
+            sharing_coefficient_percent=coefficient_percentage,
+            fixed_monthly_fee=fixed_monthly_fee,
+            marketplace_monthly_fee=marketplace_monthly_fee,
+            taxes_surcharges=taxes_surcharges,
             market_maker_rate=market_maker_rate,
             feed_in_tariff=feed_in_tariff,
             production_kWh=production_kWh, consumption_kWh=consumption_kWh)
@@ -193,11 +201,13 @@ class SCMManager:
 
         market_maker_rate = home_data.market_maker_rate
         grid_fees = home_data.grid_fees
+        taxes_surcharges = home_data.taxes_surcharges
         feed_in_tariff = home_data.feed_in_tariff
 
         market_maker_rate_decreased_fees = (
-                market_maker_rate + grid_fees * (1.0 - self._grid_fees_reduction))
-        market_maker_rate_normal_fees = market_maker_rate + grid_fees
+                market_maker_rate + grid_fees * (1.0 - self._grid_fees_reduction) +
+                taxes_surcharges)
+        market_maker_rate_normal_fees = market_maker_rate + grid_fees + taxes_surcharges
 
         base_energy_bill = (
                 home_data.energy_need_kWh * market_maker_rate_normal_fees -
