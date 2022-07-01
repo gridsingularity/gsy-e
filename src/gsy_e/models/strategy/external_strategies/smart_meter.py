@@ -23,7 +23,7 @@ from typing import TYPE_CHECKING, Callable, Dict, List
 from gsy_e.models.market import MarketBase
 from gsy_e.models.strategy.external_strategies import (ExternalMixin,
                                                        ExternalStrategyConnectionManager,
-                                                       IncomingRequest)
+                                                       IncomingRequest, OrderCanNotBePosted)
 from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
 
 if TYPE_CHECKING:
@@ -279,11 +279,19 @@ class SmartMeterExternalMixin(ExternalMixin):
                 response_message = (
                     "The following arguments are not supported for this market and have been "
                     f"removed from your order: {filtered_fields}.")
+            if self.area.is_market_settlement(market.id):
+                if not self.state.can_post_settlement_bid(market.time_slot):
+                    raise OrderCanNotBePosted("The smart meter did not consume enough energy, "
+                                              "settlement bid can not be posted.")
+                required_energy = self.state.get_unsettled_deviation_kWh(market.time_slot)
+            else:
+                required_energy = (
+                        self.state.get_energy_requirement_Wh(market.time_slot) / 1000)
             replace_existing = arguments.get("replace_existing", True)
             assert self.can_bid_be_posted(
                 arguments["energy"],
                 arguments["price"],
-                self.state.get_desired_energy_Wh(market.time_slot) / 1000,
+                required_energy,
                 market,
                 replace_existing
             )
@@ -349,11 +357,18 @@ class SmartMeterExternalMixin(ExternalMixin):
         """Post the offer to the market."""
         market = self._get_market_from_command_argument(arguments)
         try:
+            if self.area.is_market_settlement(market.id):
+                if not self.state.can_post_settlement_offer(market.time_slot):
+                    raise OrderCanNotBePosted("The smart meter did not produce enough energy, ",
+                                              "settlement offer can not be posted.")
+                available_energy = self.state.get_unsettled_deviation_kWh(market.time_slot)
+            else:
+                available_energy = self.state.get_available_energy_kWh(market.time_slot)
             replace_existing = arguments.pop("replace_existing", True)
             assert self.can_offer_be_posted(
                 arguments["energy"],
                 arguments["price"],
-                self.state.get_available_energy_kWh(market.time_slot),
+                available_energy,
                 market,
                 replace_existing)
             offer_arguments = {
