@@ -43,7 +43,7 @@ def get_setup(config):
                     CoefficientArea("H1 Storage1", strategy=SCMStorageStrategy(initial_soc=50)),
                     CoefficientArea("H1 Storage2", strategy=SCMStorageStrategy(initial_soc=50)),
                 ],
-                grid_fee_percentage=0, grid_fee_constant=0, coefficient_percent=0.6
+                grid_fee_percentage=0, grid_fee_constant=0, coefficient_percentage=0.6
             ),
             CoefficientArea(
                 "House 2",
@@ -56,7 +56,7 @@ def get_setup(config):
                     CoefficientArea("H2 Smart Meter",
                                     strategy=SCMSmartMeterStrategy(smart_meter_profile={0: 100})),
                 ],
-                grid_fee_percentage=0, grid_fee_constant=0, coefficient_percent=0.4
+                grid_fee_percentage=0, grid_fee_constant=0, coefficient_percentage=0.4
 
             ),
             CoefficientArea("Cell Tower",
