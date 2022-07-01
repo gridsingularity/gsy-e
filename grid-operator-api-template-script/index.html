@@ -110,7 +110,7 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
-      <a href="#time-of-use-tou" tabindex="1" class="md-skip">
+      <a href="#implement-basic-grid-fees" tabindex="1" class="md-skip">
         Skip to content
       </a>
     
@@ -1552,22 +1552,22 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#time-of-use-tou" title="Time-of-Use (ToU)" class="md-nav__link">
-    Time-of-Use (ToU)
+  <a href="#implement-basic-grid-fees" title="Implement basic grid fees" class="md-nav__link">
+    Implement basic grid fees
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#aziiz-pricing" title="Aziiz pricing" class="md-nav__link">
-    Aziiz pricing
+  <a href="#implement-dynamic-grid-fees-with-time-of-use-strategy" title="Implement dynamic grid fees with Time of Use strategy" class="md-nav__link">
+    Implement dynamic grid fees with Time of Use strategy
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#script-configuration" title="Script Configuration" class="md-nav__link">
-    Script Configuration
+  <a href="#implement-dynamic-grid-fees-with-aziiz-strategy" title="Implement dynamic grid fees with Aziiz strategy" class="md-nav__link">
+    Implement dynamic grid fees with Aziiz strategy
   </a>
   
 </li>
@@ -1946,22 +1946,22 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#time-of-use-tou" title="Time-of-Use (ToU)" class="md-nav__link">
-    Time-of-Use (ToU)
+  <a href="#implement-basic-grid-fees" title="Implement basic grid fees" class="md-nav__link">
+    Implement basic grid fees
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#aziiz-pricing" title="Aziiz pricing" class="md-nav__link">
-    Aziiz pricing
+  <a href="#implement-dynamic-grid-fees-with-time-of-use-strategy" title="Implement dynamic grid fees with Time of Use strategy" class="md-nav__link">
+    Implement dynamic grid fees with Time of Use strategy
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#script-configuration" title="Script Configuration" class="md-nav__link">
-    Script Configuration
+  <a href="#implement-dynamic-grid-fees-with-aziiz-strategy" title="Implement dynamic grid fees with Aziiz strategy" class="md-nav__link">
+    Implement dynamic grid fees with Aziiz strategy
   </a>
   
 </li>
@@ -1987,501 +1987,213 @@
                 
                   <h1>Grid Operator API Template Script</h1>
                 
-                <p>A Grid Operator API template script is available <a href="https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/grid_operator_api_template.py">here</a>. This is a flexible and versatile Python script for easy modification and implementation of custom grid fee strategies. See the <code>TODO</code> flags there to see how to configure your grid fee strategy and extract market data.</p>
-<p>In this script two template strategies are available:</p>
-<h3 id="time-of-use-tou">Time-of-Use (ToU)<a class="headerlink" href="#time-of-use-tou" title="Permanent link">&para;</a></h3>
-<p>This is a strategy where grid fee is applied depending on the <strong>time of the day</strong> (hours and minutes) regardless of the market conditions. After analysing import and export patterns of their client, grid operators can create a time-based curve, increasing fees at peak predicted times (e.g. morning and dinner time).</p>
-<p>Here is an example of ToU strategy that was used by the DSOs in one of the experiments at <a href="https://gridsingularity.medium.com/energy-singularity-challenge-2020-testing-novel-grid-fee-models-and-intelligent-peer-to-peer-6a0d715a9063">Odyssey hackathon</a>.</p>
-<p><img alt="alt_text" src="../img/grid-operator-api-2.png" /></p>
-<h3 id="aziiz-pricing">Aziiz pricing<a class="headerlink" href="#aziiz-pricing" title="Permanent link">&para;</a></h3>
-<p>The Aziiz model is using past market information to determine the next grid fee. The model looks at <strong>past imports and exports</strong> on a specific market, applies a moving average and then based on this number sets the next grid fee for that market. This model has the advantage of integrating market conditions into its strategy. For instance if past market slots experienced high imports, the model will increase fees in the relevant market to incentivise market participants to contain the energy within that area.</p>
-<h3 id="script-configuration">Script Configuration<a class="headerlink" href="#script-configuration" title="Permanent link">&para;</a></h3>
-<p>At the start of the SDK Script, the user needs to specify the markets she/he wishes to connect and manage as well as the <a href="../asset-api-events/">Oracle name</a>.</p>
-<pre class="codehilite"><code class="language-python">################################################
-# CONFIGURATIONS
-################################################
-automatic = True
+                <p>The Grid Operator API template scripts are flexible and versatile Python scripts that can be easily modified to implement dynamic grid fees in the Grid Singularity Exchange. </p>
+<p>In this section, each script will be described along with its functionalities in order of complexity.</p>
+<h2 id="implement-basic-grid-fees">Implement basic grid fees<a class="headerlink" href="#implement-basic-grid-fees" title="Permanent link">&para;</a></h2>
+<p>A template file for managing the market fees through the gsy-e-sdk API client is available <a href="https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/grid_operator_api_scripts/rest_grid_fees.py">here</a>. The script illustrates the most basic implementation of a Grid Operator API strategy: setting grid fees for different markets in the Grid Singularity Exchange. </p>
+<p>Initially, the user needs to list the markets to be managed via  the API.  For simulations launched via the user-interface (UI), the CONNECT_TO_ALL_ASSETS parameter is available. If this parameter is set to True, the Grid Operator API connects automatically to all the markets for which the user is <a href="https://gridsingularity.github.io/gsy-e/implement-grid-fees-walkthrough/">registered</a>.</p>
+<pre class="codehilite"><code class="language-python"># List of markets' names to be connected with the API
+MARKET_NAMES = [
+   &quot;Grid&quot;,
+   &quot;Community&quot;,
+]
 
-# List of market the Grid Operators connect to
-market_names = [&quot;Grid&quot;, &quot;Community&quot;]  # TODO list the market names as they are in the collaboration
-
-# Name of your aggregator
-oracle_name = &quot;dso
+ORACLE_NAME = &quot;dso&quot;
+SLOT_LENGTH = 15  # leave as is
+CONNECT_TO_ALL_MARKETS = True
 </code></pre>
 
-<p>Right after that, the user can select the strategy to use (Time of Use or Aziiz model). To select the Time of Use strategy, you have to set TimeOfUse to True and Aziiz to False. On the other hand, to select the Aziiz model, the user has to set TimeOfUse to False and Aziiz to True.
-If the Aziiz model is selected, the user can tune parameters such as applying the moving average and specifying the number of past market slots to average.</p>
-<pre class="codehilite"><code class="language-python"># Grid tariff selection
-TimeOfUse = True  # TODO Activate the Time of Use model if set to True
-Aziiz = False  # TODO Activate the Aziiz model if set to True
-moving_average_peak = True  # Perform a moving average of the last #look_back ptu (for the Aziiz tariff only)
-look_back = 4  # Number of past markets slots to apply the moving average (for the Aziiz tariff only)
-
-slot_length = 15  # leave as is
-
-
-def fee_strategy():
-    if TimeOfUse:
-        market_prices = pd.read_excel(os.path.join(current_dir,&quot;resources/ToU.xlsx&quot;))  # TODO upload an Excel/CSV file with prices of every market at each time slot (based on given template)
-
-        planned_fee = {}
-        for i in range(len(market_prices)):
-            for j in market_names:
-                planned_fee.update({(str(market_prices[&quot;Time&quot;][i])[0:5], j): market_prices[j][i]})
-
-    if Aziiz:
-        market_prices = pd.ExcelFile(os.path.join(current_dir, &quot;resources/Aziiz.xlsx&quot;))  # TODO upload an Excel/CSV file with thresholds and fees of every market (based on given template)
-
-    return market_prices, planned_fee
+<p>At the beginning of each <a href="https://gridsingularity.github.io/gsy-e/asset-api-events/#each-new-market-slot">market slot</a>, the script loops through the markets configured in the simulation. For each market, it reads the market fee for the current time slot and sets it for the next.  That information is logged in the terminal in a table format.</p>
+<pre class="codehilite"><code class="language-python">def on_market_cycle(self, market_info):
+   current_market_fee = {}
+   for area_uuid, area_dict in self.latest_grid_tree_flat.items():
+       if area_dict[&quot;area_name&quot;] in MARKET_NAMES:
+           self.add_to_batch_commands.last_market_dso_stats(area_uuid)
+           current_market_fee[area_dict[&quot;area_name&quot;]] = area_dict[
+               &quot;current_market_fee&quot;
+           ]
+   next_market_fee = self._set_new_market_fee()
+   log_grid_fees_information(MARKET_NAMES, current_market_fee, next_market_fee)
 </code></pre>
 
-<p>For both strategies, the script reads an Excel file to adjust the grid fees (<a href="https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/resources/ToU.xlsx">ToU.xlsx</a> and <a href="https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/resources/Aziiz.xlsx">Aziiz.xlsx</a>). In ToU.xlsx the user can define the grid fees for each market she/he manages for every quarter hours of the day.</p>
-<p><img alt="alt_text" src="../img/grid-operator-api-3.png" /></p>
-<p>In Aziiz.xlsx grid fees can be set for every peak import/export thresholds for each market. The Aziiz strategy will compare the average of the last markets’ peak import/export to the threshold. If the average is lower than the threshold the relevant grid fee will be applied (for instance on the figure below if the average peak is equal to 22kWh, the next grid fee will be 3 cents/KWh. Each sheet’s name represents the market connected to.</p>
-<p><img alt="alt_text" src="../img/grid-operator-api-4.png" /></p>
-<p>On_market_slot event is used to gather market statistics and set the grid fees for the next market slot. In the first part, the Grid Operator API is requesting market statistics from the simulation.</p>
-<pre class="codehilite"><code class="language-python">################################################
-# STORE MARKET INFORMATION
-################################################
-for area_uuid, area_dict in self.latest_grid_tree_flat.items():
-    if area_dict[&quot;area_name&quot;] in market_names:
-        self.add_to_batch_commands.last_market_dso_stats(area_uuid)
+<p>Since there is no preconfigured pricing strategy in this script, the market fee is hardcoded in the <em>set_new_market_fee</em> function (in this example, it was assigned a value of 10). Then, the batch commands are executed. </p>
+<pre class="codehilite"><code class="language-python">def _set_new_market_fee(self):
+   &quot;&quot;&quot;Return the market fees for each market for the next time slot.&quot;&quot;&quot;
+   next_market_fee = {}
+   for area_uuid, area_dict in self.latest_grid_tree_flat.items():
+       if area_dict[&quot;area_name&quot;] in MARKET_NAMES:
+           next_market_fee[area_dict[&quot;area_name&quot;]] = 10
 
-self.dso_stats_response = self.execute_batch_commands()
+           self.add_to_batch_commands.grid_fees(
+               area_uuid=area_uuid,
+               fee_cents_kwh=next_market_fee[area_dict[&quot;area_name&quot;]],
+           )
+   self.execute_batch_commands()
+   return next_market_fee
 </code></pre>
 
-<p>Later in the script, the API is storing some of the relevant market data to local variables, easier to manipulate.</p>
-<pre class="codehilite"><code class="language-python">for area_uuid, area_dict in self.latest_grid_tree_flat.items():
-            if area_dict[&quot;area_name&quot;] in market_names:
-                self.last_market_fee[area_dict[&quot;area_name&quot;]] = area_dict[&quot;last_market_fee&quot;]
-                self.current_market_fee[area_dict[&quot;area_name&quot;]] = area_dict[&quot;current_market_fee&quot;]
+<p>Later in the script, the <em>on_event_or_response</em> is called. By default, the Asset API template does not perform any operation here but the user can add <a href="https://gridsingularity.github.io/gsy-e/asset-api-events/">events</a>. For instance, the user could record all the trades occurring in that event.  Lastly, the script overwrites the <em>on_finish event</em> so that the script stops whenever the function is triggered. If the user wishes to save any information reported in the logs, it can be done by exporting it to an external file.</p>
+<pre class="codehilite"><code class="language-python">def on_event_or_response(self, message):
+   pass
 
-        for uuid, market_event in self.dso_stats_response[&quot;responses&quot;].items():
-            # Store data from market info into variables - these variables are updated in a way that always just store the current/most updated values
-            self.min_trade_rate[market_event[0]['name']] = market_event[0][&quot;market_stats&quot;][&quot;min_trade_rate&quot;]
-            self.avg_trade_rate[market_event[0]['name']] = market_event[0][&quot;market_stats&quot;][&quot;avg_trade_rate&quot;]
-            self.max_trade_rate[market_event[0]['name']] = market_event[0][&quot;market_stats&quot;][&quot;max_trade_rate&quot;]
-            self.median_trade_rate[market_event[0]['name']] = market_event[0][&quot;market_stats&quot;][&quot;median_trade_rate&quot;]
-            self.total_traded_energy_kWh[market_event[0]['name']] = market_event[0][&quot;market_stats&quot;][&quot;total_traded_energy_kWh&quot;]
-            self.self_sufficiency[market_event[0]['name']] = market_event[0][&quot;market_stats&quot;][&quot;self_sufficiency&quot;]
-            self.self_consumption[market_event[0]['name']] = market_event[0][&quot;market_stats&quot;][&quot;self_consumption&quot;]
-            self.import_kWh[market_event[0]['name']] = market_event[0][&quot;market_stats&quot;]['area_throughput']['import']
-            self.export_kWh[market_event[0]['name']] = market_event[0][&quot;market_stats&quot;]['area_throughput']['export']
-            try:
-                self.balance[market_event[0]['name']] = self.import_kWh[market_event[0]['name']] - self.export_kWh[market_event[0]['name']]
-            except:
-                self.balance[market_event[0]['name']] = 0
-
-        self.balance_hist = self.balance_hist.append(self.balance,ignore_index=True)  # DataFrame that gets updated and grows at each market slot and contains the balance (import - export) for the areas
-
-        # Print information in the terminal
-        print('LAST MARKET STATISTICS')
-
-        last_market_table1 = []
-        for i in range(len(market_names)):
-            keys_list = list(self.total_traded_energy_kWh.keys())
-            values_list = list(self.total_traded_energy_kWh.values())
-            min_values_list = list(self.min_trade_rate.values())
-            avg_values_list = list(self.avg_trade_rate.values())
-            med_values_list = list(self.median_trade_rate.values())
-            max_values_list = list(self.max_trade_rate.values())
-
-            # Print None values as 0
-            values_list = [0 if x is None else x for x in values_list]
-            min_values_list = [0 if x is None else x for x in min_values_list]
-            avg_values_list = [0 if x is None else x for x in avg_values_list]
-            med_values_list = [0 if x is None else x for x in med_values_list]
-            max_values_list = [0 if x is None else x for x in max_values_list]
-
-            last_market_table1.append(
-                [keys_list[i], values_list[i], min_values_list[i], avg_values_list[i], med_values_list[i],
-                 max_values_list[i]])
-
-        last_market_headers1 = [&quot;Markets&quot;, &quot;Total energy traded [kWh]&quot;, &quot;Min trade rate [€cts/Kwh]&quot;,
-                                &quot;Avg trade rate [€cts/Kwh]&quot;, &quot;Med trade rate [€cts/Kwh]&quot;, &quot;Max trade rate [€cts/Kwh]&quot;]
-        print(tabulate(last_market_table1, last_market_headers1, tablefmt=&quot;fancy_grid&quot;))
-
-        last_market_table2 = []
-        for i in range(len(market_names)):
-            keys_list = list(self.total_traded_energy_kWh.keys())
-            ss_values_list = list(self.self_sufficiency.values())
-            sc_values_list = list(self.self_consumption.values())
-            energy_imp_values_list = list(self.import_kWh.values())
-            energy_exp_values_list = list(self.export_kWh.values())
-            last_fee_values_list = list(self.last_market_fee.values())
-            # Print None values as 0
-            ss_values_list = [0 if x is None else x for x in ss_values_list]
-            sc_values_list = [0 if x is None else x for x in sc_values_list]
-            energy_imp_values_list = [0 if x is None else x for x in energy_imp_values_list]
-            energy_exp_values_list = [0 if x is None else x for x in energy_exp_values_list]
-            last_fee_values_list = [0 if x is None else x for x in last_fee_values_list]
-
-            last_market_table2.append([keys_list[i], ss_values_list[i], sc_values_list[i], energy_imp_values_list[i],
-                                       energy_exp_values_list[i], last_fee_values_list[i]])
-
-        last_market_headers2 = [&quot;Markets&quot;, &quot;Self sufficiency [%]&quot;, &quot;Self consumption [%]&quot;, &quot;Energy import [kWh]&quot;,
-                                &quot;Energy export [kWh]&quot;, &quot;Last fee [€cts/Kwh]&quot;]
-        print(tabulate(last_market_table2, last_market_headers2, tablefmt=&quot;fancy_grid&quot;))
-
-        ################################################
-        # SET NEW GRID FEE
-        ################################################
-        for area_uuid, area_dict in self.latest_grid_tree_flat.items():
-
-            if area_dict[&quot;area_name&quot;] in market_names:
-                ###################################################################
-                # TIME OF USE STRATEGY
-                ###################################################################
-                if TimeOfUse:
-                    self.next_market_fee[area_dict[&quot;area_name&quot;]] = self.scheduled_fee(self.market_time, planned_fee,
-                                                                                      area_dict[&quot;area_name&quot;])
-
-                ###################################################################
-                # AZIIZ STRATEGY
-                ###################################################################
-                if Aziiz:
-
-                    if moving_average_peak:
-                        self.max_ext_energy_kWh = abs(self.balance_hist[area_dict[&quot;area_name&quot;]].iloc[
-                                                      -look_back:].mean())  # Calculate the absolute moving average of the net balance by looking back at 4 markets
-                    else:
-                        self.max_ext_energy_kWh = max(self.import_kWh[area_dict[&quot;area_name&quot;]], self.export_kWh[
-                            area_dict[
-                                &quot;area_name&quot;]])  # Calculate the max between the import and export of the defined market
-
-                    individual_market_prices = pd.read_excel(market_prices, area_dict[&quot;area_name&quot;])  # Select the market in the file
-
-                    for k in range(len(individual_market_prices)):
-                        if self.max_ext_energy_kWh &lt;= individual_market_prices[&quot;Threshold&quot;][k]:  # if the peak is lower than this value, the following grid fee will be applied. If the max is higher, it will go to the lower elif condition
-                            self.next_market_fee[area_dict[&quot;area_name&quot;]] = individual_market_prices[&quot;Grid fee&quot;][
-                                k]  # new grid fee
-                            break
-                        else:
-                            self.next_market_fee[area_dict[
-                                &quot;area_name&quot;]] = 2000  # TODO set the last value if all the previous ones are not fulfilled
-
-                self.add_to_batch_commands.grid_fees(area_uuid=area_uuid,fee_cents_kwh=self.next_market_fee[area_dict[&quot;area_name&quot;]])
-
-        next_fee_response = self.execute_batch_commands()  # send batch command
-
-        print()
-        print('CURRENT AND NEXT MARKET FEES')
-
-        current_market_table = []
-        for i in range(len(market_names)):
-            keys_list = list(self.current_market_fee.keys())
-            current_fee_values_list = list(self.current_market_fee.values())
-            next_fee_values_list = list(self.next_market_fee.values())
-
-            current_fee_values_list = [0 if x is None else x for x in current_fee_values_list]
-            next_fee_values_list = [0 if x is None else x for x in next_fee_values_list]
-
-            current_market_table.append([keys_list[i], current_fee_values_list[i], next_fee_values_list[i]])
-
-        current_market_headers = [&quot;Markets&quot;, &quot;Current fee [€cts/kWh]&quot;, &quot;Next fee [€cts/kWh]&quot;]
-        print(tabulate(current_market_table, current_market_headers, tablefmt=&quot;fancy_grid&quot;))
-
-    ################################################
-    # TRIGGERS EACH COMMAND RESPONSE AND EVENT
-    ################################################
-    def on_event_or_response(self, message):
-        # print(&quot;message&quot;,message)
-        pass
-
-    ################################################
-    # SIMULATION TERMINATION CONDITION
-    ################################################
-    def on_finish(self, finish_info):
-        # TODO export relevant information stored during the simulation (if needed)
-        self.is_finished = True
-
-
-################################################
-# REGISTER FOR MARKETS
-################################################
-def get_assets_name(indict: dict) -&gt; dict:
-    &quot;&quot;&quot;
-    This function is used to parse the grid tree and returned all registered assets
-    wrapper for _get_assets_name
-    &quot;&quot;&quot;
-    if indict == {}:
-        return {}
-    outdict = {&quot;Area&quot;: [], &quot;Load&quot;: [], &quot;PV&quot;: [], &quot;Storage&quot;: []}
-    _get_assets_name(indict, outdict)
-    return outdict
-
-
-def _get_assets_name(indict: dict, outdict: dict):
-    &quot;&quot;&quot;
-    Parse the collaboration / Canary Network registry
-    Returns a list of the Market, Load, PV and Storage nodes the user is registered to
-    &quot;&quot;&quot;
-    for key, value in indict.items():
-        if key == &quot;name&quot;:
-            name = value
-        if key == &quot;type&quot;:
-            area_type = value
-        if key == &quot;registered&quot; and value:
-            outdict[area_type].append(name)
-        if 'children' in key:
-            for children in indict[key]:
-                _get_assets_name(children, outdict)
-
-
-# Code to create the market aggregator and connect to the relevant simulation. Keep it as is
-if os.environ[&quot;API_CLIENT_RUN_ON_REDIS&quot;] == &quot;true&quot;:
-    MarketClient = RedisMarketClient
-    market_args = {&quot;autoregister&quot;: True}
-    aggr = Oracle(aggregator_name=oracle_name)
-
-else:
-    MarketClient = RestMarketClient
-    simulation_id = os.environ[&quot;API_CLIENT_SIMULATION_ID&quot;]
-    domain_name = os.environ[&quot;API_CLIENT_DOMAIN_NAME&quot;]
-    websockets_domain_name = os.environ[&quot;API_CLIENT_WEBSOCKET_DOMAIN_NAME&quot;]
-    market_args = {&quot;simulation_id&quot;: simulation_id,
-                   &quot;domain_name&quot;: domain_name, &quot;websockets_domain_name&quot;: websockets_domain_name}
-
-    aggr = Oracle(aggregator_name=oracle_name, **market_args)
-    if automatic:
-        registry = aggr.get_configuration_registry()
-        market_names = get_assets_name(registry)[&quot;Area&quot;]
-
-market_prices, planned_fee = fee_strategy()
-
-print()
-print('Connecting to markets ...')
-
-for i in market_names:
-    if os.environ[&quot;API_CLIENT_RUN_ON_REDIS&quot;] == &quot;true&quot;:
-        market_registered = RedisMarketClient(area_id=i)
-    else:
-        market_uuid = get_area_uuid_from_area_name_and_collaboration_id(market_args[&quot;simulation_id&quot;], i, market_args[&quot;domain_name&quot;])
-        market_args[&quot;area_id&quot;] = market_uuid
-        market_registered = RestMarketClient(**market_args)
-    selected = market_registered.select_aggregator(aggr.aggregator_uuid)
-    print(&quot;----&gt; Connected to &quot;, i)
-    sleep(0.3)
-
-print(aggr.device_uuid_list)
-
-# loop to allow persistence
-while not aggr.is_finished:
-    sleep(0.5)
-</code></pre>
-
-<p>In the following lines, to improve the API monitoring, the script is printing relevant data in the terminal:</p>
-<p><img alt="alt_text" src="../img/grid-operator-api-5.png" /></p>
-<pre class="codehilite"><code class="language-python"># Print information in the terminal
-print('LAST MARKET STATISTICS')
-
-last_market_table1 = []
-for i in range(len(market_names)):
-    keys_list = list(self.total_traded_energy_kWh.keys())
-    values_list = list(self.total_traded_energy_kWh.values())
-    min_values_list = list(self.min_trade_rate.values())
-    avg_values_list = list(self.avg_trade_rate.values())
-    med_values_list = list(self.median_trade_rate.values())
-    max_values_list = list(self.max_trade_rate.values())
-
-    # Print None values as 0
-    values_list = [0 if x is None else x for x in values_list]
-    min_values_list = [0 if x is None else x for x in min_values_list]
-    avg_values_list = [0 if x is None else x for x in avg_values_list]
-    med_values_list = [0 if x is None else x for x in med_values_list]
-    max_values_list = [0 if x is None else x for x in max_values_list]
-
-    last_market_table1.append(
-        [keys_list[i], values_list[i], min_values_list[i], avg_values_list[i], med_values_list[i],
-         max_values_list[i]])
-
-last_market_headers1 = [&quot;Markets&quot;, &quot;Total energy traded [kWh]&quot;, &quot;Min trade rate [€cts/Kwh]&quot;,
-                        &quot;Avg trade rate [€cts/Kwh]&quot;, &quot;Med trade rate [€cts/Kwh]&quot;, &quot;Max trade rate [€cts/Kwh]&quot;]
-print(tabulate(last_market_table1, last_market_headers1, tablefmt=&quot;fancy_grid&quot;))
-
-last_market_table2 = []
-for i in range(len(market_names)):
-    keys_list = list(self.total_traded_energy_kWh.keys())
-    ss_values_list = list(self.self_sufficiency.values())
-    sc_values_list = list(self.self_consumption.values())
-    energy_imp_values_list = list(self.import_kWh.values())
-    energy_exp_values_list = list(self.export_kWh.values())
-    last_fee_values_list = list(self.last_market_fee.values())
-    # Print None values as 0
-    ss_values_list = [0 if x is None else x for x in ss_values_list]
-    sc_values_list = [0 if x is None else x for x in sc_values_list]
-    energy_imp_values_list = [0 if x is None else x for x in energy_imp_values_list]
-    energy_exp_values_list = [0 if x is None else x for x in energy_exp_values_list]
-    last_fee_values_list = [0 if x is None else x for x in last_fee_values_list]
-
-    last_market_table2.append([keys_list[i], ss_values_list[i], sc_values_list[i], energy_imp_values_list[i],
-                               energy_exp_values_list[i], last_fee_values_list[i]])
-
-last_market_headers2 = [&quot;Markets&quot;, &quot;Self sufficiency [%]&quot;, &quot;Self consumption [%]&quot;, &quot;Energy import [kWh]&quot;,
-                        &quot;Energy export [kWh]&quot;, &quot;Last fee [€cts/Kwh]&quot;]
-print(tabulate(last_market_table2, last_market_headers2, tablefmt=&quot;fancy_grid&quot;))
-</code></pre>
-
-<p>In the next section, the script applies the grid fee depending on the fee strategy chosen here. If the Time of Use was set, the markets’ grid fee is set based on the ToU excel file. If the Aziiz model was chosen the next fee is defined based on the Aziiz excel file. Additionally, if the peak import/export is higher than all threshold defined in the excel sheets this line sets the next fee as 2000cts/kWh. All the fees are added to the batch command and then executed.</p>
-<pre class="codehilite"><code class="language-python">################################################
-# SET NEW GRID FEE
-################################################
-for area_uuid, area_dict in self.latest_grid_tree_flat.items():
-
-    if area_dict[&quot;area_name&quot;] in market_names:
-        ###################################################################
-        # TIME OF USE STRATEGY
-        ###################################################################
-        if TimeOfUse:
-            self.next_market_fee[area_dict[&quot;area_name&quot;]] = self.scheduled_fee(self.market_time, planned_fee,
-                                                                              area_dict[&quot;area_name&quot;])
-
-        ###################################################################
-        # AZIIZ STRATEGY
-        ###################################################################
-        if Aziiz:
-
-            if moving_average_peak:
-                self.max_ext_energy_kWh = abs(self.balance_hist[area_dict[&quot;area_name&quot;]].iloc[
-                                              -look_back:].mean())  # Calculate the absolute moving average of the net balance by looking back at 4 markets
-            else:
-                self.max_ext_energy_kWh = max(self.import_kWh[area_dict[&quot;area_name&quot;]], self.export_kWh[
-                    area_dict[
-                        &quot;area_name&quot;]])  # Calculate the max between the import and export of the defined market
-
-            individual_market_prices = pd.read_excel(market_prices, area_dict[&quot;area_name&quot;])  # Select the market in the file
-
-            for k in range(len(individual_market_prices)):
-                if self.max_ext_energy_kWh &lt;= individual_market_prices[&quot;Threshold&quot;][k]:  # if the peak is lower than this value, the following grid fee will be applied. If the max is higher, it will go to the lower elif condition
-                    self.next_market_fee[area_dict[&quot;area_name&quot;]] = individual_market_prices[&quot;Grid fee&quot;][
-                        k]  # new grid fee
-                    break
-                else:
-                    self.next_market_fee[area_dict[
-                        &quot;area_name&quot;]] = 2000  # TODO set the last value if all the previous ones are not fulfilled
-
-        self.add_to_batch_commands.grid_fees(area_uuid=area_uuid,fee_cents_kwh=self.next_market_fee[area_dict[&quot;area_name&quot;]])
-
-next_fee_response = self.execute_batch_commands()  # send batch command
-</code></pre>
-
-<p>In the following lines, the script is printing the current fee and next fee for each market.</p>
-<p><img alt="alt_text" src="../img/grid-operator-api-6.png" /></p>
-<pre class="codehilite"><code class="language-python">print()
-        print('CURRENT AND NEXT MARKET FEES')
-
-        current_market_table = []
-        for i in range(len(market_names)):
-            keys_list = list(self.current_market_fee.keys())
-            current_fee_values_list = list(self.current_market_fee.values())
-            next_fee_values_list = list(self.next_market_fee.values())
-
-            current_fee_values_list = [0 if x is None else x for x in current_fee_values_list]
-            next_fee_values_list = [0 if x is None else x for x in next_fee_values_list]
-
-            current_market_table.append([keys_list[i], current_fee_values_list[i], next_fee_values_list[i]])
-
-        current_market_headers = [&quot;Markets&quot;, &quot;Current fee [€cts/kWh]&quot;, &quot;Next fee [€cts/kWh]&quot;]
-        print(tabulate(current_market_table, current_market_headers, tablefmt=&quot;fancy_grid&quot;))
-</code></pre>
-
-<p>Later, the on_event_or_response is overwritten. By default we do not perform any operation in this event but the user could add some if needed. For instance the user could record all the grid fee change responses received in that event.</p>
-<pre class="codehilite"><code class="language-python">################################################
-# TRIGGERS EACH COMMAND RESPONSE AND EVENT
-################################################
-def on_event_or_response(self, message):
-    # print(&quot;message&quot;,message)
-    pass
-</code></pre>
-
-<p>Lastly, the SDK Script overwrites the on_finish event so that whenever the function is triggered the script stops. If the user wishes to save some information recorded within the Exchange SDK this would be the opportunity to export them to external files.</p>
-<pre class="codehilite"><code class="language-python">################################################
-# SIMULATION TERMINATION CONDITION
-################################################
 def on_finish(self, finish_info):
-    # TODO export relevant information stored during the simulation (if needed)
-    self.is_finished = True
+   self.is_finished = True
 </code></pre>
 
-<p>The rest of the script is used to connect to a running simulation/collaboration/Canary Test Network. These lines should work as is and no changes are required.</p>
-<pre class="codehilite"><code class="language-python">################################################
-# REGISTER FOR MARKETS
-################################################
-def get_assets_name(indict: dict) -&gt; dict:
-    &quot;&quot;&quot;
-    This function is used to parse the grid tree and returned all registered assets
-    wrapper for _get_assets_name
-    &quot;&quot;&quot;
-    if indict == {}:
-        return {}
-    outdict = {&quot;Area&quot;: [], &quot;Load&quot;: [], &quot;PV&quot;: [], &quot;Storage&quot;: []}
-    _get_assets_name(indict, outdict)
-    return outdict
+<p>The rest of the script is used to connect to the energy assets of a running simulation/collaboration/Canary Test Network. These lines should work as is and no changes are required. </p>
+<pre class="codehilite"><code class="language-python">market_args = {
+   &quot;simulation_id&quot;: os.environ[&quot;API_CLIENT_SIMULATION_ID&quot;],
+   &quot;domain_name&quot;: os.environ[&quot;API_CLIENT_DOMAIN_NAME&quot;],
+   &quot;websockets_domain_name&quot;: os.environ[&quot;API_CLIENT_WEBSOCKET_DOMAIN_NAME&quot;],
+}
 
-
-def _get_assets_name(indict: dict, outdict: dict):
-    &quot;&quot;&quot;
-    Parse the collaboration / Canary Network registry
-    Returns a list of the Market, Load, PV and Storage nodes the user is registered to
-    &quot;&quot;&quot;
-    for key, value in indict.items():
-        if key == &quot;name&quot;:
-            name = value
-        if key == &quot;type&quot;:
-            area_type = value
-        if key == &quot;registered&quot; and value:
-            outdict[area_type].append(name)
-        if 'children' in key:
-            for children in indict[key]:
-                _get_assets_name(children, outdict)
-
-
-# Code to create the market aggregator and connect to the relevant simulation. Keep it as is
-if os.environ[&quot;API_CLIENT_RUN_ON_REDIS&quot;] == &quot;true&quot;:
-    MarketClient = RedisMarketClient
-    market_args = {&quot;autoregister&quot;: True}
-    aggr = Oracle(aggregator_name=oracle_name)
-
-else:
-    MarketClient = RestMarketClient
-    simulation_id = os.environ[&quot;API_CLIENT_SIMULATION_ID&quot;]
-    domain_name = os.environ[&quot;API_CLIENT_DOMAIN_NAME&quot;]
-    websockets_domain_name = os.environ[&quot;API_CLIENT_WEBSOCKET_DOMAIN_NAME&quot;]
-    market_args = {&quot;simulation_id&quot;: simulation_id,
-                   &quot;domain_name&quot;: domain_name, &quot;websockets_domain_name&quot;: websockets_domain_name}
-
-    aggr = Oracle(aggregator_name=oracle_name, **market_args)
-    if automatic:
-        registry = aggr.get_configuration_registry()
-        market_names = get_assets_name(registry)[&quot;Area&quot;]
-
-market_prices, planned_fee = fee_strategy()
+aggregator = Oracle(aggregator_name=ORACLE_NAME, **market_args)
+if CONNECT_TO_ALL_MARKETS:
+   registry = aggregator.get_configuration_registry()
+   MARKET_NAMES = get_assets_name(registry)[&quot;Area&quot;]
 
 print()
-print('Connecting to markets ...')
+print(&quot;Connecting to markets ...&quot;)
 
-for i in market_names:
-    if os.environ[&quot;API_CLIENT_RUN_ON_REDIS&quot;] == &quot;true&quot;:
-        market_registered = RedisMarketClient(area_id=i)
-    else:
-        market_uuid = get_area_uuid_from_area_name_and_collaboration_id(market_args[&quot;simulation_id&quot;], i, market_args[&quot;domain_name&quot;])
-        market_args[&quot;area_id&quot;] = market_uuid
-        market_registered = RestMarketClient(**market_args)
-    selected = market_registered.select_aggregator(aggr.aggregator_uuid)
-    print(&quot;----&gt; Connected to &quot;, i)
-    sleep(0.3)
+for i in MARKET_NAMES:
+   market_uuid = get_area_uuid_from_area_name_and_collaboration_id(
+       market_args[&quot;simulation_id&quot;], i, market_args[&quot;domain_name&quot;]
+   )
+   market_args[&quot;area_id&quot;] = market_uuid
+   market_registered = RestMarketClient(**market_args)
+   market_registered.select_aggregator(aggregator.aggregator_uuid)
+   print(&quot;----&gt; Connected to &quot;, i)
 
-print(aggr.device_uuid_list)
+print(aggregator.device_uuid_list)
 
 # loop to allow persistence
-while not aggr.is_finished:
-    sleep(0.5)
+while not aggregator.is_finished:
+   sleep(0.5)
 </code></pre>
 
-<p>For a video tutorial on the Grid Operator API, please follow this <a href="https://www.youtube.com/embed/LoYoyIy-C7M">link</a>.</p>
-<iframe width="560" height="315" src="https://www.youtube.com/embed/LoYoyIy-C7M" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<p>For simulations ran in the backend, a similar script is available <a href="https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/grid_operator_api_scripts/redis_grid_fees.py">here</a>.</p>
+<h2 id="implement-dynamic-grid-fees-with-time-of-use-strategy">Implement dynamic grid fees with Time of Use strategy<a class="headerlink" href="#implement-dynamic-grid-fees-with-time-of-use-strategy" title="Permanent link">&para;</a></h2>
+<p>In Time of Use (ToU) strategy, grid fees are applied depending on the time of the day (hours and minutes) regardless of the market conditions. After analyzing import and export patterns of their client, grid operators can create a time-based curve, increasing fees at peak predicted times (e.g. morning and dinner time). Below is an example of a ToU strategy used by the grid operators in one of the experiments at <a href="https://gridsingularity.medium.com/energy-singularity-challenge-2020-testing-novel-grid-fee-models-and-intelligent-peer-to-peer-6a0d715a9063">Odyssey hackathon</a>.</p>
+<p><img alt="alt_text" src="../img/grid-operator-api-2.png" /></p>
+<p>A template script can be found <a href="https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/grid_operator_api_scripts/rest_tou_strategy.py">here</a>. The ToU strategy is uploaded to the Grid Operator API script as a CSV file (an example can be found <a href="https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/grid_operator_api_scripts/resources/ToU.csv">here</a>), with the following structure:</p>
+<p><img alt="alt_text" src="../img/grid-operator-api-7.png" style="height:221px;width:329px;text-align:center" /></p>
+<p>As shown in the table above, for each market (in this case, the Community market and the Grid market), a value in ct€/kWh is assigned with a granularity of 15 min. The file is loaded through the read_fee_strategy function:</p>
+<pre class="codehilite"><code class="language-python">def read_fee_strategy():
+   &quot;Return a dictionary containing the Time of Use strategy loaded from the CSV input file.&quot;
+   with open(
+           os.path.join(module_dir, &quot;resources/ToU.csv&quot;), newline=&quot;&quot;, encoding=&quot;utf-8&quot;
+   ) as csvfile:
+       csv_rows = csv.reader(csvfile, delimiter=&quot; &quot;, quotechar=&quot;|&quot;)
+       headers = next(csv_rows)[0].split(&quot;;&quot;)
+       market_indexes = {}
+       planned_fee = {}
+       for market_name in MARKET_NAMES:
+           market_indexes.update({(market_name, headers.index(market_name))})
+       for row in csv_rows:
+           row = row[0].split(&quot;;&quot;)
+           for market in MARKET_NAMES:
+               planned_fee.update({(row[0], market): row[market_indexes[market]]})
+   return planned_fee
+</code></pre>
 
-<p><em>The next step is to adapt the <a href="https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/grid_operator_api_template.py">Grid Operator API template script</a>) developed by Grid Singularity to customize the grid fee strategies as you wish!</em></p>
+<p>As explained in the previous section, here the script sets the market fee for each market for the next time slot and prints that information in the terminal. Note that in this case, the value is taken from the uploaded CSV file instead of being hardcoded (inserted in the code). The <em>calculate_next_slot_market_fee</em> function reads the scheduled fees from the spreadsheet and returns the corresponding grid fee value according to each  market and the current market slot.</p>
+<pre class="codehilite"><code class="language-python">def calculate_next_slot_market_fee(market_time: DateTime, market_name:str) -&gt; float:
+   &quot;&quot;&quot;Return the market fee for the next time slot.&quot;&quot;&quot;
+   slot_time = market_time.add(minutes=SLOT_LENGTH).format(TIME_FORMAT_SECONDS)
+   if (slot_time, market_name) in fee_strategy:
+       next_fee = fee_strategy[(slot_time, market_name)]
+       if not isinstance(next_fee, (int, float)):
+           next_fee = float(next_fee.replace(&quot;,&quot;, &quot;.&quot;))
+   else:
+       next_fee = None
+   return next_fee
+</code></pre>
+
+<p>The rest of the script has been covered in the previous section. For simulations ran in the backend, a similar script is available <a href="https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/grid_operator_api_scripts/redis_tou_strategy.py">here</a>.</p>
+<h2 id="implement-dynamic-grid-fees-with-aziiz-strategy">Implement dynamic grid fees with Aziiz strategy<a class="headerlink" href="#implement-dynamic-grid-fees-with-aziiz-strategy" title="Permanent link">&para;</a></h2>
+<p>The Aziiz strategy, named after the researcher who suggested this <a href="https://gridsingularity.medium.com/energy-singularity-challenge-2020-testing-novel-grid-fee-models-and-intelligent-peer-to-peer-6a0d715a9063">model</a>, is using past market information to determine the next grid fee. The model looks at past imports and exports on a specific market, applies a moving average and then based on this number sets the next grid fee for that market. This model has the advantage of integrating market conditions into its strategy. For instance, if past market slots experienced high imports, the model will increase fees in the relevant market to incentivise market participants to contain the energy within that market. </p>
+<p>A template script can be found <a href="https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/grid_operator_api_scripts/rest_aziiz_strategy.py">here</a>. With this strategy, two more parameters are available at the beginning of the script and can be tuned:</p>
+<pre class="codehilite"><code class="language-python">MOVING_AVERAGE_PEAK = True
+LOOK_BACK_INDEX = 4
+</code></pre>
+
+<p>If MOVING_AVERAGE_PEAK is set to True, the Aziiz strategy will compare the average of the last markets’ (how many is defined by the LOOK_BACK_INDEX parameter) peak import/export to the threshold.</p>
+<p>The <em>on_market_slot</em> event is used to request market statistics from the simulation, based on which import / export balance can be calculated for each market. This is the criteria to determine which grid fees to apply in each market. </p>
+<pre class="codehilite"><code class="language-python">def calculate_import_export_balance(self):
+   &quot;&quot;&quot;Calculate the balance (import - export) for each market.&quot;&quot;&quot;
+   self.dso_stats_response = self.execute_batch_commands()
+   for market_event in self.dso_stats_response[&quot;responses&quot;].items():
+       self.import_kwh[market_event[1][0][&quot;name&quot;]] = market_event[1][0][
+           &quot;market_stats&quot;
+       ][&quot;area_throughput&quot;][&quot;import&quot;]
+       self.export_kwh[market_event[1][0][&quot;name&quot;]] = market_event[1][0][
+           &quot;market_stats&quot;
+       ][&quot;area_throughput&quot;][&quot;export&quot;]
+       self.balance[market_event[1][0][&quot;name&quot;]] = (
+           self.import_kwh[market_event[1][0][&quot;name&quot;]]
+           - self.export_kwh[market_event[1][0][&quot;name&quot;]]
+       )
+   self.balance_hist.append(self.balance)
+</code></pre>
+
+<p>In the Aziiz strategy, grid fees can be set for every peak import/export threshold for each market. A JSON file containing this information is uploaded to the Grid Operator API script. An example can be found <a href="https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/grid_operator_api_scripts/resources/aziiz.json">here</a>. </p>
+<pre class="codehilite"><code class="language-python">{
+   &quot;Grid&quot;: [
+       {&quot;Import / Export threshold&quot;: 10, &quot;Grid fee&quot;: 0.9},
+       {&quot;Import / Export threshold&quot;: 15, &quot;Grid fee&quot;: 2.1},
+       {&quot;Import / Export threshold&quot;: 20, &quot;Grid fee&quot;: 3},
+       {&quot;Import / Export threshold&quot;: 25, &quot;Grid fee&quot;: 3.9},
+       {&quot;Import / Export threshold&quot;: 30, &quot;Grid fee&quot;: 6},
+       {&quot;Import / Export threshold&quot;: 50, &quot;Grid fee&quot;: 30}
+   ],
+   &quot;Community&quot;: [
+       {&quot;Import / Export threshold&quot;: 10, &quot;Grid fee&quot;: 0.9},
+       {&quot;Import / Export threshold&quot;: 15, &quot;Grid fee&quot;: 2.1},
+       {&quot;Import / Export threshold&quot;: 20, &quot;Grid fee&quot;: 3},
+       {&quot;Import / Export threshold&quot;: 25, &quot;Grid fee&quot;: 3.9},
+       {&quot;Import / Export threshold&quot;: 30, &quot;Grid fee&quot;: 6},
+       {&quot;Import / Export threshold&quot;: 50, &quot;Grid fee&quot;: 30}
+   ]
+}
+</code></pre>
+
+<p>If the average is lower than the threshold, the relevant grid fee will be applied; for instance in the figure above, if the average peak is equal to 22 kWh, the next grid fee will be 3 cents/KWh. </p>
+<p>Below is a snippet of the _set_new_market_fee adapted to the Aziiz strategy. All the fees are added to the batch command and then executed. </p>
+<pre class="codehilite"><code class="language-python">def _set_new_market_fee(self):
+   &quot;&quot;&quot;Return the market fees for each market for the next time slot.&quot;&quot;&quot;
+   next_market_fee = {}
+   for area_uuid, area_dict in self.latest_grid_tree_flat.items():
+       if area_dict[&quot;area_name&quot;] in MARKET_NAMES:
+           if MOVING_AVERAGE_PEAK:
+               fees = []
+               for balance in self.balance_hist:
+                   fees.append(balance[area_dict[&quot;area_name&quot;]])
+               max_ext_energy_kwh = abs(
+                   sum(fees[-LOOK_BACK_INDEX:]) / len(fees[-LOOK_BACK_INDEX:])
+               )
+           else:
+               max_ext_energy_kwh = max(
+                   self.import_kwh[area_dict[&quot;area_name&quot;]],
+                   self.export_kwh[area_dict[&quot;area_name&quot;]],
+               )
+
+           individual_market_fees = fee_strategy[area_dict[&quot;area_name&quot;]]
+           for market_fee in individual_market_fees:
+               if max_ext_energy_kwh &lt;= market_fee[&quot;Import / Export threshold&quot;]:
+                   next_market_fee[area_dict[&quot;area_name&quot;]] = market_fee[&quot;Grid fee&quot;]
+                   break
+               next_market_fee[area_dict[&quot;area_name&quot;]] = 2000
+           self.add_to_batch_commands.grid_fees(
+               area_uuid=area_uuid,
+               fee_cents_kwh=next_market_fee[area_dict[&quot;area_name&quot;]],
+           )
+   self.execute_batch_commands()
+   return next_market_fee
+</code></pre>
+
+<p>The rest of the script has been already covered in this previous section. For simulations run in the backend, a similar script is available here.</p>
+<p>For a video tutorial on the Grid Operator API, please follow this <a href="https://www.youtube.com/watch?v=3OMkWLSrl4c">link</a>.</p>
+<p>The next step is to adapt the Grid Operator API template scripts developed by Grid Singularity to customize the grid fee strategies to implement dynamic grid fees in the Grid Singularity Exchange.</p>
                 
                   
                 
