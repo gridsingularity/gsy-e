@@ -21,6 +21,7 @@ from uuid import uuid4
 
 from gsy_framework.area_validator import validate_area
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.data_classes import Trade
 from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.exceptions import GSyAreaException, GSyDeviceException
 from gsy_framework.utils import key_in_dict_and_not_none
@@ -45,12 +46,13 @@ from gsy_e.models.market.forward import ForwardMarketBase
 from gsy_e.gsy_e_core.enums import AvailableMarketTypes
 from gsy_e.models.strategy import BaseStrategy
 from gsy_e.models.strategy.external_strategies import ExternalMixin
+from gsy_e.models.strategy.scm import SCMStrategy
 
 log = getLogger(__name__)
 
 if TYPE_CHECKING:
     from gsy_e.models.market import MarketBase
-    from gsy_framework.data_classes import Trade
+    from gsy_e.models.area.scm_manager import SCMManager
 
 
 def check_area_name_exists_in_parent_area(parent_area, name):
@@ -121,13 +123,13 @@ class AreaBase:
         self.strategy = strategy
         self._config = config
         self._set_grid_fees(grid_fee_constant, grid_fee_percentage)
-        self._current_time_slot = None
+        self._current_market_time_slot = None
         self.display_type = "Area" if self.strategy is None else self.strategy.__class__.__name__
 
     @property
     def now(self) -> DateTime:
         """Get the current time of the simulation."""
-        return self._current_time_slot
+        return self._current_market_time_slot
 
     @property
     def trades(self) -> List["Trade"]:
@@ -241,15 +243,82 @@ class AreaBase:
             log.exception("area.update_descendants_strategy_prices failed.")
             return
 
-    def cycle_coefficients_trading(self, current_time_slot: DateTime) -> None:
-        """Perform operations that should be executed on coefficients trading cycle."""
-        self._current_time_slot = current_time_slot
-
     def get_results_dict(self):
         """Calculate the results dict for the coefficients trading."""
         if self.strategy is not None:
-            return self.strategy.state.get_results_dict(self._current_time_slot)
+            return self.strategy.state.get_results_dict(self._current_market_time_slot)
         return {}
+
+
+class CoefficientArea(AreaBase):
+    """Area class for the coefficient matching mechanism."""
+    def __init__(self, name: str = None, children: List["CoefficientArea"] = None,
+                 uuid: str = None,
+                 strategy: SCMStrategy = None,
+                 config: SimulationConfig = None,
+                 grid_fee_percentage: float = None,
+                 grid_fee_constant: float = None,
+                 coefficient_percent: float = 0.0,
+                 market_maker_rate: float = (
+                         ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE / 100.),
+                 feed_in_tariff: float = GlobalConfig.FEED_IN_TARIFF / 100.,
+                 ):
+        # pylint: disable=too-many-arguments
+        super().__init__(name, children, uuid, strategy, config, grid_fee_percentage,
+                         grid_fee_constant)
+        self._coefficient_percent = coefficient_percent
+        self._market_maker_rate = market_maker_rate
+        self._feed_in_tariff = feed_in_tariff
+        self.past_market_time_slot = None
+
+    def activate_energy_parameters(self, current_time_slot: DateTime) -> None:
+        """Activate the coefficient-based area parameters."""
+        self._current_market_time_slot = current_time_slot
+
+        if self.strategy:
+            self.strategy.activate(self)
+        for child in self.children:
+            child.activate_energy_parameters(current_time_slot)
+
+    def cycle_coefficients_trading(self, current_time_slot: DateTime) -> None:
+        """Perform operations that should be executed on coefficients trading cycle."""
+        self.past_market_time_slot = self._current_market_time_slot
+        self._current_market_time_slot = current_time_slot
+
+        if self.strategy:
+            self.strategy.market_cycle(self)
+
+        for child in self.children:
+            child.cycle_coefficients_trading(current_time_slot)
+
+    def _is_home_area(self):
+        return self.children and all(child.strategy for child in self.children)
+
+    def _calculate_home_after_meter_data(
+            self, current_time_slot: DateTime, scm_manager: "SCMManager") -> None:
+        production_kWh = sum(child.strategy.get_energy_to_sell_kWh(current_time_slot)
+                             for child in self.children)
+        consumption_kWh = sum(child.strategy.get_energy_to_buy_kWh(current_time_slot)
+                              for child in self.children)
+        scm_manager.add_home_data(self.uuid, self.name,
+                                  self.grid_fee_constant, self._coefficient_percent,
+                                  self._market_maker_rate, self._feed_in_tariff,
+                                  production_kWh, consumption_kWh)
+
+    def calculate_home_after_meter_data(
+            self, current_time_slot: DateTime, scm_manager: "SCMManager") -> None:
+        """Recursive function that calculates the home after meter data."""
+        if self._is_home_area():
+            self._calculate_home_after_meter_data(current_time_slot, scm_manager)
+        for child in self.children:
+            child.calculate_home_after_meter_data(current_time_slot, scm_manager)
+
+    def trigger_energy_trades(self, scm_manager: "SCMManager") -> None:
+        """Recursive function that triggers energy trading on all children of the root area."""
+        if self._is_home_area():
+            scm_manager.calculate_home_energy_bills(self.uuid)
+        for child in self.children:
+            child.trigger_energy_trades(scm_manager)
 
 
 class Area(AreaBase):

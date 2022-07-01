@@ -183,7 +183,7 @@ class FakeMarket:
         return offer
 
     def accept_offer(self, **kwargs):
-        return Trade("", "", "", "", "", "", "")
+        return Trade("", now(), None, "", "", 0.1, 0.1)
 
 
 class TestLoadHoursStrategyInput(unittest.TestCase):
