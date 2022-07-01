@@ -286,7 +286,7 @@ class SmartMeterExternalMixin(ExternalMixin):
                 required_energy = self.state.get_unsettled_deviation_kWh(market.time_slot)
             else:
                 required_energy = (
-                        self.state.get_energy_requirement_Wh(market.time_slot) / 1000)
+                    self.state.get_energy_requirement_Wh(market.time_slot) / 1000)
             replace_existing = arguments.get("replace_existing", True)
             assert self.can_bid_be_posted(
                 arguments["energy"],
