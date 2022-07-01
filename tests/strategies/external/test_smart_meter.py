@@ -1,0 +1,154 @@
+# pylint: disable=protected-access
+import uuid
+
+import pytest
+from gsy_framework.constants_limits import DATE_TIME_FORMAT, ConstSettings
+from pendulum import datetime
+
+from gsy_e.gsy_e_core.blockchain_interface import NonBlockchainInterface
+from gsy_e.models.market.settlement import SettlementMarket
+from gsy_e.models.strategy.external_strategies.smart_meter import SmartMeterExternalStrategy
+from tests.strategies.external.utils import (
+    assert_bid_offer_aggregator_commands_return_value,
+    check_external_command_endpoint_with_correct_payload_succeeds,
+    create_areas_markets_for_strategy_fixture)
+
+
+@pytest.fixture(name="external_smart_meter")
+def external_storage_fixture():
+    """Create a StorageExternalStrategy instance in a two-sided market."""
+    ConstSettings.MASettings.MARKET_TYPE = 2
+    yield create_areas_markets_for_strategy_fixture(SmartMeterExternalStrategy(
+        smart_meter_profile={
+            "2022-01-01T00:00": 0
+        }
+    ))
+    ConstSettings.MASettings.MARKET_TYPE = 1
+
+
+@pytest.fixture(name="settlement_market")
+def settlement_market_fixture():
+    """Create a SettlementMarket."""
+    return SettlementMarket(bc=NonBlockchainInterface(str(uuid.uuid4())),
+                            time_slot=datetime(2021, 1, 1, 00, 00))
+
+
+class TestSmartMeterExternalStrategy:
+    """Tests for the SmartMeterExternalStrategy class."""
+
+    # BID FUNCTIONALITIES #
+
+    @staticmethod
+    def test_bid_succeeds(external_smart_meter: SmartMeterExternalStrategy):
+        arguments = {"price": 1, "energy": 2}
+        check_external_command_endpoint_with_correct_payload_succeeds(
+            external_smart_meter, "bid", arguments)
+
+    @staticmethod
+    def test_list_bids_succeeds(external_smart_meter: SmartMeterExternalStrategy):
+        check_external_command_endpoint_with_correct_payload_succeeds(
+            external_smart_meter, "list_bids", {})
+
+    @staticmethod
+    def test_delete_bid_succeeds(external_smart_meter: SmartMeterExternalStrategy):
+        check_external_command_endpoint_with_correct_payload_succeeds(
+            external_smart_meter, "delete_bid", {})
+
+    @staticmethod
+    def test_bid_aggregator(external_smart_meter: SmartMeterExternalStrategy):
+        external_smart_meter.state.set_desired_energy(
+            500.0, external_smart_meter.spot_market.time_slot, overwrite=True)
+        return_value = external_smart_meter.trigger_aggregator_commands({
+            "type": "bid",
+            "price": 200.0,
+            "energy": 0.5,
+            "transaction_id": str(uuid.uuid4())
+        })
+        assert_bid_offer_aggregator_commands_return_value(return_value, is_offer=False)
+
+    @staticmethod
+    def test_bid_aggregator_places_settlement_bid(
+            external_smart_meter: SmartMeterExternalStrategy, settlement_market):
+        unsettled_energy_kWh = 0.2
+        external_smart_meter.area._markets.settlement_market_ids = [settlement_market.id]
+        external_smart_meter.area._markets.settlement_markets = {
+            settlement_market.time_slot: settlement_market}
+        external_smart_meter.state._forecast_measurement_deviation_kWh[
+            settlement_market.time_slot] = (unsettled_energy_kWh)
+        external_smart_meter.state._unsettled_deviation_kWh[settlement_market.time_slot] = (
+            unsettled_energy_kWh)
+        return_value = external_smart_meter.trigger_aggregator_commands({
+            "type": "bid",
+            "price": 200,
+            "energy": 0.2,
+            "time_slot": settlement_market.time_slot.format(DATE_TIME_FORMAT),
+            "transaction_id": str(uuid.uuid4())
+        })
+        assert return_value["status"] == "ready"
+        assert len(settlement_market.bids.values()) == 1
+        assert list(settlement_market.bids.values())[0].energy == unsettled_energy_kWh
+
+    @staticmethod
+    def test_bid_aggregator_succeeds_with_warning_if_dof_are_disabled(
+            external_smart_meter: SmartMeterExternalStrategy):
+        """
+        The bid_aggregator command succeeds, but it shows a warning if Degrees of Freedom are
+        disabled and nevertheless provided.
+        """
+        external_smart_meter.simulation_config.enable_degrees_of_freedom = False
+        external_smart_meter.state.set_desired_energy(
+            1000, external_smart_meter.spot_market.time_slot, overwrite=True)
+        return_value = external_smart_meter.trigger_aggregator_commands({
+            "type": "bid",
+            "price": 200,
+            "energy": 0.5,
+            "attributes": {"energy_type": "PV"},
+            "requirements": [{"price": 12}],
+            "transaction_id": str(uuid.uuid4())
+        })
+        assert_bid_offer_aggregator_commands_return_value(return_value, is_offer=False)
+        assert return_value["message"] == (
+            "The following arguments are not supported for this market and have been removed from "
+            "your order: ['requirements', 'attributes'].")
+
+    @staticmethod
+    def test_delete_bid_aggregator(external_smart_meter: SmartMeterExternalStrategy):
+        bid = external_smart_meter.post_bid(external_smart_meter.spot_market, 200.0, 1.0)
+        return_value = external_smart_meter.trigger_aggregator_commands({
+            "type": "delete_bid",
+            "bid": str(bid.id),
+            "transaction_id": str(uuid.uuid4())
+        })
+        assert return_value["status"] == "ready"
+        assert return_value["command"] == "bid_delete"
+        assert return_value["deleted_bids"] == [bid.id]
+
+    @staticmethod
+    def test_list_bids_aggregator(external_smart_meter: SmartMeterExternalStrategy):
+        bid = external_smart_meter.post_bid(external_smart_meter.spot_market, 200.0, 1.0)
+        return_value = external_smart_meter.trigger_aggregator_commands({
+                "type": "list_bids",
+                "transaction_id": str(uuid.uuid4())
+        })
+        assert return_value["status"] == "ready"
+        assert return_value["command"] == "list_bids"
+        assert return_value["bid_list"] == [
+            {"id": bid.id, "price": bid.price, "energy": bid.energy}]
+
+    # OFFER FUNCTIONALITIES #
+
+    @staticmethod
+    def test_offer_succeeds(external_smart_meter: SmartMeterExternalStrategy):
+        arguments = {"price": 1, "energy": 2}
+        check_external_command_endpoint_with_correct_payload_succeeds(
+            external_smart_meter, "offer", arguments)
+
+    @staticmethod
+    def test_list_offers_succeeds(external_smart_meter: SmartMeterExternalStrategy):
+        check_external_command_endpoint_with_correct_payload_succeeds(
+            external_smart_meter, "list_offers", {})
+
+    @staticmethod
+    def test_delete_offer_succeeds(external_smart_meter: SmartMeterExternalStrategy):
+        check_external_command_endpoint_with_correct_payload_succeeds(
+            external_smart_meter, "delete_offer", {})
