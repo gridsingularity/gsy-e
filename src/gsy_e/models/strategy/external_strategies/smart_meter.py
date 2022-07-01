@@ -357,6 +357,12 @@ class SmartMeterExternalMixin(ExternalMixin):
         """Post the offer to the market."""
         market = self._get_market_from_command_argument(arguments)
         try:
+            response_message = ""
+            arguments, filtered_fields = self.filter_degrees_of_freedom_arguments(arguments)
+            if filtered_fields:
+                response_message = (
+                    "The following arguments are not supported for this market and have been "
+                    f"removed from your order: {filtered_fields}.")
             if self.area.is_market_settlement(market.id):
                 if not self.state.can_post_settlement_offer(market.time_slot):
                     raise OrderCanNotBePosted("The smart meter did not produce enough energy, ",
@@ -381,7 +387,8 @@ class SmartMeterExternalMixin(ExternalMixin):
             response = {"command": "offer", "status": "ready",
                         "market_type": market.type_name,
                         "offer": offer.to_json_string(replace_existing=replace_existing),
-                        "transaction_id": arguments.get("transaction_id")}
+                        "transaction_id": arguments.get("transaction_id"),
+                        "message": response_message}
         except Exception: # noqa
             error_message = (f"Error when handling offer create on area {self.device.name}: "
                              f"Offer Arguments: {arguments}")
