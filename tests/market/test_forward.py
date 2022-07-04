@@ -25,10 +25,11 @@ from gsy_e.models.area import Area
 from gsy_e.models.area.market_rotators import (DayForwardMarketRotator,
                                                WeekForwardMarketRotator, MonthForwardMarketRotator,
                                                YearForwardMarketRotator)
-from gsy_e.models.market import GridFee
 from gsy_e.models.market.forward import (ForwardMarketBase, DayForwardMarket,
                                          WeekForwardMarket, MonthForwardMarket, YearForwardMarket)
-from tests.market.test_future import count_orders_in_buffers
+
+
+from tests.market import count_orders_in_buffers
 
 CURRENT_MARKET_SLOT = datetime(2022, 6, 13, 0, 0)  # day of week = 1 (Monday)
 
@@ -37,17 +38,11 @@ class TestForwardMarkets:
 
     @staticmethod
     def _create_forward_market(market_class: ForwardMarketBase, create=False):
-        area = Area("test_area")
+        area = MagicMock(spec=Area)
         area.config.start_date = CURRENT_MARKET_SLOT
         area.config.end_date = area.config.start_date.add(years=6)
         area.activate()
-        forward_markets = market_class(
-            bc=area.bc,
-            notification_listener=area.dispatcher.broadcast_notification,
-            grid_fee_type=area.config.grid_fee_type,
-            grid_fees=GridFee(grid_fee_percentage=area.grid_fee_percentage,
-                              grid_fee_const=area.grid_fee_constant),
-            name=area.name)
+        forward_markets = market_class(bc=area.bc)
         if create:
             forward_markets.create_future_markets(CURRENT_MARKET_SLOT, area.config)
         return forward_markets
