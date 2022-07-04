@@ -14,24 +14,26 @@ class TestRQJobUtils:
     """Test RQ-related utilities."""
 
     @staticmethod
-    def test_launch_simulation_from_rq_job():
+    def fn(queue, **kwargs):
+        # This helper function should not be defined in a local scope, so Python can dump it when
+        # starting the process.
+        """Launch simulation and push the exception in the result queue if any.
+        This function is supposed to run in a separate process.
+        """
+        try:
+            launch_simulation_from_rq_job(**kwargs)
+        except Exception as exc:  # noqa
+            queue.put(exc)
+            raise exc
+
+    def test_launch_simulation_from_rq_job(self):
         """Assure the launch_simulation_from_rq_job can successfully launch a simulation.
         The launch_simulation_from_rq_job is ran in another process to ensure that its changes on
         constant settings will not cause other tests to fail.
         """
 
-        def fn(queue, **kwargs):
-            """Launch simulation and push the exception in the result queue if any.
-            This function is supposed to run in a separate process.
-            """
-            try:
-                launch_simulation_from_rq_job(**kwargs)
-            except Exception as exc:  # noqa
-                queue.put(exc)
-                raise exc
-
         results_queue = Queue()
-        process = Process(target=fn, args=(results_queue,), kwargs={
+        process = Process(target=self.fn, args=(results_queue,), kwargs={
             "scenario": zlib.compress(pickle.dumps("default_2a")),
             "settings": {
                "duration": duration(days=1),
