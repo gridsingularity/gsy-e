@@ -1,4 +1,3 @@
-# pylint: disable=broad-except
 """
 Copyright 2018 Grid Singularity
 This file is part of Grid Singularity Exchange.
