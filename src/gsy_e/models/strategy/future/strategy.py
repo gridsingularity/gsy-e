@@ -12,7 +12,6 @@ General Public License for more details.
 You should have received a copy of the GNU General Public License along with this program. If not,
 see <http://www.gnu.org/licenses/>.
 """
-
 from typing import TYPE_CHECKING, List, Union
 
 from gsy_framework.constants_limits import ConstSettings
@@ -48,12 +47,23 @@ class FutureTemplateStrategyBidUpdater(TemplateStrategyBidUpdater):
             return []
         return area.future_markets.market_time_slots
 
+    def time_for_price_update(self, strategy: "BaseStrategy", time_slot: DateTime) -> bool:
+        """Check if the prices of bids/offers should be updated."""
+        return (
+                self._elapsed_seconds(strategy.area)
+                - self.market_slot_added_time_mapping[time_slot] >= (
+                        self.update_interval.seconds * self.update_counter[time_slot]))
+
     def update(self, market: "FutureMarkets", strategy: "BaseStrategy") -> None:
         """Update the price of existing bids to reflect the new rates."""
         for time_slot in strategy.area.future_markets.market_time_slots:
             if self.time_for_price_update(strategy, time_slot):
                 if strategy.are_bids_posted(market.id, time_slot):
                     strategy.update_bid_rates(market, self.get_updated_rate(time_slot), time_slot)
+
+    def delete_past_state_values(self, current_market_time_slot: DateTime) -> None:
+        """Delete irrelevant values from buffers for unneeded markets."""
+        self._delete_market_slot_data(current_market_time_slot)
 
 
 class FutureTemplateStrategyOfferUpdater(TemplateStrategyOfferUpdater):
@@ -75,6 +85,13 @@ class FutureTemplateStrategyOfferUpdater(TemplateStrategyOfferUpdater):
             return []
         return area.future_markets.market_time_slots
 
+    def time_for_price_update(self, strategy: "BaseStrategy", time_slot: DateTime) -> bool:
+        """Check if the prices of bids/offers should be updated."""
+        return (
+                self._elapsed_seconds(strategy.area)
+                - self.market_slot_added_time_mapping[time_slot] >= (
+                        self.update_interval.seconds * self.update_counter[time_slot]))
+
     def update(self, market: "FutureMarkets", strategy: "BaseStrategy") -> None:
         """Update the price of existing offers to reflect the new rates."""
         for time_slot in strategy.area.future_markets.market_time_slots:
@@ -82,6 +99,10 @@ class FutureTemplateStrategyOfferUpdater(TemplateStrategyOfferUpdater):
                 if strategy.are_offers_posted(market.id):
                     strategy.update_offer_rates(
                         market, self.get_updated_rate(time_slot), time_slot)
+
+    def delete_past_state_values(self, current_market_time_slot: DateTime) -> None:
+        """Delete irrelevant values from buffers for unneeded markets."""
+        self._delete_market_slot_data(current_market_time_slot)
 
 
 class FutureMarketStrategyInterface:
@@ -99,6 +120,9 @@ class FutureMarketStrategyInterface:
 
     def update_and_populate_price_settings(self, strategy: "BaseStrategy") -> None:
         """Base class method for updating/populating price settings"""
+
+    def delete_past_state_values(self, current_market_time_slot: DateTime) -> None:
+        """Base class method for deleting the state of past or spot markets."""
 
 
 def future_strategy_bid_updater_factory(
@@ -261,6 +285,10 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
 
         self._bid_updater.increment_update_counter_all_markets(strategy)
         self._offer_updater.increment_update_counter_all_markets(strategy)
+
+    def delete_past_state_values(self, current_market_time_slot: DateTime) -> None:
+        self._bid_updater.delete_past_state_values(current_market_time_slot)
+        self._offer_updater.delete_past_state_values(current_market_time_slot)
 
 
 def future_market_strategy_factory(asset_type: AssetType) -> FutureMarketStrategyInterface:

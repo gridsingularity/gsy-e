@@ -34,6 +34,9 @@ class TestMarketRotation:
     @staticmethod
     @pytest.fixture
     def area_fixture():
+        """Fixture for an area object."""
+        original_future_markets = ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS
+        ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS = 24
         original_registry = DeviceRegistry.REGISTRY
         DeviceRegistry.REGISTRY = {
             "General Load": (33, 35),
@@ -50,7 +53,6 @@ class TestMarketRotation:
         ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = False
         ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS = False
         gsy_e.constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = False
-        original_future_markets = ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS
 
         yield area
 
@@ -81,7 +83,6 @@ class TestMarketRotation:
     @staticmethod
     @patch("gsy_e.constants.RETAIN_PAST_MARKET_STRATEGIES_STATE", True)
     def test_market_rotation_is_successful_keep_past_markets(area_fixture):
-        ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS = 24
         area_fixture.activate()
         assert len(area_fixture.all_markets) == 1
         ticks_per_slot = area_fixture.config.slot_length / area_fixture.config.tick_length

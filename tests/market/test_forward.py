@@ -22,33 +22,27 @@ from gsy_framework.data_classes import Bid, Offer, Trade
 from pendulum import datetime
 
 from gsy_e.models.area import Area
-
 from gsy_e.models.area.market_rotators import (DayForwardMarketRotator, IntradayMarketRotator,
                                                WeekForwardMarketRotator, MonthForwardMarketRotator,
                                                YearForwardMarketRotator)
-from gsy_e.models.market import GridFee
 from gsy_e.models.market.forward import (ForwardMarketBase, DayForwardMarket, IntradayMarket,
                                          WeekForwardMarket, MonthForwardMarket, YearForwardMarket)
-from tests.market.test_future import count_orders_in_buffers
 
-CURRENT_MARKET_SLOT = datetime(2022, 6, 19, 0, 10)
+
+from tests.market import count_orders_in_buffers
+
+CURRENT_MARKET_SLOT = datetime(2022, 6, 13, 0, 0)  # day of week = 1 (Monday)
 
 
 class TestForwardMarkets:
 
     @staticmethod
     def _create_forward_market(market_class: ForwardMarketBase, create=False):
-        area = Area("test_area")
+        area = MagicMock(spec=Area)
         area.config.start_date = CURRENT_MARKET_SLOT
         area.config.end_date = area.config.start_date.add(years=6)
         area.activate()
-        forward_markets = market_class(
-            bc=area.bc,
-            notification_listener=area.dispatcher.broadcast_notification,
-            grid_fee_type=area.config.grid_fee_type,
-            grid_fees=GridFee(grid_fee_percentage=area.grid_fee_percentage,
-                              grid_fee_const=area.grid_fee_constant),
-            name=area.name)
+        forward_markets = market_class(bc=area.bc)
         if create:
             forward_markets.create_future_markets(CURRENT_MARKET_SLOT, area.config)
         return forward_markets
@@ -60,7 +54,7 @@ class TestForwardMarkets:
                               [MonthForwardMarket, 24],
                               [YearForwardMarket, 5]])
     @patch("gsy_e.models.market.future.is_time_slot_in_simulation_duration", MagicMock())
-    def test_create_forward_future_markets(self, market_class, expected_market_count):
+    def test_create_forward_markets(self, market_class, expected_market_count):
         # pylint: disable=protected-access
 
         area = Area("test_area")
@@ -80,22 +74,31 @@ class TestForwardMarkets:
                            forward_markets.slot_trade_mapping]:
 
                 assert len(buffer.keys()) == expected_market_count
-                day_ahead_time_slot = market_class._get_start_time(CURRENT_MARKET_SLOT)
+                ahead_time_slot = market_class._get_start_time(CURRENT_MARKET_SLOT)
                 most_future_slot = market_class._get_end_time(CURRENT_MARKET_SLOT)
-                assert all(day_ahead_time_slot <= time_slot <= most_future_slot
+                assert all(ahead_time_slot <= time_slot <= most_future_slot
                            for time_slot in buffer)
+                if market_class == DayForwardMarket:
+                    assert all(time_slot.minute == 0 for time_slot in buffer)
+                if market_class == WeekForwardMarket:
+                    assert all(time_slot.hour == 0 and time_slot.minute == 0
+                               for time_slot in buffer)
+                if market_class == MonthForwardMarket:
+                    assert all(time_slot.day == 1 for time_slot in buffer)
+                if market_class == YearForwardMarket:
+                    assert all(time_slot.month == 1 and time_slot.day == 1 for time_slot in buffer)
 
     @pytest.mark.parametrize("market_class, rotator_class, expected_market_count, rotation_time",
                              [[IntradayMarket, IntradayMarketRotator, 24 * 4,
                                CURRENT_MARKET_SLOT.set(minute=15)],
                               [DayForwardMarket, DayForwardMarketRotator, 24 * 7,
-                               CURRENT_MARKET_SLOT.set(minute=0)],
+                               CURRENT_MARKET_SLOT.add(days=1)],
                               [WeekForwardMarket, WeekForwardMarketRotator, 52,
-                               datetime(2022, 6, 20, 0, 0)],
+                               CURRENT_MARKET_SLOT.add(weeks=1)],
                               [MonthForwardMarket, MonthForwardMarketRotator, 24,
-                               CURRENT_MARKET_SLOT.add(months=1).set(day=1, hour=0, minute=0)],
+                               CURRENT_MARKET_SLOT.set(day=1).add(months=1)],
                               [YearForwardMarket, YearForwardMarketRotator, 5,
-                               datetime(2022, 1, 1, 0, 0)]
+                               CURRENT_MARKET_SLOT.set(day=1, month=1).add(years=1)]
                               ])
     @patch("gsy_e.models.market.forward.ConstSettings.ForwardMarketSettings."
            "ENABLE_FORWARD_MARKETS", True)
@@ -114,7 +117,7 @@ class TestForwardMarkets:
         rotator = rotator_class(forward_markets)
         count_orders_in_buffers(forward_markets, expected_market_count)
         # Markets should not be deleted when it is not time
-        rotator.rotate(CURRENT_MARKET_SLOT)
+        rotator.rotate(CURRENT_MARKET_SLOT.add(minutes=5))
         count_orders_in_buffers(forward_markets, expected_market_count)
         # Market should be deleted if the rotation time has been reached
         rotator.rotate(rotation_time)

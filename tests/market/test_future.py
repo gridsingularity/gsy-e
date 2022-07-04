@@ -22,7 +22,7 @@ from gsy_framework.constants_limits import GlobalConfig, DATE_TIME_FORMAT, Const
 from gsy_framework.data_classes import Bid, Offer, Trade, TradeBidOfferInfo
 from gsy_framework.utils import datetime_to_string_incl_seconds
 from pendulum import datetime, duration, now
-
+from tests.market import count_orders_in_buffers
 from gsy_e.models.area import Area
 from gsy_e.models.market import GridFee
 from gsy_e.models.market.future import FutureMarkets, FutureMarketException, FutureOrders
@@ -69,18 +69,6 @@ def bid_fixture() -> Bid:
     """Return a bid instance."""
     return Bid("id1", datetime(2021, 10, 19, 0, 0),
                10, 10, buyer="buyer", time_slot=datetime(2021, 10, 19, 0, 0))
-
-
-def count_orders_in_buffers(future_markets: FutureMarkets, expected_count: int) -> None:
-    """Count number of markets and orders created in buffers."""
-    for buffer in [future_markets.slot_bid_mapping,
-                   future_markets.slot_offer_mapping,
-                   future_markets.slot_trade_mapping]:
-        assert all(len(orders) == 1 for orders in buffer.values())
-        assert len(buffer) == expected_count
-    assert len(future_markets.bids) == expected_count
-    assert len(future_markets.offers) == expected_count
-    assert len(future_markets.trades) == expected_count
 
 
 class TestFutureMarkets:

@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from calendar import monthrange
 from typing import Optional, TYPE_CHECKING
 
 from gsy_framework.constants_limits import ConstSettings
@@ -56,15 +57,14 @@ class ForwardMarketBase(FutureMarkets):
         """Return time when the market block ends."""
 
     @staticmethod
-    def _get_market_slot_duration() -> duration:
+    def _get_market_slot_duration(current_time: DateTime, _config) -> duration:
         """Return duration of market slots inside the market block."""
 
     def create_future_markets(self, current_market_time_slot: DateTime,
                               config: "SimulationConfig") -> None:
         if not ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS:
             return
-        self._create_future_markets(self._get_market_slot_duration(),
-                                    self._get_start_time(current_market_time_slot),
+        self._create_future_markets(self._get_start_time(current_market_time_slot),
                                     self._get_end_time(current_market_time_slot), config)
 
 
@@ -80,7 +80,7 @@ class IntradayMarket(ForwardMarketBase):
         return current_time.add(days=1)
 
     @staticmethod
-    def _get_market_slot_duration() -> duration:
+    def _get_market_slot_duration(_current_time: DateTime, _config) -> duration:
         return duration(minutes=15)
 
 
@@ -89,14 +89,14 @@ class DayForwardMarket(ForwardMarketBase):
 
     @staticmethod
     def _get_start_time(current_time: DateTime) -> DateTime:
-        return current_time.set(hour=0, minute=0).add(hours=1)
+        return current_time.set(hour=0, minute=0).add(days=1)
 
     @staticmethod
     def _get_end_time(current_time: DateTime) -> DateTime:
-        return current_time.set(hour=0, minute=0).add(weeks=1)
+        return current_time.set(hour=0, minute=0).add(weeks=1, days=1, hours=-1)
 
     @staticmethod
-    def _get_market_slot_duration() -> duration:
+    def _get_market_slot_duration(_current_time: DateTime, _config) -> duration:
         return duration(hours=1)
 
 
@@ -105,14 +105,15 @@ class WeekForwardMarket(ForwardMarketBase):
 
     @staticmethod
     def _get_start_time(current_time: DateTime) -> DateTime:
-        return current_time.set(hour=0, minute=0).add(weeks=1)
+        days_until_next_monday = 7 - (current_time.day_of_week - 1)
+        return current_time.set(hour=0, minute=0).add(days=days_until_next_monday)
 
     @staticmethod
     def _get_end_time(current_time: DateTime) -> DateTime:
         return current_time.set(hour=0, minute=0).add(years=1)
 
     @staticmethod
-    def _get_market_slot_duration() -> duration:
+    def _get_market_slot_duration(_current_time: DateTime, _config) -> duration:
         return duration(weeks=1)
 
 
@@ -121,23 +122,20 @@ class MonthForwardMarket(ForwardMarketBase):
 
     @staticmethod
     def _get_start_time(current_time: DateTime) -> DateTime:
-        return current_time.set(hour=0, minute=0).add(months=1)
+        return current_time.set(day=1, hour=0, minute=0).add(months=1)
 
     @staticmethod
     def _get_end_time(current_time: DateTime) -> DateTime:
-        return current_time.set(hour=0, minute=0).add(years=2)
+        return current_time.set(day=1, hour=0, minute=0).add(years=2)
 
     @staticmethod
-    def _get_market_slot_duration() -> duration:
-        return duration(months=1)
+    def _get_market_slot_duration(current_time: DateTime, _config) -> duration:
+        number_of_days_month = monthrange(current_time.year, current_time.month)[1]
+        return duration(days=number_of_days_month)
 
 
 class YearForwardMarket(ForwardMarketBase):
     """Year forward market implementation"""
-
-    @staticmethod
-    def _adapt_market_length(market_length: duration, time_slot: DateTime) -> duration:
-        return market_length + duration(days=1) if time_slot.is_leap_year() else market_length
 
     @staticmethod
     def _get_start_time(current_time: DateTime) -> DateTime:
@@ -148,5 +146,5 @@ class YearForwardMarket(ForwardMarketBase):
         return current_time.set(month=1, day=1, hour=0, minute=0).add(years=6)
 
     @staticmethod
-    def _get_market_slot_duration() -> duration:
-        return duration(years=1)
+    def _get_market_slot_duration(current_time: DateTime, _config) -> duration:
+        return duration(years=1, days=1) if current_time.is_leap_year() else duration(years=1)

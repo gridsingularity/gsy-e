@@ -76,7 +76,7 @@ class IntradayMarketRotator(ForwardMarketRotatorBase):
 
     @staticmethod
     def _get_last_slot_to_be_deleted(current_time: DateTime) -> DateTime:
-        return current_time.add(minutes=15)
+        return current_time
 
     @staticmethod
     def _is_it_time_to_rotate(current_time: DateTime) -> bool:
@@ -89,7 +89,7 @@ class DayForwardMarketRotator(ForwardMarketRotatorBase):
 
     @staticmethod
     def _get_last_slot_to_be_deleted(current_time: DateTime) -> DateTime:
-        return current_time.add(hours=1)
+        return current_time
 
     @staticmethod
     def _is_it_time_to_rotate(current_time: DateTime) -> bool:
@@ -101,7 +101,7 @@ class WeekForwardMarketRotator(ForwardMarketRotatorBase):
 
     @staticmethod
     def _get_last_slot_to_be_deleted(current_time: DateTime) -> DateTime:
-        return current_time.add(weeks=1)
+        return current_time.add(days=8-current_time.day_of_week-1)
 
     @staticmethod
     def _is_it_time_to_rotate(current_time: DateTime) -> bool:
@@ -116,7 +116,7 @@ class MonthForwardMarketRotator(ForwardMarketRotatorBase):
 
     @staticmethod
     def _get_last_slot_to_be_deleted(current_time: DateTime) -> DateTime:
-        return current_time.add(months=1)
+        return current_time
 
     @staticmethod
     def _is_it_time_to_rotate(current_time: DateTime) -> bool:
@@ -131,7 +131,7 @@ class YearForwardMarketRotator(ForwardMarketRotatorBase):
 
     @staticmethod
     def _get_last_slot_to_be_deleted(current_time: DateTime) -> DateTime:
-        return current_time.add(years=2)
+        return current_time.add(years=1)
 
     @staticmethod
     def _is_it_time_to_rotate(current_time: DateTime) -> bool:
