@@ -271,8 +271,8 @@ class SmartMeterExternalMixin(ExternalMixin):
 
     def _bid_aggregator(self, arguments: Dict) -> Dict:
         """Post the bid to the market."""
-        market = self._get_market_from_command_argument(arguments)
         try:
+            market = self._get_market_from_command_argument(arguments)
             response_message = ""
             arguments, filtered_fields = self.filter_degrees_of_freedom_arguments(arguments)
             if filtered_fields:
@@ -355,8 +355,8 @@ class SmartMeterExternalMixin(ExternalMixin):
 
     def _offer_aggregator(self, arguments: Dict) -> Dict:
         """Post the offer to the market."""
-        market = self._get_market_from_command_argument(arguments)
         try:
+            market = self._get_market_from_command_argument(arguments)
             response_message = ""
             arguments, filtered_fields = self.filter_degrees_of_freedom_arguments(arguments)
             if filtered_fields:
