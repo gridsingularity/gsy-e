@@ -99,6 +99,17 @@ R   Start a Python REPL at the current simulation step
 s   Save current state of simulation to file (see below for resuming)
 === =======
 
+
+InfluxDb Configuration
+===========
+Edit following config file example:
+.. code-block::
+    src/gsy_e/setup/influxdb.cfg.example
+
+1. edit password and username of InfluxDB (and or change the other settings, if another InfluxDB should be used)
+2. save as new file with name "influxdb.cfg" (This file will not be tracked in git)
+
+
 Development
 ===========
 

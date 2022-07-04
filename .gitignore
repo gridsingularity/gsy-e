@@ -104,7 +104,7 @@ requirements/local.*
 gsy_e-simulation
 
 # Ink contract builds
-src/gsy_e/blockchain/contracts/ink/target
+src/gsy_e/setup/*.cfg
 
 # Cargo.lock files
 Cargo.lock
