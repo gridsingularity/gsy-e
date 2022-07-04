@@ -15,7 +15,7 @@ class TestRQJobUtils:
 
     @staticmethod
     def fn(queue, **kwargs):
-        # This helper function should be defined in a global scope, so Python can dump it when
+        # This helper function should not be defined in a local scope, so Python can dump it when
         # starting the process.
         """Launch simulation and push the exception in the result queue if any.
         This function is supposed to run in a separate process.
