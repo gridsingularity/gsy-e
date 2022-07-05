@@ -1,4 +1,5 @@
-##Solar Panels
+## Solar Panels
+
 There are two options to implement a PV in a backend:
 
 [Solar Profile](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/pv.py) (for template generation profile):
@@ -7,27 +8,30 @@ Market ('H2 PV', strategy=PVStrategy(panel_count=4, initial_selling_rate=30, fin
 ```
 
 [User Profile](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/predefined_pv.py) (for uploaded generation profile):
-```user_profile_path = os.path.join(gsy-e_path, "assets/Solar_Curve_W_sunny.csv")
+```python
+user_profile_path = os.path.join(gsy-e_path, "assets/Solar_Curve_W_sunny.csv")
 Market ('H1 PV', strategy=PVUserProfileStrategy(power_profile=user_profile_path,
 panel_count=))
 ```
 
-##Consumption
+## Consumption
+
 To implement the consumption profile (load) in a backend simulation, two options are available:
 
 [User configure Profile](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/load_hours.py):
 ```python
 Market('Load', strategy=LoadHoursStrategy(avg_power_W=200, hrs_per_day=6,hrs_of_day=list(range(12, 18)), initial_buying_rate=0, final_buying_rate=35))
 ```
+
 [User upload Profile](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/predefined_load.py):
 ```python
 user_profile_path = os.path.join(gsy-e_path,"assets/load.csv")
 
 Market('Load', strategy=LoadProfileStrategy(daily_load_profile=user_profile_path, initial_buying_rate
 ```
-Addendum: hrs_of_day and hrs_per_day
+### Addendum: `hrs_of_day` and `hrs_per_day`
 
-hrs_of_day defines the allowed time-window in which the load has to consume for a time defined by hrs_per_day.
+`hrs_of_day` defines the allowed time-window in which the load has to consume for a time defined by `hrs_per_day`.
 
 For example, a user can input 5 hrs_per_day and give a wider range for hrs_of_day like (2,18). The Load will try to consume as fast as possible during this time if there is any offered energy to purchase within the limits of `initial_buying_rate` and `final_buying_rate` set parameters.
 - If there is sufficient energy at affordable rates, the load will consume in the first 5 hours, i.e. from 02:00 until 07:00, with no energy demand unmatched.
@@ -35,7 +39,7 @@ For example, a user can input 5 hrs_per_day and give a wider range for hrs_of_da
 
 For information on changes in buying and selling rates, please see: [Trading strategies](default-trading-strategy.md)
 
-##Batteries
+## Batteries
 
 To implement a battery in a backend simulation one option is available:
 
@@ -44,7 +48,7 @@ To implement a battery in a backend simulation one option is available:
 Market('Storage', strategy=StorageStrategy(initial_soc=50, energy_rate_decrease_per_update=3, battery_capacity_kWh=1.2, max_abs_battery_power_kW=5, final_buying_rate=16.99, final_selling_rate= 17.01)))
 ```
 
-##Power Plant
+## Power Plant
 
 To implement the power plant in a backend simulation one option is available:
 
@@ -60,7 +64,7 @@ profile_kW = {
 Market ("Power Plant', strategy=FinitePowerPlant(energy_rate=31.3, max_available_power_kW=profile_
 ```
 
-##Market Maker
+## Market Maker
 To implement a market maker in a backend simulation, two methods are available :
 
 [Infinite power plant](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/market_maker_strategy.py)
@@ -74,7 +78,7 @@ grid_connected=True))
 Market ('Market Maker', strategy=InfiniteBusStrategy(energy_buy_rate=22, energy_sell_rate=22))
 ```
 
-Addendum: Storage Capacity Based Method.
+### Addendum: Storage Capacity Based Method.
 
 This method was created to sell energy at lower prices during high state of charge - SOC (when the battery has more energy stored) and at higher prices during low SOC (when the battery can afford to sell its stored energy for less).
 If the cap_price_strategy is True, the offer price for the storage is calculated according to:
@@ -88,11 +92,11 @@ To implement a power plant in a backend simulation, one option is available:
 
 ```python
 profile_kW = {
-0: 0.1,
-8: 0.15,
-12: 0.2,
-19: 0.15,
-22: 0.1
+    0: 0.1,
+    8: 0.15,
+    12: 0.2,
+    19: 0.15,
+    22: 0.1
 }
-Market ("Power Plant', strategy=FinitePowerPlant(energy_rate=31.3, max_available_power_kW=profile_kW))
+Market ("Power Plant", strategy=FinitePowerPlant(energy_rate=31.3, max_available_power_kW=profile_kW))
 ```
