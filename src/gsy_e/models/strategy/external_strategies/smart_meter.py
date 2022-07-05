@@ -305,6 +305,7 @@ class SmartMeterExternalMixin(ExternalMixin):
             response = {
                 "command": "bid",
                 "status": "ready",
+                "area_uuid": self.device.uuid,
                 "bid": bid.to_json_string(replace_existing=replace_existing),
                 "market_type": market.type_name,
                 "transaction_id": arguments.get("transaction_id"),
@@ -314,6 +315,7 @@ class SmartMeterExternalMixin(ExternalMixin):
                               self.device.name, arguments)
             response = {"command": "bid", "status": "error",
                         "market_type": market.type_name,
+                        "area_uuid": self.device.uuid,
                         "error_message": "Error when handling bid create "
                                          f"on area {self.device.name} with arguments {arguments}.",
                         "transaction_id": arguments.get("transaction_id")}
@@ -326,6 +328,7 @@ class SmartMeterExternalMixin(ExternalMixin):
             to_delete_bid_id = arguments.get("bid")
             deleted_bids = self.remove_bid_from_pending(market.id, bid_id=to_delete_bid_id)
             response = {"command": "bid_delete", "status": "ready", "deleted_bids": deleted_bids,
+                        "area_uuid": self.device.uuid,
                         "transaction_id": arguments.get("transaction_id")}
         except Exception: # noqa
             logging.exception("Error when handling bid delete on area %s: Bid Arguments: %s",
@@ -333,6 +336,7 @@ class SmartMeterExternalMixin(ExternalMixin):
             response = {"command": "bid_delete", "status": "error",
                         "error_message": "Error when handling bid delete "
                                          f"on area {self.device.name} with arguments {arguments}.",
+                        "area_uuid": self.device.uuid,
                         "transaction_id": arguments.get("transaction_id")}
         return response
 
@@ -343,12 +347,14 @@ class SmartMeterExternalMixin(ExternalMixin):
             response = {
                 "command": "list_bids", "status": "ready",
                 "bid_list": self.filtered_market_bids(market),
+                "area_uuid": self.device.uuid,
                 "transaction_id": arguments.get("transaction_id")}
         except Exception: # noqa
             error_message = f"Error when handling list bids on area {self.device.name}"
             logging.exception(error_message)
             response = {"command": "list_bids", "status": "error",
                         "error_message": error_message,
+                        "area_uuid": self.device.uuid,
                         "transaction_id": arguments.get("transaction_id")}
         return response
 
@@ -386,6 +392,7 @@ class SmartMeterExternalMixin(ExternalMixin):
             response = {"command": "offer", "status": "ready",
                         "market_type": market.type_name,
                         "offer": offer.to_json_string(replace_existing=replace_existing),
+                        "area_uuid": self.device.uuid,
                         "transaction_id": arguments.get("transaction_id"),
                         "message": response_message}
         except Exception: # noqa
@@ -395,6 +402,7 @@ class SmartMeterExternalMixin(ExternalMixin):
             response = {"command": "offer", "status": "error",
                         "market_type": market.type_name,
                         "error_message": error_message,
+                        "area_uuid": self.device.uuid,
                         "transaction_id": arguments.get("transaction_id")}
         return response
 
@@ -407,6 +415,7 @@ class SmartMeterExternalMixin(ExternalMixin):
                 market, to_delete_offer_id)
             response = {"command": "offer_delete", "status": "ready",
                         "deleted_offers": deleted_offers,
+                        "area_uuid": self.device.uuid,
                         "transaction_id": arguments.get("transaction_id")}
         except Exception: # noqa
             error_message = (f"Error when handling offer delete on area {self.device.name}: "
@@ -414,6 +423,7 @@ class SmartMeterExternalMixin(ExternalMixin):
             logging.exception(error_message)
             response = {"command": "offer_delete", "status": "error",
                         "error_message": error_message,
+                        "area_uuid": self.device.uuid,
                         "transaction_id": arguments.get("transaction_id")}
         return response
 
@@ -423,12 +433,14 @@ class SmartMeterExternalMixin(ExternalMixin):
             market = self._get_market_from_command_argument(arguments)
             response = {"command": "list_offers", "status": "ready",
                         "offer_list": self.filtered_market_offers(market),
+                        "area_uuid": self.device.uuid,
                         "transaction_id": arguments.get("transaction_id")}
         except Exception: # noqa
             error_message = f"Error when handling list offers on area {self.device.name}"
             logging.exception(error_message)
             response = {"command": "list_offers", "status": "error",
                         "error_message": error_message,
+                        "area_uuid": self.device.uuid,
                         "transaction_id": arguments.get("transaction_id")}
         return response
 
