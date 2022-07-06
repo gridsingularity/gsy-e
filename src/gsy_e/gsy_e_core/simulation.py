@@ -25,7 +25,7 @@ from importlib import import_module
 from logging import getLogger
 from time import sleep, time, mktime
 from types import ModuleType
-from typing import Tuple, Optional, TYPE_CHECKING
+from typing import Tuple, Optional, Union, TYPE_CHECKING
 
 import psutil
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
@@ -38,21 +38,20 @@ from pendulum import now, duration, DateTime, Duration
 import gsy_e.constants
 from gsy_e.constants import TIME_ZONE, DATE_TIME_FORMAT, SIMULATION_PAUSE_TIMEOUT
 from gsy_e.gsy_e_core.exceptions import SimulationException
-from gsy_e.gsy_e_core.export import ExportAndPlot
+from gsy_e.gsy_e_core.export import ExportAndPlot, CoefficientExportAndPlot
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.gsy_e_core.live_events import LiveEvents
 from gsy_e.gsy_e_core.myco_singleton import bid_offer_matcher
 from gsy_e.gsy_e_core.redis_connections.simulation import RedisSimulationCommunication
-from gsy_e.gsy_e_core.sim_results.endpoint_buffer import endpoint_buffer_class_factory
-from gsy_e.gsy_e_core.sim_results.file_export_endpoints import FileExportEndpoints
+from gsy_e.gsy_e_core.sim_results.endpoint_buffer import (
+    CoefficientEndpointBuffer, SimulationEndpointBuffer)
 from gsy_e.gsy_e_core.util import NonBlockingConsole, validate_const_settings_for_simulation
 from gsy_e.models.area.event_deserializer import deserialize_events_to_areas
 from gsy_e.models.area.scm_manager import SCMManager
 from gsy_e.models.config import SimulationConfig
 
 if TYPE_CHECKING:
-    from gsy_e.models.area import Area, AreaBase
-    from gsy_e.gsy_e_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
+    from gsy_e.models.area import Area, AreaBase, CoefficientArea
 
 log = getLogger(__name__)
 
@@ -211,7 +210,7 @@ class SimulationTimeManager:
             self._set_area_current_tick(child, current_tick)
 
     def calculate_total_initial_ticks_slots(
-            self, config: SimulationConfig, slot_resume: int, tick_resume: int, area: "Area"
+            self, config: SimulationConfig, slot_resume: int, tick_resume: int, area: "AreaBase"
     ) -> Tuple[int, int, int]:
         """Calculate the initial slot and tick of the simulation, and the total slot count."""
         slot_count = int(config.sim_duration / config.slot_length)
@@ -273,7 +272,7 @@ class SimulationSetup:
     def __post_init__(self) -> None:
         self._set_random_seed(self.seed)
 
-    def load_setup_module(self) -> "Area":
+    def load_setup_module(self) -> Union["Area", "CoefficientArea"]:
         """Load setup module and create areas that are described on the setup."""
         loaded_python_module = self._import_setup_module(self.setup_module_name)
         area = loaded_python_module.get_setup(self.config)
@@ -334,17 +333,17 @@ class SimulationResultsManager:
         self._endpoint_buffer = None
         self._export = None
 
-    def init_results(self, redis_job_id: str, area: "Area",
+    def init_results(self, redis_job_id: str, area: "AreaBase",
                      config_params: SimulationSetup) -> None:
         """Construct objects that contain the simulation results for the broker and CSV output."""
-        self._endpoint_buffer = endpoint_buffer_class_factory()(
+        self._endpoint_buffer = SimulationEndpointBuffer(
             redis_job_id, config_params.seed,
             area, self.export_results_on_finish)
 
         if self.export_results_on_finish:
             self._export = ExportAndPlot(area, self.export_path,
                                          self.export_subdir,
-                                         FileExportEndpoints(), self._endpoint_buffer)
+                                         self._endpoint_buffer)
 
     @property
     def _should_send_results_to_broker(self) -> None:
@@ -412,6 +411,17 @@ class SimulationResultsManager:
 
 class CoefficientSimulationResultsManager(SimulationResultsManager):
 
+    def init_results(self, redis_job_id: str, area: "AreaBase",
+                     config_params: SimulationSetup) -> None:
+        """Construct objects that contain the simulation results for the broker and CSV output."""
+        self._endpoint_buffer = CoefficientEndpointBuffer(
+            redis_job_id, config_params.seed,
+            area, self.export_results_on_finish)
+
+        if self.export_results_on_finish:
+            self._export = CoefficientExportAndPlot(
+                area, self.export_path, self.export_subdir, self._endpoint_buffer)
+
     def update_results(
             self, current_state: dict, progress_info: SimulationProgressInfo,
             area: "Area", simulation_status: str) -> None:
@@ -421,19 +431,24 @@ class CoefficientSimulationResultsManager(SimulationResultsManager):
     def _update_area_stats(cls, area: "Area", endpoint_buffer: "SimulationEndpointBuffer") -> None:
         return
 
+    def update_csv_files(self, slot_no: int, current_time_slot: DateTime, area: "Area",
+                         scm_manager: SCMManager) -> None:
+        """Update the csv results on market cycle."""
+        if self.export_results_on_finish:
+            self._export.data_to_csv(area, current_time_slot, slot_no == 0, scm_manager)
+
     def save_csv_results(self, area: "Area") -> None:
         """Update the CSV results on finish, and write the CSV files."""
-        # TODO: fix this
-        return
         if self.export_results_on_finish:
             log.info("Exporting simulation data.")
-            self._export.data_to_csv(area, False)
+            self._export.data_to_csv(area, False, None)
             self._export.area_tree_summary_to_json(self._endpoint_buffer.area_result_dict)
-            self._export.export(power_flow=None)
+            # self._export.export(power_flow=None)
 
     def update_send_coefficient_results(
             self, current_state: dict, progress_info: SimulationProgressInfo,
-            area: "Area", simulation_status: str, scm_manager: "SCMManager") -> None:
+            area: "CoefficientArea", simulation_status: str,
+            scm_manager: Optional["SCMManager"] = None) -> None:
         """
         Update the coefficient simulation results.
         """
@@ -458,15 +473,15 @@ class CoefficientSimulationResultsManager(SimulationResultsManager):
 
             if self.export_results_on_finish:
                 assert self._export is not None
-                if (area.current_market is not None
+                if (progress_info.current_slot_time is not None
                         and gsy_e.constants.RETAIN_PAST_MARKET_STRATEGIES_STATE):
                     # for integration tests:
                     self._export.raw_data_to_json(
-                        area.current_market.time_slot_str,
+                        progress_info.current_slot_str,
                         self._endpoint_buffer.flattened_area_core_stats_dict
                     )
 
-                self._export.file_stats_endpoint(area)
+                self._export.file_stats_endpoint(area, scm_manager)
 
 
 def simulation_results_manager_factory():
@@ -488,7 +503,7 @@ class SimulationExternalEvents:
         self.redis_connection = RedisSimulationCommunication(
             state_params, simulation_id, self.live_events, progress_info, area)
 
-    def update(self, area: "Area") -> None:
+    def update(self, area: "AreaBase") -> None:
         """
         Update the simulation according to any live events received. Triggered every market slot.
         """
@@ -822,6 +837,9 @@ class Simulation:
 class CoefficientSimulation(Simulation):
     """Start and control a simulation with coefficient trading."""
 
+    area: "CoefficientArea"
+    _results: CoefficientSimulationResultsManager
+
     def _init(self, redis_job_id: str) -> None:
         # has to be called before load_setup_module():
         global_objects.profiles_handler.activate()
@@ -829,7 +847,7 @@ class CoefficientSimulation(Simulation):
         self.area = self._setup.load_setup_module()
 
         self._results.init_results(redis_job_id, self.area, self._setup)
-        self._results.update_and_send_results(
+        self._results.update_send_coefficient_results(
             self.current_state, self.progress_info, self.area, self._status.status)
 
         log.debug("Starting simulation with config %s", self._setup.config)
@@ -871,8 +889,9 @@ class CoefficientSimulation(Simulation):
             scm_manager.calculate_community_after_meter_data()
             self.area.trigger_energy_trades(scm_manager)
 
-            self._results.update_and_send_results(
-                self.current_state, self.progress_info, self.area, self._status.status)
+            self._results.update_send_coefficient_results(
+                self.current_state, self.progress_info, self.area,
+                self._status.status, scm_manager)
             self._external_events.update(self.area)
 
             gc.collect()
@@ -889,10 +908,25 @@ class CoefficientSimulation(Simulation):
                 self._simulation_finish_actions(slot_count)
                 return
 
-            # self._results.update_csv_on_market_cycle(slot_no, self.area)
+            self._results.update_csv_files(slot_no, self.progress_info.current_slot_time,
+                                           self.area, scm_manager)
             self._status.handle_incremental_mode()
 
         self._simulation_finish_actions(slot_count)
+
+    def _simulation_finish_actions(self, slot_count: int) -> None:
+        self._status.sim_status = "finished"
+        self._deactivate_areas(self.area)
+        self._setup.config.external_redis_communicator.\
+            publish_aggregator_commands_responses_events()
+        if not self._status.stopped:
+            self.progress_info.update(
+                slot_count - 1, slot_count, self._time, self._setup.config)
+            paused_duration = duration(seconds=self._time.paused_time)
+            self.progress_info.log_simulation_finished(paused_duration, self._setup.config)
+        self._results.update_send_coefficient_results(
+            self.current_state, self.progress_info, self.area, self._status.status)
+        self._results.save_csv_results(self.area)
 
 
 def simulation_class_factory():
