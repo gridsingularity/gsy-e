@@ -1,7 +1,7 @@
 import logging
 from dataclasses import dataclass, asdict
 from math import isclose
-from typing import Dict, TYPE_CHECKING
+from typing import Dict, TYPE_CHECKING, List
 from uuid import uuid4
 
 from gsy_framework.constants_limits import ConstSettings
@@ -35,7 +35,7 @@ class HomeAfterMeterData:
     energy_surplus_kWh: float = 0.
     energy_need_kWh: float = 0.
     community_production_kWh: float = 0.
-    trades = None
+    trades: List[Trade] = None
 
     def to_dict(self) -> Dict:
         """Dict representation of the home after meter data."""
@@ -349,6 +349,9 @@ class SCMManager:
             "bills": self._bills[area_uuid].to_dict(),
             "after_meter_data": self._home_data[area_uuid].to_dict()
         }
+
+    def get_after_meter_data(self, area_uuid):
+        return self._home_data.get(area_uuid)
 
     @property
     def community_bills(self):
