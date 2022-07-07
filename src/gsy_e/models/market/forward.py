@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from abc import abstractmethod
 from calendar import monthrange
 from typing import Optional, TYPE_CHECKING
 
@@ -49,14 +50,17 @@ class ForwardMarketBase(FutureMarkets):
                          grid_fees=grid_fees, name=name)
 
     @staticmethod
+    @abstractmethod
     def _get_start_time(current_time: DateTime) -> DateTime:
         """Return time when the market block starts."""
 
     @staticmethod
+    @abstractmethod
     def _get_end_time(current_time: DateTime) -> DateTime:
         """Return time when the market block ends."""
 
     @staticmethod
+    @abstractmethod
     def _get_market_slot_duration(current_time: DateTime, _config) -> duration:
         """Return duration of market slots inside the market block."""
 
