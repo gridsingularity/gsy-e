@@ -64,12 +64,12 @@ class ForwardMarketBase(FutureMarkets):
     def _get_market_slot_duration(current_time: DateTime, _config) -> duration:
         """Return duration of market slots inside the market block."""
 
-    def create_future_markets(self, current_market_time_slot: DateTime,
-                              config: "SimulationConfig") -> None:
+    def create_future_market_slots(self, current_market_time_slot: DateTime,
+                                   config: "SimulationConfig") -> None:
         if not ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS:
             return
-        self._create_future_markets(self._get_start_time(current_market_time_slot),
-                                    self._get_end_time(current_market_time_slot), config)
+        self._create_future_market_slots(self._get_start_time(current_market_time_slot),
+                                         self._get_end_time(current_market_time_slot), config)
 
 
 class DayForwardMarket(ForwardMarketBase):

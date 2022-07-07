@@ -514,12 +514,12 @@ class Area(AreaBase):
 
         # create new future markets:
         if self.future_markets:
-            self.future_markets.create_future_markets(now_value, self.config)
+            self.future_markets.create_future_market_slots(now_value, self.config)
 
         # create new day ahead markets:
         if self.forward_markets:
             for forward_market in self.forward_markets.values():
-                forward_market.create_future_markets(now_value, self.config)
+                forward_market.create_future_market_slots(now_value, self.config)
 
         self.dispatcher.event_market_cycle()
 
