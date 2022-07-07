@@ -443,7 +443,7 @@ class CoefficientSimulationResultsManager(SimulationResultsManager):
             log.info("Exporting simulation data.")
             self._export.data_to_csv(area, False, None)
             self._export.area_tree_summary_to_json(self._endpoint_buffer.area_result_dict)
-            # self._export.export(power_flow=None)
+            self._export.export(power_flow=None)
 
     def update_send_coefficient_results(
             self, current_state: dict, progress_info: SimulationProgressInfo,
@@ -466,9 +466,9 @@ class CoefficientSimulationResultsManager(SimulationResultsManager):
         elif (gsy_e.constants.RETAIN_PAST_MARKET_STRATEGIES_STATE or
               self.export_results_on_finish):
 
-            self._endpoint_buffer.update_stats(
+            self._endpoint_buffer.update_coefficient_stats(
                 area, current_state["sim_status"], progress_info, current_state,
-                calculate_results=True)
+                True, scm_manager)
             self._update_area_stats(area, self._endpoint_buffer)
 
             if self.export_results_on_finish:

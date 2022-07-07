@@ -88,6 +88,9 @@ class PlotEnergyProfile:
         """
         Plots history of energy trades
         """
+        if market_name not in energy_profile:
+            return
+
         plot_desc = PlotDescription(data=[], barmode="relative", xtitle="Time",
                                     ytitle="Energy [kWh]",
                                     title=f"Energy Trade Profile of {market_name}")
@@ -150,7 +153,10 @@ class PlotDeviceStats:
     @staticmethod
     def _get_from_dict(data_dict: Dict, map_list: List) -> Mapping:
         """Get nested data from a dict by following a path provided by a list of keys."""
-        return reduce(operator.getitem, map_list, data_dict)
+        try:
+            return reduce(operator.getitem, map_list, data_dict)
+        except KeyError:
+            return {}
 
     def _plot_device_stats(self, address_list: list, device_strategy):
         """Plot device graphs."""

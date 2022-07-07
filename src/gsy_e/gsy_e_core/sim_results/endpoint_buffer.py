@@ -16,21 +16,19 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
-from typing import Dict, TYPE_CHECKING, List, Type
-
-from gsy_framework.constants_limits import (ConstSettings, DATE_TIME_UI_FORMAT, DATE_TIME_FORMAT,
-                                            GlobalConfig)
-from gsy_framework.enums import SpotMarketTypeEnum
-from gsy_framework.results_validator import results_validator
-from gsy_framework.sim_results.all_results import ResultsHandler
-from gsy_framework.utils import get_json_dict_memory_allocation_size
-from pendulum import DateTime
+from typing import Dict, TYPE_CHECKING, List
 
 from gsy_e.gsy_e_core.sim_results.offer_bids_trades_hr_stats import OfferBidTradeGraphStats
 from gsy_e.gsy_e_core.util import (
     get_market_maker_rate_from_config, get_feed_in_tariff_rate_from_config)
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
 from gsy_e.models.strategy.finite_power_plant import FinitePowerPlant
+from gsy_framework.constants_limits import (ConstSettings, DATE_TIME_UI_FORMAT, DATE_TIME_FORMAT,
+                                            GlobalConfig)
+from gsy_framework.results_validator import results_validator
+from gsy_framework.sim_results.all_results import ResultsHandler
+from gsy_framework.utils import get_json_dict_memory_allocation_size
+from pendulum import DateTime
 
 if TYPE_CHECKING:
     from gsy_e.models.area import Area, AreaBase
@@ -304,7 +302,7 @@ class SimulationEndpointBuffer:
             return
         for area_uuid, area_result in self.flattened_area_core_stats_dict.items():
             self.bids_offers_trades[area_uuid] = {
-                k: area_result[k] for k in ("offers", "bids", "trades")}
+                k: area_result.get(k, []) for k in ("offers", "bids", "trades")}
 
 
 class CoefficientEndpointBuffer(SimulationEndpointBuffer):
@@ -319,6 +317,7 @@ class CoefficientEndpointBuffer(SimulationEndpointBuffer):
             progress_info: "SimulationProgressInfo", sim_state: Dict,
             calculate_results: bool, scm_manager: "SCMManager") -> None:
         self._scm_manager = scm_manager
+        self.current_market_time_slot_str = progress_info.current_slot_str
         super().update_stats(
             area, simulation_status, progress_info, sim_state, calculate_results)
 
@@ -340,8 +339,9 @@ class CoefficientEndpointBuffer(SimulationEndpointBuffer):
                 if area.parent.current_market is not None:
                     core_stats_dict["energy_rate"] = (
                         area.strategy.energy_rate.get(area.now, None))
-        elif not area.strategy:
-            core_stats_dict.update(self._scm_manager.get_area_results())
+        elif not area.strategy and self._scm_manager is not None:
+            core_stats_dict.update(
+                self._scm_manager.get_area_results(area.uuid, serializable=True))
         else:
             core_stats_dict.update(area.get_results_dict())
 
@@ -351,10 +351,3 @@ class CoefficientEndpointBuffer(SimulationEndpointBuffer):
 
         for child in area.children:
             self._populate_core_stats_and_sim_state(child)
-
-
-def endpoint_buffer_class_factory() -> Type[SimulationEndpointBuffer]:
-    """Class factory for endpoint buffer classes."""
-    return (CoefficientEndpointBuffer
-            if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value
-            else SimulationEndpointBuffer)

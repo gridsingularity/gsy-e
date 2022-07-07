@@ -312,7 +312,7 @@ class CoefficientDataExporter(BaseDataExporter):
         from statistics import mean
         if not self._scm:
             return []
-        area_results = self._scm.get_area_results(self._area.uuid)
+        area_results = self._scm.get_area_results(self._area.uuid, serializable=False)
         if not area_results["after_meter_data"]:
             return []
         trade_prices = [

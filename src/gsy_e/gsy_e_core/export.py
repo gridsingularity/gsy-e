@@ -150,6 +150,7 @@ class ExportAndPlot:
                 ConstSettings.GeneralSettings.EXPORT_SUPPLY_DEMAND_PLOTS is True):
             PlotSupplyDemandCurve(
                 self.file_stats_endpoint, self.plot_dir).plot(self.area, self.plot_dir)
+
         self.move_root_plot_folder()
 
     def data_to_csv(self, area: Area, is_first: bool) -> None:

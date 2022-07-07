@@ -43,8 +43,14 @@ class HomeAfterMeterData:
         output_dict.update({
             "allocated_community_energy_kWh": self.allocated_community_energy_kWh,
             "energy_bought_from_community_kWh": self.energy_bought_from_community_kWh,
-            "energy_sold_to_grid_kWh": self.energy_sold_to_grid_kWh
+            "energy_sold_to_grid_kWh": self.energy_sold_to_grid_kWh,
         })
+        return output_dict
+
+    def serializable_dict(self) -> Dict:
+        """Dict representation that can be serialized."""
+        output_dict = self.to_dict()
+        output_dict["trades"] = [trade.serializable_dict() for trade in self.trades]
         return output_dict
 
     def __post_init__(self):
@@ -335,7 +341,7 @@ class SCMManager:
 
         self._bills[home_uuid] = home_bill
 
-    def get_area_results(self, area_uuid):
+    def get_area_results(self, area_uuid: str, serializable: bool = False) -> Dict:
         """Return the SCM results for one area (and one time slot)."""
         if area_uuid == self._community_uuid:
             return {
@@ -347,14 +353,17 @@ class SCMManager:
             return {"bills": {}, "after_meter_data": {}}
         return {
             "bills": self._bills[area_uuid].to_dict(),
-            "after_meter_data": self._home_data[area_uuid].to_dict()
+            "after_meter_data": (
+                self._home_data[area_uuid].to_dict() if serializable is False else
+                self._home_data[area_uuid].serializable_dict()
+            )
         }
 
-    def get_after_meter_data(self, area_uuid):
+    def get_after_meter_data(self, area_uuid: str) -> Dict:
         return self._home_data.get(area_uuid)
 
     @property
-    def community_bills(self):
+    def community_bills(self) -> Dict:
         """Calculate bills for the community."""
         member_to_sum = ["base_energy_bill", "gsy_energy_bill", "bought_from_community",
                          "spent_to_community", "bought_from_grid", "spent_to_grid",
