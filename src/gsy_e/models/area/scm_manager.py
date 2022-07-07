@@ -240,7 +240,8 @@ class AreaEnergyBills:
 class SCMManager:
     """Handle the community manager coefficient trade."""
     def __init__(self, area: "CoefficientArea", time_slot: DateTime):
-        self._validate_community(area)
+        SCMCommunityValidator.validate(community=area)
+
         self._home_data: Dict[str, HomeAfterMeterData] = {}
         # Community is always the root area in the context of SCM.
         self._community_uuid = area.uuid
@@ -248,15 +249,6 @@ class SCMManager:
         self._time_slot = time_slot
         self._bills: Dict[str, AreaEnergyBills] = {}
         self._grid_fees_reduction = ConstSettings.SCMSettings.GRID_FEES_REDUCTION
-
-    @staticmethod
-    def _validate_community(community_area: "CoefficientArea") -> None:
-        assert isclose(
-            sum(home.coefficient_percentage for home in community_area.children), 1.0
-        ), "Coefficients from all homes should sum up to 1."
-        for home in community_area.children:
-            assert all(isinstance(asset.strategy, SCMStrategy) for asset in home.children), \
-                f"Home {home.name} has assets with non-SCM strategies."
 
     def add_home_data(self, home_uuid: str, home_name: str,
                       grid_fees: float, coefficient_percentage: float,
@@ -412,14 +404,44 @@ class SCMManager:
     @property
     def community_bills(self) -> Dict:
         """Calculate bills for the community."""
-        member_to_sum = ["base_energy_bill", "gsy_energy_bill", "bought_from_community",
-                         "spent_to_community", "bought_from_grid", "spent_to_grid",
-                         "sold_to_grid", "earned_from_grid", "tax_surcharges", "grid_fees",
-                         "marketplace_fee", "fixed_fee"]
-
         community_bills = AreaEnergyBills()
-        for member in member_to_sum:
-            setattr(community_bills, member,
-                    sum(getattr(home_bill, member) for home_bill in self._bills.values()))
+        for data in self._bills.values():
+            community_bills.base_energy_bill += data.base_energy_bill
+            community_bills.gsy_energy_bill += data.gsy_energy_bill
+            community_bills.bought_from_community += data.bought_from_community
+            community_bills.spent_to_community += data.spent_to_community
+            community_bills.bought_from_grid += data.bought_from_grid
+            community_bills.spent_to_grid += data.spent_to_grid
+            community_bills.sold_to_grid += data.sold_to_grid
+            community_bills.earned_from_grid += data.earned_from_grid
+            community_bills.tax_surcharges += data.tax_surcharges
+            community_bills.grid_fees += data.grid_fees
+            community_bills.marketplace_fee += data.marketplace_fee
+            community_bills.fixed_fee += data.fixed_fee
 
         return community_bills.to_dict()
+
+
+class SCMCommunityValidator:
+    """Validator for SCM Community areas."""
+
+    @classmethod
+    def validate(cls, community: "CoefficientArea") -> None:
+        """Run all validations for the given community."""
+        cls._validate_coefficients(community)
+        cls._validate_market_maker_rate(community)
+
+    @staticmethod
+    def _validate_coefficients(community: "CoefficientArea") -> None:
+        assert isclose(
+            sum(home.coefficient_percentage for home in community.children), 1.0
+        ), "Coefficients from all homes should sum up to 1."
+        for home in community.children:
+            assert all(isinstance(asset.strategy, SCMStrategy) for asset in home.children), \
+                f"Home {home.name} has assets with non-SCM strategies."
+
+    @staticmethod
+    def _validate_market_maker_rate(community):
+        for home in community.children:
+            assert home.get("market_maker_rate") is not None, \
+                f"Home {home.name} does not define market_maker_rate."

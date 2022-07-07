@@ -19,13 +19,17 @@ import inspect
 import logging
 
 from gsy_framework.constants_limits import ConstSettings, SpotMarketTypeEnum
+
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
-from gsy_e.models.strategy.external_strategies.load import (
-    LoadForecastExternalStrategy, LoadHoursExternalStrategy, LoadProfileExternalStrategy)
-from gsy_e.models.strategy.external_strategies.pv import (
-    PVExternalStrategy, PVForecastExternalStrategy, PVPredefinedExternalStrategy,
-    PVUserProfileExternalStrategy)
+from gsy_e.models.strategy.external_strategies.load import (LoadForecastExternalStrategy,
+                                                            LoadHoursExternalStrategy,
+                                                            LoadProfileExternalStrategy)
+from gsy_e.models.strategy.external_strategies.pv import (PVExternalStrategy,
+                                                          PVForecastExternalStrategy,
+                                                          PVPredefinedExternalStrategy,
+                                                          PVUserProfileExternalStrategy)
+from gsy_e.models.strategy.external_strategies.smart_meter import SmartMeterExternalStrategy
 from gsy_e.models.strategy.external_strategies.storage import StorageExternalStrategy
 from gsy_e.models.strategy.finite_power_plant import FinitePowerPlant
 from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
@@ -34,12 +38,11 @@ from gsy_e.models.strategy.market_maker_strategy import MarketMakerStrategy
 from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy
 from gsy_e.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
 from gsy_e.models.strategy.pv import PVStrategy
+from gsy_e.models.strategy.scm.load import SCMLoadHoursStrategy, SCMLoadProfile
+from gsy_e.models.strategy.scm.pv import SCMPVPredefinedStrategy, SCMPVStrategy, SCMPVUserProfile
+from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
 from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
 from gsy_e.models.strategy.storage import StorageStrategy
-from gsy_e.models.strategy.scm.load import SCMLoadHoursStrategy, SCMLoadProfile
-from gsy_e.models.strategy.scm.pv import SCMPVStrategy, SCMPVPredefinedStrategy, SCMPVUserProfile
-from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
-
 
 external_strategies_mapping = {
     LoadHoursStrategy: LoadHoursExternalStrategy,
@@ -47,7 +50,8 @@ external_strategies_mapping = {
     PVStrategy: PVExternalStrategy,
     PVPredefinedStrategy: PVPredefinedExternalStrategy,
     PVUserProfileStrategy: PVUserProfileExternalStrategy,
-    StorageStrategy: StorageExternalStrategy
+    StorageStrategy: StorageExternalStrategy,
+    SmartMeterStrategy: SmartMeterExternalStrategy
 }
 
 forecast_strategy_mapping = {
