@@ -74,15 +74,17 @@ class PlotEnergyProfile:
         self._endpoint_buffer = endpoint_buffer
         self._plot_dir = plot_dir
 
-    def plot(self, area: Area) -> None:
+    def plot(self, area: Area, directory: str = None) -> None:
         """Plot the energy profile of areas (not devices)."""
+        if not directory:
+            directory = self._plot_dir
         energy_profile = self._endpoint_buffer.results_handler.trade_profile_plot_results
 
-        new_subdir = os.path.join(self._plot_dir, area.slug)
+        new_subdir = os.path.join(directory, area.slug)
         self._plot_energy_profile(new_subdir, area.name, energy_profile)
         for child in area.children:
             if child.children:
-                self.plot(child)
+                self.plot(child, new_subdir)
 
     def _plot_energy_profile(self, subdir: str, market_name: str, energy_profile) -> None:
         """

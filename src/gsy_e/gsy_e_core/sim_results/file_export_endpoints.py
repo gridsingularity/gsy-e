@@ -315,19 +315,23 @@ class CoefficientDataExporter(BaseDataExporter):
         area_results = self._scm.get_area_results(self._area.uuid, serializable=False)
         if not area_results["after_meter_data"]:
             return []
+        trade_rates = [
+            t.trade_rate
+            for t in area_results["after_meter_data"]["trades"]
+        ]
         trade_prices = [
             t.trade_price
             for t in area_results["after_meter_data"]["trades"]
         ]
         trades_energy = [
-            t.trade_price
+            t.traded_energy
             for t in area_results["after_meter_data"]["trades"]
         ]
         return [[self._area.past_market_time_slot,
-                mean(trade_prices),
-                min(trade_prices),
-                max(trade_prices),
-                len(trade_prices),
+                mean(trade_rates),
+                min(trade_rates),
+                max(trade_rates),
+                len(trade_rates),
                 sum(trades_energy),
                 sum(trade_prices)]]
 
