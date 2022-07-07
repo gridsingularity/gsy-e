@@ -56,7 +56,7 @@ def main():
         try:
             worker.work(max_jobs=1, burst=True, logging_level="ERROR")
         except Exception as ex:  # pylint: disable=broad-except
-            logger.error(ex)
+            logger.exception(ex)
             worker.kill_horse()
             worker.wait_for_horse()
 
