@@ -604,7 +604,15 @@ class Area(AreaBase):
             "current_time": self.now,
             AvailableMarketTypes.SPOT: [self.spot_market],
             AvailableMarketTypes.SETTLEMENT: list(self.settlement_markets.values()),
-            AvailableMarketTypes.FUTURE: self.future_markets,
+            AvailableMarketTypes.FUTURE: self.future_markets}
+
+        bid_offer_matcher.update_area_uuid_spot_markets_mapping(
+            area_uuid_markets_mapping={self.uuid: markets_mapping})
+
+        if not ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS:
+            return
+
+        forward_markets_mapping = {
             AvailableMarketTypes.DAY_FORWARD:
                 self.forward_markets.get(AvailableMarketTypes.DAY_FORWARD),
             AvailableMarketTypes.WEEK_FORWARD:
@@ -614,9 +622,8 @@ class Area(AreaBase):
             AvailableMarketTypes.YEAR_FORWARD:
                 self.forward_markets.get(AvailableMarketTypes.YEAR_FORWARD)
         }
-
-        bid_offer_matcher.update_area_uuid_markets_mapping(
-            area_uuid_markets_mapping={self.uuid: markets_mapping})
+        bid_offer_matcher.update_area_uuid_forward_markets_mapping(
+            area_uuid_markets_mapping={self.uuid: forward_markets_mapping})
 
     def execute_actions_after_tick_event(self) -> None:
         """
