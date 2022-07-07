@@ -328,12 +328,12 @@ class CoefficientDataExporter(BaseDataExporter):
             for t in area_results["after_meter_data"]["trades"]
         ]
         return [[self._area.past_market_time_slot,
-                mean(trade_rates),
-                min(trade_rates),
-                max(trade_rates),
-                len(trade_rates),
-                sum(trades_energy),
-                sum(trade_prices)]]
+                mean(trade_rates) if trade_rates else 0.,
+                min(trade_rates) if trade_rates else 0.,
+                max(trade_rates) if trade_rates else 0.,
+                len(trade_rates) if trade_rates else 0.,
+                sum(trades_energy) if trades_energy else 0.,
+                sum(trade_prices) if trade_prices else 0.]]
 
 
 class CoefficientLeafDataExporter(BaseDataExporter):

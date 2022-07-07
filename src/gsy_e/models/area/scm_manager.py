@@ -3,12 +3,14 @@ from dataclasses import dataclass, asdict
 from math import isclose
 from typing import Dict, TYPE_CHECKING, List
 from uuid import uuid4
+from calendar import monthrange
 
-from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.data_classes import Trade
-from pendulum import DateTime
+from pendulum import DateTime, duration
 
-from gsy_e.constants import DEFAULT_SCM_GRID_NAME, DEFAULT_SCM_COMMUNITY_NAME
+from gsy_e.constants import (
+    DEFAULT_SCM_GRID_NAME, DEFAULT_SCM_COMMUNITY_NAME, FLOATING_POINT_TOLERANCE)
 from gsy_e.models.strategy.scm import SCMStrategy
 
 if TYPE_CHECKING:
@@ -94,6 +96,7 @@ class HomeAfterMeterData:
     def create_buy_trade(self, current_time_slot: DateTime, seller_name: str,
                          traded_energy_kWh: float, trade_price_cents: float) -> None:
         """Create and save a trade object for buying energy."""
+        assert traded_energy_kWh > 0.
         trade = Trade(
             str(uuid4()), current_time_slot, None,
             seller_name, self.home_name,
@@ -144,13 +147,18 @@ class CommunityData:
 class AreaEnergyBills:
     """Represents home energy bills."""
     base_energy_bill: float = 0.
+    base_energy_bill_excl_revenue: float = 0.
     gsy_energy_bill: float = 0.
+    grid_fees: float = 0.
+    tax_surcharges: float = 0.
     bought_from_community: float = 0.
     spent_to_community: float = 0.
     bought_from_grid: float = 0.
     spent_to_grid: float = 0.
     sold_to_grid: float = 0.
     earned_from_grid: float = 0.
+    marketplace_fee: float = 0.
+    fixed_fee: float = 0.
 
     def to_dict(self) -> Dict:
         """Dict representation of the area energy bills."""
@@ -159,21 +167,30 @@ class AreaEnergyBills:
             "savings": self.savings,
             "savings_percent": self.savings_percent,
             "home_balance_kWh": self.home_balance_kWh,
-            "home_balance": self.home_balance
+            "home_balance": self.home_balance,
+            "gsy_energy_bill_excl_revenue": self.gsy_energy_bill_excl_revenue,
+            "gsy_energy_bill_excl_revenue_without_fees":
+                self.gsy_energy_bill_excl_revenue_without_fees
         })
         return output_dict
 
-    def set_bought_from_community(self, energy_kWh, energy_rate):
+    def set_bought_from_community(
+            self, energy_kWh, energy_rate, grid_fee_rate, tax_surcharge_rate):
         """Update price and energy counters after buying energy from the community."""
         self.bought_from_community += energy_kWh
         self.spent_to_community += energy_kWh * energy_rate
         self.gsy_energy_bill += energy_kWh * energy_rate
+        self.tax_surcharges += energy_kWh * tax_surcharge_rate
+        self.grid_fees += energy_kWh * grid_fee_rate
 
-    def set_bought_from_grid(self, energy_kWh, energy_rate):
+    def set_bought_from_grid(
+            self, energy_kWh, energy_rate, grid_fee_rate, tax_surcharge_rate):
         """Update price and energy counters after buying energy from the grid."""
         self.bought_from_grid += energy_kWh
         self.spent_to_grid += energy_kWh * energy_rate
         self.gsy_energy_bill += energy_kWh * energy_rate
+        self.tax_surcharges += energy_kWh * tax_surcharge_rate
+        self.grid_fees += energy_kWh * grid_fee_rate
 
     def set_sold_to_grid(self, energy_kWh, energy_rate):
         """Update price and energy counters after selling energy to the grid."""
@@ -184,14 +201,30 @@ class AreaEnergyBills:
     @property
     def savings(self):
         """Absolute price savings of the home, compared to the base energy bill."""
+        # The savings and the percentage might produce negative and huge percentage values
+        # in cases of production. This is due to the fact that the energy bill in these cases
+        # will be negative, and the producer will not have "savings". For a more realistic case
+        # the revenue should be omitted from the calculation of the savings, however this needs
+        # to be discussed.
         return self.base_energy_bill - self.gsy_energy_bill
 
     @property
     def savings_percent(self):
         """Percentage of the price savings of the home, compared to the base energy bill."""
         return (
-            ((self.base_energy_bill - self.gsy_energy_bill) / self.base_energy_bill) * 100.0
-            if self.base_energy_bill else 0.)
+            (self.savings / self.base_energy_bill) * 100.0
+            if self.base_energy_bill > 0. else 0.)
+
+    @property
+    def gsy_energy_bill_excl_revenue(self):
+        """Energy bill of the home excluding revenue."""
+        return self.gsy_energy_bill + self.earned_from_grid
+
+    @property
+    def gsy_energy_bill_excl_revenue_without_fees(self):
+        """Energy bill of the home excluding revenue and excluding all fees."""
+        return (self.gsy_energy_bill_excl_revenue - self.grid_fees - self.tax_surcharges
+                - self.fixed_fee - self.marketplace_fee)
 
     @property
     def home_balance_kWh(self):
@@ -279,51 +312,65 @@ class SCMManager:
         taxes_surcharges = home_data.taxes_surcharges
         feed_in_tariff = home_data.feed_in_tariff
 
+        slots_per_month = (duration(days=1) / GlobalConfig.slot_length) * monthrange(
+            self._time_slot.year, self._time_slot.month)[1]
+        marketplace_fee = home_data.marketplace_monthly_fee / slots_per_month
+        fixed_fee = home_data.fixed_monthly_fee / slots_per_month
+
         market_maker_rate_decreased_fees = (
                 market_maker_rate + grid_fees * (1.0 - self._grid_fees_reduction) +
                 taxes_surcharges)
         market_maker_rate_normal_fees = market_maker_rate + grid_fees + taxes_surcharges
 
-        home_bill = AreaEnergyBills()
+        home_bill = AreaEnergyBills(
+            marketplace_fee=marketplace_fee, fixed_fee=fixed_fee,
+            gsy_energy_bill=marketplace_fee + fixed_fee)
 
         base_energy_bill = (
-                home_data.energy_need_kWh * market_maker_rate_normal_fees -
-                home_data.energy_surplus_kWh * feed_in_tariff)
+                home_data.energy_need_kWh * market_maker_rate_normal_fees + marketplace_fee +
+                fixed_fee - home_data.energy_surplus_kWh * feed_in_tariff)
         home_bill.base_energy_bill = base_energy_bill
 
         if home_data.allocated_community_energy_kWh > home_data.energy_need_kWh:
             if home_data.energy_surplus_kWh > 0.0:
                 home_bill.set_bought_from_community(
-                    home_data.energy_bought_from_community_kWh, market_maker_rate_decreased_fees)
+                    home_data.energy_bought_from_community_kWh, market_maker_rate_decreased_fees,
+                    grid_fees * (1.0 - self._grid_fees_reduction), taxes_surcharges
+                )
                 home_bill.set_sold_to_grid(
                     self.community_data.energy_sold_to_grid_kWh, feed_in_tariff)
 
-                if home_data.energy_bought_from_community_kWh > 0.:
+                if home_data.energy_bought_from_community_kWh > FLOATING_POINT_TOLERANCE:
                     home_data.create_buy_trade(
                         self._time_slot, DEFAULT_SCM_COMMUNITY_NAME,
                         home_data.energy_bought_from_community_kWh,
                         (home_data.energy_bought_from_community_kWh *
                          market_maker_rate_decreased_fees)
                     )
-                if self.community_data.energy_sold_to_grid_kWh > 0.:
+                if self.community_data.energy_sold_to_grid_kWh > FLOATING_POINT_TOLERANCE:
                     home_data.create_sell_trade(
                         self._time_slot, DEFAULT_SCM_GRID_NAME,
                         self.community_data.energy_sold_to_grid_kWh,
                         self.community_data.energy_sold_to_grid_kWh * feed_in_tariff)
-            else:
+            elif home_data.energy_need_kWh > FLOATING_POINT_TOLERANCE:
                 home_bill.set_bought_from_community(
-                    home_data.energy_need_kWh, market_maker_rate_decreased_fees)
+                    home_data.energy_need_kWh, market_maker_rate_decreased_fees,
+                    grid_fees * (1.0 - self._grid_fees_reduction), taxes_surcharges
+                )
                 home_data.create_buy_trade(
                     self._time_slot, DEFAULT_SCM_COMMUNITY_NAME, home_data.energy_need_kWh,
                     home_data.energy_need_kWh * market_maker_rate_decreased_fees
                 )
         else:
             home_bill.set_bought_from_community(
-                home_data.allocated_community_energy_kWh, market_maker_rate_decreased_fees)
+                home_data.allocated_community_energy_kWh, market_maker_rate_decreased_fees,
+                grid_fees * (1.0 - self._grid_fees_reduction), taxes_surcharges
+            )
 
             energy_from_grid_kWh = (
                     home_data.energy_need_kWh - home_data.allocated_community_energy_kWh)
-            home_bill.set_bought_from_grid(energy_from_grid_kWh, market_maker_rate_normal_fees)
+            home_bill.set_bought_from_grid(energy_from_grid_kWh, market_maker_rate_normal_fees,
+                                           grid_fees, taxes_surcharges)
 
             if home_data.allocated_community_energy_kWh > 0.0:
                 home_data.create_buy_trade(
@@ -367,11 +414,12 @@ class SCMManager:
         """Calculate bills for the community."""
         member_to_sum = ["base_energy_bill", "gsy_energy_bill", "bought_from_community",
                          "spent_to_community", "bought_from_grid", "spent_to_grid",
-                         "sold_to_grid", "earned_from_grid"]
+                         "sold_to_grid", "earned_from_grid", "tax_surcharges", "grid_fees",
+                         "marketplace_fee", "fixed_fee"]
 
         community_bills = AreaEnergyBills()
         for member in member_to_sum:
             setattr(community_bills, member,
                     sum(getattr(home_bill, member) for home_bill in self._bills.values()))
 
-        return asdict(community_bills)
+        return community_bills.to_dict()
