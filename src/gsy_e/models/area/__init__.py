@@ -604,17 +604,17 @@ class Area(AreaBase):
             "current_time": self.now,
             AvailableMarketTypes.SPOT: [self.spot_market],
             AvailableMarketTypes.SETTLEMENT: list(self.settlement_markets.values()),
-            AvailableMarketTypes.FUTURE: self.future_markets}
-        if ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS:
-            markets_mapping.update({
-                AvailableMarketTypes.DAY_FORWARD:
-                    self.forward_markets[AvailableMarketTypes.DAY_FORWARD],
-                AvailableMarketTypes.WEEK_FORWARD:
-                    self.forward_markets[AvailableMarketTypes.WEEK_FORWARD],
-                AvailableMarketTypes.MONTH_FORWARD:
-                    self.forward_markets[AvailableMarketTypes.MONTH_FORWARD],
-                AvailableMarketTypes.YEAR_FORWARD:
-                    self.forward_markets[AvailableMarketTypes.YEAR_FORWARD]})
+            AvailableMarketTypes.FUTURE: self.future_markets,
+            AvailableMarketTypes.DAY_FORWARD:
+                self.forward_markets.get(AvailableMarketTypes.DAY_FORWARD),
+            AvailableMarketTypes.WEEK_FORWARD:
+                self.forward_markets.get(AvailableMarketTypes.WEEK_FORWARD),
+            AvailableMarketTypes.MONTH_FORWARD:
+                self.forward_markets.get(AvailableMarketTypes.MONTH_FORWARD),
+            AvailableMarketTypes.YEAR_FORWARD:
+                self.forward_markets.get(AvailableMarketTypes.YEAR_FORWARD)
+        }
+
         bid_offer_matcher.update_area_uuid_markets_mapping(
             area_uuid_markets_mapping={self.uuid: markets_mapping})
 
