@@ -49,7 +49,7 @@ def active_future_market() -> FutureMarkets:
             grid_fees=GridFee(grid_fee_percentage=area.grid_fee_percentage,
                               grid_fee_const=area.grid_fee_constant),
             name=area.name)
-    future_market.create_future_markets(
+    future_market.create_future_market_slots(
         DEFAULT_CURRENT_MARKET_SLOT, area.config)
     yield future_market
 
@@ -86,7 +86,7 @@ class TestFutureMarkets:
 
         with patch("gsy_e.models.market.future.ConstSettings.FutureMarketSettings."
                    "FUTURE_MARKET_DURATION_HOURS", 0):
-            future_market.create_future_markets(
+            future_market.create_future_market_slots(
                 DEFAULT_CURRENT_MARKET_SLOT, area.config
             )
         for buffer in [future_market.slot_bid_mapping,
@@ -96,7 +96,7 @@ class TestFutureMarkets:
 
         with patch("gsy_e.models.market.future.ConstSettings.FutureMarketSettings."
                    "FUTURE_MARKET_DURATION_HOURS", 1):
-            future_market.create_future_markets(
+            future_market.create_future_market_slots(
                 DEFAULT_CURRENT_MARKET_SLOT, area.config
             )
         for buffer in [future_market.slot_bid_mapping,

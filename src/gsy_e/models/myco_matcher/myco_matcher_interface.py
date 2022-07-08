@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from abc import ABC, abstractmethod
-from typing import Dict
+from typing import Dict, List, Callable
 
 
 class MycoMatcherInterface(ABC):
@@ -43,3 +43,26 @@ class MycoMatcherInterface(ABC):
 
     def event_finish(self, **kwargs) -> None:
         """Handler for the finish event."""
+
+    @staticmethod
+    def _match_recommendations(area_uuid: str, area_data: Dict, markets: List,
+                               get_matches_recommendations: Callable) -> None:
+        """Request trade recommendations and match them in the relevant market."""
+        for market in markets:
+            if not market:
+                continue
+            while True:
+                # Perform matching until all recommendations and their residuals are handled.
+                orders = market.orders_per_slot()
+
+                # Format should be: {area_uuid: {time_slot: {"bids": [], "offers": [], ...}}}
+                data = {
+                    area_uuid: {
+                        time_slot: {**orders_data, "current_time": area_data["current_time"]}
+                        for time_slot, orders_data in orders.items()}}
+                bid_offer_pairs = get_matches_recommendations(data)
+                if not bid_offer_pairs:
+                    break
+                trades_occurred = market.match_recommendations(bid_offer_pairs)
+                if not trades_occurred:
+                    break

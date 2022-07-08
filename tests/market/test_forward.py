@@ -44,7 +44,7 @@ class TestForwardMarkets:
         area.activate()
         forward_markets = market_class(bc=area.bc)
         if create:
-            forward_markets.create_future_markets(CURRENT_MARKET_SLOT, area.config)
+            forward_markets.create_future_market_slots(CURRENT_MARKET_SLOT, area.config)
         return forward_markets
 
     @pytest.mark.parametrize("market_class, expected_market_count",
@@ -61,14 +61,14 @@ class TestForwardMarkets:
         with patch("gsy_e.models.market.forward.ConstSettings.ForwardMarketSettings."
                    "ENABLE_FORWARD_MARKETS", False):
             forward_markets = self._create_forward_market(market_class)
-            forward_markets.create_future_markets(CURRENT_MARKET_SLOT, area.config)
+            forward_markets.create_future_market_slots(CURRENT_MARKET_SLOT, area.config)
             assert not hasattr(forward_markets, "_bids")
             assert not hasattr(forward_markets, "_offers")
 
         with patch("gsy_e.models.market.forward.ConstSettings.ForwardMarketSettings."
                    "ENABLE_FORWARD_MARKETS", True):
             forward_markets = self._create_forward_market(market_class)
-            forward_markets.create_future_markets(CURRENT_MARKET_SLOT, area.config)
+            forward_markets.create_future_market_slots(CURRENT_MARKET_SLOT, area.config)
             for buffer in [forward_markets.slot_bid_mapping,
                            forward_markets.slot_offer_mapping,
                            forward_markets.slot_trade_mapping]:

@@ -514,12 +514,12 @@ class Area(AreaBase):
 
         # create new future markets:
         if self.future_markets:
-            self.future_markets.create_future_markets(now_value, self.config)
+            self.future_markets.create_future_market_slots(now_value, self.config)
 
         # create new day ahead markets:
         if self.forward_markets:
             for forward_market in self.forward_markets.values():
-                forward_market.create_future_markets(now_value, self.config)
+                forward_market.create_future_market_slots(now_value, self.config)
 
         self.dispatcher.event_market_cycle()
 
@@ -605,18 +605,25 @@ class Area(AreaBase):
             AvailableMarketTypes.SPOT: [self.spot_market],
             AvailableMarketTypes.SETTLEMENT: list(self.settlement_markets.values()),
             AvailableMarketTypes.FUTURE: self.future_markets}
-        if ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS:
-            markets_mapping.update({
-                AvailableMarketTypes.DAY_FORWARD:
-                    self.forward_markets[AvailableMarketTypes.DAY_FORWARD],
-                AvailableMarketTypes.WEEK_FORWARD:
-                    self.forward_markets[AvailableMarketTypes.WEEK_FORWARD],
-                AvailableMarketTypes.MONTH_FORWARD:
-                    self.forward_markets[AvailableMarketTypes.MONTH_FORWARD],
-                AvailableMarketTypes.YEAR_FORWARD:
-                    self.forward_markets[AvailableMarketTypes.YEAR_FORWARD]})
-        bid_offer_matcher.update_area_uuid_markets_mapping(
+
+        bid_offer_matcher.update_area_uuid_spot_markets_mapping(
             area_uuid_markets_mapping={self.uuid: markets_mapping})
+
+        if not ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS:
+            return
+
+        forward_markets_mapping = {
+            AvailableMarketTypes.DAY_FORWARD:
+                self.forward_markets.get(AvailableMarketTypes.DAY_FORWARD),
+            AvailableMarketTypes.WEEK_FORWARD:
+                self.forward_markets.get(AvailableMarketTypes.WEEK_FORWARD),
+            AvailableMarketTypes.MONTH_FORWARD:
+                self.forward_markets.get(AvailableMarketTypes.MONTH_FORWARD),
+            AvailableMarketTypes.YEAR_FORWARD:
+                self.forward_markets.get(AvailableMarketTypes.YEAR_FORWARD)
+        }
+        bid_offer_matcher.update_area_uuid_forward_markets_mapping(
+            area_uuid_markets_mapping={self.uuid: forward_markets_mapping})
 
     def execute_actions_after_tick_event(self) -> None:
         """

@@ -17,23 +17,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import json
 import logging
-from typing import Dict, List, Union, TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Callable, Dict, List, Union
 
 from gsy_framework.constants_limits import ConstSettings
 from pendulum import duration
 
 from gsy_e.gsy_e_core.exceptions import GSyException
-from gsy_e.gsy_e_core.util import get_market_maker_rate_from_config
-from gsy_e.models.strategy.external_strategies import (
-    ExternalMixin, IncomingRequest, default_market_info, ExternalStrategyConnectionManager,
-    CommandTypeNotSupported, OrderCanNotBePosted)
+from gsy_e.models.strategy.external_strategies import (CommandTypeNotSupported, ExternalMixin,
+                                                       ExternalStrategyConnectionManager,
+                                                       IncomingRequest, OrderCanNotBePosted)
 from gsy_e.models.strategy.external_strategies.forecast_mixin import ForecastExternalMixin
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
-from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy, DefinedLoadEnergyParameters
+from gsy_e.models.strategy.predefined_load import DefinedLoadEnergyParameters, DefinedLoadStrategy
 
 if TYPE_CHECKING:
-    from gsy_e.models.state import LoadState
     from gsy_e.models.market.two_sided import TwoSidedMarket
+    from gsy_e.models.state import LoadState
 
 
 class LoadExternalMixin(ExternalMixin):
@@ -239,20 +238,7 @@ class LoadExternalMixin(ExternalMixin):
         if not self.should_use_default_strategy:
             self._cycle_energy_parameters()
             if not self.is_aggregator_controlled:
-                market_event_channel = f"{self.channel_prefix}/events/market"
-                market_info = self.spot_market.info
-                if self.is_aggregator_controlled:
-                    market_info.update(default_market_info)
-                market_info["device_info"] = self._device_info_dict
-                market_info["event"] = "market"
-                market_info["area_uuid"] = self.device.uuid
-                market_info["device_bill"] = self.device.stats.aggregated_stats.get("bills")
-                market_info["last_market_maker_rate"] = (
-                    get_market_maker_rate_from_config(self.area.current_market))
-                market_info["last_market_stats"] = (
-                    self.area.stats.get_price_stats_current_market())
-                self.redis.publish_json(market_event_channel, market_info)
-
+                self.populate_market_info_to_connected_user()
             self._delete_past_state()
         else:
             super().event_market_cycle()

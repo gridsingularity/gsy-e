@@ -31,6 +31,7 @@ def launch_simulation_from_rq_job(scenario: bytes, settings: Optional[Dict],
                                   connect_to_profiles_db: bool = True):
     # pylint: disable=too-many-arguments, too-many-locals
     """Launch simulation from rq job."""
+    logging.getLogger().setLevel(logging.ERROR)
     scenario = decompress_and_decode_queued_strings(scenario)
     if isinstance(scenario, dict):
         gsy_e.constants.CONFIGURATION_ID = scenario.pop("configuration_uuid")
