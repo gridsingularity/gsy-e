@@ -325,6 +325,11 @@ class CoefficientArea(AreaBase):
         for child in self.children:
             child.trigger_energy_trades(scm_manager)
 
+    @property
+    def market_maker_rate(self) -> float:
+        """Get the market maker rate."""
+        return self._market_maker_rate
+
 
 class Area(AreaBase):
     # pylint: disable=too-many-public-methods
