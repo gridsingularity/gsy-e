@@ -203,12 +203,16 @@ def read_settings_from_file(settings_file):
             settings = json.load(sf)
         advanced_settings = settings["advanced_settings"]
         simulation_settings = {
-            "sim_duration": IntervalType("H:M")(
-                settings["basic_settings"].get("sim_duration", GlobalConfig.sim_duration)),
-            "slot_length": IntervalType("M:S")(
-                settings["basic_settings"].get("slot_length", GlobalConfig.slot_length)),
-            "tick_length": IntervalType("M:S")(
-                settings["basic_settings"].get("tick_length", GlobalConfig.tick_length)),
+            # pylint: disable=used-before-assignment
+            "sim_duration": (IntervalType("H:M")(sim_duration)
+                             if (sim_duration := settings["basic_settings"].get("sim_duration"))
+                             else GlobalConfig.sim_duration),
+            "slot_length": (IntervalType("M:S")(slot_length)
+                            if (slot_length := settings["basic_settings"].get("slot_length"))
+                            else GlobalConfig.slot_length),
+            "tick_length": (IntervalType("M:S")(tick_length)
+                            if (tick_length := settings["basic_settings"].get("tick_length"))
+                            else GlobalConfig.tick_length),
             "cloud_coverage": settings["basic_settings"].get(
                 "cloud_coverage", advanced_settings["PVSettings"]["DEFAULT_POWER_PROFILE"]),
             "enable_degrees_of_freedom": settings["basic_settings"].get(
