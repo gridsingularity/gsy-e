@@ -45,7 +45,7 @@ from gsy_e.models.strategy.future.strategy import future_market_strategy_factory
 from gsy_e.models.strategy.settlement.strategy import settlement_market_strategy_factory
 from gsy_e.models.strategy.update_frequency import TemplateStrategyBidUpdater
 
-log = getLogger(__name__)
+logger = getLogger(__name__)
 
 BalancingRatio = namedtuple("BalancingRatio", ("demand", "supply"))
 
@@ -242,7 +242,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
             self._validate_rates(initial_rate, final_rate, energy_rate_change_per_update,
                                  fit_to_limit)
         except GSyDeviceException:
-            log.exception("LoadHours._area_reconfigure_prices failed. Exception: ")
+            logger.exception("LoadHours._area_reconfigure_prices failed. Exception: ")
             return
 
         self.bid_update.set_parameters(
@@ -312,7 +312,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
                 self._energy_params.decrease_hours_per_day(time_slot, energy_Wh)
 
         except MarketException:
-            self.log.exception("An Error occurred while buying an offer")
+            logger.exception("An Error occurred while buying an offer")
 
     def _double_sided_market_event_tick(self, market):
         self.bid_update.update(market, self)
