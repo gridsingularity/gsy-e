@@ -119,8 +119,8 @@ class AreaMarkets:
 
     def _activate_forward_markets(self, area: "Area") -> None:
         """
-        Create DayAheadMarkets instance and create MAs that communicate to the parent
-        DayAheadMarkets.
+        Create forward market instances and create MAs that communicate to the parent
+        forward market.
         """
         if not ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS:
             return
