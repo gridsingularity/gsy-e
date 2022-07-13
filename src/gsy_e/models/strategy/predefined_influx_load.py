@@ -2,6 +2,9 @@ import pandas as pd
 import configparser
 from influxdb import DataFrameClient
 from typing import Union
+from pendulum import duration
+from gsy_e.gsy_e_core.util import d3a_path
+import os
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy
@@ -37,10 +40,7 @@ class DefinedLoadStrategyInflux(DefinedLoadStrategy):
         :param use_market_maker_rate: If set to True, Load would track its final buying rate
         as per utility's trading rate
         """
-
-        df = DefinedLoadStrategyInflux._getInfluxDBData(path_influx_config);
-        
-        super().__init__(daily_load_profile=df,
+        super().__init__(daily_load_profile=DefinedLoadStrategyInflux._getInfluxDBData(path_influx_config),
                          fit_to_limit=fit_to_limit,
                          energy_rate_increase_per_update=energy_rate_increase_per_update,
                          update_interval=update_interval,
@@ -83,11 +83,20 @@ class DefinedLoadStrategyInflux(DefinedLoadStrategy):
         df = pd.concat(result.values(), axis=1)
         df = df.sum(axis=1).to_frame("W")
         df = df.reset_index(level=0)
-        df.rename({'index': 'Time'}, axis=1, inplace=True)
+        df.rename({"index": "Interval"}, axis=1, inplace=True)
 
         # remove day from time data
-        df["Time"] = pd.to_datetime(df['Time'], unit='ms').dt.time
-        return df
+        df["Interval"] = df["Interval"].map(lambda x: x.strftime("%H:%M"))
+
+        # remove last row
+        df.drop(df.tail(1).index,inplace=True)
+        
+
+        # convert to dictionary
+        df.set_index("Interval", inplace=True)
+        df_dict = df.to_dict().get("W")
+
+        return df_dict
 
     @staticmethod
     def to_csv(df, filepath):
