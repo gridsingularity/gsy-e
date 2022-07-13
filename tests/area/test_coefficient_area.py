@@ -41,6 +41,7 @@ class TestCoefficientArea:
         ConstSettings.MASettings.MARKET_TYPE = SpotMarketTypeEnum.ONE_SIDED.value
 
     @staticmethod
+    @pytest.fixture()
     def _create_2_house_grid():
         strategy = MagicMock(spec=SCMPVStrategy)
         strategy.get_energy_to_sell_kWh = MagicMock(return_value=0.5)
@@ -72,9 +73,9 @@ class TestCoefficientArea:
                                  market_maker_rate=0.24)
         return CoefficientArea(name="Grid", children=[house1, house2])
 
-    @classmethod
-    def test_calculate_after_meter_data(cls):
-        grid_area = cls._create_2_house_grid()
+    @staticmethod
+    def test_calculate_after_meter_data(_create_2_house_grid):
+        grid_area = _create_2_house_grid
         house1 = grid_area.children[0]
         house2 = grid_area.children[1]
         time_slot = now()
@@ -98,9 +99,9 @@ class TestCoefficientArea:
         assert isclose(scm._home_data[house2.uuid].energy_surplus_kWh, 0.1)
         assert isclose(scm._home_data[house2.uuid].energy_need_kWh, 0.0)
 
-    @classmethod
-    def test_calculate_community_after_meter_data(cls):
-        grid_area = cls._create_2_house_grid()
+    @staticmethod
+    def test_calculate_community_after_meter_data(_create_2_house_grid):
+        grid_area = _create_2_house_grid
         house1 = grid_area.children[0]
         house2 = grid_area.children[1]
         time_slot = now()
@@ -118,9 +119,9 @@ class TestCoefficientArea:
         assert isclose(scm._home_data[house2.uuid].energy_bought_from_community_kWh, 0.00)
         assert isclose(scm._home_data[house2.uuid].energy_sold_to_grid_kWh, 0.04)
 
-    @classmethod
-    def test_trigger_energy_trades(cls):
-        grid_area = cls._create_2_house_grid()
+    @staticmethod
+    def test_trigger_energy_trades(_create_2_house_grid):
+        grid_area = _create_2_house_grid
         house1 = grid_area.children[0]
         house2 = grid_area.children[1]
         time_slot = now()
