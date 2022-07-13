@@ -333,7 +333,8 @@ class CoefficientArea(AreaBase):
     def _change_home_coefficient_percentage(self, scm_manager: "SCMManager") -> None:
         community_total_energy_need = scm_manager.community_data.energy_need_kWh
         home_energy_need = scm_manager.get_home_energy_need(self.uuid)
-        self.coefficient_percentage = home_energy_need / community_total_energy_need
+        if community_total_energy_need != 0:
+            self.coefficient_percentage = home_energy_need / community_total_energy_need
 
     def change_home_coefficient_percentage(self, scm_manager: "SCMManager") -> None:
         """Recursive function that change home coefficient percentage based on energy need.
