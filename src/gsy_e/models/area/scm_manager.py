@@ -261,6 +261,12 @@ class SCMManager:
             savings=(base_energy_bill - gsy_energy_bill),
             savings_percent=savings_percent)
 
+    def get_home_energy_need(self, home_uuid: str) -> float:
+        """Get home energy need in kWh"""
+        assert home_uuid in self._home_data
+
+        return self._home_data[home_uuid].energy_need_kWh
+
     @property
     def community_bills(self):
         """Calculate bills for the community."""
