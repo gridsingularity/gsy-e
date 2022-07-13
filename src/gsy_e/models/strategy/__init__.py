@@ -653,25 +653,6 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
             offer_energy, offer_price, available_energy, market, time_slot=time_slot,
             replace_existing=replace_existing)
 
-    def can_settlement_offer_be_posted(
-            self, offer_energy: float, offer_price: float,
-            market: "OneSidedMarket", replace_existing: bool = False) -> bool:
-        """
-        Checks whether an offer can be posted to the settlement market
-        :param offer_energy: Energy of the offer that we want to post
-        :param offer_price: Price of the offer that we want to post
-        :param market: Settlement market that we want the offer to be posted to
-        :param replace_existing: Boolean argument that controls whether the offer should replace
-                                 existing offers from the same asset
-        :return: True in case the offer can be posted, False otherwise
-        """
-        if not self.state.can_post_settlement_offer(market.time_slot):
-            return False
-        unsettled_energy_kWh = self.state.get_unsettled_deviation_kWh(market.time_slot)
-        return self.offers.can_offer_be_posted(
-            offer_energy, offer_price, unsettled_energy_kWh, market, time_slot=market.time_slot,
-            replace_existing=replace_existing)
-
     @property
     def spot_market(self) -> "MarketBase":
         """Return the spot_market member of the area."""
@@ -811,25 +792,6 @@ class BidEnabledStrategy(BaseStrategy):
         total_posted_energy = (bid_energy + posted_bid_energy)
 
         return total_posted_energy <= required_energy_kWh and bid_price >= 0.0
-
-    def can_settlement_bid_be_posted(self, bid_energy: float, bid_price: float,
-                                     market: "TwoSidedMarket",
-                                     replace_existing: bool = False) -> bool:
-        """
-        Checks whether a bid can be posted to the settlement market
-        :param bid_energy: Energy of the bid that we want to post
-        :param bid_price: Price of the bid that we want to post
-        :param market: Settlement market that we want the bid to be posted to
-        :param replace_existing: Boolean argument that controls whether the bid should replace
-                                 existing bids from the same asset
-        :return: True in case the bid can be posted, False otherwise
-        """
-        if not self.state.can_post_settlement_bid(market.time_slot):
-            return False
-        unsettled_energy_kWh = self.state.get_unsettled_deviation_kWh(market.time_slot)
-        return self.can_bid_be_posted(
-            bid_energy, bid_price, unsettled_energy_kWh, market, time_slot=market.time_slot,
-            replace_existing=replace_existing)
 
     def is_bid_posted(self, market: "TwoSidedMarket", bid_id: str) -> bool:
         """Check if bid is posted to the market"""
