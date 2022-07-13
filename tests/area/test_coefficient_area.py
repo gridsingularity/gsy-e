@@ -3,13 +3,13 @@ from unittest.mock import MagicMock
 
 import pytest
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.enums import SpotMarketTypeEnum
+from gsy_framework.enums import SpotMarketTypeEnum, CoefficientAlgorithm
 from pendulum import duration, today
 from pendulum import now
 
 from gsy_e import constants
 from gsy_e.models.area import CoefficientArea
-from gsy_e.models.area.scm_manager import SCMManager
+from gsy_e.models.area.scm_manager import SCMManager, HomeAfterMeterData
 from gsy_e.models.config import SimulationConfig
 from gsy_e.models.strategy.scm.load import SCMLoadHoursStrategy
 from gsy_e.models.strategy.scm.pv import SCMPVStrategy
@@ -162,3 +162,37 @@ class TestCoefficientArea:
         assert isclose(trades[1].traded_energy, 0.04)
         assert trades[1].seller == "House 2"
         assert trades[1].buyer == "Grid"
+
+    @staticmethod
+    @pytest.fixture()
+    def _dynamic_algorithm():
+        ConstSettings.SCMSettings.MARKET_ALGORITHM = CoefficientAlgorithm.DYNAMIC.value
+        yield
+        ConstSettings.SCMSettings.MARKET_ALGORITHM = CoefficientAlgorithm.STATIC.value
+
+    @staticmethod
+    def test_change_home_coefficient_percentage(_dynamic_algorithm, _create_2_house_grid):
+        grid_area = _create_2_house_grid
+        house1 = grid_area.children[0]
+        house2 = grid_area.children[1]
+        house1.coefficient_percentage = 0.8
+        house2.coefficient_percentage = 0.2
+
+        time_slot = now()
+        scm = SCMManager(grid_area, time_slot)
+        scm.community_data.energy_need_kWh = 10
+        scm._home_data[house1.uuid] = HomeAfterMeterData(house1.uuid, "house1")
+        scm._home_data[house2.uuid] = HomeAfterMeterData(house2.uuid, "house1")
+        scm._home_data[house1.uuid].energy_need_kWh = 2
+        scm._home_data[house2.uuid].energy_need_kWh = 8
+        grid_area.change_home_coefficient_percentage(scm)
+
+        assert house1.coefficient_percentage == 0.2
+        assert house2.coefficient_percentage == 0.8
+
+        scm._home_data[house1.uuid].energy_need_kWh = 10
+        scm._home_data[house2.uuid].energy_need_kWh = 0
+        grid_area.change_home_coefficient_percentage(scm)
+
+        assert house1.coefficient_percentage == 1.0
+        assert house2.coefficient_percentage == 0.0  # we allow null values
