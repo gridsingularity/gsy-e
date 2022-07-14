@@ -20,7 +20,7 @@ from typing import Dict, Union
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Offer
 from gsy_framework.enums import SpotMarketTypeEnum
-from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from gsy_framework.read_user_profile import InputProfileTypes, read_arbitrary_profile
 from gsy_framework.utils import find_object_of_same_weekday_and_time, limit_float_precision
 from gsy_framework.validators.smart_meter_validator import SmartMeterValidator
 from numpy import random
@@ -30,14 +30,14 @@ from pendulum.datetime import DateTime
 from gsy_e import constants
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.exceptions import GSyException, MarketException
-from gsy_e.gsy_e_core.global_objects_singleton import global_objects
-from gsy_e.gsy_e_core.util import (get_market_maker_rate_from_config, should_read_profile_from_db)
+from gsy_e.gsy_e_core.util import get_market_maker_rate_from_config
 from gsy_e.models.base import AssetType
 from gsy_e.models.market import MarketBase
 from gsy_e.models.state import SmartMeterState
 from gsy_e.models.strategy import BidEnabledStrategy, utils
-from gsy_e.models.strategy.update_frequency import (
-    TemplateStrategyBidUpdater, TemplateStrategyOfferUpdater)
+from gsy_e.models.strategy.profile import EnergyProfile
+from gsy_e.models.strategy.update_frequency import (TemplateStrategyBidUpdater,
+                                                    TemplateStrategyOfferUpdater)
 
 log = getLogger(__name__)
 
@@ -45,28 +45,15 @@ log = getLogger(__name__)
 class SmartMeterEnergyParameters:
     """Manage energy parameters for the Smart Meter Strategy class."""
     def __init__(self, smart_meter_profile, smart_meter_profile_uuid):
-        self.smart_meter_profile = smart_meter_profile  # Raw profile data
-        self.profile = None  # Preprocessed data extracted from smart_meter_profile
-        if should_read_profile_from_db(self.smart_meter_profile):
-            self.smart_meter_profile = None
-        self.profile_uuid = smart_meter_profile_uuid
-
+        self._energy_profile = EnergyProfile(smart_meter_profile, smart_meter_profile_uuid)
         self._state = SmartMeterState()
         self._simulation_start_timestamp = None
         self._area = None
 
-    def _read_or_rotate_profiles(self, reconfigure=False):
-        input_profile = self.smart_meter_profile \
-            if reconfigure or not self.profile else self.profile
-        self.profile = \
-            global_objects.profiles_handler.rotate_profile(profile_type=InputProfileTypes.POWER,
-                                                           profile=input_profile,
-                                                           profile_uuid=self.profile_uuid)
-
     def activate(self, area):
         """Trigger by strategy activate event, configure the energy parameters for trading."""
         self._area = area
-        self._read_or_rotate_profiles()
+        self._energy_profile.read_or_rotate_profiles()
         self._simulation_start_timestamp = area.now
 
     def set_energy_forecast_for_future_markets(self, time_slots, reconfigure: bool = True):
@@ -75,15 +62,16 @@ class SmartMeterEnergyParameters:
         Args:
             reconfigure: if True, re-read and preprocess the raw profile data.
         """
-        self._read_or_rotate_profiles(reconfigure=reconfigure)
+        self._energy_profile.read_or_rotate_profiles(reconfigure=reconfigure)
 
-        if not self.profile:
+        if not self._energy_profile.profile:
             raise GSyException(
                 f"Smart Meter {self._area.name} tries to set its required energy forecast without "
                 "a profile.")
 
         for slot_time in time_slots:
-            energy_kWh = find_object_of_same_weekday_and_time(self.profile, slot_time)
+            energy_kWh = find_object_of_same_weekday_and_time(
+                self._energy_profile.profile, slot_time)
             # For the Smart Meter, the energy amount can be either positive (consumption) or
             # negative (production).
             consumed_energy = energy_kWh if energy_kWh > 0 else 0.0
@@ -111,14 +99,14 @@ class SmartMeterEnergyParameters:
     def reset(self, **kwargs):
         """Reconfigure energy parameters."""
         if kwargs.get("smart_meter_profile") is not None:
-            self.smart_meter_profile = kwargs["smart_meter_profile"]
+            self._energy_profile.input_profile = kwargs["smart_meter_profile"]
             self.set_energy_forecast_for_future_markets(kwargs["time_slots"], reconfigure=True)
 
     def serialize(self):
         """Create dict with smart meter energy parameters."""
         return {
-            "smart_meter_profile": self.smart_meter_profile,
-            "smart_meter_profile_uuid": self.profile_uuid
+            "smart_meter_profile": self._energy_profile.input_profile,
+            "smart_meter_profile_uuid": self._energy_profile.input_profile_uuid
         }
 
 
