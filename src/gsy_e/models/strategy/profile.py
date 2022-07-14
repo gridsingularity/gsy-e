@@ -21,7 +21,14 @@ class EnergyProfile:
         """Boolean return if profile to be read from DB."""
         return profile_uuid is not None and gsy_e.constants.CONNECT_TO_PROFILES_DB
 
-    def read_or_rotate_profiles(self, reconfigure=False):
+    @property
+    def has_profile(self) -> bool:
+        """Checks if the asset has a predefined profile."""
+        return self.input_profile or self.input_profile_uuid
+
+    def read_or_rotate_profiles(
+            self, reconfigure=False,
+            profile_type: InputProfileTypes = InputProfileTypes.POWER):
         """Rotate current profile or read and preprocess profile from source."""
         if not self.profile or reconfigure:
             profile = self.input_profile
@@ -29,6 +36,6 @@ class EnergyProfile:
             profile = self.profile
 
         self.profile = global_objects.profiles_handler.rotate_profile(
-            profile_type=InputProfileTypes.POWER,
+            profile_type=profile_type,
             profile=profile,
             profile_uuid=self.input_profile_uuid)
