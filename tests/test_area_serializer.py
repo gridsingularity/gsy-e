@@ -22,22 +22,22 @@ import pytest
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig, SpotMarketTypeEnum
 from pendulum import duration, instance
 
-from gsy_e.gsy_e_core.area_serializer import area_to_string, area_from_string, are_all_areas_unique
+from gsy_e.gsy_e_core.area_serializer import are_all_areas_unique, area_from_string, area_to_string
 from gsy_e.models.area import Area
 from gsy_e.models.config import SimulationConfig
-from gsy_e.models.leaves import (
-    SmartMeter, PV, LoadHours, Storage, PredefinedPV, PVProfile, LoadProfile)
+from gsy_e.models.leaves import (PV, LoadHours, LoadProfile, PredefinedPV, PVProfile, SmartMeter,
+                                 Storage)
 from gsy_e.models.strategy.external_strategies.load import LoadHoursExternalStrategy
 from gsy_e.models.strategy.external_strategies.pv import PVExternalStrategy
 from gsy_e.models.strategy.external_strategies.storage import StorageExternalStrategy
 from gsy_e.models.strategy.pv import PVStrategy
 from gsy_e.models.strategy.scm.load import SCMLoadHoursStrategy, SCMLoadProfile
-from gsy_e.models.strategy.scm.pv import SCMPVStrategy, SCMPVPredefinedStrategy, SCMPVUserProfile
+from gsy_e.models.strategy.scm.pv import SCMPVPredefinedStrategy, SCMPVStrategy, SCMPVUserProfile
 from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
 from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
 
-
 # pylint: disable=protected-access
+
 
 @pytest.fixture(scope="function", autouse=True)
 def _device_registry_auto_fixture():
@@ -213,8 +213,11 @@ def test_leaf_deserialization_scm():
 
     assert isinstance(recovered.children[2], PVProfile)
     assert isinstance(recovered.children[2].strategy, SCMPVUserProfile)
-    assert recovered.children[2].strategy._energy_params._power_profile_input == "test1.csv"
-    assert recovered.children[2].strategy._energy_params.power_profile_uuid == "fedcba"
+
+    assert recovered.children[2].strategy._energy_params.\
+        _energy_profile.input_profile == "test1.csv"
+    assert recovered.children[2].strategy._energy_params.\
+        _energy_profile.input_profile_uuid == "fedcba"
 
     assert isinstance(recovered.children[3], LoadHours)
     assert isinstance(recovered.children[3].strategy, SCMLoadHoursStrategy)
