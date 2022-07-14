@@ -225,8 +225,10 @@ def test_leaf_deserialization_scm():
 
     assert isinstance(recovered.children[4], LoadProfile)
     assert isinstance(recovered.children[4].strategy, SCMLoadProfile)
-    assert recovered.children[4].strategy._energy_params._load_profile_input == "test.csv"
-    assert recovered.children[4].strategy._energy_params.profile_uuid == "abcdef"
+    assert recovered.children[4].strategy._energy_params.\
+        _energy_profile.input_profile == "test.csv"
+    assert recovered.children[4].strategy._energy_params.\
+        _energy_profile.input_profile_uuid == "abcdef"
 
     assert isinstance(recovered.children[5], Storage)
     assert isinstance(recovered.children[5].strategy, SCMStorageStrategy)
