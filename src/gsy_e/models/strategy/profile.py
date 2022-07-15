@@ -6,7 +6,10 @@ from gsy_e.gsy_e_core.util import should_read_profile_from_db
 
 class EnergyProfile:
     """Manage reading/rotating energy profile of an asset."""
-    def __init__(self, input_profile=None, input_profile_uuid=None, input_energy_rate=None):
+    def __init__(
+            self, input_profile=None, input_profile_uuid=None,
+            input_energy_rate=None, profile_type: InputProfileTypes = None):
+
         self.input_profile = input_profile
         self.input_profile_uuid = input_profile_uuid
         self.input_energy_rate = input_energy_rate
@@ -23,6 +26,13 @@ class EnergyProfile:
 
         self.profile = None
 
+        self.profile_type = profile_type
+        if self.profile_type is None:
+            if self.input_energy_rate is not None:
+                self.profile_type = InputProfileTypes.IDENTITY
+            else:
+                self.profile_type = InputProfileTypes.POWER
+
     def read_or_rotate_profiles(self, reconfigure=False):
         """Rotate current profile or read and preprocess profile from source."""
         if not self.profile or reconfigure:
@@ -30,17 +40,12 @@ class EnergyProfile:
         else:
             profile = self.profile
 
-        if self.input_energy_rate is not None:
-            profile_type = InputProfileTypes.IDENTITY
-        else:
-            profile_type = InputProfileTypes.POWER
-
         profile = global_objects.profiles_handler.rotate_profile(
-            profile_type=profile_type,
+            profile_type=self.profile_type,
             profile=profile,
             profile_uuid=self.input_profile_uuid)
 
-        if profile_type == InputProfileTypes.IDENTITY:
+        if self.profile_type == InputProfileTypes.IDENTITY:
             self.profile = convert_identity_profile_to_float(profile)
         else:
             self.profile = profile
