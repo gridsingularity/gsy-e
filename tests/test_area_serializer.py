@@ -217,7 +217,7 @@ def test_leaf_deserialization_scm():
     assert recovered.children[2].strategy._energy_params.\
         _energy_profile.input_profile == "test1.csv"
     assert recovered.children[2].strategy._energy_params.\
-        _energy_profile.input_profile_uuid == "fedcba"
+        _energy_profile.input_profile_uuid is None
 
     assert isinstance(recovered.children[3], LoadHours)
     assert isinstance(recovered.children[3].strategy, SCMLoadHoursStrategy)
@@ -228,7 +228,7 @@ def test_leaf_deserialization_scm():
     assert recovered.children[4].strategy._energy_params.\
         _energy_profile.input_profile == "test.csv"
     assert recovered.children[4].strategy._energy_params.\
-        _energy_profile.input_profile_uuid == "abcdef"
+        _energy_profile.input_profile_uuid is None
 
     assert isinstance(recovered.children[5], Storage)
     assert isinstance(recovered.children[5].strategy, SCMStorageStrategy)

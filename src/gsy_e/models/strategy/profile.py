@@ -14,7 +14,7 @@ class EnergyProfile:
         if should_read_profile_from_db(self.input_profile_uuid):
             self.input_profile = None
             self.input_energy_rate = None
-        elif input_energy_rate:
+        elif input_energy_rate is not None:
             self.input_profile = None
             self.input_profile_uuid = None
         else:
