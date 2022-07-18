@@ -16,9 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
-from typing import Dict, TYPE_CHECKING, List, Type
+from typing import TYPE_CHECKING, Dict, List, Type
 
-from gsy_framework.constants_limits import (ConstSettings, DATE_TIME_UI_FORMAT, DATE_TIME_FORMAT,
+from gsy_framework.constants_limits import (DATE_TIME_FORMAT, DATE_TIME_UI_FORMAT, ConstSettings,
                                             GlobalConfig)
 from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.results_validator import results_validator
@@ -27,15 +27,15 @@ from gsy_framework.utils import get_json_dict_memory_allocation_size
 from pendulum import DateTime
 
 from gsy_e.gsy_e_core.sim_results.offer_bids_trades_hr_stats import OfferBidTradeGraphStats
-from gsy_e.gsy_e_core.util import (
-    get_market_maker_rate_from_config, get_feed_in_tariff_rate_from_config)
+from gsy_e.gsy_e_core.util import (get_feed_in_tariff_rate_from_config,
+                                   get_market_maker_rate_from_config)
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
 from gsy_e.models.strategy.finite_power_plant import FinitePowerPlant
 
 if TYPE_CHECKING:
+    from gsy_e.gsy_e_core.simulation import SimulationProgressInfo
     from gsy_e.models.area import Area, AreaBase
     from gsy_e.models.market import MarketBase
-    from gsy_e.gsy_e_core.simulation import SimulationProgressInfo
 
 _NO_VALUE = {
     "min": None,
@@ -235,7 +235,8 @@ class SimulationEndpointBuffer:
             else:
                 if area.parent.current_market is not None:
                     core_stats_dict["energy_rate"] = (
-                        area.strategy.energy_rate.get(area.parent.current_market.time_slot, None))
+                        area.strategy._sell_energy_profile.profile.get(
+                            area.parent.current_market.time_slot, None))
                     for trade in area.strategy.trades[area.parent.current_market]:
                         core_stats_dict["trades"].append(trade.serializable_dict())
         else:
@@ -328,7 +329,8 @@ class CoefficientEndpointBuffer(SimulationEndpointBuffer):
             else:
                 if area.parent.current_market is not None:
                     core_stats_dict["energy_rate"] = (
-                        area.strategy.energy_rate.get(area.now, None))
+                        area.strategy._sell_energy_profile.profile.get(
+                            area.now, None))
         else:
             core_stats_dict.update(area.get_results_dict())
 
