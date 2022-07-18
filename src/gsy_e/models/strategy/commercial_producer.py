@@ -42,7 +42,7 @@ class CommercialStrategy(BaseStrategy):
         self._sell_energy_profile = EnergyProfile(input_energy_rate=energy_rate)
 
     def serialize(self):
-        return {"energy_rate": self._sell_energy_profile.profile}
+        return {"energy_rate": self._sell_energy_profile.input_energy_rate}
 
     @property
     def state(self):
