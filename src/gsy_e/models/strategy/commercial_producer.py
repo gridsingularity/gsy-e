@@ -44,7 +44,7 @@ class CommercialStrategy(BaseStrategy):
     @property
     def energy_rate(self):
         # This method exists for backward compatibility.
-        """Return energy profile of the asset."""
+        """Return sell energy profile of the asset."""
         return self._sell_energy_profile.profile
 
     def serialize(self):

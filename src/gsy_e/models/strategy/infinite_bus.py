@@ -59,6 +59,12 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
         # amended.
         self._read_or_rotate_profiles()
 
+    @property
+    def energy_buy_rate(self):
+        # This method exists for backward compatibility.
+        """Return buy energy profile of the asset."""
+        return self._buy_energy_profile.profile
+
     def serialize(self):
         return {
             # sell
