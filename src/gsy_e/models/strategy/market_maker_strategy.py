@@ -40,21 +40,21 @@ class MarketMakerStrategy(CommercialStrategy):
                energy_rate_profile, energy_rate_profile_uuid, energy_rate]):
             energy_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
 
-        self._energy_profile = EnergyProfile(
+        self._sell_energy_profile = EnergyProfile(
             energy_rate_profile, energy_rate_profile_uuid, energy_rate)
         self._read_or_rotate_profiles()
 
     def serialize(self):
         return {
             "grid_connected": self._grid_connected,
-            "energy_rate": self._energy_profile.input_energy_rate,
-            "energy_rate_profile": self._energy_profile.input_profile,
-            "energy_rate_profile_uuid": self._energy_profile.input_profile_uuid
+            "energy_rate": self._sell_energy_profile.input_energy_rate,
+            "energy_rate_profile": self._sell_energy_profile.input_profile,
+            "energy_rate_profile_uuid": self._sell_energy_profile.input_profile_uuid
         }
 
     def _read_or_rotate_profiles(self, reconfigure=False):
-        self._energy_profile.read_or_rotate_profiles(reconfigure=reconfigure)
-        GlobalConfig.market_maker_rate = self._energy_profile.profile
+        self._sell_energy_profile.read_or_rotate_profiles(reconfigure=reconfigure)
+        GlobalConfig.market_maker_rate = self._sell_energy_profile.profile
 
     def event_market_cycle(self):
         if self._grid_connected is True:
