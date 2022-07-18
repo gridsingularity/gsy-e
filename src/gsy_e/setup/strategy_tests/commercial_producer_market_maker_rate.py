@@ -36,6 +36,7 @@ market_maker_rate = {
 
 def get_setup(config):
     ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE = market_maker_rate
+    config.read_market_maker_rate(market_maker_rate)
     area = Area(
         "Grid",
         [
