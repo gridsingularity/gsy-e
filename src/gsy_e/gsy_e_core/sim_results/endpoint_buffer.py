@@ -235,7 +235,7 @@ class SimulationEndpointBuffer:
             else:
                 if area.parent.current_market is not None:
                     core_stats_dict["energy_rate"] = (
-                        area.strategy._sell_energy_profile.profile.get(
+                        area.strategy.energy_rate.get(
                             area.parent.current_market.time_slot, None))
                     for trade in area.strategy.trades[area.parent.current_market]:
                         core_stats_dict["trades"].append(trade.serializable_dict())
@@ -329,7 +329,7 @@ class CoefficientEndpointBuffer(SimulationEndpointBuffer):
             else:
                 if area.parent.current_market is not None:
                     core_stats_dict["energy_rate"] = (
-                        area.strategy._sell_energy_profile.profile.get(
+                        area.strategy.energy_rate.get(
                             area.now, None))
         else:
             core_stats_dict.update(area.get_results_dict())

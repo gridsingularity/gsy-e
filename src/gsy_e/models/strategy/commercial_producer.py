@@ -41,6 +41,12 @@ class CommercialStrategy(BaseStrategy):
             energy_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
         self._sell_energy_profile = EnergyProfile(input_energy_rate=energy_rate)
 
+    @property
+    def energy_rate(self):
+        # This method exists for backward compatibility.
+        """Return energy profile of the asset."""
+        return self._sell_energy_profile.profile
+
     def serialize(self):
         return {"energy_rate": self._sell_energy_profile.input_energy_rate}
 
