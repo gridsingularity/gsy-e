@@ -947,24 +947,17 @@ def run_simulation(setup_module_name: str = "", simulation_config: SimulationCon
     """Initiate simulation class and start simulation."""
     # pylint: disable=too-many-arguments
     try:
-        if saved_sim_state is None:
-            simulation = simulation_class_factory()(
-                setup_module_name=setup_module_name,
-                simulation_config=simulation_config,
-                simulation_events=simulation_events,
-                slot_length_realtime=slot_length_realtime,
-                redis_job_id=redis_job_id,
-                **kwargs
-            )
-        else:
-            simulation = simulation_class_factory()(
-                setup_module_name=setup_module_name,
-                simulation_config=simulation_config,
-                simulation_events=simulation_events,
-                slot_length_realtime=slot_length_realtime,
-                redis_job_id=saved_sim_state["general"]["simulation_id"],
-                **kwargs
-            )
+        redis_job_id = (
+            redis_job_id if saved_sim_state is None
+            else saved_sim_state["general"]["simulation_id"])
+        simulation = simulation_class_factory()(
+            setup_module_name=setup_module_name,
+            simulation_config=simulation_config,
+            simulation_events=simulation_events,
+            slot_length_realtime=slot_length_realtime,
+            redis_job_id=redis_job_id,
+            **kwargs
+        )
     except SimulationException as ex:
         log.error(ex)
         return
