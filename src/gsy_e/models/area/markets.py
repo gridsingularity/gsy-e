@@ -98,9 +98,7 @@ class AreaMarkets:
 
     def activate_future_markets(self, area: "Area") -> None:
         """Wrapper for activation methods for all future market types."""
-        if ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS:
-            self._activate_forward_markets(area)
-
+        self._activate_forward_markets(area)
         self._activate_future_markets(area)
 
     def _activate_future_markets(self, area: "Area") -> None:

@@ -353,7 +353,6 @@ class Area(AreaBase):
         event_list = event_list if event_list is not None else []
         self.events = Events(event_list, self)
         self._bc = None
-        self._markets = None
         self.dispatcher = DispatcherFactory(self)()
         self._markets = AreaMarkets(self.log)
         self.stats = AreaStats(self._markets, self)
