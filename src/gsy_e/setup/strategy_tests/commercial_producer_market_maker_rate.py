@@ -15,9 +15,11 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from gsy_framework.constants_limits import ConstSettings
+
 from gsy_e.models.area import Area
-from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
+from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 
 """
 Setup file for displaying the infinite power plant strategy.
@@ -33,7 +35,7 @@ market_maker_rate = {
 
 
 def get_setup(config):
-    config.read_market_maker_rate(market_maker_rate)
+    ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE = market_maker_rate
     area = Area(
         "Grid",
         [
