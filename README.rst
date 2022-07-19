@@ -26,14 +26,7 @@ Clone the Repository
 
 .. code-block::
 
-    git clone https://github.com/BC4P/gsy-e/
-
-To fetch and update the submodules:
-
-.. code-block::
-    
-    cd gsy-e
-    git submodule update --init --recursive
+   git clone --recurse-submodules https://github.com/BC4P/gsy-e/
 
 After cloning this project setup a Python 3.10 virtualenv or conda env and install gsy-e using pip:
     
