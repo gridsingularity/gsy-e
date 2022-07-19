@@ -24,7 +24,7 @@ class EnergyProfile:
             self.input_profile_uuid = None
             self.input_energy_rate = None
 
-        self.profile = None
+        self.profile = {}
 
         self.profile_type = profile_type
         if self.profile_type is None:
