@@ -34,12 +34,7 @@ After cloning this project setup a Python 3.10 virtualenv or conda env and insta
     
     conda create -n bc4p python=3.10
     conda activate bc4p
-    pip install -e .
-    pip install -e gsy-framework
-    pip install -e energyMarket
-    pip install eth-brownie # needed for blockchain
-
-To Properly setup the b4p package follow the instructions here: https://github.com/BC4P/energyMarket#setup (with the exeption that the repository is already cloned).
+    pip install -e . -e gsy-framework -e energyMarket
 
 Unfortunatley, fixing versions through `pip-compile` from `pip-tools` does make things worse, as e.g. eth-brownie has other fixed versions, as gsy-framework, resulting in an unresolvable situation.
 Install with pip only helps here, as it ignores those hard fixed versions.
@@ -79,6 +74,8 @@ To allow the integration of other workers through the redis connection, one can 
 Controlling the simulation
 --------------------------
 
+This is not available on Windows.
+
 While running a simulation, the following keyboard commands are available:
 
 === =======
@@ -101,28 +98,6 @@ Edit following config file example:
 
 1. edit password and username of InfluxDB (and or change the other settings, if another InfluxDB should be used)
 2. save as new file with name "influxdb.cfg" (This file will not be tracked in git)
-
-
-Development
-===========
-
-Updating requirements
----------------------
-
-We use `pip-tools`_ managed by `fabric3`_ to handle requirements.
-To update the pinned requirements use the following command::
-
-    ~# fab compile
-
-
-
-There is also a command to compile and sync in one step::
-
-    ~# fab reqs
-
-
-_`pip-tools`: https://github.com/nvie/pip-tools
-_`fabric3`: https://pypi.python.org/pypi/Fabric3
 
 
 Testing
