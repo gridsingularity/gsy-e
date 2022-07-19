@@ -24,7 +24,7 @@ import sys
 
 if sys.platform != 'win32':
     import termios
-import tty
+    import tty
 from functools import wraps
 from logging import LoggerAdapter, getLogger, getLoggerClass, addLevelName, setLoggerClass, NOTSET
 from typing import TYPE_CHECKING
@@ -164,8 +164,8 @@ class NonBlockingConsole:
 
     @classmethod
     def get_char(cls, timeout=0):
-        """get char"""
-        if select.select([sys.stdin], [], [], timeout) == ([sys.stdin], [], []):
+        if (sys.platform != 'win32' and 
+                select.select([sys.stdin], [], [], timeout) == ([sys.stdin], [], [])):
             return sys.stdin.read(1)
         return False
 

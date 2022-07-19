@@ -327,7 +327,7 @@ class SimulationResultsManager:
         self.kafka_connection = kafka_connection_factory()
 
         if export_subdir is None:
-            self.export_subdir = now(tz=TIME_ZONE).format(f"{DATE_TIME_FORMAT}:ss")
+            self.export_subdir = now(tz=TIME_ZONE).format(f"{DATE_TIME_FORMAT}:ss").replace(':', '-')
         else:
             self.export_subdir = export_subdir
         self._endpoint_buffer = None
