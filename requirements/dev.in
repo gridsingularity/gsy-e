@@ -1,6 +1,4 @@
--r base.txt
+-r base.in
 
-fabric3
-psutil
 pylint
 pyyaml

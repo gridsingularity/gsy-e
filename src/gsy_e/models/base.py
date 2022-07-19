@@ -19,7 +19,7 @@ from enum import Enum
 from logging import getLogger
 from typing import Dict, Optional, TYPE_CHECKING
 
-from cached_property import cached_property
+from functools import cached_property
 
 from gsy_e.gsy_e_core.exceptions import GSyException
 from gsy_e.gsy_e_core.util import TaggedLogWrapper
