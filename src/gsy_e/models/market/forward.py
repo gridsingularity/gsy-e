@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from abc import abstractmethod
-from calendar import monthrange
 from typing import Optional, TYPE_CHECKING
 
 from gsy_framework.constants_limits import ConstSettings
@@ -118,8 +117,7 @@ class MonthForwardMarket(ForwardMarketBase):
 
     @staticmethod
     def _get_market_slot_duration(current_time: DateTime, _config) -> duration:
-        number_of_days_month = monthrange(current_time.year, current_time.month)[1]
-        return duration(days=number_of_days_month)
+        return duration(months=1)
 
 
 class YearForwardMarket(ForwardMarketBase):
@@ -135,4 +133,4 @@ class YearForwardMarket(ForwardMarketBase):
 
     @staticmethod
     def _get_market_slot_duration(current_time: DateTime, _config) -> duration:
-        return duration(years=1, days=1) if current_time.is_leap_year() else duration(years=1)
+        return duration(years=1)
