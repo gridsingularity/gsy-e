@@ -101,8 +101,9 @@ class ExportAndPlot:
         try:
             if path is not None:
                 path = os.path.abspath(path)
-
-            self.rootdir = pathlib.Path(path or str(pathlib.Path.home()) + "/gsy_e-simulation")
+            else:
+                path = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..'))
+            self.rootdir = pathlib.Path(path + "/gsy_e-simulation")
             self.directory = pathlib.Path(self.rootdir, subdir)
             self.zip_filename = pathlib.Path(self.rootdir, subdir + "_results")
             mkdir_from_str(str(self.directory))

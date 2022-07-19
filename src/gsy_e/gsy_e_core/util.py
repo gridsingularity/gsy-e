@@ -21,7 +21,9 @@ import logging
 import os
 import select
 import sys
-import termios
+
+if sys.platform != 'win32':
+    import termios
 import tty
 from functools import wraps
 from logging import LoggerAdapter, getLogger, getLoggerClass, addLevelName, setLoggerClass, NOTSET
@@ -151,13 +153,13 @@ class IntervalType(ParamType):
 class NonBlockingConsole:
     """NonBlockingConsole"""
     def __enter__(self):
-        if os.isatty(sys.stdin.fileno()):
+        if os.isatty(sys.stdin.fileno()) and sys.platform != 'win32':
             self.old_settings = termios.tcgetattr(sys.stdin)
             tty.setcbreak(sys.stdin.fileno())
         return self
 
     def __exit__(self, date_type, value, traceback):
-        if os.isatty(sys.stdin.fileno()):
+        if os.isatty(sys.stdin.fileno()) and sys.platform != 'win32':
             termios.tcsetattr(sys.stdin, termios.TCSADRAIN, self.old_settings)
 
     @classmethod
