@@ -88,7 +88,7 @@ class CommercialStrategy(BaseStrategy):
     def offer_energy(self, market):
         """Method for offering energy on a market."""
         energy_rate = find_object_of_same_weekday_and_time(
-            self._sell_energy_profile.profile, market.time_slot)
+            self.energy_rate, market.time_slot)
         try:
             offer = market.offer(
                 self.energy_per_slot_kWh * energy_rate,

@@ -95,7 +95,7 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
                 # Don't buy our own offer
                 continue
             if offer.energy_rate <= find_object_of_same_weekday_and_time(
-                    self._buy_energy_profile.profile,
+                    self.energy_buy_rate,
                     market.time_slot):
                 try:
                     self.accept_offer(market, offer, buyer_origin=self.owner.name,
@@ -117,7 +117,7 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
             for market in self.area.all_markets:
                 try:
                     buy_rate = find_object_of_same_weekday_and_time(
-                        self._buy_energy_profile.profile,
+                        self.energy_buy_rate,
                         market.time_slot)
                     self.post_bid(market,
                                   buy_rate * INF_ENERGY,
