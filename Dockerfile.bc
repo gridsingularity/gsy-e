@@ -15,6 +15,6 @@ ADD ./setup.cfg ./README.rst ./setup.py /app/
 
 
 RUN pip install -e .[bc] -e gsy-framework -e energyMarket
-RUN cd energyMarket/b4p/b4p-contracts && rm -r build && brownie compile && cd /app
+RUN cd energyMarket/b4p/b4p-contracts && rm -rf build && brownie compile && cd /app
 
 ENTRYPOINT ["gsy-e"]
