@@ -3,22 +3,18 @@ FROM python:3.10
 RUN mkdir /app
 WORKDIR /app
 
+RUN apt-get update && apt-get install -y libssl-dev npm gcc && apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN npm i n -g && npm i -g npm@latest && npm i -g ganache-cli
+
 ADD ./requirements /app/requirements
 ADD ./gsy-framework /app/gsy-framework
 ADD ./energyMarket /app/energyMarket
-RUN apt-get update && apt-get install -y libssl-dev npm gcc && apt-get clean && rm -rf /var/lib/apt/lists/*
-RUN pip install --upgrade pip && pip install -r requirements/pandapower.in
-#&& pip install -r requirements/blockchain.in # gsy-e-dex broken
 
 ADD ./src /app/src
 ADD ./setup.cfg ./README.rst ./setup.py /app/
-RUN rm requirements/*.txt # import of package_utils fails due to weird reqs
-RUN pip install -e .
-RUN npm i n -g && npm i -g npm@latest && npm i -g ganache-cli
 
-RUN pip install eth-brownie
-RUN cd gsy-framework && pip install -e . && cd ..
-RUN cd energyMarket && pip install -e . && cd b4p/b4p-contracts && rm -r build && brownie compile && cd /app
-#RUN mkdir -p /root/.cache/black/22.3.0 # python black uses blib2to3 which writes stuff as pickle
+
+RUN pip install -e .[bc] -e gsy-framework -e energyMarket
+RUN cd energyMarket/b4p/b4p-contracts && rm -r build && brownie compile && cd /app
 
 ENTRYPOINT ["gsy-e"]

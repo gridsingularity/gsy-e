@@ -437,7 +437,7 @@ class ExportAndPlot:
         device_dict = self._get_from_dict(device_stats, device_address_list)
         # converting address_list into plot_dir by slugifying the members
         plot_dir = os.path.join(self.plot_dir,
-                                "/".join([slugify(node).lower() for node in address_list][0:-1]))
+                                "/".join([slugify(node, to_lower=True) for node in address_list][0:-1]))
         mkdir_from_str(plot_dir)
         output_file = os.path.join(plot_dir, f"device_profile_{device_name}.html")
         PlotlyGraph.plot_device_profile(device_dict, device_name, output_file, device_strategy)

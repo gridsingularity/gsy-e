@@ -6,6 +6,8 @@ gsy_framework_branch = "master"
 
 try:
     with open("requirements/blockchain.txt", encoding="utf-8") as req:
+        REQUIREMENTS_BC = [r.partition("#")[0] for r in req if not r.startswith("-e")]
+    with open("requirements/base.in", encoding="utf-8") as req:
         REQUIREMENTS = [r.partition("#")[0] for r in req if not r.startswith("-e")]
 except OSError:
     # Shouldn't happen
@@ -13,11 +15,6 @@ except OSError:
 
 with open("README.rst", "r", encoding="utf-8") as readme:
     README = readme.read()
-
-if platform.python_implementation() == "PyPy":
-    REQUIREMENTS.append("psycopg2cffi==2.9.0")
-else:
-    REQUIREMENTS.append("psycopg2-binary")
 
 # *IMPORTANT*: Don't manually change the version here. Use the 'bumpversion' utility.
 VERSION = "1.3.0"
@@ -34,10 +31,10 @@ setup(
     package_dir={"": "src"},
     package_data={"gsy_e": ["resources/*.csv", "setup/gsy_e_settings.json"]},
     install_requires=REQUIREMENTS,
+    extras_require = { 'bc': REQUIREMENTS_BC},
     entry_points={
         "console_scripts": [
             "gsy-e = gsy_e.gsy_e_core.cli:main"
         ]
     },
-    zip_safe=False,
 )
