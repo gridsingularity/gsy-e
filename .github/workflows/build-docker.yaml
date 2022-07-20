@@ -21,16 +21,16 @@ jobs:
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v3
         with:
+          push: true # Will only build if this is not here
+          tags: |
+            ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+            ghcr.io/${{ github.repository }}:latest
+      
+      - name: Build and Push Docker BC Image
+        uses: docker/build-push-action@v3
+        with:
           file: Dockerfile.bc
           push: true # Will only build if this is not here
           tags: |
-            ghcr.io/${{ github.repository }}:bc-${{ github.ref }}
+            ghcr.io/${{ github.repository }}:bc-${{ github.ref_name }}
             ghcr.io/${{ github.repository }}:bc-latest
-
-      - name: Build and Push Docker Image
-        uses: docker/build-push-action@v3
-        with:
-          push: true # Will only build if this is not here
-          tags: |
-            ghcr.io/${{ github.repository }}:${{ github.ref }}
-            ghcr.io/${{ github.repository }}:latest
