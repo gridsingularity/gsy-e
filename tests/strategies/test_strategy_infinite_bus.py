@@ -23,7 +23,7 @@ from uuid import uuid4
 import pendulum
 import pytest
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
-from gsy_framework.data_classes import BalancingOffer, Bid, Offer, Trade
+from gsy_framework.data_classes import Offer, Trade, BalancingOffer, Bid
 
 from gsy_e import constants
 from gsy_e.constants import TIME_ZONE
@@ -157,7 +157,7 @@ def test_global_market_maker_rate_set_at_instantiation(area_test1):
     strategy = InfiniteBusStrategy(energy_sell_rate=35)
     strategy.area = area_test1
     strategy.event_activate()
-    for time, value in strategy._sell_energy_profile.profile.items():
+    for time, value in strategy.energy_rate.items():
         assert value == GlobalConfig.market_maker_rate[time]
     strategy = InfiniteBusStrategy(energy_rate_profile={"01:15": 40})
     strategy.area = area_test1
@@ -371,8 +371,8 @@ def test_global_market_maker_rate_profile_and_infinite_bus_selling_rate_profile(
     assert list(GlobalConfig.market_maker_rate.values())[0] == 516.0
     assert list(GlobalConfig.market_maker_rate.values())[-1] == 595.0
     bus_test5.event_activate()
-    assert list(bus_test5._sell_energy_profile.profile.values())[0] == 516.0
-    assert list(bus_test5._sell_energy_profile.profile.values())[-1] == 595.0
+    assert list(bus_test5.energy_rate.values())[0] == 516.0
+    assert list(bus_test5.energy_rate.values())[-1] == 595.0
 
 
 @pytest.fixture()
@@ -386,12 +386,12 @@ def bus_test6(area_test1):
 
 def test_infinite_bus_buying_rate_set_as_profile(bus_test6):
     bus_test6.event_activate()
-    assert isinstance(bus_test6._buy_energy_profile.profile, dict)
-    assert len(bus_test6._buy_energy_profile.profile) == 96
-    assert list(bus_test6._buy_energy_profile.profile.values())[0] == 10
-    assert list(bus_test6._buy_energy_profile.profile.values())[15] == 15
+    assert isinstance(bus_test6.energy_buy_rate, dict)
+    assert len(bus_test6.energy_buy_rate) == 96
+    assert list(bus_test6.energy_buy_rate.values())[0] == 10
+    assert list(bus_test6.energy_buy_rate.values())[15] == 15
 
 
 def test_feed_in_tariff_set_as_infinite_bus_buying_rate(bus_test6):
     bus_test6.event_activate()
-    assert GlobalConfig.FEED_IN_TARIFF == bus_test6._buy_energy_profile.profile
+    assert GlobalConfig.FEED_IN_TARIFF == bus_test6.energy_buy_rate
