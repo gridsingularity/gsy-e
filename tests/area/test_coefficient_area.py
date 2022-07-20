@@ -1,3 +1,20 @@
+"""
+Copyright 2018 Grid Singularity
+This file is part of Grid Singularity Exchange.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
 from math import isclose
 from unittest.mock import MagicMock
 
@@ -9,7 +26,7 @@ from pendulum import now
 
 from gsy_e import constants
 from gsy_e.models.area import CoefficientArea
-from gsy_e.models.area.scm_manager import SCMManager
+from gsy_e.models.area.scm_manager import SCMManager, AreaEnergyBills
 from gsy_e.models.config import SimulationConfig
 from gsy_e.models.strategy.scm.load import SCMLoadHoursStrategy
 from gsy_e.models.strategy.scm.pv import SCMPVStrategy
@@ -72,9 +89,8 @@ class TestCoefficientArea:
                                  market_maker_rate=0.24)
         return CoefficientArea(name="Grid", children=[house1, house2])
 
-    @classmethod
-    def test_calculate_after_meter_data(cls):
-        grid_area = cls._create_2_house_grid()
+    def test_calculate_after_meter_data(self):
+        grid_area = self._create_2_house_grid()
         house1 = grid_area.children[0]
         house2 = grid_area.children[1]
         time_slot = now()
@@ -98,9 +114,8 @@ class TestCoefficientArea:
         assert isclose(scm._home_data[house2.uuid].energy_surplus_kWh, 0.1)
         assert isclose(scm._home_data[house2.uuid].energy_need_kWh, 0.0)
 
-    @classmethod
-    def test_calculate_community_after_meter_data(cls):
-        grid_area = cls._create_2_house_grid()
+    def test_calculate_community_after_meter_data(self):
+        grid_area = self._create_2_house_grid()
         house1 = grid_area.children[0]
         house2 = grid_area.children[1]
         time_slot = now()
@@ -118,9 +133,8 @@ class TestCoefficientArea:
         assert isclose(scm._home_data[house2.uuid].energy_bought_from_community_kWh, 0.00)
         assert isclose(scm._home_data[house2.uuid].energy_sold_to_grid_kWh, 0.04)
 
-    @classmethod
-    def test_trigger_energy_trades(cls):
-        grid_area = cls._create_2_house_grid()
+    def test_trigger_energy_trades(self):
+        grid_area = self._create_2_house_grid()
         house1 = grid_area.children[0]
         house2 = grid_area.children[1]
         time_slot = now()
@@ -159,3 +173,12 @@ class TestCoefficientArea:
         assert isclose(trades[1].traded_energy, 0.04)
         assert trades[1].seller == "House 2"
         assert trades[1].buyer == "Grid"
+
+    @staticmethod
+    def test_calculate_energy_benchmark():
+        bills = AreaEnergyBills()
+        bills.set_min_max_community_savings(10, 90)
+        bills.base_energy_bill = 1.0
+        bills.gsy_energy_bill = 0.4
+        assert isclose(bills.savings_percent, 60.0)
+        assert isclose(bills.energy_benchmark, (60 - 10) / (90 - 10))
