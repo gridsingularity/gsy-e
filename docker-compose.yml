@@ -31,7 +31,7 @@ services:
 
   
   gsy-market:
-    image: gsy-e
+    image: ghcr.io/bc4p/gsy-e:latest
     build:
       context: .
       dockerfile: Dockerfile.bc

@@ -146,4 +146,4 @@ def run(setup_module_name, settings_file, duration, slot_length, tick_length,
 
 
 if __name__ == '__main__':
-    run(['--setup', 'redis_communication_default_2a'])
+    run(['--setup', 'api_setup.default_community', '--slot-length-realtime', '10s', '--enable-external-connection'])
