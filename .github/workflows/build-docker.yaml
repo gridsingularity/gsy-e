@@ -23,7 +23,7 @@ jobs:
         with:
           push: true # Will only build if this is not here
           tags: |
-            ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+            ghcr.io/${{ github.repository }}:${{ github.sha }}
             ghcr.io/${{ github.repository }}:latest
       
       - name: Build and Push Docker BC Image
@@ -32,5 +32,5 @@ jobs:
           file: Dockerfile.bc
           push: true # Will only build if this is not here
           tags: |
-            ghcr.io/${{ github.repository }}:bc-${{ github.ref_name }}
+            ghcr.io/${{ github.repository }}:bc-${{ github.sha }}
             ghcr.io/${{ github.repository }}:bc-latest
