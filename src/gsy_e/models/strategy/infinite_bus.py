@@ -132,13 +132,10 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
         }
 
     def restore_state(self, saved_state):
-        self._buy_energy_profile.input_energy_rate = convert_str_to_pendulum_in_dict(
+        self._buy_energy_profile.profile = convert_str_to_pendulum_in_dict(
             saved_state["energy_buy_rate"])
-        self._sell_energy_profile.input_energy_rate = convert_str_to_pendulum_in_dict(
+        self._sell_energy_profile.profile = convert_str_to_pendulum_in_dict(
             saved_state["energy_rate"])
-
-        self._buy_energy_profile.read_or_rotate_profiles(reconfigure=True)
-        self._sell_energy_profile.read_or_rotate_profiles(reconfigure=True)
 
     @property
     def asset_type(self):

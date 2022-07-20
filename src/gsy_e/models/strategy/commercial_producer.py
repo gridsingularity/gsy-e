@@ -125,9 +125,8 @@ class CommercialStrategy(BaseStrategy):
         return {"energy_rate": convert_pendulum_to_str_in_dict(self._sell_energy_profile.profile)}
 
     def restore_state(self, saved_state):
-        self._sell_energy_profile.input_energy_rate = convert_str_to_pendulum_in_dict(
+        self._sell_energy_profile.profile = convert_str_to_pendulum_in_dict(
             saved_state["energy_rate"])
-        self._read_or_rotate_profiles(reconfigure=True)
 
     @property
     def asset_type(self):
