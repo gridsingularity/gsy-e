@@ -37,8 +37,8 @@ services:
       dockerfile: Dockerfile.bc
     command: run --setup bc4p -t 6m -s 15m --slot-length-realtime 10s --enable-external-connection --start-date 2022-07-01 #--enable-bc
     volumes:
-      - ./gsy_e-simulation/:/root/gsy_e-simulation # ~/gsy_e-simulation
-      - ./src/gsy_e/setup:/app/gsy-e/src/gsy_e/setup
+      - ./gsy_e-simulation/:/app/gsy_e-simulation # ~/gsy_e-simulation
+      - ./src/gsy_e/setup:/app/src/gsy_e/setup
     environment:
       - KAFKA_URL=kafka:9092
       - KAFKA_USERNAME=user

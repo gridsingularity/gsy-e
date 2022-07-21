@@ -2,6 +2,7 @@ FROM python:3.10-slim
 
 RUN mkdir /app
 WORKDIR /app
+ENV TZ="Europe/Berlin"
 
 ADD ./requirements /app/requirements
 ADD ./gsy-framework /app/gsy-framework
