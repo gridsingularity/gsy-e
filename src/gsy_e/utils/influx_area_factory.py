@@ -10,13 +10,19 @@ class InfluxAreaFactory:
         self.ic = InfluxConnection(path_influx_config)
 
     def getArea(self, areaname):
-        Area(
-                areaname,
-                [*[Area("House " + str(i), [
-                    Area(f"H{i} General Load", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                                  hrs_per_day=24,
-                                                                  hrs_of_day=list(range(24))),
+
+        influx_data = self.ic.getData()
+
+        res = Area(
+            areaname,
+            [
+                *[Area(k, [
+                    Area(k +"General Load", strategy=DefinedLoadStrategy(
+                             daily_load_profile=v,
+                             final_buying_rate=35),
                     ),   
-                ]) for i in range(1, 1000)]
-                ]
-            ),
+                ]) for k,v in influx_data.items()]
+            ]
+        )
+
+        return res

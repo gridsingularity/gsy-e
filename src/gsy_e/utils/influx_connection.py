@@ -19,29 +19,31 @@ class InfluxConnection:
             port=int(config['InfluxDB']['port']),
             ssl=True,
             verify_ssl=True,
-            database=config['InfluxDB']['Database']
+            database=config['InfluxDB']['database']
         )
+        self.tablename = config.get('Table','tablename',fallback='Strom')
+        self.powerkey = config.get('Table','powerkey',fallback='P_ges')
 
-    def getAggregatedDataDict(self, sim_interval=GlobalConfig.slot_length.in_minutes()):
-        start = GlobalConfig.start_date
-        end = GlobalConfig.start_date + GlobalConfig.sim_duration
 
-        query = 'SELECT mean("P_ges") FROM "Strom" WHERE time >= \'' + start.to_datetime_string() + '\' AND time <= \'' + end.to_datetime_string() + '\' GROUP BY time(' + str(sim_interval) + 'm), "id" fill(linear)'
+    def getAggregatedDataDict(self, interval = GlobalConfig.slot_length.in_minutes(),
+                                    start = GlobalConfig.start_date,
+                                    duration = GlobalConfig.sim_duration):
 
-        # time >= now() - 24h and time <= now()
+        query_res = self._influx_query(interval, start, duration)
 
-        result = self.client.query(query)
-
-        df = pd.concat(result.values(), axis=1)
+        # sum smartmeters
+        df = pd.concat(query_res.values(), axis=1)
         df = df.sum(axis=1).to_frame("W")
-        df = df.reset_index(level=0)
+
+        # index renaming
+        df.reset_index(level=0, inplace=True)
         df.rename({"index": "Interval"}, axis=1, inplace=True)
 
         # remove day from time data
         df["Interval"] = df["Interval"].map(lambda x: x.strftime("%H:%M"))
 
         # remove last row
-        df.drop(df.tail(1).index,inplace=True)
+        df.drop(df.tail(1).index, inplace=True)
         
 
         # convert to dictionary
@@ -49,6 +51,40 @@ class InfluxConnection:
         df_dict = df.to_dict().get("W")
 
         return df_dict
+
+    def getData(self, interval = GlobalConfig.slot_length.in_minutes(),
+                        start = GlobalConfig.start_date,
+                        duration = GlobalConfig.sim_duration):
+
+        query_res = self._influx_query(interval, start, duration)
+
+        res_dict = dict()
+
+        for k,v in query_res.items():
+            #renaming
+            v.reset_index(level=0, inplace=True)
+            v.rename({"index": "Interval"}, axis=1, inplace=True)
+            v.rename({"mean": "W"}, axis=1, inplace=True)
+
+            # remove day from time data
+            v["Interval"] = v["Interval"].map(lambda x: x.strftime("%H:%M"))
+
+            # remove last row
+            v.drop(v.tail(1).index, inplace=True)
+
+            # convert to dictionary
+            v.set_index("Interval", inplace=True)
+            res_dict[k[1][0][1]] = v.to_dict().get("W")
+
+        return res_dict
+
+
+    def _influx_query(self, interval, start, duration):
+        end = start + duration
+
+        query = 'SELECT mean("'+ self.powerkey +'") FROM "'+ self.tablename +'" WHERE time >= \'' + start.to_datetime_string() + '\' AND time <= \'' + end.to_datetime_string() + '\' GROUP BY time(' + str(interval) + 'm), "id" fill(linear)'
+
+        return self.client.query(query)
 
 
     @staticmethod
