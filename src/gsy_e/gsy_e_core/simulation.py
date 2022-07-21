@@ -47,10 +47,11 @@ from gsy_e.gsy_e_core.sim_results.endpoint_buffer import endpoint_buffer_class_f
 from gsy_e.gsy_e_core.sim_results.file_export_endpoints import FileExportEndpoints
 from gsy_e.gsy_e_core.util import NonBlockingConsole, validate_const_settings_for_simulation
 from gsy_e.models.area.event_deserializer import deserialize_events_to_areas
+from gsy_e.models.area.scm_manager import SCMManager
 from gsy_e.models.config import SimulationConfig
 
 if TYPE_CHECKING:
-    from gsy_e.models.area import Area
+    from gsy_e.models.area import Area, AreaBase
     from gsy_e.gsy_e_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
 
 log = getLogger(__name__)
@@ -108,7 +109,7 @@ class SimulationProgressInfo:
             slot_no + 1, config)
         self.current_slot_number = slot_no
 
-        log.warning("Slot %s of %s - (%.1f %%) %s elapsed, ETA: %s", slot_no, slot_count,
+        log.warning("Slot %s of %s - (%.1f %%) %s elapsed, ETA: %s", slot_no+1, slot_count,
                     self.percentage_completed, self.elapsed_time,
                     self.eta)
 
@@ -357,7 +358,9 @@ class SimulationResultsManager:
         """
         assert self._endpoint_buffer is not None
 
-        if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS:
+        if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
+            if not self._should_send_results_to_broker:
+                return
             self._endpoint_buffer.update_stats(
                 area, simulation_status, progress_info, current_state,
                 calculate_results=False)
@@ -399,6 +402,9 @@ class SimulationResultsManager:
 
     @classmethod
     def _update_area_stats(cls, area: "Area", endpoint_buffer: "SimulationEndpointBuffer") -> None:
+        # TODO: Fix in the context of GSYE-258
+        if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
+            return
         for child in area.children:
             cls._update_area_stats(child, endpoint_buffer)
         bills = endpoint_buffer.results_handler.all_ui_results["bills"].get(area.uuid, {})
@@ -413,6 +419,9 @@ class SimulationResultsManager:
 
     def save_csv_results(self, area: "Area") -> None:
         """Update the CSV results on finish, and write the CSV files."""
+        # TODO: Fix with GSYE-258
+        if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
+            return
         if self.export_results_on_finish:
             log.info("Exporting simulation data.")
             self._export.data_to_csv(area, False)
@@ -487,7 +496,7 @@ class Simulation:
         validate_const_settings_for_simulation()
 
     def _init(self, redis_job_id: str) -> None:
-        # has to be called before get_setup():
+        # has to be called before load_setup_module():
         global_objects.profiles_handler.activate()
 
         self.area = self._setup.load_setup_module()
@@ -766,6 +775,31 @@ class Simulation:
 
 class CoefficientSimulation(Simulation):
     """Start and control a simulation with coefficient trading."""
+
+    def _init(self, redis_job_id: str) -> None:
+        # has to be called before load_setup_module():
+        global_objects.profiles_handler.activate()
+
+        self.area = self._setup.load_setup_module()
+
+        self._results.init_results(redis_job_id, self.area, self._setup)
+        self._results.update_and_send_results(
+            self.current_state, self.progress_info, self.area, self._status.status)
+
+        log.debug("Starting simulation with config %s", self._setup.config)
+
+        self.area.activate_energy_parameters(self._setup.config.start_date)
+
+    @property
+    def _time_since_start(self) -> Duration:
+        """Return pendulum duration since start of simulation."""
+        current_time = self.progress_info.current_slot_time \
+            if self.progress_info.current_slot_time else self._setup.config.start_date
+        return current_time - self._setup.config.start_date
+
+    def _deactivate_areas(self, area: "AreaBase"):
+        pass
+
     def _execute_simulation(
             self, slot_resume: int, tick_resume: int, console: NonBlockingConsole = None) -> None:
 
@@ -782,6 +816,14 @@ class CoefficientSimulation(Simulation):
 
             global_objects.profiles_handler.update_time_and_buffer_profiles(
                 self._get_current_market_time_slot(slot_no))
+
+            scm_manager = SCMManager(self.area, self._get_current_market_time_slot(slot_no))
+
+            self.area.calculate_home_after_meter_data(
+                self.progress_info.current_slot_time, scm_manager)
+
+            scm_manager.calculate_community_after_meter_data()
+            self.area.trigger_energy_trades(scm_manager)
 
             self._results.update_and_send_results(
                 self.current_state, self.progress_info, self.area, self._status.status)
@@ -801,7 +843,7 @@ class CoefficientSimulation(Simulation):
                 self._simulation_finish_actions(slot_count)
                 return
 
-            self._results.update_csv_on_market_cycle(slot_no, self.area)
+            # self._results.update_csv_on_market_cycle(slot_no, self.area)
             self._status.handle_incremental_mode()
 
         self._simulation_finish_actions(slot_count)
@@ -813,7 +855,7 @@ def simulation_class_factory():
     """
     return (
         CoefficientSimulation
-        if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS
+        if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value
         else Simulation
     )
 

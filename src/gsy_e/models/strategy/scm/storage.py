@@ -12,7 +12,7 @@ StorageSettings = ConstSettings.StorageSettings
 
 
 if TYPE_CHECKING:
-    from gsy_e.models.area import AreaBase
+    from gsy_e.models.area import AreaBase, CoefficientArea
 
 
 class SCMStorageStrategy(SCMStrategy):
@@ -45,23 +45,33 @@ class SCMStorageStrategy(SCMStrategy):
 
     def activate(self, area: "AreaBase") -> None:
         """Activate the strategy."""
-        self._state.add_default_values_to_state_profiles([area.current_market_time_slot])
+        self._state.add_default_values_to_state_profiles([area._current_market_time_slot])
         self._state.activate(
-            area.simulation_config.slot_length,
-            area.current_market_time_slot
-            if area.current_market_time_slot else area.config.start_date)
+            area.config.slot_length,
+            area._current_market_time_slot
+            if area._current_market_time_slot else area.config.start_date)
 
     def market_cycle(self, area: "AreaBase") -> None:
         """Update the storage state for the next time slot."""
-        self._state.add_default_values_to_state_profiles([area.current_market_time_slot])
-        self._state.market_cycle(area.past_market_time_slot, area.current_market_time_slot, [])
+        self._state.add_default_values_to_state_profiles([area._current_market_time_slot])
+        self._state.market_cycle(area.past_market_time_slot, area._current_market_time_slot, [])
         self._state.delete_past_state_values(area.past_market_time_slot)
-        self._state.check_state(area.current_market_time_slot)
+        self._state.check_state(area._current_market_time_slot)
 
-    def ge_energy_to_sell_kWh(self, time_slot: DateTime) -> float:
+    def get_energy_to_sell_kWh(self, time_slot: DateTime) -> float:
         """Get the available energy for production for the specified time slot."""
         return self._state.get_available_energy_to_sell_kWh(time_slot)
 
     def get_energy_to_buy_kWh(self, time_slot: DateTime) -> float:
         """Get the available energy for consumption for the specified time slot."""
         return self._state.get_available_energy_to_buy_kWh(time_slot)
+
+    def decrease_energy_to_sell(
+            self, traded_energy_kWh: float, time_slot: DateTime, area: "CoefficientArea"):
+        """Decrease traded energy from the state and the strategy parameters."""
+        self._state.register_energy_from_offer_trade(traded_energy_kWh, time_slot)
+
+    def decrease_energy_to_buy(
+            self, traded_energy_kWh: float, time_slot: DateTime, area: "CoefficientArea"):
+        """Decrease traded energy from the state and the strategy parameters."""
+        self._state.register_energy_from_bid_trade(traded_energy_kWh, time_slot)
