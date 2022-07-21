@@ -2,8 +2,9 @@
 .git
 wiki
 .hypothesis
-gsy_e-simulation
+**/gsy_e-simulation
 *.egg-info
 .coverage.*
 **/__pycache__
 **/.tox
+build
