@@ -133,6 +133,7 @@ class TestCoefficientArea:
         assert isclose(scm._home_data[house2.uuid].energy_bought_from_community_kWh, 0.00)
         assert isclose(scm._home_data[house2.uuid].energy_sold_to_grid_kWh, 0.04)
 
+    @pytest.mark.skip("Will be reactivated on GSYE-355")
     def test_trigger_energy_trades(self):
         grid_area = self._create_2_house_grid()
         house1 = grid_area.children[0]
