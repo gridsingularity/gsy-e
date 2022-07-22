@@ -108,12 +108,12 @@ class TestCoefficientArea:
         grid_area.calculate_home_after_meter_data(time_slot, scm)
         scm.calculate_community_after_meter_data()
 
-        assert scm._home_data[house1.uuid].community_production_kWh == 0.1
+        assert scm._home_data[house1.uuid].community_total_production_kWh == 0.1
         assert isclose(scm._home_data[house1.uuid].allocated_community_energy_kWh, 0.06)
         assert isclose(scm._home_data[house1.uuid].energy_bought_from_community_kWh, 0.06)
         assert isclose(scm._home_data[house1.uuid].energy_sold_to_grid_kWh, 0.0)
 
-        assert scm._home_data[house2.uuid].community_production_kWh == 0.1
+        assert scm._home_data[house2.uuid].community_total_production_kWh == 0.1
         assert isclose(scm._home_data[house2.uuid].allocated_community_energy_kWh, 0.04)
         assert isclose(scm._home_data[house2.uuid].energy_bought_from_community_kWh, 0.00)
         assert isclose(scm._home_data[house2.uuid].energy_sold_to_grid_kWh, 0.04)
