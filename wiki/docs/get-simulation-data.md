@@ -20,7 +20,7 @@ Grid Singularity has developed the Grid Data API to provide information about th
 
 _Note: Technical parameters and instructions to be added soon!_
 
-##Connect to the data APIs
+##Connect to the data APIs 
 
 ### Perform a request using Postman
 
