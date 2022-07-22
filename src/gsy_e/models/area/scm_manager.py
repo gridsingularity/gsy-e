@@ -36,7 +36,8 @@ class HomeAfterMeterData:
     self_consumed_energy_kWh: float = 0.
     energy_surplus_kWh: float = 0.
     energy_need_kWh: float = 0.
-    community_production_kWh: float = 0.
+    community_total_production_kWh: float = 0.
+    _self_production_for_community_kWh: float = 0.
     trades: List[Trade] = None
 
     def to_dict(self) -> Dict:
@@ -68,17 +69,31 @@ class HomeAfterMeterData:
         if self.trades is None:
             self.trades = []
 
-    def set_community_production(self, energy_kWh: float):
+    def set_community_production(self, energy_kWh: float, unassigned_energy_production_kWh: float):
         """
         Set the community energy production, in order to correctly generate the community-related
         home data.
         """
-        self.community_production_kWh = energy_kWh
+        self.community_total_production_kWh = energy_kWh
+        if self.energy_surplus_kWh <= unassigned_energy_production_kWh:
+            self._self_production_for_community_kWh = self.energy_surplus_kWh
+            return unassigned_energy_production_kWh - self.energy_surplus_kWh
+        self._self_production_for_community_kWh = unassigned_energy_production_kWh
+        return 0.
+
+    @property
+    def self_production_for_community_kWh(self):
+        return self._self_production_for_community_kWh
+
+    @property
+    def self_production_for_grid_kWh(self):
+        assert self.energy_surplus_kWh >= self._self_production_for_community_kWh
+        return self.energy_surplus_kWh - self._self_production_for_community_kWh
 
     @property
     def allocated_community_energy_kWh(self) -> float:
         """Amount of community energy allocated to the home."""
-        return self.community_production_kWh * self.sharing_coefficient_percent
+        return self.community_total_production_kWh * self.sharing_coefficient_percent
 
     @property
     def energy_bought_from_community_kWh(self) -> float:
@@ -153,6 +168,8 @@ class AreaEnergyBills:
     tax_surcharges: float = 0.
     bought_from_community: float = 0.
     spent_to_community: float = 0.
+    sold_to_community: float = 0.
+    earned_from_community: float = 0.
     bought_from_grid: float = 0.
     spent_to_grid: float = 0.
     sold_to_grid: float = 0.
@@ -185,6 +202,12 @@ class AreaEnergyBills:
         self.gsy_energy_bill += energy_kWh * energy_rate
         self.tax_surcharges += energy_kWh * tax_surcharge_rate
         self.grid_fees += energy_kWh * grid_fee_rate
+
+    def set_sold_to_community(self, energy_kWh, energy_rate):
+        """Update price and energy counters after buying energy from the community."""
+        self.sold_to_community += energy_kWh
+        self.earned_from_community += energy_kWh * energy_rate
+        self.gsy_energy_bill -= energy_kWh * energy_rate
 
     def set_bought_from_grid(
             self, energy_kWh, energy_rate, grid_fee_rate, tax_surcharge_rate):
@@ -302,8 +325,10 @@ class SCMManager:
             self.community_data.energy_surplus_kWh += data.energy_surplus_kWh
             self.community_data.energy_need_kWh += data.energy_need_kWh
 
+        unassigned_production_kWh = self.community_data.energy_surplus_kWh
         for home_data in self._home_data.values():
-            home_data.set_community_production(self.community_data.energy_surplus_kWh)
+            unassigned_production_kWh = home_data.set_community_production(
+                self.community_data.energy_surplus_kWh, unassigned_production_kWh)
 
         for data in self._home_data.values():
             self.community_data.energy_bought_from_community_kWh += (
@@ -347,9 +372,6 @@ class SCMManager:
                     home_data.energy_bought_from_community_kWh, market_maker_rate_decreased_fees,
                     grid_fees * (1.0 - self._grid_fees_reduction), taxes_surcharges
                 )
-                home_bill.set_sold_to_grid(
-                    self.community_data.energy_sold_to_grid_kWh, feed_in_tariff)
-
                 if home_data.energy_bought_from_community_kWh > FLOATING_POINT_TOLERANCE:
                     home_data.create_buy_trade(
                         self._time_slot, DEFAULT_SCM_COMMUNITY_NAME,
@@ -357,11 +379,24 @@ class SCMManager:
                         (home_data.energy_bought_from_community_kWh *
                          market_maker_rate_decreased_fees)
                     )
-                if self.community_data.energy_sold_to_grid_kWh > FLOATING_POINT_TOLERANCE:
+
+                home_bill.set_sold_to_grid(
+                    home_data.self_production_for_grid_kWh, feed_in_tariff)
+                if home_data.self_production_for_grid_kWh > FLOATING_POINT_TOLERANCE:
                     home_data.create_sell_trade(
                         self._time_slot, DEFAULT_SCM_GRID_NAME,
-                        self.community_data.energy_sold_to_grid_kWh,
-                        self.community_data.energy_sold_to_grid_kWh * feed_in_tariff)
+                        home_data.self_production_for_grid_kWh,
+                        home_data.self_production_for_grid_kWh * feed_in_tariff)
+
+                home_bill.set_sold_to_community(
+                    home_data.self_production_for_community_kWh, market_maker_rate_decreased_fees)
+                if home_data.self_production_for_community_kWh > FLOATING_POINT_TOLERANCE:
+                    home_data.create_sell_trade(
+                        self._time_slot, DEFAULT_SCM_COMMUNITY_NAME,
+                        home_data.self_production_for_community_kWh,
+                        home_data.self_production_for_community_kWh *
+                        market_maker_rate_decreased_fees)
+
             elif home_data.energy_need_kWh > FLOATING_POINT_TOLERANCE:
                 home_bill.set_bought_from_community(
                     home_data.energy_need_kWh, market_maker_rate_decreased_fees,
