@@ -13,7 +13,7 @@ Figure 1: Screenshot of a simulation url, which includes the simulation_id and t
 
 You can then connect to the API with the following URL, which divides the parameters with a slash (/):
 
-_https://d3aweb.gridsingularity.com/historical-data/devices/{simulation_id}/{area_uuid}/{start_time}/{end_time}_
+_https://gsyweb.gridsingularity.com/historical-data/devices/{simulation_id}/{area_uuid}/{start_time}/{end_time}_
 
 ##Grid Data API
 Grid Singularity has developed the Grid Data API to provide information about the topology of a simulated energy community, listing all the different configurations of the energy assets, including their geographic location (latitude and longitude).
@@ -59,7 +59,7 @@ import requests
 username = "<your_user>"
 password = "<your_password>"
 
-domain = "https://d3aweb.gridsingularity.com"
+domain = "https://gsyweb.gridsingularity.com"
 simulation_id = "990abe5e-3126-4b8b-9978-66ca07824d3c"   #example of simulation
 area_uuid = "a245cff8-d90a-44d9-82e5-d37999b62e04"       #example of community
 start_date = "2021-09-25T00:00"                          #example of start_date
