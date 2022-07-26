@@ -102,6 +102,7 @@ nav:
             - 'Launch the Matching API':
                 - 'Registration - Simulations run on the User-Interface': 'registration-matching-api-user-interface.md'
                 - 'Registration - Simulations run on the Backend': 'registration-matching-api-backend.md'
+        - 'Extract data (historical profile and grid topology) through the Grid Singularity Historical Data and Grid Data APIs': 'get-simulation-data.md'
 - 'Grid Singularity Canary Test Network':
     - 'Connect to a Grid Singularity Canary Test Network': 'connect-ctn.md'
     - 'Send live energy asset data streams to the Grid Singularity exchange':
