@@ -127,7 +127,7 @@ class AreaStats:
         total volume of energy traded"""
         out_dict = copy(default_trade_stats_dict)
         trade_volumes = [trade.traded_energy for trade in self.current_market.trades]
-        trade_rates = [trade.trade_price/trade.traded_energy
+        trade_rates = [trade.trade_rate
                        for trade in self.current_market.trades]
         if len(trade_rates) > 0:
             out_dict["min_trade_rate"] = limit_float_precision(min(trade_rates))

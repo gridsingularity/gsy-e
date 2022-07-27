@@ -16,6 +16,10 @@ class SCMLoadHoursStrategy(SCMStrategy):
         self._energy_params = LoadHoursEnergyParameters(avg_power_W, hrs_of_day)
         self._simulation_start_timestamp = None
 
+    @property
+    def state(self):
+        return self._energy_params.state
+
     def activate(self, area: "AreaBase") -> None:
         """Activate the strategy."""
         self._energy_params.event_activate_energy(area)
@@ -58,6 +62,10 @@ class SCMLoadProfile(SCMStrategy):
     def __init__(self, daily_load_profile, daily_load_profile_uuid=None):
         self._energy_params = DefinedLoadEnergyParameters(
             daily_load_profile, daily_load_profile_uuid)
+
+    @property
+    def state(self):
+        return self._energy_params.state
 
     def serialize(self) -> Dict:
         """Serialize the strategy parameters."""

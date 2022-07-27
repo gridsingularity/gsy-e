@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from logging import getLogger
 from typing import List, Dict, Optional, Union, TYPE_CHECKING
 from uuid import uuid4
+from numpy.random import random
 
 from gsy_framework.area_validator import validate_area
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
@@ -315,14 +316,14 @@ class CoefficientArea(AreaBase):
         """Recursive function that calculates the home after meter data."""
         if self._is_home_area():
             self._calculate_home_after_meter_data(current_time_slot, scm_manager)
-        for child in self.children:
+        for child in sorted(self.children, key=lambda _: random()):
             child.calculate_home_after_meter_data(current_time_slot, scm_manager)
 
     def trigger_energy_trades(self, scm_manager: "SCMManager") -> None:
         """Recursive function that triggers energy trading on all children of the root area."""
         if self._is_home_area():
             scm_manager.calculate_home_energy_bills(self.uuid)
-        for child in self.children:
+        for child in sorted(self.children, key=lambda _: random()):
             child.trigger_energy_trades(scm_manager)
 
     @property
