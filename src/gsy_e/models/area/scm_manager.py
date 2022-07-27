@@ -335,12 +335,12 @@ class SCMManager:
 
         unassigned_energy_production_kWh = sum(home_data.energy_bought_from_community_kWh
                                                for home_data in self._home_data.values())
-        for data in self._home_data.values():
-            unassigned_energy_production_kWh = data.set_production_for_community(
+        for home_data in self._home_data.values():
+            unassigned_energy_production_kWh = home_data.set_production_for_community(
                 unassigned_energy_production_kWh)
             self.community_data.energy_bought_from_community_kWh += (
-                data.energy_bought_from_community_kWh)
-            self.community_data.energy_sold_to_grid_kWh += data.energy_sold_to_grid_kWh
+                home_data.energy_bought_from_community_kWh)
+            self.community_data.energy_sold_to_grid_kWh += home_data.energy_sold_to_grid_kWh
 
     def calculate_home_energy_bills(
             self, home_uuid: str) -> None:
