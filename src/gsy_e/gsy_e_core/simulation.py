@@ -29,7 +29,7 @@ from typing import Tuple, Optional, TYPE_CHECKING
 
 import psutil
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
-from gsy_framework.enums import SpotMarketTypeEnum
+from gsy_framework.enums import SpotMarketTypeEnum, CoefficientAlgorithm
 from gsy_framework.kafka_communication.kafka_producer import kafka_connection_factory
 from gsy_framework.utils import format_datetime, str_to_pendulum_datetime
 from numpy import random
@@ -824,6 +824,9 @@ class CoefficientSimulation(Simulation):
 
             scm_manager.calculate_community_after_meter_data()
             self.area.trigger_energy_trades(scm_manager)
+
+            if ConstSettings.SCMSettings.MARKET_ALGORITHM == CoefficientAlgorithm.DYNAMIC.value:
+                self.area.change_home_coefficient_percentage(scm_manager)
 
             self._results.update_and_send_results(
                 self.current_state, self.progress_info, self.area, self._status.status)

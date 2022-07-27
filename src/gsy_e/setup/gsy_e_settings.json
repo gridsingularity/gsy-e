@@ -216,7 +216,7 @@
       "MARKET_TYPE": 1,
       "MARKET_TYPE_LIMIT": [
         1,
-        2
+        3
       ],
       "BID_OFFER_MATCH_TYPE": 1,
       "BID_OFFER_MATCH_TYPE_LIMIT": [
@@ -241,7 +241,12 @@
       "FLEXIBLE_LOADS_SUPPORT": true
     },
     "SCMSettings": {
-      "GRID_FEES_REDUCTION": 0.28
+      "GRID_FEES_REDUCTION": 0.28,
+      "MARKET_ALGORITHM": 1,
+      "MARKET_ALGORITHM_LIMIT": [
+        1,
+        2
+      ]
     }
   }
 }

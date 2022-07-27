@@ -261,6 +261,12 @@ class SCMManager:
             savings=(base_energy_bill - gsy_energy_bill),
             savings_percent=savings_percent)
 
+    def get_home_energy_need(self, home_uuid: str) -> float:
+        """Get home energy need in kWh"""
+        assert home_uuid in self._home_data
+
+        return self._home_data[home_uuid].energy_need_kWh
+
     @property
     def community_bills(self):
         """Calculate bills for the community."""
@@ -292,7 +298,7 @@ class SCMCommunityValidator:
                 f"Home {home.name} has assets with non-SCM strategies."
 
     @staticmethod
-    def _validate_market_maker_rate(community):
+    def _validate_market_maker_rate(community: "CoefficientArea") -> None:
         for home in community.children:
-            assert home.get("market_maker_rate") is not None, \
+            assert home.market_maker_rate is not None, \
                 f"Home {home.name} does not define market_maker_rate."
