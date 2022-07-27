@@ -133,7 +133,6 @@ class TestCoefficientArea:
         assert isclose(scm._home_data[house2.uuid].energy_bought_from_community_kWh, 0.00)
         assert isclose(scm._home_data[house2.uuid].energy_sold_to_grid_kWh, 0.04)
 
-    @pytest.mark.skip("Will be reactivated on GSYE-355")
     def test_trigger_energy_trades(self):
         grid_area = self._create_2_house_grid()
         house1 = grid_area.children[0]
@@ -153,7 +152,7 @@ class TestCoefficientArea:
         assert isclose(scm._bills[house2.uuid].base_energy_bill, -0.005)
         assert isclose(scm._bills[house2.uuid].gsy_energy_bill, -0.0164)
         assert isclose(scm._bills[house2.uuid].savings, 0.0114)
-        assert isclose(scm._bills[house2.uuid].savings_percent, -228.0)
+        assert isclose(scm._bills[house2.uuid].savings_percent, 0.0)
         assert len(scm._home_data[house1.uuid].trades) == 2
         trades = scm._home_data[house1.uuid].trades
         assert isclose(trades[0].trade_rate, 0.3)
@@ -168,8 +167,8 @@ class TestCoefficientArea:
         trades = scm._home_data[house2.uuid].trades
         assert isclose(trades[0].trade_rate, 0.24)
         assert isclose(trades[0].traded_energy, 0.06)
-        assert trades[0].seller == "Community"
-        assert trades[0].buyer == "House 2"
+        assert trades[0].seller == "House 2"
+        assert trades[0].buyer == "Community"
         assert isclose(trades[1].trade_rate, 0.05)
         assert isclose(trades[1].traded_energy, 0.04)
         assert trades[1].seller == "House 2"
