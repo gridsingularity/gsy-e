@@ -16,7 +16,7 @@ attrs==21.2.0
     #   jsonschema
 awesome-slugify==1.6.5
     # via -r requirements/base.txt
-backports-entry-points-selectable==1.1.0
+backports.entry-points-selectable==1.1.0
     # via
     #   -r requirements/base.txt
     #   gsy-dex
