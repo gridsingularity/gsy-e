@@ -436,6 +436,12 @@ class SCMManager:
     def get_after_meter_data(self, area_uuid: str) -> Dict:
         return self._home_data.get(area_uuid)
 
+    def get_home_energy_need(self, home_uuid: str) -> float:
+        """Get home energy need in kWh"""
+        assert home_uuid in self._home_data
+
+        return self._home_data[home_uuid].energy_need_kWh
+
     @property
     def community_bills(self) -> Dict:
         """Calculate bills for the community."""
@@ -478,5 +484,5 @@ class SCMCommunityValidator:
     @staticmethod
     def _validate_market_maker_rate(community: "CoefficientArea") -> None:
         for home in community.children:
-            assert home._market_maker_rate is not None, \
+            assert home.market_maker_rate is not None, \
                 f"Home {home.name} does not define market_maker_rate."
