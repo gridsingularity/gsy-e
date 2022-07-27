@@ -188,6 +188,7 @@ class TestCoefficientArea:
         assert isclose(bills.savings_percent, 60.0)
         assert isclose(bills.energy_benchmark, (60 - 10) / (90 - 10))
 
+    @staticmethod
     @pytest.fixture()
     def _dynamic_algorithm():
         ConstSettings.SCMSettings.MARKET_ALGORITHM = CoefficientAlgorithm.DYNAMIC.value
