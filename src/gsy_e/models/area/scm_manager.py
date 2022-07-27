@@ -1,7 +1,7 @@
 import logging
 from dataclasses import dataclass, asdict
 from math import isclose
-from typing import Dict, TYPE_CHECKING, List
+from typing import Dict, TYPE_CHECKING, List, Optional
 from uuid import uuid4
 from calendar import monthrange
 
@@ -66,15 +66,19 @@ class HomeAfterMeterData:
         self.self_consumed_energy_kWh = min(self.consumption_kWh, self.production_kWh)
         self.energy_surplus_kWh = self.production_kWh - self.self_consumed_energy_kWh
         self.energy_need_kWh = self.consumption_kWh - self.self_consumed_energy_kWh
+        assert not (self.energy_surplus_kWh > FLOATING_POINT_TOLERANCE and
+                    self.energy_need_kWh > FLOATING_POINT_TOLERANCE)
         if self.trades is None:
             self.trades = []
 
-    def set_community_production(self, energy_kWh: float, unassigned_energy_production_kWh: float):
+    def set_total_community_production(self, energy_kWh: float):
         """
         Set the community energy production, in order to correctly generate the community-related
         home data.
         """
         self.community_total_production_kWh = energy_kWh
+
+    def set_production_for_community(self, unassigned_energy_production_kWh: float):
         if self.energy_surplus_kWh <= unassigned_energy_production_kWh:
             self._self_production_for_community_kWh = self.energy_surplus_kWh
             return unassigned_energy_production_kWh - self.energy_surplus_kWh
@@ -176,6 +180,8 @@ class AreaEnergyBills:
     earned_from_grid: float = 0.
     marketplace_fee: float = 0.
     fixed_fee: float = 0.
+    _min_community_savings_percent: float = 0.
+    _max_community_savings_percent: float = 0.
 
     def to_dict(self) -> Dict:
         """Dict representation of the area energy bills."""
@@ -183,6 +189,7 @@ class AreaEnergyBills:
         output_dict.update({
             "savings": self.savings,
             "savings_percent": self.savings_percent,
+            "energy_benchmark": self.energy_benchmark,
             "home_balance_kWh": self.home_balance_kWh,
             "home_balance": self.home_balance,
             "gsy_energy_bill_excl_revenue": self.gsy_energy_bill_excl_revenue,
@@ -221,6 +228,15 @@ class AreaEnergyBills:
         self.earned_from_grid += energy_kWh * energy_rate
         self.gsy_energy_bill -= energy_kWh * energy_rate
 
+    def set_min_max_community_savings(
+            self, min_savings_percent: float, max_savings_percent: float):
+        """
+        Update the minimum and maximum saving of a home in the community.
+        Used in order to calculate the energy benchmark.
+        """
+        self._min_community_savings_percent = min_savings_percent
+        self._max_community_savings_percent = max_savings_percent
+
     @property
     def savings(self):
         """Absolute price savings of the home, compared to the base energy bill."""
@@ -237,6 +253,12 @@ class AreaEnergyBills:
         return (
             (self.savings / self.base_energy_bill) * 100.0
             if self.base_energy_bill > 0. else 0.)
+
+    @property
+    def energy_benchmark(self):
+        """Savings ranking compared to the homes with the min and max savings."""
+        return ((self.savings_percent - self._min_community_savings_percent) /
+                (self._max_community_savings_percent - self._min_community_savings_percent))
 
     @property
     def gsy_energy_bill_excl_revenue(self):
@@ -307,15 +329,18 @@ class SCMManager:
             self.community_data.energy_surplus_kWh += data.energy_surplus_kWh
             self.community_data.energy_need_kWh += data.energy_need_kWh
 
-        unassigned_production_kWh = self.community_data.energy_surplus_kWh
         for home_data in self._home_data.values():
-            unassigned_production_kWh = home_data.set_community_production(
-                self.community_data.energy_surplus_kWh, unassigned_production_kWh)
+            home_data.set_total_community_production(
+                self.community_data.energy_surplus_kWh)
 
-        for data in self._home_data.values():
+        unassigned_energy_production_kWh = sum(home_data.energy_bought_from_community_kWh
+                                               for home_data in self._home_data.values())
+        for home_data in self._home_data.values():
+            unassigned_energy_production_kWh = home_data.set_production_for_community(
+                unassigned_energy_production_kWh)
             self.community_data.energy_bought_from_community_kWh += (
-                data.energy_bought_from_community_kWh)
-            self.community_data.energy_sold_to_grid_kWh += data.energy_sold_to_grid_kWh
+                home_data.energy_bought_from_community_kWh)
+            self.community_data.energy_sold_to_grid_kWh += home_data.energy_sold_to_grid_kWh
 
     def calculate_home_energy_bills(
             self, home_uuid: str) -> None:
@@ -350,26 +375,6 @@ class SCMManager:
 
         if home_data.allocated_community_energy_kWh > home_data.energy_need_kWh:
             if home_data.energy_surplus_kWh > 0.0:
-                home_bill.set_bought_from_community(
-                    home_data.energy_bought_from_community_kWh, market_maker_rate_decreased_fees,
-                    grid_fees * (1.0 - self._grid_fees_reduction), taxes_surcharges
-                )
-                if home_data.energy_bought_from_community_kWh > FLOATING_POINT_TOLERANCE:
-                    home_data.create_buy_trade(
-                        self._time_slot, DEFAULT_SCM_COMMUNITY_NAME,
-                        home_data.energy_bought_from_community_kWh,
-                        (home_data.energy_bought_from_community_kWh *
-                         market_maker_rate_decreased_fees)
-                    )
-
-                home_bill.set_sold_to_grid(
-                    home_data.self_production_for_grid_kWh, feed_in_tariff)
-                if home_data.self_production_for_grid_kWh > FLOATING_POINT_TOLERANCE:
-                    home_data.create_sell_trade(
-                        self._time_slot, DEFAULT_SCM_GRID_NAME,
-                        home_data.self_production_for_grid_kWh,
-                        home_data.self_production_for_grid_kWh * feed_in_tariff)
-
                 home_bill.set_sold_to_community(
                     home_data.self_production_for_community_kWh, market_maker_rate_decreased_fees)
                 if home_data.self_production_for_community_kWh > FLOATING_POINT_TOLERANCE:
@@ -378,6 +383,14 @@ class SCMManager:
                         home_data.self_production_for_community_kWh,
                         home_data.self_production_for_community_kWh *
                         market_maker_rate_decreased_fees)
+
+                home_bill.set_sold_to_grid(
+                    home_data.self_production_for_grid_kWh, feed_in_tariff)
+                if home_data.self_production_for_grid_kWh > FLOATING_POINT_TOLERANCE:
+                    home_data.create_sell_trade(
+                        self._time_slot, DEFAULT_SCM_GRID_NAME,
+                        home_data.self_production_for_grid_kWh,
+                        home_data.self_production_for_grid_kWh * feed_in_tariff)
 
             elif home_data.energy_need_kWh > FLOATING_POINT_TOLERANCE:
                 home_bill.set_bought_from_community(
@@ -423,6 +436,11 @@ class SCMManager:
                 "after_meter_data": {}
             }
 
+        min_savings = min(bill.savings_percent for bill in self._bills.values())
+        max_savings = max(bill.savings_percent for bill in self._bills.values())
+        for bill in self._bills.values():
+            bill.set_min_max_community_savings(min_savings, max_savings)
+
         if area_uuid not in self._bills:
             return {"bills": {}, "after_meter_data": {}}
         return {
@@ -433,7 +451,8 @@ class SCMManager:
             )
         }
 
-    def get_after_meter_data(self, area_uuid: str) -> Dict:
+    def get_after_meter_data(self, area_uuid: str) -> Optional[HomeAfterMeterData]:
+        """Get after meter data for the home with area_uuid. Returns None for invalid uuid."""
         return self._home_data.get(area_uuid)
 
     def get_home_energy_need(self, home_uuid: str) -> float:
