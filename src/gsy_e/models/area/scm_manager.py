@@ -115,7 +115,10 @@ class HomeAfterMeterData:
     def create_buy_trade(self, current_time_slot: DateTime, seller_name: str,
                          traded_energy_kWh: float, trade_price_cents: float) -> None:
         """Create and save a trade object for buying energy."""
-        assert traded_energy_kWh > 0.
+        assert traded_energy_kWh > 0. and traded_energy_kWh <= self.energy_need_kWh, \
+            f"Cannot buy more energy ({traded_energy_kWh}) than the energy need (" \
+            f"{self.energy_need_kWh}) of the home ({self.home_name})."
+
         trade = Trade(
             str(uuid4()), current_time_slot, None,
             seller_name, self.home_name,
@@ -131,6 +134,9 @@ class HomeAfterMeterData:
     def create_sell_trade(self, current_time_slot: DateTime, buyer_name: str,
                           traded_energy_kWh: float, trade_price_cents: float):
         """Create and save a trade object for selling energy."""
+        assert traded_energy_kWh <= self.energy_surplus_kWh, \
+            f"Cannot sell more energy ({traded_energy_kWh}) than the energy surplus (" \
+            f"{self.energy_surplus_kWh}) of the home ({self.home_name})."
         trade = Trade(
             str(uuid4()), current_time_slot, None,
             self.home_name, buyer_name,
@@ -257,6 +263,9 @@ class AreaEnergyBills:
     @property
     def energy_benchmark(self):
         """Savings ranking compared to the homes with the min and max savings."""
+        if (self._max_community_savings_percent -
+                self._min_community_savings_percent) <= FLOATING_POINT_TOLERANCE:
+            return 0.
         return ((self.savings_percent - self._min_community_savings_percent) /
                 (self._max_community_savings_percent - self._min_community_savings_percent))
 
