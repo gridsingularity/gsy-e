@@ -2040,11 +2040,11 @@
 <p>This API requires the following parameters:</p>
 <ul>
 <li><em>Simulation_id</em>: This is the ID of the simulation or the Grid <a href="https://gridsingularity.github.io/gsy-e/connect-ctn/">Singularity Canary Test Network</a>, and can be found in the url on the <a href="https://gridsingularity.com/singularity-map">Grid Singularity user interface (UI)</a>  (see Fig. 1)</li>
-<li><em>Area_uuid</em>: This is the ID of the asset or market of the energy community for which the historical information is to be retrieved. It can also be found in the url on the <a href="https://gridsingularity.com/singularity-map">Grid Singularity UI</a> (see Fig. 1)</li>
+<li><em>Market_uuid</em>: This is the ID of the asset or market of the energy community for which the historical information is to be retrieved. It can also be found in the url on the <a href="https://gridsingularity.com/singularity-map">Grid Singularity UI</a> (see Fig. 1)</li>
 <li><em>Start_time</em> and <em>end_time</em>: This is the time period for which the historical information is downloaded</li>
 </ul>
 <p>You can then connect to the API with the following URL, which divides the parameters with a slash (/):</p>
-<p><em>https://gsyweb.gridsingularity.com/historical-data/devices/{simulation_id}/{area_uuid}/{start_time}/{end_time}</em></p>
+<p><em>https://gsyweb.gridsingularity.com/historical-data/devices/{simulation_id}/{market_uuid}/{start_time}/{end_time}</em></p>
 <h2 id="grid-data-api">Grid Data API<a class="headerlink" href="#grid-data-api" title="Permanent link">&para;</a></h2>
 <p>Grid Singularity has developed the Grid Data API to provide information about the topology of a simulated energy community, listing the relevant attributes and connections for each energy asset. </p>
 <p>This API requires the following parameters:</p>
@@ -2062,8 +2062,8 @@
 <li><em>Attributes</em>: any relevant asset attributes </li>
 </ul>
 <p>We will gradually add more data points to the response of the Grid Data API, for instance the geographic location (longitude and latitude) of each asset.</p>
-<p><img alt="alt_text" src="../img/get-simulation-data-1.png" />
-Figure 1: Screenshot of a simulation url, which includes the simulation_id and the area_uuid parameters in the <a href="https://gridsingularity.com/singularity-map">Grid Singularity UI</a></p>
+<p><img alt="alt_text" src="../img/get-simulation-data_1.png" />
+Figure 1: Screenshot of a simulation url, which includes the simulation_id and the market_uuid parameters in the <a href="https://gridsingularity.com/singularity-map">Grid Singularity UI</a></p>
 <h2 id="connect-to-the-data-apis">Connect to the data APIs<a class="headerlink" href="#connect-to-the-data-apis" title="Permanent link">&para;</a></h2>
 <h3 id="perform-a-request-using-postman">Perform a request using Postman<a class="headerlink" href="#perform-a-request-using-postman" title="Permanent link">&para;</a></h3>
 <p>Postman is a widely used API client that enables you to save your requests as well as share settings with others. To use Postman with this API, the first step is to create a “collection” that contains all settings needed to perform a request to the Historical Data API.</p>
@@ -2102,7 +2102,7 @@ password = &quot;&lt;your_password&gt;&quot;
 
 domain = &quot;https://gsyweb.gridsingularity.com&quot;
 simulation_id = &quot;990abe5e-3126-4b8b-9978-66ca07824d3c&quot;   
-area_uuid = &quot;a245cff8-d90a-44d9-82e5-d37999b62e04&quot;       
+market_uuid = &quot;a245cff8-d90a-44d9-82e5-d37999b62e04&quot;       
 start_date = &quot;2021-09-25T00:00&quot;                          
 end_date = &quot;2021-10-01T00:00&quot;                            
 </code></pre>
