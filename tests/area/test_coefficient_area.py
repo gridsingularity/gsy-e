@@ -1,3 +1,20 @@
+"""
+Copyright 2018 Grid Singularity
+This file is part of Grid Singularity Exchange.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
 from math import isclose
 from unittest.mock import MagicMock
 
@@ -9,7 +26,7 @@ from pendulum import now
 
 from gsy_e import constants
 from gsy_e.models.area import CoefficientArea
-from gsy_e.models.area.scm_manager import SCMManager, HomeAfterMeterData
+from gsy_e.models.area.scm_manager import SCMManager, HomeAfterMeterData, AreaEnergyBills
 from gsy_e.models.config import SimulationConfig
 from gsy_e.models.strategy.scm.load import SCMLoadHoursStrategy
 from gsy_e.models.strategy.scm.pv import SCMPVStrategy
@@ -109,18 +126,17 @@ class TestCoefficientArea:
         grid_area.calculate_home_after_meter_data(time_slot, scm)
         scm.calculate_community_after_meter_data()
 
-        assert scm._home_data[house1.uuid].community_production_kWh == 0.1
+        assert scm._home_data[house1.uuid].community_total_production_kWh == 0.1
         assert isclose(scm._home_data[house1.uuid].allocated_community_energy_kWh, 0.06)
         assert isclose(scm._home_data[house1.uuid].energy_bought_from_community_kWh, 0.06)
         assert isclose(scm._home_data[house1.uuid].energy_sold_to_grid_kWh, 0.0)
 
-        assert scm._home_data[house2.uuid].community_production_kWh == 0.1
+        assert scm._home_data[house2.uuid].community_total_production_kWh == 0.1
         assert isclose(scm._home_data[house2.uuid].allocated_community_energy_kWh, 0.04)
         assert isclose(scm._home_data[house2.uuid].energy_bought_from_community_kWh, 0.00)
         assert isclose(scm._home_data[house2.uuid].energy_sold_to_grid_kWh, 0.04)
 
     @staticmethod
-    @pytest.mark.skip("calculate_home_energy_bills should be revisit")
     def test_trigger_energy_trades(_create_2_house_grid):
         grid_area = _create_2_house_grid
         house1 = grid_area.children[0]
@@ -141,7 +157,7 @@ class TestCoefficientArea:
         # TODO: this part is failing
         assert isclose(scm._bills[house2.uuid].gsy_energy_bill, -0.0164)
         assert isclose(scm._bills[house2.uuid].savings, 0.0114)
-        assert isclose(scm._bills[house2.uuid].savings_percent, -228.0)
+        assert isclose(scm._bills[house2.uuid].savings_percent, 0.0)
         assert len(scm._home_data[house1.uuid].trades) == 2
         trades = scm._home_data[house1.uuid].trades
         assert isclose(trades[0].trade_rate, 0.3)
@@ -156,12 +172,21 @@ class TestCoefficientArea:
         trades = scm._home_data[house2.uuid].trades
         assert isclose(trades[0].trade_rate, 0.24)
         assert isclose(trades[0].traded_energy, 0.06)
-        assert trades[0].seller == "Community"
-        assert trades[0].buyer == "House 2"
+        assert trades[0].seller == "House 2"
+        assert trades[0].buyer == "Community"
         assert isclose(trades[1].trade_rate, 0.05)
         assert isclose(trades[1].traded_energy, 0.04)
         assert trades[1].seller == "House 2"
         assert trades[1].buyer == "Grid"
+
+    @staticmethod
+    def test_calculate_energy_benchmark():
+        bills = AreaEnergyBills()
+        bills.set_min_max_community_savings(10, 90)
+        bills.base_energy_bill = 1.0
+        bills.gsy_energy_bill = 0.4
+        assert isclose(bills.savings_percent, 60.0)
+        assert isclose(bills.energy_benchmark, (60 - 10) / (90 - 10))
 
     @staticmethod
     @pytest.fixture()

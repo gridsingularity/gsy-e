@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from abc import ABC, abstractmethod
-from typing import List, Dict
+from typing import List, Dict, TYPE_CHECKING
 
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.enums import BidOfferMatchAlgoEnum, SpotMarketTypeEnum
@@ -27,6 +27,14 @@ from gsy_e.models.market.market_structures import AvailableMarketTypes
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_e.models.strategy.pv import PVStrategy
 from gsy_e.models.strategy.storage import StorageStrategy
+from gsy_e.models.strategy.scm.pv import SCMPVStrategy
+from gsy_e.models.strategy.scm.load import SCMLoadProfile, SCMLoadHoursStrategy
+from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
+
+
+if TYPE_CHECKING:
+    from gsy_e.models.area import CoefficientArea
+    from gsy_e.models.area.scm_manager import SCMManager
 
 
 class BaseDataExporter(ABC):
@@ -157,7 +165,7 @@ class LeafDataExporter(BaseDataExporter):
                     s.charge_history_kWh[slot],
                     s.offered_history[slot],
                     s.charge_history[slot]]
-        elif isinstance(self.area.strategy, (LoadHoursStrategy)):
+        elif isinstance(self.area.strategy, LoadHoursStrategy):
             desired = self.area.strategy.state.get_desired_energy_Wh(slot) / 1000
             return [desired, self._traded(market) + desired]
         elif isinstance(self.area.strategy, PVStrategy):
@@ -169,7 +177,7 @@ class LeafDataExporter(BaseDataExporter):
 
 class FileExportEndpoints:
     """Handle data preparation for csv-file and plot export."""
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         self.plot_stats = {}
         self.plot_balancing_stats = {}
         self.cumulative_offers = {}
@@ -186,9 +194,8 @@ class FileExportEndpoints:
                 self._populate_area_children_data(child)
         self._update_plot_stats(area)
 
-    @staticmethod
     def export_data_factory(
-            area: Area, past_market_type: AvailableMarketTypes
+            self, area: Area, past_market_type: AvailableMarketTypes
     ) -> BaseDataExporter:
         """Decide which data acquisition class to use."""
         if past_market_type == AvailableMarketTypes.SPOT:
@@ -245,3 +252,121 @@ class FileExportEndpoints:
                                              AvailableMarketTypes.BALANCING)
         if ConstSettings.GeneralSettings.EXPORT_SUPPLY_DEMAND_PLOTS:
             self._populate_plots_stats_for_supply_demand_curve(area)
+
+
+def file_export_endpoints_factory():
+    return (
+        CoefficientFileExportEndpoints()
+        if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value
+        else FileExportEndpoints()
+    )
+
+
+class CoefficientFileExportEndpoints(FileExportEndpoints):
+
+    def __call__(self, area, scm_manager: "SCMManager" = None):
+        self._scm_manager = scm_manager
+        super().__call__(area)
+
+    def export_data_factory(
+            self, area: "CoefficientArea", past_market_type: AvailableMarketTypes
+    ) -> BaseDataExporter:
+        """Decide which data acquisition class to use."""
+        assert past_market_type == AvailableMarketTypes.SPOT, "SCM supports only spot market."
+        return (CoefficientDataExporter(area, self._scm_manager)
+                if len(area.children) > 0
+                else CoefficientLeafDataExporter(area))
+
+    def _update_plot_stats(self, area: Area) -> None:
+        """
+        Method that calculates the stats for the plots. Should omit the balancing market and
+        supply demand plots for the SCM case.
+        """
+        self._get_stats_from_market_data(self.plot_stats, area, AvailableMarketTypes.SPOT)
+
+    def _populate_plots_stats_for_supply_demand_curve(self, area: Area) -> None:
+        """
+        Supply demand curve should not be implemented for SCM due to its dependency with 2-sided
+        pay as clear algorithm.
+        """
+        raise NotImplementedError
+
+
+class CoefficientDataExporter(BaseDataExporter):
+    def __init__(self, area: "CoefficientArea", scm_manager: "SCMManager" = None):
+        self._area = area
+        self._scm = scm_manager
+
+    @property
+    def labels(self) -> List:
+        return ["slot",
+                "avg trade rate [ct./kWh]",
+                "min trade rate [ct./kWh]",
+                "max trade rate [ct./kWh]",
+                "# trades",
+                "total energy traded [kWh]",
+                "total trade volume [EURO ct.]"]
+
+    @property
+    def rows(self) -> List:
+        from statistics import mean
+        if not self._scm:
+            return []
+        area_results = self._scm.get_area_results(self._area.uuid, serializable=False)
+        if not area_results["after_meter_data"]:
+            return []
+        trade_rates = [
+            t.trade_rate
+            for t in area_results["after_meter_data"]["trades"]
+        ]
+        trade_prices = [
+            t.trade_price
+            for t in area_results["after_meter_data"]["trades"]
+        ]
+        trades_energy = [
+            t.traded_energy
+            for t in area_results["after_meter_data"]["trades"]
+        ]
+        return [[self._area.past_market_time_slot,
+                mean(trade_rates) if trade_rates else 0.,
+                min(trade_rates) if trade_rates else 0.,
+                max(trade_rates) if trade_rates else 0.,
+                len(trade_rates) if trade_rates else 0.,
+                sum(trades_energy) if trades_energy else 0.,
+                sum(trade_prices) if trade_prices else 0.]]
+
+
+class CoefficientLeafDataExporter(BaseDataExporter):
+    def __init__(self, area: "CoefficientArea"):
+        self._area = area
+
+    @property
+    def labels(self) -> List:
+        if isinstance(self._area.strategy, SCMStorageStrategy):
+            return ["slot", "charge [kWh]", "offered [kWh]", "charge [%]"]
+        elif isinstance(self._area.strategy, (SCMLoadHoursStrategy, SCMLoadProfile)):
+            return ["slot", "desired energy [kWh]", "deficit [kWh]"]
+        elif isinstance(self._area.strategy, SCMPVStrategy):
+            return ["slot", "produced [kWh]", "not sold [kWh]"]
+        return []
+
+    @property
+    def rows(self):
+        slot = self._area.past_market_time_slot
+        if slot is None:
+            return []
+        if isinstance(self._area.strategy, SCMStorageStrategy):
+            s = self._area.strategy.state
+            return [[slot,
+                    s.charge_history_kWh[slot],
+                    s.offered_history[slot],
+                    s.charge_history[slot]]]
+        elif isinstance(self._area.strategy, (SCMLoadHoursStrategy, SCMLoadProfile)):
+            desired = self._area.strategy.state.get_desired_energy_Wh(slot) / 1000
+            # All energy is traded in SCM
+            return [[self._area.past_market_time_slot, desired, 0.]]
+        elif isinstance(self._area.strategy, SCMPVStrategy):
+            not_sold = self._area.strategy.state.get_available_energy_kWh(slot)
+            produced = self._area.strategy.state.get_energy_production_forecast_kWh(slot, 0.0)
+            return [[self._area.past_market_time_slot, produced, not_sold]]
+        return []
