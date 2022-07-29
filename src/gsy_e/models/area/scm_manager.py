@@ -79,6 +79,7 @@ class HomeAfterMeterData:
         self.community_total_production_kWh = energy_kWh
 
     def set_production_for_community(self, unassigned_energy_production_kWh: float):
+        """Assign the energy surplus of the home to be consumed by the community."""
         if self.energy_surplus_kWh <= unassigned_energy_production_kWh:
             self._self_production_for_community_kWh = self.energy_surplus_kWh
             return unassigned_energy_production_kWh - self.energy_surplus_kWh
@@ -87,10 +88,12 @@ class HomeAfterMeterData:
 
     @property
     def self_production_for_community_kWh(self):
+        """Part of the energy_surplus_kWh that is assigned to the community."""
         return self._self_production_for_community_kWh
 
     @property
     def self_production_for_grid_kWh(self):
+        """Part of the energy_surplus_kWh that is assigned to the grid."""
         assert self.energy_surplus_kWh >= self._self_production_for_community_kWh
         return self.energy_surplus_kWh - self._self_production_for_community_kWh
 
@@ -115,7 +118,7 @@ class HomeAfterMeterData:
     def create_buy_trade(self, current_time_slot: DateTime, seller_name: str,
                          traded_energy_kWh: float, trade_price_cents: float) -> None:
         """Create and save a trade object for buying energy."""
-        assert traded_energy_kWh > 0. and traded_energy_kWh <= self.energy_need_kWh, \
+        assert 0. < traded_energy_kWh <= self.energy_need_kWh, \
             f"Cannot buy more energy ({traded_energy_kWh}) than the energy need (" \
             f"{self.energy_need_kWh}) of the home ({self.home_name})."
 
@@ -169,10 +172,11 @@ class CommunityData:
 
 
 @dataclass
-class AreaEnergyBills:
+class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
     """Represents home energy bills."""
     base_energy_bill: float = 0.
     base_energy_bill_excl_revenue: float = 0.
+    base_energy_bill_revenue: float = 0.
     gsy_energy_bill: float = 0.
     grid_fees: float = 0.
     tax_surcharges: float = 0.
@@ -272,7 +276,7 @@ class AreaEnergyBills:
     @property
     def gsy_energy_bill_excl_revenue(self):
         """Energy bill of the home excluding revenue."""
-        return self.gsy_energy_bill + self.earned_from_grid
+        return self.gsy_energy_bill + self.earned_from_grid + self.earned_from_community
 
     @property
     def gsy_energy_bill_excl_revenue_without_fees(self):
@@ -381,6 +385,10 @@ class SCMManager:
                 home_data.energy_need_kWh * market_maker_rate_normal_fees + marketplace_fee +
                 fixed_fee - home_data.energy_surplus_kWh * feed_in_tariff)
         home_bill.base_energy_bill = base_energy_bill
+        home_bill.base_energy_bill_revenue = home_data.energy_surplus_kWh * feed_in_tariff
+        home_bill.base_energy_bill_excl_revenue = (
+                home_data.energy_need_kWh * market_maker_rate_normal_fees + marketplace_fee
+                + fixed_fee)
 
         if home_data.allocated_community_energy_kWh > home_data.energy_need_kWh:
             if home_data.energy_surplus_kWh > 0.0:
