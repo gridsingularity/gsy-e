@@ -33,6 +33,10 @@ class SCMStorageStrategy(SCMStrategy):
             capacity=battery_capacity_kWh, max_abs_battery_power_kW=max_abs_battery_power_kW,
             min_allowed_soc=min_allowed_soc)
 
+    @property
+    def state(self):
+        return self._state
+
     def serialize(self) -> Dict:
         """Serialize the strategy parameters."""
         return {

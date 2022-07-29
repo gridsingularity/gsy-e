@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from logging import getLogger
 from typing import List, Dict, Optional, Union, TYPE_CHECKING
 from uuid import uuid4
+from numpy.random import random
 
 from gsy_framework.area_validator import validate_area
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
@@ -316,15 +317,35 @@ class CoefficientArea(AreaBase):
         """Recursive function that calculates the home after meter data."""
         if self._is_home_area():
             self._calculate_home_after_meter_data(current_time_slot, scm_manager)
-        for child in self.children:
+        for child in sorted(self.children, key=lambda _: random()):
             child.calculate_home_after_meter_data(current_time_slot, scm_manager)
 
     def trigger_energy_trades(self, scm_manager: "SCMManager") -> None:
         """Recursive function that triggers energy trading on all children of the root area."""
         if self._is_home_area():
             scm_manager.calculate_home_energy_bills(self.uuid)
-        for child in self.children:
+        for child in sorted(self.children, key=lambda _: random()):
             child.trigger_energy_trades(scm_manager)
+
+    @property
+    def market_maker_rate(self) -> float:
+        """Get the market maker rate."""
+        return self._market_maker_rate
+
+    def _change_home_coefficient_percentage(self, scm_manager: "SCMManager") -> None:
+        community_total_energy_need = scm_manager.community_data.energy_need_kWh
+        home_energy_need = scm_manager.get_home_energy_need(self.uuid)
+        if community_total_energy_need != 0:
+            self.coefficient_percentage = home_energy_need / community_total_energy_need
+
+    def change_home_coefficient_percentage(self, scm_manager: "SCMManager") -> None:
+        """Recursive function that change home coefficient percentage based on energy need.
+        This method is for dynamic energy allocation algorithm.
+        """
+        if self._is_home_area():
+            self._change_home_coefficient_percentage(scm_manager)
+        for child in self.children:
+            child.change_home_coefficient_percentage(scm_manager)
 
 
 class Area(AreaBase):
