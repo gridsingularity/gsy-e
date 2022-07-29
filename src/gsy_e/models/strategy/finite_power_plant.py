@@ -24,10 +24,11 @@ from gsy_e.models.strategy.commercial_producer import CommercialStrategy
 
 
 class FinitePowerPlant(CommercialStrategy):
+    """Strategy class for finite power plant that can only sell a finite amount of energy."""
 
     def serialize(self):
         return {
-            "energy_rate": self.energy_rate_input,
+            "energy_rate": self._sell_energy_profile.input_energy_rate,
             "max_available_power_kW": self.max_available_power_kW
         }
 
@@ -58,12 +59,13 @@ class FinitePowerPlant(CommercialStrategy):
 
     def get_state(self):
         return {
-            "energy_rate": convert_pendulum_to_str_in_dict(self.energy_rate),
+            "energy_rate": convert_pendulum_to_str_in_dict(self._sell_energy_profile.profile),
             "max_available_power_kW": convert_pendulum_to_str_in_dict(
                 self.max_available_power_kW)
         }
 
     def restore_state(self, saved_state):
-        self.energy_rate.update(convert_str_to_pendulum_in_dict(saved_state["energy_rate"]))
+        self._sell_energy_profile.profile = convert_str_to_pendulum_in_dict(
+            saved_state["energy_rate"])
         self.max_available_power_kW.update(convert_str_to_pendulum_in_dict(
             saved_state["max_available_power_kW"]))
