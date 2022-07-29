@@ -14,7 +14,7 @@ see <http://www.gnu.org/licenses/>.
 """
 from typing import TYPE_CHECKING, List, Union
 
-from gsy_framework.constants_limits import GlobalConfig
+from gsy_framework.constants_limits import ConstSettings
 from pendulum import duration, DateTime
 
 from gsy_e.constants import FutureTemplateStrategiesConstants
@@ -33,7 +33,7 @@ class FutureTemplateStrategyBidUpdater(TemplateStrategyBidUpdater):
 
     @property
     def _time_slot_duration_in_seconds(self) -> int:
-        return GlobalConfig.FUTURE_MARKET_DURATION_HOURS * 60 * 60
+        return ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS * 60 * 60
 
     @staticmethod
     def get_all_markets(area: "Area") -> List["FutureMarkets"]:
@@ -71,7 +71,7 @@ class FutureTemplateStrategyOfferUpdater(TemplateStrategyOfferUpdater):
 
     @property
     def _time_slot_duration_in_seconds(self) -> int:
-        return GlobalConfig.FUTURE_MARKET_DURATION_HOURS * 60 * 60
+        return ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS * 60 * 60
 
     @staticmethod
     def get_all_markets(area: "Area") -> List["FutureMarkets"]:
@@ -304,7 +304,7 @@ def future_market_strategy_factory(asset_type: AssetType) -> FutureMarketStrateg
     final_buying_rate = FutureTemplateStrategiesConstants.FINAL_BUYING_RATE
     initial_selling_rate = FutureTemplateStrategiesConstants.INITIAL_SELLING_RATE
     final_selling_rate = FutureTemplateStrategiesConstants.FINAL_SELLING_RATE
-    if GlobalConfig.FUTURE_MARKET_DURATION_HOURS > 0:
+    if ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS > 0:
         return FutureMarketStrategy(
             asset_type, initial_buying_rate, final_buying_rate,
             initial_selling_rate, final_selling_rate)

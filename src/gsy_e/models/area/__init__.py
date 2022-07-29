@@ -43,7 +43,8 @@ from gsy_e.models.area.stats import AreaStats
 from gsy_e.models.area.throughput_parameters import ThroughputParameters
 from gsy_e.models.config import SimulationConfig
 from gsy_e.models.market.future import FutureMarkets
-from gsy_e.models.market.market_structures import AvailableMarketTypes
+from gsy_e.models.market.forward import ForwardMarketBase
+from gsy_e.gsy_e_core.enums import AvailableMarketTypes
 from gsy_e.models.strategy import BaseStrategy
 from gsy_e.models.strategy.external_strategies import ExternalMixin
 from gsy_e.models.strategy.scm import SCMStrategy
@@ -373,7 +374,6 @@ class Area(AreaBase):
         event_list = event_list if event_list is not None else []
         self.events = Events(event_list, self)
         self._bc = None
-        self._markets = None
         self.dispatcher = DispatcherFactory(self)()
         self._markets = AreaMarkets(self.log)
         self.stats = AreaStats(self._markets, self)
@@ -534,8 +534,12 @@ class Area(AreaBase):
 
         # create new future markets:
         if self.future_markets:
-            self.future_markets.create_future_markets(
-                now_value, self.config.slot_length, self.config)
+            self.future_markets.create_future_market_slots(now_value, self.config)
+
+        # create new day ahead markets:
+        if self.forward_markets:
+            for forward_market in self.forward_markets.values():
+                forward_market.create_future_market_slots(now_value, self.config)
 
         self.dispatcher.event_market_cycle()
 
@@ -616,12 +620,31 @@ class Area(AreaBase):
 
     def _update_myco_matcher(self) -> None:
         """Update the markets cache that the myco matcher will request"""
-        bid_offer_matcher.update_area_uuid_markets_mapping(
-            area_uuid_markets_mapping={
-                self.uuid: {"markets": [self.spot_market],
-                            "settlement_markets": list(self.settlement_markets.values()),
-                            "future_markets": self.future_markets,
-                            "current_time": self.now}})
+        markets_mapping = {
+            "current_time": self.now,
+            AvailableMarketTypes.SPOT: [self.spot_market],
+            AvailableMarketTypes.SETTLEMENT: list(self.settlement_markets.values()),
+            AvailableMarketTypes.FUTURE: self.future_markets}
+
+        bid_offer_matcher.update_area_uuid_spot_markets_mapping(
+            area_uuid_markets_mapping={self.uuid: markets_mapping})
+
+        if not ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS:
+            return
+
+        forward_markets_mapping = {
+            "current_time": self.now,
+            AvailableMarketTypes.DAY_FORWARD:
+                self.forward_markets.get(AvailableMarketTypes.DAY_FORWARD),
+            AvailableMarketTypes.WEEK_FORWARD:
+                self.forward_markets.get(AvailableMarketTypes.WEEK_FORWARD),
+            AvailableMarketTypes.MONTH_FORWARD:
+                self.forward_markets.get(AvailableMarketTypes.MONTH_FORWARD),
+            AvailableMarketTypes.YEAR_FORWARD:
+                self.forward_markets.get(AvailableMarketTypes.YEAR_FORWARD)
+        }
+        bid_offer_matcher.update_area_uuid_forward_markets_mapping(
+            area_uuid_markets_mapping={self.uuid: forward_markets_mapping})
 
     def execute_actions_after_tick_event(self) -> None:
         """
@@ -770,6 +793,11 @@ class Area(AreaBase):
     def future_markets(self) -> FutureMarkets:
         """Return the future markets of the area."""
         return self._markets.future_markets
+
+    @property
+    def forward_markets(self) -> Optional[Dict[AvailableMarketTypes, ForwardMarketBase]]:
+        """Return the day ahead markets of the area."""
+        return self._markets.forward_markets
 
     @property
     def settlement_markets(self) -> Dict:

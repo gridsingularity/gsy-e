@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import pathlib
 
-from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.read_user_profile import InputProfileTypes, read_arbitrary_profile
 from gsy_framework.utils import (convert_kW_to_kWh, find_object_of_same_weekday_and_time,
                                  key_in_dict_and_not_none)
@@ -156,7 +156,7 @@ class PVPredefinedStrategy(PVStrategy):
     def set_produced_energy_forecast_in_state(self, reconfigure=True):
         """Update the production energy forecast."""
         time_slots = [self.area.spot_market.time_slot]
-        if GlobalConfig.FUTURE_MARKET_DURATION_HOURS:
+        if ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS:
             time_slots.extend(self.area.future_market_time_slots)
 
         if reconfigure:
@@ -249,7 +249,7 @@ class PVUserProfileStrategy(PVStrategy):
 
     def set_produced_energy_forecast_in_state(self, reconfigure=True):
         time_slots = [self.area.spot_market.time_slot]
-        if GlobalConfig.FUTURE_MARKET_DURATION_HOURS:
+        if ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS:
             time_slots.extend(self.area.future_market_time_slots)
 
         self._energy_params.set_produced_energy_forecast_in_state(
