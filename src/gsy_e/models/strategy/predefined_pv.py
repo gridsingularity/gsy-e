@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import pathlib
 
-from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.read_user_profile import InputProfileTypes, read_arbitrary_profile
 from gsy_framework.utils import (convert_kW_to_kWh, find_object_of_same_weekday_and_time,
                                  key_in_dict_and_not_none)

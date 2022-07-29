@@ -23,7 +23,7 @@ import pathlib
 import shutil
 from typing import Dict, Tuple, List, TYPE_CHECKING
 
-from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import (
     Trade, BalancingTrade, Bid, Offer, BalancingOffer, MarketClearingState)
 from gsy_framework.enums import BidOfferMatchAlgoEnum, SpotMarketTypeEnum
@@ -31,6 +31,7 @@ from gsy_framework.utils import mkdir_from_str
 from pendulum import DateTime
 
 import gsy_e.constants
+from gsy_e.gsy_e_core.enums import AvailableMarketTypes, PAST_MARKET_TYPE_FILE_SUFFIX_MAPPING
 from gsy_e.gsy_e_core.myco_singleton import bid_offer_matcher
 from gsy_e.gsy_e_core.sim_results.file_export_endpoints import file_export_endpoints_factory
 from gsy_e.gsy_e_core.sim_results.results_plots import (
@@ -39,11 +40,6 @@ from gsy_e.gsy_e_core.sim_results.results_plots import (
     PlotDeviceStats)
 from gsy_e.gsy_e_core.util import constsettings_to_dict
 from gsy_e.models.area import Area
-from gsy_e.models.market.market_structures import (AvailableMarketTypes,
-                                                   PAST_MARKET_TYPE_FILE_SUFFIX_MAPPING)
-from gsy_e.models.state import ESSEnergyOrigin
-from gsy_e.models.strategy.storage import StorageStrategy
-
 
 if TYPE_CHECKING:
     from gsy_e.models.market.future import FutureMarkets
