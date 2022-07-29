@@ -22,10 +22,10 @@ from gsy_framework.data_classes import Bid, Offer, Trade
 from pendulum import datetime
 
 from gsy_e.models.area import Area
-from gsy_e.models.area.market_rotators import (DayForwardMarketRotator,
+from gsy_e.models.area.market_rotators import (DayForwardMarketRotator, IntradayMarketRotator,
                                                WeekForwardMarketRotator, MonthForwardMarketRotator,
                                                YearForwardMarketRotator)
-from gsy_e.models.market.forward import (ForwardMarketBase, DayForwardMarket,
+from gsy_e.models.market.forward import (ForwardMarketBase, DayForwardMarket, IntradayMarket,
                                          WeekForwardMarket, MonthForwardMarket, YearForwardMarket)
 
 
@@ -48,7 +48,8 @@ class TestForwardMarkets:
         return forward_markets
 
     @pytest.mark.parametrize("market_class, expected_market_count",
-                             [[DayForwardMarket, 24 * 7],
+                             [[IntradayMarket, 24 * 4],
+                              [DayForwardMarket, 24 * 7],
                               [WeekForwardMarket, 52],
                               [MonthForwardMarket, 24],
                               [YearForwardMarket, 5]])
@@ -88,7 +89,9 @@ class TestForwardMarkets:
                     assert all(time_slot.month == 1 and time_slot.day == 1 for time_slot in buffer)
 
     @pytest.mark.parametrize("market_class, rotator_class, expected_market_count, rotation_time",
-                             [[DayForwardMarket, DayForwardMarketRotator, 24 * 7,
+                             [[IntradayMarket, IntradayMarketRotator, 24 * 4,
+                               CURRENT_MARKET_SLOT.set(minute=15)],
+                              [DayForwardMarket, DayForwardMarketRotator, 24 * 7,
                                CURRENT_MARKET_SLOT.add(days=1)],
                               [WeekForwardMarket, WeekForwardMarketRotator, 52,
                                CURRENT_MARKET_SLOT.add(weeks=1)],
@@ -114,7 +117,7 @@ class TestForwardMarkets:
         rotator = rotator_class(forward_markets)
         count_orders_in_buffers(forward_markets, expected_market_count)
         # Markets should not be deleted when it is not time
-        rotator.rotate(CURRENT_MARKET_SLOT)
+        rotator.rotate(CURRENT_MARKET_SLOT.add(minutes=5))
         count_orders_in_buffers(forward_markets, expected_market_count)
         # Market should be deleted if the rotation time has been reached
         rotator.rotate(rotation_time)

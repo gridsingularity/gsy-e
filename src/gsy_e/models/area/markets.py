@@ -27,7 +27,7 @@ from gsy_e.models.area.market_rotators import (BaseRotator, DefaultMarketRotator
                                                SettlementMarketRotator, FutureMarketRotator,
                                                ForwardMarketRotatorBase, DayForwardMarketRotator,
                                                WeekForwardMarketRotator, MonthForwardMarketRotator,
-                                               YearForwardMarketRotator)
+                                               YearForwardMarketRotator, IntradayMarketRotator)
 from gsy_e.models.market import GridFee, MarketBase
 from gsy_e.models.market.balancing import BalancingMarket
 from gsy_e.models.market.future import FutureMarkets
@@ -36,7 +36,9 @@ from gsy_e.models.market.one_sided import OneSidedMarket
 from gsy_e.models.market.settlement import SettlementMarket
 from gsy_e.models.market.two_sided import TwoSidedMarket
 from gsy_e.models.market.forward import (
-    ForwardMarketBase, DayForwardMarket, WeekForwardMarket, MonthForwardMarket, YearForwardMarket)
+    ForwardMarketBase, DayForwardMarket, WeekForwardMarket, MonthForwardMarket, YearForwardMarket,
+    IntradayMarket
+)
 
 if TYPE_CHECKING:
     from gsy_e.models.area import Area
@@ -45,14 +47,16 @@ _FORWARD_MARKET_TYPE_MAPPING = {
     AvailableMarketTypes.DAY_FORWARD: DayForwardMarket,
     AvailableMarketTypes.WEEK_FORWARD: WeekForwardMarket,
     AvailableMarketTypes.MONTH_FORWARD: MonthForwardMarket,
-    AvailableMarketTypes.YEAR_FORWARD: YearForwardMarket
+    AvailableMarketTypes.YEAR_FORWARD: YearForwardMarket,
+    AvailableMarketTypes.INTRADAY: IntradayMarket
 }
 
 _FORWARD_MARKET_ROTATOR_MAPPING = {
     AvailableMarketTypes.DAY_FORWARD: DayForwardMarketRotator,
     AvailableMarketTypes.WEEK_FORWARD: WeekForwardMarketRotator,
     AvailableMarketTypes.MONTH_FORWARD: MonthForwardMarketRotator,
-    AvailableMarketTypes.YEAR_FORWARD: YearForwardMarketRotator
+    AvailableMarketTypes.YEAR_FORWARD: YearForwardMarketRotator,
+    AvailableMarketTypes.INTRADAY: IntradayMarketRotator
 }
 
 

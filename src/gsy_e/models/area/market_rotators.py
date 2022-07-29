@@ -71,6 +71,19 @@ class ForwardMarketRotatorBase:
                     current_time))
 
 
+class IntradayMarketRotator(ForwardMarketRotatorBase):
+    """Handles market rotation for the intraday market block"""
+
+    @staticmethod
+    def _get_last_slot_to_be_deleted(current_time: DateTime) -> DateTime:
+        return current_time
+
+    @staticmethod
+    def _is_it_time_to_rotate(current_time: DateTime) -> bool:
+        return (current_time.minute % 15 == 0 and
+                current_time.second == 0)
+
+
 class DayForwardMarketRotator(ForwardMarketRotatorBase):
     """Handles market rotation for the day-forward market block"""
 
