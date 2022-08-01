@@ -127,7 +127,8 @@ class SmartMeterStrategyTest(unittest.TestCase):
         self.strategy.bid_update.set_parameters.assert_not_called()
         self.strategy.offer_update.set_parameters.assert_not_called()
 
-    @patch("gsy_e.models.strategy.smart_meter.global_objects.profiles_handler.rotate_profile")
+    @patch(
+        "gsy_e.gsy_e_core.global_objects_singleton.global_objects.profiles_handler.rotate_profile")
     def test_set_energy_forecast_for_future_markets(self, rotate_profile_mock):
         """The consumption/production expectations for the upcoming market slots are correctly set.
 
@@ -158,7 +159,8 @@ class SmartMeterStrategyTest(unittest.TestCase):
         self.strategy.state.update_total_demanded_energy.assert_has_calls([
             call(market_slot.time_slot) for market_slot in market_mocks])
 
-    @patch("gsy_e.models.strategy.smart_meter.global_objects.profiles_handler.rotate_profile")
+    @patch(
+        "gsy_e.gsy_e_core.global_objects_singleton.global_objects.profiles_handler.rotate_profile")
     def test_set_energy_forecast_for_future_markets_no_profile(self, rotate_profile_mock):
         """Consumption/production expectations can't be set without an energy profile."""
         rotate_profile_mock.return_value = None
@@ -168,7 +170,8 @@ class SmartMeterStrategyTest(unittest.TestCase):
             self.strategy._energy_params.set_energy_forecast_for_future_markets(
                 time_slots, reconfigure=True)
 
-    @patch("gsy_e.models.strategy.smart_meter.global_objects.profiles_handler.rotate_profile")
+    @patch(
+        "gsy_e.gsy_e_core.global_objects_singleton.global_objects.profiles_handler.rotate_profile")
     def test_event_activate_energy(self, rotate_profile_mock):
         """event_activate_energy calls the expected state interface methods."""
         rotate_profile_mock.return_value = self._create_profile_mock()

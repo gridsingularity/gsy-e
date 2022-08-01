@@ -59,9 +59,6 @@ def get_setup(config):
                 grid_fee_percentage=0, grid_fee_constant=0, coefficient_percentage=0.4
 
             ),
-            CoefficientArea("Cell Tower",
-                            strategy=SCMLoadHoursStrategy(avg_power_W=100,
-                                                          hrs_of_day=list(range(0, 24)))),
         ],
         config=config
     )

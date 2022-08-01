@@ -104,9 +104,14 @@ _setup_modules = available_simulation_scenarios
               help=(
                 "Enable or disable Degrees of Freedom "
                 "(orders can't contain attributes/requirements)."))
+@click.option("-m", "--market-type", type=int,
+              default=ConstSettings.MASettings.MARKET_TYPE, show_default=True,
+              help="Market type. 1 for one-sided market, 2 for two-sided market, "
+                   "3 for coefficient-based trading.")
 def run(setup_module_name, settings_file, duration, slot_length, tick_length,
         cloud_coverage, enable_external_connection, start_date,
-        pause_at, incremental, slot_length_realtime, enable_dof: bool, **kwargs):
+        pause_at, incremental, slot_length_realtime, enable_dof: bool,
+        market_type: int, **kwargs):
     """Configure settings and run a simulation."""
     # Force the multiprocessing start method to be 'fork' on macOS.
     if platform.system() == "Darwin":
@@ -120,6 +125,8 @@ def run(setup_module_name, settings_file, duration, slot_length, tick_length,
             simulation_settings["external_connection_enabled"] = False
             simulation_config = SimulationConfig(**simulation_settings)
         else:
+            assert 1 <= market_type <= 3, "Market type should be an integer between 1 and 3."
+            ConstSettings.MASettings.MARKET_TYPE = market_type
             global_settings = {"sim_duration": duration,
                                "slot_length": slot_length,
                                "tick_length": tick_length,
