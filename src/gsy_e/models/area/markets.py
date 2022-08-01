@@ -137,6 +137,7 @@ class AreaMarkets:
                                   grid_fee_const=area.grid_fee_constant),
                 name=area.name)
             self.forward_markets[market_type] = market
+            self.forward_markets[market_type].update_clock(area.now)
             area.dispatcher.create_market_agents_for_forward_markets(market, market_type)
 
     def activate_market_rotators(self):
