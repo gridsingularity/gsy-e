@@ -112,6 +112,8 @@ class AreaBase:
         self.uuid = uuid if uuid is not None else str(uuid4())
         self.slug = slugify(name, to_lower=True)
         self.parent = None
+        if not children:
+            children = []
         children = [child for child in children if child is not None]
         self.children = (
             AreaChildrenList(self, children)
