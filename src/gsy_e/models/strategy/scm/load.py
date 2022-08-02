@@ -57,7 +57,7 @@ class SCMLoadHoursStrategy(SCMStrategy):
             traded_energy_kWh, time_slot, area.name)
 
 
-class SCMLoadProfile(SCMStrategy):
+class SCMLoadProfileStrategy(SCMStrategy):
     """Load SCM strategy with power production dictated by a profile."""
     def __init__(self, daily_load_profile=None, daily_load_profile_uuid=None):
         self._energy_params = DefinedLoadEnergyParameters(

@@ -36,7 +36,7 @@ from gsy_e.models.strategy.market_maker_strategy import MarketMakerStrategy
 from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy
 from gsy_e.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
 from gsy_e.models.strategy.pv import PVStrategy
-from gsy_e.models.strategy.scm.load import SCMLoadHoursStrategy, SCMLoadProfile
+from gsy_e.models.strategy.scm.load import SCMLoadHoursStrategy, SCMLoadProfileStrategy
 from gsy_e.models.strategy.scm.pv import SCMPVPredefinedStrategy, SCMPVStrategy, SCMPVUserProfile
 from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
 from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
@@ -62,7 +62,7 @@ forecast_strategy_mapping = {
 
 scm_strategy_mapping = {
     LoadHoursStrategy: SCMLoadHoursStrategy,
-    DefinedLoadStrategy: SCMLoadProfile,
+    DefinedLoadStrategy: SCMLoadProfileStrategy,
     PVStrategy: SCMPVStrategy,
     PVPredefinedStrategy: SCMPVPredefinedStrategy,
     PVUserProfileStrategy: SCMPVUserProfile,
@@ -203,7 +203,7 @@ class SCMPVProfile(CoefficientLeaf):
 
 
 class SCMLoadProfile(CoefficientLeaf):
-    strategy_type = SCMLoadProfile
+    strategy_type = SCMLoadProfileStrategy
 
 
 class SCMLoadHours(CoefficientLeaf):
