@@ -128,7 +128,6 @@ class AreaBase:
         self._config = config
         self._set_grid_fees(grid_fee_constant, grid_fee_percentage)
         self._current_market_time_slot = None
-        self.display_type = "Area" if self.strategy is None else self.strategy.__class__.__name__
 
     @property
     def now(self) -> DateTime:
@@ -273,6 +272,8 @@ class CoefficientArea(AreaBase):
         # pylint: disable=too-many-arguments
         super().__init__(name, children, uuid, strategy, config, grid_fee_percentage,
                          grid_fee_constant)
+        self.display_type = (
+            "CoeficientArea" if self.strategy is None else self.strategy.__class__.__name__)
         self.coefficient_percentage = coefficient_percentage
         self._taxes_surcharges = taxes_surcharges
         self._fixed_monthly_fee = fixed_monthly_fee
@@ -372,6 +373,7 @@ class Area(AreaBase):
                  ):
         super().__init__(name, children, uuid, strategy, config, grid_fee_percentage,
                          grid_fee_constant)
+        self.display_type = "Area" if self.strategy is None else self.strategy.__class__.__name__
         self.current_tick = 0
         self.throughput = throughput
         event_list = event_list if event_list is not None else []
