@@ -149,12 +149,15 @@ class TestCoefficientArea:
 
         # energy need * normal market maker fees for the case of positive energy need
         assert isclose(scm._bills[house1.uuid].base_energy_bill, 0.06)
+        assert isclose(scm._bills[house1.uuid].base_energy_bill_excl_revenue, 0.06)
+        assert isclose(scm._bills[house1.uuid].base_energy_bill_revenue, 0.0)
         assert isclose(scm._bills[house1.uuid].gsy_energy_bill, 0.06)
         assert isclose(scm._bills[house1.uuid].savings, 0.0)
         assert isclose(scm._bills[house1.uuid].savings_percent, 0.0)
         # energy surplus * feed in tariff for the case of positive energy surplus
         assert isclose(scm._bills[house2.uuid].base_energy_bill, -0.005)
-        # TODO: this part is failing
+        assert isclose(scm._bills[house2.uuid].base_energy_bill_excl_revenue, 0.0)
+        assert isclose(scm._bills[house2.uuid].base_energy_bill_revenue, 0.005)
         assert isclose(scm._bills[house2.uuid].gsy_energy_bill, -0.0164)
         assert isclose(scm._bills[house2.uuid].savings, 0.0114)
         assert isclose(scm._bills[house2.uuid].savings_percent, 0.0)

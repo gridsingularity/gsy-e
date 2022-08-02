@@ -117,7 +117,12 @@ def _leaf_from_dict(description, config):
     if not issubclass(leaf_type, Leaf):
         raise ValueError(f"Unknown leaf type '{leaf_type}'")
     display_type = description.pop("display_type", None)
-    leaf_object = leaf_type(**description, config=config)
+    try:
+        leaf_object = leaf_type(**description, config=config)
+    except KeyError:
+        # If the strategy is not supported in SCM or normal operating mode, do
+        # not create the area at all.
+        return None
     if display_type is not None:
         leaf_object.display_type = display_type
     return leaf_object
