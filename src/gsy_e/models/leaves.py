@@ -18,9 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import inspect
 import logging
 
-from gsy_framework.constants_limits import ConstSettings, SpotMarketTypeEnum
-
-from gsy_e.models.area import Area
+from gsy_e.models.area import Area, CoefficientArea
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
 from gsy_e.models.strategy.external_strategies.load import (LoadForecastExternalStrategy,
                                                             LoadHoursExternalStrategy,
@@ -72,7 +70,7 @@ scm_strategy_mapping = {
 }
 
 
-class Leaf(Area):
+class LeafBase:
     """
     Superclass for frequently used leaf Areas, so they can be
     instantiated and serialized in a more compact format
@@ -80,14 +78,7 @@ class Leaf(Area):
     strategy_type = None
 
     def __init__(self, name, config, uuid=None, **kwargs):
-        if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
-            # For the SCM only use the SCM-enabled strategies and ignore the rest.
-            try:
-                self.strategy_type = scm_strategy_mapping[self.strategy_type]
-            except KeyError as e:
-                logging.error("Strategy %s not supported in SCM.", self.strategy_type)
-                raise e
-        elif config.external_connection_enabled:
+        if config.external_connection_enabled:
             if kwargs.get("forecast_stream_enabled", False) is True:
                 try:
                     self.strategy_type = forecast_strategy_mapping[self.strategy_type]
@@ -144,6 +135,14 @@ class Leaf(Area):
         return self.strategy.serialize()
 
 
+class Leaf(LeafBase, Area):
+    pass
+
+
+class CoefficientLeaf(LeafBase, CoefficientArea):
+    pass
+
+
 # pylint: disable=missing-class-docstring
 
 
@@ -189,3 +188,37 @@ class SmartMeter(Leaf):
 
 class FiniteDieselGenerator(Leaf):
     strategy_type = FinitePowerPlant
+
+
+class SCMPV(CoefficientLeaf):
+    strategy_type = SCMPVStrategy
+
+
+class SCMPredefinedPV(CoefficientLeaf):
+    strategy_type = SCMPVPredefinedStrategy
+
+
+class SCMPVProfile(CoefficientLeaf):
+    strategy_type = SCMPVUserProfile
+
+
+class SCMLoadProfile(CoefficientLeaf):
+    strategy_type = SCMLoadProfile
+
+
+class SCMLoadHours(CoefficientLeaf):
+    strategy_type = SCMLoadHoursStrategy
+
+
+class SCMStorage(CoefficientLeaf):
+    strategy_type = SCMStorageStrategy
+
+
+scm_leaf_mapping = {
+    "LoadHours": SCMLoadHours,
+    "LoadProfile": SCMLoadProfile,
+    "Storage": SCMStorage,
+    "PV": SCMPV,
+    "PredefinedPV": SCMPredefinedPV,
+    "PVProfile": SCMPVProfile
+}
