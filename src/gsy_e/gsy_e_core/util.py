@@ -497,3 +497,23 @@ def is_time_slot_in_past_markets(time_slot: DateTime, current_time_slot: DateTim
         return (time_slot < current_time_slot.subtract(
             hours=ConstSettings.SettlementMarketSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS))
     return time_slot < current_time_slot
+
+
+def memory_usage_percent():
+    """Returns the percentage of limit utilization."""
+    memory_limit_file = "/sys/fs/cgroup/memory/memory.limit_in_bytes"
+    memory_usage_file = "/sys/fs/cgroup/memory/memory.usage_in_bytes"
+
+    try:
+        with open(memory_limit_file, "r") as limit:
+            mem_limit = limit.read()
+    except OSError:
+        return 0
+
+    try:
+        with open(memory_usage_file, "r") as usage:
+            mem_usage = usage.read()
+    except OSError:
+        return 0
+
+    return round(int(mem_usage) / int(mem_limit) * 100)
