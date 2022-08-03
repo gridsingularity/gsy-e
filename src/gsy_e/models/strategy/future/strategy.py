@@ -236,7 +236,7 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
         strategy.post_bid(
             market=strategy.area.future_markets,
             energy=available_buy_energy_kWh,
-            price=available_buy_energy_kWh * self._bid_updater.initial_rate[time_slot],
+            price=available_buy_energy_kWh * self._bid_updater.get_updated_rate(time_slot),
             time_slot=time_slot,
             replace_existing=False
         )
@@ -255,7 +255,7 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
             market=strategy.area.future_markets,
             replace_existing=False,
             energy=available_sell_energy_kWh,
-            price=available_sell_energy_kWh * self._offer_updater.initial_rate[time_slot],
+            price=available_sell_energy_kWh * self._offer_updater.get_updated_rate(time_slot),
             time_slot=time_slot
         )
         # update_counter has to be increased because the first price counts as a price update
