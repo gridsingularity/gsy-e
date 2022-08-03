@@ -32,6 +32,10 @@ from gsy_e.models.strategy.market_maker_strategy import MarketMakerStrategy
 from gsy_e.models.strategy.pv import PVStrategy
 from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
 from gsy_e.models.strategy.storage import StorageStrategy
+from gsy_e.models.strategy.scm.load import SCMLoadProfile, SCMLoadHoursStrategy
+from gsy_e.models.strategy.scm.pv import SCMPVStrategy
+from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
+from gsy_e.models.strategy.scm.smart_meter import SCMSmartMeterStrategy
 
 green = 'rgba(20,150,20, alpha)'
 purple = 'rgba(156, 110, 177, alpha)'
@@ -478,7 +482,7 @@ class PlotlyGraph:
         sold_trade_energy_var_name = "sold_trade_energy_kWh"
         bought_trade_energy_var_name = "bought_trade_energy_kWh"
         data = []
-        if isinstance(device_strategy, StorageStrategy):
+        if isinstance(device_strategy, (StorageStrategy, SCMStorageStrategy)):
             y1axis_key = "trade_price_eur"
             y2axis_key = trade_energy_var_name
             y3axis_key = "soc_history_%"
@@ -492,7 +496,8 @@ class PlotlyGraph:
             layout = cls._device_plot_layout("overlay", f"{device_name}",
                                              'Time', yaxis_caption_list)
 
-        elif isinstance(device_strategy, LoadHoursStrategy):
+        elif isinstance(device_strategy, (LoadHoursStrategy, SCMLoadHoursStrategy,
+                                          SCMLoadProfile)):
             y1axis_key = "trade_price_eur"
             y2axis_key = trade_energy_var_name
             y3axis_key = "load_profile_kWh"
@@ -507,7 +512,7 @@ class PlotlyGraph:
             layout = cls._device_plot_layout("overlay", f"{device_name}",
                                              'Time', yaxis_caption_list)
 
-        elif isinstance(device_strategy, SmartMeterStrategy):
+        elif isinstance(device_strategy, (SmartMeterStrategy, SCMSmartMeterStrategy)):
             y1axis_key = "trade_price_eur"
             y2axis_key = trade_energy_var_name
             y3axis_key = "smart_meter_profile_kWh"
@@ -520,7 +525,7 @@ class PlotlyGraph:
             data += cls._plot_line_time_series(device_dict, y3axis_key)
             layout = cls._device_plot_layout("overlay", device_name, "Time", yaxis_caption_list)
 
-        elif isinstance(device_strategy, PVStrategy):
+        elif isinstance(device_strategy, (PVStrategy, SCMPVStrategy)):
             y1axis_key = "trade_price_eur"
             y2axis_key = trade_energy_var_name
             y3axis_key = "pv_production_kWh"

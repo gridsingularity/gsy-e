@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from logging import getLogger
 from typing import List, Dict, Optional, Union, TYPE_CHECKING
 from uuid import uuid4
+from numpy.random import random
 
 from gsy_framework.area_validator import validate_area
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
@@ -42,7 +43,8 @@ from gsy_e.models.area.stats import AreaStats
 from gsy_e.models.area.throughput_parameters import ThroughputParameters
 from gsy_e.models.config import SimulationConfig
 from gsy_e.models.market.future import FutureMarkets
-from gsy_e.models.market.market_structures import AvailableMarketTypes
+from gsy_e.models.market.forward import ForwardMarketBase
+from gsy_e.gsy_e_core.enums import AvailableMarketTypes
 from gsy_e.models.strategy import BaseStrategy
 from gsy_e.models.strategy.external_strategies import ExternalMixin
 from gsy_e.models.strategy.scm import SCMStrategy
@@ -315,15 +317,35 @@ class CoefficientArea(AreaBase):
         """Recursive function that calculates the home after meter data."""
         if self._is_home_area():
             self._calculate_home_after_meter_data(current_time_slot, scm_manager)
-        for child in self.children:
+        for child in sorted(self.children, key=lambda _: random()):
             child.calculate_home_after_meter_data(current_time_slot, scm_manager)
 
     def trigger_energy_trades(self, scm_manager: "SCMManager") -> None:
         """Recursive function that triggers energy trading on all children of the root area."""
         if self._is_home_area():
             scm_manager.calculate_home_energy_bills(self.uuid)
-        for child in self.children:
+        for child in sorted(self.children, key=lambda _: random()):
             child.trigger_energy_trades(scm_manager)
+
+    @property
+    def market_maker_rate(self) -> float:
+        """Get the market maker rate."""
+        return self._market_maker_rate
+
+    def _change_home_coefficient_percentage(self, scm_manager: "SCMManager") -> None:
+        community_total_energy_need = scm_manager.community_data.energy_need_kWh
+        home_energy_need = scm_manager.get_home_energy_need(self.uuid)
+        if community_total_energy_need != 0:
+            self.coefficient_percentage = home_energy_need / community_total_energy_need
+
+    def change_home_coefficient_percentage(self, scm_manager: "SCMManager") -> None:
+        """Recursive function that change home coefficient percentage based on energy need.
+        This method is for dynamic energy allocation algorithm.
+        """
+        if self._is_home_area():
+            self._change_home_coefficient_percentage(scm_manager)
+        for child in self.children:
+            child.change_home_coefficient_percentage(scm_manager)
 
 
 class Area(AreaBase):
@@ -352,7 +374,6 @@ class Area(AreaBase):
         event_list = event_list if event_list is not None else []
         self.events = Events(event_list, self)
         self._bc = None
-        self._markets = None
         self.dispatcher = DispatcherFactory(self)()
         self._markets = AreaMarkets(self.log)
         self.stats = AreaStats(self._markets, self)
@@ -513,8 +534,12 @@ class Area(AreaBase):
 
         # create new future markets:
         if self.future_markets:
-            self.future_markets.create_future_markets(
-                now_value, self.config.slot_length, self.config)
+            self.future_markets.create_future_market_slots(now_value, self.config)
+
+        # create new day ahead markets:
+        if self.forward_markets:
+            for forward_market in self.forward_markets.values():
+                forward_market.create_future_market_slots(now_value, self.config)
 
         self.dispatcher.event_market_cycle()
 
@@ -595,12 +620,31 @@ class Area(AreaBase):
 
     def _update_myco_matcher(self) -> None:
         """Update the markets cache that the myco matcher will request"""
-        bid_offer_matcher.update_area_uuid_markets_mapping(
-            area_uuid_markets_mapping={
-                self.uuid: {"markets": [self.spot_market],
-                            "settlement_markets": list(self.settlement_markets.values()),
-                            "future_markets": self.future_markets,
-                            "current_time": self.now}})
+        markets_mapping = {
+            "current_time": self.now,
+            AvailableMarketTypes.SPOT: [self.spot_market],
+            AvailableMarketTypes.SETTLEMENT: list(self.settlement_markets.values()),
+            AvailableMarketTypes.FUTURE: self.future_markets}
+
+        bid_offer_matcher.update_area_uuid_spot_markets_mapping(
+            area_uuid_markets_mapping={self.uuid: markets_mapping})
+
+        if not ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS:
+            return
+
+        forward_markets_mapping = {
+            "current_time": self.now,
+            AvailableMarketTypes.DAY_FORWARD:
+                self.forward_markets.get(AvailableMarketTypes.DAY_FORWARD),
+            AvailableMarketTypes.WEEK_FORWARD:
+                self.forward_markets.get(AvailableMarketTypes.WEEK_FORWARD),
+            AvailableMarketTypes.MONTH_FORWARD:
+                self.forward_markets.get(AvailableMarketTypes.MONTH_FORWARD),
+            AvailableMarketTypes.YEAR_FORWARD:
+                self.forward_markets.get(AvailableMarketTypes.YEAR_FORWARD)
+        }
+        bid_offer_matcher.update_area_uuid_forward_markets_mapping(
+            area_uuid_markets_mapping={self.uuid: forward_markets_mapping})
 
     def execute_actions_after_tick_event(self) -> None:
         """
@@ -749,6 +793,11 @@ class Area(AreaBase):
     def future_markets(self) -> FutureMarkets:
         """Return the future markets of the area."""
         return self._markets.future_markets
+
+    @property
+    def forward_markets(self) -> Optional[Dict[AvailableMarketTypes, ForwardMarketBase]]:
+        """Return the day ahead markets of the area."""
+        return self._markets.forward_markets
 
     @property
     def settlement_markets(self) -> Dict:
