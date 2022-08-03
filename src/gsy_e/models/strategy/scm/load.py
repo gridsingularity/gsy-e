@@ -57,7 +57,7 @@ class SCMLoadHoursStrategy(SCMStrategy):
             traded_energy_kWh, time_slot, area.name)
 
 
-class SCMLoadProfile(SCMStrategy):
+class SCMLoadProfileStrategy(SCMStrategy):
     """Load SCM strategy with power production dictated by a profile."""
     def __init__(self, daily_load_profile=None, daily_load_profile_uuid=None):
         self._energy_params = DefinedLoadEnergyParameters(
@@ -77,7 +77,7 @@ class SCMLoadProfile(SCMStrategy):
 
     def market_cycle(self, area: "AreaBase") -> None:
         """Update the load forecast and measurements for the next/previous market slot."""
-        self._energy_params.read_or_rotate_profiles()
+        self._energy_params._energy_profile.read_or_rotate_profiles()
         slot_time = area._current_market_time_slot
         self._energy_params.update_energy_requirement(slot_time, area.name)
 

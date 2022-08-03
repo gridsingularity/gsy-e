@@ -507,15 +507,27 @@ class SCMCommunityValidator:
         """Run all validations for the given community."""
         cls._validate_coefficients(community)
         cls._validate_market_maker_rate(community)
+        # Disabled validation due to infinite bus.
+        # cls._validate_all_strategies_scm(community)
+
+    @classmethod
+    def _sum_of_all_coefficients_in_grid(cls, area):
+        coefficient_sum = sum(
+            cls._sum_of_all_coefficients_in_grid(child)
+            for child in area.children
+        )
+        return coefficient_sum + area.coefficient_percentage
 
     @staticmethod
-    def _validate_coefficients(community: "CoefficientArea") -> None:
-        assert isclose(
-            sum(home.coefficient_percentage for home in community.children), 1.0
-        ), "Coefficients from all homes should sum up to 1."
+    def _validate_all_strategies_scm(community):
         for home in community.children:
             assert all(isinstance(asset.strategy, SCMStrategy) for asset in home.children), \
                 f"Home {home.name} has assets with non-SCM strategies."
+
+    @classmethod
+    def _validate_coefficients(cls, community: "CoefficientArea") -> None:
+        assert isclose(cls._sum_of_all_coefficients_in_grid(community), 1.0), \
+            "Coefficients from all homes should sum up to 1."
 
     @staticmethod
     def _validate_market_maker_rate(community: "CoefficientArea") -> None:

@@ -32,7 +32,7 @@ from gsy_e.models.strategy.market_maker_strategy import MarketMakerStrategy
 from gsy_e.models.strategy.pv import PVStrategy
 from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
 from gsy_e.models.strategy.storage import StorageStrategy
-from gsy_e.models.strategy.scm.load import SCMLoadProfile, SCMLoadHoursStrategy
+from gsy_e.models.strategy.scm.load import SCMLoadProfileStrategy, SCMLoadHoursStrategy
 from gsy_e.models.strategy.scm.pv import SCMPVStrategy
 from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
 from gsy_e.models.strategy.scm.smart_meter import SCMSmartMeterStrategy
@@ -497,7 +497,7 @@ class PlotlyGraph:
                                              'Time', yaxis_caption_list)
 
         elif isinstance(device_strategy, (LoadHoursStrategy, SCMLoadHoursStrategy,
-                                          SCMLoadProfile)):
+                                          SCMLoadProfileStrategy)):
             y1axis_key = "trade_price_eur"
             y2axis_key = trade_energy_var_name
             y3axis_key = "load_profile_kWh"
