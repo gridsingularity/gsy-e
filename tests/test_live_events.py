@@ -21,6 +21,7 @@ from gsy_e.models.strategy.storage import StorageStrategy
 class TestLiveEvents(unittest.TestCase):
 
     def setUp(self):
+        GlobalConfig.FEED_IN_TARIFF = 20
         self.config = SimulationConfig(
             sim_duration=duration(hours=12),
             slot_length=duration(minutes=15),
