@@ -68,12 +68,15 @@ class SimulationEndpointBuffer:
 
         self.bids_offers_trades = {}
         self.last_energy_trades_high_resolution = {}
-        self.results_handler = ResultsHandler(should_export_plots)
+        self.results_handler = self._create_endpoint_buffer(should_export_plots)
         self.simulation_state = {"general": {}, "areas": {}}
 
         if (ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR or
                 ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR):
             self.offer_bid_trade_hr = OfferBidTradeGraphStats()
+
+    def _create_endpoint_buffer(self, should_export_plots):
+        return ResultsHandler(should_export_plots)
 
     def prepare_results_for_publish(self) -> Dict:
         """Validate, serialise and check size of the results before sending to gsy-web."""
@@ -312,6 +315,9 @@ class CoefficientEndpointBuffer(SimulationEndpointBuffer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._scm_manager = None
+
+    def _create_endpoint_buffer(self, should_export_plots):
+        return ResultsHandler(should_export_plots, is_scm=True)
 
     def update_coefficient_stats(
             self, area: "AreaBase", simulation_status: str,
