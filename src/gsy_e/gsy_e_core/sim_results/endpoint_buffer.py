@@ -318,7 +318,12 @@ class CoefficientEndpointBuffer(SimulationEndpointBuffer):
             progress_info: "SimulationProgressInfo", sim_state: Dict,
             calculate_results: bool, scm_manager: "SCMManager") -> None:
         self._scm_manager = scm_manager
+
         self.current_market_time_slot_str = progress_info.current_slot_str
+        if progress_info.current_slot_time:
+            self.current_market_time_slot = progress_info.current_slot_time
+            self.current_market_time_slot_unix = progress_info.current_slot_time.timestamp()
+
         super().update_stats(
             area, simulation_status, progress_info, sim_state, calculate_results)
 
