@@ -83,7 +83,7 @@ class SimulationProgressInfo:
     @staticmethod
     def _get_market_slot_time(slot_number: int, config: "SimulationConfig") -> DateTime:
         return config.start_date.add(
-            minutes=config.slot_length.minutes * slot_number
+            minutes=config.slot_length.total_minutes() * slot_number
         )
 
     def update(self, slot_no: int, slot_count: int, time_params: "SimulationTimeManager",
