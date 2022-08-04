@@ -236,15 +236,13 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
         strategy.post_bid(
             market=strategy.area.future_markets,
             energy=available_buy_energy_kWh,
-            price=available_buy_energy_kWh * self._bid_updater.initial_rate[time_slot],
+            price=available_buy_energy_kWh * self._bid_updater.get_updated_rate(time_slot),
             time_slot=time_slot,
             replace_existing=False
         )
-        if self._bid_updater.update_counter[time_slot] == 0:
-            # update_counter is 0 only for the very first bid that hast not been updated
-            # has to be increased because the first price counts as a price update
-            # pylint: disable=no-member
-            self._bid_updater.increment_update_counter(strategy, time_slot)
+        # update_counter has to be increased because the first price counts as a price update
+        # pylint: disable=no-member
+        self._bid_updater.increment_update_counter(strategy, time_slot)
 
     def _post_producer_first_offer(
             self, strategy: "BaseStrategy", time_slot: DateTime,
@@ -257,14 +255,12 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
             market=strategy.area.future_markets,
             replace_existing=False,
             energy=available_sell_energy_kWh,
-            price=available_sell_energy_kWh * self._offer_updater.initial_rate[time_slot],
+            price=available_sell_energy_kWh * self._offer_updater.get_updated_rate(time_slot),
             time_slot=time_slot
         )
-        if self._offer_updater.update_counter[time_slot] == 0:
-            # update_counter is 0 only for the very first bid that hast not been updated
-            # has to be increased because the first price counts as a price update
-            # pylint: disable=no-member
-            self._offer_updater.increment_update_counter(strategy, time_slot)
+        # update_counter has to be increased because the first price counts as a price update
+        # pylint: disable=no-member
+        self._offer_updater.increment_update_counter(strategy, time_slot)
 
     def event_tick(self, strategy: "BaseStrategy") -> None:
         """
