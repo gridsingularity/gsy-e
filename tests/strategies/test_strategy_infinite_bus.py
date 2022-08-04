@@ -43,6 +43,7 @@ def auto_fixture():
     ConstSettings.MASettings.MARKET_TYPE = 1
     ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = False
     DeviceRegistry.REGISTRY = {}
+    GlobalConfig.FEED_IN_TARIFF = 20
 
 
 # pylint: disable=too-many-instance-attributes
