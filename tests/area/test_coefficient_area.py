@@ -88,7 +88,7 @@ class TestCoefficientArea:
                                  coefficient_percentage=0.4,
                                  feed_in_tariff=0.05,
                                  market_maker_rate=0.24)
-        return CoefficientArea(name="Grid", children=[house1, house2])
+        return CoefficientArea(name="Community", children=[house1, house2])
 
     @staticmethod
     def test_calculate_after_meter_data(_create_2_house_grid):
