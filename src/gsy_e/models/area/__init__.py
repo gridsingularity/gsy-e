@@ -639,6 +639,8 @@ class Area(AreaBase):
 
         forward_markets_mapping = {
             "current_time": self.now,
+            AvailableMarketTypes.INTRADAY:
+                self.forward_markets.get(AvailableMarketTypes.INTRADAY),
             AvailableMarketTypes.DAY_FORWARD:
                 self.forward_markets.get(AvailableMarketTypes.DAY_FORWARD),
             AvailableMarketTypes.WEEK_FORWARD:
