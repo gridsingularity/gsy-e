@@ -1,16 +1,15 @@
 import logging
+from calendar import monthrange
 from dataclasses import dataclass, asdict, field
-
-import gsy_e.constants
 from math import isclose
 from typing import Dict, TYPE_CHECKING, List, Optional
 from uuid import uuid4
-from calendar import monthrange
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.data_classes import Trade
 from pendulum import DateTime, duration
 
+import gsy_e.constants
 from gsy_e.constants import (
     DEFAULT_SCM_GRID_NAME, DEFAULT_SCM_COMMUNITY_NAME, FLOATING_POINT_TOLERANCE)
 from gsy_e.models.strategy.scm import SCMStrategy
@@ -317,16 +316,17 @@ class SCMManager:
         self._bills: Dict[str, AreaEnergyBills] = {}
         self._grid_fees_reduction = ConstSettings.SCMSettings.GRID_FEES_REDUCTION
 
-    def _get_community_uuid_from_area(self, area):
+    @staticmethod
+    def _get_community_uuid_from_area(area):
         # Community is always the root area in the context of SCM.
         # The following hack in order to support the UI which defines the Community one level
         # lower than the Grid area.
         if "Community" in area.name:
             return area.uuid
-        else:
-            for child in area.children:
-                if "Community" in child.name:
-                    return child.uuid
+
+        for child in area.children:
+            if "Community" in child.name:
+                return child.uuid
         assert False, f"Should not reach here, configuration {gsy_e.constants.CONFIGURATION_ID}" \
                       f"should have an area with name 'Community' either on the top level or " \
                       f"on the second level after the top."
@@ -481,7 +481,10 @@ class SCMManager:
         if area_uuid == self._community_uuid:
             return {
                 "bills": self.community_bills,
-                "after_meter_data": self.community_data.serializable_dict(),
+                "after_meter_data": (
+                    self.community_data.to_dict() if serializable is False else
+                    self.community_data.serializable_dict()
+                ),
                 "trades": [
                     trade.serializable_dict()
                     for trade in self.community_data.trades
