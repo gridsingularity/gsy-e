@@ -128,6 +128,21 @@ class FutureMarkets(TwoSidedMarket):
         """Return list of all time slots of future markets."""
         return list(self.slot_bid_mapping.keys())
 
+    @property
+    def market_time_slots_str(self) -> List[str]:
+        """Return all the time slots of future markets represented as strings."""
+        return [time_slot.format(DATE_TIME_FORMAT) for time_slot in self.market_time_slots]
+
+    @property
+    def info(self) -> Dict:
+        """Return information about the market instance."""
+        return {
+            "name": self.name,
+            "id": self.id,
+            "duration_min": GlobalConfig.slot_length.minutes,
+            "time_slots": self.market_time_slots_str,
+            "type_name": self.type_name}
+
     def orders_per_slot(self) -> Dict[str, Dict]:
         """Return all orders in the market per time slot."""
         orders_dict = {}
@@ -136,6 +151,7 @@ class FutureMarkets(TwoSidedMarket):
             if time_slot not in orders_dict:
                 orders_dict[time_slot] = {"bids": [], "offers": []}
             orders_dict[time_slot]["bids"].extend([bid.serializable_dict() for bid in bids_list])
+
         for time_slot, offers_list in self.slot_offer_mapping.items():
             time_slot = time_slot.format(DATE_TIME_FORMAT)
             if time_slot not in orders_dict:
@@ -162,33 +178,44 @@ class FutureMarkets(TwoSidedMarket):
             if time_slot <= current_market_time_slot:
                 del orders.slot_order_mapping[time_slot]
 
-    def delete_orders_in_old_future_markets(self, current_market_time_slot: DateTime) -> None:
+    def delete_orders_in_old_future_markets(self, last_slot_to_be_deleted: DateTime
+                                            ) -> None:
         """Delete order and trade buffers."""
-        self._expire_orders(self.offers, current_market_time_slot)
-        self._expire_orders(self.bids, current_market_time_slot)
+        self._expire_orders(self.offers, last_slot_to_be_deleted)
+        self._expire_orders(self.bids, last_slot_to_be_deleted)
 
         self.offer_history = self._remove_old_orders_from_list(
-            self.offer_history, current_market_time_slot)
+            self.offer_history, last_slot_to_be_deleted)
         self.bid_history = self._remove_old_orders_from_list(
-            self.bid_history, current_market_time_slot)
+            self.bid_history, last_slot_to_be_deleted)
         self.trades = self._remove_old_orders_from_list(
-            self.trades, current_market_time_slot)
+            self.trades, last_slot_to_be_deleted)
 
-    def create_future_markets(self, current_market_time_slot: DateTime,
-                              slot_length: duration,
-                              config: "SimulationConfig") -> None:
-        """Add sub dicts in order dictionaries for future market slots."""
-        if not GlobalConfig.FUTURE_MARKET_DURATION_HOURS:
-            return
-        future_time_slot = current_market_time_slot.add(minutes=slot_length.total_minutes())
-        most_future_slot = (current_market_time_slot +
-                            duration(hours=GlobalConfig.FUTURE_MARKET_DURATION_HOURS))
-        while future_time_slot <= most_future_slot:
+    @staticmethod
+    def _get_market_slot_duration(_current_time: DateTime, config: "SimulationConfig") -> duration:
+        return config.slot_length
+
+    def _create_future_market_slots(
+            self, start_time: DateTime, end_time: DateTime, config: "SimulationConfig") -> None:
+        future_time_slot = start_time
+        while future_time_slot <= end_time:
             if (future_time_slot not in self.slot_bid_mapping and
                     is_time_slot_in_simulation_duration(future_time_slot, config)):
                 self.bids.slot_order_mapping[future_time_slot] = []
                 self.offers.slot_order_mapping[future_time_slot] = []
-            future_time_slot = future_time_slot.add(minutes=slot_length.total_minutes())
+            future_time_slot = (
+                future_time_slot + self._get_market_slot_duration(future_time_slot, config))
+
+    def create_future_market_slots(self, current_market_time_slot: DateTime,
+                                   config: "SimulationConfig") -> None:
+        """Add sub dicts in order dictionaries for future market slots."""
+        if not ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS:
+            return
+        self._create_future_market_slots(
+            current_market_time_slot.add(minutes=config.slot_length.total_minutes()),
+            current_market_time_slot.add(
+                hours=ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS),
+            config)
 
     @lock_market_action
     def bid(self, price: float, energy: float, buyer: str, buyer_origin: str,

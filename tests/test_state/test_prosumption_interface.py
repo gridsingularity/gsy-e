@@ -20,6 +20,9 @@ class ProsumptionInterfaceHelper(ProsumptionInterface):
     def delete_past_state_values(self, current_time_slot: DateTime):
         raise NotImplementedError
 
+    def get_results_dict(self, current_time_slot: DateTime) -> dict:
+        raise NotImplementedError
+
 
 class TestProsumptionInterface:
     """ Test ProsumptionInterface class"""

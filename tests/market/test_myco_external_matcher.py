@@ -8,14 +8,14 @@ from pendulum import now
 import gsy_e.constants
 import gsy_e.models.market.market_redis_connection
 from gsy_e.gsy_e_core.exceptions import MycoValidationException, InvalidBidOfferPairException
-import gsy_e.gsy_e_core.redis_connections.redis_area_market_communicator
+import gsy_e.gsy_e_core.redis_connections.area_market
 from gsy_e.models.market import Offer, Bid
 from gsy_e.models.market.two_sided import TwoSidedMarket
 from gsy_e.models.myco_matcher import MycoExternalMatcher
 from gsy_e.models.myco_matcher.myco_external_matcher import MycoExternalMatcherValidator
+from gsy_e.gsy_e_core.enums import AvailableMarketTypes
 
-gsy_e.gsy_e_core.redis_connections.redis_area_market_communicator.ResettableCommunicator = (
-    MagicMock)
+gsy_e.gsy_e_core.redis_connections.area_market.ResettableCommunicator = MagicMock
 
 
 class TestMycoExternalMatcher:
@@ -57,12 +57,14 @@ class TestMycoExternalMatcher:
             channel, {"simulation_id": self.matcher.simulation_id})
 
     def test_event_tick(self):
-        data = {"event": "tick"}
+        data = {"event": "tick", "markets_info": {self.market.id: self.market.info}}
         self.matcher._tick_counter.is_it_time_for_external_tick = MagicMock(return_value=True)
         self.matcher.event_tick(current_tick_in_slot=6)
+
         self.matcher._tick_counter.is_it_time_for_external_tick.assert_called_once_with(6)
         self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
             self.events_channel, data)
+
         self.matcher._tick_counter.is_it_time_for_external_tick = MagicMock(return_value=False)
         self.matcher.event_tick(current_tick_in_slot=7)
         self.matcher._tick_counter.is_it_time_for_external_tick.assert_called_once_with(7)
@@ -122,7 +124,8 @@ class TestMycoExternalMatcher:
             "event": "offers_bids_response",
             "bids_offers": {"area1": {}}
         }
-        self.matcher.update_area_uuid_markets_mapping({"area1": {"markets": [self.market]}})
+        self.matcher.update_area_uuid_markets_mapping(
+            {"area1": {AvailableMarketTypes.SPOT: [self.market]}})
         self.matcher._publish_orders_message_buffer = [payload]
         self.matcher._publish_orders()
         self.matcher.myco_ext_conn.publish_json.assert_called_once_with(

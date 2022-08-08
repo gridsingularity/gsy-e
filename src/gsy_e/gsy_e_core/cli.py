@@ -18,7 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import logging
 import multiprocessing
 import platform
-from multiprocessing import Process
 
 import click
 from click.types import Choice
@@ -27,7 +26,7 @@ from colorlog.colorlog import ColoredFormatter
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.exceptions import GSyException
 from gsy_framework.settings_validators import validate_global_settings
-from pendulum import DateTime, today
+from pendulum import today
 
 import gsy_e.constants
 from gsy_e.gsy_e_core.simulation import run_simulation
@@ -94,8 +93,6 @@ _setup_modules = available_simulation_scenarios
 @click.option("--export-path",  type=str, default=None, show_default=False,
               help="Specify a path for the csv export files (default: ~/gsy-e-simulation)")
 @click.option("--enable-bc", is_flag=True, default=False, help="Run simulation on Blockchain")
-@click.option("--compare-alt-pricing", is_flag=True, default=False,
-              help="Compare alternative pricing schemes")
 @click.option("--enable-external-connection", is_flag=True, default=False,
               help="External Agents interaction to simulation during runtime")
 @click.option("--start-date", type=DateType(gsy_e.constants.DATE_FORMAT),
@@ -107,9 +104,14 @@ _setup_modules = available_simulation_scenarios
               help=(
                 "Enable or disable Degrees of Freedom "
                 "(orders can't contain attributes/requirements)."))
+@click.option("-m", "--market-type", type=int,
+              default=ConstSettings.MASettings.MARKET_TYPE, show_default=True,
+              help="Market type. 1 for one-sided market, 2 for two-sided market, "
+                   "3 for coefficient-based trading.")
 def run(setup_module_name, settings_file, duration, slot_length, tick_length,
-        cloud_coverage, compare_alt_pricing, enable_external_connection, start_date,
-        pause_at, incremental, slot_length_realtime, enable_dof: bool, **kwargs):
+        cloud_coverage, enable_external_connection, start_date,
+        pause_at, incremental, slot_length_realtime, enable_dof: bool,
+        market_type: int, **kwargs):
     """Configure settings and run a simulation."""
     # Force the multiprocessing start method to be 'fork' on macOS.
     if platform.system() == "Darwin":
@@ -123,6 +125,8 @@ def run(setup_module_name, settings_file, duration, slot_length, tick_length,
             simulation_settings["external_connection_enabled"] = False
             simulation_config = SimulationConfig(**simulation_settings)
         else:
+            assert 1 <= market_type <= 3, "Market type should be an integer between 1 and 3."
+            ConstSettings.MASettings.MARKET_TYPE = market_type
             global_settings = {"sim_duration": duration,
                                "slot_length": slot_length,
                                "tick_length": tick_length,
@@ -138,29 +142,10 @@ def run(setup_module_name, settings_file, duration, slot_length, tick_length,
         if incremental:
             kwargs["incremental"] = incremental
 
-        if compare_alt_pricing is True:
-            ConstSettings.MASettings.AlternativePricing.COMPARE_PRICING_SCHEMES = True
-            # we need the seconds in the export dir name
-            kwargs["export_subdir"] = DateTime.now(tz=gsy_e.constants.TIME_ZONE).format(
-                f"{gsy_e.constants.DATE_TIME_FORMAT}:ss")
-            processes = []
-            for pricing_scheme in range(0, 4):
-                kwargs["pricing_scheme"] = pricing_scheme
-                p = Process(target=run_simulation, args=(setup_module_name, simulation_config,
-                                                         None, None, None, slot_length_realtime,
-                                                         kwargs)
-                            )
-                p.start()
-                processes.append(p)
-
-            for p in processes:
-                p.join()
-
-        else:
-            if pause_at is not None:
-                kwargs["pause_after"] = convert_str_to_pause_after_interval(start_date, pause_at)
-            run_simulation(setup_module_name, simulation_config, None, None, None,
-                           slot_length_realtime, kwargs)
+        if pause_at is not None:
+            kwargs["pause_after"] = convert_str_to_pause_after_interval(start_date, pause_at)
+        run_simulation(setup_module_name, simulation_config, None, None, None,
+                       slot_length_realtime, kwargs)
 
     except GSyException as ex:
         log.exception(ex)

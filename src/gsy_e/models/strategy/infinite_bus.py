@@ -17,126 +17,76 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.enums import SpotMarketTypeEnum
-from gsy_framework.read_user_profile import convert_identity_profile_to_float
-from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
-from gsy_framework.utils import convert_str_to_pendulum_in_dict, convert_pendulum_to_str_in_dict
-from gsy_framework.utils import find_object_of_same_weekday_and_time
+from gsy_framework.read_user_profile import InputProfileTypes
+from gsy_framework.utils import (convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict,
+                                 find_object_of_same_weekday_and_time)
 
 from gsy_e.gsy_e_core.exceptions import MarketException
-from gsy_e.gsy_e_core.global_objects_singleton import global_objects
-from gsy_e.gsy_e_core.util import should_read_profile_from_db
 from gsy_e.models.base import AssetType
-from gsy_e.models.strategy import BidEnabledStrategy, INF_ENERGY
+from gsy_e.models.strategy import INF_ENERGY, BidEnabledStrategy
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
+from gsy_e.models.strategy.profile import EnergyProfile
 
 
 # pylint: disable=missing-class-docstring, too-many-instance-attributes, too-many-arguments
 class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
     """Implementation for infinite bus to participate in GSy Exchange."""
-    parameters = ("energy_sell_rate", "energy_rate_profile", "energy_buy_rate",
-                  "buying_rate_profile", "buying_rate_profile_uuid", "energy_rate_profile_uuid")
 
     def __init__(self, energy_sell_rate=None, energy_rate_profile=None, energy_buy_rate=None,
                  buying_rate_profile=None, buying_rate_profile_uuid=None,
                  energy_rate_profile_uuid=None):
         super().__init__()
         self.energy_per_slot_kWh = INF_ENERGY
-        self.energy_buy_rate = None
 
-        if should_read_profile_from_db(buying_rate_profile_uuid):
-            self.energy_buy_rate_input = None
-            self.buying_rate_profile = None
-            self.buying_rate_profile_uuid = buying_rate_profile_uuid
-        else:
-            self.energy_buy_rate_input = energy_buy_rate
-            self.buying_rate_profile = buying_rate_profile
-            self.buying_rate_profile_uuid = None
+        # buy
+        if all(arg is None for arg in [
+               buying_rate_profile, buying_rate_profile_uuid, energy_buy_rate]):
+            energy_buy_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
+        self._buy_energy_profile = EnergyProfile(
+            buying_rate_profile, buying_rate_profile_uuid, energy_buy_rate,
+            profile_type=InputProfileTypes.IDENTITY)
 
-        if should_read_profile_from_db(energy_rate_profile_uuid):
-            self.energy_rate_input = None
-            self.energy_rate_profile = None
-            self.energy_rate_profile_uuid = energy_rate_profile_uuid
-        else:
-            self.energy_rate_input = energy_sell_rate
-            self.energy_rate_profile = energy_rate_profile
-            self.energy_rate_profile_uuid = None
+        # sell
+        if all(arg is None for arg in [
+               energy_rate_profile, energy_rate_profile_uuid, energy_sell_rate]):
+            energy_sell_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
+        self._sell_energy_profile = EnergyProfile(
+            energy_rate_profile, energy_rate_profile_uuid, energy_sell_rate,
+            profile_type=InputProfileTypes.IDENTITY)
 
         # This is done to support the UI which handles the Infinite Bus only as a Market Maker.
         # If one plans to allow multiple Infinite Bus devices in the grid, this should be
         # amended.
         self._read_or_rotate_profiles()
 
-    def _set_global_market_maker_rate(self):
-        if self.energy_rate_profile is not None:
-            GlobalConfig.market_maker_rate = read_arbitrary_profile(
-                InputProfileTypes.IDENTITY, self.energy_rate_profile)
-        elif self.energy_rate is not None:
-            GlobalConfig.market_maker_rate = self.energy_rate
+    @property
+    def energy_buy_rate(self):
+        # This method exists for backward compatibility.
+        """Return buy energy profile of the asset."""
+        return self._buy_energy_profile.profile
 
-    def _set_global_feed_in_tariff_rate(self):
-        GlobalConfig.FEED_IN_TARIFF = self.energy_buy_rate
+    def serialize(self):
+        return {
+            # sell
+            "energy_sell_rate": self._sell_energy_profile.input_energy_rate,
+            "energy_rate_profile": self._sell_energy_profile.input_profile,
+            "energy_rate_profile_uuid": self._sell_energy_profile.input_profile_uuid,
+            # buy
+            "energy_buy_rate": self._buy_energy_profile.input_energy_rate,
+            "buying_rate_profile": self._buy_energy_profile.input_profile,
+            "buying_rate_profile_uuid": self._buy_energy_profile.input_profile_uuid,
+        }
 
     def _read_or_rotate_profiles(self, reconfigure=False):
-        if (self.energy_buy_rate_input is None and
-                self.buying_rate_profile is None and
-                self.buying_rate_profile_uuid is None):
-            self.energy_buy_rate = GlobalConfig.market_maker_rate
-        else:
-            if self.energy_buy_rate_input is None and self.energy_buy_rate is None:
-                self.energy_buy_rate_input = self.buying_rate_profile
-            self.energy_buy_rate = (
-                convert_identity_profile_to_float(
-                    global_objects.profiles_handler.rotate_profile(
-                        profile_type=InputProfileTypes.IDENTITY,
-                        profile=self.energy_buy_rate
-                        if self.energy_buy_rate else self.energy_buy_rate_input,
-                        profile_uuid=self.buying_rate_profile_uuid)))
+        self._sell_energy_profile.read_or_rotate_profiles(reconfigure=reconfigure)
+        self._buy_energy_profile.read_or_rotate_profiles(reconfigure=reconfigure)
 
-        if (self.energy_rate_input is None and
-                self.energy_rate_profile is None and
-                self.energy_rate_profile_uuid is None):
-            self.energy_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                      GlobalConfig.market_maker_rate)
-        else:
-            if self.energy_rate_input is None and self.energy_rate is None:
-                self.energy_rate_input = self.energy_rate_profile
-            self.energy_rate = (
-                convert_identity_profile_to_float(
-                    global_objects.profiles_handler.rotate_profile(
-                        profile_type=InputProfileTypes.IDENTITY,
-                        profile=(self.energy_rate
-                                 if self.energy_rate else self.energy_rate_input),
-                        profile_uuid=self.energy_rate_profile_uuid)))
-
-        self._set_global_market_maker_rate()
-        self._set_global_feed_in_tariff_rate()
-
-    def _populate_selling_rate(self):
-        if self.energy_rate_profile is not None:
-            self.energy_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                      self.energy_rate_profile)
-            del self.energy_rate_profile
-        elif self.energy_rate is not None:
-            self.energy_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                      self.energy_rate)
-        else:
-            self.energy_rate = self.simulation_config.market_maker_rate
-
-    def _populate_buying_rate(self):
-        if self.buying_rate_profile is not None:
-            self.energy_buy_rate = read_arbitrary_profile(
-                InputProfileTypes.IDENTITY, self.buying_rate_profile)
-            del self.buying_rate_profile
-        elif self.energy_buy_rate is not None:
-            self.energy_buy_rate = read_arbitrary_profile(
-                InputProfileTypes.IDENTITY, self.energy_buy_rate)
-        else:
-            self.energy_buy_rate = self.simulation_config.market_maker_rate
+        GlobalConfig.market_maker_rate = self._sell_energy_profile.profile
+        GlobalConfig.FEED_IN_TARIFF = self._buy_energy_profile.profile
 
     def event_activate(self, **kwargs):
         """Event activate."""
-        self._populate_selling_rate()
-        self._populate_buying_rate()
+        self._read_or_rotate_profiles()
 
     def buy_energy(self, market):
         """Buy energy."""
@@ -144,8 +94,9 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
             if offer.seller == self.owner.name:
                 # Don't buy our own offer
                 continue
-            if offer.energy_rate <= find_object_of_same_weekday_and_time(self.energy_buy_rate,
-                                                                         market.time_slot):
+            if offer.energy_rate <= find_object_of_same_weekday_and_time(
+                    self.energy_buy_rate,
+                    market.time_slot):
                 try:
                     self.accept_offer(market, offer, buyer_origin=self.owner.name,
                                       buyer_origin_id=self.owner.uuid,
@@ -165,8 +116,9 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
         if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value:
             for market in self.area.all_markets:
                 try:
-                    buy_rate = find_object_of_same_weekday_and_time(self.energy_buy_rate,
-                                                                    market.time_slot)
+                    buy_rate = find_object_of_same_weekday_and_time(
+                        self.energy_buy_rate,
+                        market.time_slot)
                     self.post_bid(market,
                                   buy_rate * INF_ENERGY,
                                   INF_ENERGY)
@@ -175,15 +127,15 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
 
     def get_state(self):
         return {
-            "energy_rate": convert_pendulum_to_str_in_dict(self.energy_rate),
-            "energy_buy_rate": convert_pendulum_to_str_in_dict(self.energy_buy_rate),
+            "energy_rate": convert_pendulum_to_str_in_dict(self._sell_energy_profile.profile),
+            "energy_buy_rate": convert_pendulum_to_str_in_dict(self._buy_energy_profile.profile),
         }
 
     def restore_state(self, saved_state):
-        self.energy_buy_rate.update(convert_str_to_pendulum_in_dict(
-            saved_state["energy_buy_rate"]))
-        self.energy_rate.update(convert_str_to_pendulum_in_dict(
-            saved_state["energy_rate"]))
+        self._buy_energy_profile.profile = convert_str_to_pendulum_in_dict(
+            saved_state["energy_buy_rate"])
+        self._sell_energy_profile.profile = convert_str_to_pendulum_in_dict(
+            saved_state["energy_rate"])
 
     @property
     def asset_type(self):

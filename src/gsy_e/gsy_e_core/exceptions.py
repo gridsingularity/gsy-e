@@ -20,60 +20,76 @@ from gsy_framework.exceptions import GSyException
 
 
 class SimulationException(GSyException):
-    pass
+    """General simulation exception."""
 
 
 class MarketException(GSyException):
-    pass
+    """Exception of the MarketBase classes."""
 
 
 class MarketReadOnlyException(MarketException):
-    pass
+    """Market is read-only and a mutate operation is performed."""
 
 
 class OfferNotFoundException(MarketException):
-    pass
+    """Offer does not exist in the market."""
 
 
 class BidNotFoundException(MarketException):
-    pass
+    """Bid does not exist in the market."""
 
 
 class InvalidTrade(MarketException):
-    pass
+    """Trade that occurred was invalid."""
 
 
 class InvalidOffer(MarketException):
-    pass
+    """Invalid offer was posted."""
 
 
 class InvalidBid(MarketException):
-    pass
+    """Invalid bid was posted."""
 
 
 class AreaException(GSyException):
-    pass
+    """Error during the operation of the Area class."""
 
 
 class InvalidBalancingTradeException(MarketException):
-    pass
+    """Balancing trade that occurred was invalid."""
 
 
 class DeviceNotInRegistryError(MarketException):
-    pass
+    """Device name is not a part of the registry."""
 
 
 class D3ARedisException(GSyException):
-    pass
+    """Redis connection reported an error."""
 
 
 class WrongMarketTypeException(GSyException):
-    pass
+    """Operation cannot be performed on the selected market type."""
 
 
 class InvalidBidOfferPairException(GSyException):
-    pass
+    """Invalid match of bid and offer."""
 
 
 class MycoValidationException(GSyException):
-    pass
+    """Myco recommendations did not pass the validation check."""
+
+
+class LiveEventException(GSyException):
+    """Exception type for live event errors."""
+
+
+class NegativePriceOrdersException(MarketException):
+    """Exception type for errors regarding negative order prices."""
+
+
+class NegativeEnergyOrderException(MarketException):
+    """Exception type for errors of negative energy value in orders."""
+
+
+class NegativeEnergyTradeException(MarketException):
+    """Exception type for errors of negative energy value in Trades."""

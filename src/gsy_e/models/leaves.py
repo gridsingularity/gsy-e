@@ -15,24 +15,31 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import inspect
 import logging
 
-from gsy_e.models.area import Area
+from gsy_e.models.area import Area, CoefficientArea
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
-from gsy_e.models.strategy.external_strategies.load import (
-    LoadForecastExternalStrategy, LoadHoursExternalStrategy, LoadProfileExternalStrategy)
-from gsy_e.models.strategy.external_strategies.pv import (
-    PVExternalStrategy, PVForecastExternalStrategy, PVPredefinedExternalStrategy,
-    PVUserProfileExternalStrategy)
+from gsy_e.models.strategy.external_strategies.load import (LoadForecastExternalStrategy,
+                                                            LoadHoursExternalStrategy,
+                                                            LoadProfileExternalStrategy)
+from gsy_e.models.strategy.external_strategies.pv import (PVExternalStrategy,
+                                                          PVForecastExternalStrategy,
+                                                          PVPredefinedExternalStrategy,
+                                                          PVUserProfileExternalStrategy)
+from gsy_e.models.strategy.external_strategies.smart_meter import SmartMeterExternalStrategy
 from gsy_e.models.strategy.external_strategies.storage import StorageExternalStrategy
 from gsy_e.models.strategy.finite_power_plant import FinitePowerPlant
-from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
 from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_e.models.strategy.market_maker_strategy import MarketMakerStrategy
 from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy
 from gsy_e.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
 from gsy_e.models.strategy.pv import PVStrategy
+from gsy_e.models.strategy.scm.load import SCMLoadHoursStrategy, SCMLoadProfileStrategy
+from gsy_e.models.strategy.scm.pv import SCMPVPredefinedStrategy, SCMPVStrategy, SCMPVUserProfile
+from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
+from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
 from gsy_e.models.strategy.storage import StorageStrategy
 
 external_strategies_mapping = {
@@ -41,7 +48,8 @@ external_strategies_mapping = {
     PVStrategy: PVExternalStrategy,
     PVPredefinedStrategy: PVPredefinedExternalStrategy,
     PVUserProfileStrategy: PVUserProfileExternalStrategy,
-    StorageStrategy: StorageExternalStrategy
+    StorageStrategy: StorageExternalStrategy,
+    SmartMeterStrategy: SmartMeterExternalStrategy
 }
 
 forecast_strategy_mapping = {
@@ -52,8 +60,17 @@ forecast_strategy_mapping = {
     LoadHoursStrategy: LoadForecastExternalStrategy
 }
 
+scm_strategy_mapping = {
+    LoadHoursStrategy: SCMLoadHoursStrategy,
+    DefinedLoadStrategy: SCMLoadProfileStrategy,
+    PVStrategy: SCMPVStrategy,
+    PVPredefinedStrategy: SCMPVPredefinedStrategy,
+    PVUserProfileStrategy: SCMPVUserProfile,
+    StorageStrategy: SCMStorageStrategy
+}
 
-class Leaf(Area):
+
+class LeafBase:
     """
     Superclass for frequently used leaf Areas, so they can be
     instantiated and serialized in a more compact format
@@ -66,28 +83,67 @@ class Leaf(Area):
                 try:
                     self.strategy_type = forecast_strategy_mapping[self.strategy_type]
                 except KeyError:
-                    logging.error(f"{self.strategy_type} could not be found in "
-                                  f"forecast_strategy_mapping, using template strategy.")
+                    logging.error("%s could not be found in forecast_strategy_mapping, "
+                                  "using template strategy.", self.strategy_type)
             elif kwargs.get("allow_external_connection", False) is True:
                 try:
                     self.strategy_type = external_strategies_mapping[self.strategy_type]
                 except KeyError:
-                    logging.error(f"{self.strategy_type} could not be found "
-                                  f"in external_strategies_mapping, using template strategy.")
-        super(Leaf, self).__init__(
-            name=name,
-            strategy=self.strategy_type(**{
-                key: value for key, value in kwargs.items()
-                if key in (self.strategy_type.parameters or []) and value is not None
-            }),
-            config=config,
-            uuid=uuid
-        )
+                    logging.error("%s could not be found in external_strategies_mapping, "
+                                  "using template strategy.", self.strategy_type)
+
+        # The following code is used in order to collect all the available constructor arguments
+        # from the strategy class that needs to be constructed, and cross-check with the input
+        # arguments (kwargs) in order to verify that all arguments are valid for the strategy,
+        # and to log a warning and omit them if they are not valid for the strategy.
+        # This approach traverses over the class hierarchy in order to fetch all constructor
+        # arguments from all base classes. The reason why this is needed, is because some derived
+        # classes (e.g. all the external strategies) do not define a constructor, thus using the
+        # default one (def __init__(self, *args, **kwargs)) and thus making it impossible to read
+        # the constructor arguments.
+
+        # Gather all constructor arguments from all base classes of the strategy class.
+        allowed_arguments = ["self"]
+        for strategy_base in self.strategy_type.__mro__:
+            if "__init__" in strategy_base.__dict__:
+                allowed_arguments += inspect.getfullargspec(strategy_base).args[1:]
+
+        # Filter out the arguments that are not accepted by any constructor in the strategy
+        # class hierarchy and log them.
+        not_accepted_args = set(kwargs.keys()).difference(allowed_arguments)
+        if not_accepted_args:
+            logging.warning("Trying to construct area strategy %s with not allowed "
+                            "arguments %s", name, not_accepted_args)
+        try:
+            super().__init__(
+                name=name,
+                strategy=self.strategy_type(**{
+                    key: value for key, value in kwargs.items()
+                    if key in allowed_arguments and value is not None
+                }),
+                config=config,
+                uuid=uuid
+            )
+        except TypeError as ex:
+            logging.error("Cannot create leaf area %s with strategy %s and parameters %s.",
+                          name, self.strategy_type, kwargs)
+            raise ex
 
     @property
     def parameters(self):
-        return {key: getattr(self.strategy, key, None)
-                for key in self.strategy_type.parameters}
+        """Get dict with the strategy parameters and their values."""
+        return self.strategy.serialize()
+
+
+class Leaf(LeafBase, Area):
+    pass
+
+
+class CoefficientLeaf(LeafBase, CoefficientArea):
+    pass
+
+
+# pylint: disable=missing-class-docstring
 
 
 class CommercialProducer(Leaf):
@@ -132,3 +188,37 @@ class SmartMeter(Leaf):
 
 class FiniteDieselGenerator(Leaf):
     strategy_type = FinitePowerPlant
+
+
+class SCMPV(CoefficientLeaf):
+    strategy_type = SCMPVStrategy
+
+
+class SCMPredefinedPV(CoefficientLeaf):
+    strategy_type = SCMPVPredefinedStrategy
+
+
+class SCMPVProfile(CoefficientLeaf):
+    strategy_type = SCMPVUserProfile
+
+
+class SCMLoadProfile(CoefficientLeaf):
+    strategy_type = SCMLoadProfileStrategy
+
+
+class SCMLoadHours(CoefficientLeaf):
+    strategy_type = SCMLoadHoursStrategy
+
+
+class SCMStorage(CoefficientLeaf):
+    strategy_type = SCMStorageStrategy
+
+
+scm_leaf_mapping = {
+    "LoadHours": SCMLoadHours,
+    "LoadProfile": SCMLoadProfile,
+    "Storage": SCMStorage,
+    "PV": SCMPV,
+    "PredefinedPV": SCMPredefinedPV,
+    "PVProfile": SCMPVProfile
+}

@@ -20,21 +20,22 @@ import os
 import click
 
 from datetime import datetime, timedelta
-from redis import StrictRedis
+from redis import Redis
 from rq import Queue
 from subprocess import Popen
 from time import sleep
 import platform
 from gsy_framework.utils import check_redis_health
-from gsy_e.gsy_e_core.util import get_simulation_queue_name
+from gsy_e.gsy_e_core.util import get_simulation_queue_name, memory_usage_percent
 
 REDIS_URL = os.environ.get('REDIS_URL', 'redis://localhost')
 MAX_JOBS = os.environ.get('D3A_MAX_JOBS_PER_POD', 2)
+MAX_LIMIT_MEMORY_USAGE_PERCENT = os.environ.get('D3A_MAX_MEM_USAGE_PERCENT', 90)
 
 
 class Launcher:
     def __init__(self, max_jobs=None, max_delay_seconds=2):
-        self.redis_connection = StrictRedis.from_url(REDIS_URL, retry_on_timeout=True)
+        self.redis_connection = Redis.from_url(REDIS_URL, retry_on_timeout=True)
         self.queue = Queue(get_simulation_queue_name(), connection=self.redis_connection)
         self.max_jobs = max_jobs if max_jobs is not None else int(MAX_JOBS)
         self.max_delay = timedelta(seconds=max_delay_seconds)
@@ -48,8 +49,10 @@ class Launcher:
         self.job_array.append(self._start_worker())
         while True:
             sleep(1)
+
             if len(self.job_array) < self.max_jobs and self.is_queue_crowded():
-                self.job_array.append(self._start_worker())
+                if memory_usage_percent() <= MAX_LIMIT_MEMORY_USAGE_PERCENT:
+                    self.job_array.append(self._start_worker())
 
             self.job_array = [j for j in self.job_array if j.poll() is None]
 

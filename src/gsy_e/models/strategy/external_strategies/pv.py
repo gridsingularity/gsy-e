@@ -17,17 +17,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import json
 import logging
-from typing import Dict, Callable, TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable, Dict
 
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Offer
 from pendulum import duration
 
 from gsy_e.gsy_e_core.exceptions import GSyException
-from gsy_e.gsy_e_core.util import get_market_maker_rate_from_config
-from gsy_e.models.strategy.external_strategies import (
-    ExternalMixin, IncomingRequest, ExternalStrategyConnectionManager, default_market_info,
-    CommandTypeNotSupported, OrderCanNotBePosted)
+from gsy_e.models.strategy.external_strategies import (CommandTypeNotSupported, ExternalMixin,
+                                                       ExternalStrategyConnectionManager,
+                                                       IncomingRequest, OrderCanNotBePosted)
 from gsy_e.models.strategy.external_strategies.forecast_mixin import ForecastExternalMixin
 from gsy_e.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
 from gsy_e.models.strategy.pv import PVStrategy
@@ -221,19 +220,7 @@ class PVExternalMixin(ExternalMixin):
             self.set_produced_energy_forecast_in_state(reconfigure=False)
             self._set_energy_measurement_of_last_market()
             if not self.is_aggregator_controlled:
-                market_event_channel = f"{self.channel_prefix}/events/market"
-                market_info = self.spot_market.info
-                if self.is_aggregator_controlled:
-                    market_info.update(default_market_info)
-                market_info["device_info"] = self._device_info_dict
-                market_info["event"] = "market"
-                market_info["device_bill"] = self.device.stats.aggregated_stats.get("bills")
-                market_info["area_uuid"] = self.device.uuid
-                market_info["last_market_maker_rate"] = (
-                    get_market_maker_rate_from_config(self.area.current_market))
-                market_info["last_market_stats"] = (
-                    self.area.stats.get_price_stats_current_market())
-                self.redis.publish_json(market_event_channel, market_info)
+                self.populate_market_info_to_connected_user()
             self._delete_past_state()
         else:
             super().event_market_cycle()
@@ -392,9 +379,6 @@ class PVForecastExternalStrategy(ForecastExternalMixin, PVPredefinedExternalStra
     """
     Strategy responsible for reading forecast and measurement production data via hardware API
     """
-    parameters = ("energy_forecast_Wh", "panel_count", "initial_selling_rate",
-                  "final_selling_rate", "fit_to_limit", "update_interval",
-                  "energy_rate_decrease_per_update", "use_market_maker_rate")
 
     # pylint: disable=too-many-arguments
     def __init__(
@@ -405,7 +389,10 @@ class PVForecastExternalStrategy(ForecastExternalMixin, PVPredefinedExternalStra
             update_interval=duration(
                 minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
             energy_rate_decrease_per_update=None,
-            use_market_maker_rate: bool = False):
+            use_market_maker_rate: bool = False,
+            cloud_coverage: int = None,
+            capacity_kW: float = None
+    ):
         """
         Constructor of PVForecastStrategy
         """

@@ -12,10 +12,9 @@ General Public License for more details.
 You should have received a copy of the GNU General Public License along with this program. If not,
 see <http://www.gnu.org/licenses/>.
 """
-
 from typing import TYPE_CHECKING, List, Union
 
-from gsy_framework.constants_limits import GlobalConfig
+from gsy_framework.constants_limits import ConstSettings
 from pendulum import duration, DateTime
 
 from gsy_e.constants import FutureTemplateStrategiesConstants
@@ -34,7 +33,7 @@ class FutureTemplateStrategyBidUpdater(TemplateStrategyBidUpdater):
 
     @property
     def _time_slot_duration_in_seconds(self) -> int:
-        return GlobalConfig.FUTURE_MARKET_DURATION_HOURS * 60 * 60
+        return ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS * 60 * 60
 
     @staticmethod
     def get_all_markets(area: "Area") -> List["FutureMarkets"]:
@@ -48,12 +47,23 @@ class FutureTemplateStrategyBidUpdater(TemplateStrategyBidUpdater):
             return []
         return area.future_markets.market_time_slots
 
+    def time_for_price_update(self, strategy: "BaseStrategy", time_slot: DateTime) -> bool:
+        """Check if the prices of bids/offers should be updated."""
+        return (
+                self._elapsed_seconds(strategy.area)
+                - self.market_slot_added_time_mapping[time_slot] >= (
+                        self.update_interval.seconds * self.update_counter[time_slot]))
+
     def update(self, market: "FutureMarkets", strategy: "BaseStrategy") -> None:
         """Update the price of existing bids to reflect the new rates."""
         for time_slot in strategy.area.future_markets.market_time_slots:
             if self.time_for_price_update(strategy, time_slot):
                 if strategy.are_bids_posted(market.id, time_slot):
-                    strategy.update_bid_rates(market, self.get_updated_rate(time_slot))
+                    strategy.update_bid_rates(market, self.get_updated_rate(time_slot), time_slot)
+
+    def delete_past_state_values(self, current_market_time_slot: DateTime) -> None:
+        """Delete irrelevant values from buffers for unneeded markets."""
+        self._delete_market_slot_data(current_market_time_slot)
 
 
 class FutureTemplateStrategyOfferUpdater(TemplateStrategyOfferUpdater):
@@ -61,7 +71,7 @@ class FutureTemplateStrategyOfferUpdater(TemplateStrategyOfferUpdater):
 
     @property
     def _time_slot_duration_in_seconds(self) -> int:
-        return GlobalConfig.FUTURE_MARKET_DURATION_HOURS * 60 * 60
+        return ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS * 60 * 60
 
     @staticmethod
     def get_all_markets(area: "Area") -> List["FutureMarkets"]:
@@ -75,12 +85,24 @@ class FutureTemplateStrategyOfferUpdater(TemplateStrategyOfferUpdater):
             return []
         return area.future_markets.market_time_slots
 
+    def time_for_price_update(self, strategy: "BaseStrategy", time_slot: DateTime) -> bool:
+        """Check if the prices of bids/offers should be updated."""
+        return (
+                self._elapsed_seconds(strategy.area)
+                - self.market_slot_added_time_mapping[time_slot] >= (
+                        self.update_interval.seconds * self.update_counter[time_slot]))
+
     def update(self, market: "FutureMarkets", strategy: "BaseStrategy") -> None:
         """Update the price of existing offers to reflect the new rates."""
         for time_slot in strategy.area.future_markets.market_time_slots:
             if self.time_for_price_update(strategy, time_slot):
                 if strategy.are_offers_posted(market.id):
-                    strategy.update_offer_rates(market, self.get_updated_rate(time_slot))
+                    strategy.update_offer_rates(
+                        market, self.get_updated_rate(time_slot), time_slot)
+
+    def delete_past_state_values(self, current_market_time_slot: DateTime) -> None:
+        """Delete irrelevant values from buffers for unneeded markets."""
+        self._delete_market_slot_data(current_market_time_slot)
 
 
 class FutureMarketStrategyInterface:
@@ -98,6 +120,9 @@ class FutureMarketStrategyInterface:
 
     def update_and_populate_price_settings(self, strategy: "BaseStrategy") -> None:
         """Base class method for updating/populating price settings"""
+
+    def delete_past_state_values(self, current_market_time_slot: DateTime) -> None:
+        """Base class method for deleting the state of past or spot markets."""
 
 
 def future_strategy_bid_updater_factory(
@@ -142,6 +167,7 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
     def __init__(self, asset_type: AssetType,
                  initial_buying_rate: float, final_buying_rate: float,
                  initial_selling_rate: float, final_selling_rate: float):
+        # pylint: disable=too-many-arguments
         """
         Args:
             initial_buying_rate: Initial rate of the future bids
@@ -200,9 +226,6 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
                 assert False, ("Strategy %s has to be producer or consumer to be able to "
                                "participate in the future market.", strategy.owner.name)
 
-        self._bid_updater.increment_update_counter_all_markets(strategy)
-        self._offer_updater.increment_update_counter_all_markets(strategy)
-
     def _post_consumer_first_bid(
             self, strategy: "BaseStrategy", time_slot: DateTime,
             available_buy_energy_kWh: float) -> None:
@@ -213,8 +236,13 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
         strategy.post_bid(
             market=strategy.area.future_markets,
             energy=available_buy_energy_kWh,
-            price=available_buy_energy_kWh * self._bid_updater.initial_rate[time_slot],
-            time_slot=time_slot)
+            price=available_buy_energy_kWh * self._bid_updater.get_updated_rate(time_slot),
+            time_slot=time_slot,
+            replace_existing=False
+        )
+        # update_counter has to be increased because the first price counts as a price update
+        # pylint: disable=no-member
+        self._bid_updater.increment_update_counter(strategy, time_slot)
 
     def _post_producer_first_offer(
             self, strategy: "BaseStrategy", time_slot: DateTime,
@@ -227,9 +255,12 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
             market=strategy.area.future_markets,
             replace_existing=False,
             energy=available_sell_energy_kWh,
-            price=available_sell_energy_kWh * self._offer_updater.initial_rate[time_slot],
+            price=available_sell_energy_kWh * self._offer_updater.get_updated_rate(time_slot),
             time_slot=time_slot
         )
+        # update_counter has to be increased because the first price counts as a price update
+        # pylint: disable=no-member
+        self._offer_updater.increment_update_counter(strategy, time_slot)
 
     def event_tick(self, strategy: "BaseStrategy") -> None:
         """
@@ -251,28 +282,25 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
         self._bid_updater.increment_update_counter_all_markets(strategy)
         self._offer_updater.increment_update_counter_all_markets(strategy)
 
+    def delete_past_state_values(self, current_market_time_slot: DateTime) -> None:
+        self._bid_updater.delete_past_state_values(current_market_time_slot)
+        self._offer_updater.delete_past_state_values(current_market_time_slot)
 
-def future_market_strategy_factory(
-        asset_type: AssetType,
-        initial_buying_rate: float = FutureTemplateStrategiesConstants.INITIAL_BUYING_RATE,
-        final_buying_rate: float = FutureTemplateStrategiesConstants.FINAL_BUYING_RATE,
-        initial_selling_rate: float = FutureTemplateStrategiesConstants.INITIAL_SELLING_RATE,
-        final_selling_rate: float = FutureTemplateStrategiesConstants.FINAL_SELLING_RATE
-) -> FutureMarketStrategyInterface:
+
+def future_market_strategy_factory(asset_type: AssetType) -> FutureMarketStrategyInterface:
     """
     Factory method for creating the future market trading strategy. Creates an object of a
     class with empty implementation if the future market is disabled, with the real
     implementation otherwise
-    Args:
-        initial_buying_rate: Initial rate of the future bids
-        final_buying_rate: Final rate of the future bids
-        initial_selling_rate: Initial rate of the future offers
-        final_selling_rate: Final rate of the future offers
 
     Returns: Future strategy object
 
     """
-    if GlobalConfig.FUTURE_MARKET_DURATION_HOURS > 0:
+    initial_buying_rate = FutureTemplateStrategiesConstants.INITIAL_BUYING_RATE
+    final_buying_rate = FutureTemplateStrategiesConstants.FINAL_BUYING_RATE
+    initial_selling_rate = FutureTemplateStrategiesConstants.INITIAL_SELLING_RATE
+    final_selling_rate = FutureTemplateStrategiesConstants.FINAL_SELLING_RATE
+    if ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS > 0:
         return FutureMarketStrategy(
             asset_type, initial_buying_rate, final_buying_rate,
             initial_selling_rate, final_selling_rate)

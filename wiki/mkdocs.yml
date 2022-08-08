@@ -28,15 +28,16 @@ nav:
             - 'Bills and traded energy': 'bills-traded-energy.md'
             - 'Self-Sufficiency and Self-Consumption': 'self-sufficiency-self-consumption.md'
             - 'Trade profile': 'trade-profile.md'
-            - 'Summary': 'summary.md'
+            - 'Aggregate Market Summary': 'aggregate-market-summary.md'
             - 'Price': 'price.md'
             - 'Trades': 'trades.md'
             - 'Results Download': 'results-download.md'
+            - 'Duplicating simulations': 'duplicating-simulations'
     - 'Instructions for researchers on backend code':
         - 'Backend Installation Instructions':
             - 'Linux Installation Instructions': 'linux-installation-instructions.md'
             - 'Mac Installation Instructions': 'ios-installation-instructions.md'
-            - 'Virtual Machine Installation Instructions': 'vm-installation-instructions.md'
+            - 'Windows Installation Instructions': 'vm-installation-instructions.md'
             - 'Version Updates': 'version-update.md'
         - 'Backend Simulation Configuration':
             - 'Setup Configuration': 'setup-configuration.md'
@@ -92,6 +93,16 @@ nav:
             - 'Launch the Grid Operator API':
                 - 'Registration - Simulations run on the User-Interface': 'registration-grid-operator-api-user-interface.md'
                 - 'Registration - Simulations run on the Backend': 'registration-grid-operator-api-backend.md'
+        - 'Customise the clearing algorithm through the Grid Singularity Matching API':
+            - 'Walkthrough': 'matching-api-walkthrough.md'
+            - 'Matching API':
+                - 'Matching API Events': 'matching-api-events.md'
+                - 'Matching API Commands': 'matching-api-commands.md'
+                - 'Matching API Template Script': 'matching-api-template-script.md'
+            - 'Launch the Matching API':
+                - 'Registration - Simulations run on the User-Interface': 'registration-matching-api-user-interface.md'
+                - 'Registration - Simulations run on the Backend': 'registration-matching-api-backend.md'
+        - 'Extract data (historical profile and grid topology) through the Grid Singularity Historical Data and Grid Data APIs': 'get-simulation-data.md'
 - 'Grid Singularity Canary Test Network':
     - 'Connect to a Grid Singularity Canary Test Network': 'connect-ctn.md'
     - 'Send live energy asset data streams to the Grid Singularity exchange':

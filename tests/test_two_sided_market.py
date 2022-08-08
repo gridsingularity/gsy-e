@@ -8,15 +8,17 @@ import pytest
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import BidOfferMatch
 from gsy_framework.data_classes import TradeBidOfferInfo, Trade
+from gsy_framework.enums import BidOfferMatchAlgoEnum
 from gsy_framework.matching_algorithms import (
     PayAsBidMatchingAlgorithm, PayAsClearMatchingAlgorithm
 )
 from pendulum import now
 
+from gsy_e.events import MarketEvent
 from gsy_e.gsy_e_core.blockchain_interface import NonBlockchainInterface
 from gsy_e.gsy_e_core.exceptions import (
-    BidNotFoundException, InvalidBid, InvalidBidOfferPairException, InvalidTrade, MarketException)
-from gsy_e.events import MarketEvent
+    BidNotFoundException, NegativeEnergyOrderException, InvalidBidOfferPairException,
+    InvalidTrade, NegativeEnergyTradeException)
 from gsy_e.models.market import Bid, Offer
 from gsy_e.models.market.two_sided import TwoSidedMarket
 
@@ -82,11 +84,11 @@ class TestTwoSidedMarket:
         # if energy < 0
         market.fee_class.update_incoming_bid_with_fee = MagicMock(return_value=5/2)
         assert len(market.bids) == 0
-        with pytest.raises(InvalidBid):
+        with pytest.raises(NegativeEnergyOrderException):
             market.bid(5, -2, "buyer", "buyer_origin")
             assert len(market.bids) == 0
         # if price < 0
-        with pytest.raises(MarketException) as exception:
+        with pytest.raises(NegativeEnergyOrderException) as exception:
             market.bid(-5, -2, "buyer", "buyer_origin")
             assert exception.value == "Negative price after taxes, bid cannot be posted."
             assert len(market.bids) == 0
@@ -141,7 +143,7 @@ class TestTwoSidedMarket:
         with pytest.raises(InvalidBidOfferPairException):
             # should raise an exception as buyer_id is not in trading_partners
             market._validate_requirements_satisfied(recommendation)
-        bid.buyer_id = "bid_id2"
+        recommendation.bid.buyer_id = "bid_id2"
         market._validate_requirements_satisfied(recommendation)  # Should not raise any exceptions
         # bid.requirements.append({"energy_type": ["Grey"]})
         recommendation.matching_requirements["bid_requirement"] = {"energy_type": ["Grey"]}
@@ -257,7 +259,7 @@ class TestTwoSidedMarket:
 
     @staticmethod
     def test_market_bid_invalid(market: TwoSidedMarket):
-        with pytest.raises(InvalidBid):
+        with pytest.raises(NegativeEnergyOrderException):
             market.bid(10, -1, "someone", "someone")
 
     @staticmethod
@@ -358,8 +360,14 @@ class TestTwoSidedMarket:
             energy, market=TwoSidedMarket(bc=MagicMock(), time_slot=pendulum.now())):
         bid = market.bid(20, 20, "A", "A")
         trade_offer_info = TradeBidOfferInfo(1, 1, 1, 1, 1)
-        with pytest.raises(InvalidTrade):
-            market.accept_bid(bid, energy=energy, seller="A", trade_offer_info=trade_offer_info)
+        if energy <= 0:
+            with pytest.raises(NegativeEnergyTradeException):
+                market.accept_bid(
+                    bid, energy=energy, seller="A", trade_offer_info=trade_offer_info)
+        else:
+            with pytest.raises(InvalidTrade):
+                market.accept_bid(
+                    bid, energy=energy, seller="A", trade_offer_info=trade_offer_info)
 
     @staticmethod
     def test_market_accept_bid_yields_partial_bid_trade(
@@ -439,9 +447,43 @@ class TestTwoSidedMarket:
         assert matches[0]["offer"]["id"] == "residual_offer"
         assert matches[1]["bid"]["id"] == "residual_bid_2"
 
+    @staticmethod
+    def test_matching_list_gets_updated_with_residual_orders_with_requirements():
+        offer1 = Offer("offer_id", pendulum.now(), 1, 1, "S")
+        bid_requirement = {"trading_partners": [offer1.seller_id], "energy": 1.5}
+        bid1 = Bid("bid_id", pendulum.now(), 1, 2, "B",
+                   requirements=[bid_requirement])
+        recommendations = [
+            BidOfferMatch(
+                offer=offer1.serializable_dict(), selected_energy=1,
+                bid=bid1.serializable_dict(), trade_rate=1, market_id="",
+                matching_requirements={
+                    "bid_requirement": bid_requirement},
+                time_slot="").serializable_dict()
+        ]
+        offer_trade = Trade("trade", pendulum.now(), offer1, "S", "B",
+                            residual=Offer("residual_offer", pendulum.now(), 0.5, 1, "S"),
+                            traded_energy=1, trade_price=0.5)
+        bid_trade = Trade("bid_trade", pendulum.now(), bid1, "S", "B",
+                          residual=Bid("residual_bid", pendulum.now(), 0.5, 1, "S",
+                                       requirements=[bid_requirement]),
+                          traded_energy=1, trade_price=0.5)
+        recommendations = (
+            TwoSidedMarket._replace_offers_bids_with_residual_in_recommendations_list(
+                recommendations, offer_trade, bid_trade))
+        assert len(recommendations) == 1
+        assert recommendations[0]["offer"]["id"] == "residual_offer"
+        assert recommendations[0]["bid"]["id"] == "residual_bid"
+        # The bid traded 1 kWh so the maximum energy should become 2 - 1 = 1
+        # Furthermore, the bid was traded with the trading_partner
+        # it only bought 1 out of 1.5, so the residual bid's requirement should reflect this = 0.5
+        assert recommendations[0]["bid"]["energy"] == 1
+        assert recommendations[0]["bid"]["requirements"][0]["energy"] == 0.5
+        assert recommendations[0]["matching_requirements"]["bid_requirement"]["energy"] == 0.5
+
 
 class TestTwoSidedMarketMatchRecommendations:
-    """Class Responsible for testing two sided market's matching functionality."""
+    """Class Responsible for testing two-sided market's matching functionality."""
 
     @staticmethod
     def test_match_recommendations(market):
@@ -462,3 +504,207 @@ class TestTwoSidedMarketMatchRecommendations:
         ]
         market.match_recommendations(recommendations)
         assert len(market.trades) == 1
+
+    @staticmethod
+    def test_recommendation_with_valid_match_requirements_gets_accepted(market):
+        """Test recommended match with valid requirements gets accepted."""
+        bid = Bid(
+            "bid_id1", pendulum.now(), price=2, energy=1, buyer="Buyer", buyer_id="buyer1",
+            time_slot="2021-10-06T12:00", requirements=[
+                {"trading_partners": ["seller1", "seller2"]},
+                {"energy_type": ["green"]}
+            ])
+        offer = Offer("offer_id1", pendulum.now(), price=2, energy=1, seller="Seller",
+                      seller_id="seller1", time_slot="2021-10-06T12:00")
+
+        market.bids = {"bid_id1": bid}
+        market.offers = {"offer_id1": offer}
+
+        recommended_match = BidOfferMatch(
+            bid=bid.serializable_dict(), offer=offer.serializable_dict(),
+            trade_rate=2, selected_energy=1, market_id=market.id,
+            time_slot="2021-10-06T12:00", matching_requirements={
+                "bid_requirement": {"trading_partners": ["seller1", "seller2"]},
+                "offer_requirement": {}
+            })
+
+        recommendations = [recommended_match.serializable_dict()]
+        market.match_recommendations(recommendations)
+        assert len(market.trades) == 1
+
+    @staticmethod
+    def test_recommendations_with_invalid_match_requirements_get_rejected(market):
+        """Test recommendations with invalid match_requirements get rejected."""
+        bid = Bid(
+            "bid_id1", pendulum.now(), price=2, energy=1, buyer="Buyer", buyer_id="buyer1",
+            time_slot="2021-10-06T12:00", requirements=[
+                {"trading_partners": ["seller1", "seller2"]},
+                {"energy_type": ["green"]}
+            ])
+        offer = Offer("offer_id1", pendulum.now(), price=2, energy=1, seller="Seller",
+                      seller_id="seller1", time_slot="2021-10-06T12:00")
+
+        market.bids = {"bid_id1": bid}
+        market.offers = {"offer_id1": offer}
+
+        recommendations = [
+            # reject due to invalid bid_requirement
+            BidOfferMatch(
+                bid=bid.serializable_dict(), offer=offer.serializable_dict(),
+                trade_rate=2, selected_energy=1, market_id=market.id,
+                time_slot="2021-10-06T12:00", matching_requirements={
+                    "bid_requirement": {"trading_partners": ["seller1", "seller2", "seller3"]},
+                    "offer_requirement": {}
+                }),
+            # reject due to invalid bid_requirement
+            BidOfferMatch(
+                bid=bid.serializable_dict(), offer=offer.serializable_dict(),
+                trade_rate=2, selected_energy=1, market_id=market.id,
+                time_slot="2021-10-06T12:00", matching_requirements={
+                    "bid_requirement": {"trading_partners": ["seller1", "seller2"], "price": 2},
+                    "offer_requirement": {}
+                }),
+            # reject due to invalid offer_requirement
+            BidOfferMatch(
+                bid=bid.serializable_dict(), offer=offer.serializable_dict(),
+                trade_rate=2, selected_energy=1, market_id=market.id,
+                time_slot="2021-10-06T12:00", matching_requirements={
+                    "bid_requirement": {},
+                    "offer_requirement": {"trading_partners": ["buyer1"]}
+                })
+        ]
+
+        for recommendation in recommendations:
+            with pytest.raises(Exception):
+                market.validate_bid_offer_match(recommendation)
+
+        market.match_recommendations(
+            [recommendation.serializable_dict() for recommendation in recommendations])
+        assert len(market.trades) == 0
+
+    @staticmethod
+    def test_validate_recommendation_selected_energy(market):
+        """Test a recommendation with invalid selected_energy gets rejected."""
+        bid = Bid("bid_id1", pendulum.now(), price=2, energy=1, buyer="Buyer", buyer_id="buyer1",
+                  time_slot="2021-10-06T12:00")
+        offer = Offer("offer_id1", pendulum.now(), price=2, energy=1, seller="Seller",
+                      seller_id="seller1", time_slot="2021-10-06T12:00")
+
+        market.bids = {"bid_id1": bid}
+        market.offers = {"offer_id1": offer}
+
+        recommended_match1 = BidOfferMatch(
+            bid=bid.serializable_dict(), offer=offer.serializable_dict(),
+            trade_rate=2, selected_energy=2, market_id=market.id,
+            time_slot="2021-10-06T12:00")
+        recommended_match2 = BidOfferMatch(
+            bid=bid.serializable_dict(), offer=offer.serializable_dict(),
+            trade_rate=2, selected_energy=0, market_id=market.id,
+            time_slot="2021-10-06T12:00")
+        recommended_match3 = BidOfferMatch(
+            bid=bid.serializable_dict(), offer=offer.serializable_dict(),
+            trade_rate=2, selected_energy=-2, market_id=market.id,
+            time_slot="2021-10-06T12:00")
+
+        recommendations = [
+            recommended_match1,
+            recommended_match2,
+            recommended_match3]
+
+        for recommendation in recommendations:
+            with pytest.raises(InvalidBidOfferPairException):
+                market.validate_bid_offer_match(recommendation)
+
+        market.match_recommendations([
+            recommendation.serializable_dict() for recommendation in recommendations])
+        assert len(market.trades) == 0
+
+    @staticmethod
+    def test_validate_recommendation_traded_rate(market):
+        """Test a recommendation with invalid traded_rate gets rejected."""
+        bid = Bid("bid_id1", pendulum.now(), price=8, energy=4, buyer="Buyer", buyer_id="buyer1",
+                  time_slot="2021-10-06T12:00")
+        offer = Offer("offer_id1", pendulum.now(), price=8, energy=4, seller="Seller",
+                      seller_id="seller1", time_slot="2021-10-06T12:00")
+
+        market.bids = {"bid_id1": bid}
+        market.offers = {"offer_id1": offer}
+        # lower trade rate
+        recommended_match1 = BidOfferMatch(
+            bid=bid.serializable_dict(), offer=offer.serializable_dict(),
+            trade_rate=1, selected_energy=1, market_id=market.id,
+            time_slot="2021-10-06T12:00")
+        # higher trade rate
+        recommended_match2 = BidOfferMatch(
+            bid=bid.serializable_dict(), offer=offer.serializable_dict(),
+            trade_rate=3, selected_energy=1, market_id=market.id,
+            time_slot="2021-10-06T12:00")
+
+        recommendations = [
+            recommended_match1,
+            recommended_match2]
+
+        for recommendation in recommendations:
+            with pytest.raises(InvalidBidOfferPairException):
+                market.validate_bid_offer_match(recommendation)
+
+        market.match_recommendations([
+            recommendation.serializable_dict() for recommendation in recommendations])
+        assert len(market.trades) == 0
+
+    @staticmethod
+    def test_validate_recommendation_bid_requirement_price(market):
+        """Test validate bid price requirement in PAY_AS_BID market."""
+        ConstSettings.MASettings.BID_OFFER_MATCH_TYPE = BidOfferMatchAlgoEnum.PAY_AS_BID.value
+        bid = Bid(
+            "bid_id1", pendulum.now(), price=35, energy=1, buyer="Buyer", buyer_id="buyer1",
+            time_slot="2021-10-06T12:00", requirements=[
+                {"trading_partners": ["seller1"], "price": 45}])
+        offer = Offer("offer_id1", pendulum.now(), price=35, energy=1, seller="Seller",
+                      seller_id="seller1", time_slot="2021-10-06T12:00")
+
+        market.bids = {"bid_id1": bid}
+        market.offers = {"offer_id1": offer}
+
+        # valid match
+        recommended_match = BidOfferMatch(
+            bid=bid.serializable_dict(), offer=offer.serializable_dict(),
+            trade_rate=35, selected_energy=1, market_id=market.id,
+            time_slot="2021-10-06T12:00", matching_requirements={
+                "bid_requirement": {"trading_partners": ["seller1"], "price": 45}
+            })
+        market.validate_bid_offer_match(recommended_match)
+        market.match_recommendations([
+            recommended_match.serializable_dict()
+        ])
+        assert len(market.trades) == 1
+        assert market.accumulated_trade_price == 45
+
+    @staticmethod
+    def test_validate_recommended_bid_requirement_energy(market):
+        """Test validate bid energy requirement in PAY_AS_BID market."""
+        ConstSettings.MASettings.BID_OFFER_MATCH_TYPE = BidOfferMatchAlgoEnum.PAY_AS_BID.value
+        bid = Bid(
+            "bid_id1", pendulum.now(), price=60, energy=3, buyer="Buyer", buyer_id="buyer1",
+            time_slot="2021-10-06T12:00", requirements=[
+                {"trading_partners": ["seller1"], "energy": 2, "price": 45}])
+        offer = Offer("offer_id1", pendulum.now(), price=60, energy=3, seller="Seller",
+                      seller_id="seller1", time_slot="2021-10-06T12:00")
+
+        market.bids = {"bid_id1": bid}
+        market.offers = {"offer_id1": offer}
+
+        # valid match
+        recommended_match = BidOfferMatch(
+            bid=bid.serializable_dict(), offer=offer.serializable_dict(),
+            trade_rate=20, selected_energy=2, market_id=market.id,
+            time_slot="2021-10-06T12:00", matching_requirements={
+                "bid_requirement": {"trading_partners": ["seller1"], "energy": 2, "price": 45}
+            })
+        market.validate_bid_offer_match(recommended_match)
+        market.match_recommendations([
+            recommended_match.serializable_dict()
+        ])
+        assert len(market.trades) == 1
+        assert market.accumulated_trade_energy == 2
+        assert market.accumulated_trade_price == 45

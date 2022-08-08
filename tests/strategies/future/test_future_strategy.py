@@ -20,7 +20,7 @@ from typing import TYPE_CHECKING
 from unittest.mock import Mock, MagicMock
 
 import pytest
-from gsy_framework.constants_limits import GlobalConfig
+from gsy_framework.constants_limits import GlobalConfig, ConstSettings
 from pendulum import today, duration
 
 from gsy_e.constants import TIME_ZONE, FutureTemplateStrategiesConstants
@@ -36,12 +36,13 @@ if TYPE_CHECKING:
 
 class TestFutureMarketStrategy:
     """Test the FutureMarketStrategy class."""
-    # pylint: disable = attribute-defined-outside-init
+    # pylint: disable = attribute-defined-outside-init, too-many-instance-attributes
 
     def setup_method(self) -> None:
         """Preparation for the tests execution"""
-        self._original_future_markets_duration = GlobalConfig.FUTURE_MARKET_DURATION_HOURS
-        GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 24
+        self._original_future_markets_duration = (
+            ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS)
+        ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS = 24
         self.time_slot = today(tz=TIME_ZONE).at(hour=12, minute=0, second=0)
         self.area_mock = Mock()
         self.area_mock.name = "test_name"
@@ -51,10 +52,21 @@ class TestFutureMarketStrategy:
         self.future_markets = MagicMock(spec=FutureMarkets)
         self.future_markets.market_time_slots = [self.time_slot]
         self.future_markets.id = str(uuid.uuid4())
+        self._original_initial_buying_rate = FutureTemplateStrategiesConstants.INITIAL_BUYING_RATE
+        self._original_final_buying_rate = FutureTemplateStrategiesConstants.FINAL_BUYING_RATE
+        self._original_initial_selling_rate = (
+            FutureTemplateStrategiesConstants.INITIAL_SELLING_RATE)
+        self._original_final_selling_rate = FutureTemplateStrategiesConstants.FINAL_SELLING_RATE
 
     def teardown_method(self) -> None:
         """Test cleanup"""
-        GlobalConfig.FUTURE_MARKET_DURATION_HOURS = self._original_future_markets_duration
+        ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS = (
+            self._original_future_markets_duration)
+        FutureTemplateStrategiesConstants.INITIAL_BUYING_RATE = self._original_initial_buying_rate
+        FutureTemplateStrategiesConstants.FINAL_BUYING_RATE = self._original_final_buying_rate
+        FutureTemplateStrategiesConstants.INITIAL_SELLING_RATE = (
+            self._original_initial_selling_rate)
+        FutureTemplateStrategiesConstants.FINAL_SELLING_RATE = self._original_final_selling_rate
 
     def _setup_strategy_fixture(self, future_strategy_fixture: "BaseStrategy") -> None:
         future_strategy_fixture.owner = self.area_mock
@@ -121,7 +133,8 @@ class TestFutureMarketStrategy:
         )
 
     @pytest.mark.parametrize(
-        "future_strategy_fixture", [LoadHoursStrategy(100), PVStrategy(), StorageStrategy()])
+        "future_strategy_fixture", [LoadHoursStrategy(100), PVStrategy(),
+                                    StorageStrategy(initial_soc=50)])
     def test_event_tick_updates_bids_and_offers(
             self, future_strategy_fixture: "BaseStrategy") -> None:
         """Validate that tick event updates existing bids and offers to the expected energy
@@ -156,18 +169,36 @@ class TestFutureMarketStrategy:
         future_strategy.event_tick(future_strategy_fixture)
         future_strategy_fixture.area.current_tick = ticks_for_update
         future_strategy.event_tick(future_strategy_fixture)
-        number_of_updates = ((GlobalConfig.FUTURE_MARKET_DURATION_HOURS * 60 /
-                             FutureTemplateStrategiesConstants.UPDATE_INTERVAL_MIN) - 1)
+        number_of_updates = (
+                (ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS * 60 /
+                 FutureTemplateStrategiesConstants.UPDATE_INTERVAL_MIN) - 1)
         bid_energy_rate = (50 - 10) / number_of_updates
         offer_energy_rate = (50 - 20) / number_of_updates
         if isinstance(future_strategy_fixture, LoadHoursStrategy):
             future_strategy_fixture.update_bid_rates.assert_called_once_with(
-                self.future_markets, 10 + bid_energy_rate)
+                self.future_markets, 10 + bid_energy_rate, self.time_slot)
         if isinstance(future_strategy_fixture, PVStrategy):
             future_strategy_fixture.update_offer_rates.assert_called_once_with(
-                self.future_markets, 50 - offer_energy_rate)
+                self.future_markets, 50 - offer_energy_rate, self.time_slot)
         if isinstance(future_strategy_fixture, StorageStrategy):
             future_strategy_fixture.update_bid_rates.assert_called_once_with(
-                self.future_markets, 10 + bid_energy_rate)
+                self.future_markets, 10 + bid_energy_rate, self.time_slot)
             future_strategy_fixture.update_offer_rates.assert_called_once_with(
-                self.future_markets, 50 - offer_energy_rate)
+                self.future_markets, 50 - offer_energy_rate, self.time_slot)
+
+    @staticmethod
+    def test_future_template_strategies_constants() -> None:
+        """Validate that strategies constants are properly evaluated"""
+        # pylint: disable=protected-access
+        FutureTemplateStrategiesConstants.INITIAL_BUYING_RATE = 15
+        FutureTemplateStrategiesConstants.FINAL_BUYING_RATE = 35
+        FutureTemplateStrategiesConstants.INITIAL_SELLING_RATE = 30
+        FutureTemplateStrategiesConstants.FINAL_SELLING_RATE = 10
+
+        load_strategy_fixture = LoadHoursStrategy(100)
+        assert load_strategy_fixture._future_market_strategy._bid_updater.initial_rate_input == 15
+        assert load_strategy_fixture._future_market_strategy._bid_updater.final_rate_input == 35
+
+        pv_strategy_fixture = PVStrategy()
+        assert pv_strategy_fixture._future_market_strategy._offer_updater.initial_rate_input == 30
+        assert pv_strategy_fixture._future_market_strategy._offer_updater.final_rate_input == 10

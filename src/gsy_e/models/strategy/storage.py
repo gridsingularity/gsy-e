@@ -51,11 +51,18 @@ BalancingSettings = ConstSettings.BalancingSettings
 class StorageStrategy(BidEnabledStrategy):
     """Template strategy for storage assets."""
 
-    parameters = ("initial_soc", "min_allowed_soc", "battery_capacity_kWh",
-                  "max_abs_battery_power_kW", "cap_price_strategy", "initial_selling_rate",
-                  "final_selling_rate", "initial_buying_rate", "final_buying_rate", "fit_to_limit",
-                  "energy_rate_increase_per_update", "energy_rate_decrease_per_update",
-                  "update_interval", "initial_energy_origin", "balancing_energy_ratio")
+    def serialize(self):
+        return {
+            "initial_soc": self.state.initial_soc,
+            "min_allowed_soc": self.state.min_allowed_soc_ratio * 100.0,
+            "battery_capacity_kWh": self.state.capacity,
+            "max_abs_battery_power_kW": self.state.max_abs_battery_power_kW,
+            "cap_price_strategy": self.cap_price_strategy,
+            "initial_energy_origin": self.state.initial_energy_origin,
+            "balancing_energy_ratio": self.balancing_energy_ratio,
+            **self.bid_update.serialize(),
+            **self.offer_update.serialize(),
+        }
 
     def __init__(  # pylint: disable=too-many-arguments, too-many-locals
         self, initial_soc: float = StorageSettings.MIN_ALLOWED_SOC,
@@ -205,7 +212,7 @@ class StorageStrategy(BidEnabledStrategy):
             update_interval=update_interval
         )
 
-    def area_reconfigure_event(self, **kwargs):
+    def area_reconfigure_event(self, *args, **kwargs):
         """Reconfigure the device properties at runtime using the provided arguments."""
         self._area_reconfigure_prices(**kwargs)
         self._update_profiles_with_default_values()
@@ -262,28 +269,6 @@ class StorageStrategy(BidEnabledStrategy):
         self._update_profiles_with_default_values()
         self.event_activate_energy()
         self.event_activate_price()
-
-    def _set_alternative_pricing_scheme(self):
-        if ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME != 0:
-            for market in self.area.all_markets:
-                time_slot = market.time_slot
-                if ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME == 1:
-                    self.bid_update.set_parameters(initial_rate=0,
-                                                   final_rate=0)
-                    self.offer_update.set_parameters(initial_rate=0,
-                                                     final_rate=0)
-                elif ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME == 2:
-                    rate = (self.simulation_config.market_maker_rate[time_slot] *
-                            ConstSettings.MASettings.AlternativePricing.
-                            FEED_IN_TARIFF_PERCENTAGE / 100)
-                    self.bid_update.set_parameters(initial_rate=0, final_rate=rate)
-                    self.offer_update.set_parameters(initial_rate=rate, final_rate=rate)
-                elif ConstSettings.MASettings.AlternativePricing.PRICING_SCHEME == 3:
-                    rate = self.simulation_config.market_maker_rate[time_slot]
-                    self.bid_update.set_parameters(initial_rate=0, final_rate=rate)
-                    self.offer_update.set_parameters(initial_rate=rate, final_rate=rate)
-                else:
-                    raise MarketException
 
     @staticmethod
     def _validate_constructor_arguments(  # pylint: disable=too-many-arguments, too-many-branches
@@ -358,8 +343,9 @@ class StorageStrategy(BidEnabledStrategy):
             self.offer_update.update(market, self)
 
         self.bid_update.increment_update_counter_all_markets(self)
-        if self.offer_update.increment_update_counter_all_markets(self):
-            self._buy_energy_one_sided_spot_market(market)
+        self.offer_update.increment_update_counter_all_markets(self)
+
+        self._buy_energy_one_sided_spot_market(market)
 
         self._future_market_strategy.event_tick(self)
 
@@ -407,7 +393,6 @@ class StorageStrategy(BidEnabledStrategy):
 
     def event_market_cycle(self):
         super().event_market_cycle()
-        self._set_alternative_pricing_scheme()
         self._update_profiles_with_default_values()
         self.offer_update.reset(self)
 
@@ -450,11 +435,6 @@ class StorageStrategy(BidEnabledStrategy):
             # Can early return here, because the offers are sorted according to energy rate
             # therefore the following offers will be more expensive
             return True
-        alt_pricing_settings = ConstSettings.MASettings.AlternativePricing
-        if (offer.seller == alt_pricing_settings.ALT_PRICING_MARKET_MAKER_NAME and
-                alt_pricing_settings.PRICING_SCHEME != 0):
-            # don't buy from MA if alternative pricing scheme is activated
-            return None
 
         try:
             max_energy = self.state.get_available_energy_to_buy_kWh(market.time_slot)
@@ -473,6 +453,8 @@ class StorageStrategy(BidEnabledStrategy):
 
     def _buy_energy_one_sided_spot_market(self, market, offer=None):
         if not market:
+            return
+        if ConstSettings.MASettings.MARKET_TYPE != SpotMarketTypeEnum.ONE_SIDED.value:
             return
         max_affordable_offer_rate = self.bid_update.get_updated_rate(market.time_slot)
 
@@ -560,6 +542,10 @@ class StorageStrategy(BidEnabledStrategy):
         self.offer_update.delete_past_state_values(self.area.current_market.time_slot)
         self.bid_update.delete_past_state_values(self.area.current_market.time_slot)
         self.state.delete_past_state_values(self.area.current_market.time_slot)
+
+        # Delete the state of the current slot from the future market cache
+        self._future_market_strategy.delete_past_state_values(
+            self.area.current_market.time_slot)
 
     @property
     def asset_type(self):

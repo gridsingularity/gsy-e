@@ -23,13 +23,13 @@ from typing import Dict
 from collections.abc import Callable
 
 from gsy_framework.constants_limits import ConstSettings
-from redis import StrictRedis
+from redis import Redis
 from rq import Queue
 
 import gsy_e.constants
 from gsy_e.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT
-from gsy_e.gsy_e_core.redis_connections.aggregator_connection import AggregatorHandler
-from gsy_e.gsy_e_core.redis_connections.redis_communication import REDIS_URL
+from gsy_e.gsy_e_core.redis_connections.aggregator import AggregatorHandler
+from gsy_e.gsy_e_core.redis_connections.simulation import REDIS_URL
 
 log = logging.getLogger(__name__)
 REDIS_THREAD_JOIN_TIMEOUT = 2
@@ -40,7 +40,7 @@ class RedisCommunicator:
     """Base class for redis communication using pubsub."""
 
     def __init__(self):
-        self.redis_db = StrictRedis.from_url(REDIS_URL, retry_on_timeout=True)
+        self.redis_db = Redis.from_url(REDIS_URL, retry_on_timeout=True)
         self.pubsub = self.redis_db.pubsub()
         self.pubsub_response = self.redis_db.pubsub()
         self.event = Event()

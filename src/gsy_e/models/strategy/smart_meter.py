@@ -1,3 +1,4 @@
+# pylint: disable=fixme
 """
 Copyright 2018 Grid Singularity
 This file is part of Grid Singularity Exchange
@@ -19,7 +20,7 @@ from typing import Dict, Union
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Offer
 from gsy_framework.enums import SpotMarketTypeEnum
-from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from gsy_framework.read_user_profile import InputProfileTypes, read_arbitrary_profile
 from gsy_framework.utils import find_object_of_same_weekday_and_time, limit_float_precision
 from gsy_framework.validators.smart_meter_validator import SmartMeterValidator
 from numpy import random
@@ -29,32 +30,101 @@ from pendulum.datetime import DateTime
 from gsy_e import constants
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.exceptions import GSyException, MarketException
-from gsy_e.gsy_e_core.global_objects_singleton import global_objects
-from gsy_e.gsy_e_core.util import (get_market_maker_rate_from_config, should_read_profile_from_db)
+from gsy_e.gsy_e_core.util import get_market_maker_rate_from_config
 from gsy_e.models.base import AssetType
 from gsy_e.models.market import MarketBase
 from gsy_e.models.state import SmartMeterState
 from gsy_e.models.strategy import BidEnabledStrategy, utils
-from gsy_e.models.strategy.update_frequency import (
-    TemplateStrategyBidUpdater, TemplateStrategyOfferUpdater)
+from gsy_e.models.strategy.profile import EnergyProfile
+from gsy_e.models.strategy.update_frequency import (TemplateStrategyBidUpdater,
+                                                    TemplateStrategyOfferUpdater)
 
 log = getLogger(__name__)
+
+
+class SmartMeterEnergyParameters:
+    """Manage energy parameters for the Smart Meter Strategy class."""
+    def __init__(self, smart_meter_profile, smart_meter_profile_uuid):
+        self._energy_profile = EnergyProfile(smart_meter_profile, smart_meter_profile_uuid)
+        self._state = SmartMeterState()
+        self._simulation_start_timestamp = None
+        self._area = None
+
+    def activate(self, area):
+        """Trigger by strategy activate event, configure the energy parameters for trading."""
+        self._area = area
+        self._energy_profile.read_or_rotate_profiles()
+        self._simulation_start_timestamp = area.now
+
+    def set_energy_forecast_for_future_markets(self, time_slots, reconfigure: bool = True):
+        """Set the energy consumption/production expectations for the upcoming market slots.
+
+        Args:
+            reconfigure: if True, re-read and preprocess the raw profile data.
+        """
+        self._energy_profile.read_or_rotate_profiles(reconfigure=reconfigure)
+
+        if not self._energy_profile.profile:
+            raise GSyException(
+                f"Smart Meter {self._area.name} tries to set its required energy forecast without "
+                "a profile.")
+
+        for slot_time in time_slots:
+            energy_kWh = find_object_of_same_weekday_and_time(
+                self._energy_profile.profile, slot_time)
+            # For the Smart Meter, the energy amount can be either positive (consumption) or
+            # negative (production).
+            consumed_energy = energy_kWh if energy_kWh > 0 else 0.0
+            # Turn energy into a positive number (required for set_available_energy method)
+            produced_energy = abs(energy_kWh) if energy_kWh < 0 else 0.0
+
+            if consumed_energy and produced_energy:
+                raise InconsistentEnergyException(
+                    "The Smart Meter can't both produce and consume energy at the same time.")
+
+            # NOTE: set_desired_energy accepts energy in Wh (not kWh) so we multiply * 1000
+            self._state.set_desired_energy(consumed_energy * 1000, slot_time, overwrite=False)
+            self._state.set_available_energy(produced_energy, slot_time, reconfigure)
+            self._state.update_total_demanded_energy(slot_time)
+
+    def set_energy_measurement_kWh(self, time_slot: DateTime) -> None:
+        """Set the (simulated) actual energy of the device in a market slot."""
+        energy_forecast_kWh = self._state.get_energy_at_market_slot(time_slot)
+        simulated_measured_energy_kWh = utils.compute_altered_energy(energy_forecast_kWh)
+        # This value can be either positive (consumption) or negative (production). This is
+        # different from the other devices (PV, Load) where the value is positive regardless of
+        # its direction (consumption or production)
+        self._state.set_energy_measurement_kWh(simulated_measured_energy_kWh, time_slot)
+
+    def reset(self, **kwargs):
+        """Reconfigure energy parameters."""
+        if kwargs.get("smart_meter_profile") is not None:
+            self._energy_profile.input_profile = kwargs["smart_meter_profile"]
+            self.set_energy_forecast_for_future_markets(kwargs["time_slots"], reconfigure=True)
+
+    def serialize(self):
+        """Create dict with smart meter energy parameters."""
+        return {
+            "smart_meter_profile": self._energy_profile.input_profile,
+            "smart_meter_profile_uuid": self._energy_profile.input_profile_uuid
+        }
 
 
 class SmartMeterStrategy(BidEnabledStrategy):
     """Class defining a strategy for Smart Meter devices."""
 
-    # The `parameters` set is used to decide which fields will be added to the serialized
-    # representation of the Leaf object that uses this strategy (see AreaEncoder).
-    parameters = (
-        "smart_meter_profile", "smart_meter_profile_uuid",
-        # Energy production parameters
-        "initial_selling_rate", "final_selling_rate", "energy_rate_decrease_per_update",
-        # Energy consumption parameters
-        "initial_buying_rate", "final_buying_rate", "energy_rate_increase_per_update",
-        # Common parameters
-        "fit_to_limit", "update_interval", "use_market_maker_rate")
+    def serialize(self):
+        return {
+            # Energy parameters
+            **self._energy_params.serialize(),
+            # Price production parameters
+            **self.offer_update.serialize(),
+            # Price consumption parameters
+            **self.bid_update.serialize(),
+            "use_market_maker_rate": self.use_market_maker_rate
+        }
 
+    # pylint: disable=too-many-arguments
     def __init__(
             self,
             smart_meter_profile: Union[Path, str, Dict[int, float], Dict[str, float]] = None,
@@ -94,21 +164,11 @@ class SmartMeterStrategy(BidEnabledStrategy):
         """
         super().__init__()
 
-        self.smart_meter_profile = smart_meter_profile  # Raw profile data
-        self.profile = None  # Preprocessed data extracted from smart_meter_profile
-        if should_read_profile_from_db(self.smart_meter_profile):
-            self.smart_meter_profile = None
-        self.profile_uuid = smart_meter_profile_uuid
+        self._energy_params = SmartMeterEnergyParameters(
+            smart_meter_profile, smart_meter_profile_uuid)
 
-        self.initial_selling_rate = initial_selling_rate
-        self.final_selling_rate = final_selling_rate
-        self.energy_rate_decrease_per_update = energy_rate_decrease_per_update
-        self.initial_buying_rate = initial_buying_rate
-        self.final_buying_rate = final_buying_rate
-        self.energy_rate_increase_per_update = energy_rate_increase_per_update
-        self.fit_to_limit = fit_to_limit
-        self.update_interval = self._convert_update_interval_to_duration(update_interval)
         self.use_market_maker_rate = use_market_maker_rate
+        update_interval = self._convert_update_interval_to_duration(update_interval)
 
         self.validator = SmartMeterValidator
         self.validator.validate(
@@ -116,35 +176,26 @@ class SmartMeterStrategy(BidEnabledStrategy):
             energy_rate_increase_per_update=energy_rate_increase_per_update,
             energy_rate_decrease_per_update=energy_rate_decrease_per_update)
 
-        self._state = SmartMeterState()
-        self._simulation_start_timestamp = None
-
         # Instances to update the Smart Meter's bids and offers across all market slots
-        self.bid_update = None
-        self.offer_update = None
-        self._init_price_update()
-
-    @property
-    def state(self) -> SmartMeterState:
-        return self._state
-
-    def _init_price_update(self):
-        """Initialize the bid and offer updaters."""
         self.bid_update = TemplateStrategyBidUpdater(
-            initial_rate=self.initial_buying_rate,
-            final_rate=self.final_buying_rate,
-            fit_to_limit=self.fit_to_limit,
-            energy_rate_change_per_update=self.energy_rate_increase_per_update,
-            update_interval=self.update_interval,
+            initial_rate=initial_buying_rate,
+            final_rate=final_buying_rate,
+            fit_to_limit=fit_to_limit,
+            energy_rate_change_per_update=energy_rate_increase_per_update,
+            update_interval=update_interval,
             rate_limit_object=min)
 
         self.offer_update = TemplateStrategyOfferUpdater(
-            initial_rate=self.initial_selling_rate,
-            final_rate=self.final_selling_rate,
-            fit_to_limit=self.fit_to_limit,
-            energy_rate_change_per_update=self.energy_rate_decrease_per_update,
-            update_interval=self.update_interval,
+            initial_rate=initial_selling_rate,
+            final_rate=final_selling_rate,
+            fit_to_limit=fit_to_limit,
+            energy_rate_change_per_update=energy_rate_decrease_per_update,
+            update_interval=update_interval,
             rate_limit_object=max)
+
+    @property
+    def state(self) -> SmartMeterState:
+        return self._energy_params._state  # pylint: disable=protected-access
 
     def event_activate(self, **kwargs):
         """Activate the device."""
@@ -178,18 +229,10 @@ class SmartMeterStrategy(BidEnabledStrategy):
 
         This method is triggered by the ACTIVATE event.
         """
-
-        self._read_or_rotate_profiles()
-        self._simulation_start_timestamp = self.area.now
-        self._set_energy_forecast_for_future_markets(reconfigure=True)
-
-    def _read_or_rotate_profiles(self, reconfigure=False):
-        input_profile = self.smart_meter_profile \
-            if reconfigure or not self.profile else self.profile
-        self.profile = \
-            global_objects.profiles_handler.rotate_profile(profile_type=InputProfileTypes.POWER,
-                                                           profile=input_profile,
-                                                           profile_uuid=self.profile_uuid)
+        self._energy_params.activate(self.owner)
+        time_slots = [m.time_slot for m in self.area.all_markets]
+        self._energy_params.set_energy_forecast_for_future_markets(
+            time_slots, reconfigure=True)
 
     def event_market_cycle(self):
         """Prepare rates and execute bids/offers when a new market slot begins.
@@ -199,7 +242,9 @@ class SmartMeterStrategy(BidEnabledStrategy):
         super().event_market_cycle()
 
         self._reset_rates_and_update_prices()
-        self._set_energy_forecast_for_future_markets(reconfigure=False)
+        time_slots = [m.time_slot for m in self.area.all_markets]
+        self._energy_params.set_energy_forecast_for_future_markets(
+            time_slots, reconfigure=False)
         self._set_energy_measurement_of_last_market()
         # Create bids/offers for the expected energy consumption/production in future markets
         for market in self.area.all_markets:
@@ -213,16 +258,7 @@ class SmartMeterStrategy(BidEnabledStrategy):
     def _set_energy_measurement_of_last_market(self):
         """Set the (simulated) actual energy of the device in the previous market slot."""
         if self.area.current_market:
-            self._set_energy_measurement_kWh(self.area.current_market.time_slot)
-
-    def _set_energy_measurement_kWh(self, time_slot: DateTime) -> None:
-        """Set the (simulated) actual energy of the device in a market slot."""
-        energy_forecast_kWh = self.state.get_energy_at_market_slot(time_slot)
-        simulated_measured_energy_kWh = utils.compute_altered_energy(energy_forecast_kWh)
-        # This value can be either positive (consumption) or negative (production). This is
-        # different from the other devices (PV, Load) where the value is positive regardless of
-        # its direction (consumption or production)
-        self.state.set_energy_measurement_kWh(simulated_measured_energy_kWh, time_slot)
+            self._energy_params.set_energy_measurement_kWh(self.area.current_market.time_slot)
 
     def event_offer(self, *, market_id, offer):
         """Automatically react to offers (trying to buy energy) in one-sided markets.
@@ -297,37 +333,30 @@ class SmartMeterStrategy(BidEnabledStrategy):
         self.bid_update.update_and_populate_price_settings(self.area)
 
         # Update the raw profile. It will be read later while setting the energy forecast.
-        if kwargs.get("smart_meter_profile") is not None:
-            self.smart_meter_profile = kwargs["smart_meter_profile"]
-
-            self.offer_update.update_and_populate_price_settings(self.area)
-            self.bid_update.update_and_populate_price_settings(self.area)
-            self._set_energy_forecast_for_future_markets(reconfigure=True)
+        time_slots = [m.time_slot for m in self.area.all_markets]
+        self._energy_params.reset(time_slots=time_slots, **kwargs)
 
     def _area_reconfigure_production_prices(self, **kwargs):
-        if kwargs.get("initial_selling_rate") is not None:
-            initial_rate = read_arbitrary_profile(
-                InputProfileTypes.IDENTITY, kwargs["initial_selling_rate"])
-        else:
-            initial_rate = self.offer_update.initial_rate_profile_buffer
+        initial_rate = (
+            read_arbitrary_profile(InputProfileTypes.IDENTITY, kwargs["initial_selling_rate"])
+            if kwargs.get("initial_selling_rate") is not None
+            else self.offer_update.initial_rate_profile_buffer)
 
-        if kwargs.get("final_selling_rate") is not None:
-            final_rate = read_arbitrary_profile(
-                InputProfileTypes.IDENTITY, kwargs["final_selling_rate"])
-        else:
-            final_rate = self.offer_update.final_rate_profile_buffer
+        final_rate = (
+            read_arbitrary_profile(InputProfileTypes.IDENTITY, kwargs["final_selling_rate"])
+            if kwargs.get("final_selling_rate") is not None
+            else self.offer_update.final_rate_profile_buffer)
 
-        if kwargs.get("energy_rate_decrease_per_update") is not None:
-            energy_rate_change_per_update = read_arbitrary_profile(
-                InputProfileTypes.IDENTITY, kwargs["energy_rate_decrease_per_update"])
-        else:
-            energy_rate_change_per_update = (
-                self.offer_update.energy_rate_change_per_update_profile_buffer)
+        energy_rate_change_per_update = (
+            read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                   kwargs["energy_rate_decrease_per_update"])
+            if kwargs.get("energy_rate_decrease_per_update") is not None
+            else self.offer_update.energy_rate_change_per_update_profile_buffer)
 
-        if kwargs.get("fit_to_limit") is not None:
-            fit_to_limit = kwargs["fit_to_limit"]
-        else:
-            fit_to_limit = self.offer_update.fit_to_limit
+        fit_to_limit = (
+            kwargs["fit_to_limit"]
+            if kwargs.get("fit_to_limit") is not None
+            else self.offer_update.fit_to_limit)
 
         if kwargs.get("update_interval") is not None:
             if isinstance(kwargs["update_interval"], int):
@@ -343,7 +372,7 @@ class SmartMeterStrategy(BidEnabledStrategy):
         try:
             self._validate_production_rates(
                 initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit)
-        except Exception as ex:
+        except GSyException as ex:
             log.exception("SmartMeterStrategy._area_reconfigure_production_prices failed: %s", ex)
             return
 
@@ -355,29 +384,26 @@ class SmartMeterStrategy(BidEnabledStrategy):
             update_interval=update_interval)
 
     def _area_reconfigure_consumption_prices(self, **kwargs):
-        if kwargs.get("initial_buying_rate") is not None:
-            initial_rate = read_arbitrary_profile(
-                InputProfileTypes.IDENTITY, kwargs["initial_buying_rate"])
-        else:
-            initial_rate = self.bid_update.initial_rate_profile_buffer
+        initial_rate = (
+            read_arbitrary_profile(InputProfileTypes.IDENTITY, kwargs["initial_buying_rate"])
+            if kwargs.get("initial_buying_rate") is not None
+            else self.bid_update.initial_rate_profile_buffer)
 
-        if kwargs.get("final_buying_rate") is not None:
-            final_rate = read_arbitrary_profile(
-                InputProfileTypes.IDENTITY, kwargs["final_buying_rate"])
-        else:
-            final_rate = self.bid_update.final_rate_profile_buffer
+        final_rate = (
+            read_arbitrary_profile(InputProfileTypes.IDENTITY, kwargs["final_buying_rate"])
+            if kwargs.get("final_buying_rate") is not None
+            else self.bid_update.final_rate_profile_buffer)
 
-        if kwargs.get("energy_rate_increase_per_update") is not None:
-            energy_rate_change_per_update = read_arbitrary_profile(
-                InputProfileTypes.IDENTITY, kwargs["energy_rate_increase_per_update"])
-        else:
-            energy_rate_change_per_update = (
-                self.bid_update.energy_rate_change_per_update_profile_buffer)
+        energy_rate_change_per_update = (
+            read_arbitrary_profile(InputProfileTypes.IDENTITY,
+                                   kwargs["energy_rate_increase_per_update"])
+            if kwargs.get("energy_rate_increase_per_update") is not None
+            else self.bid_update.energy_rate_change_per_update_profile_buffer)
 
-        if kwargs.get("fit_to_limit") is not None:
-            fit_to_limit = kwargs["fit_to_limit"]
-        else:
-            fit_to_limit = self.bid_update.fit_to_limit
+        fit_to_limit = (
+            kwargs["fit_to_limit"]
+            if kwargs.get("fit_to_limit") is not None
+            else self.bid_update.fit_to_limit)
 
         if kwargs.get("update_interval") is not None:
             if isinstance(kwargs["update_interval"], int):
@@ -393,7 +419,7 @@ class SmartMeterStrategy(BidEnabledStrategy):
         try:
             self._validate_consumption_rates(
                 initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit)
-        except Exception as ex:
+        except GSyException as ex:
             log.exception(ex)
             return
 
@@ -447,37 +473,6 @@ class SmartMeterStrategy(BidEnabledStrategy):
         except MarketException:
             pass
 
-    def _set_energy_forecast_for_future_markets(self, reconfigure: bool = True):
-        """Set the energy consumption/production expectations for the upcoming market slots.
-
-        Args:
-            reconfigure: if True, re-read and preprocess the raw profile data.
-        """
-        self._read_or_rotate_profiles(reconfigure=reconfigure)
-
-        if not self.profile:
-            raise GSyException(
-                f"Smart Meter {self.owner.name} tries to set its required energy forecast without "
-                "a profile.")
-
-        for market in self.area.all_markets:
-            slot_time = market.time_slot
-            energy_kWh = find_object_of_same_weekday_and_time(self.profile, slot_time)
-            # For the Smart Meter, the energy amount can be either positive (consumption) or
-            # negative (production).
-            consumed_energy = energy_kWh if energy_kWh > 0 else 0.0
-            # Turn energy into a positive number (required for set_available_energy method)
-            produced_energy = abs(energy_kWh) if energy_kWh < 0 else 0.0
-
-            if consumed_energy and produced_energy:
-                raise InconsistentEnergyException(
-                    "The Smart Meter can't both produce and consume energy at the same time.")
-
-            # NOTE: set_desired_energy accepts energy in Wh (not kWh) so we multiply * 1000
-            self.state.set_desired_energy(consumed_energy * 1000, slot_time, overwrite=False)
-            self.state.set_available_energy(produced_energy, slot_time, reconfigure)
-            self.state.update_total_demanded_energy(slot_time)
-
     @staticmethod
     def _convert_update_interval_to_duration(update_interval):
         if update_interval is None:
@@ -499,6 +494,9 @@ class SmartMeterStrategy(BidEnabledStrategy):
         self.bid_update.delete_past_state_values(self.area.current_market.time_slot)
         # Delete offer rates for previous market slots
         self.offer_update.delete_past_state_values(self.area.current_market.time_slot)
+        # Delete the state of the current slot from the future market cache
+        self._future_market_strategy.delete_past_state_values(
+            self.area.current_market.time_slot)
 
     def _replace_rates_with_market_maker_rates(self):
         # Reconfigure the final buying rate (for energy consumption)
@@ -597,7 +595,7 @@ class SmartMeterStrategy(BidEnabledStrategy):
         pass
 
     def _offer_comes_from_different_seller(self, offer):
-        return offer.seller != self.owner.name and offer.seller != self.area.name
+        return offer.seller not in [self.owner.name, self.area.name]
 
     @property
     def asset_type(self):

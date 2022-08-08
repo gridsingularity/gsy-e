@@ -2,10 +2,17 @@
 from math import isclose
 from unittest.mock import patch
 import pytest
-from pendulum import now
+from pendulum import now, DateTime
 
 from gsy_e.models.state import ProductionState, StateInterface
 from tests.test_state.test_prosumption_interface import TestProsumptionInterface
+
+
+class ProductionInterfaceHelper(ProductionState):
+    """Add the get_results_dict abstract method to the ProductionState."""
+
+    def get_results_dict(self, current_time_slot: DateTime) -> dict:
+        raise NotImplementedError
 
 
 class TestProductionState(TestProsumptionInterface):
@@ -13,7 +20,7 @@ class TestProductionState(TestProsumptionInterface):
 
     @staticmethod
     def _setup_base_configuration():
-        return ProductionState(), now()
+        return ProductionInterfaceHelper(), now()
 
     def test_get_state_raise_error_if_conflicting_keys(self):
         with patch.object(StateInterface, "get_state",

@@ -31,6 +31,7 @@ def get_setup(config):
                     Area("H2 PV", strategy=PVPredefinedStrategy(panel_count=1,
                                                                 capacity_kW=0.25,
                                                                 initial_selling_rate=80,
+                                                                update_interval=10,
                                                                 cloud_coverage=0),
                          event_list=[StrategyEvents(14, {"cloud_coverage": 2})])
                 ]

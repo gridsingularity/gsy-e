@@ -25,10 +25,11 @@ from gsy_framework.data_classes import Offer, Trade, TradeBidOfferInfo
 from gsy_framework.enums import SpotMarketTypeEnum
 from pendulum import DateTime
 
-from gsy_e.gsy_e_core.exceptions import (
-    InvalidOffer, MarketReadOnlyException, OfferNotFoundException, InvalidTrade, MarketException)
-from gsy_e.gsy_e_core.util import short_offer_bid_log_str
 from gsy_e.events.event_structures import MarketEvent
+from gsy_e.gsy_e_core.exceptions import (
+    MarketReadOnlyException, OfferNotFoundException, InvalidTrade,
+    NegativePriceOrdersException, NegativeEnergyOrderException)
+from gsy_e.gsy_e_core.util import short_offer_bid_log_str
 from gsy_e.models.market import MarketBase, lock_market_action, GridFee
 
 log = getLogger(__name__)
@@ -110,7 +111,7 @@ class OneSidedMarket(MarketBase):
         if self.readonly:
             raise MarketReadOnlyException()
         if energy <= 0:
-            raise InvalidOffer()
+            raise NegativeEnergyOrderException("Energy value for offer can not be negative.")
         if original_price is None:
             original_price = price
 
@@ -121,7 +122,8 @@ class OneSidedMarket(MarketBase):
             price = self._update_new_offer_price_with_fee(price, original_price, energy)
 
         if price < 0.0:
-            raise MarketException("Negative price after taxes, offer cannot be posted.")
+            raise NegativePriceOrdersException(
+                "Negative price after taxes, offer cannot be posted.")
 
         if offer_id is None:
             offer_id = self.bc_interface.create_new_offer(energy, price, seller)
@@ -135,7 +137,8 @@ class OneSidedMarket(MarketBase):
             self.offer_history.append(offer)
 
         log.debug("%s[OFFER][NEW][%s][%s] %s",
-                  self._debug_log_market_type_identifier, self.name, self.time_slot_str, offer)
+                  self._debug_log_market_type_identifier, self.name,
+                  self.time_slot_str or offer.time_slot, offer)
         if dispatch_event is True:
             self.dispatch_market_offer_event(offer)
         return offer
@@ -159,7 +162,8 @@ class OneSidedMarket(MarketBase):
         self.bc_interface.cancel_offer(offer)
 
         log.debug("%s[OFFER][DEL][%s][%s] %s",
-                  self._debug_log_market_type_identifier, self.name, self.time_slot_str, offer)
+                  self._debug_log_market_type_identifier, self.name,
+                  self.time_slot_str or offer.time_slot, offer)
         self._notify_listeners(MarketEvent.OFFER_DELETED, offer=offer)
 
     def _update_offer_fee_and_calculate_final_price(self, energy, trade_rate,
@@ -214,7 +218,8 @@ class OneSidedMarket(MarketBase):
                                     time_slot=original_offer.time_slot)
 
         log.debug("%s[OFFER][SPLIT][%s, %s] (%s into %s and %s",
-                  self._debug_log_market_type_identifier, self.time_slot_str, self.name,
+                  self._debug_log_market_type_identifier,
+                  self.time_slot_str or residual_offer.time_slot, self.name,
                   short_offer_bid_log_str(original_offer), short_offer_bid_log_str(accepted_offer),
                   short_offer_bid_log_str(residual_offer))
 
@@ -316,7 +321,9 @@ class OneSidedMarket(MarketBase):
                       seller_origin=offer.seller_origin, buyer_origin=buyer_origin,
                       fee_price=fee_price, buyer_origin_id=buyer_origin_id,
                       seller_origin_id=offer.seller_origin_id,
-                      seller_id=offer.seller_id, buyer_id=buyer_id, time_slot=offer.time_slot
+                      seller_id=offer.seller_id, buyer_id=buyer_id, time_slot=offer.time_slot,
+                      matching_requirements=offer_bid_trade_info.matching_requirements
+                      if offer_bid_trade_info else None
                       )
 
         self.bc_interface.track_trade_event(self.time_slot, trade)

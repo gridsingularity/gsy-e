@@ -17,23 +17,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import json
 import logging
-from typing import Dict, List, Union, TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Callable, Dict, List, Union
 
 from gsy_framework.constants_limits import ConstSettings
 from pendulum import duration
 
 from gsy_e.gsy_e_core.exceptions import GSyException
-from gsy_e.gsy_e_core.util import get_market_maker_rate_from_config
-from gsy_e.models.strategy.external_strategies import (
-    ExternalMixin, IncomingRequest, default_market_info, ExternalStrategyConnectionManager,
-    CommandTypeNotSupported, OrderCanNotBePosted)
+from gsy_e.models.strategy.external_strategies import (CommandTypeNotSupported, ExternalMixin,
+                                                       ExternalStrategyConnectionManager,
+                                                       IncomingRequest, OrderCanNotBePosted)
 from gsy_e.models.strategy.external_strategies.forecast_mixin import ForecastExternalMixin
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
-from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy
+from gsy_e.models.strategy.predefined_load import DefinedLoadEnergyParameters, DefinedLoadStrategy
 
 if TYPE_CHECKING:
-    from gsy_e.models.state import LoadState
     from gsy_e.models.market.two_sided import TwoSidedMarket
+    from gsy_e.models.state import LoadState
 
 
 class LoadExternalMixin(ExternalMixin):
@@ -47,11 +46,9 @@ class LoadExternalMixin(ExternalMixin):
     can_bid_be_posted: Callable
     remove_bid_from_pending: Callable
     post_bid: Callable
-    add_entry_in_hrs_per_day: Callable
     posted_bid_energy: Callable
     _delete_past_state: Callable
-    _calculate_active_markets: Callable
-    _update_energy_requirement_in_state: Callable
+    _cycle_energy_parameters: Callable
 
     @property
     def channel_dict(self) -> Dict:
@@ -239,25 +236,9 @@ class LoadExternalMixin(ExternalMixin):
         self._reject_all_pending_requests()
         self._update_connection_status()
         if not self.should_use_default_strategy:
-            self.add_entry_in_hrs_per_day()
-            self._calculate_active_markets()
-            self._update_energy_requirement_in_state()
-            self._set_energy_measurement_of_last_market()
+            self._cycle_energy_parameters()
             if not self.is_aggregator_controlled:
-                market_event_channel = f"{self.channel_prefix}/events/market"
-                market_info = self.spot_market.info
-                if self.is_aggregator_controlled:
-                    market_info.update(default_market_info)
-                market_info["device_info"] = self._device_info_dict
-                market_info["event"] = "market"
-                market_info["area_uuid"] = self.device.uuid
-                market_info["device_bill"] = self.device.stats.aggregated_stats.get("bills")
-                market_info["last_market_maker_rate"] = (
-                    get_market_maker_rate_from_config(self.area.current_market))
-                market_info["last_market_stats"] = (
-                    self.area.stats.get_price_stats_current_market())
-                self.redis.publish_json(market_event_channel, market_info)
-
+                self.populate_market_info_to_connected_user()
             self._delete_past_state()
         else:
             super().event_market_cycle()
@@ -401,14 +382,23 @@ class LoadProfileExternalStrategy(LoadExternalMixin, DefinedLoadStrategy):
     """Concrete DefinedLoadStrategy class with external connection capabilities"""
 
 
+class LoadForecastExternalEnergyParams(DefinedLoadEnergyParameters):
+    """
+    Energy parameters for LoadForecastExternalStrategy class. Mostly used to override / disable
+    methods of the DefinedLoadEnergyParameters.
+    """
+
+    def read_or_rotate_profiles(self, reconfigure=False) -> None:
+        """Overridden with empty implementation to disable reading profile from DB."""
+
+    def event_activate_energy(self, area):
+        """Overridden with empty implementation to disable profile activation."""
+
+
 class LoadForecastExternalStrategy(ForecastExternalMixin, LoadProfileExternalStrategy):
     """
         Strategy responsible for reading forecast and measurement consumption data via hardware API
     """
-    parameters = ("energy_forecast_Wh", "fit_to_limit", "energy_rate_increase_per_update",
-                  "update_interval", "initial_buying_rate", "final_buying_rate",
-                  "balancing_energy_ratio", "use_market_maker_rate")
-
     # pylint: disable=too-many-arguments
     def __init__(self, fit_to_limit=True, energy_rate_increase_per_update=None,
                  update_interval=None,
@@ -419,7 +409,12 @@ class LoadForecastExternalStrategy(ForecastExternalMixin, LoadProfileExternalStr
                  balancing_energy_ratio: tuple =
                  (ConstSettings.BalancingSettings.OFFER_DEMAND_RATIO,
                   ConstSettings.BalancingSettings.OFFER_SUPPLY_RATIO),
-                 use_market_maker_rate: bool = False):
+                 use_market_maker_rate: bool = False,
+                 avg_power_W=0,
+                 hrs_per_day=0,
+                 hrs_of_day=None,
+                 daily_load_profile=None,
+                 daily_load_profile_uuid=None):
         """
         Constructor of LoadForecastStrategy
         """
@@ -435,6 +430,8 @@ class LoadForecastExternalStrategy(ForecastExternalMixin, LoadProfileExternalStr
                          initial_buying_rate=initial_buying_rate,
                          balancing_energy_ratio=balancing_energy_ratio,
                          use_market_maker_rate=use_market_maker_rate)
+
+        self._energy_params = LoadForecastExternalEnergyParams()
 
     def update_energy_forecast(self) -> None:
         """Set energy forecast for future markets."""

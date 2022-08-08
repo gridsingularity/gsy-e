@@ -25,14 +25,12 @@ from gsy_framework.constants_limits import GlobalConfig
 from gsy_framework.data_classes import BidOfferMatch
 
 import gsy_e.constants
-from gsy_e.gsy_e_core.exceptions import (
-    InvalidBidOfferPairException, MycoValidationException)
-from gsy_e.gsy_e_core.redis_connections.redis_area_market_communicator import (
-    myco_redis_communicator_factory)
-from gsy_e.gsy_e_core.util import ExternalTickCounter
+from gsy_e.gsy_e_core.exceptions import InvalidBidOfferPairException, MycoValidationException
+from gsy_e.gsy_e_core.redis_connections.area_market import myco_redis_communicator_factory
+from gsy_e.gsy_e_core.market_counters import ExternalTickCounter
 from gsy_e.models.market.two_sided import TwoSidedMarket
 from gsy_e.models.myco_matcher.myco_matcher_interface import MycoMatcherInterface
-
+from gsy_e.gsy_e_core.enums import AvailableMarketTypes
 
 # pylint: disable=fixme
 
@@ -91,7 +89,7 @@ class MycoExternalMatcher(MycoMatcherInterface):
             response_data = {"event": ExternalMatcherEventsEnum.OFFERS_BIDS_RESPONSE.value}
             filters = data.get("filters", {})
             # IDs of markets (Areas) the client is interested in
-            filtered_areas_uuids = filters.get("markets")
+            filtered_areas_uuids = filters.get(AvailableMarketTypes.SPOT)
             market_orders_list_mapping = {}
             for area_uuid, area_data in self.area_uuid_markets_mapping.items():
                 if filtered_areas_uuids and area_uuid not in filtered_areas_uuids:
@@ -99,7 +97,8 @@ class MycoExternalMatcher(MycoMatcherInterface):
                     continue
 
                 # Cache the market (needed while matching)
-                for market in area_data["markets"] + area_data.get("settlement_markets", []):
+                for market in (area_data[AvailableMarketTypes.SPOT] +
+                               area_data.get(AvailableMarketTypes.SETTLEMENT, [])):
                     self.area_markets_mapping.update(
                         {f"{area_uuid}-{market.time_slot_str}": market})
                     if area_uuid not in market_orders_list_mapping:
@@ -107,9 +106,9 @@ class MycoExternalMatcher(MycoMatcherInterface):
                     market_orders_list_mapping[area_uuid].update(
                         self._get_orders(market, filters))
 
-                if area_data.get("future_markets"):
+                if area_data.get(AvailableMarketTypes.FUTURE):
                     # Future markets
-                    market = area_data["future_markets"]
+                    market = area_data[AvailableMarketTypes.FUTURE]
                     self.area_markets_mapping.update(
                         {f"{area_uuid}-{time_slot_str}": market
                          for time_slot_str in market.orders_per_slot().keys()})
@@ -188,6 +187,23 @@ class MycoExternalMatcher(MycoMatcherInterface):
         channel = "external-myco/simulation-id/response/"
         self.myco_ext_conn.publish_json(channel, {"simulation_id": self.simulation_id})
 
+    def _get_markets_ids_to_markets_info_mapping(self) -> Dict[str, Dict]:
+        """Map each market ID to the information of its market object.
+
+        NOTE: "markets" here are not areas, but actual MarketBase (or derived) objects.
+
+        Return:
+            dictionary of the structure:
+                { <market1.id>: <market1.info>, <market2.id>: <market2.info> }
+        """
+        markets_info_by_id = {}
+        for market in self.area_markets_mapping.values():
+            if market.id in markets_info_by_id:
+                continue
+            markets_info_by_id[market.id] = market.info
+
+        return markets_info_by_id
+
     def event_tick(self, **kwargs):
         """
         Publish the tick event to the Myco client. Should be performed after the tick event from
@@ -197,7 +213,12 @@ class MycoExternalMatcher(MycoMatcherInterface):
         # If External matching is enabled, limit the number of ticks dispatched.
         if not self._tick_counter.is_it_time_for_external_tick(current_tick_in_slot):
             return
-        data = {"event": ExternalMatcherEventsEnum.TICK.value, **kwargs}
+
+        market_id_to_market_info = self._get_markets_ids_to_markets_info_mapping()
+        data = {
+            "event": ExternalMatcherEventsEnum.TICK.value,
+            "markets_info": market_id_to_market_info,
+            **kwargs}
         self.myco_ext_conn.publish_json(self._events_channel, data)
         # Publish the orders of the market at the end of the tick, in order for the external
         # commands and aggregator commands to have already been processed

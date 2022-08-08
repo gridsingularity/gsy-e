@@ -24,7 +24,7 @@ else:
     REQUIREMENTS.append("psycopg2==2.9.1")
 
 # *IMPORTANT*: Don't manually change the version here. Use the 'bumpversion' utility.
-VERSION = "1.2.0"
+VERSION = "1.3.0"
 
 setup(
     name="gsy-e",
@@ -36,7 +36,7 @@ setup(
     version=VERSION,
     packages=find_packages(where="src", exclude=["tests"]),
     package_dir={"": "src"},
-    package_data={"gsy_e": ["resources/*.csv"]},
+    package_data={"gsy_e": ["resources/*.csv", "setup/gsy_e_settings.json"]},
     install_requires=REQUIREMENTS,
     entry_points={
         "console_scripts": [

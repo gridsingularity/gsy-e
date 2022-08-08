@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
-from typing import TYPE_CHECKING, Callable, List
+from typing import TYPE_CHECKING, Callable, List, Dict
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.read_user_profile import InputProfileTypes
@@ -41,9 +41,8 @@ class TemplateStrategyUpdaterInterface:
     def update_and_populate_price_settings(self, area: "Area") -> None:
         """Update the price settings. Usually called during the market cycle event"""
 
-    def increment_update_counter_all_markets(self, strategy: "BaseStrategy") -> bool:
+    def increment_update_counter_all_markets(self, strategy: "BaseStrategy") -> None:
         """Increment the update counter for all markets. Usually called during the tick event"""
-        return False
 
     def set_parameters(self, *, initial_rate: float = None, final_rate: float = None,
                        energy_rate_change_per_update: float = None, fit_to_limit: bool = None,
@@ -56,15 +55,21 @@ class TemplateStrategyUpdaterInterface:
     def update(self, market: "OneSidedMarket", strategy: "BaseStrategy") -> None:
         """Update the price of existing orders to reflect the new rates."""
 
+    def delete_past_state_values(self, current_market_time_slot: DateTime) -> None:
+        """Delete irrelevant values from buffers for unneeded markets."""
+
 
 class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
     """Manage template strategy bid / offer posting. Updates periodically the energy rate
     of the posted bids or offers. Base class"""
+
+    # pylint: disable=too-many-instance-attributes
     def __init__(self, initial_rate: float, final_rate: float, fit_to_limit: bool = True,
                  energy_rate_change_per_update: float = None,
                  update_interval: Duration = duration(
                     minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
                  rate_limit_object: Callable = max):
+        # pylint: disable=too-many-arguments
         self.fit_to_limit = fit_to_limit
 
         # initial input values (currently of type float)
@@ -87,13 +92,24 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
 
         self.update_interval = update_interval
         self.update_counter = {}
+
+        # Keeps track of the elapsed seconds at the time of insertion of
+        # the slot (relevant to future markets)
+        self.market_slot_added_time_mapping: Dict[DateTime: int] = {}
+
         self.number_of_available_updates = 0
         self.rate_limit_object = rate_limit_object
+
+    def serialize(self):
+        """Return dict with configuration parameters."""
+        return {
+            "fit_to_limit": self.fit_to_limit,
+            "update_interval": self.update_interval
+        }
 
     def _read_or_rotate_rate_profiles(self) -> None:
         """ Creates a new chunk of profiles if the current_timestamp is not in the profile buffers
         """
-        # TODO: this needs to be implemented to except profile UUIDs and DB connection
         self.initial_rate_profile_buffer = global_objects.profiles_handler.rotate_profile(
             InputProfileTypes.IDENTITY, self.initial_rate_input)
         self.final_rate_profile_buffer = global_objects.profiles_handler.rotate_profile(
@@ -104,6 +120,13 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
                     InputProfileTypes.IDENTITY, self.energy_rate_change_per_update_input)
             )
 
+    def _delete_market_slot_data(self, market_time_slot: DateTime) -> None:
+        self.initial_rate.pop(market_time_slot, None)
+        self.final_rate.pop(market_time_slot, None)
+        self.energy_rate_change_per_update.pop(market_time_slot, None)
+        self.update_counter.pop(market_time_slot, None)
+        self.market_slot_added_time_mapping.pop(market_time_slot, None)
+
     def delete_past_state_values(self, current_market_time_slot: DateTime) -> None:
         """Delete values from buffers before the current_market_time_slot"""
         to_delete = []
@@ -111,10 +134,7 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
             if is_time_slot_in_past_markets(market_slot, current_market_time_slot):
                 to_delete.append(market_slot)
         for market_slot in to_delete:
-            self.initial_rate.pop(market_slot, None)
-            self.final_rate.pop(market_slot, None)
-            self.energy_rate_change_per_update.pop(market_slot, None)
-            self.update_counter.pop(market_slot, None)
+            self._delete_market_slot_data(market_slot)
 
     @staticmethod
     def get_all_markets(area: "Area") -> List["OneSidedMarket"]:
@@ -151,11 +171,23 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
                 final_rate = find_object_of_same_weekday_and_time(
                     self.final_rate_profile_buffer, time_slot)
 
+            # Hackathon TODO: get rid of self.initial_rate, self.final_rate, self.update_counter
+            # and self.market_slot_added_time_mapping in favor of one object
+            # that keeps track of time_slot: attributes
             self.initial_rate[time_slot] = initial_rate
             self.final_rate[time_slot] = final_rate
 
             self._set_or_update_energy_rate_change_per_update(time_slot)
             write_default_to_dict(self.update_counter, time_slot, 0)
+
+            # todo: homogenize the calculation of elapsed seconds for spot and future markets
+            self._add_slot_to_mapping(area, time_slot)
+
+    def _add_slot_to_mapping(self, area, time_slot):
+        """keep track of the elapsed time of simulation at the addition of a new slot."""
+        if time_slot not in self.market_slot_added_time_mapping:
+            elapsed_seconds = self._elapsed_seconds(area)
+            self.market_slot_added_time_mapping[time_slot] = elapsed_seconds
 
     def _set_or_update_energy_rate_change_per_update(self, time_slot: DateTime) -> None:
         energy_rate_change_per_update = {}
@@ -211,31 +243,32 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
         updated_rate = self.rate_limit_object(calculated_rate, self.final_rate[time_slot])
         return updated_rate
 
-    def _elapsed_seconds(self, strategy: "BaseStrategy") -> int:
-        current_tick_number = strategy.area.current_tick % (
-                self._time_slot_duration_in_seconds / strategy.area.config.tick_length.seconds)
-        return current_tick_number * strategy.area.config.tick_length.seconds
+    @staticmethod
+    def _elapsed_seconds(area: "Area") -> int:
+        """Return the elapsed seconds since the very beginning of the simulation."""
+        return area.current_tick * area.config.tick_length.seconds
 
-    def increment_update_counter_all_markets(self, strategy: "BaseStrategy") -> bool:
+    def _elapsed_seconds_per_slot(self, area: "Area") -> int:
+        """Return the elapsed seconds since the beginning of the market slot."""
+        current_tick_number = area.current_tick % (
+                self._time_slot_duration_in_seconds / area.config.tick_length.seconds)
+        return current_tick_number * area.config.tick_length.seconds
+
+    def increment_update_counter_all_markets(self, strategy: "BaseStrategy") -> None:
         """Update method of the class. Should be called on each tick and increments the
         update counter in order to validate whether an update in the posted energy rates
         is required."""
-        should_update = [
-            self._increment_update_counter(strategy, time_slot)
-            for time_slot in self._get_all_time_slots(strategy.area)
-        ]
-        return any(should_update)
+        for time_slot in self._get_all_time_slots(strategy.area):
+            self.increment_update_counter(strategy, time_slot)
 
-    def _increment_update_counter(self, strategy: "BaseStrategy", time_slot) -> bool:
+    def increment_update_counter(self, strategy: "BaseStrategy", time_slot) -> None:
         """Increment the counter of the number of times in which prices have been updated."""
         if self.time_for_price_update(strategy, time_slot):
             self.update_counter[time_slot] += 1
-            return True
-        return False
 
     def time_for_price_update(self, strategy: "BaseStrategy", time_slot: DateTime) -> bool:
         """Check if the prices of bids/offers should be updated."""
-        return self._elapsed_seconds(strategy) >= (
+        return self._elapsed_seconds_per_slot(strategy.area) >= (
             self.update_interval.seconds * self.update_counter[time_slot])
 
     def set_parameters(self, *, initial_rate: float = None, final_rate: float = None,
@@ -278,6 +311,14 @@ class TemplateStrategyBidUpdater(TemplateStrategyUpdaterBase):
             if strategy.are_bids_posted(market.id):
                 strategy.update_bid_rates(market, self.get_updated_rate(market.time_slot))
 
+    def serialize(self):
+        return {
+            **super().serialize(),
+            "initial_buying_rate": self.initial_rate_input,
+            "final_buying_rate": self.final_rate_input,
+            "energy_rate_increase_per_update": self.energy_rate_change_per_update_input
+        }
+
 
 class TemplateStrategyOfferUpdater(TemplateStrategyUpdaterBase):
     """Manage offers posted by template strategies. Update offers periodically."""
@@ -293,3 +334,11 @@ class TemplateStrategyOfferUpdater(TemplateStrategyUpdaterBase):
         if self.time_for_price_update(strategy, market.time_slot):
             if strategy.are_offers_posted(market.id):
                 strategy.update_offer_rates(market, self.get_updated_rate(market.time_slot))
+
+    def serialize(self):
+        return {
+            **super().serialize(),
+            "initial_selling_rate": self.initial_rate_input,
+            "final_selling_rate": self.final_rate_input,
+            "energy_rate_decrease_per_update": self.energy_rate_change_per_update_input
+        }

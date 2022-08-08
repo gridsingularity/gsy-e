@@ -32,7 +32,8 @@ from pendulum import DateTime, duration, today, now
 from gsy_e.constants import TIME_ZONE, TIME_FORMAT
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.util import d3a_path
-from gsy_e.models.area import DEFAULT_CONFIG, Area
+from gsy_e.models.area import Area
+from gsy_e.models.config import create_simulation_config_from_global_config
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy
 
@@ -41,13 +42,17 @@ TIME = today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 MIN_BUY_ENERGY = 50  # wh
 
 
-def teardown_function():
+@pytest.fixture(scope="function", autouse=True)
+def auto_fixture():
+    GlobalConfig.market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
+    yield
+    GlobalConfig.market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
     ConstSettings.MASettings.MARKET_TYPE = 1
 
 
 class FakeArea:
     def __init__(self):
-        self.config = DEFAULT_CONFIG
+        self.config = create_simulation_config_from_global_config()
         self.appliance = None
         self.name = 'FakeArea'
         self.uuid = str(uuid4())
@@ -178,7 +183,7 @@ class FakeMarket:
         return offer
 
     def accept_offer(self, **kwargs):
-        return Trade("", "", "", "", "", "", "")
+        return Trade("", now(), None, "", "", 0.1, 0.1)
 
 
 class TestLoadHoursStrategyInput(unittest.TestCase):
@@ -278,7 +283,7 @@ def load_hours_strategy_test5(load_hours_strategy_test4, area_test2):
 def test_activate_event_populates_energy_requirement(load_hours_strategy_test1):
     load_hours_strategy_test1.event_activate()
     energy_requirement = load_hours_strategy_test1.state._energy_requirement_Wh
-    assert all([energy == load_hours_strategy_test1.energy_per_slot_Wh
+    assert all([energy == load_hours_strategy_test1._energy_params.energy_per_slot_Wh
                 for energy in energy_requirement.values()])
     assert all([load_hours_strategy_test1.state._desired_energy_Wh[ts] == energy
                 for ts, energy in energy_requirement.items()])
@@ -353,12 +358,12 @@ def test_event_tick_one_sided_market_energy_required(load_hours_strategy_test1, 
     load_hours_strategy_test1.state.decrement_energy_requirement = Mock()
 
     load_hours_strategy_test1.event_activate()
-    assert load_hours_strategy_test1.hrs_per_day == {0: 4}
+    assert load_hours_strategy_test1._energy_params.hrs_per_day == {0: 4}
     load_hours_strategy_test1.event_tick()
     load_hours_strategy_test1.accept_offer.assert_called()
     load_hours_strategy_test1.state.decrement_energy_requirement.assert_called()
     # The amount of operating hours has decreased
-    assert load_hours_strategy_test1.hrs_per_day == {0: 3.25}
+    assert load_hours_strategy_test1._energy_params.hrs_per_day == {0: 3.25}
 
 
 def test_event_tick(load_hours_strategy_test1, market_test1):
@@ -398,7 +403,7 @@ def test_device_operating_hours_deduction_with_partial_trade(load_hours_strategy
     load_hours_strategy_test5.event_tick()
     assert round(((
         float(load_hours_strategy_test5.accept_offer.call_args[0][1].energy) *
-        1000 / load_hours_strategy_test5.energy_per_slot_Wh) *
+        1000 / load_hours_strategy_test5._energy_params.energy_per_slot_Wh) *
         (load_hours_strategy_test5.simulation_config.slot_length / duration(hours=1))), 2) == \
         round(((0.1/0.155) * 0.25), 2)
 
@@ -481,7 +486,7 @@ def test_balancing_offers_are_created_if_device_in_registry(
     balancing_fixture.event_balancing_market_cycle()
     expected_balancing_demand_energy = \
         balancing_fixture.balancing_energy_ratio.demand * \
-        balancing_fixture.energy_per_slot_Wh
+        balancing_fixture._energy_params.energy_per_slot_Wh
     actual_balancing_demand_energy = \
         area_test2.test_balancing_market.created_balancing_offers[0].energy
     assert len(area_test2.test_balancing_market.created_balancing_offers) == 1
