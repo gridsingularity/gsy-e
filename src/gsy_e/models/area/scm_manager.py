@@ -1,5 +1,5 @@
 import logging
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 
 import gsy_e.constants
 from math import isclose
@@ -167,7 +167,7 @@ class CommunityData:
     energy_need_kWh: float = 0.
     energy_bought_from_community_kWh: float = 0.
     energy_sold_to_grid_kWh: float = 0.
-    trades: List[Trade] = None
+    trades: List[Trade] = field(default_factory=list)
 
     def to_dict(self) -> Dict:
         """Dict representation of the community energy data."""
@@ -178,10 +178,6 @@ class CommunityData:
         output_dict = self.to_dict()
         output_dict["trades"] = [trade.serializable_dict() for trade in self.trades]
         return output_dict
-
-    def __post_init__(self):
-        if self.trades is None:
-            self.trades = []
 
 
 @dataclass
