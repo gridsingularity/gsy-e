@@ -666,6 +666,8 @@ class Area(AreaBase):
             self.future_markets.update_clock(self.now)
             for market in self._markets.settlement_markets.values():
                 market.update_clock(self.now)
+            for market in self._markets.forward_markets.values():
+                market.update_clock(self.now)
         for child in self.children:
             child.execute_actions_after_tick_event()
 
