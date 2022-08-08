@@ -1,5 +1,7 @@
 import logging
 from dataclasses import dataclass, asdict
+
+import gsy_e.constants
 from math import isclose
 from typing import Dict, TYPE_CHECKING, List, Optional
 from uuid import uuid4
@@ -165,10 +167,21 @@ class CommunityData:
     energy_need_kWh: float = 0.
     energy_bought_from_community_kWh: float = 0.
     energy_sold_to_grid_kWh: float = 0.
+    trades: List[Trade] = None
 
     def to_dict(self) -> Dict:
         """Dict representation of the community energy data."""
         return asdict(self)
+
+    def serializable_dict(self) -> Dict:
+        """Dict representation that can be serialized."""
+        output_dict = self.to_dict()
+        output_dict["trades"] = [trade.serializable_dict() for trade in self.trades]
+        return output_dict
+
+    def __post_init__(self):
+        if self.trades is None:
+            self.trades = []
 
 
 @dataclass
@@ -301,12 +314,26 @@ class SCMManager:
         SCMCommunityValidator.validate(community=area)
 
         self._home_data: Dict[str, HomeAfterMeterData] = {}
-        # Community is always the root area in the context of SCM.
-        self._community_uuid = area.uuid
+
+        self._community_uuid = self._get_community_uuid_from_area(area)
         self.community_data = CommunityData(self._community_uuid)
         self._time_slot = time_slot
         self._bills: Dict[str, AreaEnergyBills] = {}
         self._grid_fees_reduction = ConstSettings.SCMSettings.GRID_FEES_REDUCTION
+
+    def _get_community_uuid_from_area(self, area):
+        # Community is always the root area in the context of SCM.
+        # The following hack in order to support the UI which defines the Community one level
+        # lower than the Grid area.
+        if "Community" in area.name:
+            return area.uuid
+        else:
+            for child in area.children:
+                if "Community" in child.name:
+                    return child.uuid
+        assert False, f"Should not reach here, configuration {gsy_e.constants.CONFIGURATION_ID}" \
+                      f"should have an area with name 'Community' either on the top level or " \
+                      f"on the second level after the top."
 
     def add_home_data(self, home_uuid: str, home_name: str,
                       grid_fees: float, coefficient_percentage: float,
@@ -445,12 +472,24 @@ class SCMManager:
 
         self._bills[home_uuid] = home_bill
 
+    def accumulate_community_trades(self):
+        """
+        Gather all trades from homes to the community after meter data, in order to have them
+        available for the simulation results generation.
+        """
+        for home_data in self._home_data.values():
+            self.community_data.trades.extend(home_data.trades)
+
     def get_area_results(self, area_uuid: str, serializable: bool = False) -> Dict:
         """Return the SCM results for one area (and one time slot)."""
         if area_uuid == self._community_uuid:
             return {
                 "bills": self.community_bills,
-                "after_meter_data": {}
+                "after_meter_data": self.community_data.serializable_dict(),
+                "trades": [
+                    trade.serializable_dict()
+                    for trade in self.community_data.trades
+                ]
             }
 
         min_savings = min(bill.savings_percent for bill in self._bills.values())
@@ -459,13 +498,17 @@ class SCMManager:
             bill.set_min_max_community_savings(min_savings, max_savings)
 
         if area_uuid not in self._bills:
-            return {"bills": {}, "after_meter_data": {}}
+            return {"bills": {}, "after_meter_data": {}, "trades": []}
         return {
             "bills": self._bills[area_uuid].to_dict(),
             "after_meter_data": (
                 self._home_data[area_uuid].to_dict() if serializable is False else
                 self._home_data[area_uuid].serializable_dict()
-            )
+            ),
+            "trades": [
+                trade.serializable_dict()
+                for trade in self._home_data[area_uuid].trades
+            ]
         }
 
     def get_after_meter_data(self, area_uuid: str) -> Optional[HomeAfterMeterData]:

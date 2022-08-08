@@ -888,6 +888,7 @@ class CoefficientSimulation(Simulation):
 
             scm_manager.calculate_community_after_meter_data()
             self.area.trigger_energy_trades(scm_manager)
+            scm_manager.accumulate_community_trades()
 
             if ConstSettings.SCMSettings.MARKET_ALGORITHM == CoefficientAlgorithm.DYNAMIC.value:
                 self.area.change_home_coefficient_percentage(scm_manager)
