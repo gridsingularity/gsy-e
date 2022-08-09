@@ -155,25 +155,22 @@ def area_from_dict(description, config):
         else:
             children = None
 
-        coefficient_percentage = description.get("coefficient_percentage", 0.0)
         grid_fee_percentage = description.get("grid_fee_percentage", None)
         grid_fee_constant = description.get("grid_fee_constant", None)
-        taxes_surcharges = description.get("taxes_surcharges", 0.0)
-        fixed_monthly_fee = description.get("fixed_monthly_fee", 0.0)
-        marketplace_monthly_fee = description.get("marketplace_monthly_fee", 0.0)
-        market_maker_rate = description.get(
-            "market_maker_rate", ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE / 100.)
-        feed_in_tariff = description.get("feed_in_tariff", GlobalConfig.FEED_IN_TARIFF / 100.,)
+
         if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
             # For the SCM only use the CoefficientArea strategy.
             area = CoefficientArea(
                 name, children, uuid, optional("strategy"), config,
-                coefficient_percentage=coefficient_percentage,
-                taxes_surcharges=taxes_surcharges,
-                fixed_monthly_fee=fixed_monthly_fee,
-                marketplace_monthly_fee=marketplace_monthly_fee,
-                market_maker_rate=market_maker_rate,
-                feed_in_tariff=feed_in_tariff,
+                coefficient_percentage=description.get("coefficient_percentage", 0.0),
+                taxes_surcharges=description.get("taxes_surcharges", 0.0),
+                fixed_monthly_fee=description.get("fixed_monthly_fee", 0.0),
+                marketplace_monthly_fee=description.get("marketplace_monthly_fee", 0.0),
+                market_maker_rate=description.get(
+                    "market_maker_rate",
+                    ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE / 100.),
+                feed_in_tariff=description.get(
+                    "feed_in_tariff", GlobalConfig.FEED_IN_TARIFF / 100.,),
                 grid_fee_percentage=grid_fee_percentage,
                 grid_fee_constant=grid_fee_constant)
         else:
