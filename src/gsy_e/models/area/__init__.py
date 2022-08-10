@@ -273,7 +273,7 @@ class CoefficientArea(AreaBase):
         super().__init__(name, children, uuid, strategy, config, grid_fee_percentage,
                          grid_fee_constant)
         self.display_type = (
-            "CoeficientArea" if self.strategy is None else self.strategy.__class__.__name__)
+            "CoefficientArea" if self.strategy is None else self.strategy.__class__.__name__)
         self.coefficient_percentage = coefficient_percentage
         self._taxes_surcharges = taxes_surcharges
         self._fixed_monthly_fee = fixed_monthly_fee
