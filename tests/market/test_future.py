@@ -24,11 +24,11 @@ from gsy_framework.utils import datetime_to_string_incl_seconds
 from pendulum import datetime, duration, now
 from tests.market import count_orders_in_buffers
 from gsy_e.models.area import Area
-from gsy_e.models.market import GridFee
 from gsy_e.models.market.future import FutureMarkets, FutureMarketException, FutureOrders
 
 DEFAULT_CURRENT_MARKET_SLOT = datetime(2021, 10, 19, 0, 0)
 DEFAULT_SLOT_LENGTH = duration(minutes=15)
+DEFAULT_TICK_LENGTH = duration(seconds=15)
 
 
 @pytest.fixture(name="future_market")
@@ -37,21 +37,14 @@ def active_future_market() -> FutureMarkets:
     orig_future_market_duration = ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS
     orig_start_date = GlobalConfig.start_date
     ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS = 1
-    area = Area("test_area")
+    area = Area("test_area", children=[Area(name="House")])
     area.config.start_date = DEFAULT_CURRENT_MARKET_SLOT
     area.config.end_date = area.config.start_date + area.config.sim_duration
     area.config.slot_length = DEFAULT_SLOT_LENGTH
-    area.activate()
-    future_market = FutureMarkets(
-            bc=area.bc,
-            notification_listener=area.dispatcher.broadcast_notification,
-            grid_fee_type=area.config.grid_fee_type,
-            grid_fees=GridFee(grid_fee_percentage=area.grid_fee_percentage,
-                              grid_fee_const=area.grid_fee_constant),
-            name=area.name)
-    future_market.create_future_market_slots(
-        DEFAULT_CURRENT_MARKET_SLOT, area.config)
-    yield future_market
+    area.config.tick_length = DEFAULT_TICK_LENGTH
+    area.activate()  # generates area.future_markets, populate market_time_slots and update_clock
+    area.execute_actions_after_tick_event()  # to update_clock for markets like after each tick
+    yield area.future_markets
 
     ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS = orig_future_market_duration
     GlobalConfig.start_date = orig_start_date
@@ -284,6 +277,11 @@ class TestFutureMarkets:
         assert isinstance(future_market.bids, FutureOrders)
         assert future_market.bids[str(bid.id)] == bid
         assert bid in future_market.bids.slot_order_mapping[bid.time_slot]
+
+    @staticmethod
+    def test_clock_updates(future_market):
+        """Test the updating of the market clock after one tick."""
+        assert future_market.now == DEFAULT_CURRENT_MARKET_SLOT + DEFAULT_TICK_LENGTH
 
 
 class TestFutureOrders:

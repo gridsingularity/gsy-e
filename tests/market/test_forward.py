@@ -18,8 +18,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from unittest.mock import patch, MagicMock
 
 import pytest
+from gsy_framework.constants_limits import GlobalConfig
 from gsy_framework.data_classes import Bid, Offer, Trade
-from pendulum import datetime
+from pendulum import datetime, duration
 
 from gsy_e.models.area import Area
 from gsy_e.models.area.market_rotators import (DayForwardMarketRotator, IntradayMarketRotator,
@@ -32,6 +33,7 @@ from gsy_e.models.market.forward import (ForwardMarketBase, DayForwardMarket, In
 from tests.market import count_orders_in_buffers
 
 CURRENT_MARKET_SLOT = datetime(2022, 6, 13, 0, 0)  # day of week = 1 (Monday)
+DEFAULT_TICK_LENGTH = duration(seconds=15)
 
 
 class TestForwardMarkets:
@@ -122,3 +124,23 @@ class TestForwardMarkets:
         # Market should be deleted if the rotation time has been reached
         rotator.rotate(rotation_time)
         count_orders_in_buffers(forward_markets, expected_market_count - 1)
+
+    @staticmethod
+    @patch("gsy_e.models.market.forward.ConstSettings.ForwardMarketSettings."
+           "ENABLE_FORWARD_MARKETS", True)
+    def test_clock_updates():
+        """Test the updating of the market clock."""
+        orig_start_date = GlobalConfig.start_date
+        area = Area("test_area", children=[Area(name="House")])
+        area.config.start_date = CURRENT_MARKET_SLOT
+        area.config.end_date = area.config.start_date + area.config.sim_duration
+        area.config.tick_length = DEFAULT_TICK_LENGTH
+        area.activate()
+        expected_now = CURRENT_MARKET_SLOT
+        for forward_market in area.forward_markets.values():
+            assert forward_market.now == expected_now
+        area.execute_actions_after_tick_event()  # to update_clock for markets like after each tick
+        expected_now = CURRENT_MARKET_SLOT + DEFAULT_TICK_LENGTH
+        for forward_market in area.forward_markets.values():
+            assert forward_market.now == expected_now
+        GlobalConfig.start_date = orig_start_date
