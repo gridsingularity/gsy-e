@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-# pylint: disable=missing-function-docstring
+# pylint: disable=missing-function-docstring,protected-access
 from unittest.mock import MagicMock, patch, Mock, call
 
 import pytest
@@ -26,10 +26,11 @@ from pendulum import duration, today
 from gsy_e import constants
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.events.event_structures import AreaEvent, MarketEvent
-from gsy_e.models.area import Area, Asset, Market, check_area_name_exists_in_parent_area
+from gsy_e.models.area import (Area, Asset, Market,
+                               bid_offer_matcher, check_area_name_exists_in_parent_area)
 from gsy_e.models.area.events import Events
 from gsy_e.models.config import SimulationConfig
-from gsy_e.gsy_e_core.enums import AvailableMarketTypes
+from gsy_e.gsy_e_core.enums import AvailableMarketTypes, FORWARD_MARKET_TYPES
 from gsy_e.models.strategy.storage import StorageStrategy
 
 
@@ -189,6 +190,20 @@ class TestArea:
         ConstSettings.MASettings.BID_OFFER_MATCH_TYPE = BidOfferMatchAlgoEnum.EXTERNAL.value
         area.tick()
         assert manager.mock_calls == [call.match(), call.update_matcher()]
+
+    @staticmethod
+    @patch("gsy_e.models.market.forward.ConstSettings.ForwardMarketSettings."
+           "ENABLE_FORWARD_MARKETS", True)
+    def test_forward_market_mapping_for_matcher():
+        """Test the mapping with forward market types for bid/offer matcher."""
+        area = Area("test_area")
+        expected_forward_markets_mapping = {"current_time": area.now}
+        expected_forward_markets_mapping.update({market_type: None
+                                                 for market_type in FORWARD_MARKET_TYPES})
+        bid_offer_matcher.activate()
+        area._update_myco_matcher()
+        assert expected_forward_markets_mapping == (
+            list(bid_offer_matcher.forward_market_matcher.area_uuid_markets_mapping.values())[0])
 
 
 class TestEventDispatcher:
