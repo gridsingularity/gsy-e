@@ -154,15 +154,16 @@ class ProfileDBConnectionHandler:
 
     @db_session
     def _buffer_profile_types(self):
-        """ Buffers list of the profile_uuids that correspond to this simulation into
-        self._profile_uuids"""
+        """
+        Buffers profile types for the profiles of this simulation.
+        """
         profile_selection = select(
             (datapoint.profile_uuid, datapoint.profile_type)
             for datapoint in self.Profile_Database_ConfigurationAreaProfileUuids
             if datapoint.configuration_uuid == uuid.UUID(gsy_e.constants.CONFIGURATION_ID))
 
-        for p in profile_selection:
-            self._profile_types[p[0]] = InputProfileTypes(p[1])
+        for profile in profile_selection:
+            self._profile_types[profile[0]] = InputProfileTypes(profile[1])
 
     @db_session
     def _buffer_all_profiles(self, current_timestamp: DateTime):
