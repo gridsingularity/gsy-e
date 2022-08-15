@@ -204,7 +204,7 @@ class SimulationEndpointBuffer:
         for market_type, market in area.forward_markets.items():
             for time_slot in market.market_time_slots:
                 time_slot_str = time_slot.format(DATE_TIME_FORMAT)
-                stats_dict[market_type][time_slot_str] = {
+                stats_dict[market_type.value][time_slot_str] = {
                     "bids": self._get_future_orders_from_timeslot(
                         market.bid_history, time_slot),
                     "offers": self._get_future_orders_from_timeslot(
