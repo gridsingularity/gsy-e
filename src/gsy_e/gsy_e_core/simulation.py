@@ -23,29 +23,29 @@ import sys
 from dataclasses import dataclass
 from importlib import import_module
 from logging import getLogger
-from time import sleep, time, mktime
+from time import mktime, sleep, time
 from types import ModuleType
-from typing import Tuple, Optional, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, Tuple, Union
 
 import psutil
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
-from gsy_framework.enums import SpotMarketTypeEnum, CoefficientAlgorithm
+from gsy_framework.enums import CoefficientAlgorithm, SpotMarketTypeEnum
 from gsy_framework.kafka_communication.kafka_producer import kafka_connection_factory
 from gsy_framework.utils import format_datetime, str_to_pendulum_datetime
 from numpy import random
-from pendulum import now, duration, DateTime, Duration
+from pendulum import DateTime, Duration, duration, now
 
 import gsy_e.constants
-from gsy_e.constants import TIME_ZONE, DATE_TIME_FORMAT, SIMULATION_PAUSE_TIMEOUT
+from gsy_e.constants import DATE_TIME_FORMAT, SIMULATION_PAUSE_TIMEOUT, TIME_ZONE
 from gsy_e.gsy_e_core.exceptions import SimulationException
-from gsy_e.gsy_e_core.export import ExportAndPlot, CoefficientExportAndPlot
+from gsy_e.gsy_e_core.export import CoefficientExportAndPlot, ExportAndPlot
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.gsy_e_core.live_events import LiveEvents
 from gsy_e.gsy_e_core.myco_singleton import bid_offer_matcher
 from gsy_e.gsy_e_core.redis_connections.simulation import RedisSimulationCommunication
 from gsy_e.gsy_e_core.sim_results.endpoint_buffer import (
     CoefficientEndpointBuffer, SimulationEndpointBuffer)
-from gsy_e.gsy_e_core.util import NonBlockingConsole, validate_const_settings_for_simulation
+from gsy_e.gsy_e_core.util import NonBlockingConsole
 from gsy_e.models.area.event_deserializer import deserialize_events_to_areas
 from gsy_e.models.area.scm_manager import SCMManager
 from gsy_e.models.config import SimulationConfig
@@ -553,8 +553,6 @@ class Simulation:
             redis_job_id, self._setup.config, self._status, self.progress_info, self.area)
 
         deserialize_events_to_areas(simulation_events, self.area)
-
-        validate_const_settings_for_simulation()
 
     def _init(self, redis_job_id: str) -> None:
         # has to be called before load_setup_module():
