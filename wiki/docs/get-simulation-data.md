@@ -10,10 +10,10 @@ This API requires the following parameters:
 
 You can then connect to the API with the following URL, which divides the parameters with a slash (/):
 
-_https://gsyweb.gridsingularity.com/historical-data/devices/{simulation_id}/{market_uuid}/{start_time}/{end_time}_
+_https://gsyweb.gridsingularity.com/historical-data/assets/{simulation_id}/{market_uuid}/{start_time}/{end_time}_
 
 ##Grid Data API
-Grid Singularity has developed the Grid Data API to provide information about the topology of a simulated energy community, listing the relevant attributes and connections for each energy asset. 
+Grid Singularity has developed the Grid Data API to provide information about the topology of a simulated energy community, listing the relevant attributes and connections for each energy asset.
 
 This API requires the following parameters:
 
@@ -25,11 +25,11 @@ _https://gsyweb.gridsingularity.com/external-connection/configurations/{simulati
 
 The response will include the following data:
 
-* _Uuid_: unique identifier of each asset 
+* _Uuid_: unique identifier of each asset
 * _Name_: name of each asset
 * _Type_: type of each asset
 * _Aggregator_: name of the aggregator that manages the asset, if any
-* _Attributes_: any relevant asset attributes 
+* _Attributes_: any relevant asset attributes
 
 We will gradually add more data points to the response of the Grid Data API, for instance the geographic location (longitude and latitude) of each asset.
 
@@ -51,13 +51,13 @@ To install and set up a collection on postman, please follow these steps:
 
       - Download the collection file [here](https://api.media.atlassian.com/file/f0ebe667-59bd-494c-baba-d6a21e9ad730/binary?token=eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJjZGM0ZmNjYS1kMzc5LTRlMmMtOGM4YS02OGI5MjY4OWExNTYiLCJhY2Nlc3MiOnsidXJuOmZpbGVzdG9yZTpmaWxlOmYwZWJlNjY3LTU5YmQtNDk0Yy1iYWJhLWQ2YTIxZTlhZDczMCI6WyJyZWFkIl19LCJleHAiOjE2NTg1ODAzMzQsIm5iZiI6MTY1ODQ5NzQxNH0.MGCG6Dc-VKD7_Dn8y2eiT3LlahLzjzr-TkxEcdIxUM4&client=cdc4fcca-d379-4e2c-8c8a-68b92689a156&name=historical_data_api_postman_collection_20210722.postman_collection.json).
       - Go to _File_ > _Import_ and click on _Upload Files_, select the collection file that you just downloaded and click on _Import_.
-   
+
       [![VIDEO](https://img.youtube.com/vi/i1Xy6RYOv_o/0.jpg)](https://www.youtube.com/watch?v=i1Xy6RYOv_o)
 
       - Change user credentials in the pre-request scripts
 
       [![VIDEO](https://img.youtube.com/vi/uC-vBZT37Q4/0.jpg)](https://www.youtube.com/watch?v=uC-vBZT37Q4)
-   
+
       - Adapt the url with the wanted parameters following the description mentioned above and press _Send_ (the results should be shown in the _Body_ tab of the response):
 
       [![VIDEO](https://img.youtube.com/vi/J9wCld-dQLg/0.jpg)](https://www.youtube.com/watch?v=J9wCld-dQLg)
@@ -77,28 +77,26 @@ username = "<your_user>"
 password = "<your_password>"
 
 domain = "https://gsyweb.gridsingularity.com"
-simulation_id = "990abe5e-3126-4b8b-9978-66ca07824d3c"   
-market_uuid = "a245cff8-d90a-44d9-82e5-d37999b62e04"       
-start_date = "2021-09-25T00:00"                          
-end_date = "2021-10-01T00:00"                            
+simulation_id = "990abe5e-3126-4b8b-9978-66ca07824d3c"
+market_uuid = "a245cff8-d90a-44d9-82e5-d37999b62e04"
+start_date = "2021-09-25T00:00"
+end_date = "2021-10-01T00:00"
 ```
 2. Generate your JWT token
 ```python
-response = requests.post(url=domain + "/api-token-auth/", 
+response = requests.post(url=domain + "/api-token-auth/",
                          json={"username": username, "password": password})
 
 token = response.json()["token"]
 ```
 3. Create a URL and send the request:
 ```python
-historical_data_url = f"{domain}/historical-data/devices/{configuration_id}/{device_id}/{start_date}/{end_date}"
+historical_data_url = f"{domain}/historical-data/assets/{configuration_id}/{device_id}/{start_date}/{end_date}"
 headers = {"Authorization": f"JWT {token}"}
 
-response = requests.get(url=historical_data_url, 
+response = requests.get(url=historical_data_url,
                         headers=headers)
 
 profile = response.json()
 
 ```
-
-

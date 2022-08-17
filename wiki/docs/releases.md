@@ -128,7 +128,7 @@ The following features were implemented :
 
 * [Grid fees](grid-fees.md) configuration
 * User roles, including 'Collaborations' feature for multi user testing and Grid Singularity-hosted challenges
-* [API](configure-trading-strategies-walkthrough.md) connection to energy devices allowing bids and offers to be submitted by external algorithms
+* [API](configure-trading-strategies-walkthrough.md) connection to energy assets allowing bids and offers to be submitted by external algorithms
 
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/8un6qw_CGjI" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
