@@ -64,3 +64,14 @@ class SCMPVUserProfile(SCMPVStrategy):
                  power_profile_uuid: str = None):
         self._energy_params = PVUserProfileEnergyParameters(1, power_profile, power_profile_uuid)
         super().__init__()
+
+    def activate(self, area: "AreaBase") -> None:
+        self._energy_params.read_predefined_profile_for_pv()
+        super().activate(area)
+
+    def market_cycle(self, area: "AreaBase") -> None:
+        self._energy_params.read_predefined_profile_for_pv()
+        self._energy_params.set_produced_energy_forecast_in_state(
+            area.name, [area._current_market_time_slot], True
+        )
+        super().market_cycle(area)
