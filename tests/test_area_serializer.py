@@ -190,6 +190,13 @@ def test_leaf_deserialization_scm():
     recovered = area_from_string(
         '''{
              "name": "house",
+             "grid_fee_constant": 0.3,
+             "coefficient_percentage": 0.4,
+             "taxes_surcharges": 0.5,
+             "fixed_monthly_fee": 0.6,
+             "marketplace_monthly_fee": 0.7,
+             "feed_in_tariff": 0.8,
+             "market_maker_rate": 0.9,
              "children":[
                  {"name": "pv1", "type": "PV", "capacity_kW": 4},
                  {"name": "pv1", "type": "PredefinedPV", "cloud_coverage": 1},
@@ -205,6 +212,13 @@ def test_leaf_deserialization_scm():
         _create_config()
     )
 
+    assert recovered.grid_fee_constant == 0.3
+    assert recovered.coefficient_percentage == 0.4
+    assert recovered._taxes_surcharges == 0.5
+    assert recovered._fixed_monthly_fee == 0.6
+    assert recovered._marketplace_monthly_fee == 0.7
+    assert recovered._feed_in_tariff == 0.8
+    assert recovered.market_maker_rate == 0.9
     assert isinstance(recovered.children[0], SCMPV)
     assert isinstance(recovered.children[0].strategy, SCMPVStrategy)
     assert recovered.children[0].strategy._energy_params.capacity_kW == 4

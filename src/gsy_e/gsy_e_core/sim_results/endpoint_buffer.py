@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
+from collections import defaultdict
 from typing import TYPE_CHECKING, Dict, List
 
 from gsy_framework.constants_limits import (DATE_TIME_FORMAT, DATE_TIME_UI_FORMAT, ConstSettings,
@@ -25,6 +26,7 @@ from gsy_framework.sim_results.all_results import ResultsHandler
 from gsy_framework.utils import get_json_dict_memory_allocation_size
 from pendulum import DateTime
 
+from gsy_e.gsy_e_core.enums import AvailableMarketTypes
 from gsy_e.gsy_e_core.sim_results.offer_bids_trades_hr_stats import OfferBidTradeGraphStats
 from gsy_e.gsy_e_core.util import (get_feed_in_tariff_rate_from_config,
                                    get_market_maker_rate_from_config)
@@ -75,7 +77,8 @@ class SimulationEndpointBuffer:
                 ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR):
             self.offer_bid_trade_hr = OfferBidTradeGraphStats()
 
-    def _create_endpoint_buffer(self, should_export_plots):
+    @staticmethod
+    def _create_endpoint_buffer(should_export_plots):
         return ResultsHandler(should_export_plots)
 
     def prepare_results_for_publish(self) -> Dict:
@@ -190,6 +193,35 @@ class SimulationEndpointBuffer:
 
         return stats_dict
 
+    def _read_forward_markets_stats_to_dict(
+            self, area: "Area") -> Dict[AvailableMarketTypes, Dict[str, Dict]]:
+        """Read forward markets and return market_stats in a dict."""
+
+        stats_dict = defaultdict(dict)
+        if not area.forward_markets:
+            return stats_dict
+
+        for market_type, market in area.forward_markets.items():
+            for time_slot in market.market_time_slots:
+                time_slot_str = time_slot.format(DATE_TIME_FORMAT)
+                stats_dict[market_type.value][time_slot_str] = {
+                    "bids": self._get_future_orders_from_timeslot(
+                        market.bid_history, time_slot),
+                    "offers": self._get_future_orders_from_timeslot(
+                        market.offer_history, time_slot),
+                    "trades": self._get_future_orders_from_timeslot(
+                        market.trades, time_slot),
+                    "market_fee": market.market_fee,
+                    "const_fee_rate": (
+                        market.const_fee_rate if market.const_fee_rate is not None else 0.),
+                    "feed_in_tariff": get_feed_in_tariff_rate_from_config(
+                        market, time_slot=time_slot),
+                    "market_maker_rate": get_market_maker_rate_from_config(
+                        market, time_slot=time_slot)
+                }
+
+        return stats_dict
+
     @staticmethod
     def _read_market_stats_to_dict(market: "MarketBase") -> Dict:
         """Read all market related stats to a dictionary."""
@@ -227,6 +259,10 @@ class SimulationEndpointBuffer:
             if ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS > 0:
                 core_stats_dict["future_market_stats"] = (
                     self._read_future_markets_stats_to_dict(area)
+                )
+            if ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS:
+                core_stats_dict["forward_market_stats"] = (
+                    self._read_forward_markets_stats_to_dict(area)
                 )
 
         if isinstance(area.strategy, CommercialStrategy):

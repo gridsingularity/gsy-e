@@ -28,7 +28,10 @@ class EnergyProfile:
 
         self.profile_type = profile_type
         if self.profile_type is None:
-            if self.input_energy_rate is not None:
+            if self.input_profile_uuid:
+                self.profile_type = global_objects.profiles_handler.get_profile_type(
+                    self.input_profile_uuid)
+            elif self.input_energy_rate is not None:
                 self.profile_type = InputProfileTypes.IDENTITY
             else:
                 self.profile_type = InputProfileTypes.POWER

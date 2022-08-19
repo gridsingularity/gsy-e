@@ -273,7 +273,7 @@ class CoefficientArea(AreaBase):
         super().__init__(name, children, uuid, strategy, config, grid_fee_percentage,
                          grid_fee_constant)
         self.display_type = (
-            "CoeficientArea" if self.strategy is None else self.strategy.__class__.__name__)
+            "CoefficientArea" if self.strategy is None else self.strategy.__class__.__name__)
         self.coefficient_percentage = coefficient_percentage
         self._taxes_surcharges = taxes_surcharges
         self._fixed_monthly_fee = fixed_monthly_fee
@@ -639,6 +639,8 @@ class Area(AreaBase):
 
         forward_markets_mapping = {
             "current_time": self.now,
+            AvailableMarketTypes.INTRADAY:
+                self.forward_markets.get(AvailableMarketTypes.INTRADAY),
             AvailableMarketTypes.DAY_FORWARD:
                 self.forward_markets.get(AvailableMarketTypes.DAY_FORWARD),
             AvailableMarketTypes.WEEK_FORWARD:
@@ -665,6 +667,8 @@ class Area(AreaBase):
             self.spot_market.update_clock(self.now)
             self.future_markets.update_clock(self.now)
             for market in self._markets.settlement_markets.values():
+                market.update_clock(self.now)
+            for market in self._markets.forward_markets.values():
                 market.update_clock(self.now)
         for child in self.children:
             child.execute_actions_after_tick_event()

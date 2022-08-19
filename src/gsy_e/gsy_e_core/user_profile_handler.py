@@ -53,6 +53,7 @@ class ProfileDBConnectionHandler:
 
     def __init__(self):
         self._user_profiles = {}
+        self._profile_types = {}
         self._buffered_times = []
         self._profile_uuids = None
 
@@ -152,6 +153,19 @@ class ProfileDBConnectionHandler:
         self._profile_uuids = list(profile_selection)
 
     @db_session
+    def _buffer_profile_types(self):
+        """
+        Buffers profile types for the profiles of this simulation.
+        """
+        profile_selection = select(
+            (datapoint.profile_uuid, datapoint.profile_type)
+            for datapoint in self.Profile_Database_ConfigurationAreaProfileUuids
+            if datapoint.configuration_uuid == uuid.UUID(gsy_e.constants.CONFIGURATION_ID))
+
+        for profile in profile_selection:
+            self._profile_types[profile[0]] = InputProfileTypes(profile[1])
+
+    @db_session
     def _buffer_all_profiles(self, current_timestamp: DateTime):
         """ Loops over all profile uuids used in the setup and
         reads a new chunk of data from the DB
@@ -211,8 +225,13 @@ class ProfileDBConnectionHandler:
         """
         if self._should_buffer_profiles(current_timestamp):
             self._buffer_profile_uuid_list()
+            self._buffer_profile_types()
             self._buffer_all_profiles(current_timestamp)
             self._buffer_time_slots()
+
+    def get_profile_type_from_db_buffer(self, profile_uuid: str) -> InputProfileTypes:
+        """Read type of a profile."""
+        return self._profile_types[uuid.UUID(profile_uuid)]
 
     def get_profile_from_db_buffer(self, profile_uuid: str) -> Dict:
         """ Wrapper for acquiring a user profile for a specific profile_uuid
@@ -310,3 +329,7 @@ class ProfilesHandler:
         """
         return (profile is not None and
                 (not isinstance(profile, dict) or self.current_timestamp not in profile.keys()))
+
+    def get_profile_type(self, profile_uuid: str) -> InputProfileTypes:
+        """Read the profile type from a profile with the specified UUID."""
+        return self.db.get_profile_type_from_db_buffer(profile_uuid)
