@@ -90,3 +90,7 @@ class SCMLoadProfileStrategy(SCMStrategy):
         """Decrease traded energy from the state and the strategy parameters."""
         self._energy_params.state.decrement_energy_requirement(
             traded_energy_kWh, time_slot, area.name)
+
+    def get_energy_to_buy_kWh(self, time_slot: DateTime) -> float:
+        """Get the available energy for consumption for the specified time slot."""
+        return self._energy_params.state.get_energy_requirement_Wh(time_slot) / 1000.0
