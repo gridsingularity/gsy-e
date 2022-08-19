@@ -27,7 +27,7 @@ from gsy_e.models.strategy.external_strategies import (CommandTypeNotSupported, 
                                                        ExternalStrategyConnectionManager,
                                                        IncomingRequest, OrderCanNotBePosted)
 from gsy_e.models.strategy.external_strategies.forecast_mixin import ForecastExternalMixin
-from gsy_e.models.strategy.load_hours import LoadHoursStrategy, LoadHoursEnergyParameters
+from gsy_e.models.strategy.load_hours import LoadHoursStrategy, LoadHoursPerDayEnergyParameters
 from gsy_e.models.strategy.predefined_load import DefinedLoadEnergyParameters, DefinedLoadStrategy
 
 if TYPE_CHECKING:
@@ -401,7 +401,7 @@ class LoadProfileForecastEnergyParams(
 
 
 class LoadHoursForecastEnergyParams(
-        LoadForecastExternalEnergyParamsMixin, LoadHoursEnergyParameters):
+        LoadForecastExternalEnergyParamsMixin, LoadHoursPerDayEnergyParameters):
     """Energy parameters class for the forecasted external load hours strategy."""
 
 
@@ -493,7 +493,7 @@ class LoadHoursForecastExternalStrategy(
                   ConstSettings.BalancingSettings.OFFER_SUPPLY_RATIO),
                  use_market_maker_rate: bool = False,
                  avg_power_W=0,
-                 hrs_per_day=0,  # Keeping for backwards compatibility
+                 hrs_per_day=0,
                  hrs_of_day=None):
         """
         Constructor of LoadForecastStrategy
@@ -502,7 +502,7 @@ class LoadHoursForecastExternalStrategy(
             update_interval = duration(
                 minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
 
-        super().__init__(daily_load_profile=None,
+        super().__init__(None,
                          fit_to_limit=fit_to_limit,
                          energy_rate_increase_per_update=energy_rate_increase_per_update,
                          update_interval=update_interval,
@@ -512,4 +512,4 @@ class LoadHoursForecastExternalStrategy(
                          use_market_maker_rate=use_market_maker_rate)
 
         self._energy_params = LoadHoursForecastEnergyParams(
-            avg_power_W, hrs_of_day)
+            avg_power_W, hrs_per_day, hrs_of_day)
