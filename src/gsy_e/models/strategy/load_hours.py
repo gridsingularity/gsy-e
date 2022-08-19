@@ -364,7 +364,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
                     and not self.are_bids_posted(market.id)):
                 bid_energy = self.state.get_energy_requirement_Wh(market.time_slot)
                 if self._is_eligible_for_balancing_market:
-                    bid_energy -= (self.state.get_desired_energy(market.time_slot) *
+                    bid_energy -= (self.state.get_desired_energy_Wh(market.time_slot) *
                                    self.balancing_energy_ratio.demand)
                 try:
                     self.post_first_bid(market, bid_energy,

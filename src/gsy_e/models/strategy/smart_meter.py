@@ -395,7 +395,7 @@ class SmartMeterStrategy(BidEnabledStrategy):
         bid_energy = self.state.get_energy_requirement_Wh(market.time_slot)
         # TODO: balancing market support not yet implemented
         # if self._is_eligible_for_balancing_market:
-        #     bid_energy -= self.state.get_desired_energy(market.time_slot) * \
+        #     bid_energy -= self.state.get_desired_energy_Wh(market.time_slot) * \
         #                   self.balancing_energy_ratio.demand
         try:
             if not self.are_bids_posted(market.id):
