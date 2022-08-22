@@ -648,10 +648,7 @@ class Simulation:
                 self.current_state, self.progress_info, self.area, self._status.status)
             self._external_events.update(self.area)
 
-            gc.collect()
-            process = psutil.Process(os.getpid())
-            mbs_used = process.memory_info().rss / 1000000.0
-            log.debug("Used %s MBs.", mbs_used)
+            self._compute_memory_info()
 
             for tick_no in range(tick_resume, self._setup.config.ticks_per_slot):
                 self._handle_paused(console)
@@ -833,6 +830,13 @@ class Simulation:
         self._time.slot_length_realtime = duration(
             seconds=saved_state["slot_length_realtime_s"])
 
+    @staticmethod
+    def _compute_memory_info():
+        gc.collect()
+        process = psutil.Process(os.getpid())
+        mbs_used = process.memory_info().rss / 1000000.0
+        log.error("Used %s MBs.", mbs_used)
+
 
 class CoefficientSimulation(Simulation):
     """Start and control a simulation with coefficient trading."""
@@ -899,10 +903,7 @@ class CoefficientSimulation(Simulation):
 
             self._external_events.update(self.area)
 
-            gc.collect()
-            process = psutil.Process(os.getpid())
-            mbs_used = process.memory_info().rss / 1000000.0
-            log.debug("Used %s MBs.", mbs_used)
+            self._compute_memory_info()
 
             self._time.handle_slowdown_and_realtime(0, self._setup.config)
 
