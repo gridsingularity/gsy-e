@@ -166,6 +166,19 @@ class SimulationEndpointBuffer:
                 for order in future_orders
                 if order.time_slot == time_slot]
 
+    @staticmethod
+    def _get_current_forward_orders_from_timeslot(forward_orders: List,
+                                                  market_time_slot: DateTime,
+                                                  area: "Area") -> List:
+        """Filter orders that have happened in the current simulation time for
+        the specified market time slot."""
+        current_time_slot = area.now
+        last_time_slot = area.now - area.config.slot_length
+        return [order.serializable_dict()
+                for order in forward_orders
+                if order.time_slot == market_time_slot and
+                last_time_slot <= order.creation_time < current_time_slot]
+
     def _read_future_markets_stats_to_dict(self, area: "Area") -> Dict[str, Dict]:
         """Read future markets and return market_stats in a dict."""
 
@@ -205,12 +218,12 @@ class SimulationEndpointBuffer:
             for time_slot in market.market_time_slots:
                 time_slot_str = time_slot.format(DATE_TIME_FORMAT)
                 stats_dict[market_type.value][time_slot_str] = {
-                    "bids": self._get_future_orders_from_timeslot(
-                        market.bid_history, time_slot),
-                    "offers": self._get_future_orders_from_timeslot(
-                        market.offer_history, time_slot),
-                    "trades": self._get_future_orders_from_timeslot(
-                        market.trades, time_slot),
+                    "bids": self._get_current_forward_orders_from_timeslot(
+                        market.bid_history, time_slot, area),
+                    "offers": self._get_current_forward_orders_from_timeslot(
+                        market.offer_history, time_slot, area),
+                    "trades": self._get_current_forward_orders_from_timeslot(
+                        market.trades, time_slot, area),
                     "market_fee": market.market_fee,
                     "const_fee_rate": (
                         market.const_fee_rate if market.const_fee_rate is not None else 0.),
@@ -219,7 +232,6 @@ class SimulationEndpointBuffer:
                     "market_maker_rate": get_market_maker_rate_from_config(
                         market, time_slot=time_slot)
                 }
-
         return stats_dict
 
     @staticmethod
