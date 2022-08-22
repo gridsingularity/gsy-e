@@ -177,7 +177,7 @@ class SimulationEndpointBuffer:
         return [order.serializable_dict()
                 for order in forward_orders
                 if order.time_slot == market_time_slot and
-                last_time_slot < order.creation_time <= current_time_slot]
+                last_time_slot <= order.creation_time < current_time_slot]
 
     def _read_future_markets_stats_to_dict(self, area: "Area") -> Dict[str, Dict]:
         """Read future markets and return market_stats in a dict."""
