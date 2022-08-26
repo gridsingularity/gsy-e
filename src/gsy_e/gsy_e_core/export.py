@@ -21,30 +21,32 @@ import logging
 import os
 import pathlib
 import shutil
-from typing import Dict, Tuple, List, TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, List, Tuple
 
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.data_classes import (
-    Trade, BalancingTrade, Bid, Offer, BalancingOffer, MarketClearingState)
-from gsy_framework.enums import BidOfferMatchAlgoEnum, SpotMarketTypeEnum
+from gsy_framework.data_classes import (BalancingOffer, BalancingTrade, Bid, MarketClearingState,
+                                        Offer, Trade)
+from gsy_framework.enums import AvailableMarketTypes, BidOfferMatchAlgoEnum, SpotMarketTypeEnum
 from gsy_framework.utils import mkdir_from_str
 from pendulum import DateTime
 
 import gsy_e.constants
-from gsy_e.gsy_e_core.enums import AvailableMarketTypes, PAST_MARKET_TYPE_FILE_SUFFIX_MAPPING
+from gsy_e.gsy_e_core.enums import PAST_MARKET_TYPE_FILE_SUFFIX_MAPPING
 from gsy_e.gsy_e_core.myco_singleton import bid_offer_matcher
 from gsy_e.gsy_e_core.sim_results.file_export_endpoints import file_export_endpoints_factory
-from gsy_e.gsy_e_core.sim_results.results_plots import (
-    PlotAverageTradePrice, PlotESSSOCHistory, PlotESSEnergyTrace, PlotOrderInfo,
-    PlotEnergyTradeProfileHR, PlotSupplyDemandCurve, PlotEnergyProfile, PlotUnmatchedLoads,
-    PlotDeviceStats)
+from gsy_e.gsy_e_core.sim_results.results_plots import (PlotAverageTradePrice, PlotDeviceStats,
+                                                        PlotEnergyProfile,
+                                                        PlotEnergyTradeProfileHR,
+                                                        PlotESSEnergyTrace, PlotESSSOCHistory,
+                                                        PlotOrderInfo, PlotSupplyDemandCurve,
+                                                        PlotUnmatchedLoads)
 from gsy_e.gsy_e_core.util import constsettings_to_dict
 from gsy_e.models.area import Area
 
 if TYPE_CHECKING:
-    from gsy_e.models.market.future import FutureMarkets
     from gsy_e.gsy_e_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
     from gsy_e.models.area.scm_manager import SCMManager
+    from gsy_e.models.market.future import FutureMarkets
 
 _log = logging.getLogger(__name__)
 

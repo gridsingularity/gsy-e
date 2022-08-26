@@ -31,7 +31,8 @@ from gsy_e.models.area.market_rotators import (BaseRotator, DefaultMarketRotator
 from gsy_e.models.market import GridFee, MarketBase
 from gsy_e.models.market.balancing import BalancingMarket
 from gsy_e.models.market.future import FutureMarkets
-from gsy_e.gsy_e_core.enums import AvailableMarketTypes, FORWARD_MARKET_TYPES
+from gsy_e.gsy_e_core.enums import FORWARD_MARKET_TYPES
+from gsy_framework.enums import AvailableMarketTypes
 from gsy_e.models.market.one_sided import OneSidedMarket
 from gsy_e.models.market.settlement import SettlementMarket
 from gsy_e.models.market.two_sided import TwoSidedMarket
