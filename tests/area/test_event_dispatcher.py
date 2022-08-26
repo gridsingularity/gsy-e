@@ -42,6 +42,7 @@ from gsy_e.models.strategy.market_agents.two_sided_agent import TwoSidedAgent
 
 # pylint: disable=W0212
 
+
 @pytest.fixture(name="area_with_markets")
 def area_with_markets_fixture():
     """Return Area activated object that contains all types of markets."""
