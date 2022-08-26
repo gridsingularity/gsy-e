@@ -167,9 +167,10 @@ class SimulationEndpointBuffer:
                 if order.time_slot == time_slot]
 
     @staticmethod
-    def _get_current_forward_orders_from_timeslot(forward_orders: List,
-                                                  market_time_slot: DateTime,
-                                                  area: "Area") -> List:
+    def _get_current_forward_orders_from_timeslot(
+            forward_orders: List,
+            market_time_slot: DateTime,
+            area: "Area") -> List:
         """Filter orders that have happened in the current simulation time for
         the specified market time slot."""
         current_time_slot = area.now
