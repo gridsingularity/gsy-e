@@ -86,6 +86,10 @@ class IntradayMarket(ForwardMarketBase):
     def _get_market_slot_duration(_current_time: DateTime, _config) -> duration:
         return duration(minutes=15)
 
+    @property
+    def type_name(self):
+        return "Intraday Forward Market"
+
 
 class DayForwardMarket(ForwardMarketBase):
     """Day forward market implementation"""
@@ -101,6 +105,10 @@ class DayForwardMarket(ForwardMarketBase):
     @staticmethod
     def _get_market_slot_duration(_current_time: DateTime, _config) -> duration:
         return duration(hours=1)
+
+    @property
+    def type_name(self):
+        return "Day Forward Market"
 
 
 class WeekForwardMarket(ForwardMarketBase):
@@ -119,6 +127,10 @@ class WeekForwardMarket(ForwardMarketBase):
     def _get_market_slot_duration(_current_time: DateTime, _config) -> duration:
         return duration(weeks=1)
 
+    @property
+    def type_name(self):
+        return "Week forward Market"
+
 
 class MonthForwardMarket(ForwardMarketBase):
     """Month forward market implementation"""
@@ -135,6 +147,10 @@ class MonthForwardMarket(ForwardMarketBase):
     def _get_market_slot_duration(current_time: DateTime, _config) -> duration:
         return duration(months=1)
 
+    @property
+    def type_name(self):
+        return "Month Forward Market"
+
 
 class YearForwardMarket(ForwardMarketBase):
     """Year forward market implementation"""
@@ -150,3 +166,7 @@ class YearForwardMarket(ForwardMarketBase):
     @staticmethod
     def _get_market_slot_duration(current_time: DateTime, _config) -> duration:
         return duration(years=1)
+
+    @property
+    def type_name(self):
+        return "Year Froward Market"
