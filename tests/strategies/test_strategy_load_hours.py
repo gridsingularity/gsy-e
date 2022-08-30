@@ -610,7 +610,7 @@ def test_event_market_cycle_updates_measurement_and_forecast(load_hours_strategy
     load_hours_strategy_test1._update_energy_requirement_in_state.assert_called_once()
 
 
-@patch("gsy_e.models.strategy.load_hours.utils")
+@patch("gsy_e.models.strategy.energy_parameters.load.utils")
 def test_set_energy_measurement_of_last_market(utils_mock, load_hours_strategy_test1):
     """The real energy of the last market is set when necessary."""
     # If we are in the first market slot, the real energy is not set

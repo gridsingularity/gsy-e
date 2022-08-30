@@ -2,9 +2,8 @@ from typing import Union, Dict, TYPE_CHECKING
 
 from pendulum import DateTime
 
-from gsy_e.models.strategy.predefined_pv import (
-    PVPredefinedEnergyParameters, PVUserProfileEnergyParameters)
-from gsy_e.models.strategy.pv import PVEnergyParameters
+from gsy_e.models.strategy.energy_parameters.pv import (
+    PVEnergyParameters, PVPredefinedEnergyParameters, PVUserProfileEnergyParameters)
 from gsy_e.models.strategy.scm import SCMStrategy
 
 if TYPE_CHECKING:
