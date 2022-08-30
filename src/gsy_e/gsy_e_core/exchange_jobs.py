@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import logging
 from os import environ, getpid
 
-from gsy_framework.serialization import CompressSerialization
+from gsy_framework.data_serializer import DataSerializer
 from pendulum import now
 from redis import Redis
 from rq import Connection, Worker, get_current_job
@@ -36,7 +36,7 @@ def start(payload):
     from gsy_e.gsy_e_core.rq_job_handler import launch_simulation_from_rq_job
     current_job = get_current_job()
     current_job.save_meta()
-    payload = CompressSerialization.decompress_and_decode_queued_strings(payload)
+    payload = DataSerializer.decompress_and_decode(payload)
     launch_simulation_from_rq_job(**payload, job_id=current_job.id)
 
 
