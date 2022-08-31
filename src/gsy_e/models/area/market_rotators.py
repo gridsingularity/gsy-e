@@ -60,10 +60,14 @@ class ForwardMarketRotatorBase:
     def rotate(self, current_time: DateTime) -> None:
         """Delete orders in expired day-ahead markets."""
         if self._is_it_time_to_rotate(current_time):
+            slots_deleted = []
             for delivery_time, market_slot_info in self.markets.open_market_slot_info.items():
-                if market_slot_info.closing_time >= current_time:
+                if market_slot_info.closing_time <= current_time:
                     self.markets.delete_orders_in_old_future_markets(
                         last_slot_to_be_deleted=delivery_time)
+                    slots_deleted.append(delivery_time)
+            for slot_deleted in slots_deleted:
+                self.markets.open_market_slot_info.pop(slot_deleted)
 
 
 class IntradayMarketRotator(ForwardMarketRotatorBase):
