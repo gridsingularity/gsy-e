@@ -1,7 +1,5 @@
 # pylint: disable=broad-except
 
-import pickle
-import zlib
 from multiprocessing import Process, Queue
 
 import pytest
