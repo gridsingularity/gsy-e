@@ -205,7 +205,7 @@ class FutureMarkets(TwoSidedMarket):
                     is_time_slot_in_simulation_duration(future_time_slot, config)):
                 self.bids.slot_order_mapping[future_time_slot] = []
                 self.offers.slot_order_mapping[future_time_slot] = []
-                created_market_slots += future_time_slot
+                created_market_slots.append(future_time_slot)
             future_time_slot = (
                 future_time_slot + self._get_market_slot_duration(future_time_slot, config))
         return created_market_slots
