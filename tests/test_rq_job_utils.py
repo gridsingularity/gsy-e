@@ -34,7 +34,7 @@ class TestRQJobUtils:
 
         results_queue = Queue()
         process = Process(target=self.fn, args=(results_queue,), kwargs={
-            "scenario": zlib.compress(pickle.dumps("default_2a")),
+            "scenario": "default_2a",
             "settings": {
                "duration": duration(days=1),
                "slot_length": duration(hours=1),
@@ -42,7 +42,7 @@ class TestRQJobUtils:
             },
             "events": None,
             "aggregator_device_mapping": "null",
-            "saved_state": zlib.compress(pickle.dumps(None)),
+            "saved_state": None,
             "job_id": "TEST_SIM_RUNS",
             "connect_to_profiles_db": False
         })
