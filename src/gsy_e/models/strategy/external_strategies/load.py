@@ -23,12 +23,14 @@ from gsy_framework.constants_limits import ConstSettings
 from pendulum import duration
 
 from gsy_e.gsy_e_core.exceptions import GSyException
+from gsy_e.models.strategy.energy_parameters.load import (
+    LoadProfileForecastEnergyParams, LoadHoursForecastEnergyParams)
 from gsy_e.models.strategy.external_strategies import (CommandTypeNotSupported, ExternalMixin,
                                                        ExternalStrategyConnectionManager,
                                                        IncomingRequest, OrderCanNotBePosted)
 from gsy_e.models.strategy.external_strategies.forecast_mixin import ForecastExternalMixin
-from gsy_e.models.strategy.load_hours import LoadHoursStrategy, LoadHoursPerDayEnergyParameters
-from gsy_e.models.strategy.predefined_load import DefinedLoadEnergyParameters, DefinedLoadStrategy
+from gsy_e.models.strategy.load_hours import LoadHoursStrategy
+from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy
 
 if TYPE_CHECKING:
     from gsy_e.models.market.two_sided import TwoSidedMarket
@@ -380,29 +382,6 @@ class LoadHoursExternalStrategy(LoadExternalMixin, LoadHoursStrategy):
 
 class LoadProfileExternalStrategy(LoadExternalMixin, DefinedLoadStrategy):
     """Concrete DefinedLoadStrategy class with external connection capabilities"""
-
-
-class LoadForecastExternalEnergyParamsMixin:
-    """
-    Energy parameters for LoadForecastExternalStrategy class. Mostly used to override / disable
-    methods of the DefinedLoadEnergyParameters.
-    """
-
-    def read_or_rotate_profiles(self, reconfigure=False) -> None:
-        """Overridden with empty implementation to disable reading profile from DB."""
-
-    def event_activate_energy(self, area):
-        """Overridden with empty implementation to disable profile activation."""
-
-
-class LoadProfileForecastEnergyParams(
-        LoadForecastExternalEnergyParamsMixin, DefinedLoadEnergyParameters):
-    """Energy parameters class for the forecasted external load profile strategy."""
-
-
-class LoadHoursForecastEnergyParams(
-        LoadForecastExternalEnergyParamsMixin, LoadHoursPerDayEnergyParameters):
-    """Energy parameters class for the forecasted external load hours strategy."""
 
 
 class LoadForecastExternalStrategyMixin(ForecastExternalMixin):

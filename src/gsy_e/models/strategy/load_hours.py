@@ -25,12 +25,11 @@ from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.exceptions import GSyDeviceException
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from gsy_framework.utils import (
-    limit_float_precision, convert_W_to_Wh, find_object_of_same_weekday_and_time,
+    limit_float_precision, find_object_of_same_weekday_and_time,
     is_time_slot_in_simulation_duration)
 from gsy_framework.validators.load_validator import LoadValidator
 from numpy import random
 from pendulum import duration
-from pendulum.datetime import DateTime
 
 from gsy_e import constants
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
@@ -40,7 +39,8 @@ from gsy_e.gsy_e_core.util import get_market_maker_rate_from_config
 from gsy_e.models.base import AssetType
 from gsy_e.models.market import MarketBase
 from gsy_e.models.state import LoadState
-from gsy_e.models.strategy import BidEnabledStrategy, utils
+from gsy_e.models.strategy import BidEnabledStrategy
+from gsy_e.models.strategy.energy_parameters.load import LoadHoursPerDayEnergyParameters
 from gsy_e.models.strategy.future.strategy import future_market_strategy_factory
 from gsy_e.models.strategy.settlement.strategy import settlement_market_strategy_factory
 from gsy_e.models.strategy.update_frequency import TemplateStrategyBidUpdater
@@ -48,143 +48,6 @@ from gsy_e.models.strategy.update_frequency import TemplateStrategyBidUpdater
 log = getLogger(__name__)
 
 BalancingRatio = namedtuple("BalancingRatio", ("demand", "supply"))
-
-
-class LoadHoursEnergyParameters:
-    """Basic energy parameters of the load strategy."""
-    def __init__(self, avg_power_W, hrs_of_day=None):
-        LoadValidator.validate_energy(
-            avg_power_W=avg_power_W, hrs_of_day=hrs_of_day)
-
-        self.state = LoadState()
-
-        self.avg_power_W = avg_power_W
-
-        # Energy consumed per market slot
-        self.energy_per_slot_Wh = None
-
-        # List of active hours of day (values range from 0 to 23)
-        self.hrs_of_day: Optional[List[int]] = None
-        self._area = None
-        self._simulation_start_timestamp = None
-        self._assign_hours_of_day(hrs_of_day)
-
-    def serialize(self):
-        """Return dict with the current energy parameter values."""
-        return {"avg_power_W": self.avg_power_W, "hrs_of_day": self.hrs_of_day}
-
-    def set_energy_measurement_kWh(self, time_slot: DateTime) -> None:
-        """Set the (simulated) actual energy consumed by the device in a market slot."""
-        energy_forecast_kWh = self.state.get_desired_energy_Wh(time_slot) / 1000
-        simulated_measured_energy_kWh = utils.compute_altered_energy(energy_forecast_kWh)
-
-        self.state.set_energy_measurement_kWh(simulated_measured_energy_kWh, time_slot)
-
-    def update_energy_requirement(self, time_slot, overwrite=False):
-        """Update the energy requirement and desired energy from the state class."""
-        self.energy_per_slot_Wh = convert_W_to_Wh(
-            self.avg_power_W, self._area.config.slot_length)
-        if self.allowed_operating_hours(time_slot):
-            desired_energy_Wh = self.energy_per_slot_Wh
-            if not self.allowed_operating_hours(time_slot):
-                desired_energy_Wh = 0.0
-        else:
-            desired_energy_Wh = 0.0
-        self.state.set_desired_energy(desired_energy_Wh, time_slot, overwrite)
-
-    def allowed_operating_hours(self, time_slot):
-        """Check if timeslot inside allowed operating hours."""
-        return time_slot.hour in self.hrs_of_day
-
-    def event_activate_energy(self, area):
-        """Update energy requirement upon the activation event."""
-        self._area = area
-        self._simulation_start_timestamp = area.now
-
-    def reset(self, time_slot: DateTime, **kwargs):  # pylint: disable=unused-argument
-        """Reset strategy parameters."""
-        if kwargs.get("hrs_of_day") is not None:
-            self._assign_hours_of_day(kwargs["hrs_of_day"])
-        if kwargs.get("avg_power_W") is not None:
-            self.avg_power_W = kwargs["avg_power_W"]
-
-    def _get_day_of_timestamp(self, time_slot: DateTime):
-        """Return the number of days passed from the simulation start date to the time slot."""
-        if self._simulation_start_timestamp is None:
-            return 0
-        return (time_slot - self._simulation_start_timestamp).days
-
-    def _assign_hours_of_day(self, hrs_of_day: List[int]):
-        if hrs_of_day is None:
-            hrs_of_day = list(range(24))
-
-        self.hrs_of_day = hrs_of_day
-
-        if not all(0 <= h <= 23 for h in hrs_of_day):
-            raise ValueError("Hrs_of_day list should contain integers between 0 and 23.")
-
-
-class LoadHoursPerDayEnergyParameters(LoadHoursEnergyParameters):
-    """Add the hours-per-day quota parameter to the LoadHoursEnergyParameters."""
-    def __init__(self, avg_power_W, hrs_per_day=None, hrs_of_day=None):
-        LoadValidator.validate_energy(
-            avg_power_W=avg_power_W, hrs_per_day=hrs_per_day, hrs_of_day=hrs_of_day)
-
-        super().__init__(avg_power_W, hrs_of_day)
-
-        # Maps each simulation day to the number of active hours in that day
-        self.hrs_per_day: Dict[int, int] = {}
-        self._initial_hrs_per_day: Optional[int] = None
-        self._assign_hours_per_day(hrs_per_day)
-
-    def serialize(self):
-        return {
-            **super().serialize(),
-            "hrs_per_day": self.hrs_per_day,
-        }
-
-    def add_entry_in_hrs_per_day(self, time_slot: DateTime, overwrite: bool = False) -> None:
-        """Add the current day (in simulation) with the mapped hrs_per_day."""
-        current_day = self._get_day_of_timestamp(time_slot)
-        if current_day not in self.hrs_per_day or overwrite:
-            self.hrs_per_day[current_day] = self._initial_hrs_per_day
-
-    def reset(self, time_slot: DateTime, **kwargs) -> None:
-        super().reset(time_slot, **kwargs)
-        if kwargs.get("hrs_per_day") is not None:
-            self._assign_hours_per_day(kwargs["hrs_per_day"])
-            self.add_entry_in_hrs_per_day(time_slot, overwrite=True)
-
-    def event_activate_energy(self, area):
-        """Update energy requirement upon the activation event."""
-        self.hrs_per_day = {0: self._initial_hrs_per_day}
-        super().event_activate_energy(area)
-
-    def allowed_operating_hours(self, time_slot):
-        """Validate that the hours per day parameter is respected."""
-        current_day = self._get_day_of_timestamp(time_slot)
-        return (super().allowed_operating_hours(time_slot) and
-                (current_day in self.hrs_per_day and
-                 self.hrs_per_day[current_day] > FLOATING_POINT_TOLERANCE))
-
-    def decrease_hours_per_day(self, time_slot, energy_Wh):
-        """Decrease the energy from the quota of hours per day."""
-        current_day = self._get_day_of_timestamp(time_slot)
-        if self.hrs_per_day != {} and current_day in self.hrs_per_day:
-            self.hrs_per_day[current_day] -= self._operating_hours(energy_Wh / 1000.0)
-
-    def _operating_hours(self, energy_kWh):
-        return (((energy_kWh * 1000) / self.energy_per_slot_Wh)
-                * (self._area.config.slot_length / duration(hours=1)))
-
-    def _assign_hours_per_day(self, hrs_per_day: int):
-        if hrs_per_day is None:
-            hrs_per_day = len(self.hrs_of_day)
-
-        self._initial_hrs_per_day = hrs_per_day
-
-        if len(self.hrs_of_day) < hrs_per_day:
-            raise ValueError("Length of list 'hrs_of_day' must be greater equal 'hrs_per_day'")
 
 
 # pylint: disable=too-many-instance-attributes
