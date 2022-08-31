@@ -119,7 +119,7 @@ class IntradayMarket(ForwardMarketBase):
 
     @staticmethod
     def _get_start_time(current_time: DateTime) -> DateTime:
-        return current_time.add(minutes=15)
+        return current_time.add(minutes=30)
 
     @staticmethod
     def _get_end_time(current_time: DateTime) -> DateTime:
@@ -143,11 +143,11 @@ class DayForwardMarket(ForwardMarketBase):
 
     @staticmethod
     def _get_start_time(current_time: DateTime) -> DateTime:
-        return current_time.set(hour=0, minute=0).add(days=1)
+        return current_time.add(hours=2)
 
     @staticmethod
     def _get_end_time(current_time: DateTime) -> DateTime:
-        return current_time.set(hour=0, minute=0).add(weeks=1, days=1, hours=-1)
+        return current_time.add(weeks=1)
 
     @staticmethod
     def _get_market_slot_duration(_current_time: DateTime, _config) -> duration:
@@ -155,10 +155,9 @@ class DayForwardMarket(ForwardMarketBase):
 
     def _calculate_closing_time(self, delivery_time: DateTime) -> DateTime:
         """
-        Closing time of the day ahead market is one hour before the start of the day that the
-        energy will be delivered.
+        Closing time of the day ahead market is one hour before delivery.
         """
-        return delivery_time.set(hour=0, minute=0).subtract(hours=1)
+        return delivery_time.set(minute=0).subtract(hours=1)
 
     @property
     def type_name(self):
@@ -171,7 +170,7 @@ class WeekForwardMarket(ForwardMarketBase):
     @staticmethod
     def _get_start_time(current_time: DateTime) -> DateTime:
         days_until_next_monday = 7 - (current_time.day_of_week - 1)
-        return current_time.set(hour=0, minute=0).add(days=days_until_next_monday)
+        return current_time.set(hour=0, minute=0).add(days=days_until_next_monday).add(weeks=1)
 
     @staticmethod
     def _get_end_time(current_time: DateTime) -> DateTime:
@@ -198,7 +197,7 @@ class MonthForwardMarket(ForwardMarketBase):
 
     @staticmethod
     def _get_start_time(current_time: DateTime) -> DateTime:
-        return current_time.set(day=1, hour=0, minute=0).add(months=1)
+        return current_time.set(day=1, hour=0, minute=0).add(months=2)
 
     @staticmethod
     def _get_end_time(current_time: DateTime) -> DateTime:
