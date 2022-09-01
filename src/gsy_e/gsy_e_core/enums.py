@@ -1,21 +1,4 @@
-from enum import Enum
-
-
-class AvailableMarketTypes(Enum):
-    """Collection of available market types
-    Needs to be in this module in order to circumvent circular imports
-    """
-
-    SPOT = 0
-    BALANCING = 1
-    SETTLEMENT = 2
-    FUTURE = 3
-    DAY_FORWARD = 4
-    WEEK_FORWARD = 5
-    MONTH_FORWARD = 6
-    YEAR_FORWARD = 7
-    INTRADAY = 8
-
+from gsy_framework.enums import AvailableMarketTypes
 
 PAST_MARKET_TYPE_FILE_SUFFIX_MAPPING = {
     AvailableMarketTypes.SPOT: "",

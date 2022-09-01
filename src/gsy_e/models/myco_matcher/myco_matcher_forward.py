@@ -15,10 +15,10 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from gsy_framework.enums import AvailableMarketTypes
 from gsy_framework.matching_algorithms import (PayAsBidMatchingAlgorithm,
                                                PayAsClearMatchingAlgorithm)
 
-from gsy_e.gsy_e_core.enums import AvailableMarketTypes
 from gsy_e.gsy_e_core.market_counters import (DayForwardMarketCounter, IntraDayMarketCounter,
                                               MonthForwardMarketCounter, WeekForwardMarketCounter,
                                               YearForwardMarketCounter)

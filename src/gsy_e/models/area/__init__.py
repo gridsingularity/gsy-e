@@ -16,16 +16,16 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from logging import getLogger
-from typing import List, Dict, Optional, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, List, Optional, Union
 from uuid import uuid4
-from numpy.random import random
 
 from gsy_framework.area_validator import validate_area
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.data_classes import Trade
-from gsy_framework.enums import SpotMarketTypeEnum
+from gsy_framework.enums import AvailableMarketTypes, SpotMarketTypeEnum
 from gsy_framework.exceptions import GSyAreaException, GSyDeviceException
 from gsy_framework.utils import key_in_dict_and_not_none
+from numpy.random import random
 from pendulum import DateTime
 from slugify import slugify
 
@@ -42,9 +42,8 @@ from gsy_e.models.area.redis_external_market_connection import RedisMarketExtern
 from gsy_e.models.area.stats import AreaStats
 from gsy_e.models.area.throughput_parameters import ThroughputParameters
 from gsy_e.models.config import SimulationConfig
-from gsy_e.models.market.future import FutureMarkets
 from gsy_e.models.market.forward import ForwardMarketBase
-from gsy_e.gsy_e_core.enums import AvailableMarketTypes
+from gsy_e.models.market.future import FutureMarkets
 from gsy_e.models.strategy import BaseStrategy
 from gsy_e.models.strategy.external_strategies import ExternalMixin
 from gsy_e.models.strategy.scm import SCMStrategy
@@ -52,8 +51,8 @@ from gsy_e.models.strategy.scm import SCMStrategy
 log = getLogger(__name__)
 
 if TYPE_CHECKING:
-    from gsy_e.models.market import MarketBase
     from gsy_e.models.area.scm_manager import SCMManager
+    from gsy_e.models.market import MarketBase
 
 
 def check_area_name_exists_in_parent_area(parent_area, name):
