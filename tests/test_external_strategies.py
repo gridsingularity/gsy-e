@@ -20,8 +20,9 @@ import uuid
 import json
 import pytest
 from gsy_e.models.area import Area
-from gsy_e.models.strategy.external_strategies.load import (LoadForecastExternalStrategy,
-                                                            LoadHoursExternalStrategy)
+from gsy_e.models.strategy.external_strategies.load import (
+    LoadHoursForecastExternalStrategy, LoadProfileForecastExternalStrategy,
+    LoadHoursExternalStrategy)
 from gsy_e.models.strategy.external_strategies.pv import (PVForecastExternalStrategy,
                                                           PVExternalStrategy)
 from gsy_e.models.strategy.external_strategies.storage import StorageExternalStrategy
@@ -53,7 +54,8 @@ def ext_strategy_fixture(request):
 
 class TestPVForecastExternalStrategy:
 
-    @pytest.mark.parametrize("ext_strategy_fixture", [LoadForecastExternalStrategy(),
+    @pytest.mark.parametrize("ext_strategy_fixture", [LoadHoursForecastExternalStrategy(),
+                                                      LoadProfileForecastExternalStrategy(),
                                                       PVForecastExternalStrategy()], indirect=True)
     def test_event_market_cycle_calls_energy_update_methods(self, ext_strategy_fixture):
         ext_strategy_fixture.energy_forecast_buffer = {now(): 1}
@@ -88,7 +90,8 @@ class TestPVForecastExternalStrategy:
         ext_strategy_fixture.update_energy_forecast()
         ext_strategy_fixture.state.set_available_energy.assert_not_called()
 
-    @pytest.mark.parametrize("ext_strategy_fixture", [LoadForecastExternalStrategy()],
+    @pytest.mark.parametrize("ext_strategy_fixture", [LoadHoursForecastExternalStrategy(),
+                                                      LoadProfileForecastExternalStrategy()],
                              indirect=True)
     def test_update_energy_forecast_calls_set_desired_energy(self, ext_strategy_fixture):
         time = ext_strategy_fixture.area.spot_market.time_slot
@@ -101,7 +104,8 @@ class TestPVForecastExternalStrategy:
             energy * 1000, time, overwrite=True)
         ext_strategy_fixture.state.update_total_demanded_energy.assert_called_once_with(time)
 
-    @pytest.mark.parametrize("ext_strategy_fixture", [LoadForecastExternalStrategy()],
+    @pytest.mark.parametrize("ext_strategy_fixture", [LoadHoursForecastExternalStrategy(),
+                                                      LoadProfileForecastExternalStrategy()],
                              indirect=True)
     def test_update_energy_forecast_doesnt_call_set_desired_energy_for_past_markets(
             self, ext_strategy_fixture):
@@ -113,7 +117,8 @@ class TestPVForecastExternalStrategy:
         ext_strategy_fixture.state.set_desired_energy.assert_not_called()
         ext_strategy_fixture.state.update_total_demanded_energy.assert_not_called()
 
-    @pytest.mark.parametrize("ext_strategy_fixture", [LoadForecastExternalStrategy(),
+    @pytest.mark.parametrize("ext_strategy_fixture", [LoadHoursForecastExternalStrategy(),
+                                                      LoadProfileForecastExternalStrategy(),
                                                       PVForecastExternalStrategy()], indirect=True)
     def test_update_energy_measurement_calls_set_energy_measurement_kWh(
             self, ext_strategy_fixture):
@@ -124,7 +129,8 @@ class TestPVForecastExternalStrategy:
         ext_strategy_fixture.update_energy_measurement()
         ext_strategy_fixture.state.set_energy_measurement_kWh.assert_called_once_with(energy, time)
 
-    @pytest.mark.parametrize("ext_strategy_fixture", [LoadForecastExternalStrategy(),
+    @pytest.mark.parametrize("ext_strategy_fixture", [LoadHoursForecastExternalStrategy(),
+                                                      LoadProfileForecastExternalStrategy(),
                                                       PVForecastExternalStrategy()], indirect=True)
     def test_update_energy_measurement_doesnt_call_set_energy_measurement_kWh_for_future_markets(
             self, ext_strategy_fixture):

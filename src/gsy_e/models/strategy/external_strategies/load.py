@@ -23,12 +23,14 @@ from gsy_framework.constants_limits import ConstSettings
 from pendulum import duration
 
 from gsy_e.gsy_e_core.exceptions import GSyException
+from gsy_e.models.strategy.energy_parameters.load import (
+    LoadProfileForecastEnergyParams, LoadHoursForecastEnergyParams)
 from gsy_e.models.strategy.external_strategies import (CommandTypeNotSupported, ExternalMixin,
                                                        ExternalStrategyConnectionManager,
                                                        IncomingRequest, OrderCanNotBePosted)
 from gsy_e.models.strategy.external_strategies.forecast_mixin import ForecastExternalMixin
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
-from gsy_e.models.strategy.predefined_load import DefinedLoadEnergyParameters, DefinedLoadStrategy
+from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy
 
 if TYPE_CHECKING:
     from gsy_e.models.market.two_sided import TwoSidedMarket
@@ -382,56 +384,10 @@ class LoadProfileExternalStrategy(LoadExternalMixin, DefinedLoadStrategy):
     """Concrete DefinedLoadStrategy class with external connection capabilities"""
 
 
-class LoadForecastExternalEnergyParams(DefinedLoadEnergyParameters):
-    """
-    Energy parameters for LoadForecastExternalStrategy class. Mostly used to override / disable
-    methods of the DefinedLoadEnergyParameters.
-    """
-
-    def read_or_rotate_profiles(self, reconfigure=False) -> None:
-        """Overridden with empty implementation to disable reading profile from DB."""
-
-    def event_activate_energy(self, area):
-        """Overridden with empty implementation to disable profile activation."""
-
-
-class LoadForecastExternalStrategy(ForecastExternalMixin, LoadProfileExternalStrategy):
+class LoadForecastExternalStrategyMixin(ForecastExternalMixin):
     """
         Strategy responsible for reading forecast and measurement consumption data via hardware API
     """
-    # pylint: disable=too-many-arguments
-    def __init__(self, fit_to_limit=True, energy_rate_increase_per_update=None,
-                 update_interval=None,
-                 initial_buying_rate: Union[float, dict, str] =
-                 ConstSettings.LoadSettings.BUYING_RATE_RANGE.initial,
-                 final_buying_rate: Union[float, dict, str] =
-                 ConstSettings.LoadSettings.BUYING_RATE_RANGE.final,
-                 balancing_energy_ratio: tuple =
-                 (ConstSettings.BalancingSettings.OFFER_DEMAND_RATIO,
-                  ConstSettings.BalancingSettings.OFFER_SUPPLY_RATIO),
-                 use_market_maker_rate: bool = False,
-                 avg_power_W=0,
-                 hrs_per_day=0,
-                 hrs_of_day=None,
-                 daily_load_profile=None,
-                 daily_load_profile_uuid=None):
-        """
-        Constructor of LoadForecastStrategy
-        """
-        if update_interval is None:
-            update_interval = duration(
-                minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
-
-        super().__init__(daily_load_profile=None,
-                         fit_to_limit=fit_to_limit,
-                         energy_rate_increase_per_update=energy_rate_increase_per_update,
-                         update_interval=update_interval,
-                         final_buying_rate=final_buying_rate,
-                         initial_buying_rate=initial_buying_rate,
-                         balancing_energy_ratio=balancing_energy_ratio,
-                         use_market_maker_rate=use_market_maker_rate)
-
-        self._energy_params = LoadForecastExternalEnergyParams()
 
     def update_energy_forecast(self) -> None:
         """Set energy forecast for future markets."""
@@ -455,3 +411,84 @@ class LoadForecastExternalStrategy(ForecastExternalMixin, LoadProfileExternalStr
         """
         Setting measured energy for the previous slot is already done by update_energy_measurement
         """
+
+
+class LoadProfileForecastExternalStrategy(
+        LoadForecastExternalStrategyMixin, LoadProfileExternalStrategy):
+    """
+        Strategy responsible for reading forecast and measurement consumption data via hardware
+        API. In case the hardware API is not available the normal profile strategy will be used
+        instead.
+    """
+    # pylint: disable=too-many-arguments
+    def __init__(self, fit_to_limit=True, energy_rate_increase_per_update=None,
+                 update_interval=None,
+                 initial_buying_rate: Union[float, dict, str] =
+                 ConstSettings.LoadSettings.BUYING_RATE_RANGE.initial,
+                 final_buying_rate: Union[float, dict, str] =
+                 ConstSettings.LoadSettings.BUYING_RATE_RANGE.final,
+                 balancing_energy_ratio: tuple =
+                 (ConstSettings.BalancingSettings.OFFER_DEMAND_RATIO,
+                  ConstSettings.BalancingSettings.OFFER_SUPPLY_RATIO),
+                 use_market_maker_rate: bool = False,
+                 daily_load_profile=None,
+                 daily_load_profile_uuid=None):
+        """
+        Constructor of LoadForecastStrategy
+        """
+        if update_interval is None:
+            update_interval = duration(
+                minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
+
+        super().__init__(daily_load_profile=None,
+                         fit_to_limit=fit_to_limit,
+                         energy_rate_increase_per_update=energy_rate_increase_per_update,
+                         update_interval=update_interval,
+                         final_buying_rate=final_buying_rate,
+                         initial_buying_rate=initial_buying_rate,
+                         balancing_energy_ratio=balancing_energy_ratio,
+                         use_market_maker_rate=use_market_maker_rate)
+
+        self._energy_params = LoadProfileForecastEnergyParams(
+            daily_load_profile, daily_load_profile_uuid)
+
+
+class LoadHoursForecastExternalStrategy(
+        LoadForecastExternalStrategyMixin, LoadHoursExternalStrategy):
+    """
+        Strategy responsible for reading forecast and measurement consumption data via hardware
+        API. In case the hardware API is not available the normal load hours strategy will be used
+        instead.
+    """
+    # pylint: disable=too-many-arguments,unused-argument
+    def __init__(self, fit_to_limit=True, energy_rate_increase_per_update=None,
+                 update_interval=None,
+                 initial_buying_rate: Union[float, dict, str] =
+                 ConstSettings.LoadSettings.BUYING_RATE_RANGE.initial,
+                 final_buying_rate: Union[float, dict, str] =
+                 ConstSettings.LoadSettings.BUYING_RATE_RANGE.final,
+                 balancing_energy_ratio: tuple =
+                 (ConstSettings.BalancingSettings.OFFER_DEMAND_RATIO,
+                  ConstSettings.BalancingSettings.OFFER_SUPPLY_RATIO),
+                 use_market_maker_rate: bool = False,
+                 avg_power_W=0,
+                 hrs_per_day=0,
+                 hrs_of_day=None):
+        """
+        Constructor of LoadForecastStrategy
+        """
+        if update_interval is None:
+            update_interval = duration(
+                minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
+
+        super().__init__(None,
+                         fit_to_limit=fit_to_limit,
+                         energy_rate_increase_per_update=energy_rate_increase_per_update,
+                         update_interval=update_interval,
+                         final_buying_rate=final_buying_rate,
+                         initial_buying_rate=initial_buying_rate,
+                         balancing_energy_ratio=balancing_energy_ratio,
+                         use_market_maker_rate=use_market_maker_rate)
+
+        self._energy_params = LoadHoursForecastEnergyParams(
+            avg_power_W, hrs_per_day, hrs_of_day)

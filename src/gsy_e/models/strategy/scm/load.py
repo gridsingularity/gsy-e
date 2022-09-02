@@ -2,8 +2,8 @@ from typing import Dict, TYPE_CHECKING
 
 from pendulum import DateTime
 
-from gsy_e.models.strategy.load_hours import LoadHoursEnergyParameters
-from gsy_e.models.strategy.predefined_load import DefinedLoadEnergyParameters
+from gsy_e.models.strategy.energy_parameters.load import (
+    LoadHoursEnergyParameters, DefinedLoadEnergyParameters)
 from gsy_e.models.strategy.scm import SCMStrategy
 
 if TYPE_CHECKING:

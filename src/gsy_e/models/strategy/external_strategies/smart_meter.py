@@ -29,7 +29,8 @@ if TYPE_CHECKING:
     from pendulum import DateTime
 
     from gsy_e.models.strategy import Offers
-    from gsy_e.models.strategy.smart_meter import SmartMeterEnergyParameters, SmartMeterState
+    from gsy_e.models.strategy.energy_parameters.smart_meter import (
+        SmartMeterEnergyParameters, SmartMeterState)
 
 
 class SmartMeterExternalMixin(ExternalMixin):

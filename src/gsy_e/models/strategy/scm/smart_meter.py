@@ -4,7 +4,7 @@ from typing import Union, Dict, TYPE_CHECKING
 from pendulum import DateTime
 
 from gsy_e.models.strategy.scm import SCMStrategy
-from gsy_e.models.strategy.smart_meter import SmartMeterEnergyParameters
+from gsy_e.models.strategy.energy_parameters.smart_meter import SmartMeterEnergyParameters
 
 if TYPE_CHECKING:
     from gsy_e.models.area import CoefficientArea

@@ -20,9 +20,9 @@ import logging
 
 from gsy_e.models.area import Area, CoefficientArea
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
-from gsy_e.models.strategy.external_strategies.load import (LoadForecastExternalStrategy,
-                                                            LoadHoursExternalStrategy,
-                                                            LoadProfileExternalStrategy)
+from gsy_e.models.strategy.external_strategies.load import (
+    LoadHoursForecastExternalStrategy, LoadProfileForecastExternalStrategy,
+    LoadHoursExternalStrategy, LoadProfileExternalStrategy)
 from gsy_e.models.strategy.external_strategies.pv import (PVExternalStrategy,
                                                           PVForecastExternalStrategy,
                                                           PVPredefinedExternalStrategy,
@@ -56,8 +56,8 @@ forecast_strategy_mapping = {
     PVPredefinedStrategy: PVForecastExternalStrategy,
     PVStrategy: PVForecastExternalStrategy,
     PVUserProfileStrategy: PVForecastExternalStrategy,
-    DefinedLoadStrategy: LoadForecastExternalStrategy,
-    LoadHoursStrategy: LoadForecastExternalStrategy
+    DefinedLoadStrategy: LoadProfileForecastExternalStrategy,
+    LoadHoursStrategy: LoadHoursForecastExternalStrategy
 }
 
 scm_strategy_mapping = {
@@ -135,15 +135,15 @@ class LeafBase:
         return self.strategy.serialize()
 
 
+# pylint: disable=missing-class-docstring
+
+
 class Leaf(LeafBase, Area):
     pass
 
 
 class CoefficientLeaf(LeafBase, CoefficientArea):
     pass
-
-
-# pylint: disable=missing-class-docstring
 
 
 class CommercialProducer(Leaf):
