@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock
 
 import pytest
-from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from pendulum import DateTime, duration
 
 from gsy_e.gsy_e_core.enums import FORWARD_MARKET_TYPES
@@ -12,6 +12,7 @@ from gsy_e.gsy_e_core.sim_results.endpoint_buffer import SimulationEndpointBuffe
 def forward_setup_fixture():
     """Create area with all the forward markets and
     pre added timeslots for each forward market."""
+    GlobalConfig.market_maker_rate = 30
     ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS = True
     slot_length = duration(minutes=15)
     area = MagicMock(forward_markets={
