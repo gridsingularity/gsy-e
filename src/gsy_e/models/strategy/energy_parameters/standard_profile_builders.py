@@ -1,13 +1,14 @@
 import csv
 from collections import defaultdict
 from pathlib import Path
+from typing import Dict
 
 import pendulum
 
 from gsy_e.gsy_e_core.util import d3a_path
 
 
-class StandardProfile:
+class StandardProfileParser:
     """Class representing the Standard Solar Profile for forward products."""
 
     FILENAME = Path(d3a_path) / "resources/standard_solar_profile.csv"
@@ -16,11 +17,13 @@ class StandardProfile:
     SLOT_LENGTH = pendulum.duration(minutes=15)
     SLOTS_IN_ONE_HOUR = pendulum.duration(hours=1) / SLOT_LENGTH
 
-    def __init__(self):
-        self._data: defaultdict = self._parse_profile_file()
-
     @classmethod
-    def _parse_profile_file(cls) -> defaultdict:
+    def parse(cls) -> Dict:
+        """Parse the standard solar profile.
+
+        Returns: a dict where the keys are the numbers of the months and the values are dicts of
+            {time: value} items.
+        """
         data = defaultdict(dict)
         with open(cls.FILENAME, "r", encoding="utf-8") as inf:
             reader = csv.DictReader(inf, fieldnames=cls.FIELDNAMES, delimiter=";")
@@ -29,7 +32,11 @@ class StandardProfile:
                 # Only keep time, discarding the date information to make the profile more general
                 slot = pendulum.parse(row["INTERVAL"], exact=True)
                 # The SSP is expressed in power (kW) units, so we convert it to energy (kWh)
-                for month in cls.MONTHS:
-                    data[month][slot] = float(row[month]) / cls.SLOTS_IN_ONE_HOUR
+                for month_idx, month in cls._enumerate_months():
+                    data[month_idx][slot] = float(row[month]) / cls.SLOTS_IN_ONE_HOUR
 
-        return data
+        return dict(data)
+
+    @classmethod
+    def _enumerate_months(cls):
+        return enumerate(cls.MONTHS, start=1)
