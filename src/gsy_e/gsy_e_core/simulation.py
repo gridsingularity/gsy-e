@@ -833,7 +833,7 @@ class Simulation:
         gc.collect()
         process = psutil.Process(os.getpid())
         mbs_used = process.memory_info().rss / 1000000.0
-        log.error("Used %s MBs.", mbs_used)
+        log.debug("Used %s MBs.", mbs_used)
 
 
 class CoefficientSimulation(Simulation):
