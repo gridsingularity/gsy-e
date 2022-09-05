@@ -114,6 +114,11 @@ def launch_simulation_from_rq_job(scenario: bytes, settings: Optional[Dict],
             ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS
         )
 
+        ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS = settings.get(
+            "forward_market_enabled",
+            ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS
+        )
+
         if scenario is None:
             scenario_name = "default_2a"
         elif scenario in available_simulation_scenarios:
