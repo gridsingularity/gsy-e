@@ -1,4 +1,3 @@
-from logging import getLogger
 from typing import Dict, Optional
 
 import pendulum
@@ -8,8 +7,6 @@ from gsy_e.gsy_e_core.enums import AvailableMarketTypes
 from gsy_e.models.state import LoadState
 from gsy_e.models.strategy.energy_parameters.standard_profile_builders import StandardProfileParser
 
-logger = getLogger(__name__)
-
 
 class StandardProfileException(Exception):
     """Exception for the StandardProfile."""
@@ -17,8 +14,6 @@ class StandardProfileException(Exception):
 
 class LoadSSPEnergyParameters:
     """Energy parameters of the load strategy for the forward markets."""
-
-    _STANDARD_SOLAR_PROFILE = StandardProfileParser.parse()
 
     def __init__(self, capacity_kW):
         self.state = LoadState()
