@@ -91,13 +91,15 @@ class InfluxConnection:
 
         return res_dict
 
-    
     def getDataPoint(self, sm_id, start = GlobalConfig.start_date, duration = GlobalConfig.slot_length):
         end = start + duration
 
-        #query = 'SELECT mean("'+ self.powerkey +'") FROM "'+ self.tablename +'" WHERE time >= \'' + start.to_datetime_string() + '\' AND time <= \'' + end.to_datetime_string() + '\' AND id = \'' + str(sm_id) + '\''
-        query = 'SELECT mean("'+ self.powerkey +'") FROM "'+ self.tablename +'" WHERE "id" = \'97\' AND time >= now() - 1d GROUP BY time(15m), "id" fill(linear)'
-        return self.client.query(query)
+        query = 'SELECT mean("'+ self.powerkey +'") FROM "'+ self.tablename +'" WHERE "id" = \''+ str(sm_id) +'\' AND time >= now() - '+ str(duration.in_minutes()) +'m'
+        
+        #getting data out of query result
+        query_res = list(self.client.query(query).values())[0]
+        query_res.reset_index(level=0, inplace=True)
+        return query_res["index"][0], query_res["mean"][0]
 
 
     def _influx_query(self, interval, start, duration):

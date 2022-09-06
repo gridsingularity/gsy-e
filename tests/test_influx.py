@@ -16,7 +16,7 @@ connection = InfluxConnection(influx_path);
 #print(factory.getArea("FH Campus"))
 
 
-#print(connection.getSmartmeterIDs())
+#print(connection.getData())
 
 
-print(connection.getDataPoint(1))
+print(connection.getDataPoint(99))
