@@ -63,15 +63,14 @@ class ForwardTradeProfileGenerator:
     def generate_trade_profile(
             self, energy_kWh, market_slot, product_type):
         """Generate a profile based on the market slot and the product type."""
-        profile_scaled_by_traded_energy = self._scaler.scale_by_peak(peak_kWh=energy_kWh)
+        trade_profile = self._scaler.scale_by_peak(peak_kWh=energy_kWh)
 
         # This subtraction is done _before_ expanding the slots to improve performance
-        residual_energy_profile = self._subtract_profiles(
-            self._scaled_capacity_profile, profile_scaled_by_traded_energy)
+        # residual_energy_profile = self._subtract_profiles(
+        #     self._scaled_capacity_profile, trade_profile)
 
         # Target a specific market slot based on the product type and market_slot.
-        return self._expand_profile_slots(
-            residual_energy_profile, market_slot, product_type)
+        return self._expand_profile_slots(trade_profile, market_slot, product_type)
 
     @staticmethod
     def _expand_profile_slots(profile, market_slot, product_type):
