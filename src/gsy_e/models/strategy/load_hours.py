@@ -305,7 +305,11 @@ class LoadHoursStrategy(BidEnabledStrategy):
                                   buyer_origin=self.owner.name,
                                   buyer_origin_id=self.owner.uuid,
                                   buyer_id=self.owner.uuid)
-                self.state.decrement_energy_requirement(energy_Wh, time_slot, self.owner.name)
+
+                self._energy_params.decrement_energy_requirement(
+                    energy_kWh=energy_Wh,
+                    time_slot=time_slot,
+                    area_name=self.owner.name)
                 self._energy_params.decrease_hours_per_day(time_slot, energy_Wh)
 
         except MarketException:
@@ -386,11 +390,13 @@ class LoadHoursStrategy(BidEnabledStrategy):
         if not self.area.is_market_spot_or_future(market_id):
             return
         if bid_trade.offer_bid.buyer == self.owner.name:
-            self.state.decrement_energy_requirement(
-                bid_trade.traded_energy * 1000,
-                bid_trade.time_slot, self.owner.name)
-            self._energy_params.decrease_hours_per_day(bid_trade.time_slot,
-                                                       bid_trade.traded_energy * 1000.0)
+            self._energy_params.decrement_energy_requirement(
+                energy_kWh=bid_trade.traded_energy,
+                time_slot=bid_trade.time_slot,
+                area_name=self.owner.name)
+            self._energy_params.decrease_hours_per_day(
+                bid_trade.time_slot,
+                bid_trade.traded_energy * 1000.0)
 
     def event_offer_traded(self, *, market_id, trade):
         """Register the offer traded by the device and its effects. Extends the superclass method.
@@ -418,7 +424,12 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
         ramp_up_energy = (self.balancing_energy_ratio.demand *
                           self.state.get_desired_energy_Wh(market.time_slot))
-        self.state.decrement_energy_requirement(ramp_up_energy, market.time_slot, self.owner.name)
+
+        self._energy_params.decrement_energy_requirement(
+            energy_kWh=ramp_up_energy,
+            time_slot=market.time_slot,
+            area_name=self.owner.name)
+
         ramp_up_price = DeviceRegistry.REGISTRY[self.owner.name][0] * ramp_up_energy
         if ramp_up_energy != 0 and ramp_up_price != 0:
             self.area.get_balancing_market(market.time_slot).balancing_offer(
