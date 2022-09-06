@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Dict, List
+from typing import TYPE_CHECKING, Dict, Iterable, List
 
 from gsy_framework.constants_limits import (DATE_TIME_FORMAT, DATE_TIME_UI_FORMAT, ConstSettings,
                                             GlobalConfig)
@@ -168,7 +168,7 @@ class SimulationEndpointBuffer:
 
     @staticmethod
     def _get_current_forward_orders_from_timeslot(
-            forward_orders: List,
+            forward_orders: Iterable,
             market_time_slot: DateTime,
             area: "Area") -> List:
         """Filter orders that have happened in the current simulation time for
@@ -219,10 +219,11 @@ class SimulationEndpointBuffer:
             for time_slot in market.market_time_slots:
                 time_slot_str = time_slot.format(DATE_TIME_FORMAT)
                 stats_dict[market_type.value][time_slot_str] = {
+                    # only export unmatched open bids/offers
                     "bids": self._get_current_forward_orders_from_timeslot(
-                        market.bid_history, time_slot, area),
+                        market.bids.values(), time_slot, area),
                     "offers": self._get_current_forward_orders_from_timeslot(
-                        market.offer_history, time_slot, area),
+                        market.offers.values(), time_slot, area),
                     "trades": self._get_current_forward_orders_from_timeslot(
                         market.trades, time_slot, area),
                     "market_fee": market.market_fee,
