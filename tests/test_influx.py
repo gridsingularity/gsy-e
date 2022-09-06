@@ -6,11 +6,17 @@ from gsy_e.utils.influx_area_factory import InfluxAreaFactory
 from gsy_e.models.strategy.predefined_influx_load import DefinedLoadStrategyInflux
 
 influx_path = os.path.join(d3a_path, "resources", "influxdb.cfg")
-strat = DefinedLoadStrategyInflux(influx_path, final_buying_rate=60)
+#strat = DefinedLoadStrategyInflux(influx_path, final_buying_rate=60)
 connection = InfluxConnection(influx_path);
 
-print(connection.getAggregatedDataDict())
+#print(connection.getAggregatedDataDict())
 
-factory = InfluxAreaFactory(influx_path)
+#factory = InfluxAreaFactory(influx_path)
 
-print(factory.getArea("FH Campus"))
+#print(factory.getArea("FH Campus"))
+
+
+#print(connection.getSmartmeterIDs())
+
+
+print(connection.getDataPoint(1))

@@ -21,8 +21,21 @@ class InfluxConnection:
             verify_ssl=True,
             database=config['InfluxDB']['database']
         )
+        self.db = database=config['InfluxDB']['database']
         self.tablename = config.get('Table','tablename',fallback='Strom')
         self.powerkey = config.get('Table','powerkey',fallback='P_ges')
+    
+
+
+    def getSmartmeterIDs(self):
+        query = 'SHOW TAG VALUES ON "' + self.db + '" WITH KEY IN ("id")'
+        query_res = list(self.client.query(query).get_points())
+
+        def getValue(listitem):
+            return listitem["value"]
+
+        return list(map(getValue, query_res))
+
 
 
     def getAggregatedDataDict(self, interval = GlobalConfig.slot_length.in_minutes(),
@@ -78,6 +91,14 @@ class InfluxConnection:
 
         return res_dict
 
+    
+    def getDataPoint(self, sm_id, start = GlobalConfig.start_date, duration = GlobalConfig.slot_length):
+        end = start + duration
+
+        #query = 'SELECT mean("'+ self.powerkey +'") FROM "'+ self.tablename +'" WHERE time >= \'' + start.to_datetime_string() + '\' AND time <= \'' + end.to_datetime_string() + '\' AND id = \'' + str(sm_id) + '\''
+        query = 'SELECT mean("'+ self.powerkey +'") FROM "'+ self.tablename +'" WHERE "id" = \'97\' AND time >= now() - 1d GROUP BY time(15m), "id" fill(linear)'
+        return self.client.query(query)
+
 
     def _influx_query(self, interval, start, duration):
         end = start + duration
@@ -85,7 +106,6 @@ class InfluxConnection:
         query = 'SELECT mean("'+ self.powerkey +'") FROM "'+ self.tablename +'" WHERE time >= \'' + start.to_datetime_string() + '\' AND time <= \'' + end.to_datetime_string() + '\' GROUP BY time(' + str(interval) + 'm), "id" fill(linear)'
 
         return self.client.query(query)
-
 
     @staticmethod
     def to_csv(df, filepath):
