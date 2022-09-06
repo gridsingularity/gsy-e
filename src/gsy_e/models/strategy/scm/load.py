@@ -53,8 +53,11 @@ class SCMLoadHoursStrategy(SCMStrategy):
 
     def decrease_energy_to_buy(
             self, traded_energy_kWh: float, time_slot: DateTime, area: "AreaBase") -> None:
-        self._energy_params.state.decrement_energy_requirement(
-            traded_energy_kWh, time_slot, area.name)
+        """Decrease the energy requirements of the asset."""
+        self._energy_params.decrement_energy_requirement(
+            energy_kWh=traded_energy_kWh,
+            time_slot=time_slot,
+            area_name=area.name)
 
 
 class SCMLoadProfileStrategy(SCMStrategy):
@@ -87,9 +90,11 @@ class SCMLoadProfileStrategy(SCMStrategy):
 
     def decrease_energy_to_buy(
             self, traded_energy_kWh: float, time_slot: DateTime, area: "AreaBase") -> None:
-        """Decrease traded energy from the state and the strategy parameters."""
-        self._energy_params.state.decrement_energy_requirement(
-            traded_energy_kWh, time_slot, area.name)
+        """Decrease the amount of traded energy from the asset's state."""
+        self._energy_params.decrement_energy_requirement(
+            energy_kWh=traded_energy_kWh,
+            time_slot=time_slot,
+            area_name=area.name)
 
     def get_energy_to_buy_kWh(self, time_slot: DateTime) -> float:
         """Get the available energy for consumption for the specified time slot."""
