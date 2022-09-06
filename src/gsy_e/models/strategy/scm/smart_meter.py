@@ -53,7 +53,10 @@ class SCMSmartMeterStrategy(SCMStrategy):
     def decrease_energy_to_sell(
             self, traded_energy_kWh: float, time_slot: DateTime, area: "CoefficientArea"):
         """Decrease traded energy from the state and the strategy parameters."""
-        self.state.decrement_energy_requirement(traded_energy_kWh, time_slot, area.name)
+        self._energy_params.decrement_energy_requirement(
+            energy_kWh=traded_energy_kWh,
+            time_slot=time_slot,
+            area_name=area.name)
 
     def decrease_energy_to_buy(
             self, traded_energy_kWh: float, time_slot: DateTime, area: "CoefficientArea"):

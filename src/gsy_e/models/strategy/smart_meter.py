@@ -249,8 +249,10 @@ class SmartMeterStrategy(BidEnabledStrategy):
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
 
         market = self.area.get_spot_or_future_market_by_id(market_id)
-        self.state.decrement_energy_requirement(
-            bid_trade.traded_energy * 1000, market.time_slot, self.owner.name)
+        self._energy_params.decrement_energy_requirement(
+            energy_kWh=bid_trade.traded_energy,
+            time_slot=market.time_slot,
+            area_name=self.owner.name)
 
     def area_reconfigure_event(self, *args, **kwargs):
         """Reconfigure the device properties at runtime using the provided arguments.
@@ -511,7 +513,11 @@ class SmartMeterStrategy(BidEnabledStrategy):
                                   buyer_origin=self.owner.name,
                                   buyer_origin_id=self.owner.uuid,
                                   buyer_id=self.owner.uuid)
-                self.state.decrement_energy_requirement(energy_Wh, time_slot, self.owner.name)
+
+                self._energy_params.decrement_energy_requirement(
+                    energy_kWh=energy_Wh / 1000,
+                    time_slot=time_slot,
+                    area_name=self.owner.name)
 
         except MarketException:
             self.log.exception("An Error occurred while buying an offer.")
