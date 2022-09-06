@@ -1,6 +1,6 @@
 import pendulum
 
-from gsy_e.models.strategy.energy_parameters.energy_params_eb import ProfileScaler
+from gsy_e.models.strategy.energy_parameters.forward_profile import ProfileScaler
 
 
 class TestProfileScaler:
