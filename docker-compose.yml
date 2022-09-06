@@ -35,7 +35,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.bc
-    command: run --setup bc4p -t 6m -s 15m --slot-length-realtime 10s --enable-external-connection --start-date 2022-07-01 #--enable-bc
+    command: run --setup bc4p -t 30s -s 15m --enable-external-connection --start-date 2022-07-01 #--enable-bc --slot-length-realtime 10s 
     volumes:
       - ./gsy_e-simulation/:/app/gsy_e-simulation # ~/gsy_e-simulation
       - ./src/gsy_e/setup:/app/src/gsy_e/setup
