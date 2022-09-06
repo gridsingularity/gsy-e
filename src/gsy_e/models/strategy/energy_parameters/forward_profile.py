@@ -9,6 +9,14 @@ from gsy_e.gsy_e_core.enums import AvailableMarketTypes
 from gsy_e.gsy_e_core.util import d3a_path
 
 
+# The Standard Solar Profile energy parameters in this module are not used for Intraday Markets
+ALLOWED_MARKET_TYPES = [
+    AvailableMarketTypes.DAY_FORWARD,
+    AvailableMarketTypes.WEEK_FORWARD,
+    AvailableMarketTypes.MONTH_FORWARD,
+    AvailableMarketTypes.YEAR_FORWARD]
+
+
 class StandardProfileException(Exception):
     """Exception for the StandardProfile."""
 
@@ -84,6 +92,8 @@ class ForwardTradeProfileGenerator:
                     ...
                 }
         """
+        assert product_type in ALLOWED_MARKET_TYPES
+
         period = None
         if product_type == AvailableMarketTypes.YEAR_FORWARD:
             period = pendulum.period(
