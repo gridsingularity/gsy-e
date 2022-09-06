@@ -1,4 +1,5 @@
 from unittest.mock import MagicMock
+from uuid import uuid4
 
 import pytest
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
@@ -50,19 +51,21 @@ class TestSimulationEndpointBuffer:
         for market in area.forward_markets.values():
             current_time = start_time
 
-            market.bid_history = []
-            market.offer_history = []
+            market.bids = {}
+            market.offers = {}
             market.trades = []
 
             for _ in range(3):
-                market.bid_history.extend([
-                    self.gen_order(
+
+                for i in range(5):
+                    market.bids[uuid4()] = self.gen_order(
                         creation_time=current_time - slot_length,
-                        time_slot=f"TIME_SLOT_{i}") for i in range(5)])
-                market.offer_history.extend([
-                    self.gen_order(
+                        time_slot=f"TIME_SLOT_{i}")
+
+                    market.offers[uuid4()] = self.gen_order(
                         creation_time=current_time - slot_length,
-                        time_slot=f"TIME_SLOT_{i}") for i in range(5)])
+                        time_slot=f"TIME_SLOT_{i}")
+
                 market.trades.extend([
                     self.gen_order(
                         creation_time=current_time - slot_length,
