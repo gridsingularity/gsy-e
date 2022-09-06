@@ -5,7 +5,7 @@ from typing import Dict
 
 import pendulum
 
-from gsy_e.gsy_e_core.enums import AvailableMarketTypes
+from gsy_framework.enums import AvailableMarketTypes
 from gsy_e.gsy_e_core.util import d3a_path
 
 
