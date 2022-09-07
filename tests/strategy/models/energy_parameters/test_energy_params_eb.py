@@ -5,7 +5,8 @@ import pytest
 from gsy_framework.enums import AvailableMarketTypes
 
 from gsy_e.models.area import Area
-from gsy_e.models.strategy.energy_parameters.energy_params_eb import LoadSSPEnergyParameters
+from gsy_e.models.strategy.energy_parameters.energy_params_eb import (
+    ConsumptionStandardProfileEnergyParameters)
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 
 
@@ -24,11 +25,11 @@ def load_fixture():
 
 
 class TestLoadSSPEnergyParameters:
-    """Tests for the LoadSSPEnergyParameters class."""
+    """Tests for the ConsumptionStandardProfileEnergyParameters class."""
 
     @staticmethod
     def test_event_traded_energy(load):
-        energy_params = LoadSSPEnergyParameters(capacity_kW=200)
+        energy_params = ConsumptionStandardProfileEnergyParameters(capacity_kW=200)
         state_mock = MagicMock()
         energy_params.state = state_mock
         # We call this method to set the area and the profile generator

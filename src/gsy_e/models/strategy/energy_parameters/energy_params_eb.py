@@ -8,7 +8,7 @@ from gsy_e.models.state import LoadState
 from gsy_e.models.strategy.energy_parameters.forward_profile import ForwardTradeProfileGenerator
 
 
-class LoadSSPEnergyParameters:
+class ConsumptionStandardProfileEnergyParameters:
     """Energy parameters of the load strategy for the forward markets."""
 
     def __init__(self, capacity_kW):
