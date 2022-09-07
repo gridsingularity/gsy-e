@@ -35,9 +35,9 @@ class ConsumptionStandardProfileEnergyParameters:
     """Energy parameters of the load strategy for the forward markets."""
 
     def __init__(self, capacity_kW):
-        self.state = LoadState()
         self.capacity_kW: float = capacity_kW
 
+        self._state = LoadState()
         self._area = None
         self._profile_generator: Optional[ForwardTradeProfileGenerator] = None
 
@@ -75,7 +75,7 @@ class ConsumptionStandardProfileEnergyParameters:
             product_type=product_type)
 
         for time_slot, energy_value_kWh in trade_profile.items():
-            self.state.decrement_energy_requirement(
+            self._state.decrement_energy_requirement(
                 purchased_energy_Wh=energy_value_kWh * 1000,
                 time_slot=time_slot,
                 area_name=self._area.name)
@@ -85,9 +85,9 @@ class ProductionStandardProfileEnergyParameters:
     """Energy parameters of the PV strategy for the forward markets."""
 
     def __init__(self, capacity_kW):
-        self._state = PVState()
         self.capacity_kW: float = capacity_kW
 
+        self._state = PVState()
         self._area = None
         self._profile_generator: Optional[ForwardTradeProfileGenerator] = None
 

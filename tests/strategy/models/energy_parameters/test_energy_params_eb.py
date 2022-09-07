@@ -32,7 +32,7 @@ class TestConsumptionStandardProfileEnergyParameters:
     def test_event_traded_energy(load):
         energy_params = ConsumptionStandardProfileEnergyParameters(capacity_kW=200)
         state_mock = MagicMock()
-        energy_params.state = state_mock
+        energy_params._state = state_mock  # pylint: disable=protected-access
         # We call this method to set the area and the profile generator
         energy_params.event_activate_energy(load)
 
