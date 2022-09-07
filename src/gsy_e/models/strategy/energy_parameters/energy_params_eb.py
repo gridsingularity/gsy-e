@@ -1,3 +1,26 @@
+# Copyright 2018 Grid Singularity
+# This file is part of Grid Singularity Exchange
+# This program is free software: you can redistribute it and/or modify it under the terms of the
+# GNU General Public License as published by the Free Software Foundation, either version 3 of the
+# License, or (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+# even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+
+# You should have received a copy of the GNU General Public License along with this program. If
+# not, see <http://www.gnu.org/licenses/>.
+
+"""
+This module contains classes to define the energy parameters (planning algorithms) of the
+strategies for the Electric Blue exchange. These classes trade on forward markets that span over
+multiple 15 minutes slots. Therefore, they need to spread the single energy values (obtained from
+received orders) into multiple timeslots. This happens following the line of a Standard Solar
+Profile.
+
+NOTE: The intraday product should not use this approach, since it already trades on single
+15-minutes timeslots.
+"""
 from typing import Optional
 
 import pendulum
@@ -25,7 +48,7 @@ class ConsumptionStandardProfileEnergyParameters:
         }
 
     def event_activate_energy(self, area):
-        """Update energy requirement upon the activation event."""
+        """Initialize values that are required to compute the energy values of the asset."""
         self._area = area
         self._profile_generator = ForwardTradeProfileGenerator(
             peak_kWh=convert_kW_to_kWh(self.capacity_kW, self._area.config.slot_length))
