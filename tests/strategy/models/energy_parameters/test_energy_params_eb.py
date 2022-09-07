@@ -6,8 +6,9 @@ from gsy_framework.enums import AvailableMarketTypes
 
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.energy_parameters.energy_params_eb import (
-    ConsumptionStandardProfileEnergyParameters)
+    ConsumptionStandardProfileEnergyParameters, ProductionStandardProfileEnergyParameters)
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
+from gsy_e.models.strategy.pv import PVStrategy
 
 
 @pytest.fixture(name="load")
@@ -24,7 +25,7 @@ def load_fixture():
     )
 
 
-class TestLoadSSPEnergyParameters:
+class TestConsumptionStandardProfileEnergyParameters:
     """Tests for the ConsumptionStandardProfileEnergyParameters class."""
 
     @staticmethod
@@ -242,3 +243,231 @@ class TestLoadSSPEnergyParameters:
         ]
 
         state_mock.decrement_energy_requirement.assert_has_calls(calls)
+
+
+@pytest.fixture(name="pv")
+def pv_fixture():
+    """PV asset."""
+    return Area(
+        "PV", strategy=PVStrategy(2, 80)
+    )
+
+
+class TestProductionStandardProfileEnergyParameters:
+    """Tests for the ConsumptionStandardProfileEnergyParameters class."""
+
+    @staticmethod
+    def test_event_traded_energy(pv):
+        energy_params = ProductionStandardProfileEnergyParameters(capacity_kW=200)
+        state_mock = MagicMock()
+        energy_params._state = state_mock  # pylint: disable=protected-access
+        # We call this method to set the area and the profile generator
+        energy_params.event_activate_energy(pv)
+
+        market_slot = pendulum.datetime(2022, 2, 1)
+        product_type = AvailableMarketTypes.DAY_FORWARD
+        energy_params.event_traded_energy(
+            energy_kWh=50,
+            market_slot=market_slot,
+            product_type=product_type)
+
+        assert state_mock.decrement_available_energy.call_count == 96
+
+        area_name = "PV"
+        # We want to make sure that all the expected calls to the state class are correctly issued
+        calls = [
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 0, 0)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 0, 15)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 0, 30)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 0, 45)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 1, 0)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 1, 15)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 1, 30)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 1, 45)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 2, 0)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 2, 15)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 2, 30)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 2, 45)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 3, 0)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 3, 15)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 3, 30)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 3, 45)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 4, 0)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 4, 15)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 4, 30)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 4, 45)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 5, 0)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 5, 15)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 5, 30)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 5, 45)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 6, 0)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 6, 15)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 6, 30)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 6, 45)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 7, 0)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 7, 15)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 7, 30)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 7, 45)),
+            call(sold_energy_kWh=0.9649259187418431, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 8, 0)),
+            call(sold_energy_kWh=2.1247822377693897, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 8, 15)),
+            call(sold_energy_kWh=3.4525366995460276, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 8, 30)),
+            call(sold_energy_kWh=4.928760494487915, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 8, 45)),
+            call(sold_energy_kWh=6.531442853297769, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 9, 0)),
+            call(sold_energy_kWh=8.23634626547338, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 9, 15)),
+            call(sold_energy_kWh=10.017397951100218, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 9, 30)),
+            call(sold_energy_kWh=11.84711124022881, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 9, 45)),
+            call(sold_energy_kWh=13.69703002911166, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 10, 0)),
+            call(sold_energy_kWh=15.538189108297043, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 10, 15)),
+            call(sold_energy_kWh=17.341582900111224, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 10, 30)),
+            call(sold_energy_kWh=19.07863500658619, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 10, 45)),
+            call(sold_energy_kWh=20.7216609556183, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 11, 0)),
+            call(sold_energy_kWh=22.244316643283632, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 11, 15)),
+            call(sold_energy_kWh=23.622025202015898, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 11, 30)),
+            call(sold_energy_kWh=24.83237537399818, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 11, 45)),
+            call(sold_energy_kWh=25.855484930976605, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 12, 0)),
+            call(sold_energy_kWh=26.674323248274746, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 12, 15)),
+            call(sold_energy_kWh=27.27498780289075, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 12, 30)),
+            call(sold_energy_kWh=27.646930112456904, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 12, 45)),
+            call(sold_energy_kWh=27.783127451431422, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 13, 0)),
+            call(sold_energy_kWh=27.68019755987516, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 13, 15)),
+            call(sold_energy_kWh=27.338454484301177, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 13, 30)),
+            call(sold_energy_kWh=26.761904644384618, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 13, 45)),
+            call(sold_energy_kWh=25.958183188314884, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 14, 0)),
+            call(sold_energy_kWh=24.938431667543593, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 14, 15)),
+            call(sold_energy_kWh=23.717119012952274, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 14, 30)),
+            call(sold_energy_kWh=22.311808713590175, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 14, 45)),
+            call(sold_energy_kWh=20.742875971232127, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 15, 0)),
+            call(sold_energy_kWh=19.033179414924827, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 15, 15)),
+            call(sold_energy_kWh=17.207692696289516, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 15, 30)),
+            call(sold_energy_kWh=15.293101936683966, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 15, 45)),
+            call(sold_energy_kWh=13.317375550850405, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 16, 0)),
+            call(sold_energy_kWh=11.309313419419668, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 16, 15)),
+            call(sold_energy_kWh=9.298082717342957, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 16, 30)),
+            call(sold_energy_kWh=7.312747921553746, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 16, 45)),
+            call(sold_energy_kWh=5.381802615420326, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 17, 0)),
+            call(sold_energy_kWh=3.5327106783071454, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 17, 15)),
+            call(sold_energy_kWh=1.7914642962882974, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 17, 30)),
+            call(sold_energy_kWh=0.1821659572268663, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 17, 45)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 18, 0)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 18, 15)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 18, 30)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 18, 45)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 19, 0)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 19, 15)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 19, 30)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 19, 45)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 20, 0)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 20, 15)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 20, 30)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 20, 45)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 21, 0)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 21, 15)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 21, 30)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 21, 45)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 22, 0)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 22, 15)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 22, 30)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 22, 45)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 23, 0)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 23, 15)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 23, 30)),
+            call(sold_energy_kWh=0.0, area_name=area_name,
+                 time_slot=pendulum.datetime(2022, 2, 1, 23, 45))
+        ]
+
+        state_mock.decrement_available_energy.assert_has_calls(calls)
