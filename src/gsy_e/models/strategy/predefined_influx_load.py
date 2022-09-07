@@ -3,14 +3,15 @@ from typing import Union
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy
 from gsy_e.utils.influx_connection import InfluxConnection
+from gsy_e.utils.influx_queries import DataAggregatedQuery
 
-class DefinedLoadStrategyInflux(DefinedLoadStrategy):
+class InfluxLoadStrategyAggregated(DefinedLoadStrategy):
     """
         Strategy for creating a load profile. It accepts as an input a load csv file or a
         dictionary that contains the load values for each time point
     """
     # pylint: disable=too-many-arguments
-    def __init__(self, path_influx_config,
+    def __init__(self, path_influx_config, power_column, tablename, keyname
                  fit_to_limit=True, energy_rate_increase_per_update=None,
                  update_interval=None,
                  initial_buying_rate: Union[float, dict, str] =
@@ -35,9 +36,11 @@ class DefinedLoadStrategyInflux(DefinedLoadStrategy):
         :param use_market_maker_rate: If set to True, Load would track its final buying rate
         as per utility's trading rate
         """
-        ic = InfluxConnection(path_influx_config)
+        connection = InfluxConnection(influx_path);
 
-        super().__init__(daily_load_profile=ic.getAggregatedDataDict(),
+        query = DataAggregatedQuery(connection, power_column=power_column, tablename=tablename, keyname=keyname)
+
+        super().__init__(daily_load_profile=daquery.exec(),
                          fit_to_limit=fit_to_limit,
                          energy_rate_increase_per_update=energy_rate_increase_per_update,
                          update_interval=update_interval,

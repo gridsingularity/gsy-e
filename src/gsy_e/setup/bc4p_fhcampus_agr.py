@@ -21,9 +21,12 @@ from gsy_e.models.strategy.pv import PVStrategy
 from gsy_e.models.strategy.storage import StorageStrategy
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_framework.constants_limits import ConstSettings
-from gsy_e.models.strategy.predefined_influx_load import DefinedLoadStrategyInflux
+from gsy_e.models.strategy.predefined_influx_load import InfluxLoadStrategyAggregated
 from gsy_e.gsy_e_core.util import d3a_path
 import os
+
+def genload1_callback(interval):
+     return f"select power from pxl_campus group by {interval}"
 
 def get_setup(config):
     ConstSettings.GeneralSettings.RUN_IN_REALTIME = True
@@ -33,7 +36,11 @@ def get_setup(config):
             Area(
                 "FH Campus",
                 [
-                    Area("FH General Load", strategy=DefinedLoadStrategyInflux(os.path.join(d3a_path, "resources", "influxdb.cfg"), final_buying_rate=60)
+                    Area("FH General Load", strategy=InfluxLoadStrategyAggregated(os.path.join(d3a_path, "resources", "influxdb.cfg"), 
+                                                                                power_column="P_ges",
+                                                                                tablename="Strom",
+                                                                                keyname="id",
+                                                                                final_buying_rate=60)
                          ),
                 ]
             ),

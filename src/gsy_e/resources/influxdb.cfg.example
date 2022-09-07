@@ -7,7 +7,3 @@ host = bc4p.nowum.fh-aachen.de
 path = smartmeter
 database = Energiedaten
 port = 443
-
-[Table]
-tablename = Strom
-powerkey = P_ges
