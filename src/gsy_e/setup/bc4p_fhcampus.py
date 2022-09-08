@@ -27,7 +27,7 @@ import os
 
 def get_setup(config):
     ConstSettings.GeneralSettings.RUN_IN_REALTIME = True
-    factory = InfluxAreaFactory(os.path.join(d3a_path, "resources", "influxdb.cfg"), power_column="P_ges", tablename="Strom", keyname="id")
+    factory = InfluxAreaFactory(os.path.join(d3a_path, "resources", "influx_fhaachen.cfg"), power_column="P_ges", tablename="Strom", keyname="id")
     area = Area(
         "Grid",
         [

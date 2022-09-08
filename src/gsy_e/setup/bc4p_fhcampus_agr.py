@@ -25,9 +25,6 @@ from gsy_e.models.strategy.predefined_influx_load import InfluxLoadStrategyAggre
 from gsy_e.gsy_e_core.util import d3a_path
 import os
 
-def genload1_callback(interval):
-     return f"select power from pxl_campus group by {interval}"
-
 def get_setup(config):
     ConstSettings.GeneralSettings.RUN_IN_REALTIME = True
     area = Area(
@@ -36,7 +33,7 @@ def get_setup(config):
             Area(
                 "FH Campus",
                 [
-                    Area("FH General Load", strategy=InfluxLoadStrategyAggregated(os.path.join(d3a_path, "resources", "influxdb.cfg"), 
+                    Area("FH General Load", strategy=InfluxLoadStrategyAggregated(os.path.join(d3a_path, "resources", "influx_fhaachen.cfg"), 
                                                                                 power_column="P_ges",
                                                                                 tablename="Strom",
                                                                                 keyname="id",

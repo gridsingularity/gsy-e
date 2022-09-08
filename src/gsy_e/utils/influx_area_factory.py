@@ -2,9 +2,9 @@ from gsy_e.models.area import Area
 from gsy_e.gsy_e_core.util import d3a_path
 import os
 
-from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy
 from gsy_e.utils.influx_connection import InfluxConnection
-from gsy_e.utils.influx_queries import DataQuery
+from gsy_e.models.strategy.predefined_influx_load import InfluxLoadStrategy
+from gsy_e.utils.influx_queries import DataQueryFHAachen, SmartmeterIDQuery
 
 class InfluxAreaFactory:
     def __init__(self, path_influx_config, power_column, tablename, keyname):
@@ -14,20 +14,41 @@ class InfluxAreaFactory:
         self.keyname = keyname
 
 
+    def _createSubArea(self, smartmeterID):
+        query = 0;
+        try:
+            strat = InfluxLoadStrategy(query = DataQueryFHAachen(self.ic, power_column=self.power_column, tablename=self.tablename, smartmeterID=smartmeterID), final_buying_rate=35)
+
+            res = Area(
+                smartmeterID,
+                [
+                    Area(f"{smartmeterID} Load", strategy=strat),
+                ]
+            )
+            return res
+        except ValueError as err:
+            return False
+
+
+
+
     def getArea(self, areaname):
-        query = DataQuery(connection, power_column=self.power_column, tablename=self.tablename, keyname=self.keyname)
-        qres = query.exec()
+        smquery = SmartmeterIDQuery(self.ic, self.keyname)
+        idlist = smquery.exec()
+
+        subarea_list = []
+
+        for sm_id in idlist:
+            subarea = self._createSubArea(str(sm_id))
+            if(subarea != False):
+                subarea_list.append(subarea)
+
 
         res = Area(
             areaname,
             [
-                *[Area(k, [
-                    Area(k +" Load", strategy=DefinedLoadStrategy(
-                             daily_load_profile=v,
-                             final_buying_rate=35),
-                    ),   
-                ]) for k,v in qres.items()]
+                *[subarea for subarea in subarea_list]
             ]
         )
 
-        return res
+        # return res
