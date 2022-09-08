@@ -11,8 +11,9 @@ from gsy_e.gsy_e_core.sim_results.endpoint_buffer import SimulationEndpointBuffe
 
 @pytest.fixture(name="forward_setup")
 def forward_setup_fixture():
-    """Create area with all the forward markets and
-    pre added timeslots for each forward market."""
+    """Create area with all the forward markets and pre added timeslots for each forward market."""
+    original_market_marker_rate = GlobalConfig.market_maker_rate
+    original_enable_forward_markets = ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS
     GlobalConfig.market_maker_rate = 30
     ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS = True
     slot_length = duration(minutes=15)
@@ -23,13 +24,14 @@ def forward_setup_fixture():
         ]) for market_type in FORWARD_MARKET_TYPES
     }, config=MagicMock(slot_length=slot_length), uuid="AREA")
     yield area, slot_length
-    ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS = False
+    GlobalConfig.market_maker_rate = original_market_marker_rate
+    ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS = original_enable_forward_markets
 
 
 class TestSimulationEndpointBuffer:
 
     @staticmethod
-    def gen_order(creation_time, time_slot):
+    def _generate_order(creation_time, time_slot):
         """Generate one mock order{bid,offer,trade}."""
         return MagicMock(
             creation_time=creation_time,
@@ -44,7 +46,7 @@ class TestSimulationEndpointBuffer:
         area, slot_length = forward_setup
 
         progress_info = MagicMock()
-        epb = SimulationEndpointBuffer("JOB_1", 41, area, False)
+        endpoint_buffer = SimulationEndpointBuffer("JOB_1", 41, area, False)
 
         # add bids/offers/trades for 3 consequent slots for all forward timeslots.
         start_time = DateTime(2020, 1, 1, 0, 15)
@@ -56,18 +58,17 @@ class TestSimulationEndpointBuffer:
             market.trades = []
 
             for _ in range(3):
-
                 for i in range(5):
-                    market.bids[uuid4()] = self.gen_order(
+                    market.bids[uuid4()] = self._generate_order(
                         creation_time=current_time - slot_length,
                         time_slot=f"TIME_SLOT_{i}")
 
-                    market.offers[uuid4()] = self.gen_order(
+                    market.offers[uuid4()] = self._generate_order(
                         creation_time=current_time - slot_length,
                         time_slot=f"TIME_SLOT_{i}")
 
                 market.trades.extend([
-                    self.gen_order(
+                    self._generate_order(
                         creation_time=current_time - slot_length,
                         time_slot=f"TIME_SLOT_{i}") for i in range(5)])
                 current_time += slot_length
@@ -77,8 +78,8 @@ class TestSimulationEndpointBuffer:
         current_time = start_time
         for _ in range(3):
             area.now = current_time
-            epb.update_stats(area, "running", progress_info, {}, False)
-            raw_results = epb.generate_result_report()["simulation_raw_data"]
+            endpoint_buffer.update_stats(area, "running", progress_info, {}, False)
+            raw_results = endpoint_buffer.generate_result_report()["simulation_raw_data"]
             area_forward_stats = raw_results[area.uuid]["forward_market_stats"]
 
             for market_type in FORWARD_MARKET_TYPES:
