@@ -307,7 +307,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
                                   buyer_id=self.owner.uuid)
 
                 self._energy_params.decrement_energy_requirement(
-                    energy_kWh=energy_Wh,
+                    energy_kWh=energy_Wh / 1000,
                     time_slot=time_slot,
                     area_name=self.owner.name)
                 self._energy_params.decrease_hours_per_day(time_slot, energy_Wh)
@@ -426,7 +426,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
                           self.state.get_desired_energy_Wh(market.time_slot))
 
         self._energy_params.decrement_energy_requirement(
-            energy_kWh=ramp_up_energy,
+            energy_kWh=ramp_up_energy / 1000,
             time_slot=market.time_slot,
             area_name=self.owner.name)
 
