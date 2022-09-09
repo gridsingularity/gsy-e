@@ -155,14 +155,14 @@ class ProfileScaler:
 
     def __init__(self, profile: Dict):
         self._original_profile: Dict[int, Dict[pendulum.DateTime, float]] = profile
+        self._original_peak_kWh: float = self._compute_original_peak_kWh()
 
     def scale_by_peak(self, peak_kWh: float) -> Dict[pendulum.DateTime, float]:
         """Return a profile obtained by scaling the original one using a new peak capacity."""
         scaling_factor = self._compute_scaling_factor(peak_kWh)
         return self._scale_by_factor(scaling_factor)
 
-    @property
-    def _original_peak_kWh(self) -> float:
+    def _compute_original_peak_kWh(self) -> float:
         return max(
             energy_kWh
             for representative_day in self._original_profile.values()
