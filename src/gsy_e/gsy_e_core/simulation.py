@@ -487,26 +487,6 @@ def simulation_results_manager_factory():
     return SimulationResultsManager
 
 
-class SimulationExternalEvents:
-    """
-    Handle signals that affect the simulation state, that arrive from Redis. Consists of live
-    events and signals that change the simulation status.
-    """
-    def __init__(self, simulation_id: str, config: SimulationConfig,
-                 state_params: SimulationStatusManager, progress_info: SimulationProgressInfo,
-                 area: "Area") -> None:
-        # pylint: disable=too-many-arguments
-        self.live_events = LiveEvents(config)
-        self.redis_connection = RedisSimulationCommunication(
-            state_params, simulation_id, self.live_events, progress_info, area)
-
-    def update(self, area: "AreaBase") -> None:
-        """
-        Update the simulation according to any live events received. Triggered every market slot.
-        """
-        self.live_events.handle_all_events(area)
-
-
 class Simulation:
     """Main class that starts and controls simulation."""
     # pylint: disable=too-many-arguments,too-many-instance-attributes
@@ -929,6 +909,26 @@ class CoefficientSimulation(Simulation):
         self._results.update_send_coefficient_results(
             self.current_state, self.progress_info, self.area, self._status.status)
         self._results.save_csv_results(self.area)
+
+
+class SimulationExternalEvents:
+    """
+    Handle signals that affect the simulation state, that arrive from Redis. Consists of live
+    events and signals that change the simulation status.
+    """
+    def __init__(self, simulation_id: str, config: SimulationConfig,
+                 state_params: SimulationStatusManager, progress_info: SimulationProgressInfo,
+                 area: "Area") -> None:
+        # pylint: disable=too-many-arguments
+        self.live_events = LiveEvents(config)
+        self.redis_connection = RedisSimulationCommunication(
+            state_params, simulation_id, self.live_events, progress_info, area)
+
+    def update(self, area: "AreaBase") -> None:
+        """
+        Update the simulation according to any live events received. Triggered every market slot.
+        """
+        self.live_events.handle_all_events(area)
 
 
 def simulation_class_factory():
