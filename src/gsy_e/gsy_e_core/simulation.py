@@ -524,7 +524,7 @@ class Simulation:
         self.progress_info = SimulationProgressInfo()
         self.simulation_id = redis_job_id
 
-        self._init(redis_job_id)
+        self._init()
 
         self._external_events = SimulationExternalEvents(self)
 
@@ -532,7 +532,7 @@ class Simulation:
 
         validate_const_settings_for_simulation()
 
-    def _init(self, redis_job_id: str) -> None:
+    def _init(self) -> None:
         # has to be called before load_setup_module():
         global_objects.profiles_handler.activate()
 
@@ -540,13 +540,13 @@ class Simulation:
         bid_offer_matcher.activate()
         global_objects.external_global_stats(self.area, self.config.ticks_per_slot)
 
-        self._results.init_results(redis_job_id, self.area, self._setup)
+        self._results.init_results(self.simulation_id, self.area, self._setup)
         self._results.update_and_send_results(
             self.current_state, self.progress_info, self.area, self.status.status)
 
         log.debug("Starting simulation with config %s", self.config)
 
-        self.area.activate(self._setup.enable_bc, simulation_id=redis_job_id)
+        self.area.activate(self._setup.enable_bc, simulation_id=self.simulation_id)
 
     @property
     def config(self) -> SimulationConfig:
@@ -563,7 +563,7 @@ class Simulation:
         Reset simulation to initial values and restart the run.
         """
         log.info("%s Simulation reset requested %s", "=" * 15, "=" * 15)
-        self._init(self.simulation_id)
+        self._init()
         self.run()
         raise SimulationResetException
 
@@ -819,13 +819,13 @@ class CoefficientSimulation(Simulation):
     area: "CoefficientArea"
     _results: CoefficientSimulationResultsManager
 
-    def _init(self, redis_job_id: str) -> None:
+    def _init(self) -> None:
         # has to be called before load_setup_module():
         global_objects.profiles_handler.activate()
 
         self.area = self._setup.load_setup_module()
 
-        self._results.init_results(redis_job_id, self.area, self._setup)
+        self._results.init_results(self.simulation_id, self.area, self._setup)
         self._results.update_send_coefficient_results(
             self.current_state, self.progress_info, self.area, self.status.status)
 
