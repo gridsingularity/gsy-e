@@ -538,20 +538,25 @@ class Simulation:
 
         self.area = self._setup.load_setup_module()
         bid_offer_matcher.activate()
-        global_objects.external_global_stats(self.area, self._setup.config.ticks_per_slot)
+        global_objects.external_global_stats(self.area, self.config.ticks_per_slot)
 
         self._results.init_results(redis_job_id, self.area, self._setup)
         self._results.update_and_send_results(
             self.current_state, self.progress_info, self.area, self._status.status)
 
-        log.debug("Starting simulation with config %s", self._setup.config)
+        log.debug("Starting simulation with config %s", self.config)
 
         self.area.activate(self._setup.enable_bc, simulation_id=redis_job_id)
 
     @property
+    def config(self) -> SimulationConfig:
+        """Return the configuration of the simulation."""
+        return self._setup.config
+
+    @property
     def _time_since_start(self) -> Duration:
         """Return pendulum duration since start of simulation."""
-        return self.area.current_tick * self._setup.config.tick_length
+        return self.area.current_tick * self.config.tick_length
 
     def reset(self) -> None:
         """
@@ -598,21 +603,21 @@ class Simulation:
             self, slot_resume: int, tick_resume: int, console: NonBlockingConsole = None) -> None:
         slot_count, slot_resume, tick_resume = (
             self._time.calculate_total_initial_ticks_slots(
-                self._setup.config, slot_resume, tick_resume, self.area))
+                self.config, slot_resume, tick_resume, self.area))
 
-        self._setup.config.external_redis_communicator.sub_to_aggregator()
-        self._setup.config.external_redis_communicator.start_communication()
+        self.config.external_redis_communicator.sub_to_aggregator()
+        self.config.external_redis_communicator.start_communication()
 
         for slot_no in range(slot_resume, slot_count):
             self.progress_info.update(
-                slot_no, slot_count, self._time, self._setup.config)
+                slot_no, slot_count, self._time, self.config)
 
             self.area.cycle_markets()
 
             global_objects.profiles_handler.update_time_and_buffer_profiles(
                 self._get_current_market_time_slot(slot_no))
 
-            if self._setup.config.external_connection_enabled:
+            if self.config.external_connection_enabled:
                 global_objects.external_global_stats.update(market_cycle=True)
                 self.area.publish_market_cycle_to_external_clients()
 
@@ -629,20 +634,19 @@ class Simulation:
             mbs_used = process.memory_info().rss / 1000000.0
             log.debug("Used %s MBs.", mbs_used)
 
-            for tick_no in range(tick_resume, self._setup.config.ticks_per_slot):
+            for tick_no in range(tick_resume, self.config.ticks_per_slot):
                 self._handle_paused(console)
 
                 # reset tick_resume after possible resume
                 tick_resume = 0
                 log.trace("Tick %s of %s in slot %s (%.1f%%)", tick_no + 1,
-                          self._setup.config.ticks_per_slot,
-                          slot_no + 1, (tick_no + 1) / self._setup.config.ticks_per_slot * 100)
+                          self.config.ticks_per_slot,
+                          slot_no + 1, (tick_no + 1) / self.config.ticks_per_slot * 100)
 
-                self._setup.config.external_redis_communicator.\
-                    approve_aggregator_commands()
+                self.config.external_redis_communicator.approve_aggregator_commands()
 
-                current_tick_in_slot = tick_no % self._setup.config.ticks_per_slot
-                if (self._setup.config.external_connection_enabled and
+                current_tick_in_slot = tick_no % self.config.ticks_per_slot
+                if (self.config.external_connection_enabled and
                         global_objects.external_global_stats.is_it_time_for_external_tick(
                             current_tick_in_slot)):
                     global_objects.external_global_stats.update()
@@ -651,12 +655,12 @@ class Simulation:
                 self.area.execute_actions_after_tick_event()
                 bid_offer_matcher.event_tick(
                     current_tick_in_slot=current_tick_in_slot,
-                    slot_completion=f"{int((tick_no / self._setup.config.ticks_per_slot) * 100)}%",
+                    slot_completion=f"{int((tick_no / self.config.ticks_per_slot) * 100)}%",
                     market_slot=self.progress_info.next_slot_str)
-                self._setup.config.external_redis_communicator.\
+                self.config.external_redis_communicator.\
                     publish_aggregator_commands_responses_events()
 
-                self._time.handle_slowdown_and_realtime(tick_no, self._setup.config)
+                self._time.handle_slowdown_and_realtime(tick_no, self.config)
 
                 if self._status.stopped:
                     log.error("Received stop command for configuration id %s and job id %s.",
@@ -672,14 +676,13 @@ class Simulation:
     def _simulation_finish_actions(self, slot_count: int) -> None:
         self._status.sim_status = "finished"
         self._deactivate_areas(self.area)
-        self._setup.config.external_redis_communicator.\
-            publish_aggregator_commands_responses_events()
+        self.config.external_redis_communicator.publish_aggregator_commands_responses_events()
         bid_offer_matcher.event_finish()
         if not self._status.stopped:
             self.progress_info.update(
-                slot_count - 1, slot_count, self._time, self._setup.config)
+                slot_count - 1, slot_count, self._time, self.config)
             paused_duration = duration(seconds=self._time.paused_time)
-            self.progress_info.log_simulation_finished(paused_duration, self._setup.config)
+            self.progress_info.log_simulation_finished(paused_duration, self.config)
         self._results.update_and_send_results(
             self.current_state, self.progress_info, self.area, self._status.status)
         self._results.save_csv_results(self.area)
@@ -746,10 +749,10 @@ class Simulation:
             self._time.paused_time += time() - start
 
     def _info(self) -> None:
-        info = self._setup.config.as_dict()
-        slot, tick = divmod(self.area.current_tick, self._setup.config.ticks_per_slot)
-        percent = self.area.current_tick / self._setup.config.total_ticks * 100
-        slot_count = self._setup.config.sim_duration // self._setup.config.slot_length
+        info = self.config.as_dict()
+        slot, tick = divmod(self.area.current_tick, self.config.ticks_per_slot)
+        percent = self.area.current_tick / self.config.total_ticks * 100
+        slot_count = self.config.sim_duration // self.config.slot_length
         info.update(slot=slot + 1, tick=tick + 1, slot_count=slot_count, percent=percent)
         log.critical(
             "\n"
@@ -826,16 +829,19 @@ class CoefficientSimulation(Simulation):
         self._results.update_send_coefficient_results(
             self.current_state, self.progress_info, self.area, self._status.status)
 
-        log.debug("Starting simulation with config %s", self._setup.config)
+        log.debug("Starting simulation with config %s", self.config)
 
-        self.area.activate_energy_parameters(self._setup.config.start_date)
+        self.area.activate_energy_parameters(self.config.start_date)
 
     @property
     def _time_since_start(self) -> Duration:
         """Return pendulum duration since start of simulation."""
-        current_time = self.progress_info.current_slot_time \
-            if self.progress_info.current_slot_time else self._setup.config.start_date
-        return current_time - self._setup.config.start_date
+        current_time = (
+            self.progress_info.current_slot_time
+            if self.progress_info.current_slot_time
+            else self.config.start_date
+        )
+        return current_time - self.config.start_date
 
     def _deactivate_areas(self, area: "AreaBase"):
         pass
@@ -845,12 +851,12 @@ class CoefficientSimulation(Simulation):
 
         slot_count, slot_resume, tick_resume = (
             self._time.calculate_total_initial_ticks_slots(
-                self._setup.config, slot_resume, tick_resume, self.area))
+                self.config, slot_resume, tick_resume, self.area))
 
         for slot_no in range(slot_resume, slot_count):
             self._handle_paused(console)
 
-            self.progress_info.update(slot_no, slot_count, self._time, self._setup.config)
+            self.progress_info.update(slot_no, slot_count, self._time, self.config)
 
             self.area.cycle_coefficients_trading(self.progress_info.current_slot_time)
 
@@ -880,7 +886,7 @@ class CoefficientSimulation(Simulation):
             mbs_used = process.memory_info().rss / 1000000.0
             log.debug("Used %s MBs.", mbs_used)
 
-            self._time.handle_slowdown_and_realtime(0, self._setup.config)
+            self._time.handle_slowdown_and_realtime(0, self.config)
 
             if self._status.stopped:
                 log.error("Received stop command for configuration id %s and job id %s.",
@@ -898,13 +904,12 @@ class CoefficientSimulation(Simulation):
     def _simulation_finish_actions(self, slot_count: int) -> None:
         self._status.sim_status = "finished"
         self._deactivate_areas(self.area)
-        self._setup.config.external_redis_communicator.\
-            publish_aggregator_commands_responses_events()
+        self.config.external_redis_communicator.publish_aggregator_commands_responses_events()
         if not self._status.stopped:
             self.progress_info.update(
-                slot_count - 1, slot_count, self._time, self._setup.config)
+                slot_count - 1, slot_count, self._time, self.config)
             paused_duration = duration(seconds=self._time.paused_time)
-            self.progress_info.log_simulation_finished(paused_duration, self._setup.config)
+            self.progress_info.log_simulation_finished(paused_duration, self.config)
         self._results.update_send_coefficient_results(
             self.current_state, self.progress_info, self.area, self._status.status)
         self._results.save_csv_results(self.area)
@@ -917,7 +922,7 @@ class SimulationExternalEvents:
     Consists of live events and signals that change the simulation status.
     """
     def __init__(self, simulation: Simulation) -> None:
-        self.live_events = LiveEvents(simulation._setup.config)
+        self.live_events = LiveEvents(simulation.config)
         self.redis_connection = RedisSimulationCommunication(
             simulation_status=simulation._status,
             simulation_id=simulation._simulation_id,
