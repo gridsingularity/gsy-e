@@ -526,8 +526,7 @@ class Simulation:
 
         self._init(redis_job_id)
 
-        self._external_events = SimulationExternalEvents(
-            redis_job_id, self._setup.config, self._status, self.progress_info, self.area)
+        self._external_events = SimulationExternalEvents(self)
 
         deserialize_events_to_areas(simulation_events, self.area)
 
@@ -913,16 +912,18 @@ class CoefficientSimulation(Simulation):
 
 class SimulationExternalEvents:
     """
-    Handle signals that affect the simulation state, that arrive from Redis. Consists of live
-    events and signals that change the simulation status.
+    Handle signals that affect the simulation state, that arrive from Redis.
+
+    Consists of live events and signals that change the simulation status.
     """
-    def __init__(self, simulation_id: str, config: SimulationConfig,
-                 state_params: SimulationStatusManager, progress_info: SimulationProgressInfo,
-                 area: "Area") -> None:
-        # pylint: disable=too-many-arguments
-        self.live_events = LiveEvents(config)
+    def __init__(self, simulation: Simulation) -> None:
+        self.live_events = LiveEvents(simulation._setup.config)
         self.redis_connection = RedisSimulationCommunication(
-            state_params, simulation_id, self.live_events, progress_info, area)
+            simulation_status=simulation._status,
+            simulation_id=simulation._simulation_id,
+            live_events=self.live_events,
+            progress_info=simulation.progress_info,
+            area=simulation.area)
 
     def update(self, area: "AreaBase") -> None:
         """
