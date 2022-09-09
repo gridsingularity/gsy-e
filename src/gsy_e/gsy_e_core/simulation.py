@@ -521,12 +521,12 @@ class Simulation:
             started_from_cli=redis_job_id is None
         )
 
+        self.area = None
         self.progress_info = SimulationProgressInfo()
         self.simulation_id = redis_job_id
 
-        self._init()
-
         self._external_events = SimulationExternalEvents(self)
+        self._init()
 
         deserialize_events_to_areas(simulation_events, self.area)
 
