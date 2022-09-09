@@ -410,6 +410,7 @@ class SimulationResultsManager:
 
 
 class CoefficientSimulationResultsManager(SimulationResultsManager):
+    """Maintain and populate the SCM simulation results and publishing to the message broker."""
 
     def init_results(self, redis_job_id: str, area: "AreaBase",
                      config_params: SimulationSetup) -> None:
@@ -421,11 +422,6 @@ class CoefficientSimulationResultsManager(SimulationResultsManager):
         if self.export_results_on_finish:
             self._export = CoefficientExportAndPlot(
                 area, self.export_path, self.export_subdir, self._endpoint_buffer)
-
-    def update_results(
-            self, current_state: dict, progress_info: SimulationProgressInfo,
-            area: "Area", simulation_status: str) -> None:
-        raise NotImplementedError
 
     @classmethod
     def _update_area_stats(cls, area: "Area", endpoint_buffer: "SimulationEndpointBuffer") -> None:
@@ -445,7 +441,7 @@ class CoefficientSimulationResultsManager(SimulationResultsManager):
             self._export.area_tree_summary_to_json(self._endpoint_buffer.area_result_dict)
             self._export.export(power_flow=None)
 
-    def update_send_coefficient_results(
+    def update_send_coefficient_results(  # pylint: disable=too-many-arguments
             self, current_state: dict, progress_info: SimulationProgressInfo,
             area: "CoefficientArea", simulation_status: str,
             scm_manager: Optional["SCMManager"] = None) -> None:
@@ -485,6 +481,7 @@ class CoefficientSimulationResultsManager(SimulationResultsManager):
 
 
 def simulation_results_manager_factory():
+    """Return the correct results manager class depending on the current market type."""
     if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
         return CoefficientSimulationResultsManager
     return SimulationResultsManager
