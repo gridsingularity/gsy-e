@@ -72,6 +72,8 @@ class ForwardTradeProfileGenerator:
             self, energy_kWh: float, market_slot: pendulum.DateTime,
             product_type: AvailableMarketTypes):
         """Generate a profile based on the market slot and the product type."""
+        assert energy_kWh > 0, f"The traded energy must be positive. energy_kWh: {energy_kWh}"
+
         trade_profile = self._scaler.scale_by_peak(peak_kWh=energy_kWh)
 
         # This subtraction is done _before_ expanding the slots to improve performance
