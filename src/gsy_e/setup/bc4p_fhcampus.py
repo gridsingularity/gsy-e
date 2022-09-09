@@ -17,9 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
-from gsy_e.models.strategy.pv import PVStrategy
-from gsy_e.models.strategy.storage import StorageStrategy
-from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_framework.constants_limits import ConstSettings
 from gsy_e.utils.influx_area_factory import InfluxAreaFactory
 from gsy_e.gsy_e_core.util import d3a_path
@@ -39,3 +36,7 @@ def get_setup(config):
         config=config
     )
     return area
+
+
+# pip install -e .
+# gsy-e run --setup bc4p_fhcampus -s 15m --enable-external-connection --start-date 2022-07-01

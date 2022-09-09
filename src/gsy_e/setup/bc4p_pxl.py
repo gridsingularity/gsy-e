@@ -17,47 +17,41 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
-from gsy_e.models.strategy.pv import PVStrategy
-from gsy_e.models.strategy.storage import StorageStrategy
-from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_framework.constants_limits import ConstSettings
-from gsy_e.models.strategy.predefined_influx_load import InfluxLoadStrategyAggregated
-from gsy_e.models.strategy.predefined_pv import PVUserProfileStrategy
+from gsy_e.utils.influx_connection import InfluxConnection
+from gsy_e.utils.influx_queries import DataQueryPXL
+from gsy_e.models.strategy.influx import InfluxLoadStrategy, InfluxPVStrategy
 from gsy_e.gsy_e_core.util import d3a_path
 import os
 
 def get_setup(config):
     ConstSettings.GeneralSettings.RUN_IN_REALTIME = True
+    connection = InfluxConnection(os.path.join(d3a_path, "resources", "influx_pxl.cfg"))
+    tablename = "Total_Electricity"
+
     area = Area(
         "Grid",
         [
             Area(
                 "PXL Campus",
                 [
-                    Area("PV_LS_105A_power", strategy=InfluxLoadStrategyAggregated(os.path.join(d3a_path, "resources", "influxdb.cfg"), 
-                                                                                power_column="PV_LS_105A_power",
-                                                                                tablename="Total_Electricity",
-                                                                                keyname="id",
-                                                                                final_buying_rate=60)
-                         ),
+                    Area("main_P_L1", strategy=InfluxLoadStrategy(query = DataQueryPXL(connection, power_column="main_P_L1", tablename=tablename))),
+                    Area("main_P_L2", strategy=InfluxLoadStrategy(query = DataQueryPXL(connection, power_column="main_P_L2", tablename=tablename))),
+                    Area("main_P_L3", strategy=InfluxLoadStrategy(query = DataQueryPXL(connection, power_column="main_P_L3", tablename=tablename))),
+                    Area("PV_LS_105A_power", strategy=InfluxPVStrategy(query = DataQueryPXL(connection, power_column="PV_LS_105A_power", tablename=tablename))),
+                    Area("PV_LS_105B_power", strategy=InfluxPVStrategy(query = DataQueryPXL(connection, power_column="PV_LS_105B_power", tablename=tablename))),
+                    Area("PV_LS_105E_power", strategy=InfluxPVStrategy(query = DataQueryPXL(connection, power_column="PV_LS_105E_power", tablename=tablename))),
                 ]
             ),
 
             Area("Commercial Energy Producer",
                  strategy=CommercialStrategy(energy_rate=30)
                  ),
-
-            Area("Cell Tower", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                          hrs_per_day=24,
-                                                          hrs_of_day=list(range(0, 24)))
-                 )
         ],
         config=config
     )
     return area
 
 
-PVUserProfileStrategy
-
-
-SELECT mean("PV_LS_105A_power"), mean("PV_LS_105B_power"), mean("PV_LS_105E_power"), mean("main_P_L1"), mean("main_P_L2"), mean("main_P_L3"), mean("main_P_Total"), mean("main_kWh") AS "total" FROM "Total_Electricity" WHERE time >= now() - 24h and time <= now() GROUP BY time(1m) fill(null)
+# pip install -e .
+# gsy-e run --setup bc4p_pxl -s 15m --enable-external-connection --start-date 2022-09-08

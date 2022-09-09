@@ -3,7 +3,7 @@ from gsy_e.gsy_e_core.util import d3a_path
 import os
 
 from gsy_e.utils.influx_connection import InfluxConnection
-from gsy_e.models.strategy.predefined_influx_load import InfluxLoadStrategy
+from gsy_e.models.strategy.influx import InfluxLoadStrategy
 from gsy_e.utils.influx_queries import DataQueryFHAachen, SmartmeterIDQuery
 
 class InfluxAreaFactory:
@@ -17,7 +17,7 @@ class InfluxAreaFactory:
     def _createSubArea(self, smartmeterID):
         query = 0;
         try:
-            strat = InfluxLoadStrategy(query = DataQueryFHAachen(self.ic, power_column=self.power_column, tablename=self.tablename, smartmeterID=smartmeterID), final_buying_rate=35)
+            strat = InfluxLoadStrategy(query = DataQueryFHAachen(self.ic, power_column=self.power_column, tablename=self.tablename, smartmeterID=smartmeterID))
 
             res = Area(
                 smartmeterID,
@@ -43,7 +43,7 @@ class InfluxAreaFactory:
             if(subarea != False):
                 subarea_list.append(subarea)
 
-
+        print(len(subarea_list))
         res = Area(
             areaname,
             [
@@ -51,4 +51,4 @@ class InfluxAreaFactory:
             ]
         )
 
-        # return res
+        return res
