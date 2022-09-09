@@ -16,10 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from dataclasses import dataclass
 from abc import abstractmethod
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING, List
 
 from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.enums import AvailableMarketTypes
 from pendulum import DateTime, duration
 
 from gsy_e.gsy_e_core.blockchain_interface import NonBlockchainInterface
@@ -29,6 +31,15 @@ from gsy_e.models.market.future import FutureMarkets
 if TYPE_CHECKING:
     from gsy_e.models.config import SimulationConfig
     from gsy_e.models.area.event_dispatcher import AreaDispatcher
+
+
+@dataclass(frozen=True)
+class ForwardMarketSlotParameters:
+    """Parameters that describe a forward market slot."""
+    open_timestamp: DateTime
+    close_timestamp: DateTime
+    delivery_start_timestamp: DateTime
+    delivery_end_timestamp: DateTime
 
 
 class ForwardMarketBase(FutureMarkets):
@@ -47,6 +58,12 @@ class ForwardMarketBase(FutureMarkets):
         super().__init__(bc=bc, notification_listener=notification_listener,
                          readonly=readonly, grid_fee_type=grid_fee_type,
                          grid_fees=grid_fees, name=name)
+        self._open_market_slot_parameters = {}
+
+    @property
+    @abstractmethod
+    def market_type(self):
+        """Return the market type from the AvailableMarketTypes enum."""
 
     @staticmethod
     @abstractmethod
@@ -58,21 +75,58 @@ class ForwardMarketBase(FutureMarkets):
     def _get_end_time(current_time: DateTime) -> DateTime:
         """Return time when the market block ends."""
 
+    @property
+    @abstractmethod
+    def _time_from_market_close_till_delivery(self) -> duration:
+        """
+        Retrieves the time duration from the time that the market closes till the time that the
+        traded energy should be delivered.
+        """
+
     @staticmethod
     @abstractmethod
     def _get_market_slot_duration(current_time: DateTime, _config) -> duration:
         """Return duration of market slots inside the market block."""
 
     def create_future_market_slots(self, current_market_time_slot: DateTime,
-                                   config: "SimulationConfig") -> None:
+                                   config: "SimulationConfig") -> List[DateTime]:
         if not ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS:
-            return
-        self._create_future_market_slots(self._get_start_time(current_market_time_slot),
-                                         self._get_end_time(current_market_time_slot), config)
+            return []
+        created_future_slots = self._create_future_market_slots(
+            self._get_start_time(current_market_time_slot),
+            self._get_end_time(current_market_time_slot), config)
+
+        self._set_open_market_slot_parameters(current_market_time_slot, created_future_slots)
+
+        return created_future_slots
+
+    def get_market_parameters_for_market_slot(
+            self, market_slot: DateTime) -> ForwardMarketSlotParameters:
+        """Retrieve the parameters for the selected market slot."""
+        return self._open_market_slot_parameters.get(market_slot)
+
+    def _set_open_market_slot_parameters(
+            self, current_market_slot: DateTime, created_market_slots: List[DateTime]):
+        """Update the parameters of the newly opened market slots."""
+        for market_slot in created_market_slots:
+            if market_slot in self._open_market_slot_parameters:
+                continue
+
+            self._open_market_slot_parameters[market_slot] = ForwardMarketSlotParameters(
+                delivery_start_timestamp=market_slot,
+                delivery_end_timestamp=(
+                        market_slot + self._get_market_slot_duration(market_slot, None)),
+                open_timestamp=current_market_slot,
+                close_timestamp=market_slot - self._time_from_market_close_till_delivery
+            )
 
 
 class IntradayMarket(ForwardMarketBase):
     """Intraday market block implementation"""
+
+    @property
+    def market_type(self) -> AvailableMarketTypes:
+        return AvailableMarketTypes.INTRADAY
 
     @staticmethod
     def _get_start_time(current_time: DateTime) -> DateTime:
@@ -87,12 +141,20 @@ class IntradayMarket(ForwardMarketBase):
         return duration(minutes=15)
 
     @property
+    def _time_from_market_close_till_delivery(self) -> duration:
+        return duration(minutes=15)
+
+    @property
     def type_name(self):
         return "Intraday Forward Market"
 
 
 class DayForwardMarket(ForwardMarketBase):
     """Day forward market implementation"""
+
+    @property
+    def market_type(self) -> AvailableMarketTypes:
+        return AvailableMarketTypes.DAY_FORWARD
 
     @staticmethod
     def _get_start_time(current_time: DateTime) -> DateTime:
@@ -107,12 +169,20 @@ class DayForwardMarket(ForwardMarketBase):
         return duration(hours=1)
 
     @property
+    def _time_from_market_close_till_delivery(self) -> duration:
+        return duration(days=1)
+
+    @property
     def type_name(self):
         return "Day Forward Market"
 
 
 class WeekForwardMarket(ForwardMarketBase):
     """Week forward market implementation"""
+
+    @property
+    def market_type(self) -> AvailableMarketTypes:
+        return AvailableMarketTypes.WEEK_FORWARD
 
     @staticmethod
     def _get_start_time(current_time: DateTime) -> DateTime:
@@ -128,12 +198,20 @@ class WeekForwardMarket(ForwardMarketBase):
         return duration(weeks=1)
 
     @property
+    def _time_from_market_close_till_delivery(self) -> duration:
+        return duration(weeks=1)
+
+    @property
     def type_name(self):
         return "Week forward Market"
 
 
 class MonthForwardMarket(ForwardMarketBase):
     """Month forward market implementation"""
+
+    @property
+    def market_type(self) -> AvailableMarketTypes:
+        return AvailableMarketTypes.MONTH_FORWARD
 
     @staticmethod
     def _get_start_time(current_time: DateTime) -> DateTime:
@@ -148,12 +226,20 @@ class MonthForwardMarket(ForwardMarketBase):
         return duration(months=1)
 
     @property
+    def _time_from_market_close_till_delivery(self) -> duration:
+        return duration(months=1)
+
+    @property
     def type_name(self):
         return "Month Forward Market"
 
 
 class YearForwardMarket(ForwardMarketBase):
     """Year forward market implementation"""
+
+    @property
+    def market_type(self) -> AvailableMarketTypes:
+        return AvailableMarketTypes.YEAR_FORWARD
 
     @staticmethod
     def _get_start_time(current_time: DateTime) -> DateTime:
@@ -165,6 +251,10 @@ class YearForwardMarket(ForwardMarketBase):
 
     @staticmethod
     def _get_market_slot_duration(current_time: DateTime, _config) -> duration:
+        return duration(years=1)
+
+    @property
+    def _time_from_market_close_till_delivery(self) -> duration:
         return duration(years=1)
 
     @property

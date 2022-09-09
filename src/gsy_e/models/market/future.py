@@ -196,22 +196,26 @@ class FutureMarkets(TwoSidedMarket):
         return config.slot_length
 
     def _create_future_market_slots(
-            self, start_time: DateTime, end_time: DateTime, config: "SimulationConfig") -> None:
+            self, start_time: DateTime, end_time: DateTime,
+            config: "SimulationConfig") -> List[DateTime]:
         future_time_slot = start_time
+        created_market_slots = []
         while future_time_slot <= end_time:
             if (future_time_slot not in self.slot_bid_mapping and
                     is_time_slot_in_simulation_duration(future_time_slot, config)):
                 self.bids.slot_order_mapping[future_time_slot] = []
                 self.offers.slot_order_mapping[future_time_slot] = []
+                created_market_slots += future_time_slot
             future_time_slot = (
                 future_time_slot + self._get_market_slot_duration(future_time_slot, config))
+        return created_market_slots
 
     def create_future_market_slots(self, current_market_time_slot: DateTime,
-                                   config: "SimulationConfig") -> None:
+                                   config: "SimulationConfig") -> List[DateTime]:
         """Add sub dicts in order dictionaries for future market slots."""
         if not ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS:
-            return
-        self._create_future_market_slots(
+            return []
+        return self._create_future_market_slots(
             current_market_time_slot.add(minutes=config.slot_length.total_minutes()),
             current_market_time_slot.add(
                 hours=ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS),
