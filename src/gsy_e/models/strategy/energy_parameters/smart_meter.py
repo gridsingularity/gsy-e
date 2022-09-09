@@ -38,6 +38,13 @@ class SmartMeterEnergyParameters:
         self._energy_profile.read_or_rotate_profiles()
         self._simulation_start_timestamp = area.now
 
+    def decrement_energy_requirement(self, energy_kWh: float, time_slot: DateTime, area_name: str):
+        """Decrease the energy requirements of the asset."""
+        self._state.decrement_energy_requirement(
+            purchased_energy_Wh=energy_kWh * 1000,
+            time_slot=time_slot,
+            area_name=area_name)
+
     def set_energy_forecast_for_future_markets(self, time_slots, reconfigure: bool = True):
         """Set the energy consumption/production expectations for the upcoming market slots.
 
