@@ -522,7 +522,7 @@ class Simulation:
         )
 
         self.progress_info = SimulationProgressInfo()
-        self._simulation_id = redis_job_id
+        self.simulation_id = redis_job_id
 
         self._init(redis_job_id)
 
@@ -563,7 +563,7 @@ class Simulation:
         Reset simulation to initial values and restart the run.
         """
         log.info("%s Simulation reset requested %s", "=" * 15, "=" * 15)
-        self._init(self._simulation_id)
+        self._init(self.simulation_id)
         self.run()
         raise SimulationResetException
 
@@ -664,7 +664,7 @@ class Simulation:
 
                 if self.status.stopped:
                     log.error("Received stop command for configuration id %s and job id %s.",
-                              gsy_e.constants.CONFIGURATION_ID, self._simulation_id)
+                              gsy_e.constants.CONFIGURATION_ID, self.simulation_id)
                     sleep(5)
                     self._simulation_finish_actions(slot_count)
                     return
@@ -776,7 +776,7 @@ class Simulation:
             "seed": self._setup.seed,
             "sim_status": self.status.sim_status,
             "stopped": self.status.stopped,
-            "simulation_id": self._simulation_id,
+            "simulation_id": self.simulation_id,
             "run_start": format_datetime(self._time.start_time)
             if self._time.start_time is not None else "",
             "paused_time": self._time.paused_time,
@@ -788,7 +788,7 @@ class Simulation:
     def _restore_area_state(self, area: "Area", saved_area_state: dict) -> None:
         if area.uuid not in saved_area_state:
             log.warning("Area %s is not part of the saved state. State not restored. "
-                        "Simulation id: %s", area.uuid, self._simulation_id)
+                        "Simulation id: %s", area.uuid, self.simulation_id)
         else:
             area.restore_state(saved_area_state[area.uuid])
         for child in area.children:
@@ -804,7 +804,7 @@ class Simulation:
         self._setup.seed = saved_state["seed"]
         self.status.sim_status = saved_state["sim_status"]
         self.status.stopped = saved_state["stopped"]
-        self._simulation_id = saved_state["simulation_id"]
+        self.simulation_id = saved_state["simulation_id"]
         if saved_state["run_start"] != "":
             self._time.start_time = str_to_pendulum_datetime(saved_state["run_start"])
         self._time.paused_time = saved_state["paused_time"]
@@ -890,7 +890,7 @@ class CoefficientSimulation(Simulation):
 
             if self.status.stopped:
                 log.error("Received stop command for configuration id %s and job id %s.",
-                          gsy_e.constants.CONFIGURATION_ID, self._simulation_id)
+                          gsy_e.constants.CONFIGURATION_ID, self.simulation_id)
                 sleep(5)
                 self._simulation_finish_actions(slot_count)
                 return
@@ -925,7 +925,7 @@ class SimulationExternalEvents:
         self.live_events = LiveEvents(simulation.config)
         self.redis_connection = RedisSimulationCommunication(
             simulation_status=simulation.status,
-            simulation_id=simulation._simulation_id,
+            simulation_id=simulation.simulation_id,
             live_events=self.live_events,
             progress_info=simulation.progress_info,
             area=simulation.area)
