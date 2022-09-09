@@ -69,7 +69,8 @@ class ForwardTradeProfileGenerator:
         self._scaled_capacity_profile = self._scaler.scale_by_peak(peak_kWh=peak_kWh)
 
     def generate_trade_profile(
-            self, energy_kWh, market_slot, product_type):
+            self, energy_kWh: float, market_slot: pendulum.DateTime,
+            product_type: AvailableMarketTypes):
         """Generate a profile based on the market slot and the product type."""
         trade_profile = self._scaler.scale_by_peak(peak_kWh=energy_kWh)
 
@@ -81,9 +82,13 @@ class ForwardTradeProfileGenerator:
         return self._expand_profile_slots(trade_profile, market_slot, product_type)
 
     @staticmethod
-    def _expand_profile_slots(profile, market_slot, product_type):
-        """Create all the profile slots targeting a specific period of time (depending on the type
-        of the product).
+    def _expand_profile_slots(
+            profile: Dict[int, Dict[pendulum.Time, float]], market_slot: pendulum.DateTime,
+            product_type: AvailableMarketTypes):
+        """
+        Create all the profile slots targeting a specific period of time.
+
+        The period depends on the type of the product (e.g. yearly/monthly/etc.).
 
         Return:
             A new profile complete with all time slots. E.g.:
