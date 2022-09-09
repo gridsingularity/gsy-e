@@ -496,7 +496,7 @@ class Simulation:
                  no_export: bool = False, export_path: str = None,
                  export_subdir: str = None, redis_job_id=None, enable_bc=False,
                  slot_length_realtime: Duration = None, incremental: bool = False):
-        self._status = SimulationStatusManager(
+        self.status = SimulationStatusManager(
             paused=paused,
             pause_after=pause_after,
             incremental=incremental
@@ -542,7 +542,7 @@ class Simulation:
 
         self._results.init_results(redis_job_id, self.area, self._setup)
         self._results.update_and_send_results(
-            self.current_state, self.progress_info, self.area, self._status.status)
+            self.current_state, self.progress_info, self.area, self.status.status)
 
         log.debug("Starting simulation with config %s", self.config)
 
@@ -575,8 +575,8 @@ class Simulation:
 
     def run(self, initial_slot: int = 0) -> None:
         """Run the simulation."""
-        self._status.sim_status = "running"
-        self._status.stopped = False
+        self.status.sim_status = "running"
+        self.status.stopped = False
 
         self._time.reset(
             not_restored_from_state=(initial_slot == 0)
@@ -626,7 +626,7 @@ class Simulation:
                 market_slot=self.progress_info.current_slot_str)
 
             self._results.update_and_send_results(
-                self.current_state, self.progress_info, self.area, self._status.status)
+                self.current_state, self.progress_info, self.area, self.status.status)
             self._external_events.update(self.area)
 
             gc.collect()
@@ -662,7 +662,7 @@ class Simulation:
 
                 self._time.handle_slowdown_and_realtime(tick_no, self.config)
 
-                if self._status.stopped:
+                if self.status.stopped:
                     log.error("Received stop command for configuration id %s and job id %s.",
                               gsy_e.constants.CONFIGURATION_ID, self._simulation_id)
                     sleep(5)
@@ -670,21 +670,21 @@ class Simulation:
                     return
 
             self._results.update_csv_on_market_cycle(slot_no, self.area)
-            self._status.handle_incremental_mode()
+            self.status.handle_incremental_mode()
         self._simulation_finish_actions(slot_count)
 
     def _simulation_finish_actions(self, slot_count: int) -> None:
-        self._status.sim_status = "finished"
+        self.status.sim_status = "finished"
         self._deactivate_areas(self.area)
         self.config.external_redis_communicator.publish_aggregator_commands_responses_events()
         bid_offer_matcher.event_finish()
-        if not self._status.stopped:
+        if not self.status.stopped:
             self.progress_info.update(
                 slot_count - 1, slot_count, self._time, self.config)
             paused_duration = duration(seconds=self._time.paused_time)
             self.progress_info.log_simulation_finished(paused_duration, self.config)
         self._results.update_and_send_results(
-            self.current_state, self.progress_info, self.area, self._status.status)
+            self.current_state, self.progress_info, self.area, self.status.status)
         self._results.save_csv_results(self.area)
 
     def _handle_input(self, console: NonBlockingConsole, sleep_period: float = 0) -> None:
@@ -706,7 +706,7 @@ class Simulation:
                                  "  [R] start REPL\n")
                     continue
 
-                if self._status.finished and cmd in {"p", "+", "-"}:
+                if self.status.finished and cmd in {"p", "+", "-"}:
                     log.info("Simulation has finished. The commands [p, +, -] are unavailable.")
                     continue
 
@@ -715,12 +715,12 @@ class Simulation:
                 elif cmd == "i":
                     self._info()
                 elif cmd == "p":
-                    self._status.toggle_pause()
+                    self.status.toggle_pause()
                     break
                 elif cmd == "q":
                     raise KeyboardInterrupt()
                 elif cmd == "s":
-                    self._status.stop()
+                    self.status.stop()
 
             if sleep_period == 0 or time() - start >= sleep_period:
                 break
@@ -728,20 +728,20 @@ class Simulation:
     def _handle_paused(self, console: NonBlockingConsole) -> None:
         if console is not None:
             self._handle_input(console)
-            self._status.handle_pause_after(self._time_since_start)
+            self.status.handle_pause_after(self._time_since_start)
         paused_flag = False
-        if self._status.paused:
+        if self.status.paused:
             if console:
                 log.critical("Simulation paused. Press 'p' to resume or resume from API.")
             else:
                 self._results.update_and_send_results(
-                    self.current_state, self.progress_info, self.area, self._status.status)
+                    self.current_state, self.progress_info, self.area, self.status.status)
             start = time()
-        while self._status.paused:
+        while self.status.paused:
             paused_flag = True
             if console:
                 self._handle_input(console, 0.1)
-                self._status.handle_pause_timeout(self._time.tick_time_counter)
+                self.status.handle_pause_timeout(self._time.tick_time_counter)
             sleep(0.5)
 
         if console and paused_flag:
@@ -772,10 +772,10 @@ class Simulation:
     def current_state(self) -> dict:
         """Return dict that contains current progress and state of simulation."""
         return {
-            "paused": self._status.paused,
+            "paused": self.status.paused,
             "seed": self._setup.seed,
-            "sim_status": self._status.sim_status,
-            "stopped": self._status.stopped,
+            "sim_status": self.status.sim_status,
+            "stopped": self.status.stopped,
             "simulation_id": self._simulation_id,
             "run_start": format_datetime(self._time.start_time)
             if self._time.start_time is not None else "",
@@ -800,10 +800,10 @@ class Simulation:
 
     def restore_global_state(self, saved_state: dict) -> None:
         """Restore global state of simulation."""
-        self._status.paused = saved_state["paused"]
+        self.status.paused = saved_state["paused"]
         self._setup.seed = saved_state["seed"]
-        self._status.sim_status = saved_state["sim_status"]
-        self._status.stopped = saved_state["stopped"]
+        self.status.sim_status = saved_state["sim_status"]
+        self.status.stopped = saved_state["stopped"]
         self._simulation_id = saved_state["simulation_id"]
         if saved_state["run_start"] != "":
             self._time.start_time = str_to_pendulum_datetime(saved_state["run_start"])
@@ -827,7 +827,7 @@ class CoefficientSimulation(Simulation):
 
         self._results.init_results(redis_job_id, self.area, self._setup)
         self._results.update_send_coefficient_results(
-            self.current_state, self.progress_info, self.area, self._status.status)
+            self.current_state, self.progress_info, self.area, self.status.status)
 
         log.debug("Starting simulation with config %s", self.config)
 
@@ -877,7 +877,7 @@ class CoefficientSimulation(Simulation):
 
             self._results.update_send_coefficient_results(
                 self.current_state, self.progress_info, self.area,
-                self._status.status, scm_manager)
+                self.status.status, scm_manager)
 
             self._external_events.update(self.area)
 
@@ -888,7 +888,7 @@ class CoefficientSimulation(Simulation):
 
             self._time.handle_slowdown_and_realtime(0, self.config)
 
-            if self._status.stopped:
+            if self.status.stopped:
                 log.error("Received stop command for configuration id %s and job id %s.",
                           gsy_e.constants.CONFIGURATION_ID, self._simulation_id)
                 sleep(5)
@@ -897,21 +897,21 @@ class CoefficientSimulation(Simulation):
 
             self._results.update_csv_files(slot_no, self.progress_info.current_slot_time,
                                            self.area, scm_manager)
-            self._status.handle_incremental_mode()
+            self.status.handle_incremental_mode()
 
         self._simulation_finish_actions(slot_count)
 
     def _simulation_finish_actions(self, slot_count: int) -> None:
-        self._status.sim_status = "finished"
+        self.status.sim_status = "finished"
         self._deactivate_areas(self.area)
         self.config.external_redis_communicator.publish_aggregator_commands_responses_events()
-        if not self._status.stopped:
+        if not self.status.stopped:
             self.progress_info.update(
                 slot_count - 1, slot_count, self._time, self.config)
             paused_duration = duration(seconds=self._time.paused_time)
             self.progress_info.log_simulation_finished(paused_duration, self.config)
         self._results.update_send_coefficient_results(
-            self.current_state, self.progress_info, self.area, self._status.status)
+            self.current_state, self.progress_info, self.area, self.status.status)
         self._results.save_csv_results(self.area)
 
 
@@ -924,7 +924,7 @@ class SimulationExternalEvents:
     def __init__(self, simulation: Simulation) -> None:
         self.live_events = LiveEvents(simulation.config)
         self.redis_connection = RedisSimulationCommunication(
-            simulation_status=simulation._status,
+            simulation_status=simulation.status,
             simulation_id=simulation._simulation_id,
             live_events=self.live_events,
             progress_info=simulation.progress_info,
