@@ -249,8 +249,10 @@ class SmartMeterStrategy(BidEnabledStrategy):
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
 
         market = self.area.get_spot_or_future_market_by_id(market_id)
-        self.state.decrement_energy_requirement(
-            bid_trade.traded_energy * 1000, market.time_slot, self.owner.name)
+        self._energy_params.decrement_energy_requirement(
+            energy_kWh=bid_trade.traded_energy,
+            time_slot=market.time_slot,
+            area_name=self.owner.name)
 
     def area_reconfigure_event(self, *args, **kwargs):
         """Reconfigure the device properties at runtime using the provided arguments.
@@ -395,7 +397,7 @@ class SmartMeterStrategy(BidEnabledStrategy):
         bid_energy = self.state.get_energy_requirement_Wh(market.time_slot)
         # TODO: balancing market support not yet implemented
         # if self._is_eligible_for_balancing_market:
-        #     bid_energy -= self.state.get_desired_energy(market.time_slot) * \
+        #     bid_energy -= self.state.get_desired_energy_Wh(market.time_slot) * \
         #                   self.balancing_energy_ratio.demand
         try:
             if not self.are_bids_posted(market.id):
@@ -511,7 +513,11 @@ class SmartMeterStrategy(BidEnabledStrategy):
                                   buyer_origin=self.owner.name,
                                   buyer_origin_id=self.owner.uuid,
                                   buyer_id=self.owner.uuid)
-                self.state.decrement_energy_requirement(energy_Wh, time_slot, self.owner.name)
+
+                self._energy_params.decrement_energy_requirement(
+                    energy_kWh=energy_Wh / 1000,
+                    time_slot=time_slot,
+                    area_name=self.owner.name)
 
         except MarketException:
             self.log.exception("An Error occurred while buying an offer.")

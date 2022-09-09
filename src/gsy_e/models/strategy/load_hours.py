@@ -16,8 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from collections import namedtuple
-from logging import getLogger
-from typing import Union, Dict, List, Optional  # NOQA
+from typing import Union, Dict
 
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Offer
@@ -45,8 +44,6 @@ from gsy_e.models.strategy.future.strategy import future_market_strategy_factory
 from gsy_e.models.strategy.settlement.strategy import settlement_market_strategy_factory
 from gsy_e.models.strategy.update_frequency import TemplateStrategyBidUpdater
 
-log = getLogger(__name__)
-
 BalancingRatio = namedtuple("BalancingRatio", ("demand", "supply"))
 
 
@@ -66,9 +63,9 @@ class LoadHoursStrategy(BidEnabledStrategy):
     def __init__(self, avg_power_W, hrs_per_day=None, hrs_of_day=None,
                  fit_to_limit=True, energy_rate_increase_per_update=None,
                  update_interval=None,
-                 initial_buying_rate: Union[float, dict, str] =
+                 initial_buying_rate: Union[float, Dict, str] =
                  ConstSettings.LoadSettings.BUYING_RATE_RANGE.initial,
-                 final_buying_rate: Union[float, dict, str] =
+                 final_buying_rate: Union[float, Dict, str] =
                  ConstSettings.LoadSettings.BUYING_RATE_RANGE.final,
                  balancing_energy_ratio: tuple =
                  (ConstSettings.BalancingSettings.OFFER_DEMAND_RATIO,
@@ -242,7 +239,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
             self._validate_rates(initial_rate, final_rate, energy_rate_change_per_update,
                                  fit_to_limit)
         except GSyDeviceException:
-            log.exception("LoadHours._area_reconfigure_prices failed. Exception: ")
+            self.log.exception("LoadHours._area_reconfigure_prices failed. Exception: ")
             return
 
         self.bid_update.set_parameters(
@@ -308,7 +305,11 @@ class LoadHoursStrategy(BidEnabledStrategy):
                                   buyer_origin=self.owner.name,
                                   buyer_origin_id=self.owner.uuid,
                                   buyer_id=self.owner.uuid)
-                self.state.decrement_energy_requirement(energy_Wh, time_slot, self.owner.name)
+
+                self._energy_params.decrement_energy_requirement(
+                    energy_kWh=energy_Wh / 1000,
+                    time_slot=time_slot,
+                    area_name=self.owner.name)
                 self._energy_params.decrease_hours_per_day(time_slot, energy_Wh)
 
         except MarketException:
@@ -364,7 +365,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
                     and not self.are_bids_posted(market.id)):
                 bid_energy = self.state.get_energy_requirement_Wh(market.time_slot)
                 if self._is_eligible_for_balancing_market:
-                    bid_energy -= (self.state.get_desired_energy(market.time_slot) *
+                    bid_energy -= (self.state.get_desired_energy_Wh(market.time_slot) *
                                    self.balancing_energy_ratio.demand)
                 try:
                     self.post_first_bid(market, bid_energy,
@@ -389,11 +390,13 @@ class LoadHoursStrategy(BidEnabledStrategy):
         if not self.area.is_market_spot_or_future(market_id):
             return
         if bid_trade.offer_bid.buyer == self.owner.name:
-            self.state.decrement_energy_requirement(
-                bid_trade.traded_energy * 1000,
-                bid_trade.time_slot, self.owner.name)
-            self._energy_params.decrease_hours_per_day(bid_trade.time_slot,
-                                                       bid_trade.traded_energy * 1000.0)
+            self._energy_params.decrement_energy_requirement(
+                energy_kWh=bid_trade.traded_energy,
+                time_slot=bid_trade.time_slot,
+                area_name=self.owner.name)
+            self._energy_params.decrease_hours_per_day(
+                bid_trade.time_slot,
+                bid_trade.traded_energy * 1000.0)
 
     def event_offer_traded(self, *, market_id, trade):
         """Register the offer traded by the device and its effects. Extends the superclass method.
@@ -421,7 +424,12 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
         ramp_up_energy = (self.balancing_energy_ratio.demand *
                           self.state.get_desired_energy_Wh(market.time_slot))
-        self.state.decrement_energy_requirement(ramp_up_energy, market.time_slot, self.owner.name)
+
+        self._energy_params.decrement_energy_requirement(
+            energy_kWh=ramp_up_energy / 1000,
+            time_slot=market.time_slot,
+            area_name=self.owner.name)
+
         ramp_up_price = DeviceRegistry.REGISTRY[self.owner.name][0] * ramp_up_energy
         if ramp_up_energy != 0 and ramp_up_price != 0:
             self.area.get_balancing_market(market.time_slot).balancing_offer(

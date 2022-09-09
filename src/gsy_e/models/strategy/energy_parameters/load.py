@@ -53,6 +53,13 @@ class LoadHoursEnergyParameters:
         """Return dict with the current energy parameter values."""
         return {"avg_power_W": self.avg_power_W, "hrs_of_day": self.hrs_of_day}
 
+    def decrement_energy_requirement(self, energy_kWh: float, time_slot: DateTime, area_name: str):
+        """Decrease the energy requirements of the asset."""
+        self.state.decrement_energy_requirement(
+            purchased_energy_Wh=energy_kWh * 1000,
+            time_slot=time_slot,
+            area_name=area_name)
+
     def set_energy_measurement_kWh(self, time_slot: DateTime) -> None:
         """Set the (simulated) actual energy consumed by the device in a market slot."""
         energy_forecast_kWh = self.state.get_desired_energy_Wh(time_slot) / 1000
@@ -66,8 +73,6 @@ class LoadHoursEnergyParameters:
             self.avg_power_W, self._area.config.slot_length)
         if self.allowed_operating_hours(time_slot):
             desired_energy_Wh = self.energy_per_slot_Wh
-            if not self.allowed_operating_hours(time_slot):
-                desired_energy_Wh = 0.0
         else:
             desired_energy_Wh = 0.0
         self.state.set_desired_energy(desired_energy_Wh, time_slot, overwrite)
