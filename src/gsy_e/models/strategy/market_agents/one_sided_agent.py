@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from typing import Optional, TYPE_CHECKING
 
-from numpy.random import random
+import random
 
 from gsy_e.models.market import MarketBase
 from gsy_e.models.strategy.market_agents.market_agent import MarketAgent
@@ -57,7 +57,7 @@ class OneSidedAgent(MarketAgent):
 
     def event_tick(self):
         area = self.owner
-        for engine in sorted(self.engines, key=lambda _: random()):
+        for engine in random.sample(self.engines, len(self.engines)):
             engine.tick(area=area)
 
     # pylint: disable=unused-argument
@@ -67,17 +67,17 @@ class OneSidedAgent(MarketAgent):
 
     # pylint: disable=unused-argument
     def event_offer_traded(self, *, market_id: str, trade: "Trade"):
-        for engine in sorted(self.engines, key=lambda _: random()):
+        for engine in random.sample(self.engines, len(self.engines)):
             engine.event_offer_traded(trade=trade)
 
     # pylint: disable=unused-argument
     def event_offer_deleted(self, *, market_id: str, offer: "Offer"):
-        for engine in sorted(self.engines, key=lambda _: random()):
+        for engine in random.sample(self.engines, len(self.engines)):
             engine.event_offer_deleted(offer=offer)
 
     def event_offer_split(self, *, market_id: str,  original_offer: "Offer",
                           accepted_offer: "Offer", residual_offer: "Offer"):
-        for engine in sorted(self.engines, key=lambda _: random()):
+        for engine in random.sample(self.engines, len(self.engines)):
             engine.event_offer_split(market_id=market_id,
                                      original_offer=original_offer,
                                      accepted_offer=accepted_offer,
