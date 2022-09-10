@@ -69,7 +69,7 @@ To allow the integration of other workers through the redis connection, one can 
 
 .. code-block::
     
-    gsy-e run --setup bc4p -t 6m -s 15m --slot-length-realtime 15m --enable-external-connection --start-date 2022-07-01
+    gsy-e run --setup bc4p -t 30s -s 15m --enable-external-connection --start-date 2022-07-01
 
 Controlling the simulation
 --------------------------
