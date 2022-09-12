@@ -29,12 +29,13 @@ def launch_simulation_from_rq_job(scenario: Optional[Dict],
     # pylint: disable=too-many-arguments, too-many-locals
     """Launch simulation from rq job."""
     logging.getLogger().setLevel(logging.ERROR)
-    if isinstance(scenario, dict):
-        gsy_e.constants.CONFIGURATION_ID = scenario.pop("configuration_uuid")
-        if "collaboration_uuid" in scenario:
-            gsy_e.constants.EXTERNAL_CONNECTION_WEB = True
-            GlobalConfig.IS_CANARY_NETWORK = scenario.pop("is_canary_network", False)
-            gsy_e.constants.RUN_IN_REALTIME = GlobalConfig.IS_CANARY_NETWORK
+    assert isinstance(scenario, dict)
+    gsy_e.constants.CONFIGURATION_ID = scenario.pop("configuration_uuid")
+    if "collaboration_uuid" in scenario:
+        gsy_e.constants.EXTERNAL_CONNECTION_WEB = True
+        GlobalConfig.IS_CANARY_NETWORK = scenario.pop("is_canary_network", False)
+        gsy_e.constants.RUN_IN_REALTIME = GlobalConfig.IS_CANARY_NETWORK
+
     logger.info("Starting simulation with job_id: %s and configuration id: %s",
                 job_id, gsy_e.constants.CONFIGURATION_ID)
 
