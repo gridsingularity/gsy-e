@@ -57,7 +57,7 @@ class ForwardMarketBase(FutureMarkets):
         super().__init__(bc=bc, notification_listener=notification_listener,
                          readonly=readonly, grid_fee_type=grid_fee_type,
                          grid_fees=grid_fees, name=name)
-        self._open_market_slots = {}
+        self._open_market_slots: Dict[DateTime, ForwardMarketSlot] = {}
 
     @staticmethod
     @abstractmethod
@@ -189,7 +189,7 @@ class WeekForwardMarket(ForwardMarketBase):
 
     @property
     def type_name(self):
-        return "Week forward Market"
+        return "Week Forward Market"
 
 
 class MonthForwardMarket(ForwardMarketBase):
@@ -243,4 +243,4 @@ class YearForwardMarket(ForwardMarketBase):
 
     @property
     def type_name(self):
-        return "Year Froward Market"
+        return "Year Forward Market"
