@@ -25,10 +25,10 @@ from typing import Optional
 
 import pendulum
 from gsy_framework.enums import AvailableMarketTypes
+from gsy_framework.forward_markets.forward_profile import ForwardTradeProfileGenerator
 from gsy_framework.utils import convert_kW_to_kWh
 
 from gsy_e.models.state import LoadState, PVState
-from gsy_e.models.strategy.energy_parameters.forward_profile import ForwardTradeProfileGenerator
 
 
 class ConsumptionStandardProfileEnergyParameters:
