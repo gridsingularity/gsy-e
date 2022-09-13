@@ -16,8 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from collections import namedtuple
-from logging import getLogger
-from typing import Union, Dict, List, Optional  # NOQA
+from typing import Union, Dict
 
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Offer
@@ -45,8 +44,6 @@ from gsy_e.models.strategy.future.strategy import future_market_strategy_factory
 from gsy_e.models.strategy.settlement.strategy import settlement_market_strategy_factory
 from gsy_e.models.strategy.update_frequency import TemplateStrategyBidUpdater
 
-log = getLogger(__name__)
-
 BalancingRatio = namedtuple("BalancingRatio", ("demand", "supply"))
 
 
@@ -66,9 +63,9 @@ class LoadHoursStrategy(BidEnabledStrategy):
     def __init__(self, avg_power_W, hrs_per_day=None, hrs_of_day=None,
                  fit_to_limit=True, energy_rate_increase_per_update=None,
                  update_interval=None,
-                 initial_buying_rate: Union[float, dict, str] =
+                 initial_buying_rate: Union[float, Dict, str] =
                  ConstSettings.LoadSettings.BUYING_RATE_RANGE.initial,
-                 final_buying_rate: Union[float, dict, str] =
+                 final_buying_rate: Union[float, Dict, str] =
                  ConstSettings.LoadSettings.BUYING_RATE_RANGE.final,
                  balancing_energy_ratio: tuple =
                  (ConstSettings.BalancingSettings.OFFER_DEMAND_RATIO,
@@ -242,7 +239,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
             self._validate_rates(initial_rate, final_rate, energy_rate_change_per_update,
                                  fit_to_limit)
         except GSyDeviceException:
-            log.exception("LoadHours._area_reconfigure_prices failed. Exception: ")
+            self.log.exception("LoadHours._area_reconfigure_prices failed. Exception: ")
             return
 
         self.bid_update.set_parameters(
@@ -368,7 +365,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
                     and not self.are_bids_posted(market.id)):
                 bid_energy = self.state.get_energy_requirement_Wh(market.time_slot)
                 if self._is_eligible_for_balancing_market:
-                    bid_energy -= (self.state.get_desired_energy(market.time_slot) *
+                    bid_energy -= (self.state.get_desired_energy_Wh(market.time_slot) *
                                    self.balancing_energy_ratio.demand)
                 try:
                     self.post_first_bid(market, bid_energy,
