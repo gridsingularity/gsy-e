@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from gsy_e.models.area import Area
+
 # from gsy_e.models.strategy.commercial_producer import CommercialStrategy
 # from gsy_e.models.strategy.finite_power_plant import FinitePowerPlant
 from gsy_e.models.strategy.storage import StorageStrategy
@@ -30,49 +31,60 @@ def get_setup(config):
             Area(
                 "House 1",
                 [
-                    Area("H1 General Load", strategy=LoadHoursStrategy(avg_power_W=200,
-                                                                       hrs_per_day=6,
-                                                                       hrs_of_day=list(
-                                                                           range(12, 18)),
-                                                                       final_buying_rate=35)
-                         ),
-                    Area("H1 Storage1", strategy=StorageStrategy(initial_soc=50)
-                         ),
-                    Area("H1 Storage2", strategy=StorageStrategy(initial_soc=50)
-                         ),
+                    Area(
+                        "H1 General Load",
+                        strategy=LoadHoursStrategy(
+                            avg_power_W=200,
+                            hrs_per_day=6,
+                            hrs_of_day=list(range(12, 18)),
+                            final_buying_rate=35,
+                        ),
+                    ),
+                    Area("H1 Storage1", strategy=StorageStrategy(initial_soc=50)),
+                    Area("H1 Storage2", strategy=StorageStrategy(initial_soc=50)),
                 ],
-                grid_fee_percentage=0, grid_fee_constant=0,
+                grid_fee_percentage=0,
+                grid_fee_constant=0,
             ),
             Area(
                 "House 2",
                 [
-                    Area("H2 General Load", strategy=LoadHoursStrategy(avg_power_W=200,
-                                                                       hrs_per_day=4,
-                                                                       hrs_of_day=list(
-                                                                           range(12, 16)),
-                                                                       final_buying_rate=35)
-                         ),
-                    Area("H2 PV", strategy=PVStrategy(capacity_kW=0.16,
-                                                      panel_count=4,
-                                                      initial_selling_rate=30,
-                                                      final_selling_rate=5)
-                         ),
-
+                    Area(
+                        "H2 General Load",
+                        strategy=LoadHoursStrategy(
+                            avg_power_W=200,
+                            hrs_per_day=4,
+                            hrs_of_day=list(range(12, 16)),
+                            final_buying_rate=35,
+                        ),
+                    ),
+                    Area(
+                        "H2 PV",
+                        strategy=PVStrategy(
+                            capacity_kW=0.16,
+                            panel_count=4,
+                            initial_selling_rate=30,
+                            final_selling_rate=5,
+                        ),
+                    ),
                 ],
-                grid_fee_percentage=0, grid_fee_constant=0,
-
+                grid_fee_percentage=0,
+                grid_fee_constant=0,
             ),
-            Area("Cell Tower", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                          hrs_per_day=24,
-                                                          hrs_of_day=list(range(0, 24)),
-                                                          final_buying_rate=35)
-                 ),
+            Area(
+                "Cell Tower",
+                strategy=LoadHoursStrategy(
+                    avg_power_W=100,
+                    hrs_per_day=24,
+                    hrs_of_day=list(range(0, 24)),
+                    final_buying_rate=35,
+                ),
+            ),
             # Area("Commercial Energy Producer",
             #      strategy=CommercialStrategy(energy_rate=30),
             #
             #      ),
-
         ],
-        config=config
+        config=config,
     )
     return area
