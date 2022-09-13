@@ -73,8 +73,6 @@ class LoadHoursEnergyParameters:
             self.avg_power_W, self._area.config.slot_length)
         if self.allowed_operating_hours(time_slot):
             desired_energy_Wh = self.energy_per_slot_Wh
-            if not self.allowed_operating_hours(time_slot):
-                desired_energy_Wh = 0.0
         else:
             desired_energy_Wh = 0.0
         self.state.set_desired_energy(desired_energy_Wh, time_slot, overwrite)
