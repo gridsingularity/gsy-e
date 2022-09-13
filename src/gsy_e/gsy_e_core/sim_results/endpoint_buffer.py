@@ -17,16 +17,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Dict, List
+from typing import TYPE_CHECKING, Dict, Iterable, List
 
 from gsy_framework.constants_limits import (DATE_TIME_FORMAT, DATE_TIME_UI_FORMAT, ConstSettings,
                                             GlobalConfig)
+from gsy_framework.enums import AvailableMarketTypes
 from gsy_framework.results_validator import results_validator
 from gsy_framework.sim_results.all_results import ResultsHandler
 from gsy_framework.utils import get_json_dict_memory_allocation_size
 from pendulum import DateTime
 
-from gsy_e.gsy_e_core.enums import AvailableMarketTypes
 from gsy_e.gsy_e_core.sim_results.offer_bids_trades_hr_stats import OfferBidTradeGraphStats
 from gsy_e.gsy_e_core.util import (get_feed_in_tariff_rate_from_config,
                                    get_market_maker_rate_from_config)
@@ -167,9 +167,10 @@ class SimulationEndpointBuffer:
                 if order.time_slot == time_slot]
 
     @staticmethod
-    def _get_current_forward_orders_from_timeslot(forward_orders: List,
-                                                  market_time_slot: DateTime,
-                                                  area: "Area") -> List:
+    def _get_current_forward_orders_from_timeslot(
+            forward_orders: Iterable,
+            market_time_slot: DateTime,
+            area: "Area") -> List:
         """Filter orders that have happened in the current simulation time for
         the specified market time slot."""
         current_time_slot = area.now
@@ -218,10 +219,11 @@ class SimulationEndpointBuffer:
             for time_slot in market.market_time_slots:
                 time_slot_str = time_slot.format(DATE_TIME_FORMAT)
                 stats_dict[market_type.value][time_slot_str] = {
+                    # only export unmatched open bids/offers
                     "bids": self._get_current_forward_orders_from_timeslot(
-                        market.bid_history, time_slot, area),
+                        market.bids.values(), time_slot, area),
                     "offers": self._get_current_forward_orders_from_timeslot(
-                        market.offer_history, time_slot, area),
+                        market.offers.values(), time_slot, area),
                     "trades": self._get_current_forward_orders_from_timeslot(
                         market.trades, time_slot, area),
                     "market_fee": market.market_fee,
