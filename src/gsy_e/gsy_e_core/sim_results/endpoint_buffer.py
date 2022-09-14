@@ -24,7 +24,8 @@ from gsy_framework.constants_limits import (DATE_TIME_FORMAT, DATE_TIME_UI_FORMA
 from gsy_framework.enums import AvailableMarketTypes
 from gsy_framework.results_validator import results_validator
 from gsy_framework.sim_results.all_results import ResultsHandler
-from gsy_framework.utils import get_json_dict_memory_allocation_size
+from gsy_framework.utils import (datetime_to_string_incl_seconds,
+                                 get_json_dict_memory_allocation_size)
 from pendulum import DateTime
 
 from gsy_e.gsy_e_core.sim_results.offer_bids_trades_hr_stats import OfferBidTradeGraphStats
@@ -217,7 +218,7 @@ class SimulationEndpointBuffer:
 
         for market_type, market in area.forward_markets.items():
             for time_slot in market.market_time_slots:
-                time_slot_str = time_slot.format(DATE_TIME_FORMAT)
+                time_slot_str = datetime_to_string_incl_seconds(time_slot)
                 stats_dict[market_type.value][time_slot_str] = {
                     # only export unmatched open bids/offers
                     "bids": self._get_current_forward_orders_from_timeslot(
