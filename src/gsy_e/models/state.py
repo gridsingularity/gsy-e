@@ -400,10 +400,6 @@ class LoadState(ConsumptionState):
         """Return the total energy demanded in Wh."""
         return self._total_energy_demanded_Wh
 
-    def get_desired_energy(self, time_slot: DateTime) -> float:
-        """Return the desired energy (based on profile data)."""
-        return self._desired_energy_Wh[time_slot]
-
     def _calculate_unsettled_energy_kWh(
             self, measured_energy_kWh: float, time_slot: DateTime) -> float:
         """
