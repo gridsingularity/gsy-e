@@ -23,7 +23,7 @@ def launch_simulation_from_rq_job(scenario: Dict,
                                   settings: Optional[Dict],
                                   events: Optional[str],
                                   aggregator_device_mapping: str,
-                                  saved_state: str,
+                                  saved_state: Dict,
                                   job_id: str,
                                   connect_to_profiles_db: bool = True):
     # pylint: disable=too-many-arguments, too-many-locals
