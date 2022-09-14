@@ -61,15 +61,6 @@ forecast_strategy_mapping = {
     LoadHoursStrategy: LoadHoursForecastExternalStrategy
 }
 
-scm_strategy_mapping = {
-    LoadHoursStrategy: SCMLoadHoursStrategy,
-    DefinedLoadStrategy: SCMLoadProfileStrategy,
-    PVStrategy: SCMPVStrategy,
-    PVPredefinedStrategy: SCMPVPredefinedStrategy,
-    PVUserProfileStrategy: SCMPVUserProfile,
-    StorageStrategy: SCMStorageStrategy
-}
-
 
 class LeafBase:
     """
