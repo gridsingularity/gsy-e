@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
-from typing import TYPE_CHECKING, Callable, List, Dict
+from typing import TYPE_CHECKING, Callable, List, Dict, Tuple
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.read_user_profile import InputProfileTypes
@@ -57,6 +57,20 @@ class TemplateStrategyUpdaterInterface:
 
     def delete_past_state_values(self, current_market_time_slot: DateTime) -> None:
         """Delete irrelevant values from buffers for unneeded markets."""
+
+
+class MarketMakerStrategyUpdaterInterface:
+    """Interface for the updater of orders for Market Maker strategies"""
+
+    def set_parameters(self, *, initial_rate: float = None, spread: float = None,
+                       enable_inventory: bool = None) -> None:
+        """Update the parameters of the class on the fly."""
+
+    def reset(self, strategy: "BaseStrategy") -> None:
+        """Reset the price of all orders based to use their initial rate."""
+
+    def update(self, market: "OneSidedMarket", strategy: "BaseStrategy") -> None:
+        """Update the price of existing orders to reflect the new rates."""
 
 
 class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
@@ -341,4 +355,141 @@ class TemplateStrategyOfferUpdater(TemplateStrategyUpdaterBase):
             "initial_selling_rate": self.initial_rate_input,
             "final_selling_rate": self.final_rate_input,
             "energy_rate_decrease_per_update": self.energy_rate_change_per_update_input
+        }
+
+
+class MarketMakerStrategyUpdaterBase(MarketMakerStrategyUpdaterInterface):
+    """Manage market maker strategy bid / offer posting. Updates periodically the energy rate
+    of the posted bids or offers. Base class"""
+
+    # pylint: disable=too-many-instance-attributes
+    def __init__(self, initial_mid_price: float, spread: float,
+                 enable_inventory: bool):
+        # initial input values
+        self.initial_mid_price_input = initial_mid_price
+        self.spread_input = spread
+        self.enable_inventory = enable_inventory
+
+    def serialize(self):
+        return {
+            "initial_mid_price": self.initial_mid_price_input,
+            "spread": self.spread_input,
+            "enable_inventory": self.enable_inventory
+        }
+
+    @staticmethod
+    def get_all_markets(area: "Area") -> List["OneSidedMarket"]:
+        """Get list of available markets. Defaults to only the spot market."""
+        return [area.spot_market]
+
+    @staticmethod
+    def _get_all_time_slots(area: "Area") -> List[DateTime]:
+        """Get list of available time slots. Defaults to only the spot market time slot."""
+        return [area.spot_market.time_slot]
+
+    @property
+    def _time_slot_duration_in_seconds(self) -> int:
+        return GlobalConfig.slot_length.seconds
+
+    def get_updated_bid_rate(self, area: "Area") -> float:
+        """Compute the rate for bids given market orderbook information."""
+        calculated_mid_price = self.get_calculated_mid_price(area)
+        bid_rate = calculated_mid_price - (self.spread_input / 2)
+        if bid_rate < 0:
+            return calculated_mid_price
+        return bid_rate
+
+    def get_updated_offer_rate(self, area: "Area") -> float:
+        """Compute the rate for offers given market orderbook information."""
+        calculated_mid_price = self.get_calculated_mid_price(area)
+        print("calculated_mid_price", calculated_mid_price)
+        offer_rate = calculated_mid_price + (self.spread_input / 2)
+        return offer_rate
+
+    def get_calculated_mid_price(self, area: "Area") -> float:
+        (best_bid, best_offer) = self.find_national_best_bid_and_offer(area)
+        print("best_bid: ", best_bid, "\nbest_offer: ", best_offer)
+        if best_bid is None or best_offer is None:
+            return self.initial_mid_price_input
+        return (best_bid + best_offer) / 2
+
+    def find_national_best_bid_and_offer(self, area: "Area") -> Tuple[float, float]:
+        """Find the best bid and offer among all markets."""
+        best_bid = None
+        best_offer = None
+        print(
+            "find_national_best_bid_and_offer:\nbids ------>",
+            self.get_all_markets(area)[0].bids.values(),
+            "\noffers ----->",
+            self.get_all_markets(area)[0].offers.values()
+        )
+        for bid in self.get_all_markets(area)[0].bids.values():
+            if best_bid is None or bid.energy_rate > best_bid:
+                best_bid = bid.energy_rate
+        for offer in self.get_all_markets(area)[0].offers.values():
+            if best_offer is None or offer.energy_rate < best_offer:
+                best_offer = offer.energy_rate
+        return best_bid, best_offer
+
+    def set_parameters(self, *, initial_mid_price: float = None, spread: float = None,
+                       enable_inventory: bool = None) -> None:
+        """Update the parameters of the class without the need to destroy and recreate
+        the object."""
+        if initial_mid_price is not None:
+            self.initial_mid_price_input = initial_mid_price
+        if spread is not None:
+            self.spread_input = spread
+        if enable_inventory is not None:
+            self.enable_inventory = enable_inventory
+
+    def reset(self, strategy: "BaseStrategy") -> None:
+        raise NotImplementedError
+
+    def update(self, market: "OneSidedMarket", strategy: "BaseStrategy") -> None:
+        raise NotImplementedError
+
+
+class MarketMakerStrategyBidUpdater(MarketMakerStrategyUpdaterBase):
+    """Manage bids posted by template strategies. Update bids periodically."""
+
+    def reset(self, strategy: "BidEnabledStrategy") -> None:
+        """Reset the price of all bids to use their initial rate."""
+        # decrease energy rate for each market again, except for the newly created one
+        for market in self.get_all_markets(strategy.area):
+            strategy.update_bid_rates(market, self.get_updated_bid_rate(strategy.area))
+
+    def update(self, market: "TwoSidedMarket", strategy: "BidEnabledStrategy") -> None:
+        """Update the price of existing bids to reflect the new rates."""
+        if strategy.are_bids_posted(market.id):
+            strategy.update_bid_rates(market, self.get_updated_bid_rate(strategy.area))
+
+    def serialize(self):
+        return {
+            **super().serialize(),
+            "initial_buying_rate": self.initial_mid_price_input - (self.spread_input / 2),
+            "spread": self.spread_input,
+            "enable_inventory": self.enable_inventory
+        }
+
+
+class MarketMakerStrategyOfferUpdater(MarketMakerStrategyUpdaterBase):
+    """Manage offers posted by template strategies. Update offers periodically."""
+
+    def reset(self, strategy: "BaseStrategy") -> None:
+        """Reset the price of all offers to use their initial rate."""
+        # decrease energy rate for each market again, except for the newly created one
+        for market in self.get_all_markets(strategy.area):
+            strategy.update_offer_rates(market, self.get_updated_offer_rate(strategy.area))
+
+    def update(self, market: "TwoSidedMarket", strategy: "BaseStrategy") -> None:
+        """Update the price of existing offers to reflect the new rates."""
+        if strategy.are_offers_posted(market.id):
+            strategy.update_offer_rates(market, self.get_updated_offer_rate(strategy.area))
+
+    def serialize(self):
+        return {
+            **super().serialize(),
+            "initial_selling_rate": self.initial_mid_price_input + (self.spread_input / 2),
+            "spread": self.spread_input,
+            "enable_inventory": self.enable_inventory
         }
