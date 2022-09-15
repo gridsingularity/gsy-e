@@ -247,16 +247,88 @@ class SimulationTimeManager:
         """
         if gsy_e.constants.RUN_IN_REALTIME:
             tick_runtime_s = time() - self.tick_time_counter
-            sleep(abs(config.tick_length.seconds - tick_runtime_s))
+            sleep_time_s = config.tick_length.seconds - tick_runtime_s
         elif self.slot_length_realtime:
             current_expected_tick_time = self.tick_time_counter + self.tick_length_realtime_s
             sleep_time_s = current_expected_tick_time - now().timestamp()
-            if sleep_time_s > 0:
-                sleep(sleep_time_s)
-                log.debug("Tick %s/%s: Sleep time of %s s was applied",
-                          tick_no + 1, config.ticks_per_slot, sleep_time_s)
+        else:
+            return
+
+        if sleep_time_s > 0:
+            sleep(sleep_time_s)
+            log.debug("Tick %s/%s: Sleep time of %s s was applied",
+                      tick_no + 1, config.ticks_per_slot, sleep_time_s)
 
         self.tick_time_counter = time()
+
+
+@dataclass
+class SimulationTimeManagerScm:
+    """Handles simulation time management."""
+    start_time: DateTime = now(tz=TIME_ZONE)
+    paused_time: int = 0  # Time spent in paused state, in seconds
+    slot_length_realtime: duration = None
+    slot_time_counter: float = time()
+
+    def reset(self, not_restored_from_state: bool = True) -> None:
+        """
+        Restore time-related parameters of the simulation to their default values.
+        Mainly useful when resetting the simulation.
+        """
+        self.slot_time_counter = time()
+        if not_restored_from_state:
+            self.start_time = now(tz=TIME_ZONE)
+            self.paused_time = 0
+
+    def handle_slowdown_and_realtime_scm(self, slot_no: int, slot_count: int,
+                                         config: SimulationConfig) -> None:
+        """
+        Handle simulation slowdown and simulation realtime mode, and sleep the simulation
+        accordingly for SCM simulations.
+        """
+
+        slot_length_realtime_s = self.slot_length_realtime.total_seconds()
+
+        if gsy_e.constants.RUN_IN_REALTIME:
+            slot_runtime_s = time() - self.slot_time_counter
+            sleep_time_s = config.slot_length.total_seconds() - slot_runtime_s
+        elif slot_length_realtime_s:
+            current_expected_tick_time = self.slot_time_counter + slot_length_realtime_s
+            sleep_time_s = current_expected_tick_time - now().timestamp()
+        else:
+            return
+
+        if sleep_time_s > 0:
+            sleep(sleep_time_s)
+            log.debug("Slot %s/%s: Sleep time of %s s was applied",
+                      slot_no, slot_count, sleep_time_s)
+
+        self.slot_time_counter = time()
+
+    @staticmethod
+    def calc_resume_slot_and_count_realtime(
+            config: SimulationConfig, slot_resume: int) -> Tuple[int, int]:
+        """Calculate total slot count and the slot where to resume the realtime simulation."""
+        slot_count = int(config.sim_duration / config.slot_length)
+
+        if gsy_e.constants.RUN_IN_REALTIME:
+            slot_count = sys.maxsize
+
+            today = datetime.date.today()
+            seconds_since_midnight = time() - mktime(today.timetuple())
+            slot_resume = int(seconds_since_midnight // config.slot_length.seconds) + 1
+            seconds_elapsed_in_slot = seconds_since_midnight % config.slot_length.seconds
+            sleep_time_s = config.slot_length.total_seconds() - seconds_elapsed_in_slot
+            sleep(sleep_time_s)
+
+        return slot_count, slot_resume
+
+
+def simulation_time_manager_factory(slot_length_realtime: duration):
+    """Factory for time manager objects."""
+    if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
+        return SimulationTimeManagerScm(slot_length_realtime=slot_length_realtime)
+    return SimulationTimeManager(slot_length_realtime=slot_length_realtime)
 
 
 @dataclass
@@ -410,6 +482,10 @@ class SimulationResultsManager:
 
 
 class CoefficientSimulationResultsManager(SimulationResultsManager):
+    """
+    Maintain and populate the simulation results and the publishing to the message broker for
+    SCM simulations.
+    """
 
     def init_results(self, redis_job_id: str, area: "AreaBase",
                      config_params: SimulationSetup) -> None:
@@ -422,7 +498,7 @@ class CoefficientSimulationResultsManager(SimulationResultsManager):
             self._export = CoefficientExportAndPlot(
                 area, self.export_path, self.export_subdir, self._endpoint_buffer)
 
-    def update_results(
+    def update_and_send_results(
             self, current_state: dict, progress_info: SimulationProgressInfo,
             area: "Area", simulation_status: str) -> None:
         raise NotImplementedError
@@ -449,6 +525,7 @@ class CoefficientSimulationResultsManager(SimulationResultsManager):
             self, current_state: dict, progress_info: SimulationProgressInfo,
             area: "CoefficientArea", simulation_status: str,
             scm_manager: Optional["SCMManager"] = None) -> None:
+        # pylint: disable=too-many-arguments
         """
         Update the coefficient simulation results.
         """
@@ -485,6 +562,7 @@ class CoefficientSimulationResultsManager(SimulationResultsManager):
 
 
 def simulation_results_manager_factory():
+    """Factory for results manager objects."""
     if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
         return CoefficientSimulationResultsManager
     return SimulationResultsManager
@@ -524,7 +602,7 @@ class Simulation:
             pause_after=pause_after,
             incremental=incremental
         )
-        self._time = SimulationTimeManager(
+        self._time = simulation_time_manager_factory(
             slot_length_realtime=slot_length_realtime,
         )
 
@@ -867,11 +945,11 @@ class CoefficientSimulation(Simulation):
         pass
 
     def _execute_simulation(
-            self, slot_resume: int, tick_resume: int, console: NonBlockingConsole = None) -> None:
-
-        slot_count, slot_resume, tick_resume = (
-            self._time.calculate_total_initial_ticks_slots(
-                self._setup.config, slot_resume, tick_resume, self.area))
+            self, slot_resume: int, _tick_resume: int, console: NonBlockingConsole = None) -> None:
+        gsy_e.constants.RUN_IN_REALTIME = True
+        slot_count, slot_resume = (
+            self._time.calc_resume_slot_and_count_realtime(
+                self._setup.config, slot_resume))
 
         for slot_no in range(slot_resume, slot_count):
             self._handle_paused(console)
@@ -903,7 +981,7 @@ class CoefficientSimulation(Simulation):
 
             self._compute_memory_info()
 
-            self._time.handle_slowdown_and_realtime(0, self._setup.config)
+            self._time.handle_slowdown_and_realtime_scm(slot_no, slot_count, self._setup.config)
 
             if self._status.stopped:
                 log.error("Received stop command for configuration id %s and job id %s.",
