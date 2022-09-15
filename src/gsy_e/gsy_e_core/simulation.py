@@ -828,8 +828,12 @@ class Simulation:
             if console:
                 log.critical("Simulation paused. Press 'p' to resume or resume from API.")
             else:
-                self._results.update_and_send_results(
-                    self.current_state, self.progress_info, self.area, self._status.status)
+                try:
+                    self._results.update_and_send_results(
+                        self.current_state, self.progress_info, self.area, self._status.status)
+                except NotImplementedError:
+                    self._results.update_send_coefficient_results(
+                        self.current_state, self.progress_info, self.area, self._status.status)
             start = time()
         while self._status.paused:
             paused_flag = True
