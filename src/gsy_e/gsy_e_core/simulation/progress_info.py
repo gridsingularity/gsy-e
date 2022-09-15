@@ -26,7 +26,7 @@ import gsy_e.constants
 from gsy_e.constants import TIME_ZONE
 
 if TYPE_CHECKING:
-    from gsy_e.gsy_e_core.simulation_utils.simulation_time_manager import SimulationTimeManager
+    from gsy_e.gsy_e_core.simulation.time_manager import SimulationTimeManager
     from gsy_e.models.config import SimulationConfig
 
 log = getLogger(__name__)

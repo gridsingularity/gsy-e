@@ -32,13 +32,13 @@ import gsy_e.constants
 from gsy_e.gsy_e_core.exceptions import SimulationException
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.gsy_e_core.myco_singleton import bid_offer_matcher
-from gsy_e.gsy_e_core.simulation_utils.simulation_external_events import SimulationExternalEvents
-from gsy_e.gsy_e_core.simulation_utils.simulation_progress_info import SimulationProgressInfo
-from gsy_e.gsy_e_core.simulation_utils.simulation_results_manager import (
+from gsy_e.gsy_e_core.simulation.external_events import SimulationExternalEvents
+from gsy_e.gsy_e_core.simulation.progress_info import SimulationProgressInfo
+from gsy_e.gsy_e_core.simulation.results_manager import (
     simulation_results_manager_factory, CoefficientSimulationResultsManager)
-from gsy_e.gsy_e_core.simulation_utils.simulation_setup import SimulationSetup
-from gsy_e.gsy_e_core.simulation_utils.simulation_status_manager import SimulationStatusManager
-from gsy_e.gsy_e_core.simulation_utils.simulation_time_manager import (
+from gsy_e.gsy_e_core.simulation.setup import SimulationSetup
+from gsy_e.gsy_e_core.simulation.status_manager import SimulationStatusManager
+from gsy_e.gsy_e_core.simulation.time_manager import (
     simulation_time_manager_factory)
 from gsy_e.gsy_e_core.util import NonBlockingConsole
 from gsy_e.models.area.event_deserializer import deserialize_events_to_areas

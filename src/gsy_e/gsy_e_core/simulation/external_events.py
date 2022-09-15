@@ -25,8 +25,8 @@ from gsy_e.models.config import SimulationConfig
 
 if TYPE_CHECKING:
     from gsy_e.models.area import Area, AreaBase
-    from gsy_e.gsy_e_core.simulation_utils.simulation_status_manager import SimulationStatusManager
-    from gsy_e.gsy_e_core.simulation_utils.simulation_progress_info import SimulationProgressInfo
+    from gsy_e.gsy_e_core.simulation.status_manager import SimulationStatusManager
+    from gsy_e.gsy_e_core.simulation.progress_info import SimulationProgressInfo
 
 log = getLogger(__name__)
 
