@@ -946,7 +946,6 @@ class CoefficientSimulation(Simulation):
 
     def _execute_simulation(
             self, slot_resume: int, _tick_resume: int, console: NonBlockingConsole = None) -> None:
-        gsy_e.constants.RUN_IN_REALTIME = True
         slot_count, slot_resume = (
             self._time.calc_resume_slot_and_count_realtime(
                 self._setup.config, slot_resume))
