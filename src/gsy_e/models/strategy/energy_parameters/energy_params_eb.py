@@ -47,11 +47,23 @@ class ConsumptionStandardProfileEnergyParameters:
             "capacity_kW": self.capacity_kW
         }
 
+    @property
+    def capacity_kWh(self):
+        """Capacity of the load in kWh."""
+        return convert_kW_to_kWh(self.capacity_kW, self._area.config.slot_length)
+
+    def get_available_energy_kWh(self, market_slot: pendulum.DateTime):
+        """Get the available bid energy of the load."""
+        scaling_factor = (
+                self._state.get_energy_requirement_Wh(market_slot) /
+                self._state.get_desired_energy_Wh(market_slot))
+        return scaling_factor * self.capacity_kWh
+
     def event_activate_energy(self, area):
         """Initialize values that are required to compute the energy values of the asset."""
         self._area = area
         self._profile_generator = ForwardTradeProfileGenerator(
-            peak_kWh=convert_kW_to_kWh(self.capacity_kW, self._area.config.slot_length))
+            peak_kWh=self.capacity_kWh)
 
     def event_traded_energy(
             self, energy_kWh: float, market_slot: pendulum.DateTime,
@@ -97,11 +109,23 @@ class ProductionStandardProfileEnergyParameters:
             "capacity_kW": self.capacity_kW
         }
 
+    @property
+    def capacity_kWh(self):
+        """Capacity of the PV in kWh."""
+        return convert_kW_to_kWh(self.capacity_kW, self._area.config.slot_length)
+
+    def get_available_energy_kWh(self, market_slot: pendulum.DateTime):
+        """Get the available offer energy of the PV."""
+        scaling_factor = (
+                self._state.get_available_energy_kWh(market_slot) /
+                self._state.get_energy_production_forecast_kWh(market_slot))
+        return scaling_factor * self.capacity_kWh
+
     def event_activate_energy(self, area):
         """Initialize values that are required to compute the energy values of the asset."""
         self._area = area
         self._profile_generator = ForwardTradeProfileGenerator(
-            peak_kWh=convert_kW_to_kWh(self.capacity_kW, self._area.config.slot_length))
+            peak_kWh=self.capacity_kWh)
 
     def event_traded_energy(
             self, energy_kWh: float, market_slot: pendulum.DateTime,

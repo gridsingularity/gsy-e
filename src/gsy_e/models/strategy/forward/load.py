@@ -1,6 +1,5 @@
 from typing import Dict, TYPE_CHECKING
 
-from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.enums import AvailableMarketTypes
 from pendulum import DateTime
 
@@ -12,9 +11,6 @@ from gsy_e.models.strategy.forward.order_updater import OrderUpdaterParameters
 if TYPE_CHECKING:
     from gsy_e.models.market.forward import ForwardMarketBase
     from gsy_framework.data_classes import Trade
-
-
-BUYING_RATE_RANGE = ConstSettings.LoadSettings.BUYING_RATE_RANGE
 
 
 class ForwardLoadStrategy(ForwardStrategyBase):
@@ -38,7 +34,7 @@ class ForwardLoadStrategy(ForwardStrategyBase):
     def post_order(self, market: "ForwardMarketBase", market_slot: DateTime):
         order_rate = self._order_updaters[market][market_slot].get_energy_rate(
             self.area.now)
-        energy_kWh = 10.0  # TODO: Connect the energy params
+        energy_kWh = self._energy_params.get_available_energy_kWh(market_slot)
         market.bid(
             order_rate * energy_kWh, energy_kWh,
             buyer=self.owner.name,
