@@ -16,8 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from dataclasses import dataclass
 from abc import abstractmethod
+from dataclasses import dataclass
 from typing import Optional, TYPE_CHECKING, List
 
 from gsy_framework.constants_limits import ConstSettings
@@ -40,6 +40,11 @@ class ForwardMarketSlotParameters:
     close_timestamp: DateTime
     delivery_start_timestamp: DateTime
     delivery_end_timestamp: DateTime
+
+    def __post_init__(self):
+        assert self.delivery_end_timestamp > self.delivery_start_timestamp
+        assert self.close_timestamp < self.delivery_start_timestamp
+        assert self.close_timestamp > self.open_timestamp
 
 
 class ForwardMarketBase(FutureMarkets):
@@ -75,14 +80,6 @@ class ForwardMarketBase(FutureMarkets):
     def _get_end_time(current_time: DateTime) -> DateTime:
         """Return time when the market block ends."""
 
-    @property
-    @abstractmethod
-    def _time_from_market_close_till_delivery(self) -> duration:
-        """
-        Retrieves the time duration from the time that the market closes till the time that the
-        traded energy should be delivered.
-        """
-
     @staticmethod
     @abstractmethod
     def _get_market_slot_duration(current_time: DateTime, _config) -> duration:
@@ -94,10 +91,10 @@ class ForwardMarketBase(FutureMarkets):
             return []
         created_future_slots = self._create_future_market_slots(
             self._get_start_time(current_market_time_slot),
-            self._get_end_time(current_market_time_slot), config)
+            self._get_end_time(current_market_time_slot), config,
+            current_market_time_slot)
 
         self._set_open_market_slot_parameters(current_market_time_slot, created_future_slots)
-
         return created_future_slots
 
     def get_market_parameters_for_market_slot(

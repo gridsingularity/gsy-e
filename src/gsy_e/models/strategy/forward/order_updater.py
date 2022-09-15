@@ -35,7 +35,7 @@ class OrderUpdater:
         current_time = start_time
         timepoints = []
         while current_time < end_time:
-            timepoints += current_time
+            timepoints.append(current_time)
             current_time += interval
         return timepoints
 
@@ -46,7 +46,8 @@ class OrderUpdater:
 
     def get_energy_rate(self, current_time_slot: DateTime):
         """Calculate energy rate for the current time slot."""
-        time_elapsed_since_start = self._market_params.open_timestamp - current_time_slot
+        assert current_time_slot >= self._market_params.open_timestamp
+        time_elapsed_since_start = current_time_slot - self._market_params.open_timestamp
         total_slot_length = (
                 self._market_params.close_timestamp - self._market_params.open_timestamp)
         rate_range = self._parameters.final_rate - self._parameters.initial_rate

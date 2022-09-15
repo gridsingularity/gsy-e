@@ -48,10 +48,10 @@ class TestForwardMarkets:
         return forward_markets
 
     @pytest.mark.parametrize("market_class, expected_market_count",
-                             [[IntradayMarket, 24 * 4],
-                              [DayForwardMarket, 24 * 7],
-                              [WeekForwardMarket, 52],
-                              [MonthForwardMarket, 24],
+                             [[IntradayMarket, 24 * 4 - 1],
+                              [DayForwardMarket, 24 * 7 - 1],
+                              [WeekForwardMarket, 51],
+                              [MonthForwardMarket, 23],
                               [YearForwardMarket, 5]])
     @patch("gsy_e.models.market.future.is_time_slot_in_simulation_duration", MagicMock())
     def test_create_forward_markets(self, market_class, expected_market_count):
@@ -89,13 +89,13 @@ class TestForwardMarkets:
                     assert all(time_slot.month == 1 and time_slot.day == 1 for time_slot in buffer)
 
     @pytest.mark.parametrize("market_class, rotator_class, expected_market_count, rotation_time",
-                             [[IntradayMarket, IntradayMarketRotator, 24 * 4,
+                             [[IntradayMarket, IntradayMarketRotator, 24 * 4 - 1,
                                CURRENT_MARKET_SLOT.set(minute=15)],
-                              [DayForwardMarket, DayForwardMarketRotator, 24 * 7,
-                               CURRENT_MARKET_SLOT.add(days=1)],
-                              [WeekForwardMarket, WeekForwardMarketRotator, 52,
+                              [DayForwardMarket, DayForwardMarketRotator, 24 * 7 - 1,
+                               CURRENT_MARKET_SLOT.add(hours=1)],
+                              [WeekForwardMarket, WeekForwardMarketRotator, 51,
                                CURRENT_MARKET_SLOT.add(weeks=1)],
-                              [MonthForwardMarket, MonthForwardMarketRotator, 24,
+                              [MonthForwardMarket, MonthForwardMarketRotator, 23,
                                CURRENT_MARKET_SLOT.set(day=1).add(months=1)],
                               [YearForwardMarket, YearForwardMarketRotator, 5,
                                CURRENT_MARKET_SLOT.set(day=1, month=1).add(years=1)]
