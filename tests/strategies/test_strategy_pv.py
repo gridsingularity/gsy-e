@@ -592,7 +592,7 @@ def fixture_pv_strategy():
     return pv_strategy
 
 
-@patch("gsy_e.models.strategy.pv.utils")
+@patch("gsy_e.models.strategy.energy_parameters.pv.utils")
 def test_set_energy_measurement_of_last_market(utils_mock, pv_strategy):
     """The real energy of the last market is set when necessary."""
     # If we are in the first market slot, the real energy is not set

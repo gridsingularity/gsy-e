@@ -5,7 +5,7 @@ import platform
 from gsy_framework.constants_limits import ConstSettings
 
 from gsy_e.models.area import Market, Asset
-from gsy_e.models.strategy.external_strategies.load import LoadForecastExternalStrategy
+from gsy_e.models.strategy.external_strategies.load import LoadHoursForecastExternalStrategy
 from gsy_e.models.strategy.external_strategies.pv import PVForecastExternalStrategy
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_e.models.strategy.storage import StorageStrategy
@@ -52,7 +52,7 @@ def get_setup(config):
                               final_selling_rate=11, fit_to_limit=True)
                           ),
                     Asset("forecast-measurement-load",
-                          strategy=LoadForecastExternalStrategy(
+                          strategy=LoadHoursForecastExternalStrategy(
                               final_buying_rate=35, initial_buying_rate=11,
                               use_market_maker_rate=True)
                           ),
