@@ -91,7 +91,7 @@ token = response.json()["token"]
 ```
 3. Create a URL and send the request:
 ```python
-historical_data_url = f"{domain}/historical-data/assets/{configuration_id}/{device_id}/{start_date}/{end_date}"
+historical_data_url = f"{domain}/historical-data/assets/{configuration_id}/{asset_id}/{start_date}/{end_date}"
 headers = {"Authorization": f"JWT {token}"}
 
 response = requests.get(url=historical_data_url,
