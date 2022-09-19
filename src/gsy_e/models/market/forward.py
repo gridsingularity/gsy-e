@@ -66,6 +66,15 @@ class ForwardMarketBase(FutureMarkets):
         self._open_market_slot_parameters = {}
 
     @property
+    def uses_ssp_product(self) -> bool:
+        """Should the market use the SSP product or energy values."""
+        return self.market_type in [
+            AvailableMarketTypes.YEAR_FORWARD,
+            AvailableMarketTypes.MONTH_FORWARD,
+            AvailableMarketTypes.WEEK_FORWARD
+        ]
+
+    @property
     @abstractmethod
     def market_type(self):
         """Return the market type from the AvailableMarketTypes enum."""

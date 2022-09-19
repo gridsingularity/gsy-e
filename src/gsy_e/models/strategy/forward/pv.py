@@ -3,6 +3,7 @@ from typing import Dict, TYPE_CHECKING
 from gsy_framework.enums import AvailableMarketTypes
 from pendulum import DateTime
 
+from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.models.strategy.energy_parameters.energy_params_eb import (
     ProductionStandardProfileEnergyParameters)
 from gsy_e.models.strategy.forward import ForwardStrategyBase
@@ -24,6 +25,9 @@ class ForwardPVStrategy(ForwardStrategyBase):
         super().__init__(order_updater_parameters)
         self._energy_params = ProductionStandardProfileEnergyParameters(capacity_kW)
 
+    def event_activate(self, **kwargs):
+        self._energy_params.event_activate_energy(self.area)
+
     def remove_open_orders(self, market: "ForwardMarketBase", market_slot: DateTime):
         offers = [offer
                   for offer in market.slot_offer_mapping[market_slot]
@@ -34,7 +38,12 @@ class ForwardPVStrategy(ForwardStrategyBase):
     def post_order(self, market: "ForwardMarketBase", market_slot: DateTime):
         order_rate = self._order_updaters[market][market_slot].get_energy_rate(
             self.area.now)
-        energy_kWh = self._energy_params.get_available_energy_kWh(market_slot)
+        energy_kWh = self._energy_params.get_available_energy_kWh(
+            market_slot, market.uses_ssp_product)
+
+        if energy_kWh <= FLOATING_POINT_TOLERANCE:
+            return
+
         market.offer(
             order_rate * energy_kWh, energy_kWh,
             seller=self.owner.name,

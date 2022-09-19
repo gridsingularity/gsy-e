@@ -28,6 +28,7 @@ from gsy_framework.enums import AvailableMarketTypes
 from gsy_framework.forward_markets.forward_profile import ForwardTradeProfileGenerator
 from gsy_framework.utils import convert_kW_to_kWh
 
+from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.models.state import LoadState, PVState
 
 
@@ -52,18 +53,33 @@ class ConsumptionStandardProfileEnergyParameters:
         """Capacity of the load in kWh."""
         return convert_kW_to_kWh(self.capacity_kW, self._area.config.slot_length)
 
-    def get_available_energy_kWh(self, market_slot: pendulum.DateTime):
+    def get_available_energy_kWh(self, market_slot: pendulum.DateTime, ssp_product_used: bool):
         """Get the available bid energy of the load."""
-        scaling_factor = (
-                self._state.get_energy_requirement_Wh(market_slot) /
-                self._state.get_desired_energy_Wh(market_slot))
-        return scaling_factor * self.capacity_kWh
+        if ssp_product_used:
+            reference_slot = market_slot.set(hour=12, minute=0, tz=pendulum.UTC)
+        else:
+            reference_slot = market_slot.set(tz=pendulum.UTC)
+
+        if self._state.get_desired_energy_Wh(reference_slot) <= FLOATING_POINT_TOLERANCE:
+            scaling_factor = 0.
+        else:
+            scaling_factor = (
+                    self._state.get_energy_requirement_Wh(reference_slot) /
+                    self._state.get_desired_energy_Wh(reference_slot))
+        return abs(scaling_factor) * self.capacity_kWh
 
     def event_activate_energy(self, area):
         """Initialize values that are required to compute the energy values of the asset."""
         self._area = area
         self._profile_generator = ForwardTradeProfileGenerator(
             peak_kWh=self.capacity_kWh)
+        for i in range(4):
+            capacity_profile = self._profile_generator.generate_trade_profile(
+                energy_kWh=self.capacity_kWh,
+                market_slot=pendulum.now(tz=pendulum.UTC).start_of("year").add(years=i),
+                product_type=AvailableMarketTypes.YEAR_FORWARD)
+            for time_slot, energy_kWh in capacity_profile.items():
+                self._state.set_desired_energy(energy_kWh, time_slot)
 
     def event_traded_energy(
             self, energy_kWh: float, market_slot: pendulum.DateTime,
@@ -114,18 +130,33 @@ class ProductionStandardProfileEnergyParameters:
         """Capacity of the PV in kWh."""
         return convert_kW_to_kWh(self.capacity_kW, self._area.config.slot_length)
 
-    def get_available_energy_kWh(self, market_slot: pendulum.DateTime):
+    def get_available_energy_kWh(self, market_slot: pendulum.DateTime, ssp_product_used: bool):
         """Get the available offer energy of the PV."""
-        scaling_factor = (
-                self._state.get_available_energy_kWh(market_slot) /
-                self._state.get_energy_production_forecast_kWh(market_slot))
-        return scaling_factor * self.capacity_kWh
+        if ssp_product_used:
+            reference_slot = market_slot.set(hour=12, minute=0)
+        else:
+            reference_slot = market_slot
+
+        if self._state.get_energy_production_forecast_kWh(
+                reference_slot) <= FLOATING_POINT_TOLERANCE:
+            scaling_factor = 0.
+        else:
+            scaling_factor = (
+                    self._state.get_available_energy_kWh(reference_slot) /
+                    self._state.get_energy_production_forecast_kWh(reference_slot))
+        return abs(scaling_factor) * self.capacity_kWh
 
     def event_activate_energy(self, area):
         """Initialize values that are required to compute the energy values of the asset."""
         self._area = area
         self._profile_generator = ForwardTradeProfileGenerator(
             peak_kWh=self.capacity_kWh)
+        capacity_profile = self._profile_generator.generate_trade_profile(
+            energy_kWh=self.capacity_kWh,
+            market_slot=pendulum.now().start_of("year"),
+            product_type=AvailableMarketTypes.YEAR_FORWARD)
+        for time_slot, energy_kWh in capacity_profile.items():
+            self._state.set_available_energy(energy_kWh, time_slot)
 
     def event_traded_energy(
             self, energy_kWh: float, market_slot: pendulum.DateTime,
