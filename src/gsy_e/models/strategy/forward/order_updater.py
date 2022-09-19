@@ -50,9 +50,10 @@ class OrderUpdater:
         time_elapsed_since_start = current_time_slot - self._market_params.open_timestamp
         total_slot_length = (
                 self._market_params.close_timestamp - self._market_params.open_timestamp)
-        rate_range = self._parameters.final_rate - self._parameters.initial_rate
+        rate_range = abs(self._parameters.final_rate - self._parameters.initial_rate)
         rate_diff_from_initial = (time_elapsed_since_start / total_slot_length) * rate_range
         if self._parameters.initial_rate < self._parameters.final_rate:
             return self._parameters.initial_rate + rate_diff_from_initial
 
+        assert (self._parameters.initial_rate - rate_diff_from_initial) >= 0.
         return self._parameters.initial_rate - rate_diff_from_initial

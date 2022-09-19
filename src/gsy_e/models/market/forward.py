@@ -249,11 +249,11 @@ class YearForwardMarket(ForwardMarketBase):
 
     @staticmethod
     def _get_start_time(current_time: DateTime) -> DateTime:
-        return current_time.set(month=1, day=1, hour=0, minute=0).add(years=2)
+        return current_time.start_of("year").add(years=2)
 
     @staticmethod
     def _get_end_time(current_time: DateTime) -> DateTime:
-        return current_time.set(month=1, day=1, hour=0, minute=0).add(years=6)
+        return current_time.start_of("year").add(years=6)
 
     @staticmethod
     def _get_market_slot_duration(current_time: DateTime, _config) -> duration:
