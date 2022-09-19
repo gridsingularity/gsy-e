@@ -128,7 +128,7 @@ The following features were implemented :
 
 * [Grid fees](grid-fees.md) configuration
 * User roles, including 'Collaborations' feature for multi user testing and Grid Singularity-hosted challenges
-* [API](configure-trading-strategies-walkthrough.md) connection to energy devices allowing bids and offers to be submitted by external algorithms
+* [API](configure-trading-strategies-walkthrough.md) connection to energy assets allowing bids and offers to be submitted by external algorithms
 
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/8un6qw_CGjI" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
@@ -147,7 +147,7 @@ The following features were implemented :
 
 * Run simulations for [one week](general-settings.md)
 * Choose your market type: additional access to [two-sided pay as bid](two-sided-pay-as-bid.md) and [two-sided pay as clear](two-sided-pay-as-clear.md) market types
-* New user friendly device strategies
+* New user friendly asset strategies
 * Configure your [market maker](model-market-maker.md)
 * Scrollable graphs on the results page optimized for longer simulations
 * Download simulation results
