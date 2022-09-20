@@ -51,8 +51,8 @@ class ForwardStrategyBase(EventMixin, AreaBehaviorBase, ABC):
 
             for market_slot in market.market_time_slots:
                 market_parameters = market.get_market_parameters_for_market_slot(market_slot)
-                if (market_parameters.close_timestamp <= market_parameters.open_timestamp or
-                        market_parameters.close_timestamp <= self.area.now):
+                if (market_parameters.closing_time <= market_parameters.opening_time or
+                        market_parameters.closing_time <= self.area.now):
                     continue
                 if not self._order_updater_for_market_slot_exists(market, market_slot):
                     self._order_updaters[market][market_slot] = OrderUpdater(
@@ -68,7 +68,7 @@ class ForwardStrategyBase(EventMixin, AreaBehaviorBase, ABC):
                 market_params = market_object.get_market_parameters_for_market_slot(market_slot)
                 if not market_params:
                     continue
-                if market_params.close_timestamp <= self.area.now:
+                if market_params.closing_time <= self.area.now:
                     slots_to_delete.append(market_slot)
             for slot in slots_to_delete:
                 market_slot_updater_dict.pop(slot)

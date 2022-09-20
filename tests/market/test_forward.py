@@ -19,7 +19,7 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 from gsy_framework.data_classes import Bid, Offer, Trade
-from pendulum import datetime
+from pendulum import datetime, duration
 
 from gsy_e.models.area import Area
 from gsy_e.models.area.market_rotators import (DayForwardMarketRotator, IntradayMarketRotator,
@@ -50,8 +50,8 @@ class TestForwardMarkets:
     @pytest.mark.parametrize("market_class, expected_market_count",
                              [[IntradayMarket, 24 * 4 - 1],
                               [DayForwardMarket, 24 * 7 - 1],
-                              [WeekForwardMarket, 51],
-                              [MonthForwardMarket, 23],
+                              [WeekForwardMarket, 52 - 1],
+                              [MonthForwardMarket, 24 - 1],
                               [YearForwardMarket, 5]])
     @patch("gsy_e.models.market.future.is_time_slot_in_simulation_duration", MagicMock())
     def test_create_forward_markets(self, market_class, expected_market_count):
@@ -122,3 +122,43 @@ class TestForwardMarkets:
         # Market should be deleted if the rotation time has been reached
         rotator.rotate(rotation_time)
         count_orders_in_buffers(forward_markets, expected_market_count - 1)
+
+    # pylint: disable=too-many-arguments
+    @pytest.mark.parametrize("market_class, expected_market_count, start_timedelta, "
+                             "delivery_duration, closing_delivery_timedelta, reference_time",
+                             [[IntradayMarket, 24 * 4 - 1, duration(minutes=30),
+                               duration(minutes=15), duration(minutes=15), CURRENT_MARKET_SLOT],
+                              [DayForwardMarket, 24 * 7 - 1, duration(hours=2),
+                               duration(hours=1), duration(hours=1), CURRENT_MARKET_SLOT],
+                              [WeekForwardMarket, 51, duration(weeks=2),
+                               duration(weeks=1), duration(weeks=1), CURRENT_MARKET_SLOT],
+                              [MonthForwardMarket, 23, duration(months=2),
+                               duration(months=1), duration(months=1),
+                               CURRENT_MARKET_SLOT.set(day=1, hour=0, minute=0)],
+                              [YearForwardMarket, 5, duration(years=2),
+                               duration(years=1), duration(years=1),
+                               CURRENT_MARKET_SLOT.set(month=1, day=1, hour=0, minute=0)]
+                              ])
+    @patch("gsy_e.models.market.forward.ConstSettings.ForwardMarketSettings."
+           "ENABLE_FORWARD_MARKETS", True)
+    def test_forward_market_parameters(
+            self, market_class, expected_market_count, start_timedelta, delivery_duration,
+            closing_delivery_timedelta, reference_time
+    ):
+        forward_markets = self._create_forward_market(market_class, create=True)
+        slots_info = forward_markets.open_market_slot_info
+        assert len(slots_info) == expected_market_count
+
+        expected_open_time = CURRENT_MARKET_SLOT
+        # Reference time is the time that the markets use as a reference in order to calculate the
+        # slots they need to open. For instance, reference time for the yearly market is always the
+        # first hour of the first day of the current year, while for the monthly market is the
+        # first hour of the first day of the current month.
+        expected_delivery_time = reference_time + start_timedelta
+        for delivery_time, slot_info in slots_info.items():
+            assert delivery_time == expected_delivery_time
+            assert slot_info.delivery_start_time == expected_delivery_time
+            assert slot_info.delivery_end_time == expected_delivery_time + delivery_duration
+            assert slot_info.opening_time == expected_open_time
+            assert slot_info.closing_time == expected_delivery_time - closing_delivery_timedelta
+            expected_delivery_time = expected_delivery_time + delivery_duration
