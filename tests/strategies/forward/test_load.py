@@ -18,27 +18,32 @@ if TYPE_CHECKING:
 
 CURRENT_MARKET_SLOT = datetime(2022, 6, 13, 0, 0)
 
+load_parameters = {
+    AvailableMarketTypes.INTRADAY: OrderUpdaterParameters(duration(minutes=5), 10, 40, 20),
+    AvailableMarketTypes.DAY_FORWARD: OrderUpdaterParameters(duration(minutes=30), 20, 40, 20),
+    AvailableMarketTypes.WEEK_FORWARD: OrderUpdaterParameters(duration(days=1), 30, 50, 20),
+    AvailableMarketTypes.MONTH_FORWARD: OrderUpdaterParameters(duration(weeks=1), 40, 60, 20),
+    AvailableMarketTypes.YEAR_FORWARD: OrderUpdaterParameters(duration(months=1), 50, 70, 20)
+}
+
+
+pv_parameters = {
+    AvailableMarketTypes.INTRADAY: OrderUpdaterParameters(duration(minutes=5), 41, 11, 20),
+    AvailableMarketTypes.DAY_FORWARD: OrderUpdaterParameters(duration(minutes=30), 42, 22, 20),
+    AvailableMarketTypes.WEEK_FORWARD: OrderUpdaterParameters(duration(days=1), 53, 33, 20),
+    AvailableMarketTypes.MONTH_FORWARD: OrderUpdaterParameters(duration(weeks=1), 66, 39, 20),
+    AvailableMarketTypes.YEAR_FORWARD: OrderUpdaterParameters(duration(months=1), 72, 56, 20)
+}
+
 
 @pytest.fixture(name="forward_strategy_fixture", params=[
-    ForwardLoadStrategy(capacity_kW=100, order_updater_parameters={
-        AvailableMarketTypes.INTRADAY: OrderUpdaterParameters(duration(minutes=5), 10, 40),
-        AvailableMarketTypes.DAY_FORWARD: OrderUpdaterParameters(duration(minutes=30), 20, 40),
-        AvailableMarketTypes.WEEK_FORWARD: OrderUpdaterParameters(duration(days=1), 30, 50),
-        AvailableMarketTypes.MONTH_FORWARD: OrderUpdaterParameters(duration(weeks=1), 40, 60),
-        AvailableMarketTypes.YEAR_FORWARD: OrderUpdaterParameters(duration(months=1), 50, 70)
-    }),
-    ForwardPVStrategy(capacity_kW=100, order_updater_parameters={
-        AvailableMarketTypes.INTRADAY: OrderUpdaterParameters(duration(minutes=5), 41, 11),
-        AvailableMarketTypes.DAY_FORWARD: OrderUpdaterParameters(duration(minutes=30), 42, 22),
-        AvailableMarketTypes.WEEK_FORWARD: OrderUpdaterParameters(duration(days=1), 53, 33),
-        AvailableMarketTypes.MONTH_FORWARD: OrderUpdaterParameters(duration(weeks=1), 66, 39),
-        AvailableMarketTypes.YEAR_FORWARD: OrderUpdaterParameters(duration(months=1), 72, 56)
-    })])
+    (ForwardLoadStrategy, load_parameters,),
+    (ForwardPVStrategy, pv_parameters, )])
 def forward_market_strategy_fixture(request) -> Tuple["ForwardStrategyBase", "Area"]:
     """Fixture for the ForwardStrategy classes."""
     ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS = True
     orig_start_date = GlobalConfig.start_date
-    strategy = request.param
+    strategy = request.param[0](capacity_kW=100, order_updater_parameters=request.param[1])
     strategy_area = Area("asset", strategy=strategy)
     area = Area("grid", children=[strategy_area])
     area.config.start_date = CURRENT_MARKET_SLOT
