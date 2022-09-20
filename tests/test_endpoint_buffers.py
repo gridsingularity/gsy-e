@@ -159,3 +159,28 @@ class TestSimulationEndpointBuffer:
                 in caplog.text
 
         assert output == {}
+
+    def test_generate_json_report(self, forward_setup):
+        area, _ = forward_setup
+        endpoint_buffer = SimulationEndpointBuffer(
+            job_id="JOB_1",
+            random_seed=41,
+            area=area,
+            should_export_plots=False)
+
+        # The ResultsHandler class should be tested as a different unit, so we just mock its output
+        results_handler_mock = MagicMock(all_raw_results={"mocked-results": "some-results"})
+        endpoint_buffer.results_handler = results_handler_mock
+
+        assert endpoint_buffer.generate_json_report() == {
+            "job_id": "JOB_1",
+            "random_seed": 41,
+            "status": "",
+            "progress_info": {
+                "eta_seconds": 0,
+                "elapsed_time_seconds": 0,
+                "percentage_completed": 0
+            },
+            "simulation_state": {"general": {}, "areas": {}},
+            "mocked-results": "some-results"
+        }
