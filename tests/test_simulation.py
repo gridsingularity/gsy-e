@@ -59,9 +59,7 @@ class TestSimulation:
         simulation._results.endpoint_buffer.results_handler.all_ui_results = {
             k: {} for k in results_mapping}
 
-        simulation._results.update_and_send_results(
-            simulation.current_state, simulation.progress_info, simulation.area,
-            simulation._status.status)
+        simulation._results.update_and_send_results(simulation=simulation)
 
         assert not simulation._results.endpoint_buffer.prepare_results_for_publish.called
         assert not simulation._results.kafka_connection.publish.called
@@ -88,9 +86,7 @@ class TestSimulation:
         simulation._results.endpoint_buffer.results_handler.all_ui_results = {
             k: {} for k in results_mapping}
 
-        simulation._results.update_and_send_results(
-            simulation.current_state, simulation.progress_info, simulation.area,
-            simulation._status.status)
+        simulation._results.update_and_send_results(simulation=simulation)
 
         simulation._results.endpoint_buffer.prepare_results_for_publish.assert_not_called()
         simulation._results.kafka_connection.publish.assert_not_called()
