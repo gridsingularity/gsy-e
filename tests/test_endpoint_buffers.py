@@ -88,7 +88,8 @@ class TestSimulationEndpointBuffer:
         for _ in range(3):
             area.now = current_time
             endpoint_buffer.update_stats(area, "running", progress_info, {}, False)
-            raw_results = endpoint_buffer.generate_result_report()["simulation_raw_data"]
+            # pylint: disable=protected-access
+            raw_results = endpoint_buffer._generate_result_report()["simulation_raw_data"]
             area_forward_stats = raw_results[area.uuid]["forward_market_stats"]
 
             for market_type in FORWARD_MARKET_TYPES:

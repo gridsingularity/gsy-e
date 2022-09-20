@@ -79,7 +79,7 @@ class SimulationEndpointBuffer:
 
     def prepare_results_for_publish(self) -> Dict:
         """Validate, serialise and check size of the results before sending to gsy-web."""
-        result_report = self.generate_result_report()
+        result_report = self._generate_result_report()
         results_validator(result_report)
 
         message_size = get_json_dict_memory_allocation_size(result_report)
@@ -89,22 +89,6 @@ class SimulationEndpointBuffer:
             return {}
         logging.debug("Publishing %s KB of data via Redis.", message_size)
         return result_report
-
-    def generate_result_report(self) -> Dict:
-        """Create dict that contains all statistics that are sent to the gsy-web."""
-        return {
-            "job_id": self.job_id,
-            "current_market": self.current_market_time_slot_str,
-            "current_market_ui_time_slot_str": self.current_market_ui_time_slot_str,
-            "random_seed": self.random_seed,
-            "status": self.status,
-            "progress_info": self.simulation_progress,
-            "bids_offers_trades": self.bids_offers_trades,
-            "results_area_uuids": list(self.result_area_uuids),
-            "simulation_state": self.simulation_state,
-            "simulation_raw_data": self.flattened_area_core_stats_dict,
-            "configuration_tree": self.area_result_dict
-        }
 
     def generate_json_report(self) -> Dict:
         """Create dict that contains all locally exported statistics (for JSON files)."""
@@ -150,6 +134,22 @@ class SimulationEndpointBuffer:
     @staticmethod
     def _create_endpoint_buffer(should_export_plots):
         return ResultsHandler(should_export_plots)
+
+    def _generate_result_report(self) -> Dict:
+        """Create dict that contains all statistics that are sent to the gsy-web."""
+        return {
+            "job_id": self.job_id,
+            "current_market": self.current_market_time_slot_str,
+            "current_market_ui_time_slot_str": self.current_market_ui_time_slot_str,
+            "random_seed": self.random_seed,
+            "status": self.status,
+            "progress_info": self.simulation_progress,
+            "bids_offers_trades": self.bids_offers_trades,
+            "results_area_uuids": list(self.result_area_uuids),
+            "simulation_state": self.simulation_state,
+            "simulation_raw_data": self.flattened_area_core_stats_dict,
+            "configuration_tree": self.area_result_dict
+        }
 
     @staticmethod
     def _structure_results_from_area_object(target_area: "AreaBase") -> Dict:
