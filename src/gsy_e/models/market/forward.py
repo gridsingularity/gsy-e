@@ -66,15 +66,6 @@ class ForwardMarketBase(FutureMarkets):
         self._open_market_slot_parameters = {}
 
     @property
-    def uses_ssp_product(self) -> bool:
-        """Should the market use the SSP product or energy values."""
-        return self.market_type in [
-            AvailableMarketTypes.YEAR_FORWARD,
-            AvailableMarketTypes.MONTH_FORWARD,
-            AvailableMarketTypes.WEEK_FORWARD
-        ]
-
-    @property
     @abstractmethod
     def market_type(self):
         """Return the market type from the AvailableMarketTypes enum."""
@@ -154,6 +145,10 @@ class IntradayMarket(ForwardMarketBase):
     def type_name(self):
         return "Intraday Forward Market"
 
+    @property
+    def _debug_log_market_type_identifier(self) -> str:
+        return "[INTRADAY]"
+
 
 class DayForwardMarket(ForwardMarketBase):
     """Day forward market implementation"""
@@ -181,6 +176,10 @@ class DayForwardMarket(ForwardMarketBase):
     @property
     def type_name(self):
         return "Day Forward Market"
+
+    @property
+    def _debug_log_market_type_identifier(self) -> str:
+        return "[DAY]"
 
 
 class WeekForwardMarket(ForwardMarketBase):
@@ -211,6 +210,10 @@ class WeekForwardMarket(ForwardMarketBase):
     def type_name(self):
         return "Week forward Market"
 
+    @property
+    def _debug_log_market_type_identifier(self) -> str:
+        return "[WEEK]"
+
 
 class MonthForwardMarket(ForwardMarketBase):
     """Month forward market implementation"""
@@ -239,6 +242,10 @@ class MonthForwardMarket(ForwardMarketBase):
     def type_name(self):
         return "Month Forward Market"
 
+    @property
+    def _debug_log_market_type_identifier(self) -> str:
+        return "[MONTH]"
+
 
 class YearForwardMarket(ForwardMarketBase):
     """Year forward market implementation"""
@@ -266,3 +273,7 @@ class YearForwardMarket(ForwardMarketBase):
     @property
     def type_name(self):
         return "Year Froward Market"
+
+    @property
+    def _debug_log_market_type_identifier(self) -> str:
+        return "[YEAR]"
