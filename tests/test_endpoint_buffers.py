@@ -38,7 +38,9 @@ def forward_setup_fixture():
 
 
 class TestSimulationEndpointBuffer:
+    """Tests for the SimulationEndpointBuffer class."""
 
+    # pylint: disable=no-self-use
     @staticmethod
     def _generate_order(creation_time, time_slot):
         """Generate one mock order{bid,offer,trade}."""
@@ -104,8 +106,7 @@ class TestSimulationEndpointBuffer:
                                 orders[0]["creation_time"] < current_time)
             current_time += slot_length
 
-    @staticmethod
-    def test_prepare_results_for_publish(forward_setup):
+    def test_prepare_results_for_publish(self, forward_setup):
         area, _ = forward_setup
         endpoint_buffer = SimulationEndpointBuffer(
             job_id="JOB_1",
@@ -139,10 +140,9 @@ class TestSimulationEndpointBuffer:
             }
         }
 
-    @staticmethod
     @patch("gsy_e.gsy_e_core.sim_results.endpoint_buffer.get_json_dict_memory_allocation_size")
     def test_prepare_results_for_publish_output_too_big(
-            get_json_dict_memory_allocation_size_mock, forward_setup, caplog):
+            self, get_json_dict_memory_allocation_size_mock, forward_setup, caplog):
         """The preparation of results fails if the output is too big."""
 
         area, _ = forward_setup
@@ -184,3 +184,11 @@ class TestSimulationEndpointBuffer:
             "simulation_state": {"general": {}, "areas": {}},
             "mocked-results": "some-results"
         }
+
+
+class TestCoefficientEndpointBuffer(TestSimulationEndpointBuffer):
+    """Tests for the CoefficientEndpointBuffer class.
+
+    Run the same tests as TestSimulationEndpointBuffer to make sure that the Liskov substitution
+    principle is respected and both classes can operate successfully.
+    """
