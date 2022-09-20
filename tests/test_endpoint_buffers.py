@@ -17,13 +17,17 @@ def forward_setup_fixture():
     GlobalConfig.market_maker_rate = 30
     ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS = True
     slot_length = duration(minutes=15)
-    area = MagicMock(forward_markets={
-        # each forward market will have 5 timeslots.
-        market_type: MagicMock(market_time_slots=[
-            f"TIME_SLOT_{i}" for i in range(5)
-        ]) for market_type in FORWARD_MARKET_TYPES
-    }, config=MagicMock(slot_length=slot_length), uuid="AREA")
+    forward_markets = {  # each forward market will have 5 timeslots.
+        market_type: MagicMock(market_time_slots=[f"TIME_SLOT_{i}" for i in range(5)])
+        for market_type in FORWARD_MARKET_TYPES
+    }
+    area = MagicMock(
+        forward_markets=forward_markets,
+        config=MagicMock(slot_length=slot_length),
+        uuid="AREA")
+
     yield area, slot_length
+
     GlobalConfig.market_maker_rate = original_market_marker_rate
     ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS = original_enable_forward_markets
 
