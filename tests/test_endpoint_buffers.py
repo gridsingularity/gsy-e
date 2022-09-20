@@ -1,4 +1,5 @@
-from unittest.mock import MagicMock
+import logging
+from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
 import pytest
@@ -7,6 +8,8 @@ from pendulum import DateTime, duration
 
 from gsy_e.gsy_e_core.enums import FORWARD_MARKET_TYPES
 from gsy_e.gsy_e_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
+
+logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(name="forward_setup")
@@ -25,6 +28,8 @@ def forward_setup_fixture():
         forward_markets=forward_markets,
         config=MagicMock(slot_length=slot_length),
         uuid="AREA")
+    area.name = "area-name"
+    area.parent = None
 
     yield area, slot_length
 
@@ -97,3 +102,59 @@ class TestSimulationEndpointBuffer:
                         assert (current_time - slot_length <=
                                 orders[0]["creation_time"] < current_time)
             current_time += slot_length
+
+    @staticmethod
+    def test_prepare_results_for_publish(forward_setup):
+        area, _ = forward_setup
+        endpoint_buffer = SimulationEndpointBuffer(
+            job_id="JOB_1",
+            random_seed=41,
+            area=area,
+            should_export_plots=False)
+
+        output = endpoint_buffer.prepare_results_for_publish()
+
+        assert output == {
+            "job_id": "JOB_1",
+            "current_market": "",
+            "current_market_ui_time_slot_str": "",
+            "random_seed": 41,
+            "status": "",
+            "progress_info": {
+                "eta_seconds": 0,
+                "elapsed_time_seconds": 0,
+                "percentage_completed": 0,
+            },
+            "bids_offers_trades": {},
+            "results_area_uuids": [],
+            "simulation_state": {"general": {}, "areas": {}},
+            "simulation_raw_data": {},
+            "configuration_tree": {
+                "name": "area-name",
+                "uuid": "AREA",
+                "parent_uuid": "",
+                "type": "MagicMock",
+                "children": []
+            }
+        }
+
+    @staticmethod
+    @patch("gsy_e.gsy_e_core.sim_results.endpoint_buffer.get_json_dict_memory_allocation_size")
+    def test_prepare_results_for_publish_output_too_big(
+            get_json_dict_memory_allocation_size_mock, forward_setup, caplog):
+        """The preparation of results fails if the output is too big."""
+
+        area, _ = forward_setup
+        endpoint_buffer = SimulationEndpointBuffer(
+            job_id="JOB_1",
+            random_seed=41,
+            area=area,
+            should_export_plots=False)
+
+        get_json_dict_memory_allocation_size_mock.return_value = 128000
+        with caplog.at_level(logging.WARNING):
+            output = endpoint_buffer.prepare_results_for_publish()
+            assert "Do not publish message bigger than 64 MB, current message size 128.0 MB." \
+                in caplog.text
+
+        assert output == {}
