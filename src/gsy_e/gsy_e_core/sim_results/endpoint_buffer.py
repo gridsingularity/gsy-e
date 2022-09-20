@@ -116,13 +116,6 @@ class SimulationEndpointBuffer:
             )
         return area_result_dict
 
-    def update_results_area_uuids(self, area: "AreaBase") -> None:
-        """Populate a set of area uuids that contribute to the stats."""
-        if area.strategy is not None or (area.strategy is None and area.children):
-            self.result_area_uuids.update({area.uuid})
-        for child in area.children:
-            self.update_results_area_uuids(child)
-
     def generate_result_report(self) -> Dict:
         """Create dict that contains all statistics that are sent to the gsy-web."""
         return {
@@ -344,9 +337,16 @@ class SimulationEndpointBuffer:
                 self.offer_bid_trade_hr.update(area)
 
         self.result_area_uuids = set()
-        self.update_results_area_uuids(area)
+        self._update_results_area_uuids(area)
 
         self._update_offer_bid_trade()
+
+    def _update_results_area_uuids(self, area: "AreaBase") -> None:
+        """Populate a set of area uuids that contribute to the stats."""
+        if area.strategy is not None or (area.strategy is None and area.children):
+            self.result_area_uuids.update({area.uuid})
+        for child in area.children:
+            self._update_results_area_uuids(child)
 
     def _update_offer_bid_trade(self) -> None:
         """Populate self.bids_offers_trades with results from flattened_area_core_stats_dict
