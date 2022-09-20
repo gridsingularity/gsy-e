@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Union, TYPE_CHECKING, Dict
 
 from gsy_framework.enums import AvailableMarketTypes
+from gsy_framework.constants_limits import ConstSettings
 from pendulum import DateTime
 
 from gsy_e.events import EventMixin, AreaEvent, MarketEvent
@@ -10,12 +11,19 @@ from gsy_e.models.strategy.forward.order_updater import OrderUpdater, OrderUpdat
 
 if TYPE_CHECKING:
     from gsy_e.models.market.forward import ForwardMarketBase
+    from gsy_e.models.state import StateInterface
 
 
 class ForwardStrategyBase(EventMixin, AreaBehaviorBase, ABC):
     """Base class for the forward market strategies."""
     def __init__(self,
                  order_updater_parameters: Dict[AvailableMarketTypes, OrderUpdaterParameters]):
+        assert ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS is True
+        print(sum(params.capacity_percent for params in order_updater_parameters.values()))
+        assert (
+            0.0 <=
+            sum(params.capacity_percent for params in order_updater_parameters.values()) <=
+            100.0)
         super().__init__()
         self.enabled = True
         self._allowed_disable_events = [
@@ -92,3 +100,8 @@ class ForwardStrategyBase(EventMixin, AreaBehaviorBase, ABC):
     def event_market_cycle(self):
         self._delete_past_order_updaters()
         self._post_orders_to_new_markets()
+
+    @property
+    def state(self) -> "StateInterface":
+        """Get the state class of the strategy. Needs to be implemented by all strategies"""
+        raise NotImplementedError

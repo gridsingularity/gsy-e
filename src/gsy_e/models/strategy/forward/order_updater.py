@@ -14,6 +14,10 @@ class OrderUpdaterParameters:
     update_interval: duration
     initial_rate: float
     final_rate: float
+    capacity_percent: float
+
+    def __post_init__(self):
+        assert 0.0 <= self.capacity_percent <= 100.0
 
 
 class OrderUpdater:
@@ -43,6 +47,11 @@ class OrderUpdater:
             self, current_time_slot: DateTime):
         """Check if the orders need to be updated."""
         return current_time_slot in self._update_times
+
+    @property
+    def capacity_percent(self):
+        """Percentage of the total capacity that can be posted by this offer updater."""
+        return self._parameters.capacity_percent
 
     def get_energy_rate(self, current_time_slot: DateTime):
         """Calculate energy rate for the current time slot."""

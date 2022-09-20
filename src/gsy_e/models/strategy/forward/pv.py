@@ -12,6 +12,7 @@ from gsy_e.models.strategy.forward.order_updater import OrderUpdaterParameters
 if TYPE_CHECKING:
     from gsy_e.models.market.forward import ForwardMarketBase
     from gsy_framework.data_classes import Trade
+    from gsy_e.models.state import PVState
 
 
 class ForwardPVStrategy(ForwardStrategyBase):
@@ -24,6 +25,10 @@ class ForwardPVStrategy(ForwardStrategyBase):
             order_updater_parameters: Dict[AvailableMarketTypes, OrderUpdaterParameters]):
         super().__init__(order_updater_parameters)
         self._energy_params = ProductionStandardProfileEnergyParameters(capacity_kW)
+
+    @property
+    def state(self) -> "PVState":
+        return self._energy_params.state
 
     def event_activate(self, **kwargs):
         self._energy_params.event_activate_energy(self.area)
@@ -38,8 +43,17 @@ class ForwardPVStrategy(ForwardStrategyBase):
     def post_order(self, market: "ForwardMarketBase", market_slot: DateTime):
         order_rate = self._order_updaters[market][market_slot].get_energy_rate(
             self.area.now)
+
+        capacity_percent = self._order_updaters[market][market_slot].capacity_percent / 100.0
+        max_energy_kWh = self._energy_params.capacity_kWh * capacity_percent
         energy_kWh = self._energy_params.get_available_energy_kWh(
-            market_slot, market.uses_ssp_product)
+            market_slot, market.market_type)
+
+        posted_energy_kWh = self._energy_params.get_posted_energy_kWh(
+            market_slot, market.market_type)
+        energy_kWh -= posted_energy_kWh
+
+        energy_kWh = min(energy_kWh, max_energy_kWh, 0.)
 
         if energy_kWh <= FLOATING_POINT_TOLERANCE:
             return
@@ -52,6 +66,7 @@ class ForwardPVStrategy(ForwardStrategyBase):
             seller_origin_id=self.owner.uuid,
             seller_id=self.owner.uuid,
             time_slot=market_slot)
+        self._energy_params.increment_posted_energy(market_slot, energy_kWh, market.market_type)
 
     def event_traded(self, *, market_id: str, trade: "Trade"):
         """Method triggered by the MarketEvent.OFFER_TRADED event."""
@@ -61,5 +76,10 @@ class ForwardPVStrategy(ForwardStrategyBase):
         if not market:
             return
 
+        if trade.seller_id != self.owner.uuid:
+            return
+
         self._energy_params.event_traded_energy(trade.traded_energy,
                                                 trade.time_slot, market[0].market_type)
+        self._energy_params.decrement_posted_energy(
+            trade.time_slot, trade.traded_energy, market[0].market_type)
