@@ -59,7 +59,7 @@ class SimulationEndpointBuffer:
         self.current_market_time_slot_unix = None
         self.current_market_time_slot = None
         self.random_seed = random_seed if random_seed is not None else ""
-        self.status = {}
+        self.status = ""
         self.area_result_dict = self._create_area_tree_dict(area)
         self.flattened_area_core_stats_dict = {}
         self.simulation_progress = {
@@ -373,6 +373,7 @@ class CoefficientEndpointBuffer(SimulationEndpointBuffer):
             self, area: "AreaBase", simulation_status: str,
             progress_info: "SimulationProgressInfo", sim_state: Dict,
             calculate_results: bool, scm_manager: "SCMManager") -> None:
+        """Update the stats of the SCM endpoint buffer."""
         self._scm_manager = scm_manager
 
         self.current_market_time_slot_str = progress_info.current_slot_str
