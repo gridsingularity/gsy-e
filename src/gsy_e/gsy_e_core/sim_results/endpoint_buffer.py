@@ -77,10 +77,6 @@ class SimulationEndpointBuffer:
                 ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR):
             self.offer_bid_trade_hr = OfferBidTradeGraphStats()
 
-    @staticmethod
-    def _create_endpoint_buffer(should_export_plots):
-        return ResultsHandler(should_export_plots)
-
     def prepare_results_for_publish(self) -> Dict:
         """Validate, serialise and check size of the results before sending to gsy-web."""
         result_report = self.generate_result_report()
@@ -93,28 +89,6 @@ class SimulationEndpointBuffer:
             return {}
         logging.debug("Publishing %s KB of data via Redis.", message_size)
         return result_report
-
-    @staticmethod
-    def _structure_results_from_area_object(target_area: "AreaBase") -> Dict:
-        """Add basic information about the area in the area_tree_dict."""
-        area_dict = {}
-        area_dict["name"] = target_area.name
-        area_dict["uuid"] = target_area.uuid
-        area_dict["parent_uuid"] = (target_area.parent.uuid
-                                    if target_area.parent is not None else "")
-        area_dict["type"] = (str(target_area.strategy.__class__.__name__)
-                             if target_area.strategy is not None else "Area")
-        area_dict["children"] = []
-        return area_dict
-
-    def _create_area_tree_dict(self, area: "AreaBase") -> Dict:
-        """Create a tree that mirrors the setup architecture and contains basic information."""
-        area_result_dict = self._structure_results_from_area_object(area)
-        for child in area.children:
-            area_result_dict["children"].append(
-                self._create_area_tree_dict(child)
-            )
-        return area_result_dict
 
     def generate_result_report(self) -> Dict:
         """Create dict that contains all statistics that are sent to the gsy-web."""
@@ -142,6 +116,62 @@ class SimulationEndpointBuffer:
             "simulation_state": self.simulation_state,
             **self.results_handler.all_raw_results
         }
+
+    def update_stats(self, area: "AreaBase", simulation_status: str,
+                     progress_info: "SimulationProgressInfo", sim_state: Dict,
+                     calculate_results: bool) -> None:
+        # pylint: disable=too-many-arguments
+        """Wrapper for handling of all results."""
+        self.area_result_dict = self._create_area_tree_dict(area)
+        self.status = simulation_status
+        self._calculate_and_update_last_market_time_slot(area)
+        self.simulation_state["general"] = sim_state
+        self._populate_core_stats_and_sim_state(area)
+        self.simulation_progress = {
+            "eta_seconds": progress_info.eta.seconds if progress_info.eta else None,
+            "elapsed_time_seconds": progress_info.elapsed_time.seconds,
+            "percentage_completed": int(progress_info.percentage_completed)
+        }
+
+        if calculate_results:
+            self.results_handler.update(
+                self.area_result_dict, self.flattened_area_core_stats_dict,
+                self.current_market_time_slot_str)
+
+            if (ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR or
+                    ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR):
+                self.offer_bid_trade_hr.update(area)
+
+        self.result_area_uuids = set()
+        self._update_results_area_uuids(area)
+
+        self._update_offer_bid_trade()
+
+    @staticmethod
+    def _create_endpoint_buffer(should_export_plots):
+        return ResultsHandler(should_export_plots)
+
+    @staticmethod
+    def _structure_results_from_area_object(target_area: "AreaBase") -> Dict:
+        """Add basic information about the area in the area_tree_dict."""
+        area_dict = {}
+        area_dict["name"] = target_area.name
+        area_dict["uuid"] = target_area.uuid
+        area_dict["parent_uuid"] = (target_area.parent.uuid
+                                    if target_area.parent is not None else "")
+        area_dict["type"] = (str(target_area.strategy.__class__.__name__)
+                             if target_area.strategy is not None else "Area")
+        area_dict["children"] = []
+        return area_dict
+
+    def _create_area_tree_dict(self, area: "AreaBase") -> Dict:
+        """Create a tree that mirrors the setup architecture and contains basic information."""
+        area_result_dict = self._structure_results_from_area_object(area)
+        for child in area.children:
+            area_result_dict["children"].append(
+                self._create_area_tree_dict(child)
+            )
+        return area_result_dict
 
     def _read_settlement_markets_stats_to_dict(self, area: "Area") -> Dict[str, Dict]:
         """Read last settlement market and return market_stats in a dict."""
@@ -310,36 +340,6 @@ class SimulationEndpointBuffer:
                 area.current_market.time_slot.format(DATE_TIME_UI_FORMAT))
             self.current_market_time_slot_unix = area.current_market.time_slot.timestamp()
             self.current_market_time_slot = area.current_market.time_slot
-
-    def update_stats(self, area: "AreaBase", simulation_status: str,
-                     progress_info: "SimulationProgressInfo", sim_state: Dict,
-                     calculate_results: bool) -> None:
-        # pylint: disable=too-many-arguments
-        """Wrapper for handling of all results."""
-        self.area_result_dict = self._create_area_tree_dict(area)
-        self.status = simulation_status
-        self._calculate_and_update_last_market_time_slot(area)
-        self.simulation_state["general"] = sim_state
-        self._populate_core_stats_and_sim_state(area)
-        self.simulation_progress = {
-            "eta_seconds": progress_info.eta.seconds if progress_info.eta else None,
-            "elapsed_time_seconds": progress_info.elapsed_time.seconds,
-            "percentage_completed": int(progress_info.percentage_completed)
-        }
-
-        if calculate_results:
-            self.results_handler.update(
-                self.area_result_dict, self.flattened_area_core_stats_dict,
-                self.current_market_time_slot_str)
-
-            if (ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR or
-                    ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR):
-                self.offer_bid_trade_hr.update(area)
-
-        self.result_area_uuids = set()
-        self._update_results_area_uuids(area)
-
-        self._update_offer_bid_trade()
 
     def _update_results_area_uuids(self, area: "AreaBase") -> None:
         """Populate a set of area uuids that contribute to the stats."""
