@@ -144,7 +144,6 @@ class TestSimulationEndpointBuffer:
     def test_prepare_results_for_publish_output_too_big(
             self, get_json_dict_memory_allocation_size_mock, forward_setup, caplog):
         """The preparation of results fails if the output is too big."""
-
         area, _ = forward_setup
         endpoint_buffer = SimulationEndpointBuffer(
             job_id="JOB_1",
@@ -183,6 +182,61 @@ class TestSimulationEndpointBuffer:
             },
             "simulation_state": {"general": {}, "areas": {}},
             "mocked-results": "some-results"
+        }
+
+    def test_update_stats(self, forward_setup):
+        # pylint: disable=protected-access
+        area, _ = forward_setup
+        area.current_market = MagicMock(
+            name="current-market",
+            time_slot=DateTime(2022, 10, 30),
+            time_slot_str="2021-10-30T00:00:00+00:00")
+
+        endpoint_buffer = SimulationEndpointBuffer(
+            job_id="JOB_1",
+            random_seed=41,
+            area=area,
+            should_export_plots=False)
+
+        # We mock this method because it would be too complex to test all its conditionals here.
+        # It would be good to refactor the method into a class and test it independently for each
+        # market type (settlement, future, forward).
+        endpoint_buffer._populate_core_stats_and_sim_state = MagicMock()
+
+        sim_state_mock = MagicMock(name="sim-state")
+        progress_info_mock = MagicMock(
+            name="progress-info",
+            eta=duration(minutes=15),
+            elapsed_time=duration(minutes=30),
+            percentage_complete=1)
+
+        endpoint_buffer.update_stats(
+            area=area,
+            simulation_status="some-state",
+            progress_info=progress_info_mock,
+            sim_state=sim_state_mock,
+            calculate_results=False)
+
+        assert endpoint_buffer.area_result_dict == {
+            "name": "area-name",
+            "uuid": "AREA",
+            "parent_uuid": "",
+            "type": "MagicMock",
+            "children": []
+        }
+        assert endpoint_buffer.status == "some-state"
+        assert endpoint_buffer.simulation_state["general"] == sim_state_mock
+
+        assert endpoint_buffer.current_market_time_slot_str == "2021-10-30T00:00:00+00:00"
+        assert endpoint_buffer.current_market_ui_time_slot_str == "October 30 2022, 00:00 h"
+        assert endpoint_buffer.current_market_time_slot_unix == 1667080800.0
+        assert endpoint_buffer.current_market_time_slot == DateTime(2022, 10, 30)
+
+        endpoint_buffer._populate_core_stats_and_sim_state.assert_called_once_with(area)
+        assert endpoint_buffer.simulation_progress == {
+            "eta_seconds": 900,
+            "elapsed_time_seconds": 1800,
+            "percentage_completed": 1
         }
 
 

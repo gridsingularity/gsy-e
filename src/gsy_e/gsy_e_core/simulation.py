@@ -67,8 +67,8 @@ class SimulationProgressInfo:
     """Information about the simulation progress."""
 
     def __init__(self):
-        self.eta = duration(seconds=0)
-        self.elapsed_time = duration(seconds=0)
+        self.eta = duration(seconds=0)  # Estimated Time of Arrival (end of the simulation)
+        self.elapsed_time = duration(seconds=0)  # Time passed since the start of the simulation
         self.percentage_completed = 0
         self.next_slot_str = ""
         self.current_slot_str = ""
