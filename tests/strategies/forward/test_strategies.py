@@ -126,7 +126,7 @@ class TestForwardStrategies:
         cls._assert_posted_orders_on_markets(strategy, AvailableMarketTypes.YEAR_FORWARD,
                                              5, 50, 10)
 
-    @staticmethod
+    @classmethod
     @pytest.mark.parametrize("market_type, ", [
         AvailableMarketTypes.INTRADAY,
         AvailableMarketTypes.DAY_FORWARD,
@@ -135,7 +135,7 @@ class TestForwardStrategies:
         AvailableMarketTypes.YEAR_FORWARD,
     ])
     def test_forward_strategy_updates_orders_on_tick(
-            forward_strategy_fixture, market_type):
+            cls, forward_strategy_fixture, market_type):
         strategy = forward_strategy_fixture[0]
         area = forward_strategy_fixture[1]
         area.activate()
@@ -145,15 +145,13 @@ class TestForwardStrategies:
         initial_rate = strategy._order_updater_params[market_type].initial_rate
         final_rate = strategy._order_updater_params[market_type].final_rate
 
-        if isinstance(strategy, ForwardPVStrategy):
-            order_mapping = area.forward_markets[market_type].slot_offer_mapping
-        else:
-            order_mapping = area.forward_markets[market_type].slot_bid_mapping
+        order_mapping = cls._get_order_mapping_from_strategy(strategy, market_type)
         old_orders = deepcopy(order_mapping)
         # Assert that orders are not updated before the update interval
         with patch("gsy_e.models.area.Area.now", new_callable=PropertyMock) as now_mock:
             now_mock.return_value = CURRENT_MARKET_SLOT + update_interval - duration(seconds=1)
             strategy.event_tick()
+            order_mapping = cls._get_order_mapping_from_strategy(strategy, market_type)
             assert len(order_mapping) > 0
             for time_slot, old_order_list in old_orders.items():
                 if not old_order_list:
@@ -164,6 +162,7 @@ class TestForwardStrategies:
         with patch("gsy_e.models.area.Area.now", new_callable=PropertyMock) as now_mock:
             now_mock.return_value = CURRENT_MARKET_SLOT + update_interval
             strategy.event_tick()
+            order_mapping = cls._get_order_mapping_from_strategy(strategy, market_type)
             assert len(order_mapping) > 0
             for time_slot, old_order_list in old_orders.items():
                 if not old_order_list:
@@ -188,3 +187,10 @@ class TestForwardStrategies:
                     assert isclose(
                         updated_order.energy_rate,
                         slot_completion_ratio * (final_rate - initial_rate) + initial_rate)
+
+    @staticmethod
+    def _get_order_mapping_from_strategy(
+            strategy: "ForwardStrategyBase", market_type: AvailableMarketTypes):
+        if isinstance(strategy, ForwardPVStrategy):
+            return strategy.area.forward_markets[market_type].slot_offer_mapping
+        return strategy.area.forward_markets[market_type].slot_bid_mapping

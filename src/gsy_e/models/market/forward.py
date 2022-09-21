@@ -80,13 +80,6 @@ class ForwardMarketBase(FutureMarkets):
     def _get_end_time(current_time: DateTime) -> DateTime:
         """Return time when the market block ends."""
 
-    @abstractmethod
-    def _calculate_closing_time(self, delivery_time: DateTime) -> DateTime:
-        """
-        Retrieves the time duration from the time that the market closes till the time that the
-        traded energy should be delivered.
-        """
-
     @staticmethod
     @abstractmethod
     def _get_market_slot_duration(current_time: DateTime, _config) -> duration:
@@ -126,7 +119,7 @@ class ForwardMarketBase(FutureMarkets):
                 delivery_end_time=(
                         market_slot + self._get_market_slot_duration(market_slot, None)),
                 opening_time=current_market_slot,
-                closing_time=self._calculate_closing_time(market_slot)
+                closing_time=market_slot - self._time_from_market_close_till_delivery
             )
 
 
@@ -148,10 +141,6 @@ class IntradayMarket(ForwardMarketBase):
     @staticmethod
     def _get_market_slot_duration(_current_time: DateTime, _config) -> duration:
         return duration(minutes=15)
-
-    def _calculate_closing_time(self, delivery_time: DateTime) -> DateTime:
-        """Closing time of the intraday market is 15 mins before delivery."""
-        return delivery_time - duration(minutes=15)
 
     @property
     def _time_from_market_close_till_delivery(self) -> duration:
@@ -175,21 +164,15 @@ class DayForwardMarket(ForwardMarketBase):
 
     @staticmethod
     def _get_start_time(current_time: DateTime) -> DateTime:
-        return current_time.add(hours=2)
+        return current_time.set(hour=0, minute=0).add(days=1)
 
     @staticmethod
     def _get_end_time(current_time: DateTime) -> DateTime:
-        return current_time.add(weeks=1)
+        return current_time.set(hour=0, minute=0).add(weeks=1, days=1, hours=-1)
 
     @staticmethod
     def _get_market_slot_duration(_current_time: DateTime, _config) -> duration:
         return duration(hours=1)
-
-    def _calculate_closing_time(self, delivery_time: DateTime) -> DateTime:
-        """
-        Closing time of the day ahead market is one hour before delivery.
-        """
-        return delivery_time.set(minute=0).subtract(hours=1)
 
     @property
     def _time_from_market_close_till_delivery(self) -> duration:
@@ -224,13 +207,6 @@ class WeekForwardMarket(ForwardMarketBase):
     def _get_market_slot_duration(_current_time: DateTime, _config) -> duration:
         return duration(weeks=1)
 
-    def _calculate_closing_time(self, delivery_time: DateTime) -> DateTime:
-        """
-        Closing time of the week market is one week before the date that the energy will be
-        delivered.
-        """
-        return delivery_time.set(hour=0, minute=0).subtract(weeks=1)
-
     @property
     def _time_from_market_close_till_delivery(self) -> duration:
         return duration(weeks=1)
@@ -263,13 +239,6 @@ class MonthForwardMarket(ForwardMarketBase):
     def _get_market_slot_duration(current_time: DateTime, _config) -> duration:
         return duration(months=1)
 
-    def _calculate_closing_time(self, delivery_time: DateTime) -> DateTime:
-        """
-        Closing time of the monthly market is one month before the date that the energy will be
-        delivered.
-        """
-        return delivery_time.set(day=1, hour=0, minute=0).subtract(months=1)
-
     @property
     def _time_from_market_close_till_delivery(self) -> duration:
         return duration(months=1)
@@ -301,13 +270,6 @@ class YearForwardMarket(ForwardMarketBase):
     @staticmethod
     def _get_market_slot_duration(current_time: DateTime, _config) -> duration:
         return duration(years=1)
-
-    def _calculate_closing_time(self, delivery_time: DateTime) -> DateTime:
-        """
-        Closing time of the yearly market is one year before the date that the energy will be
-        delivered.
-        """
-        return delivery_time.set(month=1, day=1, hour=0, minute=0).subtract(years=1)
 
     @property
     def _time_from_market_close_till_delivery(self) -> duration:

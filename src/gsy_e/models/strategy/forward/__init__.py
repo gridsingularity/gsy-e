@@ -19,7 +19,6 @@ class ForwardStrategyBase(EventMixin, AreaBehaviorBase, ABC):
     def __init__(self,
                  order_updater_parameters: Dict[AvailableMarketTypes, OrderUpdaterParameters]):
         assert ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS is True
-        print(sum(params.capacity_percent for params in order_updater_parameters.values()))
         assert (
             0.0 <=
             sum(params.capacity_percent for params in order_updater_parameters.values()) <=

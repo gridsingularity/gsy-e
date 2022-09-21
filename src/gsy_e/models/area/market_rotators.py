@@ -54,20 +54,21 @@ class ForwardMarketRotatorBase:
         self.markets = markets
 
     @staticmethod
+    def _get_last_slot_to_be_deleted(current_time: DateTime) -> DateTime:
+        """
+        Return last time_slot that will be deleted from the ahead market buffer.
+        """
+
+    @staticmethod
     def _is_it_time_to_rotate(current_time: DateTime) -> bool:
         """Return True if it is time to rotate markets."""
 
     def rotate(self, current_time: DateTime) -> None:
         """Delete orders in expired day-ahead markets."""
         if self._is_it_time_to_rotate(current_time):
-            slots_deleted = []
-            for delivery_time, market_slot_info in self.markets.open_market_slot_info.items():
-                if market_slot_info.closing_time <= current_time:
-                    self.markets.delete_orders_in_old_future_markets(
-                        last_slot_to_be_deleted=delivery_time)
-                    slots_deleted.append(delivery_time)
-            for slot_deleted in slots_deleted:
-                self.markets.open_market_slot_info.pop(slot_deleted)
+            self.markets.delete_orders_in_old_future_markets(
+                last_slot_to_be_deleted=self._get_last_slot_to_be_deleted(
+                    current_time))
 
 
 class IntradayMarketRotator(ForwardMarketRotatorBase):
@@ -127,6 +128,10 @@ class MonthForwardMarketRotator(ForwardMarketRotatorBase):
 
 class YearForwardMarketRotator(ForwardMarketRotatorBase):
     """Handles market rotation for the year-forward market block"""
+
+    @staticmethod
+    def _get_last_slot_to_be_deleted(current_time: DateTime) -> DateTime:
+        return current_time.add(years=1)
 
     @staticmethod
     def _is_it_time_to_rotate(current_time: DateTime) -> bool:

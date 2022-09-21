@@ -53,7 +53,8 @@ class ForwardLoadStrategy(ForwardStrategyBase):
 
         energy_kWh -= posted_energy_kWh
 
-        energy_kWh = min(energy_kWh, max_energy_kWh, 0.)
+        energy_kWh = min(energy_kWh, max_energy_kWh)
+
         if energy_kWh <= FLOATING_POINT_TOLERANCE:
             return
         market.bid(
