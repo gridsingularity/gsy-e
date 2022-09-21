@@ -229,7 +229,6 @@ class TestSimulationEndpointBuffer:
 
         assert endpoint_buffer.current_market_time_slot_str == "2021-10-30T00:00:00+00:00"
         assert endpoint_buffer.current_market_ui_time_slot_str == "October 30 2022, 00:00 h"
-        assert endpoint_buffer.current_market_time_slot_unix == 1667080800.0
         assert endpoint_buffer.current_market_time_slot == DateTime(2022, 10, 30)
 
         endpoint_buffer._populate_core_stats_and_sim_state.assert_called_once_with(area)
