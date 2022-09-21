@@ -32,7 +32,14 @@ class TestRQJobUtils:
 
         results_queue = Queue()
         process = Process(target=self.fn, args=(results_queue,), kwargs={
-            "scenario": "default_2a",
+            "scenario": {
+                "name": "Sample Scenario",
+                "configuration_uuid": "25f55f48-d908-42d4-a7fb-1bc46877b3bf",
+                "children": [
+                    {
+                        "name": "Infinite Bus", "type": "InfiniteBus",
+                        "uuid": "91a4d9ba-625e-4a51-ba7e-2a3a97f68609"}]
+            },
             "settings": {
                "duration": duration(days=1),
                "slot_length": duration(hours=1),
