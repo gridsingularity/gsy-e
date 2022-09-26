@@ -41,6 +41,7 @@ from gsy_e.models.strategy.scm.pv import SCMPVPredefinedStrategy, SCMPVStrategy,
 from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
 from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
 from gsy_e.models.strategy.storage import StorageStrategy
+from gsy_e.models.strategy.predefined_wind import WindUserProfileStrategy
 
 external_strategies_mapping = {
     LoadHoursStrategy: LoadHoursExternalStrategy,
@@ -60,15 +61,6 @@ forecast_strategy_mapping = {
     LoadHoursStrategy: LoadHoursForecastExternalStrategy
 }
 
-scm_strategy_mapping = {
-    LoadHoursStrategy: SCMLoadHoursStrategy,
-    DefinedLoadStrategy: SCMLoadProfileStrategy,
-    PVStrategy: SCMPVStrategy,
-    PVPredefinedStrategy: SCMPVPredefinedStrategy,
-    PVUserProfileStrategy: SCMPVUserProfile,
-    StorageStrategy: SCMStorageStrategy
-}
-
 
 class LeafBase:
     """
@@ -76,6 +68,7 @@ class LeafBase:
     instantiated and serialized in a more compact format
     """
     strategy_type = None
+    strategy = None
 
     def __init__(self, name, config, uuid=None, **kwargs):
         if config.external_connection_enabled:
@@ -168,6 +161,10 @@ class PredefinedPV(Leaf):
 
 class PVProfile(Leaf):
     strategy_type = PVUserProfileStrategy
+
+
+class WindTurbine(Leaf):
+    strategy_type = WindUserProfileStrategy
 
 
 class LoadProfile(Leaf):
