@@ -362,7 +362,7 @@ class SimulationResultsManager:
         if self._should_send_results_to_broker:
             self._endpoint_buffer.update_stats(
                 area,
-                simulation._status.status,  # pylint: disable=protected-access
+                simulation.status.status,
                 progress_info,
                 current_state,
                 calculate_results=False)
