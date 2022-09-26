@@ -38,7 +38,7 @@ class TestSimulation:
         GlobalConfig.tick_length = duration(seconds=GlobalConfig.TICK_LENGTH_S)
 
     @staticmethod
-    @patch("gsy_e.gsy_e_core.simulation.SimulationExternalEvents", Mock())
+    @patch("gsy_e.gsy_e_core.simulation.external_events.SimulationExternalEvents", Mock())
     def test_results_are_sent_via_kafka_if_not_started_from_cli():
         redis_job_id = None
         simulation_config = SimulationConfig(duration(hours=int(12)),
@@ -67,7 +67,7 @@ class TestSimulation:
         assert not simulation._results.kafka_connection.publish.called
 
     @staticmethod
-    @patch("gsy_e.gsy_e_core.simulation.SimulationExternalEvents", Mock())
+    @patch("gsy_e.gsy_e_core.simulation.external_events.SimulationExternalEvents", Mock())
     def test_results_not_send_via_kafka_if_started_from_cli():
         redis_job_id = None
         simulation_config = SimulationConfig(duration(hours=int(12)),
