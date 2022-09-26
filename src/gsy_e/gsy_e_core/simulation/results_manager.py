@@ -33,13 +33,14 @@ from gsy_e.models.area.scm_manager import SCMManager
 
 if TYPE_CHECKING:
     from gsy_e.models.area import Area, AreaBase, CoefficientArea
-    from setup import SimulationSetup
+    from gsy_e.gsy_e_core.simulation.setup import SimulationSetup
     from gsy_e.gsy_e_core.simulation.progress_info import SimulationProgressInfo
 
 log = getLogger(__name__)
 
 
 class SimulationResultsManager:
+    # pylint: disable=too-many-instance-attributes
     """Maintain and populate the simulation results and the publishing to the message broker."""
     def __init__(self, export_results_on_finish: bool, export_path: str,
                  export_subdir: Optional[str], started_from_cli: bool) -> None:
@@ -54,6 +55,7 @@ class SimulationResultsManager:
             self.export_subdir = export_subdir
         self._endpoint_buffer = None
         self._export = None
+        self._scm_manager = None
 
     def init_results(self, redis_job_id: str, area: "AreaBase",
                      config_params: "SimulationSetup") -> None:
@@ -148,10 +150,9 @@ class CoefficientSimulationResultsManager(SimulationResultsManager):
             self._export = CoefficientExportAndPlot(
                 area, self.export_path, self.export_subdir, self._endpoint_buffer)
 
-    def update_and_send_results(
-            self, current_state: dict, progress_info: "SimulationProgressInfo",
-            area: "Area", simulation_status: str) -> None:
-        raise NotImplementedError
+    def update_scm_manager(self, scm_manager: SCMManager) -> None:
+        """Update the scm_manager with the latest instance."""
+        self._scm_manager = scm_manager
 
     @classmethod
     def _update_area_stats(cls, area: "Area", endpoint_buffer: "SimulationEndpointBuffer") -> None:
@@ -171,11 +172,9 @@ class CoefficientSimulationResultsManager(SimulationResultsManager):
             self._export.area_tree_summary_to_json(self._endpoint_buffer.area_result_dict)
             self._export.export(power_flow=None)
 
-    def update_send_coefficient_results(
+    def update_and_send_results(
             self, current_state: dict, progress_info: "SimulationProgressInfo",
-            area: "CoefficientArea", simulation_status: str,
-            scm_manager: Optional["SCMManager"] = None) -> None:
-        # pylint: disable=too-many-arguments
+            area: "CoefficientArea", simulation_status: str) -> None:
         """
         Update the coefficient simulation results.
         """
@@ -184,7 +183,7 @@ class CoefficientSimulationResultsManager(SimulationResultsManager):
         if self._should_send_results_to_broker:
             self._endpoint_buffer.update_coefficient_stats(
                 area, simulation_status, progress_info, current_state,
-                False, scm_manager)
+                False, self._scm_manager)
             results = self._endpoint_buffer.prepare_results_for_publish()
             if results is None:
                 return
@@ -195,7 +194,7 @@ class CoefficientSimulationResultsManager(SimulationResultsManager):
 
             self._endpoint_buffer.update_coefficient_stats(
                 area, current_state["sim_status"], progress_info, current_state,
-                True, scm_manager)
+                True, self._scm_manager)
             self._update_area_stats(area, self._endpoint_buffer)
 
             if self.export_results_on_finish:
@@ -208,7 +207,7 @@ class CoefficientSimulationResultsManager(SimulationResultsManager):
                         self._endpoint_buffer.flattened_area_core_stats_dict
                     )
 
-                self._export.file_stats_endpoint(area, scm_manager)
+                self._export.file_stats_endpoint(area, self._scm_manager)
 
 
 def simulation_results_manager_factory():

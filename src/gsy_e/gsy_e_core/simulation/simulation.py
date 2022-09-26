@@ -394,7 +394,7 @@ class CoefficientSimulation(Simulation):
         self.area = self._setup.load_setup_module()
 
         self._results.init_results(redis_job_id, self.area, self._setup)
-        self._results.update_send_coefficient_results(
+        self._results.update_and_send_results(
             self.current_state, self.progress_info, self.area, self._status.status)
 
         log.debug("Starting simulation with config %s", self._setup.config)
@@ -413,7 +413,6 @@ class CoefficientSimulation(Simulation):
 
     def _execute_simulation(
             self, slot_resume: int, _tick_resume: int, console: NonBlockingConsole = None) -> None:
-        gsy_e.constants.RUN_IN_REALTIME = True
         slot_count, slot_resume = (
             self._time.calc_resume_slot_and_count_realtime(
                 self._setup.config, slot_resume))
@@ -440,9 +439,11 @@ class CoefficientSimulation(Simulation):
             if ConstSettings.SCMSettings.MARKET_ALGORITHM == CoefficientAlgorithm.DYNAMIC.value:
                 self.area.change_home_coefficient_percentage(scm_manager)
 
-            self._results.update_send_coefficient_results(
-                self.current_state, self.progress_info, self.area,
-                self._status.status, scm_manager)
+            # important: SCM manager has to be updated before sending the results
+            self._results.update_scm_manager(scm_manager)
+
+            self._results.update_and_send_results(
+                self.current_state, self.progress_info, self.area, self._status.status)
 
             self._external_events.update(self.area)
 
@@ -473,7 +474,7 @@ class CoefficientSimulation(Simulation):
                 slot_count - 1, slot_count, self._time, self._setup.config)
             paused_duration = duration(seconds=self._time.paused_time)
             self.progress_info.log_simulation_finished(paused_duration, self._setup.config)
-        self._results.update_send_coefficient_results(
+        self._results.update_and_send_results(
             self.current_state, self.progress_info, self.area, self._status.status)
         self._results.save_csv_results(self.area)
 
