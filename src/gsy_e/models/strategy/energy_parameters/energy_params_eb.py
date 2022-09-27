@@ -22,9 +22,11 @@ NOTE: The intraday product should not use this approach, since it already trades
 15-minutes timeslots.
 """
 from abc import ABC, abstractmethod
-from typing import Optional, TYPE_CHECKING, Dict
+from collections import defaultdict
+from typing import Optional, TYPE_CHECKING, DefaultDict
 
 import pendulum
+from gsy_framework.constants_limits import GlobalConfig
 from gsy_framework.enums import AvailableMarketTypes
 from gsy_framework.forward_markets.forward_profile import ForwardTradeProfileGenerator
 from gsy_framework.utils import convert_kW_to_kWh
@@ -39,20 +41,14 @@ if TYPE_CHECKING:
 class ForwardEnergyParams(ABC):
     """Common abstract base class for the energy parameters of the forward strategies."""
     def __init__(self):
-        self._posted_energy_kWh: Dict = {}
+        self._posted_energy_kWh: DefaultDict = defaultdict(lambda: 0.)
 
     def get_posted_energy_kWh(
             self, market_slot: pendulum.DateTime, market_type: AvailableMarketTypes) -> float:
         """Retrieve the already posted energy on this market slot."""
         if market_type == AvailableMarketTypes.INTRADAY:
-            if market_slot not in self._posted_energy_kWh:
-                self._posted_energy_kWh[market_slot] = 0.
-
             return self._posted_energy_kWh[market_slot]
         if market_type == AvailableMarketTypes.DAY_FORWARD:
-            for slot in self.day_forward_slots(market_slot):
-                if slot not in self._posted_energy_kWh:
-                    self._posted_energy_kWh[slot] = 0.
             return max(
                 self._posted_energy_kWh[slot]
                 for slot in self.day_forward_slots(market_slot)
@@ -70,14 +66,10 @@ class ForwardEnergyParams(ABC):
         if market_type not in [AvailableMarketTypes.INTRADAY, AvailableMarketTypes.DAY_FORWARD]:
             return
         if market_type == AvailableMarketTypes.INTRADAY:
-            if market_slot not in self._posted_energy_kWh:
-                self._posted_energy_kWh[market_slot] = 0.
             self._posted_energy_kWh[market_slot] += posted_energy_kWh
         if market_type == AvailableMarketTypes.DAY_FORWARD:
             slots = self.day_forward_slots(market_slot)
             for slot in slots:
-                if slot not in self._posted_energy_kWh:
-                    self._posted_energy_kWh[slot] = 0.
                 self._posted_energy_kWh[slot] += posted_energy_kWh
 
     def decrement_posted_energy(
@@ -183,7 +175,7 @@ class ConsumptionStandardProfileEnergyParameters(ForwardEnergyParams):
                 for slot in self.day_forward_slots(market_slot)
             )
 
-        reference_slot = market_slot.set(hour=12, minute=0, tz=pendulum.UTC)
+        reference_slot = market_slot.set(hour=12, minute=0)
 
         if self._state.get_desired_energy_Wh(reference_slot) <= FLOATING_POINT_TOLERANCE:
             scaling_factor = 0.
@@ -198,10 +190,11 @@ class ConsumptionStandardProfileEnergyParameters(ForwardEnergyParams):
         self._area = area
         self._profile_generator = ForwardTradeProfileGenerator(
             peak_kWh=self.capacity_kWh)
-        for i in range(4):
+
+        for i in range(6):
             capacity_profile = self._profile_generator.generate_trade_profile(
                 energy_kWh=self.capacity_kWh,
-                market_slot=pendulum.now(tz=pendulum.UTC).start_of("year").add(years=i),
+                market_slot=GlobalConfig.start_date.start_of("year").add(years=i),
                 product_type=AvailableMarketTypes.YEAR_FORWARD)
             for time_slot, energy_kWh in capacity_profile.items():
                 self._state.set_desired_energy(energy_kWh * 1000, time_slot)
@@ -223,7 +216,7 @@ class ConsumptionStandardProfileEnergyParameters(ForwardEnergyParams):
         if product_type == AvailableMarketTypes.INTRADAY:
             self._state.decrement_energy_requirement(
                 purchased_energy_Wh=energy_kWh * 1000,
-                time_slot=market_slot.set(tz=pendulum.UTC),
+                time_slot=market_slot,
                 area_name=self._area.name)
             return
         if product_type == AvailableMarketTypes.DAY_FORWARD:
@@ -243,7 +236,7 @@ class ConsumptionStandardProfileEnergyParameters(ForwardEnergyParams):
         for time_slot, energy_value_kWh in trade_profile.items():
             self._state.decrement_energy_requirement(
                 purchased_energy_Wh=energy_value_kWh * 1000,
-                time_slot=time_slot.set(tz=pendulum.UTC),
+                time_slot=time_slot,
                 area_name=self._area.name)
 
 
@@ -301,12 +294,14 @@ class ProductionStandardProfileEnergyParameters(ForwardEnergyParams):
         self._area = area
         self._profile_generator = ForwardTradeProfileGenerator(
             peak_kWh=self.capacity_kWh)
-        capacity_profile = self._profile_generator.generate_trade_profile(
-            energy_kWh=self.capacity_kWh,
-            market_slot=pendulum.now().start_of("year"),
-            product_type=AvailableMarketTypes.YEAR_FORWARD)
-        for time_slot, energy_kWh in capacity_profile.items():
-            self._state.set_available_energy(energy_kWh, time_slot)
+
+        for i in range(6):
+            capacity_profile = self._profile_generator.generate_trade_profile(
+                energy_kWh=self.capacity_kWh,
+                market_slot=GlobalConfig.start_date.start_of("year").add(years=i),
+                product_type=AvailableMarketTypes.YEAR_FORWARD)
+            for time_slot, energy_kWh in capacity_profile.items():
+                self._state.set_available_energy(energy_kWh, time_slot)
 
     def event_traded_energy(
             self, energy_kWh: float, market_slot: pendulum.DateTime,
