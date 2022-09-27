@@ -192,6 +192,17 @@ class TestSimulationEndpointBuffer:
             time_slot=DateTime(2022, 10, 30),
             time_slot_str="2021-10-30T00:00:00+00:00")
 
+        # Popoulate strategy and children to update the result_area_uuids dictionary
+        child_1 = MagicMock(uuid="child-uuid-1")
+        child_1.name = "child_1"
+        child_1.parent = area
+        child_2 = MagicMock(uuid="child-uuid-2")
+        child_2.name = "child_2"
+        child_2.parent = area
+
+        area.children = [child_1, child_2]
+        area.strategy = MagicMock(name="some-strategy")
+
         endpoint_buffer = SimulationEndpointBuffer(
             job_id="JOB_1",
             random_seed=41,
@@ -222,7 +233,22 @@ class TestSimulationEndpointBuffer:
             "uuid": "AREA",
             "parent_uuid": "",
             "type": "MagicMock",
-            "children": []
+            "children": [
+                {
+                    "children": [],
+                    "name": "child_1",
+                    "parent_uuid": "AREA",
+                    "type": "MagicMock",
+                    "uuid": "child-uuid-1",
+                },
+                {
+                    "children": [],
+                    "name": "child_2",
+                    "parent_uuid": "AREA",
+                    "type": "MagicMock",
+                    "uuid": "child-uuid-2",
+                },
+            ],
         }
         assert endpoint_buffer.status == "some-state"
         assert endpoint_buffer.simulation_state["general"] == sim_state_mock
@@ -237,6 +263,8 @@ class TestSimulationEndpointBuffer:
             "elapsed_time_seconds": 1800,
             "percentage_completed": 1
         }
+
+        assert endpoint_buffer.result_area_uuids == {"AREA", "child-uuid-2", "child-uuid-1"}
 
 
 class TestCoefficientEndpointBuffer(TestSimulationEndpointBuffer):
