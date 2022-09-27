@@ -29,10 +29,9 @@ from gsy_e.models.market.forward import ForwardMarketBase
 log = getLogger(__name__)
 
 
-class BaseRotator(ABC):
+class BaseRotator:
     """Base implementation of the market rotator."""
 
-    @abstractmethod
     def rotate(self, current_time_slot: DateTime):
         """Deletion/move to past of unneeded markets."""
 

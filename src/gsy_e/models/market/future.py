@@ -203,10 +203,22 @@ class FutureMarkets(TwoSidedMarket):
         """
         return duration(minutes=0)
 
+    @staticmethod
+    def _get_start_time(current_time: DateTime, config: "SimulationConfig") -> DateTime:
+        """Return time when the market block starts."""
+        return current_time.add(minutes=config.slot_length.total_minutes())
+
+    @staticmethod
+    def _get_end_time(current_time: DateTime) -> DateTime:
+        """Return time when the market block ends."""
+        return current_time.add(
+            hours=ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS)
+
     def _create_future_market_slots(
-            self, start_time: DateTime, end_time: DateTime,
-            config: "SimulationConfig", current_market_time_slot: DateTime) -> List[DateTime]:
-        future_time_slot = start_time
+            self, config: "SimulationConfig", current_market_time_slot: DateTime
+    ) -> List[DateTime]:
+        future_time_slot = self._get_start_time(current_market_time_slot, config)
+        end_time = self._get_end_time(current_market_time_slot)
         created_market_slots = []
         while future_time_slot <= end_time:
             market_close_time = (
@@ -226,12 +238,7 @@ class FutureMarkets(TwoSidedMarket):
         """Add sub dicts in order dictionaries for future market slots."""
         if not ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS:
             return []
-        return self._create_future_market_slots(
-            current_market_time_slot.add(minutes=config.slot_length.total_minutes()),
-            current_market_time_slot.add(
-                hours=ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS),
-            config, current_market_time_slot
-        )
+        return self._create_future_market_slots(config, current_market_time_slot)
 
     @lock_market_action
     def bid(self, price: float, energy: float, buyer: str, buyer_origin: str,

@@ -72,16 +72,6 @@ class ForwardMarketBase(FutureMarkets):
 
     @staticmethod
     @abstractmethod
-    def _get_start_time(current_time: DateTime) -> DateTime:
-        """Return time when the market block starts."""
-
-    @staticmethod
-    @abstractmethod
-    def _get_end_time(current_time: DateTime) -> DateTime:
-        """Return time when the market block ends."""
-
-    @staticmethod
-    @abstractmethod
     def _get_market_slot_duration(current_time: DateTime, _config) -> duration:
         """Return duration of market slots inside the market block."""
 
@@ -89,10 +79,7 @@ class ForwardMarketBase(FutureMarkets):
                                    config: "SimulationConfig") -> List[DateTime]:
         if not ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS:
             return []
-        created_future_slots = self._create_future_market_slots(
-            self._get_start_time(current_market_time_slot),
-            self._get_end_time(current_market_time_slot), config,
-            current_market_time_slot)
+        created_future_slots = self._create_future_market_slots(config, current_market_time_slot)
 
         self._set_open_market_slot_parameters(current_market_time_slot, created_future_slots)
         return created_future_slots
@@ -131,7 +118,7 @@ class IntradayMarket(ForwardMarketBase):
         return AvailableMarketTypes.INTRADAY
 
     @staticmethod
-    def _get_start_time(current_time: DateTime) -> DateTime:
+    def _get_start_time(current_time: DateTime, config: "SimulationConfig") -> DateTime:
         return current_time.add(minutes=30)
 
     @staticmethod
@@ -163,7 +150,7 @@ class DayForwardMarket(ForwardMarketBase):
         return AvailableMarketTypes.DAY_FORWARD
 
     @staticmethod
-    def _get_start_time(current_time: DateTime) -> DateTime:
+    def _get_start_time(current_time: DateTime, config: "SimulationConfig") -> DateTime:
         return current_time.set(hour=0, minute=0).add(days=1)
 
     @staticmethod
@@ -195,7 +182,7 @@ class WeekForwardMarket(ForwardMarketBase):
         return AvailableMarketTypes.WEEK_FORWARD
 
     @staticmethod
-    def _get_start_time(current_time: DateTime) -> DateTime:
+    def _get_start_time(current_time: DateTime, config: "SimulationConfig") -> DateTime:
         days_until_next_monday = 7 - (current_time.day_of_week - 1)
         return current_time.set(hour=0, minute=0).add(days=days_until_next_monday).add(weeks=1)
 
@@ -228,7 +215,7 @@ class MonthForwardMarket(ForwardMarketBase):
         return AvailableMarketTypes.MONTH_FORWARD
 
     @staticmethod
-    def _get_start_time(current_time: DateTime) -> DateTime:
+    def _get_start_time(current_time: DateTime, config: "SimulationConfig") -> DateTime:
         return current_time.set(day=1, hour=0, minute=0).add(months=2)
 
     @staticmethod
@@ -260,7 +247,7 @@ class YearForwardMarket(ForwardMarketBase):
         return AvailableMarketTypes.YEAR_FORWARD
 
     @staticmethod
-    def _get_start_time(current_time: DateTime) -> DateTime:
+    def _get_start_time(current_time: DateTime, config: "SimulationConfig") -> DateTime:
         return current_time.start_of("year").add(years=2)
 
     @staticmethod

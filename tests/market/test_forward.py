@@ -74,7 +74,7 @@ class TestForwardMarkets:
                            forward_markets.slot_trade_mapping]:
 
                 assert len(buffer.keys()) == expected_market_count
-                ahead_time_slot = market_class._get_start_time(CURRENT_MARKET_SLOT)
+                ahead_time_slot = market_class._get_start_time(CURRENT_MARKET_SLOT, area.config)
                 most_future_slot = market_class._get_end_time(CURRENT_MARKET_SLOT)
                 assert all(ahead_time_slot <= time_slot <= most_future_slot
                            for time_slot in buffer)
