@@ -24,6 +24,7 @@ from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.enums import AvailableMarketTypes
 from pendulum import DateTime, duration
 
+from gsy_e.constants import FORWARD_MARKET_MAX_DURATION_YEARS
 from gsy_e.gsy_e_core.blockchain_interface import NonBlockchainInterface
 from gsy_e.models.market import GridFee
 from gsy_e.models.market.future import FutureMarkets
@@ -252,7 +253,7 @@ class YearForwardMarket(ForwardMarketBase):
 
     @staticmethod
     def _get_end_time(current_time: DateTime) -> DateTime:
-        return current_time.start_of("year").add(years=6)
+        return current_time.start_of("year").add(years=FORWARD_MARKET_MAX_DURATION_YEARS)
 
     @staticmethod
     def _get_market_slot_duration(current_time: DateTime, _config) -> duration:
