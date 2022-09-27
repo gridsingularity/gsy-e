@@ -45,7 +45,7 @@ class ForwardPVStrategy(ForwardStrategyBase):
             self.area.now)
 
         capacity_percent = self._order_updaters[market][market_slot].capacity_percent / 100.0
-        max_energy_kWh = self._energy_params.capacity_kWh * capacity_percent
+        max_energy_kWh = self._energy_params.peak_energy_kWh * capacity_percent
         energy_kWh = self._energy_params.get_available_energy_kWh(
             market_slot, market.market_type)
 

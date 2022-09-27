@@ -160,8 +160,8 @@ class ConsumptionStandardProfileEnergyParameters(ForwardEnergyParams):
         }
 
     @property
-    def capacity_kWh(self):
-        """Capacity of the load in kWh."""
+    def peak_energy_kWh(self):
+        """Peak energy of the load profile in kWh."""
         return convert_kW_to_kWh(self.capacity_kW, self._area.config.slot_length)
 
     def get_available_energy_kWh(
@@ -175,6 +175,14 @@ class ConsumptionStandardProfileEnergyParameters(ForwardEnergyParams):
                 for slot in self.day_forward_slots(market_slot)
             )
 
+        # This is the part where the week / month / year forward markets' available energy is
+        # calculated. In order for the available energy for a bid to be calculated, the available
+        # peak energy for the market slot duration needs to be calculated (essentially the peak
+        # energy that has not been yet traded). One time slot should be used as reference that is
+        # known in advance to have non-zero values (in our case 12:00), and by calculating the
+        # scaling factor (ratio of available - not-traded energy by the total energy that can be
+        # traded by this asset on this market slot) the available peak energy can be calculated by
+        # multiplying the scaling factor by the already known peak energy of the asset.
         reference_slot = market_slot.set(hour=12, minute=0)
 
         if self._state.get_desired_energy_Wh(reference_slot) <= FLOATING_POINT_TOLERANCE:
@@ -183,17 +191,17 @@ class ConsumptionStandardProfileEnergyParameters(ForwardEnergyParams):
             scaling_factor = (
                     self._state.get_energy_requirement_Wh(reference_slot) /
                     self._state.get_desired_energy_Wh(reference_slot))
-        return abs(scaling_factor) * self.capacity_kWh
+        return abs(scaling_factor) * self.peak_energy_kWh
 
     def event_activate_energy(self, area):
         """Initialize values that are required to compute the energy values of the asset."""
         self._area = area
         self._profile_generator = ForwardTradeProfileGenerator(
-            peak_kWh=self.capacity_kWh)
+            peak_kWh=self.peak_energy_kWh)
 
         for i in range(6):
             capacity_profile = self._profile_generator.generate_trade_profile(
-                energy_kWh=self.capacity_kWh,
+                energy_kWh=self.peak_energy_kWh,
                 market_slot=GlobalConfig.start_date.start_of("year").add(years=i),
                 product_type=AvailableMarketTypes.YEAR_FORWARD)
             for time_slot, energy_kWh in capacity_profile.items():
@@ -263,8 +271,8 @@ class ProductionStandardProfileEnergyParameters(ForwardEnergyParams):
         }
 
     @property
-    def capacity_kWh(self):
-        """Capacity of the PV in kWh."""
+    def peak_energy_kWh(self):
+        """Energy peak of the PV profile in kWh."""
         return convert_kW_to_kWh(self.capacity_kW, self._area.config.slot_length)
 
     def get_available_energy_kWh(
@@ -278,6 +286,14 @@ class ProductionStandardProfileEnergyParameters(ForwardEnergyParams):
                 for slot in self.day_forward_slots(market_slot)
             )
 
+        # This is the part where the week / month / year forward markets' available energy is
+        # calculated. In order for the available energy for a bid to be calculated, the available
+        # peak energy for the market slot duration needs to be calculated (essentially the peak
+        # energy that has not been yet traded). One time slot should be used as reference that is
+        # known in advance to have non-zero values (in our case 12:00), and by calculating the
+        # scaling factor (ratio of available - not-traded energy by the total energy that can be
+        # traded by this asset on this market slot) the available peak energy can be calculated by
+        # multiplying the scaling factor by the already known peak energy of the asset.
         reference_slot = market_slot.set(hour=12, minute=0)
 
         if self._state.get_energy_production_forecast_kWh(
@@ -287,17 +303,17 @@ class ProductionStandardProfileEnergyParameters(ForwardEnergyParams):
             scaling_factor = (
                     self._state.get_available_energy_kWh(reference_slot) /
                     self._state.get_energy_production_forecast_kWh(reference_slot))
-        return abs(scaling_factor) * self.capacity_kWh
+        return abs(scaling_factor) * self.peak_energy_kWh
 
     def event_activate_energy(self, area):
         """Initialize values that are required to compute the energy values of the asset."""
         self._area = area
         self._profile_generator = ForwardTradeProfileGenerator(
-            peak_kWh=self.capacity_kWh)
+            peak_kWh=self.peak_energy_kWh)
 
         for i in range(6):
             capacity_profile = self._profile_generator.generate_trade_profile(
-                energy_kWh=self.capacity_kWh,
+                energy_kWh=self.peak_energy_kWh,
                 market_slot=GlobalConfig.start_date.start_of("year").add(years=i),
                 product_type=AvailableMarketTypes.YEAR_FORWARD)
             for time_slot, energy_kWh in capacity_profile.items():
