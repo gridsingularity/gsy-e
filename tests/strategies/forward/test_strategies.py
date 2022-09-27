@@ -101,7 +101,6 @@ class TestForwardStrategies:
         with patch("gsy_e.models.area.Area.now", new_callable=PropertyMock) as now_mock:
             now_mock.return_value = next_slot_timestamp
             area.cycle_markets()
-            # strategy.event_market_cycle()
             assert (
                     len(strategy._order_updaters[market_object].keys()) ==
                     expected_order_updater_count)

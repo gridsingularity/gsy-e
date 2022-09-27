@@ -279,8 +279,8 @@ class ProductionStandardProfileEnergyParameters(ForwardEnergyParams):
             self, market_slot: pendulum.DateTime, market_type: AvailableMarketTypes):
         """Get the available offer energy of the PV."""
         if market_type == AvailableMarketTypes.INTRADAY:
-            self._state.get_available_energy_kWh(market_slot)
-        elif market_type == AvailableMarketTypes.DAY_FORWARD:
+            return self._state.get_available_energy_kWh(market_slot)
+        if market_type == AvailableMarketTypes.DAY_FORWARD:
             return min(
                 self._state.get_energy_production_forecast_kWh(slot)
                 for slot in self.day_forward_slots(market_slot)

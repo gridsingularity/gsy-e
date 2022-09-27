@@ -46,27 +46,27 @@ class ForwardPVStrategy(ForwardStrategyBase):
 
         capacity_percent = self._order_updaters[market][market_slot].capacity_percent / 100.0
         max_energy_kWh = self._energy_params.peak_energy_kWh * capacity_percent
-        energy_kWh = self._energy_params.get_available_energy_kWh(
+        available_energy_kWh = self._energy_params.get_available_energy_kWh(
             market_slot, market.market_type)
 
         posted_energy_kWh = self._energy_params.get_posted_energy_kWh(
             market_slot, market.market_type)
-        energy_kWh -= posted_energy_kWh
 
-        energy_kWh = min(energy_kWh, max_energy_kWh)
+        available_energy_kWh = min(available_energy_kWh - posted_energy_kWh, max_energy_kWh)
 
-        if energy_kWh <= FLOATING_POINT_TOLERANCE:
+        if available_energy_kWh <= FLOATING_POINT_TOLERANCE:
             return
 
         market.offer(
-            order_rate * energy_kWh, energy_kWh,
+            order_rate * available_energy_kWh, available_energy_kWh,
             seller=self.owner.name,
-            original_price=order_rate * energy_kWh,
+            original_price=order_rate * available_energy_kWh,
             seller_origin=self.owner.name,
             seller_origin_id=self.owner.uuid,
             seller_id=self.owner.uuid,
             time_slot=market_slot)
-        self._energy_params.increment_posted_energy(market_slot, energy_kWh, market.market_type)
+        self._energy_params.increment_posted_energy(
+            market_slot, available_energy_kWh, market.market_type)
 
     def event_traded(self, *, market_id: str, trade: "Trade"):
         """Method triggered by the MarketEvent.OFFER_TRADED event."""
