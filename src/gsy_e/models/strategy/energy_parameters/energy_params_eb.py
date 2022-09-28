@@ -39,7 +39,7 @@ if TYPE_CHECKING:
     from gsy_e.models.area import AreaBase
 
 
-class BaseMarketEnergyParams(ABC):
+class _BaseMarketEnergyParams(ABC):
     """
     Base class for the energy parameters of specific markets.
     The children of these classes should not be instantiated by classes other than the
@@ -95,7 +95,7 @@ class BaseMarketEnergyParams(ABC):
         """Trigger actions on a trade event of a PV asset."""
 
 
-class IntradayEnergyParams(BaseMarketEnergyParams):
+class _IntradayEnergyParams(_BaseMarketEnergyParams):
     """
     Energy parameters for the intraday market.
     Should only be instantiated by the ForwardEnergyParams and its child classes.
@@ -136,7 +136,7 @@ class IntradayEnergyParams(BaseMarketEnergyParams):
             area_name=self._area.name)
 
 
-class DayForwardEnergyParams(BaseMarketEnergyParams):
+class _DayForwardEnergyParams(_BaseMarketEnergyParams):
     """
     Energy parameters for the day forward market.
     Should only be instantiated by the ForwardEnergyParams and its child classes.
@@ -200,7 +200,7 @@ class DayForwardEnergyParams(BaseMarketEnergyParams):
                 area_name=self._area.name)
 
 
-class LongForwardEnergyParameters(BaseMarketEnergyParams):
+class _LongForwardEnergyParameters(_BaseMarketEnergyParams):
     """
     Energy parameters for the week / month / year forward markets.
     Should only be instantiated by the ForwardEnergyParams and its child classes.
@@ -299,13 +299,13 @@ class ForwardEnergyParams(ABC):
     def __init__(self):
         self._posted_energy_kWh: DefaultDict = defaultdict(lambda: 0.)
         self._forward_energy_params = {
-            AvailableMarketTypes.INTRADAY: IntradayEnergyParams(self._posted_energy_kWh),
-            AvailableMarketTypes.DAY_FORWARD: DayForwardEnergyParams(self._posted_energy_kWh),
-            AvailableMarketTypes.WEEK_FORWARD: LongForwardEnergyParameters(
+            AvailableMarketTypes.INTRADAY: _IntradayEnergyParams(self._posted_energy_kWh),
+            AvailableMarketTypes.DAY_FORWARD: _DayForwardEnergyParams(self._posted_energy_kWh),
+            AvailableMarketTypes.WEEK_FORWARD: _LongForwardEnergyParameters(
                 self._posted_energy_kWh, AvailableMarketTypes.WEEK_FORWARD),
-            AvailableMarketTypes.MONTH_FORWARD: LongForwardEnergyParameters(
+            AvailableMarketTypes.MONTH_FORWARD: _LongForwardEnergyParameters(
                 self._posted_energy_kWh, AvailableMarketTypes.MONTH_FORWARD),
-            AvailableMarketTypes.YEAR_FORWARD: LongForwardEnergyParameters(
+            AvailableMarketTypes.YEAR_FORWARD: _LongForwardEnergyParameters(
                 self._posted_energy_kWh, AvailableMarketTypes.YEAR_FORWARD)
         }
 
