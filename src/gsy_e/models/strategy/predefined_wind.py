@@ -16,27 +16,27 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from gsy_framework.constants_limits import ConstSettings
-from gsy_e.models.strategy.predefined_pv import PVUserProfileStrategy
 from pendulum import duration
 
-"""
-Creates a WindStrategy that uses a profile as input for its power values.
-"""
+from gsy_e.models.strategy.predefined_pv import PVUserProfileStrategy
 
 
 class WindUserProfileStrategy(PVUserProfileStrategy):
-
-    def __init__(self, power_profile,
+    """Strategy for a wind turbine creating energy following the power_profile"""
+    # pylint: disable=too-many-arguments
+    def __init__(self, power_profile=None,
                  initial_selling_rate:
                  float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
                  final_selling_rate: float = ConstSettings.WindSettings.FINAL_SELLING_RATE,
                  fit_to_limit: bool = True,
                  update_interval=duration(
                      minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
-                 energy_rate_decrease_per_update=None
+                 energy_rate_decrease_per_update=None,
+                 power_profile_uuid: str = None
                  ):
         super().__init__(power_profile=power_profile, initial_selling_rate=initial_selling_rate,
                          final_selling_rate=final_selling_rate,
                          fit_to_limit=fit_to_limit, update_interval=update_interval,
-                         energy_rate_decrease_per_update=energy_rate_decrease_per_update
+                         energy_rate_decrease_per_update=energy_rate_decrease_per_update,
+                         power_profile_uuid=power_profile_uuid
                          )
