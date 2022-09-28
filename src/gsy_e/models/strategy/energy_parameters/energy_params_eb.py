@@ -40,7 +40,11 @@ if TYPE_CHECKING:
 
 
 class BaseMarketEnergyParams(ABC):
-    """Base class for the energy parameters of specific markets."""
+    """
+    Base class for the energy parameters of specific markets.
+    The children of these classes should not be instantiated by classes other than the
+    ForwardEnergyParams child classes.
+    """
     def __init__(self, posted_energy_kWh: DefaultDict):
         self._posted_energy_kWh = posted_energy_kWh
         self._area: Optional["AreaBase"] = None
@@ -92,7 +96,10 @@ class BaseMarketEnergyParams(ABC):
 
 
 class IntradayEnergyParams(BaseMarketEnergyParams):
-    """Energy parameters for the intraday market."""
+    """
+    Energy parameters for the intraday market.
+    Should only be instantiated by the ForwardEnergyParams and its child classes.
+    """
     def get_posted_energy_kWh(self, market_slot: pendulum.DateTime) -> float:
         return self._posted_energy_kWh[market_slot]
 
@@ -130,7 +137,10 @@ class IntradayEnergyParams(BaseMarketEnergyParams):
 
 
 class DayForwardEnergyParams(BaseMarketEnergyParams):
-    """Energy parameters for the day forward market."""
+    """
+    Energy parameters for the day forward market.
+    Should only be instantiated by the ForwardEnergyParams and its child classes.
+    """
     @staticmethod
     def _day_forward_slots(market_slot: pendulum.DateTime):
         """Get the market slots for the day forward market."""
@@ -191,7 +201,10 @@ class DayForwardEnergyParams(BaseMarketEnergyParams):
 
 
 class LongForwardEnergyParameters(BaseMarketEnergyParams):
-    """Energy parameters for the week / month / year forward markets."""
+    """
+    Energy parameters for the week / month / year forward markets.
+    Should only be instantiated by the ForwardEnergyParams and its child classes.
+    """
     def __init__(self, posted_energy_kWh: DefaultDict, product_type: AvailableMarketTypes):
         super().__init__(posted_energy_kWh)
         self._product_type = product_type
