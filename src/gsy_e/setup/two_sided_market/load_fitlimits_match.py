@@ -33,7 +33,7 @@ def get_setup(config):
                 [
                     Area("Load", strategy=LoadHoursStrategy(avg_power_W=100,
                                                             hrs_per_day=24,
-                                                            hrs_of_day=range(0, 23),
+                                                            hrs_of_day=range(0, 24),
                                                             initial_buying_rate=0,
                                                             fit_to_limit=True,
                                                             use_market_maker_rate=True,
