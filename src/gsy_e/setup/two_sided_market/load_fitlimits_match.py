@@ -20,6 +20,10 @@ from gsy_e.models.area import Area
 from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 
+# This setup file is used to test that if a Load asset has the fit to
+# limit box checked, there will be no unmatched load, when the final
+# buying rate coincides with the one of the market maker.
+
 
 def get_setup(config):
     ConstSettings.MASettings.MARKET_TYPE = 2
@@ -42,7 +46,8 @@ def get_setup(config):
                 ],
                 grid_fee_percentage=40
             ),
-            Area("", strategy=InfiniteBusStrategy(energy_sell_rate=30, energy_buy_rate=0)
+            Area("Market Maker", strategy=InfiniteBusStrategy(
+                energy_sell_rate=30, energy_buy_rate=0)
                  )
         ],
         config=config
