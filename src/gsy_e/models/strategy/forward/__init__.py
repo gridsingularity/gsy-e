@@ -66,6 +66,7 @@ class ForwardStrategyBase(EventMixin, AreaBehaviorBase, ABC):
             for market_slot in market_slot_updater_dict.keys():
                 market_params = market_object.get_market_parameters_for_market_slot(market_slot)
                 if not market_params:
+                    slots_to_delete.append(market_slot)
                     continue
                 if market_params.closing_time <= self.area.now:
                     slots_to_delete.append(market_slot)

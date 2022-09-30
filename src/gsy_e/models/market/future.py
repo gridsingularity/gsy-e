@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 # pylint: disable=too-many-arguments, too-many-locals, no-member
+from abc import abstractmethod
 from collections import UserDict
 from copy import deepcopy
 from logging import getLogger
@@ -195,13 +196,13 @@ class FutureMarkets(TwoSidedMarket):
     def _get_market_slot_duration(_current_time: DateTime, config: "SimulationConfig") -> duration:
         return config.slot_length
 
-    @property
-    def _time_from_market_close_till_delivery(self) -> duration:
+    @staticmethod
+    @abstractmethod
+    def _calculate_closing_time(delivery_time: DateTime) -> DateTime:
         """
-        Retrieves the time duration from the time that the market closes till the time that the
-        traded energy should be delivered.
+        Closing time of the market. Uses as basis the delivery time in order to calculate it.
         """
-        return duration(minutes=0)
+        return delivery_time
 
     @staticmethod
     def _get_start_time(current_time: DateTime, config: "SimulationConfig") -> DateTime:
@@ -221,8 +222,7 @@ class FutureMarkets(TwoSidedMarket):
         end_time = self._get_end_time(current_market_time_slot)
         created_market_slots = []
         while future_time_slot <= end_time:
-            market_close_time = (
-                future_time_slot - self._time_from_market_close_till_delivery)
+            market_close_time = self._calculate_closing_time(future_time_slot)
             if (future_time_slot not in self.slot_bid_mapping and
                     is_time_slot_in_simulation_duration(future_time_slot, config) and
                     market_close_time > current_market_time_slot):

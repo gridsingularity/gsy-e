@@ -44,7 +44,7 @@ class ForwardMarketSlot:
 
     def __post_init__(self):
         assert self.delivery_end_time > self.delivery_start_time
-        assert self.closing_time < self.delivery_start_time
+        assert self.closing_time <= self.delivery_start_time
         assert self.closing_time > self.opening_time
 
 
@@ -107,7 +107,7 @@ class ForwardMarketBase(FutureMarkets):
                 delivery_end_time=(
                         market_slot + self._get_market_slot_duration(market_slot, None)),
                 opening_time=current_market_slot,
-                closing_time=market_slot - self._time_from_market_close_till_delivery
+                closing_time=self._calculate_closing_time(market_slot)
             )
 
 
@@ -130,9 +130,10 @@ class IntradayMarket(ForwardMarketBase):
     def _get_market_slot_duration(_current_time: DateTime, _config) -> duration:
         return duration(minutes=15)
 
-    @property
-    def _time_from_market_close_till_delivery(self) -> duration:
-        return duration(minutes=15)
+    @staticmethod
+    def _calculate_closing_time(delivery_time: DateTime) -> DateTime:
+        """Closing time of the intraday market is 15 mins before delivery."""
+        return delivery_time.subtract(minutes=15)
 
     @property
     def type_name(self):
@@ -162,9 +163,12 @@ class DayForwardMarket(ForwardMarketBase):
     def _get_market_slot_duration(_current_time: DateTime, _config) -> duration:
         return duration(hours=1)
 
-    @property
-    def _time_from_market_close_till_delivery(self) -> duration:
-        return duration(days=1)
+    @staticmethod
+    def _calculate_closing_time(delivery_time: DateTime) -> DateTime:
+        """
+        Closing time of the day ahead market is one hour before delivery.
+        """
+        return delivery_time.subtract(days=1)
 
     @property
     def type_name(self):
@@ -195,9 +199,13 @@ class WeekForwardMarket(ForwardMarketBase):
     def _get_market_slot_duration(_current_time: DateTime, _config) -> duration:
         return duration(weeks=1)
 
-    @property
-    def _time_from_market_close_till_delivery(self) -> duration:
-        return duration(weeks=1)
+    @staticmethod
+    def _calculate_closing_time(delivery_time: DateTime) -> DateTime:
+        """
+        Closing time of the week market is one week before the date that the energy will be
+        delivered.
+        """
+        return delivery_time.set(hour=0, minute=0).subtract(weeks=1)
 
     @property
     def type_name(self):
@@ -227,9 +235,13 @@ class MonthForwardMarket(ForwardMarketBase):
     def _get_market_slot_duration(current_time: DateTime, _config) -> duration:
         return duration(months=1)
 
-    @property
-    def _time_from_market_close_till_delivery(self) -> duration:
-        return duration(months=1)
+    @staticmethod
+    def _calculate_closing_time(delivery_time: DateTime) -> DateTime:
+        """
+        Closing time of the monthly market is one month before the date that the energy will be
+        delivered.
+        """
+        return delivery_time.set(day=1, hour=0, minute=0).subtract(months=1)
 
     @property
     def type_name(self):
@@ -259,9 +271,13 @@ class YearForwardMarket(ForwardMarketBase):
     def _get_market_slot_duration(current_time: DateTime, _config) -> duration:
         return duration(years=1)
 
-    @property
-    def _time_from_market_close_till_delivery(self) -> duration:
-        return duration(years=1)
+    @staticmethod
+    def _calculate_closing_time(delivery_time: DateTime) -> DateTime:
+        """
+        Closing time of the yearly market is one year before the date that the energy will be
+        delivered.
+        """
+        return delivery_time.set(month=1, day=1, hour=0, minute=0).subtract(years=1)
 
     @property
     def type_name(self):
