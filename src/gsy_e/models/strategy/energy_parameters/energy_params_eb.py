@@ -153,8 +153,7 @@ class DayForwardEnergyParams(BaseMarketEnergyParams):
 
     def decrement_posted_energy(
             self, market_slot: pendulum.DateTime, posted_energy_kWh: float):
-        slots = self._day_forward_slots(market_slot)
-        for slot in slots:
+        for slot in self._day_forward_slots(market_slot):
             self._posted_energy_kWh[slot] -= posted_energy_kWh
 
     def get_available_load_energy_kWh(
@@ -300,9 +299,9 @@ class ForwardEnergyParams(ABC):
         self._profile_generator: Optional[ForwardTradeProfileGenerator] = None
 
     def get_posted_energy_kWh(
-            self, market_slot: pendulum.DateTime, market_type: AvailableMarketTypes) -> float:
+            self, market_slot: pendulum.DateTime, product_type: AvailableMarketTypes) -> float:
         """Retrieve the already posted energy on this market slot."""
-        return self._forward_energy_params[market_type].get_posted_energy_kWh(market_slot)
+        return self._forward_energy_params[product_type].get_posted_energy_kWh(market_slot)
 
     def increment_posted_energy(
             self, market_slot: pendulum.DateTime, posted_energy_kWh: float,
