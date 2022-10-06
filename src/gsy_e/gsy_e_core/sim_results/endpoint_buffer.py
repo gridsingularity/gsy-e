@@ -59,7 +59,7 @@ class SimulationEndpointBuffer:
         self.current_market_time_slot_unix = None
         self.current_market_time_slot = None
         self.random_seed = random_seed if random_seed is not None else ""
-        self.status = {}
+        self.status = ""
         self.area_result_dict = self._create_area_tree_dict(area)
         self.flattened_area_core_stats_dict = {}
         self.simulation_progress = {
@@ -77,13 +77,9 @@ class SimulationEndpointBuffer:
                 ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR):
             self.offer_bid_trade_hr = OfferBidTradeGraphStats()
 
-    @staticmethod
-    def _create_endpoint_buffer(should_export_plots):
-        return ResultsHandler(should_export_plots)
-
     def prepare_results_for_publish(self) -> Dict:
         """Validate, serialise and check size of the results before sending to gsy-web."""
-        result_report = self.generate_result_report()
+        result_report = self._generate_result_report()
         results_validator(result_report)
 
         message_size = get_json_dict_memory_allocation_size(result_report)
@@ -93,6 +89,67 @@ class SimulationEndpointBuffer:
             return {}
         logging.debug("Publishing %s KB of data via Redis.", message_size)
         return result_report
+
+    def generate_json_report(self) -> Dict:
+        """Create dict that contains all locally exported statistics (for JSON files)."""
+        return {
+            "job_id": self.job_id,
+            "random_seed": self.random_seed,
+            "status": self.status,
+            "progress_info": self.simulation_progress,
+            "simulation_state": self.simulation_state,
+            **self.results_handler.all_raw_results
+        }
+
+    def update_stats(self, area: "AreaBase", simulation_status: str,
+                     progress_info: "SimulationProgressInfo", sim_state: Dict,
+                     calculate_results: bool) -> None:
+        # pylint: disable=too-many-arguments
+        """Wrapper for handling of all results."""
+        self.area_result_dict = self._create_area_tree_dict(area)
+        self.status = simulation_status
+        self._calculate_and_update_last_market_time_slot(area)
+        self.simulation_state["general"] = sim_state
+        self._populate_core_stats_and_sim_state(area)
+        self.simulation_progress = {
+            "eta_seconds": progress_info.eta.seconds if progress_info.eta else None,
+            "elapsed_time_seconds": progress_info.elapsed_time.seconds,
+            "percentage_completed": int(progress_info.percentage_completed)
+        }
+
+        if calculate_results:
+            self.results_handler.update(
+                self.area_result_dict, self.flattened_area_core_stats_dict,
+                self.current_market_time_slot_str)
+
+            if (ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR or
+                    ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR):
+                self.offer_bid_trade_hr.update(area)
+
+        self.result_area_uuids = set()
+        self._update_results_area_uuids(area)
+
+        self._update_offer_bid_trade()
+
+    @staticmethod
+    def _create_endpoint_buffer(should_export_plots):
+        return ResultsHandler(should_export_plots)
+
+    def _generate_result_report(self) -> Dict:
+        """Create dict that contains all statistics that are sent to the gsy-web."""
+        return {
+            "job_id": self.job_id,
+            "current_market": self.current_market_time_slot_str,
+            "current_market_ui_time_slot_str": self.current_market_ui_time_slot_str,
+            "random_seed": self.random_seed,
+            "status": self.status,
+            "progress_info": self.simulation_progress,
+            "bids_offers_trades": self.bids_offers_trades,
+            "results_area_uuids": list(self.result_area_uuids),
+            "simulation_state": self.simulation_state,
+            "simulation_raw_data": self.flattened_area_core_stats_dict,
+            "configuration_tree": self.area_result_dict
+        }
 
     @staticmethod
     def _structure_results_from_area_object(target_area: "AreaBase") -> Dict:
@@ -115,40 +172,6 @@ class SimulationEndpointBuffer:
                 self._create_area_tree_dict(child)
             )
         return area_result_dict
-
-    def update_results_area_uuids(self, area: "AreaBase") -> None:
-        """Populate a set of area uuids that contribute to the stats."""
-        if area.strategy is not None or (area.strategy is None and area.children):
-            self.result_area_uuids.update({area.uuid})
-        for child in area.children:
-            self.update_results_area_uuids(child)
-
-    def generate_result_report(self) -> Dict:
-        """Create dict that contains all statistics that are sent to the gsy-web."""
-        return {
-            "job_id": self.job_id,
-            "current_market": self.current_market_time_slot_str,
-            "current_market_ui_time_slot_str": self.current_market_ui_time_slot_str,
-            "random_seed": self.random_seed,
-            "status": self.status,
-            "progress_info": self.simulation_progress,
-            "bids_offers_trades": self.bids_offers_trades,
-            "results_area_uuids": list(self.result_area_uuids),
-            "simulation_state": self.simulation_state,
-            "simulation_raw_data": self.flattened_area_core_stats_dict,
-            "configuration_tree": self.area_result_dict
-        }
-
-    def generate_json_report(self) -> Dict:
-        """Create dict that contains all locally exported statistics (for JSON files)."""
-        return {
-            "job_id": self.job_id,
-            "random_seed": self.random_seed,
-            "status": self.status,
-            "progress_info": self.simulation_progress,
-            "simulation_state": self.simulation_state,
-            **self.results_handler.all_raw_results
-        }
 
     def _read_settlement_markets_stats_to_dict(self, area: "Area") -> Dict[str, Dict]:
         """Read last settlement market and return market_stats in a dict."""
@@ -321,35 +344,12 @@ class SimulationEndpointBuffer:
             self.current_market_time_slot_unix = area.current_market.time_slot.timestamp()
             self.current_market_time_slot = area.current_market.time_slot
 
-    def update_stats(self, area: "AreaBase", simulation_status: str,
-                     progress_info: "SimulationProgressInfo", sim_state: Dict,
-                     calculate_results: bool) -> None:
-        # pylint: disable=too-many-arguments
-        """Wrapper for handling of all results."""
-        self.area_result_dict = self._create_area_tree_dict(area)
-        self.status = simulation_status
-        self._calculate_and_update_last_market_time_slot(area)
-        self.simulation_state["general"] = sim_state
-        self._populate_core_stats_and_sim_state(area)
-        self.simulation_progress = {
-            "eta_seconds": progress_info.eta.seconds if progress_info.eta else None,
-            "elapsed_time_seconds": progress_info.elapsed_time.seconds,
-            "percentage_completed": int(progress_info.percentage_completed)
-        }
-
-        if calculate_results:
-            self.results_handler.update(
-                self.area_result_dict, self.flattened_area_core_stats_dict,
-                self.current_market_time_slot_str)
-
-            if (ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR or
-                    ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR):
-                self.offer_bid_trade_hr.update(area)
-
-        self.result_area_uuids = set()
-        self.update_results_area_uuids(area)
-
-        self._update_offer_bid_trade()
+    def _update_results_area_uuids(self, area: "AreaBase") -> None:
+        """Populate a set of area uuids that contribute to the stats."""
+        if area.strategy is not None or (area.strategy is None and area.children):
+            self.result_area_uuids.update({area.uuid})
+        for child in area.children:
+            self._update_results_area_uuids(child)
 
     def _update_offer_bid_trade(self) -> None:
         """Populate self.bids_offers_trades with results from flattened_area_core_stats_dict
@@ -376,6 +376,7 @@ class CoefficientEndpointBuffer(SimulationEndpointBuffer):
             self, area: "AreaBase", simulation_status: str,
             progress_info: "SimulationProgressInfo", sim_state: Dict,
             calculate_results: bool, scm_manager: "SCMManager") -> None:
+        """Update the stats of the SCM endpoint buffer."""
         self._scm_manager = scm_manager
 
         self.current_market_time_slot_str = progress_info.current_slot_str

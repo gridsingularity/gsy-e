@@ -67,8 +67,8 @@ class SimulationProgressInfo:
     """Information about the simulation progress."""
 
     def __init__(self):
-        self.eta = duration(seconds=0)
-        self.elapsed_time = duration(seconds=0)
+        self.eta = duration(seconds=0)  # Estimated Time of Arrival (end of the simulation)
+        self.elapsed_time = duration(seconds=0)  # Time passed since the start of the simulation
         self.percentage_completed = 0
         self.next_slot_str = ""
         self.current_slot_str = ""
@@ -247,16 +247,88 @@ class SimulationTimeManager:
         """
         if gsy_e.constants.RUN_IN_REALTIME:
             tick_runtime_s = time() - self.tick_time_counter
-            sleep(abs(config.tick_length.seconds - tick_runtime_s))
+            sleep_time_s = config.tick_length.seconds - tick_runtime_s
         elif self.slot_length_realtime:
             current_expected_tick_time = self.tick_time_counter + self.tick_length_realtime_s
             sleep_time_s = current_expected_tick_time - now().timestamp()
-            if sleep_time_s > 0:
-                sleep(sleep_time_s)
-                log.debug("Tick %s/%s: Sleep time of %s s was applied",
-                          tick_no + 1, config.ticks_per_slot, sleep_time_s)
+        else:
+            return
+
+        if sleep_time_s > 0:
+            sleep(sleep_time_s)
+            log.debug("Tick %s/%s: Sleep time of %s s was applied",
+                      tick_no + 1, config.ticks_per_slot, sleep_time_s)
 
         self.tick_time_counter = time()
+
+
+@dataclass
+class SimulationTimeManagerScm:
+    """Handles simulation time management."""
+    start_time: DateTime = now(tz=TIME_ZONE)
+    paused_time: int = 0  # Time spent in paused state, in seconds
+    slot_length_realtime: duration = None
+    slot_time_counter: float = time()
+
+    def reset(self, not_restored_from_state: bool = True) -> None:
+        """
+        Restore time-related parameters of the simulation to their default values.
+        Mainly useful when resetting the simulation.
+        """
+        self.slot_time_counter = time()
+        if not_restored_from_state:
+            self.start_time = now(tz=TIME_ZONE)
+            self.paused_time = 0
+
+    def handle_slowdown_and_realtime_scm(self, slot_no: int, slot_count: int,
+                                         config: SimulationConfig) -> None:
+        """
+        Handle simulation slowdown and simulation realtime mode, and sleep the simulation
+        accordingly for SCM simulations.
+        """
+
+        slot_length_realtime_s = self.slot_length_realtime.total_seconds()
+
+        if gsy_e.constants.RUN_IN_REALTIME:
+            slot_runtime_s = time() - self.slot_time_counter
+            sleep_time_s = config.slot_length.total_seconds() - slot_runtime_s
+        elif slot_length_realtime_s:
+            current_expected_tick_time = self.slot_time_counter + slot_length_realtime_s
+            sleep_time_s = current_expected_tick_time - now().timestamp()
+        else:
+            return
+
+        if sleep_time_s > 0:
+            sleep(sleep_time_s)
+            log.debug("Slot %s/%s: Sleep time of %s s was applied",
+                      slot_no, slot_count, sleep_time_s)
+
+        self.slot_time_counter = time()
+
+    @staticmethod
+    def calc_resume_slot_and_count_realtime(
+            config: SimulationConfig, slot_resume: int) -> Tuple[int, int]:
+        """Calculate total slot count and the slot where to resume the realtime simulation."""
+        slot_count = int(config.sim_duration / config.slot_length)
+
+        if gsy_e.constants.RUN_IN_REALTIME:
+            slot_count = sys.maxsize
+
+            today = datetime.date.today()
+            seconds_since_midnight = time() - mktime(today.timetuple())
+            slot_resume = int(seconds_since_midnight // config.slot_length.seconds) + 1
+            seconds_elapsed_in_slot = seconds_since_midnight % config.slot_length.seconds
+            sleep_time_s = config.slot_length.total_seconds() - seconds_elapsed_in_slot
+            sleep(sleep_time_s)
+
+        return slot_count, slot_resume
+
+
+def simulation_time_manager_factory(slot_length_realtime: duration):
+    """Factory for time manager objects."""
+    if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
+        return SimulationTimeManagerScm(slot_length_realtime=slot_length_realtime)
+    return SimulationTimeManager(slot_length_realtime=slot_length_realtime)
 
 
 @dataclass
@@ -318,6 +390,7 @@ class SimulationSetup:
 
 
 class SimulationResultsManager:
+    # pylint: disable=too-many-instance-attributes
     """Maintain and populate the simulation results and the publishing to the message broker."""
     def __init__(self, export_results_on_finish: bool, export_path: str,
                  export_subdir: Optional[str], started_from_cli: bool) -> None:
@@ -332,6 +405,7 @@ class SimulationResultsManager:
             self.export_subdir = export_subdir
         self._endpoint_buffer = None
         self._export = None
+        self._scm_manager = None
 
     def init_results(self, redis_job_id: str, area: "AreaBase",
                      config_params: SimulationSetup) -> None:
@@ -350,16 +424,21 @@ class SimulationResultsManager:
         """Flag that decides whether to send results to the gsy-web"""
         return not self.started_from_cli and self.kafka_connection.is_enabled()
 
-    def update_and_send_results(self, current_state: dict, progress_info: SimulationProgressInfo,
-                                area: "Area", simulation_status: str) -> None:
+    def update_and_send_results(self, simulation: "Simulation"):
+        """Update the simulation results.
+
+        This method should be called on init, finish and every market cycle.
         """
-        Update the simulation results. Should be called on init, finish and every market cycle.
-        """
-        assert self._endpoint_buffer is not None
+        current_state = simulation.current_state
+        progress_info = simulation.progress_info
+        area = simulation.area
 
         if self._should_send_results_to_broker:
             self._endpoint_buffer.update_stats(
-                area, simulation_status, progress_info, current_state,
+                area,
+                simulation.status.status,
+                progress_info,
+                current_state,
                 calculate_results=False)
             results = self._endpoint_buffer.prepare_results_for_publish()
             if results is None:
@@ -423,6 +502,10 @@ class CoefficientSimulationResultsManager(SimulationResultsManager):
             self._export = CoefficientExportAndPlot(
                 area, self.export_path, self.export_subdir, self._endpoint_buffer)
 
+    def update_scm_manager(self, scm_manager: SCMManager) -> None:
+        """Update the scm_manager with the latest instance."""
+        self._scm_manager = scm_manager
+
     @classmethod
     def _update_area_stats(cls, area: "Area", endpoint_buffer: "SimulationEndpointBuffer") -> None:
         return
@@ -441,10 +524,9 @@ class CoefficientSimulationResultsManager(SimulationResultsManager):
             self._export.area_tree_summary_to_json(self._endpoint_buffer.area_result_dict)
             self._export.export(power_flow=None)
 
-    def update_send_coefficient_results(  # pylint: disable=too-many-arguments
+    def update_and_send_results(
             self, current_state: dict, progress_info: SimulationProgressInfo,
-            area: "CoefficientArea", simulation_status: str,
-            scm_manager: Optional["SCMManager"] = None) -> None:
+            area: "CoefficientArea", simulation_status: str) -> None:
         """
         Update the coefficient simulation results.
         """
@@ -453,7 +535,7 @@ class CoefficientSimulationResultsManager(SimulationResultsManager):
         if self._should_send_results_to_broker:
             self._endpoint_buffer.update_coefficient_stats(
                 area, simulation_status, progress_info, current_state,
-                False, scm_manager)
+                False, self._scm_manager)
             results = self._endpoint_buffer.prepare_results_for_publish()
             if results is None:
                 return
@@ -464,7 +546,7 @@ class CoefficientSimulationResultsManager(SimulationResultsManager):
 
             self._endpoint_buffer.update_coefficient_stats(
                 area, current_state["sim_status"], progress_info, current_state,
-                True, scm_manager)
+                True, self._scm_manager)
             self._update_area_stats(area, self._endpoint_buffer)
 
             if self.export_results_on_finish:
@@ -477,11 +559,11 @@ class CoefficientSimulationResultsManager(SimulationResultsManager):
                         self._endpoint_buffer.flattened_area_core_stats_dict
                     )
 
-                self._export.file_stats_endpoint(area, scm_manager)
+                self._export.file_stats_endpoint(area, self._scm_manager)
 
 
 def simulation_results_manager_factory():
-    """Return the correct results manager class depending on the current market type."""
+    """Factory for results manager objects."""
     if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
         return CoefficientSimulationResultsManager
     return SimulationResultsManager
@@ -501,7 +583,7 @@ class Simulation:
             pause_after=pause_after,
             incremental=incremental
         )
-        self._time = SimulationTimeManager(
+        self._time = simulation_time_manager_factory(
             slot_length_realtime=slot_length_realtime,
         )
 
@@ -539,8 +621,7 @@ class Simulation:
         global_objects.external_global_stats(self.area, self.config.ticks_per_slot)
 
         self._results.init_results(self.simulation_id, self.area, self._setup)
-        self._results.update_and_send_results(
-            self.current_state, self.progress_info, self.area, self.status.status)
+        self._results.update_and_send_results(simulation=self)
 
         log.debug("Starting simulation with config %s", self.config)
 
@@ -623,8 +704,7 @@ class Simulation:
                 slot_completion="0%",
                 market_slot=self.progress_info.current_slot_str)
 
-            self._results.update_and_send_results(
-                self.current_state, self.progress_info, self.area, self.status.status)
+            self._results.update_and_send_results(simulation=self)
             self._external_events.update(self.area)
 
             self._compute_memory_info()
@@ -678,8 +758,7 @@ class Simulation:
                 slot_count - 1, slot_count, self._time, self.config)
             paused_duration = duration(seconds=self._time.paused_time)
             self.progress_info.log_simulation_finished(paused_duration, self.config)
-        self._results.update_and_send_results(
-            self.current_state, self.progress_info, self.area, self.status.status)
+        self._results.update_and_send_results(simulation=self)
         self._results.save_csv_results(self.area)
 
     def _handle_input(self, console: NonBlockingConsole, sleep_period: float = 0) -> None:
@@ -729,8 +808,7 @@ class Simulation:
             if console:
                 log.critical("Simulation paused. Press 'p' to resume or resume from API.")
             else:
-                self._results.update_and_send_results(
-                    self.current_state, self.progress_info, self.area, self.status.status)
+                self._results.update_and_send_results(simulation=self)
             start = time()
         while self.status.paused:
             paused_flag = True
@@ -828,7 +906,7 @@ class CoefficientSimulation(Simulation):
         self.area = self._setup.load_setup_module()
 
         self._results.init_results(self.simulation_id, self.area, self._setup)
-        self._results.update_send_coefficient_results(
+        self._results.update_and_send_results(
             self.current_state, self.progress_info, self.area, self.status.status)
 
         log.debug("Starting simulation with config %s", self.config)
@@ -849,11 +927,10 @@ class CoefficientSimulation(Simulation):
         pass
 
     def _execute_simulation(
-            self, slot_resume: int, tick_resume: int, console: NonBlockingConsole = None) -> None:
-
-        slot_count, slot_resume, tick_resume = (
-            self._time.calculate_total_initial_ticks_slots(
-                self.config, slot_resume, tick_resume, self.area))
+            self, slot_resume: int, _tick_resume: int, console: NonBlockingConsole = None) -> None:
+        slot_count, slot_resume = (
+            self._time.calc_resume_slot_and_count_realtime(
+                self.config, slot_resume))
 
         for slot_no in range(slot_resume, slot_count):
             self._handle_paused(console)
@@ -877,15 +954,17 @@ class CoefficientSimulation(Simulation):
             if ConstSettings.SCMSettings.MARKET_ALGORITHM == CoefficientAlgorithm.DYNAMIC.value:
                 self.area.change_home_coefficient_percentage(scm_manager)
 
-            self._results.update_send_coefficient_results(
-                self.current_state, self.progress_info, self.area,
-                self.status.status, scm_manager)
+            # important: SCM manager has to be updated before sending the results
+            self._results.update_scm_manager(scm_manager)
+
+            self._results.update_and_send_results(
+                self.current_state, self.progress_info, self.area, self.status.status)
 
             self._external_events.update(self.area)
 
             self._compute_memory_info()
 
-            self._time.handle_slowdown_and_realtime(0, self.config)
+            self._time.handle_slowdown_and_realtime_scm(slot_no, slot_count, self.config)
 
             if self.status.stopped:
                 log.error("Received stop command for configuration id %s and job id %s.",
@@ -909,8 +988,9 @@ class CoefficientSimulation(Simulation):
                 slot_count - 1, slot_count, self._time, self.config)
             paused_duration = duration(seconds=self._time.paused_time)
             self.progress_info.log_simulation_finished(paused_duration, self.config)
-        self._results.update_send_coefficient_results(
+        self._results.update_and_send_results(
             self.current_state, self.progress_info, self.area, self.status.status)
+
         self._results.save_csv_results(self.area)
 
 
