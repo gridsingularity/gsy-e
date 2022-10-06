@@ -67,8 +67,8 @@ class SimulationProgressInfo:
     """Information about the simulation progress."""
 
     def __init__(self):
-        self.eta = duration(seconds=0)
-        self.elapsed_time = duration(seconds=0)
+        self.eta = duration(seconds=0)  # Estimated Time of Arrival (end of the simulation)
+        self.elapsed_time = duration(seconds=0)  # Time passed since the start of the simulation
         self.percentage_completed = 0
         self.next_slot_str = ""
         self.current_slot_str = ""
@@ -424,16 +424,21 @@ class SimulationResultsManager:
         """Flag that decides whether to send results to the gsy-web"""
         return not self.started_from_cli and self.kafka_connection.is_enabled()
 
-    def update_and_send_results(self, current_state: dict, progress_info: SimulationProgressInfo,
-                                area: "Area", simulation_status: str) -> None:
+    def update_and_send_results(self, simulation: "Simulation"):
+        """Update the simulation results.
+
+        This method should be called on init, finish and every market cycle.
         """
-        Update the simulation results. Should be called on init, finish and every market cycle.
-        """
-        assert self._endpoint_buffer is not None
+        current_state = simulation.current_state
+        progress_info = simulation.progress_info
+        area = simulation.area
 
         if self._should_send_results_to_broker:
             self._endpoint_buffer.update_stats(
-                area, simulation_status, progress_info, current_state,
+                area,
+                simulation.status.status,
+                progress_info,
+                current_state,
                 calculate_results=False)
             results = self._endpoint_buffer.prepare_results_for_publish()
             if results is None:
@@ -616,8 +621,7 @@ class Simulation:
         global_objects.external_global_stats(self.area, self.config.ticks_per_slot)
 
         self._results.init_results(self.simulation_id, self.area, self._setup)
-        self._results.update_and_send_results(
-            self.current_state, self.progress_info, self.area, self.status.status)
+        self._results.update_and_send_results(simulation=self)
 
         log.debug("Starting simulation with config %s", self.config)
 
@@ -700,8 +704,7 @@ class Simulation:
                 slot_completion="0%",
                 market_slot=self.progress_info.current_slot_str)
 
-            self._results.update_and_send_results(
-                self.current_state, self.progress_info, self.area, self.status.status)
+            self._results.update_and_send_results(simulation=self)
             self._external_events.update(self.area)
 
             self._compute_memory_info()
@@ -755,8 +758,7 @@ class Simulation:
                 slot_count - 1, slot_count, self._time, self.config)
             paused_duration = duration(seconds=self._time.paused_time)
             self.progress_info.log_simulation_finished(paused_duration, self.config)
-        self._results.update_and_send_results(
-            self.current_state, self.progress_info, self.area, self.status.status)
+        self._results.update_and_send_results(simulation=self)
         self._results.save_csv_results(self.area)
 
     def _handle_input(self, console: NonBlockingConsole, sleep_period: float = 0) -> None:
@@ -806,8 +808,7 @@ class Simulation:
             if console:
                 log.critical("Simulation paused. Press 'p' to resume or resume from API.")
             else:
-                self._results.update_and_send_results(
-                    self.current_state, self.progress_info, self.area, self.status.status)
+                self._results.update_and_send_results(simulation=self)
             start = time()
         while self.status.paused:
             paused_flag = True
