@@ -128,6 +128,10 @@ class SimulationConfig:
         """
         Reads market_maker_rate from arbitrary input types
         """
+        print("GlobalConfig.market_maker_rate", GlobalConfig.market_maker_rate)
+        print("ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE",
+              ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE)
+        print("read_market_maker_rate", market_maker_rate)
         self.market_maker_rate = read_and_convert_identity_profile_to_float(market_maker_rate)
 
 

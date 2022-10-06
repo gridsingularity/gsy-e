@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import uuid
 
 import pytest
-from gsy_framework.constants_limits import ConstSettings, DATE_TIME_FORMAT, TIME_ZONE
+from gsy_framework.constants_limits import ConstSettings, DATE_TIME_FORMAT, TIME_ZONE, GlobalConfig
 from pendulum import datetime, today, duration
 
 from gsy_e.gsy_e_core.blockchain_interface import NonBlockchainInterface
@@ -47,6 +47,7 @@ def settlement_market_fixture():
 def future_market_fixture():
     original_future_market_count = ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS
     ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS = 2
+    GlobalConfig.market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
     config = create_simulation_config_from_global_config()
     config.start_date = today(tz=TIME_ZONE)
     config.slot_length = duration(hours=1)
