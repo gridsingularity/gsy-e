@@ -32,6 +32,8 @@ if TYPE_CHECKING:
     from gsy_e.models.strategy.energy_parameters.smart_meter import (
         SmartMeterEnergyParameters, SmartMeterState)
 
+logger = logging.getLogger(__name__)
+
 
 class SmartMeterExternalMixin(ExternalMixin):
     """
@@ -121,7 +123,7 @@ class SmartMeterExternalMixin(ExternalMixin):
             # Check that every provided argument is allowed
             assert all(arg in allowed_args for arg in arguments.keys())
         except Exception: # noqa
-            logging.exception("Incorrect offer request. Payload %s.", payload)
+            logger.exception("Incorrect offer request. Payload %s.", payload)
             self.redis.publish_json(
                 offer_response_channel,
                 {"command": "offer",
@@ -147,7 +149,7 @@ class SmartMeterExternalMixin(ExternalMixin):
                     market.id, arguments["offer"]):
                 raise Exception("Offer_id is not associated with any posted offer.")
         except Exception: # noqa
-            logging.exception("Error when handling delete offer request. Payload %s", payload)
+            logger.exception("Error when handling delete offer request. Payload %s", payload)
             self.redis.publish_json(
                 delete_offer_response_channel,
                 {"command": "offer_delete",
@@ -292,7 +294,9 @@ class SmartMeterExternalMixin(ExternalMixin):
                 required_energy = (
                     self.state.get_energy_requirement_Wh(market.time_slot) / 1000)
             else:
-                raise OrderCanNotBePosted("Market can not be posted to.")
+                logger.debug("The order cannot be posted on the market. "
+                             "(arguments: %s, market_id: %s", arguments, market.id)
+                raise OrderCanNotBePosted("The order cannot be posted on the market.")
             replace_existing = arguments.get("replace_existing", True)
             assert self.can_bid_be_posted(
                 arguments["energy"],
@@ -319,8 +323,8 @@ class SmartMeterExternalMixin(ExternalMixin):
                 "transaction_id": arguments.get("transaction_id"),
                 "message": response_message}
         except Exception: # noqa
-            logging.exception("Error when handling bid create on area %s: Bid Arguments: %s",
-                              self.device.name, arguments)
+            logger.exception("Error when handling bid create on area %s: Bid Arguments: %s",
+                             self.device.name, arguments)
             response = {"command": "bid", "status": "error",
                         "market_type": market.type_name,
                         "area_uuid": self.device.uuid,
@@ -339,8 +343,8 @@ class SmartMeterExternalMixin(ExternalMixin):
                         "area_uuid": self.device.uuid,
                         "transaction_id": arguments.get("transaction_id")}
         except Exception: # noqa
-            logging.exception("Error when handling bid delete on area %s: Bid Arguments: %s",
-                              self.device.name, arguments)
+            logger.exception("Error when handling bid delete on area %s: Bid Arguments: %s",
+                             self.device.name, arguments)
             response = {"command": "bid_delete", "status": "error",
                         "error_message": "Error when handling bid delete "
                                          f"on area {self.device.name} with arguments {arguments}.",
@@ -359,7 +363,7 @@ class SmartMeterExternalMixin(ExternalMixin):
                 "transaction_id": arguments.get("transaction_id")}
         except Exception: # noqa
             error_message = f"Error when handling list bids on area {self.device.name}"
-            logging.exception(error_message)
+            logger.exception(error_message)
             response = {"command": "list_bids", "status": "error",
                         "error_message": error_message,
                         "area_uuid": self.device.uuid,
@@ -387,7 +391,9 @@ class SmartMeterExternalMixin(ExternalMixin):
             elif self.area.is_market_spot(market.id):
                 available_energy = self.state.get_available_energy_kWh(market.time_slot)
             else:
-                raise OrderCanNotBePosted("Market can not be posted to.")
+                logger.debug("The order cannot be posted on the market. "
+                             "(arguments: %s, market_id: %s", arguments, market.id)
+                raise OrderCanNotBePosted("The order cannot be posted on the market.")
 
             replace_existing = arguments.pop("replace_existing", True)
             assert self.can_offer_be_posted(
@@ -412,7 +418,7 @@ class SmartMeterExternalMixin(ExternalMixin):
         except Exception: # noqa
             error_message = (f"Error when handling offer create on area {self.device.name}: "
                              f"Offer Arguments: {arguments}")
-            logging.exception(error_message)
+            logger.exception(error_message)
             response = {"command": "offer", "status": "error",
                         "market_type": market.type_name,
                         "error_message": error_message,
@@ -434,7 +440,7 @@ class SmartMeterExternalMixin(ExternalMixin):
         except Exception: # noqa
             error_message = (f"Error when handling offer delete on area {self.device.name}: "
                              f"Offer Arguments: {arguments}")
-            logging.exception(error_message)
+            logger.exception(error_message)
             response = {"command": "offer_delete", "status": "error",
                         "error_message": error_message,
                         "area_uuid": self.device.uuid,
@@ -451,7 +457,7 @@ class SmartMeterExternalMixin(ExternalMixin):
                         "transaction_id": arguments.get("transaction_id")}
         except Exception: # noqa
             error_message = f"Error when handling list offers on area {self.device.name}"
-            logging.exception(error_message)
+            logger.exception(error_message)
             response = {"command": "list_offers", "status": "error",
                         "error_message": error_message,
                         "area_uuid": self.device.uuid,
