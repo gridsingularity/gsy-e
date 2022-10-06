@@ -20,6 +20,7 @@ import logging
 from typing import TYPE_CHECKING, Callable, Dict, List, Union
 
 from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.utils import str_to_pendulum_datetime
 from pendulum import duration
 
 from gsy_e.gsy_e_core.exceptions import GSyException
@@ -314,9 +315,14 @@ class LoadExternalMixin(ExternalMixin):
                     raise OrderCanNotBePosted("The load did not consume to little energy, "
                                               "settlement bid can not be posted.")
                 required_energy_kWh = self.state.get_unsettled_deviation_kWh(market.time_slot)
-            else:
+            elif self.area.is_market_future(market.id):
+                required_energy_kWh = self.state.get_energy_requirement_Wh(
+                    str_to_pendulum_datetime(arguments["time_slot"])) / 1000.
+            elif self.area.is_market_spot(market.id):
                 required_energy_kWh = (
                         self.state.get_energy_requirement_Wh(market.time_slot) / 1000.)
+            else:
+                raise OrderCanNotBePosted("Market can not be posted to.")
 
             response = (
                 self._bid_aggregator_impl(arguments, market,

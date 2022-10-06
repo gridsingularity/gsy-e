@@ -21,6 +21,7 @@ from typing import TYPE_CHECKING, Callable, Dict
 
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Offer
+from gsy_framework.utils import str_to_pendulum_datetime
 from pendulum import duration
 
 from gsy_e.gsy_e_core.exceptions import GSyException
@@ -342,8 +343,13 @@ class PVExternalMixin(ExternalMixin):
                     raise OrderCanNotBePosted("The PV did not produce too much energy, "
                                               "settlement offer can not be posted.")
                 available_energy_kWh = self.state.get_unsettled_deviation_kWh(market.time_slot)
-            else:
+            elif self.area.is_market_future(market.id):
+                available_energy_kWh = self.state.get_available_energy_kWh(
+                    str_to_pendulum_datetime(arguments["time_slot"]))
+            elif self.area.is_market_spot(market.id):
                 available_energy_kWh = self.state.get_available_energy_kWh(market.time_slot)
+            else:
+                raise OrderCanNotBePosted("Market can not be posted to.")
 
             response = (
                 self._offer_aggregator_impl(arguments, market,

@@ -19,10 +19,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import uuid
 
 import pytest
-from gsy_framework.constants_limits import DATE_TIME_FORMAT
-from pendulum import datetime
+from gsy_framework.constants_limits import ConstSettings, DATE_TIME_FORMAT, TIME_ZONE
+from pendulum import datetime, today, duration
 
 from gsy_e.gsy_e_core.blockchain_interface import NonBlockchainInterface
+from gsy_e.models.config import create_simulation_config_from_global_config
+from gsy_e.models.market.future import FutureMarkets
 from gsy_e.models.market.settlement import SettlementMarket
 from gsy_e.models.strategy.external_strategies.pv import PVExternalStrategy
 from tests.strategies.external.utils import (
@@ -39,6 +41,21 @@ def external_pv_fixture():
 def settlement_market_fixture():
     return SettlementMarket(bc=NonBlockchainInterface(str(uuid.uuid4())),
                             time_slot=datetime(2021, 12, 7, 12, 00))
+
+
+@pytest.fixture(name="future_markets")
+def future_market_fixture():
+    original_future_market_count = ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS
+    ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS = 2
+    config = create_simulation_config_from_global_config()
+    config.start_date = today(tz=TIME_ZONE)
+    config.slot_length = duration(hours=1)
+    future_markets = FutureMarkets(bc=NonBlockchainInterface(str(uuid.uuid4())))
+    future_markets.create_future_market_slots(
+        current_market_time_slot=today(tz=TIME_ZONE), config=config)
+    assert len(future_markets.market_time_slots) == 2
+    yield future_markets
+    ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS = original_future_market_count
 
 
 class TestPVForecastExternalStrategy:
@@ -133,6 +150,28 @@ class TestPVForecastExternalStrategy:
         assert_bid_offer_aggregator_commands_return_value(return_value, True)
 
     @staticmethod
+    def test_offer_aggregator_places_future_offer(external_pv, future_markets):
+        future_energy_kWh = 0.5
+        external_pv.area._markets.future_markets = future_markets
+        assert len(future_markets.market_time_slots) == 2
+
+        for time_slot in future_markets.market_time_slots:
+            external_pv.state._available_energy_kWh[time_slot] = future_energy_kWh
+            return_value = external_pv.trigger_aggregator_commands(
+                {
+                    "type": "offer",
+                    "price": 200.0,
+                    "energy": future_energy_kWh,
+                    "time_slot": time_slot.format(DATE_TIME_FORMAT),
+                    "transaction_id": str(uuid.uuid4())
+                }
+            )
+
+            assert return_value["status"] == "ready"
+            assert len(future_markets.offers.values()) == 1
+            assert list(future_markets.offers.values())[0].energy == future_energy_kWh
+
+    @staticmethod
     def test_offer_aggregator_succeeds_with_warning_if_dof_are_disabled(external_pv):
         """
         The _offer_aggregator command succeeds, but it shows a warning if Degrees of Freedom are
@@ -169,6 +208,26 @@ class TestPVForecastExternalStrategy:
         assert return_value["status"] == "ready"
         assert return_value["command"] == "offer_delete"
         assert return_value["deleted_offers"] == [offer.id]
+
+    @staticmethod
+    def test_delete_offer_aggregator_deletes_offer_from_future_market(external_pv, future_markets):
+        external_pv.area._markets.future_markets = future_markets
+        for time_slot in future_markets.market_time_slots:
+            offer = external_pv.post_offer(
+                external_pv.area.future_markets, False, price=200.0, energy=1.0,
+                time_slot=time_slot)
+
+            return_value = external_pv.trigger_aggregator_commands(
+                {
+                    "type": "delete_offer",
+                    "offer": str(offer.id),
+                    "transaction_id": str(uuid.uuid4()),
+                    "time_slot": time_slot.format(DATE_TIME_FORMAT)
+                }
+            )
+            assert return_value["status"] == "ready"
+            assert return_value["command"] == "offer_delete"
+            assert return_value["deleted_offers"] == [offer.id]
 
     @staticmethod
     def test_list_offers_aggregator(external_pv):

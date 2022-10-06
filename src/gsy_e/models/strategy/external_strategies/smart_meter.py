@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import json
 import logging
 from typing import TYPE_CHECKING, Callable, Dict, List
-
+from gsy_framework.utils import str_to_pendulum_datetime
 from gsy_e.models.market import MarketBase
 from gsy_e.models.strategy.external_strategies import (ExternalMixin,
                                                        ExternalStrategyConnectionManager,
@@ -279,14 +279,20 @@ class SmartMeterExternalMixin(ExternalMixin):
                 response_message = (
                     "The following arguments are not supported for this market and have been "
                     f"removed from your order: {filtered_fields}.")
+            time_slot = (str_to_pendulum_datetime(arguments["time_slot"])
+                         if arguments.get("time_slot") else None)
             if self.area.is_market_settlement(market.id):
                 if not self.state.can_post_settlement_bid(market.time_slot):
                     raise OrderCanNotBePosted("The smart meter did not consume enough energy, "
                                               "settlement bid can not be posted.")
                 required_energy = self.state.get_unsettled_deviation_kWh(market.time_slot)
-            else:
+            elif self.area.is_market_future(market.id):
+                required_energy = self.state.get_energy_requirement_Wh(time_slot) / 1000
+            elif self.area.is_market_spot(market.id):
                 required_energy = (
                     self.state.get_energy_requirement_Wh(market.time_slot) / 1000)
+            else:
+                raise OrderCanNotBePosted("Market can not be posted to.")
             replace_existing = arguments.get("replace_existing", True)
             assert self.can_bid_be_posted(
                 arguments["energy"],
@@ -301,7 +307,8 @@ class SmartMeterExternalMixin(ExternalMixin):
                 arguments["energy"],
                 replace_existing=replace_existing,
                 attributes=arguments.get("attributes"),
-                requirements=arguments.get("requirements")
+                requirements=arguments.get("requirements"),
+                time_slot=time_slot
             )
             response = {
                 "command": "bid",
@@ -374,8 +381,14 @@ class SmartMeterExternalMixin(ExternalMixin):
                     raise OrderCanNotBePosted("The smart meter did not produce enough energy, ",
                                               "settlement offer can not be posted.")
                 available_energy = self.state.get_unsettled_deviation_kWh(market.time_slot)
-            else:
+            elif self.area.is_market_future(market.id):
+                available_energy = self.state.get_available_energy_kWh(
+                    str_to_pendulum_datetime(arguments["time_slot"]))
+            elif self.area.is_market_spot(market.id):
                 available_energy = self.state.get_available_energy_kWh(market.time_slot)
+            else:
+                raise OrderCanNotBePosted("Market can not be posted to.")
+
             replace_existing = arguments.pop("replace_existing", True)
             assert self.can_offer_be_posted(
                 arguments["energy"],
@@ -385,7 +398,7 @@ class SmartMeterExternalMixin(ExternalMixin):
                 replace_existing)
             offer_arguments = {
                 k: v for k, v in arguments.items()
-                if k not in ["transaction_id", "type", "time_slot"]}
+                if k not in ["transaction_id", "type"]}
             offer = self.post_offer(
                 market,
                 replace_existing,
