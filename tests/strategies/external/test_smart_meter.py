@@ -13,6 +13,9 @@ from tests.strategies.external.utils import (
     check_external_command_endpoint_with_correct_payload_succeeds,
     create_areas_markets_for_strategy_fixture, assert_bid_offer_aggregator_commands_return_value)
 
+# pylint: disable=protected-access, disable=missing-function-docstring, missing-class-docstring
+# pylint: disable=too-many-public-methods
+
 
 @pytest.fixture(name="external_smart_meter")
 def external_smart_meter_fixture():
@@ -122,7 +125,6 @@ class TestSmartMeterExternalStrategy:
     def test_bid_aggregator_places_future_bid(external_smart_meter, future_markets):
         future_energy_kWh = 0.5
         external_smart_meter.area._markets.future_markets = future_markets
-        assert len(future_markets.market_time_slots) == 2
 
         for time_slot in future_markets.market_time_slots:
             external_smart_meter.state._energy_requirement_Wh[time_slot] = future_energy_kWh * 1000
@@ -257,7 +259,6 @@ class TestSmartMeterExternalStrategy:
     def test_offer_aggregator_places_future_offer(external_smart_meter, future_markets):
         future_energy_kWh = 0.5
         external_smart_meter.area._markets.future_markets = future_markets
-        assert len(future_markets.market_time_slots) == 2
 
         for time_slot in future_markets.market_time_slots:
             external_smart_meter.state._available_energy_kWh[time_slot] = future_energy_kWh

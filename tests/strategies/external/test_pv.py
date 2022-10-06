@@ -154,7 +154,6 @@ class TestPVForecastExternalStrategy:
     def test_offer_aggregator_places_future_offer(external_pv, future_markets):
         future_energy_kWh = 0.5
         external_pv.area._markets.future_markets = future_markets
-        assert len(future_markets.market_time_slots) == 2
 
         for time_slot in future_markets.market_time_slots:
             external_pv.state._available_energy_kWh[time_slot] = future_energy_kWh

@@ -133,7 +133,6 @@ class TestLoadForecastExternalStrategy:
     def test_bid_aggregator_places_future_bid(external_load, future_markets):
         future_energy_kWh = 0.5
         external_load.area._markets.future_markets = future_markets
-        assert len(future_markets.market_time_slots) == 2
 
         for time_slot in future_markets.market_time_slots:
             external_load.state._energy_requirement_Wh[time_slot] = future_energy_kWh * 1000
