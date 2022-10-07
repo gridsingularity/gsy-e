@@ -155,11 +155,10 @@ class SimulationTimeManagerScm:
             log.debug("Slot %s/%s: Sleep time of %s s was applied",
                       slot_no, slot_count, sleep_time_s)
 
-        self.slot_time_counter = time()
+        self.slot_time_counter = int(time())
 
-    @staticmethod
     def calc_resume_slot_and_count_realtime(
-            config: "SimulationConfig", slot_resume: int) -> Tuple[int, int]:
+            self, config: "SimulationConfig", slot_resume: int) -> Tuple[int, int]:
         """Calculate total slot count and the slot where to resume the realtime simulation."""
         slot_count = int(config.sim_duration / config.slot_length)
 
@@ -173,6 +172,7 @@ class SimulationTimeManagerScm:
             sleep_time_s = config.slot_length.total_seconds() - seconds_elapsed_in_slot
             sleep(sleep_time_s)
 
+        self.slot_time_counter = int(time())
         return slot_count, slot_resume
 
 
