@@ -419,6 +419,8 @@ class CoefficientSimulation(Simulation):
             self._time.calc_resume_slot_and_count_realtime(
                 self.config, slot_resume))
 
+        self._time.reset(not_restored_from_state=(slot_resume == 0))
+
         for slot_no in range(slot_resume, slot_count):
             self._handle_paused(console)
 
