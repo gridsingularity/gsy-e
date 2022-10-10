@@ -152,6 +152,8 @@ class Simulation:
             if self._setup.started_from_cli:
                 self._run_cli_execute_cycle(initial_slot, tick_resume)
             else:
+                # update status of the simulation before executing it.
+                self._results.update_and_send_results(simulation=self)
                 self._execute_simulation(initial_slot, tick_resume)
         except (KeyboardInterrupt, SimulationResetException):
             pass
@@ -416,6 +418,8 @@ class CoefficientSimulation(Simulation):
         slot_count, slot_resume = (
             self._time.calc_resume_slot_and_count_realtime(
                 self.config, slot_resume))
+
+        self._time.reset(not_restored_from_state=(slot_resume == 0))
 
         for slot_no in range(slot_resume, slot_count):
             self._handle_paused(console)
