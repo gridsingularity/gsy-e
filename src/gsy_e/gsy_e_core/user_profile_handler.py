@@ -32,6 +32,10 @@ import gsy_e.constants
 from gsy_e.gsy_e_core.util import should_read_profile_from_db
 
 
+class ProfileDBConnectionException(Exception):
+    """Exception that is raised inside ProfileDBConnectionHandler."""
+
+
 class ProfileDBConnectionHandler:
     """
     Handles connection and interaction with the user-profiles postgres DB via pony ORM
@@ -98,10 +102,13 @@ class ProfileDBConnectionHandler:
         """
         if not isinstance(profile_uuid, uuid.UUID):
             profile_uuid = uuid.UUID(profile_uuid)
-        first_datapoint_time = select(
+        first_datapoint = select(
             datapoint for datapoint in self.Profile_Database_ProfileTimeSeries
             if datapoint.profile_uuid == profile_uuid
-        ).order_by(lambda d: d.time).limit(1)[0].time
+        ).order_by(lambda d: d.time).limit(1)
+        if len(first_datapoint) == 0:
+            raise ProfileDBConnectionException("Profile in DB is empty.")
+        first_datapoint_time = first_datapoint[0].time
 
         datapoints = select(
             datapoint for datapoint in self.Profile_Database_ProfileTimeSeries
