@@ -313,10 +313,6 @@ def change_global_config(**kwargs):
             pass
 
 
-def validate_const_settings_for_simulation():
-    """Validate constant settings for simulation."""
-
-
 def round_floats_for_ui(number):
     """Round floats for UI."""
     return round(number, 3)
