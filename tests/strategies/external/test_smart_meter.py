@@ -334,6 +334,27 @@ class TestSmartMeterExternalStrategy:
             assert return_value["deleted_offers"] == [offer.id]
 
     @staticmethod
+    def test_delete_bid_aggregator_deletes_bid_from_future_market(
+            external_smart_meter, future_markets):
+        external_smart_meter.area._markets.future_markets = future_markets
+        for time_slot in future_markets.market_time_slots:
+            bid = external_smart_meter.post_bid(
+                external_smart_meter.area.future_markets, 200.0, 1.0,
+                time_slot=time_slot)
+
+            return_value = external_smart_meter.trigger_aggregator_commands(
+                {
+                    "type": "delete_bid",
+                    "offer": str(bid.id),
+                    "transaction_id": str(uuid.uuid4()),
+                    "time_slot": time_slot.format(DATE_TIME_FORMAT)
+                }
+            )
+            assert return_value["status"] == "ready"
+            assert return_value["command"] == "bid_delete"
+            assert return_value["deleted_bids"] == [bid.id]
+
+    @staticmethod
     def test_list_offers_aggregator(external_smart_meter: SmartMeterExternalStrategy):
         offer = external_smart_meter.post_offer(
             external_smart_meter.spot_market, False, price=200.0, energy=1.0)
