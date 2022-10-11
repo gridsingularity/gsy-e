@@ -252,6 +252,18 @@ class AreaBase:
         return {}
 
 
+class CoefficientAreaException(Exception):
+    """Exception that is raised when serializing an area."""
+
+
+def assert_coefficient_area_settings(
+        strategy: Optional[SCMStrategy], setting: Optional[float], setting_name: str) -> float:
+    """Check if coefficient area that is not an asset provided SCM setting."""
+    if strategy is None and setting is None:
+        raise CoefficientAreaException(f"In SCM simulations {setting_name} can not be None.")
+    return setting
+
+
 class CoefficientArea(AreaBase):
     """Area class for the coefficient matching mechanism."""
     def __init__(self, name: str = None, children: List["CoefficientArea"] = None,
@@ -269,16 +281,23 @@ class CoefficientArea(AreaBase):
                  feed_in_tariff: float = GlobalConfig.FEED_IN_TARIFF / 100.,
                  ):
         # pylint: disable=too-many-arguments
+        assert_coefficient_area_settings(strategy, grid_fee_constant, "grid_fee_constant")
         super().__init__(name, children, uuid, strategy, config, grid_fee_percentage,
                          grid_fee_constant)
         self.display_type = (
             "CoefficientArea" if self.strategy is None else self.strategy.__class__.__name__)
-        self.coefficient_percentage = coefficient_percentage
-        self._taxes_surcharges = taxes_surcharges
-        self._fixed_monthly_fee = fixed_monthly_fee
-        self._marketplace_monthly_fee = marketplace_monthly_fee
-        self._market_maker_rate = market_maker_rate
-        self._feed_in_tariff = feed_in_tariff
+        self.coefficient_percentage = assert_coefficient_area_settings(
+            strategy, coefficient_percentage, "coefficient_percentage")
+        self._taxes_surcharges = assert_coefficient_area_settings(
+            strategy, taxes_surcharges, "taxes_surcharges")
+        self._fixed_monthly_fee = assert_coefficient_area_settings(
+            strategy, fixed_monthly_fee, "fixed_monthly_fee")
+        self._marketplace_monthly_fee = assert_coefficient_area_settings(
+            strategy, marketplace_monthly_fee, "marketplace_monthly_fee")
+        self._market_maker_rate = assert_coefficient_area_settings(
+            strategy, market_maker_rate, "market_maker_rate")
+        self._feed_in_tariff = assert_coefficient_area_settings(
+            strategy, feed_in_tariff, "feed_in_tariff")
         self.past_market_time_slot = None
 
     def activate_energy_parameters(self, current_time_slot: DateTime) -> None:

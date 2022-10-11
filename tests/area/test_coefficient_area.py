@@ -25,7 +25,7 @@ from pendulum import duration, today
 from pendulum import now
 
 from gsy_e import constants
-from gsy_e.models.area import CoefficientArea
+from gsy_e.models.area import CoefficientArea, CoefficientAreaException
 from gsy_e.models.area.scm_manager import SCMManager, HomeAfterMeterData, AreaEnergyBills
 from gsy_e.models.config import SimulationConfig
 from gsy_e.models.strategy.scm.load import SCMLoadHoursStrategy
@@ -83,12 +83,15 @@ class TestCoefficientArea:
         house1 = CoefficientArea(name="House 1", children=[load, pv],
                                  coefficient_percentage=0.6,
                                  feed_in_tariff=0.1,
-                                 market_maker_rate=0.3)
+                                 market_maker_rate=0.3,
+                                 grid_fee_constant=0.0)
         house2 = CoefficientArea(name="House 2", children=[load2, pv2],
                                  coefficient_percentage=0.4,
                                  feed_in_tariff=0.05,
-                                 market_maker_rate=0.24)
-        return CoefficientArea(name="Community", children=[house1, house2])
+                                 market_maker_rate=0.24,
+                                 grid_fee_constant=0.0)
+        return CoefficientArea(name="Community", children=[house1, house2],
+                               grid_fee_constant=0.0)
 
     @staticmethod
     def test_calculate_after_meter_data(_create_2_house_grid):
@@ -224,3 +227,22 @@ class TestCoefficientArea:
 
         assert house1.coefficient_percentage == 1.0
         assert house2.coefficient_percentage == 0.0  # we allow null values
+
+    @staticmethod
+    @pytest.mark.parametrize("scm_setting", [
+        "coefficient_percentage",
+        "taxes_surcharges",
+        "fixed_monthly_fee",
+        "marketplace_monthly_fee",
+        "market_maker_rate",
+        "feed_in_tariff",
+    ])
+    def test_coefficient_area_only_allows_not_none_values_for_settings(scm_setting):
+        strategy = MagicMock(spec=SCMLoadHoursStrategy)
+        strategy.get_energy_to_sell_kWh = MagicMock(return_value=0.0)
+        strategy.get_energy_to_buy_kWh = MagicMock(return_value=0.7)
+        load = CoefficientArea(name="load", strategy=strategy)
+        scm_settings = {scm_setting: None}
+        with pytest.raises(CoefficientAreaException):
+            # grid_fee_constant's default value is None, so setting it to 0, it is tested elsewhere
+            CoefficientArea(name="House 1", children=[load], grid_fee_constant=0., **scm_settings)
