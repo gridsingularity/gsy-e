@@ -15,18 +15,15 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-# pylint: disable=missing-function-docstring, protected-access
+# pylint: disable=missing-function-docstring, protected-access, unused-import
 import uuid
 
 import pytest
-from gsy_framework.constants_limits import ConstSettings, DATE_TIME_FORMAT, TIME_ZONE, GlobalConfig
-from pendulum import datetime, today, duration
+from gsy_framework.constants_limits import ConstSettings, DATE_TIME_FORMAT
 
-from gsy_e.gsy_e_core.blockchain_interface import NonBlockchainInterface
-from gsy_e.models.config import create_simulation_config_from_global_config
-from gsy_e.models.market.future import FutureMarkets
-from gsy_e.models.market.settlement import SettlementMarket
 from gsy_e.models.strategy.external_strategies.load import LoadHoursExternalStrategy
+from tests.strategies.external.fixtures import (future_market_fixture, # noqa
+                                                settlement_market_fixture)  # noqa
 from tests.strategies.external.utils import (
     check_external_command_endpoint_with_correct_payload_succeeds,
     create_areas_markets_for_strategy_fixture, assert_bid_offer_aggregator_commands_return_value)
@@ -37,28 +34,6 @@ def external_load_fixture():
     ConstSettings.MASettings.MARKET_TYPE = 2
     yield create_areas_markets_for_strategy_fixture(LoadHoursExternalStrategy(100))
     ConstSettings.MASettings.MARKET_TYPE = 1
-
-
-@pytest.fixture(name="settlement_market")
-def settlement_market_fixture():
-    return SettlementMarket(bc=NonBlockchainInterface(str(uuid.uuid4())),
-                            time_slot=datetime(2021, 12, 7, 12, 00))
-
-
-@pytest.fixture(name="future_markets")
-def future_market_fixture():
-    original_future_market_count = ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS
-    ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS = 2
-    GlobalConfig.market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
-    config = create_simulation_config_from_global_config()
-    config.start_date = today(tz=TIME_ZONE)
-    config.slot_length = duration(hours=1)
-    future_markets = FutureMarkets(bc=NonBlockchainInterface(str(uuid.uuid4())))
-    future_markets.create_future_market_slots(
-        current_market_time_slot=today(tz=TIME_ZONE), config=config)
-    assert len(future_markets.market_time_slots) == 2
-    yield future_markets
-    ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS = original_future_market_count
 
 
 class TestLoadForecastExternalStrategy:
