@@ -19,12 +19,10 @@ from gsy_e.models.area import Area
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
 from gsy_framework.constants_limits import ConstSettings
 from gsy_e.utils.influx_area_factory import InfluxAreaFactory
-from gsy_e.gsy_e_core.util import d3a_path
-import os
 
 def get_setup(config):
     ConstSettings.GeneralSettings.RUN_IN_REALTIME = True
-    factory = InfluxAreaFactory(os.path.join(d3a_path, "resources", "influx_fhaachen.cfg"), power_column="P_ges", tablename="Strom", keyname="id")
+    factory = InfluxAreaFactory("influx_fhaachen.cfg", power_column="P_ges", tablename="Strom", keyname="id")
     area = Area(
         "Grid",
         [
@@ -39,4 +37,4 @@ def get_setup(config):
 
 
 # pip install -e .
-# gsy-e run --setup bc4p_fhcampus -s 15m --enable-external-connection --start-date 2022-07-01
+# gsy-e run --setup bc4p_fhcampus -s 15m --enable-external-connection --start-date 2022-10-10

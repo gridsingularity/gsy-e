@@ -1,5 +1,3 @@
-from gsy_e.gsy_e_core.util import d3a_path
-import os
 from datetime import date, datetime
 from pendulum import duration, instance
 
@@ -10,12 +8,12 @@ from gsy_framework.influx_connection.queries_pxl import DataQueryPXL
 from gsy_e.utils.influx_area_factory import InfluxAreaFactory
 from gsy_e.models.strategy.influx import InfluxLoadStrategy, InfluxPVStrategy
 
-path_fhaachen = os.path.join(d3a_path, "resources", "influx_fhaachen.cfg")
-path_pxl = os.path.join(d3a_path, "resources", "influx_pxl.cfg")
+config_fhaachen = "influx_fhaachen.cfg"
+config_pxl = "influx_pxl.cfg"
 # strat = InfluxLoadStrategyAggregated(path_fhaachen, final_buying_rate=60, power_column="P_ges", tablename="Strom", keyname="id")
 
-connection1 = InfluxConnection(path_fhaachen);
-connection2 = InfluxConnection(path_pxl);
+connection1 = InfluxConnection(config_fhaachen);
+connection2 = InfluxConnection(config_pxl);
 
 #qstring = 'SHOW SERIES ON Energiedaten'
 #rquery = RawQuery(connection1, qstring)

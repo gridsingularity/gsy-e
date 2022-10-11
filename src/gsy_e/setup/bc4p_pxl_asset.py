@@ -21,11 +21,17 @@ from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.influx_connection.connection import InfluxConnection
 from gsy_framework.influx_connection.queries_pxl import DataQueryPXL
 from gsy_e.models.strategy.influx import InfluxLoadStrategy, InfluxPVStrategy
+from gsy_e.models.strategy.external_strategies.pv import PVUserProfileExternalStrategy
+from gsy_e.models.strategy.external_strategies.load import LoadProfileExternalStrategy
+from gsy_e.models.strategy.external_strategies.storage import StorageExternalStrategy
+
+# init with zero laod profile
 
 def get_setup(config):
     ConstSettings.GeneralSettings.RUN_IN_REALTIME = True
     connection = InfluxConnection("influx_pxl.cfg")
     tablename = "Total_Electricity"
+    zero_path = os.path.join(d3a_path, "resources", "Zero_Curve.csv")
 
     area = Area(
         "Grid",
@@ -33,12 +39,12 @@ def get_setup(config):
             Area(
                 "PXL Campus",
                 [
-                    Area("main_P_L1", strategy=InfluxLoadStrategy(query = DataQueryPXL(connection, power_column="main_P_L1", tablename=tablename))),
-                    Area("main_P_L2", strategy=InfluxLoadStrategy(query = DataQueryPXL(connection, power_column="main_P_L2", tablename=tablename))),
-                    Area("main_P_L3", strategy=InfluxLoadStrategy(query = DataQueryPXL(connection, power_column="main_P_L3", tablename=tablename))),
-                    Area("PV_LS_105A_power", strategy=InfluxPVStrategy(query = DataQueryPXL(connection, power_column="PV_LS_105A_power", tablename=tablename))),
-                    Area("PV_LS_105B_power", strategy=InfluxPVStrategy(query = DataQueryPXL(connection, power_column="PV_LS_105B_power", tablename=tablename))),
-                    Area("PV_LS_105E_power", strategy=InfluxPVStrategy(query = DataQueryPXL(connection, power_column="PV_LS_105E_power", tablename=tablename))),
+                    Area("main_P_L1", strategy=LoadProfileExternalStrategy(daily_load_profile=zero_path, initial_buying_rate=11, use_market_maker_rate=True)),
+                    Area("main_P_L2", strategy=LoadProfileExternalStrategy(daily_load_profile=zero_path, initial_buying_rate=11, use_market_maker_rate=True)),
+                    Area("main_P_L3", strategy=LoadProfileExternalStrategy(daily_load_profile=zero_path, initial_buying_rate=11, use_market_maker_rate=True)),
+                    Area("PV_LS_105A_power", strategy=PVUserProfileExternalStrategy(power_profile=zero_path, panel_count=1, initial_selling_rate=30, final_selling_rate=11)),
+                    Area("PV_LS_105B_power", strategy=PVUserProfileExternalStrategy(power_profile=zero_path, panel_count=1, initial_selling_rate=30, final_selling_rate=11)),
+                    Area("PV_LS_105E_power", strategy=PVUserProfileExternalStrategy(power_profile=zero_path, panel_count=1, initial_selling_rate=30, final_selling_rate=11)),
                 ]
             ),
 
@@ -49,7 +55,6 @@ def get_setup(config):
         config=config
     )
     return area
-
 
 # pip install -e .
 # gsy-e run --setup bc4p_pxl -s 15m --enable-external-connection --start-date 2022-09-08

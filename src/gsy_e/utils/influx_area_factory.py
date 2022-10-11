@@ -7,8 +7,8 @@ from gsy_framework.influx_connection.queries_fhac import DataQueryFHAachen, Smar
 from gsy_e.models.strategy.influx import InfluxLoadStrategy
 
 class InfluxAreaFactory:
-    def __init__(self, path_influx_config, power_column, tablename, keyname):
-        self.ic = InfluxConnection(path_influx_config)
+    def __init__(self, name_influx_config, power_column, tablename, keyname):
+        self.ic = InfluxConnection(name_influx_config)
         self.power_column = power_column
         self.tablename = tablename
         self.keyname = keyname
