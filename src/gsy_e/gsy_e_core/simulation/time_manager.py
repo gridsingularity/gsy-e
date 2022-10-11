@@ -127,7 +127,7 @@ class SimulationTimeManagerScm:
         Restore time-related parameters of the simulation to their default values.
         Mainly useful when resetting the simulation.
         """
-        self.slot_time_counter = time()
+        self.slot_time_counter = int(time())
         if not_restored_from_state:
             self.start_time = now(tz=TIME_ZONE)
             self.paused_time = 0
@@ -145,8 +145,8 @@ class SimulationTimeManagerScm:
             slot_runtime_s = time() - self.slot_time_counter
             sleep_time_s = config.slot_length.total_seconds() - slot_runtime_s
         elif slot_length_realtime_s:
-            current_expected_tick_time = self.slot_time_counter + slot_length_realtime_s
-            sleep_time_s = current_expected_tick_time - now().timestamp()
+            current_expected_slot_time = self.slot_time_counter + slot_length_realtime_s
+            sleep_time_s = current_expected_slot_time - now().timestamp()
         else:
             return
 
@@ -155,11 +155,10 @@ class SimulationTimeManagerScm:
             log.debug("Slot %s/%s: Sleep time of %s s was applied",
                       slot_no, slot_count, sleep_time_s)
 
-        self.slot_time_counter = time()
+        self.slot_time_counter = int(time())
 
-    @staticmethod
     def calc_resume_slot_and_count_realtime(
-            config: "SimulationConfig", slot_resume: int) -> Tuple[int, int]:
+            self, config: "SimulationConfig", slot_resume: int) -> Tuple[int, int]:
         """Calculate total slot count and the slot where to resume the realtime simulation."""
         slot_count = int(config.sim_duration / config.slot_length)
 
