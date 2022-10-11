@@ -107,7 +107,8 @@ class ProfileDBConnectionHandler:
             if datapoint.profile_uuid == profile_uuid
         ).order_by(lambda d: d.time).limit(1)
         if len(first_datapoint) == 0:
-            raise ProfileDBConnectionException("Profile in DB is empty.")
+            raise ProfileDBConnectionException(
+                f"Profile in DB is empty for profile with uuid {profile_uuid}")
         first_datapoint_time = first_datapoint[0].time
 
         datapoints = select(
