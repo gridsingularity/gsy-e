@@ -18,8 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
 from gsy_framework.constants_limits import ConstSettings
-from gsy_e.utils.influx_connection import InfluxConnection
-from gsy_e.utils.influx_queries import DataQueryPXL
+from gsy_framework.influx_connection.connection import InfluxConnection
+from gsy_framework.influx_connection.queries_pxl import DataQueryPXL
 from gsy_e.models.strategy.influx import InfluxLoadStrategy, InfluxPVStrategy
 from gsy_e.gsy_e_core.util import d3a_path
 import os

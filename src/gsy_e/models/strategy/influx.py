@@ -4,7 +4,9 @@ from pendulum import duration
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy
 from gsy_e.models.strategy.predefined_pv import PVUserProfileStrategy
-from gsy_e.utils.influx_connection import InfluxConnection, InfluxQuery
+from gsy_framework.influx_connection.connection import InfluxConnection
+from gsy_framework.influx_connection.queries import InfluxQuery
+
 #from gsy_e.utils.influx_queries import DataAggregatedQuery
 
 # class InfluxLoadStrategyAggregated(DefinedLoadStrategy):

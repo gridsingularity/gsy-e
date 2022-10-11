@@ -3,8 +3,10 @@ import os
 from datetime import date, datetime
 from pendulum import duration, instance
 
-from gsy_e.utils.influx_connection import InfluxConnection, InfluxQuery
-from gsy_e.utils.influx_queries import SmartmeterIDQuery, SingleDataPointQuery, RawQuery, DataQueryFHAachen, DataQueryPXL
+from gsy_framework.influx_connection.connection import InfluxConnection
+from gsy_framework.influx_connection.queries import RawQuery, InfluxQuery
+from gsy_framework.influx_connection.queries_fhac import SmartmeterIDQuery, SingleDataPointQuery, DataQueryFHAachen
+from gsy_framework.influx_connection.queries_pxl import DataQueryPXL
 from gsy_e.utils.influx_area_factory import InfluxAreaFactory
 from gsy_e.models.strategy.influx import InfluxLoadStrategy, InfluxPVStrategy
 
