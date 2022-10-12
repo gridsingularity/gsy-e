@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from gsy_e.models.area import Area
-from gsy_e.models.strategy.commercial_producer import CommercialStrategy
+from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.influx_connection.connection import InfluxConnection
 from gsy_framework.influx_connection.queries_pxl import DataQueryPXL
@@ -29,29 +29,33 @@ def get_setup(config):
     connection = InfluxConnection("influx_pxl.cfg")
     tablename = "Total_Electricity"
 
+    ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL = 1
+    ConstSettings.MASettings.MARKET_TYPE = 2
+    ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE = 22
+
     area = Area(
         "Grid",
         [
             Area(
                 "PXL Campus",
                 [
-                    Area("main_P_L1", strategy=InfluxLoadExternalStrategy(query = DataQueryPXL(connection, power_column="main_P_L1", tablename=tablename))),
-                    Area("main_P_L2", strategy=InfluxLoadExternalStrategy(query = DataQueryPXL(connection, power_column="main_P_L2", tablename=tablename))),
-                    Area("main_P_L3", strategy=InfluxLoadExternalStrategy(query = DataQueryPXL(connection, power_column="main_P_L3", tablename=tablename))),
-                    Area("PV_LS_105A_power", strategy=InfluxPVExternalStrategy(query = DataQueryPXL(connection, power_column="PV_LS_105A_power", tablename=tablename))),
-                    Area("PV_LS_105B_power", strategy=InfluxPVExternalStrategy(query = DataQueryPXL(connection, power_column="PV_LS_105B_power", tablename=tablename))),
-                    Area("PV_LS_105E_power", strategy=InfluxPVExternalStrategy(query = DataQueryPXL(connection, power_column="PV_LS_105E_power", tablename=tablename))),
-                ]
-            ),
+                    Area("main_P_L1", strategy=InfluxLoadExternalStrategy(query = DataQueryPXL(connection, power_column="main_P_L1", tablename=tablename), initial_buying_rate=11, use_market_maker_rate=True)),
+                    Area("main_P_L2", strategy=InfluxLoadExternalStrategy(query = DataQueryPXL(connection, power_column="main_P_L2", tablename=tablename), initial_buying_rate=11, use_market_maker_rate=True)),
+                    Area("main_P_L3", strategy=InfluxLoadExternalStrategy(query = DataQueryPXL(connection, power_column="main_P_L3", tablename=tablename), initial_buying_rate=11, use_market_maker_rate=True)),
+                    Area("PV_LS_105A_power", strategy=InfluxPVExternalStrategy(query = DataQueryPXL(connection, power_column="PV_LS_105A_power", tablename=tablename), initial_selling_rate=30, final_selling_rate=11)),
+                    Area("PV_LS_105B_power", strategy=InfluxPVExternalStrategy(query = DataQueryPXL(connection, power_column="PV_LS_105B_power", tablename=tablename), initial_selling_rate=30, final_selling_rate=11)),
+                    Area("PV_LS_105E_power", strategy=InfluxPVExternalStrategy(query = DataQueryPXL(connection, power_column="PV_LS_105E_power", tablename=tablename), initial_selling_rate=30, final_selling_rate=11)),
+                ], grid_fee_constant=0, external_connection_available=True),
 
-            Area("Commercial Energy Producer",
-                 strategy=CommercialStrategy(energy_rate=30)
-                 ),
+            Area("Market Maker", strategy=InfiniteBusStrategy(energy_buy_rate=21, energy_sell_rate=22)),
         ],
-        config=config
+        config=config, 
+        grid_fee_constant=0, 
+        external_connection_available=True
     )
     return area
 
 
 # pip install -e .
-# gsy-e run --setup bc4p_pxl -s 15m --enable-external-connection --start-date 2022-09-08
+# gsy-e run --setup bc4p_pxl_asset2 --slot-length-realtime 10 --slot-length-realtime 10 --enable-external-connection --start-date 2022-10-10 --paused 
+
