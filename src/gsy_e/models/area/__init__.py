@@ -259,7 +259,7 @@ class CoefficientAreaException(Exception):
 def validate_coefficient_area_setting(
         children: Optional[List], setting: Optional[float], setting_name: str) -> float:
     """Check if coefficient area that is not an asset provided SCM setting."""
-    if children and len(children) > 0:
+    if children:
         if all(not child.children for child in children) and setting is None:
             raise CoefficientAreaException(f"In SCM simulations {setting_name} can not be None.")
     return setting
