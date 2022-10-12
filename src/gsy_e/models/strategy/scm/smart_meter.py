@@ -4,7 +4,7 @@ from typing import Union, Dict, TYPE_CHECKING
 from pendulum import DateTime
 
 from gsy_e.models.strategy.scm import SCMStrategy
-from gsy_e.models.strategy.smart_meter import SmartMeterEnergyParameters
+from gsy_e.models.strategy.energy_parameters.smart_meter import SmartMeterEnergyParameters
 
 if TYPE_CHECKING:
     from gsy_e.models.area import CoefficientArea
@@ -21,7 +21,7 @@ class SCMSmartMeterStrategy(SCMStrategy):
             smart_meter_profile, smart_meter_profile_uuid)
 
     @property
-    def _state(self) -> "SmartMeterState":
+    def state(self) -> "SmartMeterState":
         """Fetch the state of the smart meter."""
         return self._energy_params._state  # pylint: disable=protected-access
 
@@ -40,22 +40,25 @@ class SCMSmartMeterStrategy(SCMStrategy):
         self._energy_params.set_energy_forecast_for_future_markets(
             [area._current_market_time_slot], reconfigure=False)
         self._energy_params.set_energy_measurement_kWh(area._current_market_time_slot)
-        self._state.delete_past_state_values(area.past_market_time_slot)
+        self.state.delete_past_state_values(area.past_market_time_slot)
 
     def get_energy_to_sell_kWh(self, time_slot: DateTime) -> float:
         """Get the available energy for production for the specified time slot."""
-        return self._state.get_available_energy_kWh(time_slot)
+        return self.state.get_available_energy_kWh(time_slot)
 
     def get_energy_to_buy_kWh(self, time_slot: DateTime) -> float:
         """Get the available energy for consumption for the specified time slot."""
-        return self._state.get_energy_requirement_Wh(time_slot) / 1000.0
+        return self.state.get_energy_requirement_Wh(time_slot) / 1000.0
 
     def decrease_energy_to_sell(
             self, traded_energy_kWh: float, time_slot: DateTime, area: "CoefficientArea"):
         """Decrease traded energy from the state and the strategy parameters."""
-        self._state.decrement_energy_requirement(traded_energy_kWh, time_slot, area.name)
+        self.state.decrement_available_energy(traded_energy_kWh, time_slot, area.name)
 
     def decrease_energy_to_buy(
             self, traded_energy_kWh: float, time_slot: DateTime, area: "CoefficientArea"):
         """Decrease traded energy from the state and the strategy parameters."""
-        self._state.decrement_available_energy(traded_energy_kWh, time_slot, area.name)
+        self._energy_params.decrement_energy_requirement(
+            energy_kWh=traded_energy_kWh,
+            time_slot=time_slot,
+            area_name=area.name)

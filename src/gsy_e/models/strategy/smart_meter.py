@@ -20,106 +20,25 @@ from typing import Dict, Union
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Offer
 from gsy_framework.enums import SpotMarketTypeEnum
-from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from gsy_framework.read_user_profile import InputProfileTypes, read_arbitrary_profile
 from gsy_framework.utils import find_object_of_same_weekday_and_time, limit_float_precision
 from gsy_framework.validators.smart_meter_validator import SmartMeterValidator
 from numpy import random
 from pendulum import duration
-from pendulum.datetime import DateTime
 
 from gsy_e import constants
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.exceptions import GSyException, MarketException
-from gsy_e.gsy_e_core.global_objects_singleton import global_objects
-from gsy_e.gsy_e_core.util import (get_market_maker_rate_from_config, should_read_profile_from_db)
+from gsy_e.gsy_e_core.util import get_market_maker_rate_from_config
 from gsy_e.models.base import AssetType
 from gsy_e.models.market import MarketBase
 from gsy_e.models.state import SmartMeterState
-from gsy_e.models.strategy import BidEnabledStrategy, utils
-from gsy_e.models.strategy.update_frequency import (
-    TemplateStrategyBidUpdater, TemplateStrategyOfferUpdater)
+from gsy_e.models.strategy import BidEnabledStrategy
+from gsy_e.models.strategy.energy_parameters.smart_meter import SmartMeterEnergyParameters
+from gsy_e.models.strategy.update_frequency import (TemplateStrategyBidUpdater,
+                                                    TemplateStrategyOfferUpdater)
 
 log = getLogger(__name__)
-
-
-class SmartMeterEnergyParameters:
-    """Manage energy parameters for the Smart Meter Strategy class."""
-    def __init__(self, smart_meter_profile, smart_meter_profile_uuid):
-        self.smart_meter_profile = smart_meter_profile  # Raw profile data
-        self.profile = None  # Preprocessed data extracted from smart_meter_profile
-        if should_read_profile_from_db(self.smart_meter_profile):
-            self.smart_meter_profile = None
-        self.profile_uuid = smart_meter_profile_uuid
-
-        self._state = SmartMeterState()
-        self._simulation_start_timestamp = None
-        self._area = None
-
-    def _read_or_rotate_profiles(self, reconfigure=False):
-        input_profile = self.smart_meter_profile \
-            if reconfigure or not self.profile else self.profile
-        self.profile = \
-            global_objects.profiles_handler.rotate_profile(profile_type=InputProfileTypes.POWER,
-                                                           profile=input_profile,
-                                                           profile_uuid=self.profile_uuid)
-
-    def activate(self, area):
-        """Trigger by strategy activate event, configure the energy parameters for trading."""
-        self._area = area
-        self._read_or_rotate_profiles()
-        self._simulation_start_timestamp = area.now
-
-    def set_energy_forecast_for_future_markets(self, time_slots, reconfigure: bool = True):
-        """Set the energy consumption/production expectations for the upcoming market slots.
-
-        Args:
-            reconfigure: if True, re-read and preprocess the raw profile data.
-        """
-        self._read_or_rotate_profiles(reconfigure=reconfigure)
-
-        if not self.profile:
-            raise GSyException(
-                f"Smart Meter {self._area.name} tries to set its required energy forecast without "
-                "a profile.")
-
-        for slot_time in time_slots:
-            energy_kWh = find_object_of_same_weekday_and_time(self.profile, slot_time)
-            # For the Smart Meter, the energy amount can be either positive (consumption) or
-            # negative (production).
-            consumed_energy = energy_kWh if energy_kWh > 0 else 0.0
-            # Turn energy into a positive number (required for set_available_energy method)
-            produced_energy = abs(energy_kWh) if energy_kWh < 0 else 0.0
-
-            if consumed_energy and produced_energy:
-                raise InconsistentEnergyException(
-                    "The Smart Meter can't both produce and consume energy at the same time.")
-
-            # NOTE: set_desired_energy accepts energy in Wh (not kWh) so we multiply * 1000
-            self._state.set_desired_energy(consumed_energy * 1000, slot_time, overwrite=False)
-            self._state.set_available_energy(produced_energy, slot_time, reconfigure)
-            self._state.update_total_demanded_energy(slot_time)
-
-    def set_energy_measurement_kWh(self, time_slot: DateTime) -> None:
-        """Set the (simulated) actual energy of the device in a market slot."""
-        energy_forecast_kWh = self._state.get_energy_at_market_slot(time_slot)
-        simulated_measured_energy_kWh = utils.compute_altered_energy(energy_forecast_kWh)
-        # This value can be either positive (consumption) or negative (production). This is
-        # different from the other devices (PV, Load) where the value is positive regardless of
-        # its direction (consumption or production)
-        self._state.set_energy_measurement_kWh(simulated_measured_energy_kWh, time_slot)
-
-    def reset(self, **kwargs):
-        """Reconfigure energy parameters."""
-        if kwargs.get("smart_meter_profile") is not None:
-            self.smart_meter_profile = kwargs["smart_meter_profile"]
-            self.set_energy_forecast_for_future_markets(kwargs["time_slots"], reconfigure=True)
-
-    def serialize(self):
-        """Create dict with smart meter energy parameters."""
-        return {
-            "smart_meter_profile": self.smart_meter_profile,
-            "smart_meter_profile_uuid": self.profile_uuid
-        }
 
 
 class SmartMeterStrategy(BidEnabledStrategy):
@@ -330,8 +249,10 @@ class SmartMeterStrategy(BidEnabledStrategy):
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
 
         market = self.area.get_spot_or_future_market_by_id(market_id)
-        self.state.decrement_energy_requirement(
-            bid_trade.traded_energy * 1000, market.time_slot, self.owner.name)
+        self._energy_params.decrement_energy_requirement(
+            energy_kWh=bid_trade.traded_energy,
+            time_slot=market.time_slot,
+            area_name=self.owner.name)
 
     def area_reconfigure_event(self, *args, **kwargs):
         """Reconfigure the device properties at runtime using the provided arguments.
@@ -476,7 +397,7 @@ class SmartMeterStrategy(BidEnabledStrategy):
         bid_energy = self.state.get_energy_requirement_Wh(market.time_slot)
         # TODO: balancing market support not yet implemented
         # if self._is_eligible_for_balancing_market:
-        #     bid_energy -= self.state.get_desired_energy(market.time_slot) * \
+        #     bid_energy -= self.state.get_desired_energy_Wh(market.time_slot) * \
         #                   self.balancing_energy_ratio.demand
         try:
             if not self.are_bids_posted(market.id):
@@ -592,7 +513,11 @@ class SmartMeterStrategy(BidEnabledStrategy):
                                   buyer_origin=self.owner.name,
                                   buyer_origin_id=self.owner.uuid,
                                   buyer_id=self.owner.uuid)
-                self.state.decrement_energy_requirement(energy_Wh, time_slot, self.owner.name)
+
+                self._energy_params.decrement_energy_requirement(
+                    energy_kWh=energy_Wh / 1000,
+                    time_slot=time_slot,
+                    area_name=self.owner.name)
 
         except MarketException:
             self.log.exception("An Error occurred while buying an offer.")
@@ -612,7 +537,3 @@ class SmartMeterStrategy(BidEnabledStrategy):
     @property
     def asset_type(self):
         return AssetType.PRODUCER
-
-
-class InconsistentEnergyException(Exception):
-    """Exception raised when the energy produced/consumed by the Smart Meter doesn't make sense."""

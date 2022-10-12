@@ -20,7 +20,7 @@ from gsy_framework.enums import BidOfferMatchAlgoEnum
 
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.external_strategies.load import (LoadHoursExternalStrategy,
-                                                            LoadForecastExternalStrategy)
+                                                            LoadHoursForecastExternalStrategy)
 from gsy_e.models.strategy.external_strategies.pv import PVExternalStrategy
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_e.models.strategy.storage import StorageStrategy
@@ -59,7 +59,7 @@ def get_setup(config):
                          ),
                     Area("pv", strategy=PVExternalStrategy(panel_count=4)
                          ),
-                    Area("forecast-measurement-load", strategy=LoadForecastExternalStrategy(
+                    Area("forecast-measurement-load", strategy=LoadHoursForecastExternalStrategy(
                         final_buying_rate=35)
                          ),
 

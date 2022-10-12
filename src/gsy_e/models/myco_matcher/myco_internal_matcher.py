@@ -15,12 +15,12 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
-from gsy_framework.enums import BidOfferMatchAlgoEnum
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.matching_algorithms import (
-    PayAsBidMatchingAlgorithm, PayAsClearMatchingAlgorithm,
-    AttributedMatchingAlgorithm)
+from gsy_framework.enums import AvailableMarketTypes, BidOfferMatchAlgoEnum
+from gsy_framework.matching_algorithms import (AttributedMatchingAlgorithm,
+                                               PayAsBidMatchingAlgorithm,
+                                               PayAsClearMatchingAlgorithm)
+
 from gsy_e.gsy_e_core.exceptions import WrongMarketTypeException
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.models.myco_matcher.myco_matcher_interface import MycoMatcherInterface
@@ -34,14 +34,14 @@ class MycoInternalMatcher(MycoMatcherInterface):
         self.match_algorithm = None
 
     def activate(self):
-        self.match_algorithm = self.get_matching_algorithm()
+        self.match_algorithm = self._get_matching_algorithm_spot_markets()
 
     def _get_matches_recommendations(self, data):
         """Wrapper for matching algorithm's matches recommendations."""
         return self.match_algorithm.get_matches_recommendations(data)
 
     @staticmethod
-    def get_matching_algorithm():
+    def _get_matching_algorithm_spot_markets():
         """Return a matching algorithm instance based on the global BidOffer match type.
 
         :raises:
@@ -62,29 +62,13 @@ class MycoInternalMatcher(MycoMatcherInterface):
     def match_recommendations(self, **kwargs):
         """Request trade recommendations and match them in the relevant market."""
         for area_uuid, area_data in self.area_uuid_markets_mapping.items():
-            markets = [*area_data["markets"], *area_data["settlement_markets"]]
+            markets = [*area_data[AvailableMarketTypes.SPOT],
+                       *area_data[AvailableMarketTypes.SETTLEMENT]]
             if global_objects.future_market_counter.is_time_for_clearing(
                     area_data["current_time"]):
-                markets.append(area_data["future_markets"])
-            for market in markets:
-                if not market:
-                    continue
-                while True:
-                    # Perform matching until all recommendations and their residuals are handled.
-                    orders = market.orders_per_slot()
-
-                    # Format should be: {area_uuid: {time_slot: {"bids": [], "offers": [], ...}}}
-                    data = {
-                        area_uuid: {
-                            time_slot: {**orders_data, "current_time": area_data["current_time"]}
-                            for time_slot, orders_data in orders.items()}}
-                    bid_offer_pairs = self._get_matches_recommendations(data)
-                    if not bid_offer_pairs:
-                        break
-                    trades_occurred = market.match_recommendations(bid_offer_pairs)
-                    if not trades_occurred:
-                        break
-
+                markets.append(area_data[AvailableMarketTypes.FUTURE])
+            self._match_recommendations(area_uuid, area_data, markets,
+                                        self._get_matches_recommendations)
         self.area_uuid_markets_mapping = {}
 
     def event_tick(self, **kwargs) -> None:

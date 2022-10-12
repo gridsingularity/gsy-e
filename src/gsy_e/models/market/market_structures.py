@@ -16,8 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import json
-from enum import Enum
-from typing import Dict, List, Tuple, Union  # noqa
+from typing import Tuple
 
 from gsy_framework.data_classes import Trade, BaseBidOffer
 
@@ -39,18 +38,3 @@ def parse_event_and_parameters_from_json_string(payload) -> Tuple:
         kwargs["bid_trade"] = Trade.from_json(kwargs["bid_trade"])
     event_type = MarketEvent(data["event_type"])
     return event_type, kwargs
-
-
-class AvailableMarketTypes(Enum):
-    SPOT = 0
-    BALANCING = 1
-    SETTLEMENT = 2
-    FUTURE = 3
-
-
-PAST_MARKET_TYPE_FILE_SUFFIX_MAPPING = {
-    AvailableMarketTypes.SPOT: "",
-    AvailableMarketTypes.BALANCING: "-balancing",
-    AvailableMarketTypes.SETTLEMENT: "-settlement",
-    AvailableMarketTypes.FUTURE: "-future",
-}

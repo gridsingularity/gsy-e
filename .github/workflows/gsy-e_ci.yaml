@@ -1,9 +1,7 @@
 name: gsy-e-ci
 on:
   pull_request:
-    branches:
-      - master
-      - staging
+
 jobs:
   test-build:
     runs-on: ubuntu-latest

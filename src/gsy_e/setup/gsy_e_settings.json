@@ -4,7 +4,7 @@
     "slot_length": "15m",
     "tick_length": "15s",
     "cloud_coverage": 0,
-    "start_date": "2022-06-30"
+    "start_date": "2022-08-04"
   },
   "advanced_settings": {
     "GeneralSettings": {
@@ -44,7 +44,11 @@
       "RELATIVE_STD_FROM_FORECAST_FLOAT": 10.0
     },
     "FutureMarketSettings": {
+      "FUTURE_MARKET_DURATION_HOURS": 0,
       "FUTURE_MARKET_CLEARING_INTERVAL_MINUTES": 15
+    },
+    "ForwardMarketSettings": {
+      "ENABLE_FORWARD_MARKETS": false
     },
     "AreaSettings": {
       "PERCENTAGE_FEE_LIMIT": [
@@ -216,7 +220,7 @@
       "MARKET_TYPE": 1,
       "MARKET_TYPE_LIMIT": [
         1,
-        2
+        3
       ],
       "BID_OFFER_MATCH_TYPE": 1,
       "BID_OFFER_MATCH_TYPE_LIMIT": [
@@ -241,7 +245,12 @@
       "FLEXIBLE_LOADS_SUPPORT": true
     },
     "SCMSettings": {
-      "GRID_FEES_REDUCTION": 0.28
+      "GRID_FEES_REDUCTION": 0.28,
+      "MARKET_ALGORITHM": 1,
+      "MARKET_ALGORITHM_LIMIT": [
+        1,
+        2
+      ]
     }
   }
 }

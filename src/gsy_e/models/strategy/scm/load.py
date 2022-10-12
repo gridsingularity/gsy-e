@@ -2,8 +2,8 @@ from typing import Dict, TYPE_CHECKING
 
 from pendulum import DateTime
 
-from gsy_e.models.strategy.load_hours import LoadHoursEnergyParameters
-from gsy_e.models.strategy.predefined_load import DefinedLoadEnergyParameters
+from gsy_e.models.strategy.energy_parameters.load import (
+    LoadHoursEnergyParameters, DefinedLoadEnergyParameters)
 from gsy_e.models.strategy.scm import SCMStrategy
 
 if TYPE_CHECKING:
@@ -15,6 +15,10 @@ class SCMLoadHoursStrategy(SCMStrategy):
     def __init__(self, avg_power_W, hrs_of_day=None):
         self._energy_params = LoadHoursEnergyParameters(avg_power_W, hrs_of_day)
         self._simulation_start_timestamp = None
+
+    @property
+    def state(self):
+        return self._energy_params.state
 
     def activate(self, area: "AreaBase") -> None:
         """Activate the strategy."""
@@ -49,15 +53,22 @@ class SCMLoadHoursStrategy(SCMStrategy):
 
     def decrease_energy_to_buy(
             self, traded_energy_kWh: float, time_slot: DateTime, area: "AreaBase") -> None:
-        self._energy_params.state.decrement_energy_requirement(
-            traded_energy_kWh, time_slot, area.name)
+        """Decrease the energy requirements of the asset."""
+        self._energy_params.decrement_energy_requirement(
+            energy_kWh=traded_energy_kWh,
+            time_slot=time_slot,
+            area_name=area.name)
 
 
-class SCMLoadProfile(SCMStrategy):
+class SCMLoadProfileStrategy(SCMStrategy):
     """Load SCM strategy with power production dictated by a profile."""
-    def __init__(self, daily_load_profile, daily_load_profile_uuid=None):
+    def __init__(self, daily_load_profile=None, daily_load_profile_uuid=None):
         self._energy_params = DefinedLoadEnergyParameters(
             daily_load_profile, daily_load_profile_uuid)
+
+    @property
+    def state(self):
+        return self._energy_params.state
 
     def serialize(self) -> Dict:
         """Serialize the strategy parameters."""
@@ -69,7 +80,7 @@ class SCMLoadProfile(SCMStrategy):
 
     def market_cycle(self, area: "AreaBase") -> None:
         """Update the load forecast and measurements for the next/previous market slot."""
-        self._energy_params.read_or_rotate_profiles()
+        self._energy_params._energy_profile.read_or_rotate_profiles()
         slot_time = area._current_market_time_slot
         self._energy_params.update_energy_requirement(slot_time, area.name)
 
@@ -79,6 +90,12 @@ class SCMLoadProfile(SCMStrategy):
 
     def decrease_energy_to_buy(
             self, traded_energy_kWh: float, time_slot: DateTime, area: "AreaBase") -> None:
-        """Decrease traded energy from the state and the strategy parameters."""
-        self._energy_params.state.decrement_energy_requirement(
-            traded_energy_kWh, time_slot, area.name)
+        """Decrease the amount of traded energy from the asset's state."""
+        self._energy_params.decrement_energy_requirement(
+            energy_kWh=traded_energy_kWh,
+            time_slot=time_slot,
+            area_name=area.name)
+
+    def get_energy_to_buy_kWh(self, time_slot: DateTime) -> float:
+        """Get the available energy for consumption for the specified time slot."""
+        return self._energy_params.state.get_energy_requirement_Wh(time_slot) / 1000.0

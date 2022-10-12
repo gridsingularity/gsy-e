@@ -18,39 +18,40 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import logging
 from os import environ, getpid
 
-from gsy_e.gsy_e_core.util import get_simulation_queue_name
+from gsy_framework.data_serializer import DataSerializer
 from pendulum import now
 from redis import Redis
 from rq import Connection, Worker, get_current_job
 from rq.decorators import job
 
+from gsy_e.gsy_e_core.util import get_simulation_queue_name
+
 logger = logging.getLogger()
 
 
-@job('exchange')
-def start(scenario, settings, events, aggregator_device_mapping, saved_state):
+@job("exchange")
+def start(payload):
+    """Start a simulation with a Redis job."""
+    # pylint: disable-next=import-outside-toplevel
     from gsy_e.gsy_e_core.rq_job_handler import launch_simulation_from_rq_job
-    job = get_current_job()
-    job.save_meta()
-    launch_simulation_from_rq_job(scenario, settings, events, aggregator_device_mapping,
-                                  saved_state, job.id)
+    current_job = get_current_job()
+    current_job.save_meta()
+    payload = DataSerializer.decompress_and_decode(payload)
+    launch_simulation_from_rq_job(**payload, job_id=current_job.id)
 
 
 def main():
+    """Main entrypoint for running the exchange jobs."""
     with Connection(
-        Redis.from_url(
-            environ.get('REDIS_URL', 'redis://localhost'),
-            retry_on_timeout=True
-        )
-    ):
+            Redis.from_url(environ.get("REDIS_URL", "redis://localhost"), retry_on_timeout=True)):
         worker = Worker(
             [get_simulation_queue_name()],
-            name=f'simulation.{getpid()}.{now().timestamp()}', log_job_description=False
+            name=f"simulation.{getpid()}.{now().timestamp()}", log_job_description=False
         )
         try:
             worker.work(max_jobs=1, burst=True, logging_level="ERROR")
-        except Exception as ex:
-            logger.error(ex)
+        except Exception as ex:  # pylint: disable=broad-except
+            logger.exception(ex)
             worker.kill_horse()
             worker.wait_for_horse()
 

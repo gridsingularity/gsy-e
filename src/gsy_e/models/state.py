@@ -21,7 +21,7 @@ from enum import Enum
 from math import isclose, copysign
 from typing import Dict, Optional, List
 
-from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.utils import (
     convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict, convert_kW_to_kWh,
     limit_float_precision)
@@ -400,10 +400,6 @@ class LoadState(ConsumptionState):
         """Return the total energy demanded in Wh."""
         return self._total_energy_demanded_Wh
 
-    def get_desired_energy(self, time_slot: DateTime) -> float:
-        """Return the desired energy (based on profile data)."""
-        return self._desired_energy_Wh[time_slot]
-
     def _calculate_unsettled_energy_kWh(
             self, measured_energy_kWh: float, time_slot: DateTime) -> float:
         """
@@ -727,7 +723,7 @@ class StorageState(StateInterface):
         used_storage
         """
         self._current_market_slot = current_time_slot
-        if GlobalConfig.FUTURE_MARKET_DURATION_HOURS:
+        if ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS:
             # In case the future market is enabled, the future orders have to be deleted once
             # the market becomes a spot market
             self.offered_buy_kWh[current_time_slot] = 0

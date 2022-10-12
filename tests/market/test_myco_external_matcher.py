@@ -3,13 +3,14 @@ import json
 from unittest.mock import MagicMock, patch
 
 import pytest
+from gsy_framework.enums import AvailableMarketTypes
 from pendulum import now
 
 import gsy_e.constants
-import gsy_e.models.market.market_redis_connection
-from gsy_e.gsy_e_core.exceptions import MycoValidationException, InvalidBidOfferPairException
 import gsy_e.gsy_e_core.redis_connections.area_market
-from gsy_e.models.market import Offer, Bid
+import gsy_e.models.market.market_redis_connection
+from gsy_e.gsy_e_core.exceptions import InvalidBidOfferPairException, MycoValidationException
+from gsy_e.models.market import Bid, Offer
 from gsy_e.models.market.two_sided import TwoSidedMarket
 from gsy_e.models.myco_matcher import MycoExternalMatcher
 from gsy_e.models.myco_matcher.myco_external_matcher import MycoExternalMatcherValidator
@@ -123,7 +124,8 @@ class TestMycoExternalMatcher:
             "event": "offers_bids_response",
             "bids_offers": {"area1": {}}
         }
-        self.matcher.update_area_uuid_markets_mapping({"area1": {"markets": [self.market]}})
+        self.matcher.update_area_uuid_markets_mapping(
+            {"area1": {AvailableMarketTypes.SPOT: [self.market]}})
         self.matcher._publish_orders_message_buffer = [payload]
         self.matcher._publish_orders()
         self.matcher.myco_ext_conn.publish_json.assert_called_once_with(

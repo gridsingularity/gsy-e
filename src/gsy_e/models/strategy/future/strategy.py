@@ -14,7 +14,7 @@ see <http://www.gnu.org/licenses/>.
 """
 from typing import TYPE_CHECKING, List, Union
 
-from gsy_framework.constants_limits import GlobalConfig
+from gsy_framework.constants_limits import ConstSettings
 from pendulum import duration, DateTime
 
 from gsy_e.constants import FutureTemplateStrategiesConstants
@@ -33,7 +33,7 @@ class FutureTemplateStrategyBidUpdater(TemplateStrategyBidUpdater):
 
     @property
     def _time_slot_duration_in_seconds(self) -> int:
-        return GlobalConfig.FUTURE_MARKET_DURATION_HOURS * 60 * 60
+        return ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS * 60 * 60
 
     @staticmethod
     def get_all_markets(area: "Area") -> List["FutureMarkets"]:
@@ -71,7 +71,7 @@ class FutureTemplateStrategyOfferUpdater(TemplateStrategyOfferUpdater):
 
     @property
     def _time_slot_duration_in_seconds(self) -> int:
-        return GlobalConfig.FUTURE_MARKET_DURATION_HOURS * 60 * 60
+        return ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS * 60 * 60
 
     @staticmethod
     def get_all_markets(area: "Area") -> List["FutureMarkets"]:
@@ -236,15 +236,13 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
         strategy.post_bid(
             market=strategy.area.future_markets,
             energy=available_buy_energy_kWh,
-            price=available_buy_energy_kWh * self._bid_updater.initial_rate[time_slot],
+            price=available_buy_energy_kWh * self._bid_updater.get_updated_rate(time_slot),
             time_slot=time_slot,
             replace_existing=False
         )
-        if self._bid_updater.update_counter[time_slot] == 0:
-            # update_counter is 0 only for the very first bid that hast not been updated
-            # has to be increased because the first price counts as a price update
-            # pylint: disable=no-member
-            self._bid_updater.increment_update_counter(strategy, time_slot)
+        # update_counter has to be increased because the first price counts as a price update
+        # pylint: disable=no-member
+        self._bid_updater.increment_update_counter(strategy, time_slot)
 
     def _post_producer_first_offer(
             self, strategy: "BaseStrategy", time_slot: DateTime,
@@ -257,14 +255,12 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
             market=strategy.area.future_markets,
             replace_existing=False,
             energy=available_sell_energy_kWh,
-            price=available_sell_energy_kWh * self._offer_updater.initial_rate[time_slot],
+            price=available_sell_energy_kWh * self._offer_updater.get_updated_rate(time_slot),
             time_slot=time_slot
         )
-        if self._offer_updater.update_counter[time_slot] == 0:
-            # update_counter is 0 only for the very first bid that hast not been updated
-            # has to be increased because the first price counts as a price update
-            # pylint: disable=no-member
-            self._offer_updater.increment_update_counter(strategy, time_slot)
+        # update_counter has to be increased because the first price counts as a price update
+        # pylint: disable=no-member
+        self._offer_updater.increment_update_counter(strategy, time_slot)
 
     def event_tick(self, strategy: "BaseStrategy") -> None:
         """
@@ -304,7 +300,7 @@ def future_market_strategy_factory(asset_type: AssetType) -> FutureMarketStrateg
     final_buying_rate = FutureTemplateStrategiesConstants.FINAL_BUYING_RATE
     initial_selling_rate = FutureTemplateStrategiesConstants.INITIAL_SELLING_RATE
     final_selling_rate = FutureTemplateStrategiesConstants.FINAL_SELLING_RATE
-    if GlobalConfig.FUTURE_MARKET_DURATION_HOURS > 0:
+    if ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS > 0:
         return FutureMarketStrategy(
             asset_type, initial_buying_rate, final_buying_rate,
             initial_selling_rate, final_selling_rate)
