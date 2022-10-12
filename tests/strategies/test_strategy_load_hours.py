@@ -44,9 +44,10 @@ MIN_BUY_ENERGY = 50  # wh
 
 @pytest.fixture(scope="function", autouse=True)
 def auto_fixture():
+    original_market_maker_rate = GlobalConfig.market_maker_rate
     GlobalConfig.market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
     yield
-    GlobalConfig.market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
+    GlobalConfig.market_maker_rate = original_market_maker_rate
     ConstSettings.MASettings.MARKET_TYPE = 1
 
 
@@ -524,18 +525,21 @@ def test_balancing_offers_are_created_if_device_in_registry(
     [True, 9, ], [False, 33, ]
 ])
 def test_use_market_maker_rate_parameter_is_respected(use_mmr, expected_rate):
+    original_mmr = GlobalConfig.market_maker_rate
     GlobalConfig.market_maker_rate = 9
     load = LoadHoursStrategy(200, final_buying_rate=33, use_market_maker_rate=use_mmr)
     load.area = FakeArea()
     load.owner = load.area
     load.event_activate()
     assert all(v == expected_rate for v in load.bid_update.final_rate.values())
+    GlobalConfig.market_maker_rate = original_mmr
 
 
 @pytest.mark.parametrize("use_mmr, expected_rate", [
     [True, 9, ], [False, 33, ]
 ])
 def test_use_market_maker_rate_parameter_is_respected_for_load_profiles(use_mmr, expected_rate):
+    original_mmr = GlobalConfig.market_maker_rate
     GlobalConfig.market_maker_rate = 9
     user_profile_path = os.path.join(d3a_path, "resources/Solar_Curve_W_sunny.csv")
     load = DefinedLoadStrategy(
@@ -546,6 +550,7 @@ def test_use_market_maker_rate_parameter_is_respected_for_load_profiles(use_mmr,
     load.owner = load.area
     load.event_activate()
     assert all(v == expected_rate for v in load.bid_update.final_rate.values())
+    GlobalConfig.market_maker_rate = original_mmr
 
 
 def test_load_constructor_rejects_incorrect_rate_parameters():
