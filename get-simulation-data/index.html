@@ -2044,9 +2044,9 @@
 <li><em>Start_time</em> and <em>end_time</em>: This is the time period for which the historical information is downloaded</li>
 </ul>
 <p>You can then connect to the API with the following URL, which divides the parameters with a slash (/):</p>
-<p><em>https://gsyweb.gridsingularity.com/historical-data/devices/{simulation_id}/{market_uuid}/{start_time}/{end_time}</em></p>
+<p><em>https://gsyweb.gridsingularity.com/historical-data/assets/{simulation_id}/{market_uuid}/{start_time}/{end_time}</em></p>
 <h2 id="grid-data-api">Grid Data API<a class="headerlink" href="#grid-data-api" title="Permanent link">&para;</a></h2>
-<p>Grid Singularity has developed the Grid Data API to provide information about the topology of a simulated energy community, listing the relevant attributes and connections for each energy asset. </p>
+<p>Grid Singularity has developed the Grid Data API to provide information about the topology of a simulated energy community, listing the relevant attributes and connections for each energy asset.</p>
 <p>This API requires the following parameters:</p>
 <ul>
 <li><em>Simulation_id</em>: This is the ID of the simulation or the Grid <a href="https://gridsingularity.github.io/gsy-e/connect-ctn/">Singularity Canary Test Network</a>, and can be found in the url on the <a href="https://gridsingularity.com/singularity-map">Grid Singularity user interface (UI)</a>  (see Fig. 1)</li>
@@ -2055,11 +2055,11 @@
 <p><em>https://gsyweb.gridsingularity.com/external-connection/configurations/{simulation_id}/registry</em></p>
 <p>The response will include the following data:</p>
 <ul>
-<li><em>Uuid</em>: unique identifier of each asset </li>
+<li><em>Uuid</em>: unique identifier of each asset</li>
 <li><em>Name</em>: name of each asset</li>
 <li><em>Type</em>: type of each asset</li>
 <li><em>Aggregator</em>: name of the aggregator that manages the asset, if any</li>
-<li><em>Attributes</em>: any relevant asset attributes </li>
+<li><em>Attributes</em>: any relevant asset attributes</li>
 </ul>
 <p>We will gradually add more data points to the response of the Grid Data API, for instance the geographic location (longitude and latitude) of each asset.</p>
 <p><img alt="alt_text" src="../img/get-simulation-data_1.png" />
@@ -2101,16 +2101,16 @@ username = &quot;&lt;your_user&gt;&quot;
 password = &quot;&lt;your_password&gt;&quot;
 
 domain = &quot;https://gsyweb.gridsingularity.com&quot;
-simulation_id = &quot;990abe5e-3126-4b8b-9978-66ca07824d3c&quot;   
-market_uuid = &quot;a245cff8-d90a-44d9-82e5-d37999b62e04&quot;       
-start_date = &quot;2021-09-25T00:00&quot;                          
-end_date = &quot;2021-10-01T00:00&quot;                            
+simulation_id = &quot;990abe5e-3126-4b8b-9978-66ca07824d3c&quot;
+market_uuid = &quot;a245cff8-d90a-44d9-82e5-d37999b62e04&quot;
+start_date = &quot;2021-09-25T00:00&quot;
+end_date = &quot;2021-10-01T00:00&quot;
 </code></pre>
 
 <ol>
 <li>Generate your JWT token</li>
 </ol>
-<pre class="codehilite"><code class="language-python">response = requests.post(url=domain + &quot;/api-token-auth/&quot;, 
+<pre class="codehilite"><code class="language-python">response = requests.post(url=domain + &quot;/api-token-auth/&quot;,
                          json={&quot;username&quot;: username, &quot;password&quot;: password})
 
 token = response.json()[&quot;token&quot;]
@@ -2119,10 +2119,10 @@ token = response.json()[&quot;token&quot;]
 <ol>
 <li>Create a URL and send the request:</li>
 </ol>
-<pre class="codehilite"><code class="language-python">historical_data_url = f&quot;{domain}/historical-data/devices/{configuration_id}/{device_id}/{start_date}/{end_date}&quot;
+<pre class="codehilite"><code class="language-python">historical_data_url = f&quot;{domain}/historical-data/assets/{configuration_id}/{asset_id}/{start_date}/{end_date}&quot;
 headers = {&quot;Authorization&quot;: f&quot;JWT {token}&quot;}
 
-response = requests.get(url=historical_data_url, 
+response = requests.get(url=historical_data_url,
                         headers=headers)
 
 profile = response.json()
