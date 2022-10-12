@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import os
-from gsy_framework.constants_limits import (ConstSettings, GlobalConfig)
+from gsy_framework.constants_limits import ConstSettings
 
 from gsy_e.constants import FutureTemplateStrategiesConstants
 from gsy_e.models.area import Area
@@ -33,7 +33,7 @@ current_dir = os.path.dirname(__file__)
 
 def get_setup(config):
     ConstSettings.MASettings.MARKET_TYPE = 2
-    GlobalConfig.FUTURE_MARKET_DURATION_HOURS = (
+    ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS = (
         get_var_from_env("FUTURE_MARKET_DURATION_HOURS", 1)
     )
     ConstSettings.FutureMarketSettings.FUTURE_MARKET_CLEARING_INTERVAL_MINUTES = (
