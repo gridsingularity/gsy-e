@@ -37,9 +37,10 @@ TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 @pytest.fixture(scope="function", autouse=True)
 def auto_fixture():
     constants.CONNECT_TO_PROFILES_DB = False
+    original_market_maker_rate = GlobalConfig.market_maker_rate
     GlobalConfig.market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
     yield
-    GlobalConfig.market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
+    GlobalConfig.market_maker_rate = original_market_maker_rate
     ConstSettings.MASettings.MARKET_TYPE = 1
     ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = False
     DeviceRegistry.REGISTRY = {}
