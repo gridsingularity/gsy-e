@@ -35,6 +35,7 @@ class MarketMakerStrategy(CommercialStrategy):
         super().__init__()
         MarketMakerValidator.validate(grid_connected=grid_connected)
         self._grid_connected = grid_connected
+        self.energy_rate_profile_uuid = energy_rate_profile_uuid  # needed for profile_handler
 
         if all(arg is None for arg in [
                energy_rate_profile, energy_rate_profile_uuid, energy_rate]):

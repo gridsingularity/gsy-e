@@ -103,6 +103,11 @@ class Simulation:
         global_objects.profiles_handler.activate()
 
         self.area = self._setup.load_setup_module()
+
+        # has to be called after areas are initiated in order to retrieve the profile uuids
+        global_objects.profiles_handler.update_time_and_buffer_profiles(
+            GlobalConfig.start_date, area=self.area)
+
         bid_offer_matcher.activate()
         global_objects.external_global_stats(self.area, self.config.ticks_per_slot)
 
@@ -182,7 +187,7 @@ class Simulation:
             self.area.cycle_markets()
 
             global_objects.profiles_handler.update_time_and_buffer_profiles(
-                self._get_current_market_time_slot(slot_no))
+                self._get_current_market_time_slot(slot_no), area=self.area)
 
             if self.config.external_connection_enabled:
                 global_objects.external_global_stats.update(market_cycle=True)
@@ -429,7 +434,7 @@ class CoefficientSimulation(Simulation):
             self.area.cycle_coefficients_trading(self.progress_info.current_slot_time)
 
             global_objects.profiles_handler.update_time_and_buffer_profiles(
-                self._get_current_market_time_slot(slot_no))
+                self._get_current_market_time_slot(slot_no), area=self.area)
 
             scm_manager = SCMManager(self.area, self._get_current_market_time_slot(slot_no))
 
