@@ -46,6 +46,7 @@ from gsy_e.models.market.forward import ForwardMarketBase
 from gsy_e.models.market.future import FutureMarkets
 from gsy_e.models.strategy import BaseStrategy
 from gsy_e.models.strategy.external_strategies import ExternalMixin
+from gsy_e.models.strategy.forward import ForwardStrategyBase
 from gsy_e.models.strategy.scm import SCMStrategy
 
 log = getLogger(__name__)
@@ -381,7 +382,7 @@ class Area(AreaBase):
     # pylint: disable=too-many-arguments,too-many-instance-attributes
     def __init__(self, name: str = None, children: List["Area"] = None,
                  uuid: str = None,
-                 strategy: BaseStrategy = None,
+                 strategy: Union[BaseStrategy, ForwardStrategyBase] = None,
                  config: SimulationConfig = None,
                  balancing_spot_trade_ratio=ConstSettings.BalancingSettings.SPOT_TRADE_RATIO,
                  event_list=None,
