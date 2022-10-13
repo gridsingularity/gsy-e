@@ -275,6 +275,7 @@ class ProfilesHandler:
     def activate(self):
         """Connect to DB, update current timestamp and get the first chunk of data from the DB"""
         self._connect_to_db()
+        self._update_current_time(GlobalConfig.start_date)
         if self.db:
             self.db.buffer_profile_types()
 
