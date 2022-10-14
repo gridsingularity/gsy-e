@@ -153,15 +153,18 @@ class ProfileDBConnectionHandler:
         return selection
 
     @db_session
-    def _buffer_profile_uuid_list(self, uuids_used_in_setup: List) -> None:
-        """ Buffers list of the profile_uuids that correspond to this simulation into
-        self._profile_uuids"""
+    def _get_profile_uuids_from_db(self):
         profile_selection = select(
             datapoint.profile_uuid
             for datapoint in self.Profile_Database_ConfigurationAreaProfileUuids
             if datapoint.configuration_uuid == uuid.UUID(gsy_e.constants.CONFIGURATION_ID))
+        return list(profile_selection)
 
-        db_profile_uuids = list(profile_selection)
+    def _buffer_profile_uuid_list(self, uuids_used_in_setup: List) -> None:
+        """ Buffers list of the profile_uuids that correspond to this simulation into
+        self._profile_uuids"""
+        db_profile_uuids = self._get_profile_uuids_from_db()
+
         for used_profile_uuid in uuids_used_in_setup:
             if used_profile_uuid not in db_profile_uuids:
                 raise ProfileDBConnectionException(
@@ -292,12 +295,11 @@ class ProfilesHandler:
     def _update_current_time(self, timestamp: DateTime):
         self._current_timestamp = timestamp
 
-    def update_time_and_buffer_profiles(self, timestamp, area: "Area"):
+    def update_time_and_buffer_profiles(self, timestamp: DateTime, area: "Area") -> None:
         """ Update current timestamp and get the first chunk of data from the DB"""
         self._update_current_time(timestamp)
-        uuids_used_in_setup = []
         if self.db:
-            self._get_profile_uuids_from_setup(area, uuids_used_in_setup)
+            uuids_used_in_setup = self._get_profile_uuids_from_setup(area, [])
             self.db.buffer_profiles_from_db(timestamp, uuids_used_in_setup)
 
     def _read_new_datapoints_from_buffer_or_rotate_profile(
@@ -354,7 +356,7 @@ class ProfilesHandler:
         """Read the profile type from a profile with the specified UUID."""
         return self.db.get_profile_type_from_db_buffer(profile_uuid)
 
-    def _get_profile_uuids_from_setup(self, area: "Area", profile_uuids: List) -> None:
+    def _get_profile_uuids_from_setup(self, area: "Area", profile_uuids: List) -> List:
         profile_uuid_names = [
             "daily_load_profile_uuid",
             "power_profile_uuid",
@@ -371,3 +373,4 @@ class ProfilesHandler:
         if area.children:
             for child in area.children:
                 self._get_profile_uuids_from_setup(child, profile_uuids)
+        return profile_uuids
