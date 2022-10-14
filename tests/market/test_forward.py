@@ -74,7 +74,7 @@ class TestForwardMarkets:
                            forward_markets.slot_trade_mapping]:
 
                 assert len(buffer.keys()) == expected_market_count
-                ahead_time_slot = market_class._get_start_time(CURRENT_MARKET_SLOT)
+                ahead_time_slot = market_class._get_start_time(CURRENT_MARKET_SLOT, area.config)
                 most_future_slot = market_class._get_end_time(CURRENT_MARKET_SLOT)
                 assert all(ahead_time_slot <= time_slot <= most_future_slot
                            for time_slot in buffer)
@@ -128,8 +128,8 @@ class TestForwardMarkets:
                              "delivery_duration, closing_delivery_timedelta, reference_time",
                              [[IntradayMarket, 24 * 4 - 1, duration(minutes=30),
                                duration(minutes=15), duration(minutes=15), CURRENT_MARKET_SLOT],
-                              [DayForwardMarket, 24 * 7 - 1, duration(hours=2),
-                               duration(hours=1), duration(hours=1), CURRENT_MARKET_SLOT],
+                              [DayForwardMarket, 24 * 7 - 1, duration(days=1, hours=1),
+                               duration(hours=1), duration(days=1), CURRENT_MARKET_SLOT],
                               [WeekForwardMarket, 51, duration(weeks=2),
                                duration(weeks=1), duration(weeks=1), CURRENT_MARKET_SLOT],
                               [MonthForwardMarket, 23, duration(months=2),

@@ -20,6 +20,7 @@ import logging
 from typing import TYPE_CHECKING, Callable, Dict, List, Union
 
 from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.utils import str_to_pendulum_datetime
 from pendulum import duration
 
 from gsy_e.gsy_e_core.exceptions import GSyException
@@ -35,6 +36,8 @@ from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy
 if TYPE_CHECKING:
     from gsy_e.models.market.two_sided import TwoSidedMarket
     from gsy_e.models.state import LoadState
+
+logger = logging.getLogger(__name__)
 
 
 class LoadExternalMixin(ExternalMixin):
@@ -102,7 +105,7 @@ class LoadExternalMixin(ExternalMixin):
                     "transaction_id": arguments.get("transaction_id")}
         except GSyException:
             error_message = f"Error when handling list bids on area {self.device.name}"
-            logging.exception(error_message)
+            logger.exception(error_message)
             response = {"command": "list_bids", "status": "error",
                         "error_message": error_message,
                         "transaction_id": arguments.get("transaction_id")}
@@ -143,7 +146,7 @@ class LoadExternalMixin(ExternalMixin):
             error_message = (f"Error when handling bid delete on area {self.device.name}: "
                              f"Bid Arguments: {arguments}, "
                              "Bid does not exist on the current market.")
-            logging.exception(error_message)
+            logger.exception(error_message)
             response = {"command": "bid_delete", "status": "error",
                         "error_message": error_message,
                         "transaction_id": arguments.get("transaction_id")}
@@ -214,7 +217,7 @@ class LoadExternalMixin(ExternalMixin):
         except (AssertionError, GSyException):
             error_message = (f"Error when handling bid create on area {self.device.name}: "
                              f"Bid Arguments: {arguments}")
-            logging.exception(error_message)
+            logger.exception(error_message)
             response = {"command": "bid", "status": "error",
                         "error_message": error_message,
                         "market_type": market.type_name,
@@ -314,9 +317,16 @@ class LoadExternalMixin(ExternalMixin):
                     raise OrderCanNotBePosted("The load did not consume to little energy, "
                                               "settlement bid can not be posted.")
                 required_energy_kWh = self.state.get_unsettled_deviation_kWh(market.time_slot)
-            else:
+            elif self.area.is_market_future(market.id):
+                required_energy_kWh = self.state.get_energy_requirement_Wh(
+                    str_to_pendulum_datetime(arguments["time_slot"])) / 1000.
+            elif self.area.is_market_spot(market.id):
                 required_energy_kWh = (
                         self.state.get_energy_requirement_Wh(market.time_slot) / 1000.)
+            else:
+                logger.debug("The order cannot be posted on the market. "
+                             "(arguments: %s, market_id: %s", arguments, market.id)
+                raise OrderCanNotBePosted("The order cannot be posted on the market.")
 
             response = (
                 self._bid_aggregator_impl(arguments, market,
@@ -347,7 +357,7 @@ class LoadExternalMixin(ExternalMixin):
                 "area_uuid": self.device.uuid,
                 "transaction_id": arguments.get("transaction_id")}
         except GSyException:
-            logging.exception("Error when handling delete bid on area %s", self.device.name)
+            logger.exception("Error when handling delete bid on area %s", self.device.name)
             response = {
                 "command": "bid_delete", "status": "error",
                 "area_uuid": self.device.uuid,
@@ -367,7 +377,7 @@ class LoadExternalMixin(ExternalMixin):
                 "area_uuid": self.device.uuid,
                 "transaction_id": arguments.get("transaction_id")}
         except GSyException:
-            logging.exception("Error when handling list bids on area %s", self.device.name)
+            logger.exception("Error when handling list bids on area %s", self.device.name)
             response = {
                 "command": "list_bids", "status": "error",
                 "area_uuid": self.device.uuid,

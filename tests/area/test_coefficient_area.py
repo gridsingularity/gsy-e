@@ -246,3 +246,7 @@ class TestCoefficientArea:
         with pytest.raises(CoefficientAreaException):
             # grid_fee_constant's default value is None, so setting it to 0, it is tested elsewhere
             CoefficientArea(name="House 1", children=[load], grid_fee_constant=0., **scm_settings)
+
+        # check does not fail for non-House areas
+        house = CoefficientArea(name="House 1", children=[load], grid_fee_constant=0.)
+        CoefficientArea(name="Community", children=[house], grid_fee_constant=0.)
