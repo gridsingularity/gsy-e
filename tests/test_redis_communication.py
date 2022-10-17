@@ -15,25 +15,26 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import unittest
+# pylint: disable=no-member, missing-function-docstring
 import json
-from parameterized import parameterized
+import unittest
 from logging import getLogger
-from unittest.mock import MagicMock
 from threading import Event
-from pendulum import datetime
+from unittest.mock import MagicMock
 
-import gsy_e.models.area
-from gsy_e.models.area import Area
-
-from gsy_e.models.strategy.load_hours import LoadHoursStrategy
-from gsy_e.models.strategy.storage import StorageStrategy
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
-from gsy_e.models.area.event_dispatcher import RedisAreaDispatcher, AreaDispatcher
-from gsy_e.gsy_e_core.redis_connections.area_market import RedisCommunicator
-from gsy_e.events.event_structures import AreaEvent, MarketEvent
 from gsy_framework.data_classes import (
     Offer, Trade, TradeBidOfferInfo)
+from parameterized import parameterized
+from pendulum import datetime
+
+import gsy_e.models.area.area
+from gsy_e.events.event_structures import AreaEvent, MarketEvent
+from gsy_e.gsy_e_core.redis_connections.area_market import RedisCommunicator
+from gsy_e.models.area import Area
+from gsy_e.models.area.event_dispatcher import RedisAreaDispatcher, AreaDispatcher
+from gsy_e.models.strategy.load_hours import LoadHoursStrategy
+from gsy_e.models.strategy.storage import StorageStrategy
 
 log = getLogger(__name__)
 
@@ -44,6 +45,7 @@ mock_redis.area_event = MagicMock(spec=Event)
 
 
 class MockDispatcherFactory:
+    """Mock for DispatcherFactory (inserting Redis mocks)"""
     def __init__(self, area):
         self.event_dispatching_via_redis = \
             ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS
@@ -54,7 +56,7 @@ class MockDispatcherFactory:
         return self.dispatcher
 
 
-gsy_e.models.area.DispatcherFactory = MockDispatcherFactory
+gsy_e.models.area.area.DispatcherFactory = MockDispatcherFactory
 
 
 class TestRedisEventDispatching(unittest.TestCase):
