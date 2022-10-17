@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Union, TYPE_CHECKING, Dict
 
-from gsy_framework.enums import AvailableMarketTypes
 from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.enums import AvailableMarketTypes
 from pendulum import DateTime
 
 from gsy_e.events import EventMixin, AreaEvent, MarketEvent

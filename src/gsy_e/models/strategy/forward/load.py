@@ -1,7 +1,7 @@
-from typing import Dict, TYPE_CHECKING
+from typing import Dict, TYPE_CHECKING, List
 
 from gsy_framework.enums import AvailableMarketTypes
-from pendulum import DateTime
+from pendulum import DateTime, duration
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.models.strategy.energy_parameters.energy_params_eb import (
@@ -15,6 +15,15 @@ if TYPE_CHECKING:
     from gsy_e.models.state import LoadState
 
 
+DEFAULT_LOAD_ORDER_UPDATER_PARAMS = {
+    AvailableMarketTypes.INTRADAY: OrderUpdaterParameters(duration(minutes=5), 10, 40, 10),
+    AvailableMarketTypes.DAY_FORWARD: OrderUpdaterParameters(duration(minutes=30), 20, 40, 10),
+    AvailableMarketTypes.WEEK_FORWARD: OrderUpdaterParameters(duration(days=1), 30, 50, 10),
+    AvailableMarketTypes.MONTH_FORWARD: OrderUpdaterParameters(duration(weeks=1), 40, 60, 20),
+    AvailableMarketTypes.YEAR_FORWARD: OrderUpdaterParameters(duration(months=1), 50, 70, 50)
+}
+
+
 class ForwardLoadStrategy(ForwardStrategyBase):
     """
     Strategy that models a Load that trades with a Standard Solar Profile on the forward
@@ -22,7 +31,14 @@ class ForwardLoadStrategy(ForwardStrategyBase):
     """
     def __init__(
             self, capacity_kW: float,
-            order_updater_parameters: Dict[AvailableMarketTypes, OrderUpdaterParameters]):
+            order_updater_parameters: Dict[AvailableMarketTypes, List] = None):
+        if not order_updater_parameters:
+            order_updater_parameters = DEFAULT_LOAD_ORDER_UPDATER_PARAMS
+        else:
+            order_updater_parameters = {
+                market_type: OrderUpdaterParameters(*order_updater_args)
+                for market_type, order_updater_args in order_updater_parameters.items()
+            }
         super().__init__(order_updater_parameters)
         self._energy_params = ConsumptionStandardProfileEnergyParameters(capacity_kW)
 

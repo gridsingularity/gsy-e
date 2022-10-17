@@ -42,6 +42,8 @@ from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
 from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
 from gsy_e.models.strategy.storage import StorageStrategy
 from gsy_e.models.strategy.predefined_wind import WindUserProfileStrategy
+from gsy_e.models.strategy.forward.pv import ForwardPVStrategy
+from gsy_e.models.strategy.forward.load import ForwardLoadStrategy
 
 external_strategies_mapping = {
     LoadHoursStrategy: LoadHoursExternalStrategy,
@@ -118,6 +120,8 @@ class LeafBase:
                 uuid=uuid
             )
         except TypeError as ex:
+            print(self.strategy_type)
+            print(kwargs)
             logging.error("Cannot create leaf area %s with strategy %s and parameters %s.",
                           name, self.strategy_type, kwargs)
             raise ex
@@ -183,6 +187,14 @@ class SmartMeter(Leaf):
     strategy_type = SmartMeterStrategy
 
 
+class ForwardLoad(Leaf):
+    strategy_type = ForwardLoadStrategy
+
+
+class ForwardPV(Leaf):
+    strategy_type = ForwardPVStrategy
+
+
 class FiniteDieselGenerator(Leaf):
     strategy_type = FinitePowerPlant
 
@@ -218,4 +230,10 @@ scm_leaf_mapping = {
     "PV": SCMPV,
     "PredefinedPV": SCMPredefinedPV,
     "PVProfile": SCMPVProfile
+}
+
+
+forward_leaf_mapping = {
+    "LoadHours": ForwardLoad,
+    "PV": ForwardPV
 }

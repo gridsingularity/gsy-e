@@ -10,7 +10,6 @@ from pendulum import duration, datetime
 
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.forward.load import ForwardLoadStrategy
-from gsy_e.models.strategy.forward.order_updater import OrderUpdaterParameters
 from gsy_e.models.strategy.forward.pv import ForwardPVStrategy
 
 if TYPE_CHECKING:
@@ -19,20 +18,20 @@ if TYPE_CHECKING:
 CURRENT_MARKET_SLOT = datetime(2022, 6, 13, 0, 0)
 
 load_parameters = {
-    AvailableMarketTypes.INTRADAY: OrderUpdaterParameters(duration(minutes=5), 10, 40, 20),
-    AvailableMarketTypes.DAY_FORWARD: OrderUpdaterParameters(duration(minutes=30), 20, 40, 20),
-    AvailableMarketTypes.WEEK_FORWARD: OrderUpdaterParameters(duration(days=1), 30, 50, 20),
-    AvailableMarketTypes.MONTH_FORWARD: OrderUpdaterParameters(duration(weeks=1), 40, 60, 20),
-    AvailableMarketTypes.YEAR_FORWARD: OrderUpdaterParameters(duration(months=1), 50, 70, 20)
+    AvailableMarketTypes.INTRADAY: [duration(minutes=5), 10, 40, 20],
+    AvailableMarketTypes.DAY_FORWARD: [duration(minutes=30), 20, 40, 20],
+    AvailableMarketTypes.WEEK_FORWARD: [duration(days=1), 30, 50, 20],
+    AvailableMarketTypes.MONTH_FORWARD: [duration(weeks=1), 40, 60, 20],
+    AvailableMarketTypes.YEAR_FORWARD: [duration(months=1), 50, 70, 20]
 }
 
 
 pv_parameters = {
-    AvailableMarketTypes.INTRADAY: OrderUpdaterParameters(duration(minutes=5), 41, 11, 20),
-    AvailableMarketTypes.DAY_FORWARD: OrderUpdaterParameters(duration(minutes=30), 42, 22, 20),
-    AvailableMarketTypes.WEEK_FORWARD: OrderUpdaterParameters(duration(days=1), 53, 33, 20),
-    AvailableMarketTypes.MONTH_FORWARD: OrderUpdaterParameters(duration(weeks=1), 66, 39, 20),
-    AvailableMarketTypes.YEAR_FORWARD: OrderUpdaterParameters(duration(months=1), 72, 56, 20)
+    AvailableMarketTypes.INTRADAY: [duration(minutes=5), 41, 11, 20],
+    AvailableMarketTypes.DAY_FORWARD: [duration(minutes=30), 42, 22, 20],
+    AvailableMarketTypes.WEEK_FORWARD: [duration(days=1), 53, 33, 20],
+    AvailableMarketTypes.MONTH_FORWARD: [duration(weeks=1), 66, 39, 20],
+    AvailableMarketTypes.YEAR_FORWARD: [duration(months=1), 72, 56, 20]
 }
 
 
@@ -140,15 +139,14 @@ class TestForwardStrategies:
         area.activate()
         strategy.event_market_cycle()
 
-        update_interval = strategy._order_updater_params[market_type].update_interval
-        initial_rate = strategy._order_updater_params[market_type].initial_rate
-        final_rate = strategy._order_updater_params[market_type].final_rate
+        updater_params = strategy._order_updater_params[market_type]
 
         order_mapping = cls._get_order_mapping_from_strategy(strategy, market_type)
         old_orders = deepcopy(order_mapping)
         # Assert that orders are not updated before the update interval
         with patch("gsy_e.models.area.Area.now", new_callable=PropertyMock) as now_mock:
-            now_mock.return_value = CURRENT_MARKET_SLOT + update_interval - duration(seconds=1)
+            now_mock.return_value = (
+                    CURRENT_MARKET_SLOT + updater_params.update_interval - duration(seconds=1))
             strategy.event_tick()
             order_mapping = cls._get_order_mapping_from_strategy(strategy, market_type)
             assert len(order_mapping) > 0
@@ -159,7 +157,7 @@ class TestForwardStrategies:
 
         # Assert that orders are updated at exactly the update interval
         with patch("gsy_e.models.area.Area.now", new_callable=PropertyMock) as now_mock:
-            now_mock.return_value = CURRENT_MARKET_SLOT + update_interval
+            now_mock.return_value = CURRENT_MARKET_SLOT + updater_params.update_interval
             strategy.event_tick()
             order_mapping = cls._get_order_mapping_from_strategy(strategy, market_type)
             assert len(order_mapping) > 0
@@ -175,17 +173,21 @@ class TestForwardStrategies:
                     assert updated_order.buyer_id == old_order_list[0].buyer_id
                 market_params = area.forward_markets[
                     market_type].get_market_parameters_for_market_slot(time_slot)
-                slot_completion_ratio = update_interval.total_minutes() / (
+                slot_completion_ratio = updater_params.update_interval.total_minutes() / (
                         market_params.closing_time - market_params.opening_time
                 ).total_minutes()
                 if isinstance(strategy, ForwardPVStrategy):
                     assert isclose(
                         updated_order.energy_rate,
-                        initial_rate - slot_completion_ratio * abs(initial_rate - final_rate))
+                        (updater_params.initial_rate -
+                         slot_completion_ratio * abs(updater_params.initial_rate -
+                                                     updater_params.final_rate)))
                 else:
                     assert isclose(
                         updated_order.energy_rate,
-                        slot_completion_ratio * (final_rate - initial_rate) + initial_rate)
+                        slot_completion_ratio * (
+                                updater_params.final_rate - updater_params.initial_rate) +
+                        updater_params.initial_rate)
 
     @staticmethod
     def _get_order_mapping_from_strategy(
