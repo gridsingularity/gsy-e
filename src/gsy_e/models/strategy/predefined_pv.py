@@ -133,6 +133,7 @@ class PVUserProfileStrategy(PVStrategy):
                          use_market_maker_rate=use_market_maker_rate)
         self._energy_params = PVUserProfileEnergyParameters(
             panel_count, power_profile, power_profile_uuid)
+        self.power_profile_uuid = power_profile_uuid  # needed for profile_handler
 
     def set_produced_energy_forecast_in_state(self, reconfigure=True):
         time_slots = [self.area.spot_market.time_slot]

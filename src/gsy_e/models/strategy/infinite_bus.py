@@ -37,6 +37,8 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
                  energy_rate_profile_uuid=None):
         super().__init__()
         self.energy_per_slot_kWh = INF_ENERGY
+        self.energy_rate_profile_uuid = energy_rate_profile_uuid  # needed for profile_handler
+        self.buying_rate_profile_uuid = buying_rate_profile_uuid  # needed for profile_handler
 
         # buy
         if all(arg is None for arg in [

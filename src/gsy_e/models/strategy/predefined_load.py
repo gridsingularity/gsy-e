@@ -71,6 +71,7 @@ class DefinedLoadStrategy(LoadHoursStrategy):
                          use_market_maker_rate=use_market_maker_rate)
         self._energy_params = DefinedLoadEnergyParameters(
             daily_load_profile, daily_load_profile_uuid)
+        self.daily_load_profile_uuid = daily_load_profile_uuid  # needed for profile_handler
 
     def event_market_cycle(self):
         self._energy_params._energy_profile.read_or_rotate_profiles()
