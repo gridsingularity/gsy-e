@@ -39,6 +39,15 @@ class ProfileDBConnectionException(Exception):
     """Exception that is raised inside ProfileDBConnectionHandler."""
 
 
+PROFILE_UUID_NAMES = [
+    "daily_load_profile_uuid",
+    "power_profile_uuid",
+    "energy_rate_profile_uuid",
+    "smart_meter_profile_uuid",
+    "buying_rate_profile_uuid"
+]
+
+
 class ProfileDBConnectionHandler:
     """
     Handles connection and interaction with the user-profiles postgres DB via pony ORM
@@ -299,7 +308,8 @@ class ProfilesHandler:
         """ Update current timestamp and get the first chunk of data from the DB"""
         self._update_current_time(timestamp)
         if self.db:
-            uuids_used_in_setup = self._get_profile_uuids_from_setup(area, [])
+            uuids_used_in_setup = self._get_profile_uuids_from_setup(area)
+            print(uuids_used_in_setup)
             self.db.buffer_profiles_from_db(timestamp, uuids_used_in_setup)
 
     def _read_new_datapoints_from_buffer_or_rotate_profile(
@@ -356,21 +366,16 @@ class ProfilesHandler:
         """Read the profile type from a profile with the specified UUID."""
         return self.db.get_profile_type_from_db_buffer(profile_uuid)
 
-    def _get_profile_uuids_from_setup(self, area: "Area", profile_uuids: List) -> List:
-        profile_uuid_names = [
-            "daily_load_profile_uuid",
-            "power_profile_uuid",
-            "energy_rate_profile_uuid",
-            "smart_meter_profile_uuid",
-            "buying_rate_profile_uuid"
-        ]
-        for profile_uuid_name in profile_uuid_names:
+    def _get_profile_uuids_from_setup(self, area: "Area") -> List:
+        profile_uuids = []
+        for profile_uuid_name in PROFILE_UUID_NAMES:
             profile_uuid = getattr(area.strategy, profile_uuid_name, None)
-
             if profile_uuid:
                 profile_uuids.append(uuid.UUID(profile_uuid))
                 break
+
         if area.children:
             for child in area.children:
-                self._get_profile_uuids_from_setup(child, profile_uuids)
+                profile_uuids.extend(self._get_profile_uuids_from_setup(child))
+
         return profile_uuids
