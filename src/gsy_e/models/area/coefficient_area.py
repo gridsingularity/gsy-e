@@ -36,15 +36,6 @@ class CoefficientAreaException(Exception):
     """Exception that is raised when serializing an area."""
 
 
-def validate_coefficient_area_setting(
-        children: Optional[List], setting: Optional[float], setting_name: str) -> float:
-    """Check if coefficient area that is not an asset provided SCM setting."""
-    if children:
-        if all(not child.children for child in children) and setting is None:
-            raise CoefficientAreaException(f"In SCM simulations {setting_name} can not be None.")
-    return setting
-
-
 class CoefficientArea(AreaBase):
     """Area class for the coefficient matching mechanism."""
     # pytest: disable=too-many-instance-attributes
@@ -63,23 +54,23 @@ class CoefficientArea(AreaBase):
                  feed_in_tariff: float = GlobalConfig.FEED_IN_TARIFF / 100.,
                  ):
         # pylint: disable=too-many-arguments
-        validate_coefficient_area_setting(children, grid_fee_constant, "grid_fee_constant")
         super().__init__(name, children, uuid, strategy, config, grid_fee_percentage,
                          grid_fee_constant)
         self.display_type = (
             "CoefficientArea" if self.strategy is None else self.strategy.__class__.__name__)
-        self.coefficient_percentage = validate_coefficient_area_setting(
-            children, coefficient_percentage, "coefficient_percentage")
-        self._taxes_surcharges = validate_coefficient_area_setting(
-            children, taxes_surcharges, "taxes_surcharges")
-        self._fixed_monthly_fee = validate_coefficient_area_setting(
-            children, fixed_monthly_fee, "fixed_monthly_fee")
-        self._marketplace_monthly_fee = validate_coefficient_area_setting(
-            children, marketplace_monthly_fee, "marketplace_monthly_fee")
-        self._market_maker_rate = validate_coefficient_area_setting(
-            children, market_maker_rate, "market_maker_rate")
-        self._feed_in_tariff = validate_coefficient_area_setting(
-            children, feed_in_tariff, "feed_in_tariff")
+        self.validate_coefficient_area_setting(grid_fee_constant, "grid_fee_constant")
+        self.coefficient_percentage = self.validate_coefficient_area_setting(
+            coefficient_percentage, "coefficient_percentage")
+        self._taxes_surcharges = self.validate_coefficient_area_setting(
+            taxes_surcharges, "taxes_surcharges")
+        self._fixed_monthly_fee = self.validate_coefficient_area_setting(
+            fixed_monthly_fee, "fixed_monthly_fee")
+        self._marketplace_monthly_fee = self.validate_coefficient_area_setting(
+            marketplace_monthly_fee, "marketplace_monthly_fee")
+        self._market_maker_rate = self.validate_coefficient_area_setting(
+            market_maker_rate, "market_maker_rate")
+        self._feed_in_tariff = self.validate_coefficient_area_setting(
+            feed_in_tariff, "feed_in_tariff")
         self.past_market_time_slot = None
 
     def activate_energy_parameters(self, current_time_slot: DateTime) -> None:
@@ -101,6 +92,14 @@ class CoefficientArea(AreaBase):
 
         for child in self.children:
             child.cycle_coefficients_trading(current_time_slot)
+
+    def validate_coefficient_area_setting(
+            self, setting: Optional[float], setting_name: str) -> float:
+        """Check if coefficient area that is not an asset provided SCM setting."""
+        if self._is_home_area() and setting is None:
+            raise CoefficientAreaException(
+                f"In SCM simulations {setting_name} can not be None.")
+        return setting
 
     def _is_home_area(self):
         return self.children and all(child.strategy for child in self.children)
