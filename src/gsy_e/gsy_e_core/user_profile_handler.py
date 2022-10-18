@@ -309,7 +309,6 @@ class ProfilesHandler:
         self._update_current_time(timestamp)
         if self.db:
             uuids_used_in_setup = self._get_profile_uuids_from_setup(area)
-            print(uuids_used_in_setup)
             self.db.buffer_profiles_from_db(timestamp, uuids_used_in_setup)
 
     def _read_new_datapoints_from_buffer_or_rotate_profile(
