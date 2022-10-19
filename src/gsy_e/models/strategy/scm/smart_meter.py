@@ -19,6 +19,7 @@ class SCMSmartMeterStrategy(SCMStrategy):
             smart_meter_profile_uuid: str = None):
         self._energy_params = SmartMeterEnergyParameters(
             smart_meter_profile, smart_meter_profile_uuid)
+        self.smart_meter_profile_uuid = smart_meter_profile_uuid
 
     @property
     def state(self) -> "SmartMeterState":
