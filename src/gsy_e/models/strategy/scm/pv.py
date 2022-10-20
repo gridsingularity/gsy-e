@@ -63,6 +63,7 @@ class SCMPVUserProfile(SCMPVStrategy):
                  power_profile_uuid: str = None):
         self._energy_params = PVUserProfileEnergyParameters(1, power_profile, power_profile_uuid)
         super().__init__()
+        self.power_profile_uuid = power_profile_uuid
 
     def _update_forecast_in_state(self, area):
         self._energy_params.read_predefined_profile_for_pv()

@@ -398,6 +398,10 @@ class CoefficientSimulation(Simulation):
 
         self.area = self._setup.load_setup_module()
 
+        # has to be called after areas are initiated in order to retrieve the profile uuids
+        global_objects.profiles_handler.update_time_and_buffer_profiles(
+            GlobalConfig.start_date, area=self.area)
+
         self._results.init_results(self.simulation_id, self.area, self._setup)
         self._results.update_and_send_results(self)
 
