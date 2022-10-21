@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
 import uuid
 from datetime import datetime
-from typing import Dict
+from typing import Dict, TYPE_CHECKING, List, Optional
 
 import pytz
 from gsy_framework.constants_limits import GlobalConfig
@@ -30,6 +30,22 @@ from pony.orm.core import Query
 
 import gsy_e.constants
 from gsy_e.gsy_e_core.util import should_read_profile_from_db
+
+if TYPE_CHECKING:
+    from gsy_e.models.area import Area
+
+
+class ProfileDBConnectionException(Exception):
+    """Exception that is raised inside ProfileDBConnectionHandler."""
+
+
+PROFILE_UUID_NAMES = [
+    "daily_load_profile_uuid",
+    "power_profile_uuid",
+    "energy_rate_profile_uuid",
+    "smart_meter_profile_uuid",
+    "buying_rate_profile_uuid"
+]
 
 
 class ProfileDBConnectionHandler:
@@ -52,10 +68,10 @@ class ProfileDBConnectionHandler:
         profile_type = Required(int)  # values of InputProfileTypes
 
     def __init__(self):
-        self._user_profiles = {}
-        self._profile_types = {}
-        self._buffered_times = []
-        self._profile_uuids = None
+        self._user_profiles: Dict[uuid.UUID, Dict[DateTime, float]] = {}
+        self._profile_types: Dict[uuid.UUID, InputProfileTypes] = {}
+        self._buffered_times: List[DateTime] = []
+        self._profile_uuids: Optional[List[uuid.UUID]] = []
 
     @staticmethod
     def _convert_pendulum_to_datetime(time_stamp):
@@ -98,10 +114,14 @@ class ProfileDBConnectionHandler:
         """
         if not isinstance(profile_uuid, uuid.UUID):
             profile_uuid = uuid.UUID(profile_uuid)
-        first_datapoint_time = select(
+        first_datapoint = select(
             datapoint for datapoint in self.Profile_Database_ProfileTimeSeries
             if datapoint.profile_uuid == profile_uuid
-        ).order_by(lambda d: d.time).limit(1)[0].time
+        ).order_by(lambda d: d.time).limit(1)
+        if len(first_datapoint) == 0:
+            raise ProfileDBConnectionException(
+                f"Profile in DB is empty for profile with uuid {profile_uuid}")
+        first_datapoint_time = first_datapoint[0].time
 
         datapoints = select(
             datapoint for datapoint in self.Profile_Database_ProfileTimeSeries
@@ -142,18 +162,26 @@ class ProfileDBConnectionHandler:
         return selection
 
     @db_session
-    def _buffer_profile_uuid_list(self):
-        """ Buffers list of the profile_uuids that correspond to this simulation into
-        self._profile_uuids"""
+    def _get_profile_uuids_from_db(self):
         profile_selection = select(
             datapoint.profile_uuid
             for datapoint in self.Profile_Database_ConfigurationAreaProfileUuids
             if datapoint.configuration_uuid == uuid.UUID(gsy_e.constants.CONFIGURATION_ID))
+        return list(profile_selection)
 
-        self._profile_uuids = list(profile_selection)
+    def _buffer_profile_uuid_list(self, uuids_used_in_setup: List) -> None:
+        """ Buffers list of the profile_uuids that correspond to this simulation into
+        self._profile_uuids"""
+        db_profile_uuids = self._get_profile_uuids_from_db()
+
+        for used_profile_uuid in uuids_used_in_setup:
+            if used_profile_uuid not in db_profile_uuids:
+                raise ProfileDBConnectionException(
+                    f"Did not find profile with uuid {str(used_profile_uuid)} in DB.")
+        self._profile_uuids = list(uuids_used_in_setup)
 
     @db_session
-    def _buffer_profile_types(self):
+    def buffer_profile_types(self):
         """
         Buffers profile types for the profiles of this simulation.
         """
@@ -215,7 +243,7 @@ class ProfileDBConnectionHandler:
         return (self._profile_uuids is None or
                 (not self._buffered_times or (current_timestamp not in self._buffered_times)))
 
-    def buffer_profiles_from_db(self, current_timestamp: DateTime):
+    def buffer_profiles_from_db(self, current_timestamp: DateTime, uuids_used_in_setup: List):
         """ Public method for buffering profiles and all other information from DB into memory
 
         Args:
@@ -224,13 +252,13 @@ class ProfileDBConnectionHandler:
 
         """
         if self._should_buffer_profiles(current_timestamp):
-            self._buffer_profile_uuid_list()
-            self._buffer_profile_types()
+            self.buffer_profile_types()
+            self._buffer_profile_uuid_list(uuids_used_in_setup)
             self._buffer_all_profiles(current_timestamp)
             self._buffer_time_slots()
 
     def get_profile_type_from_db_buffer(self, profile_uuid: str) -> InputProfileTypes:
-        """Read type of a profile."""
+        """Read type of profile."""
         return self._profile_types[uuid.UUID(profile_uuid)]
 
     def get_profile_from_db_buffer(self, profile_uuid: str) -> Dict:
@@ -259,7 +287,9 @@ class ProfilesHandler:
     def activate(self):
         """Connect to DB, update current timestamp and get the first chunk of data from the DB"""
         self._connect_to_db()
-        self.update_time_and_buffer_profiles(GlobalConfig.start_date)
+        self._update_current_time(GlobalConfig.start_date)
+        if self.db:
+            self.db.buffer_profile_types()
 
     def _connect_to_db(self):
         if gsy_e.constants.CONNECT_TO_PROFILES_DB:
@@ -274,11 +304,12 @@ class ProfilesHandler:
     def _update_current_time(self, timestamp: DateTime):
         self._current_timestamp = timestamp
 
-    def update_time_and_buffer_profiles(self, timestamp):
+    def update_time_and_buffer_profiles(self, timestamp: DateTime, area: "Area") -> None:
         """ Update current timestamp and get the first chunk of data from the DB"""
         self._update_current_time(timestamp)
         if self.db:
-            self.db.buffer_profiles_from_db(timestamp)
+            uuids_used_in_setup = self._get_profile_uuids_from_setup(area)
+            self.db.buffer_profiles_from_db(timestamp, uuids_used_in_setup)
 
     def _read_new_datapoints_from_buffer_or_rotate_profile(
             self, profile, profile_uuid, profile_type):
@@ -333,3 +364,17 @@ class ProfilesHandler:
     def get_profile_type(self, profile_uuid: str) -> InputProfileTypes:
         """Read the profile type from a profile with the specified UUID."""
         return self.db.get_profile_type_from_db_buffer(profile_uuid)
+
+    def _get_profile_uuids_from_setup(self, area: "Area") -> List:
+        profile_uuids = []
+        for profile_uuid_name in PROFILE_UUID_NAMES:
+            profile_uuid = getattr(area.strategy, profile_uuid_name, None)
+            if profile_uuid:
+                profile_uuids.append(uuid.UUID(profile_uuid))
+                break
+
+        if area.children:
+            for child in area.children:
+                profile_uuids.extend(self._get_profile_uuids_from_setup(child))
+
+        return profile_uuids

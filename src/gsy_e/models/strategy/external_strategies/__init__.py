@@ -349,11 +349,10 @@ class ExternalMixin:
 
             offer_arguments = {k: v
                                for k, v in arguments.items()
-                               if k not in ["transaction_id", "type", "time_slot"]}
+                               if k not in ["transaction_id", "type"]}
 
             offer = self.post_offer(
                 market, replace_existing=replace_existing, **offer_arguments)
-
             response = {
                 "command": "offer",
                 "status": "ready",
@@ -413,7 +412,8 @@ class ExternalMixin:
                 arguments["energy"],
                 replace_existing=replace_existing,
                 attributes=arguments.get("attributes"),
-                requirements=arguments.get("requirements")
+                requirements=arguments.get("requirements"),
+                time_slot=time_slot
             )
             response = {
                 "command": "bid", "status": "ready",

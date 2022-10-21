@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-# pylint: disable=missing-function-docstring
+# pylint: disable=missing-function-docstring, protected-access
 from unittest.mock import MagicMock, Mock, call, patch
 
 import pytest
@@ -156,7 +156,7 @@ class TestArea:
     @staticmethod
     @patch("gsy_e.models.area.Area._consume_commands_from_aggregator", Mock())
     @patch("gsy_e.models.area.Area._update_myco_matcher", Mock())
-    @patch("gsy_e.models.area.bid_offer_matcher.match_recommendations")
+    @patch("gsy_e.models.area.area.bid_offer_matcher.match_recommendations")
     def test_tick(mock_match_recommendations, config):
         """Test the correct chain of function calls in the Area's tick function."""
         manager = Mock()

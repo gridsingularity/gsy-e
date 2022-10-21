@@ -81,6 +81,7 @@ class TestD3ACoreUtil:
 
     @staticmethod
     def test_get_market_maker_rate_from_config():
+        original_mmr = GlobalConfig.market_maker_rate
         assert get_market_maker_rate_from_config(None, 2) == 2
         market = MagicMock()
         market.time_slot = datetime(year=2019, month=2, day=3)
@@ -90,6 +91,7 @@ class TestD3ACoreUtil:
         assert get_market_maker_rate_from_config(market, None) == 321
         GlobalConfig.market_maker_rate = 4321
         assert get_market_maker_rate_from_config(market, None) == 4321
+        GlobalConfig.market_maker_rate = original_mmr
 
     @staticmethod
     def test_export_default_settings_to_json_file():

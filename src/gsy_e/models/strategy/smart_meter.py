@@ -94,7 +94,7 @@ class SmartMeterStrategy(BidEnabledStrategy):
                 selling rate as per utility's trading rate.
         """
         super().__init__()
-
+        self.smart_meter_profile_uuid = smart_meter_profile_uuid  # needed for profile_handler
         self._energy_params = SmartMeterEnergyParameters(
             smart_meter_profile, smart_meter_profile_uuid)
 
