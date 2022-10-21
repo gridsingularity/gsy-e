@@ -17,126 +17,70 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
-from gsy_e.models.strategy.pv import PVStrategy
-from gsy_e.models.strategy.storage import StorageStrategy
-from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.influx_connection.connection import InfluxConnection
+from gsy_framework.influx_connection.queries_fhac import DataFHAachenAggregated
+from gsy_framework.influx_connection.queries_pxl import DataQueryPXL, DataQueryPXlMakerspace
+from gsy_e.models.strategy.influx import InfluxLoadStrategy, InfluxPVStrategy
 
 def get_setup(config):
     ConstSettings.GeneralSettings.RUN_IN_REALTIME = True
+    connection_pxl = InfluxConnection("influx_pxl.cfg")
+    connection_fhaachen = InfluxConnection("influx_fhaachen.cfg")
+
     area = Area(
         "Grid",
         [
             Area(
-                "House 1",
+                "PXL Campus",
                 [
-                    Area("H1 General Load", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                                       hrs_per_day=4,
-                                                                       hrs_of_day=list(
-                                                                           range(12, 20)),
-                                                                       final_buying_rate=29)
-                         ),
-                    Area("H1 Lighting", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                                   hrs_per_day=4,
-                                                                   hrs_of_day=list(range(12, 16)))
-                         ),
-                    Area("H1 Storage1", strategy=StorageStrategy(initial_soc=50)
-                         ),
-                    Area("H1 Storage2", strategy=StorageStrategy(initial_soc=50)
-                         ),
+                    Area("main_P_L1", strategy=InfluxLoadStrategy(query = DataQueryPXL(connection_pxl, power_column="main_P_L1", tablename="Total_Electricity"))),
+                    Area("main_P_L2", strategy=InfluxLoadStrategy(query = DataQueryPXL(connection_pxl, power_column="main_P_L2", tablename="Total_Electricity"))),
+                    Area("main_P_L3", strategy=InfluxLoadStrategy(query = DataQueryPXL(connection_pxl, power_column="main_P_L3", tablename="Total_Electricity"))),
+                    Area("PV_LS_105A_power", strategy=InfluxPVStrategy(query = DataQueryPXL(connection_pxl, power_column="PV_LS_105A_power", tablename="Total_Electricity"))),
+                    Area("PV_LS_105B_power", strategy=InfluxPVStrategy(query = DataQueryPXL(connection_pxl, power_column="PV_LS_105B_power", tablename="Total_Electricity"))),
+                    Area("PV_LS_105E_power", strategy=InfluxPVStrategy(query = DataQueryPXL(connection_pxl, power_column="PV_LS_105E_power", tablename="Total_Electricity"))),
                 ]
             ),
             Area(
-                "House 2",
+                "PXL Makerspace",
                 [
-                    Area("H2 General Load", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                                       hrs_per_day=3,
-                                                                       hrs_of_day=list(
-                                                                           range(12, 18)),
-                                                                       final_buying_rate=50)
-                         ),
-                    Area("H2 Lighting", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                                   hrs_per_day=4,
-                                                                   hrs_of_day=list(range(12, 16)))
-                         ),
-                    Area("H2 PV", strategy=PVStrategy(2, 80)
-                         ),
+                    Area("PXL_makerspace_EmbroideryMachine", strategy=InfluxLoadStrategy(query = DataQueryPXlMakerspace(connection_pxl, power_column="Power", device="PXL_makerspace_EmbroideryMachine", tablename="mqtt_consumer"))),
+                    Area("PXL_makerspace_LaserBig", strategy=InfluxLoadStrategy(query = DataQueryPXlMakerspace(connection_pxl, power_column="Power", device="PXL_makerspace_LaserBig", tablename="mqtt_consumer"))),
+                    Area("PXL_makerspace_LaserSmall", strategy=InfluxLoadStrategy(query = DataQueryPXlMakerspace(connection_pxl, power_column="Power", device="PXL_makerspace_LaserSmall", tablename="mqtt_consumer"))),
+                    Area("PXL_makerspace_MillingMachine", strategy=InfluxLoadStrategy(query = DataQueryPXlMakerspace(connection_pxl, power_column="Power", device="PXL_makerspace_MillingMachine", tablename="mqtt_consumer"))),
+                    Area("PXL_makerspace_Miscellaneous", strategy=InfluxLoadStrategy(query = DataQueryPXlMakerspace(connection_pxl, power_column="Power", device="PXL_makerspace_Miscellaneous", tablename="mqtt_consumer"))),
+                    Area("PXL_makerspace_PcLaserBig", strategy=InfluxLoadStrategy(query = DataQueryPXlMakerspace(connection_pxl, power_column="Power", device="PXL_makerspace_PcLaserBig", tablename="mqtt_consumer"))),
+                    Area("PXL_makerspace_PcLaserSmall", strategy=InfluxLoadStrategy(query = DataQueryPXlMakerspace(connection_pxl, power_column="Power", device="PXL_makerspace_PcLaserSmall", tablename="mqtt_consumer"))),
+                    Area("PXL_makerspace_PcUltimakers", strategy=InfluxLoadStrategy(query = DataQueryPXlMakerspace(connection_pxl, power_column="Power", device="PXL_makerspace_PcUltimakers", tablename="mqtt_consumer"))),
+                    Area("PXL_makerspace_PcVinylEmbroid", strategy=InfluxLoadStrategy(query = DataQueryPXlMakerspace(connection_pxl, power_column="Power", device="PXL_makerspace_PcVinylEmbroid", tablename="mqtt_consumer"))),
+                    Area("PXL_makerspace_PcbMilling", strategy=InfluxLoadStrategy(query = DataQueryPXlMakerspace(connection_pxl, power_column="Power", device="PXL_makerspace_PcbMilling", tablename="mqtt_consumer"))),
+                    Area("PXL_makerspace_Photostudio", strategy=InfluxLoadStrategy(query = DataQueryPXlMakerspace(connection_pxl, power_column="Power", device="PXL_makerspace_Photostudio", tablename="mqtt_consumer"))),
+                    Area("PXL_makerspace_Press", strategy=InfluxLoadStrategy(query = DataQueryPXlMakerspace(connection_pxl, power_column="Power", device="PXL_makerspace_Press", tablename="mqtt_consumer"))),
+                    Area("PXL_makerspace_SheetPress", strategy=InfluxLoadStrategy(query = DataQueryPXlMakerspace(connection_pxl, power_column="Power", device="PXL_makerspace_SheetPress", tablename="mqtt_consumer"))),
+                    Area("PXL_makerspace_Ultimaker3Left", strategy=InfluxLoadStrategy(query = DataQueryPXlMakerspace(connection_pxl, power_column="Power", device="PXL_makerspace_Ultimaker3Left", tablename="mqtt_consumer"))),
+                    Area("PXL_makerspace_Ultimaker3Right", strategy=InfluxLoadStrategy(query = DataQueryPXlMakerspace(connection_pxl, power_column="Power", device="PXL_makerspace_Ultimaker3Right", tablename="mqtt_consumer"))),
+                    Area("PXL_makerspace_UltimakerS5", strategy=InfluxLoadStrategy(query = DataQueryPXlMakerspace(connection_pxl, power_column="Power", device="PXL_makerspace_UltimakerS5", tablename="mqtt_consumer"))),
+                    Area("PXL_makerspace_VacuumFormer", strategy=InfluxLoadStrategy(query = DataQueryPXlMakerspace(connection_pxl, power_column="Power", device="PXL_makerspace_VacuumFormer", tablename="mqtt_consumer"))),
+                    Area("PXL_makerspace_VinylCutter", strategy=InfluxLoadStrategy(query = DataQueryPXlMakerspace(connection_pxl, power_column="Power", device="PXL_makerspace_VinylCutter", tablename="mqtt_consumer"))),                
                 ]
             ),
             Area(
-                "House 3",
+                "FH Campus",
                 [
-                    Area("H3 General Load", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                                       hrs_per_day=1,
-                                                                       hrs_of_day=list(
-                                                                           range(12, 13)))
-                         ),
-                    Area("H3 Lighting", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                                   hrs_per_day=4,
-                                                                   hrs_of_day=list(range(12, 16)))
-                         ),
-                    Area("H3 PV", strategy=PVStrategy(4, 60)
-                         ),
+                    Area("FH General Load", strategy=InfluxLoadStrategy(query = DataFHAachenAggregated(connection_fhaachen, power_column="P_ges", tablename="Strom"))),
                 ]
             ),
-            Area(
-                "House 4",
-                [
-                    Area("H4 General Load", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                                       hrs_per_day=1,
-                                                                       hrs_of_day=list(
-                                                                           range(12, 13)))
-                         ),
-                    Area("H4 Lighting", strategy=LoadHoursStrategy(avg_power_W=200,
-                                                                   hrs_per_day=4,
-                                                                   hrs_of_day=list(range(12, 16)))
-                         ),
-                    Area("H4 TV", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                             hrs_per_day=4,
-                                                             hrs_of_day=list(range(14, 18)))
-                         ),
-                    Area("H4 PV", strategy=PVStrategy(4, 60)
-                         ),
-                    Area("H4 Storage1", strategy=StorageStrategy(initial_soc=50)
-                         ),
-                    Area("H4 Storage2", strategy=StorageStrategy(initial_soc=50)
-                         ),
-                ]
-            ),
-            Area(
-                "House 5",
-                [
-                    Area("H5 General Load", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                                       hrs_per_day=1,
-                                                                       hrs_of_day=list(
-                                                                           range(12, 13)))
-                         ),
-                    Area("H5 Lighting", strategy=LoadHoursStrategy(avg_power_W=200,
-                                                                   hrs_per_day=4,
-                                                                   hrs_of_day=list(range(12, 16)))
-                         ),
-                    Area("H5 TV", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                             hrs_per_day=4,
-                                                             hrs_of_day=list(range(10, 15)))
-                         ),
-                    Area("H5 PV", strategy=PVStrategy(5, 60),
-                         ),
-                    Area("H5 Storage1", strategy=StorageStrategy(initial_soc=50)
-                         ),
-                    Area("H5 Storage2", strategy=StorageStrategy(initial_soc=50)
-                         ),
-                ]
-            ),
-
             Area("Commercial Energy Producer",
                  strategy=CommercialStrategy(energy_rate=30)
                  ),
-
-            Area("Cell Tower", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                          hrs_per_day=24,
-                                                          hrs_of_day=list(range(0, 24)))
-                 )
         ],
         config=config
     )
     return area
+
+
+
+
+# pip install -e .
+# gsy-e run --setup bc4p -s 15m --enable-external-connection --start-date 2022-10-10

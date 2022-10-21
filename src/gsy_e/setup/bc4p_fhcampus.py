@@ -19,6 +19,7 @@ from gsy_e.models.area import Area
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
 from gsy_framework.constants_limits import ConstSettings
 from gsy_e.utils.influx_area_factory import InfluxAreaFactory
+from gsy_e.models.strategy.influx import InfluxLoadStrategy
 
 def get_setup(config):
     ConstSettings.GeneralSettings.RUN_IN_REALTIME = True

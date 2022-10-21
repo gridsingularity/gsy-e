@@ -3,8 +3,8 @@ from pendulum import duration, instance
 
 from gsy_framework.influx_connection.connection import InfluxConnection
 from gsy_framework.influx_connection.queries import RawQuery, InfluxQuery
-from gsy_framework.influx_connection.queries_fhac import SmartmeterIDQuery, SingleDataPointQuery, DataQueryFHAachen
-from gsy_framework.influx_connection.queries_pxl import DataQueryPXL
+from gsy_framework.influx_connection.queries_fhac import SmartmeterIDQuery, SingleDataPointQuery, DataQueryFHAachen, DataFHAachenAggregated
+from gsy_framework.influx_connection.queries_pxl import DataQueryPXL, DataQueryPXlMakerspace
 from gsy_e.utils.influx_area_factory import InfluxAreaFactory
 from gsy_e.models.strategy.influx import InfluxLoadStrategy, InfluxPVStrategy
 
@@ -19,7 +19,7 @@ connection2 = InfluxConnection(config_pxl);
 #rquery = RawQuery(connection1, qstring)
 #print(rquery.exec())
 
-start_date = instance((datetime.combine(date(2022,9,8), datetime.min.time())))
+start_date = instance((datetime.combine(date(2022,10,10), datetime.min.time())))
 sim_duration = duration(days=1)
 sim_interval = 15
 
@@ -32,29 +32,39 @@ qstring5 = 'SHOW MEASUREMENTS ON telegraf'
 
 qstring6 = 'SHOW FIELD KEYS ON Energiedaten FROM "Strom"'
 qstring7 = 'SHOW FIELD KEYS ON telegraf FROM "Total_Electricity"'
+qstring8 = 'SHOW FIELD KEYS ON telegraf FROM "shellies"'
+
+
 
 qstring8 = 'SELECT mean("P_ges") FROM "Strom" WHERE time >= now() - 24h and time <= now() AND "id"=\'99\' GROUP BY time(15m) fill(null)'
 qstring9 = 'SELECT mean("PV_LS_105A_power") FROM "Total_Electricity" WHERE time >= now() - 24h and time <= now() GROUP BY time(15m) fill(null)'
-qstring10 = 'SELECT mean("P_ges") FROM "Strom" WHERE time >= now() - 24h and time <= now() AND "id" = \'1\' GROUP BY time(15m) fill(linear)'
+qstring10 = 'SELECT mean("P_ges") FROM "Strom" WHERE time >= "2022-10-09 00:00:00" and time <= "2022-10-10 00:00:00" GROUP BY time(15m), "id" fill(linear)'
+qstring11 = 'SELECT mean("Power") FROM "mqtt_consumer" WHERE ("device" =~ /^PXL_makerspace_MillingMachine$/) AND time >= now() - 7d and time <= now() GROUP BY time(15m) fill(null)'
+qstring11 = 'SELECT mean("Power") FROM "mqtt_consumer" WHERE "device" =~ /^PXL_makerspace_MillingMachine$/ AND time >= now() - 7d and time <= now() GROUP BY time(15m) fill(null)'
 
-rquery1 = RawQuery(connection1, qstring1, print)
-rquery2 = RawQuery(connection2, qstring9, print)
+
+rquery1 = RawQuery(connection1, qstring10, print)
+
+
+rquery2 = RawQuery(connection2, qstring11, print)
 
 #rquery1.exec()
 #print("------------------------------------------------")
-rquery2.exec()
+#rquery2.exec()
 
 
-fhquery = DataQueryFHAachen(connection1, power_column="P_ges", tablename="Strom", smartmeterID="10")
+fhquery = DataQueryFHAachen(connection1, power_column="P_ges", tablename="Strom", smartmeterID="10", start=start_date, duration=sim_duration, interval=sim_interval)
 #print(fhquery.exec())
 
 pxlquery = DataQueryPXL(connection2, power_column="main_P_L1", tablename="Total_Electricity", start=start_date, duration=sim_duration, interval=sim_interval)
-#print(pxlquery.exec())
+print(pxlquery.exec())
 
 
-pvquery = DataQueryPXL(connection2, power_column="PV_LS_105A_power", tablename="Total_Electricity", start=start_date, duration=sim_duration, interval=sim_interval)
-print(pvquery.exec())
+pxlmakerquery = DataQueryPXlMakerspace(connection2, power_column="Power", device="PXL_makerspace_MillingMachine", tablename="mqtt_consumer", start=start_date, duration=sim_duration, interval=sim_interval)
+print(pxlmakerquery.exec())
 
+pxlmakerquery2 = DataQueryPXlMakerspace(connection2, power_column="Power", device="PXL_makerspace_EmbroideryMachine", tablename="mqtt_consumer")
+print(pxlmakerquery2.exec())
 
 # squery = SmartmeterIDQuery(connection, keyname="id")
 # qres = squery.exec()
@@ -74,3 +84,8 @@ print(pvquery.exec())
 # daquery = DataAggregatedQuery(connection, power_column="P_ges", tablename="Strom", keyname="id")
 # dares = daquery.exec()
 #print(dares)
+
+
+#agrquery = DataFHAachenAggregated(connection1, power_column="P_ges", tablename="Strom", start=start_date, duration=sim_duration, interval=sim_interval)
+#agrres = agrquery.exec()
+#print(agrres)
