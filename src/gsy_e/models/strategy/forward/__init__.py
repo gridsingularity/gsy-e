@@ -3,6 +3,7 @@ from typing import Union, TYPE_CHECKING, Dict
 
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.enums import AvailableMarketTypes
+from gsy_framework.utils import str_to_pendulum_datetime
 from pendulum import DateTime
 
 from gsy_e.events import EventMixin, AreaEvent, MarketEvent
@@ -12,6 +13,12 @@ from gsy_e.models.strategy.forward.order_updater import OrderUpdater, OrderUpdat
 if TYPE_CHECKING:
     from gsy_e.models.market.forward import ForwardMarketBase
     from gsy_e.models.state import StateInterface
+
+
+ENABLE_EVENT_NAME = "enable"
+DISABLE_EVENT_NAME = "disable"
+POST_ORDER_EVENT_NAME = "post_order"
+REMOVE_ORDER_EVENT_NAME = "remove_order"
 
 
 class ForwardStrategyBase(EventMixin, AreaBehaviorBase, ABC):
@@ -29,6 +36,7 @@ class ForwardStrategyBase(EventMixin, AreaBehaviorBase, ABC):
             AreaEvent.ACTIVATE, MarketEvent.OFFER_TRADED, MarketEvent.BID_TRADED]
         self._order_updater_params = order_updater_parameters
         self._order_updaters = {}
+        self._live_event_handler = ForwardLiveEvents(self)
 
     def _order_updater_for_market_slot_exists(self, market: "ForwardMarketBase", market_slot):
         if market.id not in self._order_updaters:
@@ -79,8 +87,14 @@ class ForwardStrategyBase(EventMixin, AreaBehaviorBase, ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def post_order(self, market: "ForwardMarketBase", market_slot: DateTime):
+    def post_order(self, market: "ForwardMarketBase", market_slot: DateTime,
+                   order_rate: float = None, capacity_percent: float = None):
         """Post orders to the forward markets that just opened."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def remove_order(self, market: "ForwardMarketBase", market_slot: DateTime, order_uuid: str):
+        """Remove order from the selected forward market."""
         raise NotImplementedError
 
     def event_listener(self, event_type: Union[AreaEvent, MarketEvent], **kwargs):
@@ -95,13 +109,80 @@ class ForwardStrategyBase(EventMixin, AreaBehaviorBase, ABC):
         """Method triggered by the MarketEvent.BID_TRADED event."""
 
     def event_tick(self):
-        self._update_open_orders()
+        if self.enabled:
+            self._update_open_orders()
 
     def event_market_cycle(self):
         self._delete_past_order_updaters()
-        self._post_orders_to_new_markets()
+        if self.enabled:
+            self._post_orders_to_new_markets()
 
     @property
     def state(self) -> "StateInterface":
         """Get the state class of the strategy. Needs to be implemented by all strategies"""
         raise NotImplementedError
+
+    def apply_live_event(self, event: Dict):
+        self._live_event_handler.dispatch(event)
+
+
+class ForwardLiveEvents:
+
+    def __init__(self, strategy):
+        self._strategy = strategy
+
+    def dispatch(self, event: Dict):
+        """Apply a live event to the strategy."""
+        if event.get("type") not in self.available_events:
+            self._strategy.log.error(
+                "Invalid event (%s) for area %s.", event, self._strategy.area.name)
+
+        if event.get("type") == ENABLE_EVENT_NAME:
+            self.enable_event(event.get("args"))
+        if event.get("type") == DISABLE_EVENT_NAME:
+            self.disable_event()
+        if event.get("type") == POST_ORDER_EVENT_NAME:
+            self.post_order_event(event)
+        if event.get("type") == REMOVE_ORDER_EVENT_NAME:
+            self.remove_order_event(event)
+
+    @property
+    def available_events(self):
+        """Return a list of events that the strategy can handle."""
+        return [ENABLE_EVENT_NAME, DISABLE_EVENT_NAME,
+                POST_ORDER_EVENT_NAME, REMOVE_ORDER_EVENT_NAME]
+
+    def enable_event(self, event):
+        # TODO: Reconfigure the orderupdater
+        self._strategy.enabled = True
+
+    def disable_event(self):
+        self._strategy.enabled = True
+
+    def post_order_event(self, event: Dict):
+        args = event.get("args")
+        accepted_params = ["market_type", "market_slot", "capacity_percent", "energy_rate"]
+        if any(param not in args or not args[param] for param in accepted_params):
+            self._strategy.log.error(
+                "Parameters order_uuid, market_slot and market_type are obligatory "
+                "for the post order live event (%s).", event)
+            return
+
+        market = self._strategy.area.forward_markets[AvailableMarketTypes(event["market_type"])]
+        market_slot = str_to_pendulum_datetime(event["market_slot"])
+        capacity_percent = event["capacity_percent"]
+        energy_rate = event["energy_rate"]
+        self._strategy.post_order(market, market_slot, capacity_percent, energy_rate)
+
+    def remove_order_event(self, event: Dict):
+        args = event.get("args")
+        if "order_uuid" not in args or "market_slot" not in args or "market_type" not in args:
+            self._strategy.log.error(
+                "Parameters order_uuid, market_slot and market_type are obligatory "
+                "for the remove order live event (%s).", event)
+            return
+
+        market = self._strategy.area.forward_markets[AvailableMarketTypes(event["market_type"])]
+        market_slot = str_to_pendulum_datetime(event["market_slot"])
+        order_uuid = event["order_uuid"]
+        self._strategy.remove_order(market, market_slot, order_uuid)

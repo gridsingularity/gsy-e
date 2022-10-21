@@ -57,11 +57,24 @@ class ForwardPVStrategy(ForwardStrategyBase):
         for offer in offers:
             market.delete_offer(offer)
 
-    def post_order(self, market: "ForwardMarketBase", market_slot: DateTime):
-        order_rate = self._order_updaters[market][market_slot].get_energy_rate(
-            self.area.now)
+    def remove_order(self, market: "ForwardMarketBase", market_slot: DateTime, order_uuid: str):
+        bids = [bid
+                for bid in market.slot_bid_mapping[market_slot]
+                if bid.buyer == self.owner.name and bid.id == order_uuid]
+        if not bids:
+            self.log.error("Bid with id %s does not exist on the market %s %s.",
+                           order_uuid, market.market_type, market_slot)
+        for bid in bids:
+            market.delete_bid(bid)
 
-        capacity_percent = self._order_updaters[market][market_slot].capacity_percent / 100.0
+    def post_order(self, market: "ForwardMarketBase", market_slot: DateTime,
+                   order_rate: float = None, capacity_percent: float = None):
+        if not order_rate:
+            order_rate = self._order_updaters[market][market_slot].get_energy_rate(
+                self.area.now)
+
+        if not capacity_percent:
+            capacity_percent = self._order_updaters[market][market_slot].capacity_percent / 100.0
         max_energy_kWh = self._energy_params.peak_energy_kWh * capacity_percent
         available_energy_kWh = self._energy_params.get_available_energy_kWh(
             market_slot, market.market_type)

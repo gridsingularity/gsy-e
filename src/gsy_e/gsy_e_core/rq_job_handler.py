@@ -74,7 +74,7 @@ def launch_simulation_from_rq_job(scenario: Dict,
 
         assert isinstance(scenario, dict)
         gsy_e.constants.CONFIGURATION_ID = scenario.pop("configuration_uuid")
-        if "collaboration_uuid" in scenario or settings["type"] in [
+        if "collaboration_uuid" in scenario or settings.get("type") in [
                 ConfigurationType.CANARY_NETWORK.value, ConfigurationType.B2B.value]:
             gsy_e.constants.EXTERNAL_CONNECTION_WEB = True
             GlobalConfig.IS_CANARY_NETWORK = scenario.pop("is_canary_network", False)
