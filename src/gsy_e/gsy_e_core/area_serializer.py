@@ -122,6 +122,7 @@ def _leaf_from_dict(description, config):
             return None
         if not issubclass(leaf_type, Leaf):
             raise ValueError(f"Unknown forward leaf type '{leaf_type}'")
+        description = leaf_type.strategy_type.deserialize_args(description)
     elif ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
         strategy_type = description.pop("type")
         leaf_type = scm_leaf_mapping.get(strategy_type)

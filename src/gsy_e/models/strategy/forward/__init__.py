@@ -4,7 +4,7 @@ from typing import Union, TYPE_CHECKING, Dict
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.enums import AvailableMarketTypes
 from gsy_framework.utils import str_to_pendulum_datetime
-from pendulum import DateTime
+from pendulum import DateTime, duration
 
 from gsy_e.events import EventMixin, AreaEvent, MarketEvent
 from gsy_e.models.base import AreaBehaviorBase
@@ -37,6 +37,19 @@ class ForwardStrategyBase(EventMixin, AreaBehaviorBase, ABC):
         self._order_updater_params = order_updater_parameters
         self._order_updaters = {}
         self._live_event_handler = ForwardLiveEvents(self)
+
+    @staticmethod
+    def deserialize_args(constructor_args: Dict) -> Dict:
+        """Deserialize the constructor arguments for the forward classes."""
+        if "order_updater_params" in constructor_args:
+            constructor_args["order_updater_params"] = {
+                AvailableMarketTypes(market_type): OrderUpdaterParameters(
+                    duration(minutes=updater_params[0]), updater_params[1],
+                    updater_params[2], updater_params[3]
+                )
+                for market_type, updater_params in constructor_args["order_updater_params"].items()
+            }
+        return constructor_args
 
     def _order_updater_for_market_slot_exists(self, market: "ForwardMarketBase", market_slot):
         if market.id not in self._order_updaters:

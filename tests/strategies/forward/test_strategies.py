@@ -10,6 +10,7 @@ from pendulum import duration, datetime
 
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.forward.load import ForwardLoadStrategy
+from gsy_e.models.strategy.forward.order_updater import OrderUpdaterParameters
 from gsy_e.models.strategy.forward.pv import ForwardPVStrategy
 
 if TYPE_CHECKING:
@@ -18,20 +19,20 @@ if TYPE_CHECKING:
 CURRENT_MARKET_SLOT = datetime(2022, 6, 13, 0, 0)
 
 load_parameters = {
-    AvailableMarketTypes.INTRADAY: [duration(minutes=5), 10, 40, 20],
-    AvailableMarketTypes.DAY_FORWARD: [duration(minutes=30), 20, 40, 20],
-    AvailableMarketTypes.WEEK_FORWARD: [duration(days=1), 30, 50, 20],
-    AvailableMarketTypes.MONTH_FORWARD: [duration(weeks=1), 40, 60, 20],
-    AvailableMarketTypes.YEAR_FORWARD: [duration(months=1), 50, 70, 20]
+    AvailableMarketTypes.INTRADAY: OrderUpdaterParameters(duration(minutes=5), 10, 40, 20),
+    AvailableMarketTypes.DAY_FORWARD: OrderUpdaterParameters(duration(minutes=30), 20, 40, 20),
+    AvailableMarketTypes.WEEK_FORWARD: OrderUpdaterParameters(duration(days=1), 30, 50, 20),
+    AvailableMarketTypes.MONTH_FORWARD: OrderUpdaterParameters(duration(weeks=1), 40, 60, 20),
+    AvailableMarketTypes.YEAR_FORWARD: OrderUpdaterParameters(duration(months=1), 50, 70, 20)
 }
 
 
 pv_parameters = {
-    AvailableMarketTypes.INTRADAY: [duration(minutes=5), 41, 11, 20],
-    AvailableMarketTypes.DAY_FORWARD: [duration(minutes=30), 42, 22, 20],
-    AvailableMarketTypes.WEEK_FORWARD: [duration(days=1), 53, 33, 20],
-    AvailableMarketTypes.MONTH_FORWARD: [duration(weeks=1), 66, 39, 20],
-    AvailableMarketTypes.YEAR_FORWARD: [duration(months=1), 72, 56, 20]
+    AvailableMarketTypes.INTRADAY: OrderUpdaterParameters(duration(minutes=5), 41, 11, 20),
+    AvailableMarketTypes.DAY_FORWARD: OrderUpdaterParameters(duration(minutes=30), 42, 22, 20),
+    AvailableMarketTypes.WEEK_FORWARD: OrderUpdaterParameters(duration(days=1), 53, 33, 20),
+    AvailableMarketTypes.MONTH_FORWARD: OrderUpdaterParameters(duration(weeks=1), 66, 39, 20),
+    AvailableMarketTypes.YEAR_FORWARD: OrderUpdaterParameters(duration(months=1), 72, 56, 20)
 }
 
 

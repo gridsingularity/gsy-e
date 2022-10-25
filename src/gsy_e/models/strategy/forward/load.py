@@ -1,4 +1,4 @@
-from typing import Dict, TYPE_CHECKING, List
+from typing import Dict, TYPE_CHECKING
 
 from gsy_framework.enums import AvailableMarketTypes
 from pendulum import DateTime, duration
@@ -31,14 +31,9 @@ class ForwardLoadStrategy(ForwardStrategyBase):
     """
     def __init__(
             self, capacity_kW: float,
-            order_updater_parameters: Dict[AvailableMarketTypes, List] = None):
+            order_updater_parameters: Dict[AvailableMarketTypes, OrderUpdaterParameters] = None):
         if not order_updater_parameters:
             order_updater_parameters = DEFAULT_LOAD_ORDER_UPDATER_PARAMS
-        else:
-            order_updater_parameters = {
-                market_type: OrderUpdaterParameters(*order_updater_args)
-                for market_type, order_updater_args in order_updater_parameters.items()
-            }
         super().__init__(order_updater_parameters)
         self._energy_params = ConsumptionStandardProfileEnergyParameters(capacity_kW)
 
