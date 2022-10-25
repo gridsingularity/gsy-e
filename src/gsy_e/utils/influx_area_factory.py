@@ -2,13 +2,13 @@ from gsy_e.models.area import Area
 from gsy_e.gsy_e_core.util import d3a_path
 import os
 
-from gsy_e.utils.influx_connection import InfluxConnection
+from gsy_framework.influx_connection.connection import InfluxConnection
+from gsy_framework.influx_connection.queries_fhac import DataQueryFHAachen, SmartmeterIDQuery
 from gsy_e.models.strategy.influx import InfluxLoadStrategy
-from gsy_e.utils.influx_queries import DataQueryFHAachen, SmartmeterIDQuery
 
 class InfluxAreaFactory:
-    def __init__(self, path_influx_config, power_column, tablename, keyname):
-        self.ic = InfluxConnection(path_influx_config)
+    def __init__(self, name_influx_config, power_column, tablename, keyname):
+        self.ic = InfluxConnection(name_influx_config)
         self.power_column = power_column
         self.tablename = tablename
         self.keyname = keyname
