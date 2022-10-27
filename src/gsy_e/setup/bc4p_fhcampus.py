@@ -17,136 +17,25 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
-from gsy_e.models.strategy.pv import PVStrategy
-from gsy_e.models.strategy.storage import StorageStrategy
-from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_framework.constants_limits import ConstSettings
-from gsy_e.models.strategy.predefined_influx_load import DefinedLoadStrategyInflux
-from gsy_e.gsy_e_core.util import d3a_path
-import os
+from gsy_e.utils.influx_area_factory import InfluxAreaFactory
+from gsy_e.models.strategy.influx import InfluxLoadStrategy
 
 def get_setup(config):
     ConstSettings.GeneralSettings.RUN_IN_REALTIME = True
+    factory = InfluxAreaFactory("influx_fhaachen.cfg", power_column="P_ges", tablename="Strom", keyname="id")
     area = Area(
         "Grid",
         [
-            Area(
-                "FH Campus",
-                [
-                    Area("FH General Load", strategy=DefinedLoadStrategyInflux(os.path.join(d3a_path, "resources", "influxdb.cfg"), final_buying_rate=60)
-                         ),
-                ]
-            ),
-            Area(
-                "House 1",
-                [
-                    Area("H1 General Load", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                                       hrs_per_day=4,
-                                                                       hrs_of_day=list(
-                                                                           range(12, 20)),
-                                                                       final_buying_rate=29)
-                         ),
-                    Area("H1 Lighting", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                                   hrs_per_day=4,
-                                                                   hrs_of_day=list(range(12, 16)))
-                         ),
-                    Area("H1 Storage1", strategy=StorageStrategy(initial_soc=50)
-                         ),
-                    Area("H1 Storage2", strategy=StorageStrategy(initial_soc=50)
-                         ),
-                ]
-            ),
-            Area(
-                "House 2",
-                [
-                    Area("H2 General Load", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                                       hrs_per_day=3,
-                                                                       hrs_of_day=list(
-                                                                           range(12, 18)),
-                                                                       final_buying_rate=50)
-                         ),
-                    Area("H2 Lighting", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                                   hrs_per_day=4,
-                                                                   hrs_of_day=list(range(12, 16)))
-                         ),
-                    Area("H2 PV", strategy=PVStrategy(2, 80)
-                         ),
-                ]
-            ),
-            Area(
-                "House 3",
-                [
-                    Area("H3 General Load", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                                       hrs_per_day=1,
-                                                                       hrs_of_day=list(
-                                                                           range(12, 13)))
-                         ),
-                    Area("H3 Lighting", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                                   hrs_per_day=4,
-                                                                   hrs_of_day=list(range(12, 16)))
-                         ),
-                    Area("H3 PV", strategy=PVStrategy(4, 60)
-                         ),
-                ]
-            ),
-            Area(
-                "House 4",
-                [
-                    Area("H4 General Load", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                                       hrs_per_day=1,
-                                                                       hrs_of_day=list(
-                                                                           range(12, 13)))
-                         ),
-                    Area("H4 Lighting", strategy=LoadHoursStrategy(avg_power_W=200,
-                                                                   hrs_per_day=4,
-                                                                   hrs_of_day=list(range(12, 16)))
-                         ),
-                    Area("H4 TV", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                             hrs_per_day=4,
-                                                             hrs_of_day=list(range(14, 18)))
-                         ),
-                    Area("H4 PV", strategy=PVStrategy(4, 60)
-                         ),
-                    Area("H4 Storage1", strategy=StorageStrategy(initial_soc=50)
-                         ),
-                    Area("H4 Storage2", strategy=StorageStrategy(initial_soc=50)
-                         ),
-                ]
-            ),
-            Area(
-                "House 5",
-                [
-                    Area("H5 General Load", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                                       hrs_per_day=1,
-                                                                       hrs_of_day=list(
-                                                                           range(12, 13)))
-                         ),
-                    Area("H5 Lighting", strategy=LoadHoursStrategy(avg_power_W=200,
-                                                                   hrs_per_day=4,
-                                                                   hrs_of_day=list(range(12, 16)))
-                         ),
-                    Area("H5 TV", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                             hrs_per_day=4,
-                                                             hrs_of_day=list(range(10, 15)))
-                         ),
-                    Area("H5 PV", strategy=PVStrategy(5, 60),
-                         ),
-                    Area("H5 Storage1", strategy=StorageStrategy(initial_soc=50)
-                         ),
-                    Area("H5 Storage2", strategy=StorageStrategy(initial_soc=50)
-                         ),
-                ]
-            ),
-
+            factory.getArea("FH Campus"),
             Area("Commercial Energy Producer",
                  strategy=CommercialStrategy(energy_rate=30)
-                 ),
-
-            Area("Cell Tower", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                          hrs_per_day=24,
-                                                          hrs_of_day=list(range(0, 24)))
                  )
         ],
         config=config
     )
     return area
+
+
+# pip install -e .
+# gsy-e run --setup bc4p_fhcampus -s 15m --enable-external-connection --start-date 2022-10-10
