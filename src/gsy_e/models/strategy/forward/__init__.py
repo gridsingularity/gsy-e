@@ -1,24 +1,18 @@
 from abc import ABC, abstractmethod
+from copy import deepcopy
 from typing import Union, TYPE_CHECKING, Dict
-
-from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.enums import AvailableMarketTypes
-from gsy_framework.utils import str_to_pendulum_datetime
-from pendulum import DateTime, duration
 
 from gsy_e.events import EventMixin, AreaEvent, MarketEvent
 from gsy_e.models.base import AreaBehaviorBase
 from gsy_e.models.strategy.forward.order_updater import OrderUpdater, OrderUpdaterParameters
+from gsy_framework.constants_limits import ConstSettings, B2BLiveEvents
+from gsy_framework.enums import AvailableMarketTypes
+from gsy_framework.utils import str_to_pendulum_datetime
+from pendulum import DateTime, duration
 
 if TYPE_CHECKING:
     from gsy_e.models.market.forward import ForwardMarketBase
     from gsy_e.models.state import StateInterface
-
-
-ENABLE_EVENT_NAME = "enable"
-DISABLE_EVENT_NAME = "disable"
-POST_ORDER_EVENT_NAME = "post_order"
-REMOVE_ORDER_EVENT_NAME = "remove_order"
 
 
 class ForwardStrategyBase(EventMixin, AreaBehaviorBase, ABC):
@@ -32,9 +26,11 @@ class ForwardStrategyBase(EventMixin, AreaBehaviorBase, ABC):
             100.0)
         super().__init__()
         self.enabled = True
+        self._create_order_updater = ConstSettings.ForwardMarketSettings.FULLY_AUTO_TRADING
         self._allowed_disable_events = [
             AreaEvent.ACTIVATE, MarketEvent.OFFER_TRADED, MarketEvent.BID_TRADED]
-        self._order_updater_params = order_updater_parameters
+        self._order_updater_params: Dict[AvailableMarketTypes,
+                                         OrderUpdaterParameters] = order_updater_parameters
         self._order_updaters = {}
         self._live_event_handler = ForwardLiveEvents(self)
 
@@ -121,13 +117,18 @@ class ForwardStrategyBase(EventMixin, AreaBehaviorBase, ABC):
     def event_bid_traded(self, *, market_id, bid_trade):
         """Method triggered by the MarketEvent.BID_TRADED event."""
 
+    @property
+    def fully_automated_trading(self):
+        """Is the strategy in fully automated trading mode."""
+        return self.enabled and self._create_order_updater
+
     def event_tick(self):
-        if self.enabled:
+        if self.fully_automated_trading:
             self._update_open_orders()
 
     def event_market_cycle(self):
         self._delete_past_order_updaters()
-        if self.enabled:
+        if self.fully_automated_trading:
             self._post_orders_to_new_markets()
 
     @property
@@ -136,66 +137,163 @@ class ForwardStrategyBase(EventMixin, AreaBehaviorBase, ABC):
         raise NotImplementedError
 
     def apply_live_event(self, event: Dict):
+        """Apply the incoming live event to the strategy."""
         self._live_event_handler.dispatch(event)
 
 
 class ForwardLiveEvents:
+    """Handle live events for the forward strategies."""
 
     def __init__(self, strategy):
         self._strategy = strategy
 
     def dispatch(self, event: Dict):
         """Apply a live event to the strategy."""
-        if event.get("type") not in self.available_events:
+        if not B2BLiveEvents.is_supported_event(event.get("type")):
             self._strategy.log.error(
                 "Invalid event (%s) for area %s.", event, self._strategy.area.name)
+            return
 
-        if event.get("type") == ENABLE_EVENT_NAME:
-            self.enable_event(event.get("args"))
-        if event.get("type") == DISABLE_EVENT_NAME:
-            self.disable_event()
-        if event.get("type") == POST_ORDER_EVENT_NAME:
+        if event.get("type") == B2BLiveEvents.ENABLE_TRADING_EVENT_NAME:
+            self.auto_trading_event(event.get("args"))
+        if event.get("type") == B2BLiveEvents.DISABLE_TRADING_EVENT_NAME:
+            self.stop_auto_trading_event(event.get("args"))
+        if event.get("type") == B2BLiveEvents.POST_ORDER_EVENT_NAME:
             self.post_order_event(event)
-        if event.get("type") == REMOVE_ORDER_EVENT_NAME:
+        if event.get("type") == B2BLiveEvents.REMOVE_ORDER_EVENT_NAME:
             self.remove_order_event(event)
 
-    @property
-    def available_events(self):
-        """Return a list of events that the strategy can handle."""
-        return [ENABLE_EVENT_NAME, DISABLE_EVENT_NAME,
-                POST_ORDER_EVENT_NAME, REMOVE_ORDER_EVENT_NAME]
+    def auto_trading_event(self, event):
+        """
+        Enable energy trading, and create order updater for all open markets between the start and
+        end time.
+        """
+        args = event.get("args")
+        if not LiveEventArgsValidator(self._strategy.log).validate_start_trading_event_args(event):
+            return
 
-    def enable_event(self, event):
-        # TODO: Reconfigure the orderupdater
-        self._strategy.enabled = True
+        market_type = AvailableMarketTypes(args["market_type"])
+        start_time = str_to_pendulum_datetime(args["start_time"])
+        end_time = str_to_pendulum_datetime(args["end_time"])
+        capacity_percent = args["capacity_percent"]
+        energy_rate = args["energy_rate"]
+        market = self._strategy.area.forward_markets[market_type]
 
-    def disable_event(self):
-        self._strategy.enabled = True
+        for slot in market.market_time_slots:
+            if not start_time <= slot <= end_time:
+                continue
+
+            updater = self._strategy._order_updaters[market].get(slot)
+            if updater:
+                market.remove_open_orders(slot)
+
+            market_parameters = market.get_market_parameters_for_market_slot(slot)
+
+            order_updater_params = deepcopy(self._strategy._order_updater_params[market_type])
+            order_updater_params.capacity_percent = capacity_percent
+            order_updater_params.final_rate = energy_rate
+            order_updater_params.initial_rate = min(
+                order_updater_params.initial_rate, energy_rate)
+
+            self._strategy._order_updaters[market][slot] = OrderUpdater(
+                order_updater_params, market_parameters)
+            self._strategy.post_order(market, slot)
+
+    def stop_auto_trading_event(self, event: Dict):
+        """Apply stop automatic trading event to the strategy."""
+        self.remove_order_event(event)
 
     def post_order_event(self, event: Dict):
+        """Apply post order / manual trading event to the strategy."""
         args = event.get("args")
-        accepted_params = ["market_type", "market_slot", "capacity_percent", "energy_rate"]
-        if any(param not in args or not args[param] for param in accepted_params):
-            self._strategy.log.error(
-                "Parameters order_uuid, market_slot and market_type are obligatory "
-                "for the post order live event (%s).", event)
+        if not LiveEventArgsValidator(self._strategy.log).validate_start_trading_event_args(event):
             return
 
-        market = self._strategy.area.forward_markets[AvailableMarketTypes(event["market_type"])]
-        market_slot = str_to_pendulum_datetime(event["market_slot"])
-        capacity_percent = event["capacity_percent"]
-        energy_rate = event["energy_rate"]
-        self._strategy.post_order(market, market_slot, capacity_percent, energy_rate)
+        market = self._strategy.area.forward_markets[AvailableMarketTypes(args["market_type"])]
+        start_time = str_to_pendulum_datetime(args["start_time"])
+        end_time = str_to_pendulum_datetime(args["end_time"])
+        capacity_percent = args["capacity_percent"]
+        energy_rate = args["energy_rate"]
+        for slot in market.market_time_slots:
+            if start_time <= slot <= end_time:
+                self._strategy.post_order(market, slot, capacity_percent, energy_rate)
 
     def remove_order_event(self, event: Dict):
+        """Apply remove order event to the strategy."""
         args = event.get("args")
-        if "order_uuid" not in args or "market_slot" not in args or "market_type" not in args:
-            self._strategy.log.error(
-                "Parameters order_uuid, market_slot and market_type are obligatory "
-                "for the remove order live event (%s).", event)
+        if not LiveEventArgsValidator(self._strategy.log).validate_stop_trading_event_args(event):
             return
 
-        market = self._strategy.area.forward_markets[AvailableMarketTypes(event["market_type"])]
-        market_slot = str_to_pendulum_datetime(event["market_slot"])
-        order_uuid = event["order_uuid"]
-        self._strategy.remove_order(market, market_slot, order_uuid)
+        market = self._strategy.area.forward_markets[AvailableMarketTypes(args["market_type"])]
+        start_time = str_to_pendulum_datetime(args["start_time"])
+        end_time = str_to_pendulum_datetime(args["end_time"])
+        for slot in market.market_time_slots:
+            if not start_time <= slot <= end_time:
+                continue
+            updater = self._strategy._order_updaters[market].get(slot)
+            if updater:
+                market.remove_open_orders(slot)
+                self._strategy._order_updaters[market].pop(slot)
+
+
+class LiveEventArgsValidator:
+    """Validator class for the forward strategy live event arguments."""
+    def __init__(self, logger):
+        self._logger = logger
+
+    def validate_start_trading_event_args(self, event: Dict) -> bool:
+        """Validate the arguments for the start trading event."""
+        args = event.get("args")
+        accepted_params = ["start_time", "end_time", "market_type",
+                           "capacity_percent", "energy_rate"]
+        if any(param not in args or not args[param] for param in accepted_params):
+            self._logger.error(
+                "Parameters start_time, end_time, capacity_percent, energy_rate and market_type "
+                "are obligatory for the start trading live events (%s).", event)
+            return False
+
+        return (self._validate_market_type(args) and self._validate_start_end_time(args) and
+                self._validate_capacity_percent(args) and self._validate_energy_rate(args))
+
+    def validate_stop_trading_event_args(self, event: Dict) -> bool:
+        """Valiaate the arguments for the stop trading event."""
+        args = event.get("args")
+        accepted_params = ["start_time", "end_time", "market_type"]
+        if any(param not in args or not args[param] for param in accepted_params):
+            self._logger.error(
+                "Parameters start_time, end_time and market_type are obligatory "
+                "for the stop trading live events (%s).", event)
+            return False
+
+        return self._validate_market_type(args) and self._validate_start_end_time(args)
+
+    def _validate_market_type(self, args: Dict) -> bool:
+        try:
+            AvailableMarketTypes(args["market_type"])
+        except ValueError:
+            self._logger.error("Cannot deserialize market type parameter (%s).", args)
+            return False
+        return True
+
+    def _validate_start_end_time(self, args: Dict) -> bool:
+        try:
+            str_to_pendulum_datetime(args["start_time"])
+            str_to_pendulum_datetime(args["end_time"])
+        except Exception:
+            self._logger.log.error("Cannot deserialize start / end time parameters (%s).", args)
+            return False
+        return True
+
+    def _validate_capacity_percent(self, args: Dict) -> bool:
+        if not 0 <= args["capacity_percent"] <= 100.0:
+            self._logger.error(
+                "Capacity percent parameter is not in the expected range (%s).", args)
+            return False
+        return True
+
+    def _validate_energy_rate(self, args: Dict) -> bool:
+        if args["energy_rate"] < 0.:
+            self._logger.error(
+                "Energy rate parameter is negative (%s).", args)
+            return False
+        return True
