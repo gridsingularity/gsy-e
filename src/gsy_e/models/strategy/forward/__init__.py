@@ -2,14 +2,15 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 from typing import Union, TYPE_CHECKING, Dict
 
-from gsy_e.events import EventMixin, AreaEvent, MarketEvent
-from gsy_e.models.base import AreaBehaviorBase
-from gsy_e.models.strategy.forward.order_updater import OrderUpdater, OrderUpdaterParameters
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.enums import AvailableMarketTypes
 from gsy_framework.live_events.b2b import LiveEventArgsValidator, B2BLiveEvents
 from gsy_framework.utils import str_to_pendulum_datetime
 from pendulum import DateTime, duration
+
+from gsy_e.events import EventMixin, AreaEvent, MarketEvent
+from gsy_e.models.base import AreaBehaviorBase
+from gsy_e.models.strategy.forward.order_updater import OrderUpdater, OrderUpdaterParameters
 
 if TYPE_CHECKING:
     from gsy_e.models.market.forward import ForwardMarketBase
