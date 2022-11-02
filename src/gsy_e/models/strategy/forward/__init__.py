@@ -157,21 +157,22 @@ class ForwardLiveEvents:
             return
 
         if event.get("type") == B2BLiveEvents.ENABLE_TRADING_EVENT_NAME:
-            self.auto_trading_event(event.get("args"))
+            self._auto_trading_event(event.get("args"))
         if event.get("type") == B2BLiveEvents.DISABLE_TRADING_EVENT_NAME:
-            self.stop_auto_trading_event(event.get("args"))
+            self._stop_auto_trading_event(event.get("args"))
         if event.get("type") == B2BLiveEvents.POST_ORDER_EVENT_NAME:
-            self.post_order_event(event)
+            self._post_order_event(event)
         if event.get("type") == B2BLiveEvents.REMOVE_ORDER_EVENT_NAME:
-            self.remove_order_event(event)
+            self._remove_order_event(event)
 
-    def auto_trading_event(self, event):
+    def _auto_trading_event(self, event):
         """
         Enable energy trading, and create order updater for all open markets between the start and
         end time.
         """
         args = event.get("args")
-        if not LiveEventArgsValidator(self._strategy.log).validate_start_trading_event_args(args):
+        if not LiveEventArgsValidator(
+                self._strategy.log.error).validate_start_trading_event_args(args):
             return
 
         market_type = AvailableMarketTypes(args["market_type"])
@@ -201,14 +202,15 @@ class ForwardLiveEvents:
                 order_updater_params, market_parameters)
             self._strategy.post_order(market, slot)
 
-    def stop_auto_trading_event(self, event: Dict):
+    def _stop_auto_trading_event(self, event: Dict):
         """Apply stop automatic trading event to the strategy."""
-        self.remove_order_event(event)
+        self._remove_order_event(event)
 
-    def post_order_event(self, event: Dict):
+    def _post_order_event(self, event: Dict):
         """Apply post order / manual trading event to the strategy."""
         args = event.get("args")
-        if not LiveEventArgsValidator(self._strategy.log).validate_start_trading_event_args(args):
+        if not LiveEventArgsValidator(
+                self._strategy.log.error).validate_start_trading_event_args(args):
             return
 
         market = self._strategy.area.forward_markets[AvailableMarketTypes(args["market_type"])]
@@ -220,10 +222,11 @@ class ForwardLiveEvents:
             if start_time <= slot <= end_time:
                 self._strategy.post_order(market, slot, capacity_percent, energy_rate)
 
-    def remove_order_event(self, event: Dict):
+    def _remove_order_event(self, event: Dict):
         """Apply remove order event to the strategy."""
         args = event.get("args")
-        if not LiveEventArgsValidator(self._strategy.log).validate_stop_trading_event_args(args):
+        if not LiveEventArgsValidator(
+                self._strategy.log.error).validate_stop_trading_event_args(args):
             return
 
         market = self._strategy.area.forward_markets[AvailableMarketTypes(args["market_type"])]
