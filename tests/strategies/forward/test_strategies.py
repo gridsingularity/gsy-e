@@ -1,7 +1,7 @@
 from copy import deepcopy
 from math import isclose
 from typing import TYPE_CHECKING, Tuple
-from unittest.mock import patch, PropertyMock
+from unittest.mock import patch, PropertyMock, MagicMock
 
 import pytest
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
@@ -28,11 +28,11 @@ load_parameters = {
 
 
 pv_parameters = {
-    AvailableMarketTypes.INTRADAY: OrderUpdaterParameters(duration(minutes=5), 41, 11, 20),
-    AvailableMarketTypes.DAY_FORWARD: OrderUpdaterParameters(duration(minutes=30), 42, 22, 20),
-    AvailableMarketTypes.WEEK_FORWARD: OrderUpdaterParameters(duration(days=1), 53, 33, 20),
-    AvailableMarketTypes.MONTH_FORWARD: OrderUpdaterParameters(duration(weeks=1), 66, 39, 20),
-    AvailableMarketTypes.YEAR_FORWARD: OrderUpdaterParameters(duration(months=1), 72, 56, 20)
+    AvailableMarketTypes.INTRADAY: OrderUpdaterParameters(duration(minutes=5), 10, 8, 20),
+    AvailableMarketTypes.DAY_FORWARD: OrderUpdaterParameters(duration(minutes=30), 20, 18, 20),
+    AvailableMarketTypes.WEEK_FORWARD: OrderUpdaterParameters(duration(days=1), 30, 28, 20),
+    AvailableMarketTypes.MONTH_FORWARD: OrderUpdaterParameters(duration(weeks=1), 40, 38, 20),
+    AvailableMarketTypes.YEAR_FORWARD: OrderUpdaterParameters(duration(months=1), 50, 48, 20)
 }
 
 
@@ -42,6 +42,7 @@ pv_parameters = {
 def forward_market_strategy_fixture(request) -> Tuple["ForwardStrategyBase", "Area"]:
     """Fixture for the ForwardStrategy classes."""
     ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS = True
+    ConstSettings.ForwardMarketSettings.FULLY_AUTO_TRADING = True
     orig_start_date = GlobalConfig.start_date
     strategy = request.param[0](capacity_kW=100, order_updater_parameters=request.param[1])
     strategy_area = Area("asset", strategy=strategy)
@@ -67,8 +68,12 @@ class TestForwardStrategies:
         for order in orders:
             assert order.energy_rate == energy_rate
             assert order.energy == energy
-            assert order.buyer == order.buyer_origin == strategy.owner.name
-            assert order.buyer_id == order.buyer_origin_id == strategy.owner.uuid
+            if isinstance(strategy, ForwardLoadStrategy):
+                assert order.buyer == order.buyer_origin == strategy.owner.name
+                assert order.buyer_id == order.buyer_origin_id == strategy.owner.uuid
+            else:
+                assert order.seller == order.seller_origin == strategy.owner.name
+                assert order.seller_id == order.seller_origin_id == strategy.owner.uuid
 
     @staticmethod
     @pytest.mark.parametrize("market_type, expected_order_updater_count, next_slot_timestamp, ", [
@@ -108,24 +113,23 @@ class TestForwardStrategies:
                     list(strategy._order_updaters[market_object].keys()) ==
                     market_object.market_time_slots)
 
-    @classmethod
-    def test_forward_strategy_posts_order_on_market_cycle(cls, forward_strategy_fixture):
+    def test_forward_strategy_posts_order_on_market_cycle(self, forward_strategy_fixture):
         strategy = forward_strategy_fixture[0]
         area = forward_strategy_fixture[1]
         area.activate()
+        strategy._energy_params.get_available_energy_kWh = MagicMock(return_value=100.0)
         strategy.event_market_cycle()
-        cls._assert_posted_orders_on_markets(
-            strategy, AvailableMarketTypes.INTRADAY, 24 * 4 - 1, 10, 10)
-        cls._assert_posted_orders_on_markets(
-            strategy, AvailableMarketTypes.DAY_FORWARD, 24 * 7 - 1, 20, 10)
-        cls._assert_posted_orders_on_markets(
-            strategy, AvailableMarketTypes.WEEK_FORWARD, 51, 30, 10)
-        cls._assert_posted_orders_on_markets(
-            strategy, AvailableMarketTypes.MONTH_FORWARD, 23, 40, 10)
-        cls._assert_posted_orders_on_markets(strategy, AvailableMarketTypes.YEAR_FORWARD,
-                                             5, 50, 10)
+        self._assert_posted_orders_on_markets(
+            strategy, AvailableMarketTypes.INTRADAY, 24 * 4 - 1, 10, 5)
+        self._assert_posted_orders_on_markets(
+            strategy, AvailableMarketTypes.DAY_FORWARD, 24 * 7 - 1, 20, 5)
+        self._assert_posted_orders_on_markets(
+            strategy, AvailableMarketTypes.WEEK_FORWARD, 51, 30, 5)
+        self._assert_posted_orders_on_markets(
+            strategy, AvailableMarketTypes.MONTH_FORWARD, 23, 40, 5)
+        self._assert_posted_orders_on_markets(
+            strategy, AvailableMarketTypes.YEAR_FORWARD, 5, 50, 5)
 
-    @classmethod
     @pytest.mark.parametrize("market_type, ", [
         AvailableMarketTypes.INTRADAY,
         AvailableMarketTypes.DAY_FORWARD,
@@ -134,22 +138,23 @@ class TestForwardStrategies:
         AvailableMarketTypes.YEAR_FORWARD,
     ])
     def test_forward_strategy_updates_orders_on_tick(
-            cls, forward_strategy_fixture, market_type):
+            self, forward_strategy_fixture, market_type):
         strategy = forward_strategy_fixture[0]
         area = forward_strategy_fixture[1]
+        strategy._energy_params.get_available_energy_kWh = MagicMock(return_value=100.0)
         area.activate()
         strategy.event_market_cycle()
 
         updater_params = strategy._order_updater_params[market_type]
 
-        order_mapping = cls._get_order_mapping_from_strategy(strategy, market_type)
+        order_mapping = self._get_order_mapping_from_strategy(strategy, market_type)
         old_orders = deepcopy(order_mapping)
         # Assert that orders are not updated before the update interval
         with patch("gsy_e.models.area.Area.now", new_callable=PropertyMock) as now_mock:
             now_mock.return_value = (
                     CURRENT_MARKET_SLOT + updater_params.update_interval - duration(seconds=1))
             strategy.event_tick()
-            order_mapping = cls._get_order_mapping_from_strategy(strategy, market_type)
+            order_mapping = self._get_order_mapping_from_strategy(strategy, market_type)
             assert len(order_mapping) > 0
             for time_slot, old_order_list in old_orders.items():
                 if not old_order_list:
@@ -160,7 +165,7 @@ class TestForwardStrategies:
         with patch("gsy_e.models.area.Area.now", new_callable=PropertyMock) as now_mock:
             now_mock.return_value = CURRENT_MARKET_SLOT + updater_params.update_interval
             strategy.event_tick()
-            order_mapping = cls._get_order_mapping_from_strategy(strategy, market_type)
+            order_mapping = self._get_order_mapping_from_strategy(strategy, market_type)
             assert len(order_mapping) > 0
             for time_slot, old_order_list in old_orders.items():
                 if not old_order_list:
