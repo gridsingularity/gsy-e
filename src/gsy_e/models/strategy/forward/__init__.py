@@ -5,8 +5,9 @@ from typing import Union, TYPE_CHECKING, Dict
 from gsy_e.events import EventMixin, AreaEvent, MarketEvent
 from gsy_e.models.base import AreaBehaviorBase
 from gsy_e.models.strategy.forward.order_updater import OrderUpdater, OrderUpdaterParameters
-from gsy_framework.constants_limits import ConstSettings, B2BLiveEvents
+from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.enums import AvailableMarketTypes
+from gsy_framework.live_events.b2b import LiveEventArgsValidator, B2BLiveEvents
 from gsy_framework.utils import str_to_pendulum_datetime
 from pendulum import DateTime, duration
 
@@ -123,7 +124,7 @@ class ForwardStrategyBase(EventMixin, AreaBehaviorBase, ABC):
         return self.enabled and self._create_order_updater
 
     def event_tick(self):
-        if self.fully_automated_trading:
+        if self.enabled:
             self._update_open_orders()
 
     def event_market_cycle(self):
@@ -169,7 +170,7 @@ class ForwardLiveEvents:
         end time.
         """
         args = event.get("args")
-        if not LiveEventArgsValidator(self._strategy.log).validate_start_trading_event_args(event):
+        if not LiveEventArgsValidator(self._strategy.log).validate_start_trading_event_args(args):
             return
 
         market_type = AvailableMarketTypes(args["market_type"])
@@ -206,7 +207,7 @@ class ForwardLiveEvents:
     def post_order_event(self, event: Dict):
         """Apply post order / manual trading event to the strategy."""
         args = event.get("args")
-        if not LiveEventArgsValidator(self._strategy.log).validate_start_trading_event_args(event):
+        if not LiveEventArgsValidator(self._strategy.log).validate_start_trading_event_args(args):
             return
 
         market = self._strategy.area.forward_markets[AvailableMarketTypes(args["market_type"])]
@@ -221,7 +222,7 @@ class ForwardLiveEvents:
     def remove_order_event(self, event: Dict):
         """Apply remove order event to the strategy."""
         args = event.get("args")
-        if not LiveEventArgsValidator(self._strategy.log).validate_stop_trading_event_args(event):
+        if not LiveEventArgsValidator(self._strategy.log).validate_stop_trading_event_args(args):
             return
 
         market = self._strategy.area.forward_markets[AvailableMarketTypes(args["market_type"])]
@@ -234,66 +235,3 @@ class ForwardLiveEvents:
             if updater:
                 market.remove_open_orders(slot)
                 self._strategy._order_updaters[market].pop(slot)
-
-
-class LiveEventArgsValidator:
-    """Validator class for the forward strategy live event arguments."""
-    def __init__(self, logger):
-        self._logger = logger
-
-    def validate_start_trading_event_args(self, event: Dict) -> bool:
-        """Validate the arguments for the start trading event."""
-        args = event.get("args")
-        accepted_params = ["start_time", "end_time", "market_type",
-                           "capacity_percent", "energy_rate"]
-        if any(param not in args or not args[param] for param in accepted_params):
-            self._logger.error(
-                "Parameters start_time, end_time, capacity_percent, energy_rate and market_type "
-                "are obligatory for the start trading live events (%s).", event)
-            return False
-
-        return (self._validate_market_type(args) and self._validate_start_end_time(args) and
-                self._validate_capacity_percent(args) and self._validate_energy_rate(args))
-
-    def validate_stop_trading_event_args(self, event: Dict) -> bool:
-        """Valiaate the arguments for the stop trading event."""
-        args = event.get("args")
-        accepted_params = ["start_time", "end_time", "market_type"]
-        if any(param not in args or not args[param] for param in accepted_params):
-            self._logger.error(
-                "Parameters start_time, end_time and market_type are obligatory "
-                "for the stop trading live events (%s).", event)
-            return False
-
-        return self._validate_market_type(args) and self._validate_start_end_time(args)
-
-    def _validate_market_type(self, args: Dict) -> bool:
-        try:
-            AvailableMarketTypes(args["market_type"])
-        except ValueError:
-            self._logger.error("Cannot deserialize market type parameter (%s).", args)
-            return False
-        return True
-
-    def _validate_start_end_time(self, args: Dict) -> bool:
-        try:
-            str_to_pendulum_datetime(args["start_time"])
-            str_to_pendulum_datetime(args["end_time"])
-        except Exception:
-            self._logger.log.error("Cannot deserialize start / end time parameters (%s).", args)
-            return False
-        return True
-
-    def _validate_capacity_percent(self, args: Dict) -> bool:
-        if not 0 <= args["capacity_percent"] <= 100.0:
-            self._logger.error(
-                "Capacity percent parameter is not in the expected range (%s).", args)
-            return False
-        return True
-
-    def _validate_energy_rate(self, args: Dict) -> bool:
-        if args["energy_rate"] < 0.:
-            self._logger.error(
-                "Energy rate parameter is negative (%s).", args)
-            return False
-        return True
