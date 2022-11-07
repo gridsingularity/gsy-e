@@ -20,8 +20,9 @@ from gsy_e.models.strategy.commercial_producer import CommercialStrategy
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.influx_connection.connection import InfluxConnection
 from gsy_framework.influx_connection.queries_fhac import DataFHAachenAggregated
-from gsy_framework.influx_connection.queries_pxl import DataQueryPXL, DataQueryPXlMakerspace
-from gsy_e.models.strategy.influx import InfluxLoadStrategy, InfluxPVStrategy
+from gsy_framework.influx_connection.queries_pxl import DataQueryPXL
+from gsy_framework.influx_connection.queries import DataQueryMQTT
+from gsy_e.models.strategy.influx import InfluxLoadStrategy, InfluxPVStrategy, InfluxCombinedStrategy
 
 def get_setup(config):
     ConstSettings.GeneralSettings.RUN_IN_REALTIME = True
@@ -45,30 +46,38 @@ def get_setup(config):
             Area(
                 "PXL Makerspace",
                 [
-                    Area("PXL_makerspace_EmbroideryMachine", strategy=InfluxLoadStrategy(query = DataQueryPXlMakerspace(connection_pxl, power_column="Power", device="PXL_makerspace_EmbroideryMachine", tablename="mqtt_consumer"))),
-                    Area("PXL_makerspace_LaserBig", strategy=InfluxLoadStrategy(query = DataQueryPXlMakerspace(connection_pxl, power_column="Power", device="PXL_makerspace_LaserBig", tablename="mqtt_consumer"))),
-                    Area("PXL_makerspace_LaserSmall", strategy=InfluxLoadStrategy(query = DataQueryPXlMakerspace(connection_pxl, power_column="Power", device="PXL_makerspace_LaserSmall", tablename="mqtt_consumer"))),
-                    Area("PXL_makerspace_MillingMachine", strategy=InfluxLoadStrategy(query = DataQueryPXlMakerspace(connection_pxl, power_column="Power", device="PXL_makerspace_MillingMachine", tablename="mqtt_consumer"))),
-                    Area("PXL_makerspace_Miscellaneous", strategy=InfluxLoadStrategy(query = DataQueryPXlMakerspace(connection_pxl, power_column="Power", device="PXL_makerspace_Miscellaneous", tablename="mqtt_consumer"))),
-                    Area("PXL_makerspace_PcLaserBig", strategy=InfluxLoadStrategy(query = DataQueryPXlMakerspace(connection_pxl, power_column="Power", device="PXL_makerspace_PcLaserBig", tablename="mqtt_consumer"))),
-                    Area("PXL_makerspace_PcLaserSmall", strategy=InfluxLoadStrategy(query = DataQueryPXlMakerspace(connection_pxl, power_column="Power", device="PXL_makerspace_PcLaserSmall", tablename="mqtt_consumer"))),
-                    Area("PXL_makerspace_PcUltimakers", strategy=InfluxLoadStrategy(query = DataQueryPXlMakerspace(connection_pxl, power_column="Power", device="PXL_makerspace_PcUltimakers", tablename="mqtt_consumer"))),
-                    Area("PXL_makerspace_PcVinylEmbroid", strategy=InfluxLoadStrategy(query = DataQueryPXlMakerspace(connection_pxl, power_column="Power", device="PXL_makerspace_PcVinylEmbroid", tablename="mqtt_consumer"))),
-                    Area("PXL_makerspace_PcbMilling", strategy=InfluxLoadStrategy(query = DataQueryPXlMakerspace(connection_pxl, power_column="Power", device="PXL_makerspace_PcbMilling", tablename="mqtt_consumer"))),
-                    Area("PXL_makerspace_Photostudio", strategy=InfluxLoadStrategy(query = DataQueryPXlMakerspace(connection_pxl, power_column="Power", device="PXL_makerspace_Photostudio", tablename="mqtt_consumer"))),
-                    Area("PXL_makerspace_Press", strategy=InfluxLoadStrategy(query = DataQueryPXlMakerspace(connection_pxl, power_column="Power", device="PXL_makerspace_Press", tablename="mqtt_consumer"))),
-                    Area("PXL_makerspace_SheetPress", strategy=InfluxLoadStrategy(query = DataQueryPXlMakerspace(connection_pxl, power_column="Power", device="PXL_makerspace_SheetPress", tablename="mqtt_consumer"))),
-                    Area("PXL_makerspace_Ultimaker3Left", strategy=InfluxLoadStrategy(query = DataQueryPXlMakerspace(connection_pxl, power_column="Power", device="PXL_makerspace_Ultimaker3Left", tablename="mqtt_consumer"))),
-                    Area("PXL_makerspace_Ultimaker3Right", strategy=InfluxLoadStrategy(query = DataQueryPXlMakerspace(connection_pxl, power_column="Power", device="PXL_makerspace_Ultimaker3Right", tablename="mqtt_consumer"))),
-                    Area("PXL_makerspace_UltimakerS5", strategy=InfluxLoadStrategy(query = DataQueryPXlMakerspace(connection_pxl, power_column="Power", device="PXL_makerspace_UltimakerS5", tablename="mqtt_consumer"))),
-                    Area("PXL_makerspace_VacuumFormer", strategy=InfluxLoadStrategy(query = DataQueryPXlMakerspace(connection_pxl, power_column="Power", device="PXL_makerspace_VacuumFormer", tablename="mqtt_consumer"))),
-                    Area("PXL_makerspace_VinylCutter", strategy=InfluxLoadStrategy(query = DataQueryPXlMakerspace(connection_pxl, power_column="Power", device="PXL_makerspace_VinylCutter", tablename="mqtt_consumer"))),                
+                    Area("PXL_makerspace_EmbroideryMachine", strategy=InfluxLoadStrategy(query = DataQueryMQTT(connection_pxl, power_column="Power", device="PXL_makerspace_EmbroideryMachine", tablename="mqtt_consumer"))),
+                    Area("PXL_makerspace_LaserBig", strategy=InfluxLoadStrategy(query = DataQueryMQTT(connection_pxl, power_column="Power", device="PXL_makerspace_LaserBig", tablename="mqtt_consumer"))),
+                    Area("PXL_makerspace_LaserSmall", strategy=InfluxLoadStrategy(query = DataQueryMQTT(connection_pxl, power_column="Power", device="PXL_makerspace_LaserSmall", tablename="mqtt_consumer"))),
+                    Area("PXL_makerspace_MillingMachine", strategy=InfluxLoadStrategy(query = DataQueryMQTT(connection_pxl, power_column="Power", device="PXL_makerspace_MillingMachine", tablename="mqtt_consumer"))),
+                    Area("PXL_makerspace_Miscellaneous", strategy=InfluxLoadStrategy(query = DataQueryMQTT(connection_pxl, power_column="Power", device="PXL_makerspace_Miscellaneous", tablename="mqtt_consumer"))),
+                    Area("PXL_makerspace_PcLaserBig", strategy=InfluxLoadStrategy(query = DataQueryMQTT(connection_pxl, power_column="Power", device="PXL_makerspace_PcLaserBig", tablename="mqtt_consumer"))),
+                    Area("PXL_makerspace_PcLaserSmall", strategy=InfluxLoadStrategy(query = DataQueryMQTT(connection_pxl, power_column="Power", device="PXL_makerspace_PcLaserSmall", tablename="mqtt_consumer"))),
+                    Area("PXL_makerspace_PcUltimakers", strategy=InfluxLoadStrategy(query = DataQueryMQTT(connection_pxl, power_column="Power", device="PXL_makerspace_PcUltimakers", tablename="mqtt_consumer"))),
+                    Area("PXL_makerspace_PcVinylEmbroid", strategy=InfluxLoadStrategy(query = DataQueryMQTT(connection_pxl, power_column="Power", device="PXL_makerspace_PcVinylEmbroid", tablename="mqtt_consumer"))),
+                    Area("PXL_makerspace_PcbMilling", strategy=InfluxLoadStrategy(query = DataQueryMQTT(connection_pxl, power_column="Power", device="PXL_makerspace_PcbMilling", tablename="mqtt_consumer"))),
+                    Area("PXL_makerspace_Photostudio", strategy=InfluxLoadStrategy(query = DataQueryMQTT(connection_pxl, power_column="Power", device="PXL_makerspace_Photostudio", tablename="mqtt_consumer"))),
+                    Area("PXL_makerspace_Press", strategy=InfluxLoadStrategy(query = DataQueryMQTT(connection_pxl, power_column="Power", device="PXL_makerspace_Press", tablename="mqtt_consumer"))),
+                    Area("PXL_makerspace_SheetPress", strategy=InfluxLoadStrategy(query = DataQueryMQTT(connection_pxl, power_column="Power", device="PXL_makerspace_SheetPress", tablename="mqtt_consumer"))),
+                    Area("PXL_makerspace_Ultimaker3Left", strategy=InfluxLoadStrategy(query = DataQueryMQTT(connection_pxl, power_column="Power", device="PXL_makerspace_Ultimaker3Left", tablename="mqtt_consumer"))),
+                    Area("PXL_makerspace_Ultimaker3Right", strategy=InfluxLoadStrategy(query = DataQueryMQTT(connection_pxl, power_column="Power", device="PXL_makerspace_Ultimaker3Right", tablename="mqtt_consumer"))),
+                    Area("PXL_makerspace_UltimakerS5", strategy=InfluxLoadStrategy(query = DataQueryMQTT(connection_pxl, power_column="Power", device="PXL_makerspace_UltimakerS5", tablename="mqtt_consumer"))),
+                    Area("PXL_makerspace_VacuumFormer", strategy=InfluxLoadStrategy(query = DataQueryMQTT(connection_pxl, power_column="Power", device="PXL_makerspace_VacuumFormer", tablename="mqtt_consumer"))),
+                    Area("PXL_makerspace_VinylCutter", strategy=InfluxLoadStrategy(query = DataQueryMQTT(connection_pxl, power_column="Power", device="PXL_makerspace_VinylCutter", tablename="mqtt_consumer"))),                
                 ]
             ),
             Area(
                 "FH Campus",
                 [
                     Area("FH General Load", strategy=InfluxLoadStrategy(query = DataFHAachenAggregated(connection_fhaachen, power_column="P_ges", tablename="Strom"))),
+                ]
+            ),
+            Area(
+                "Berg",
+                [
+                    Area("Berg Business", strategy=InfluxCombinedStrategy(query = DataQueryMQTT(connection_pxl, power_column="Ptot", device="berg-business_main-distribution", tablename="smartpi", invert = True))),
+                    Area("Berg House 1", strategy=InfluxCombinedStrategy(query = DataQueryMQTT(connection_pxl, power_column="Ptot", device="berg-house1_main-distribution", tablename="smartpi"))),
+                    Area("Berg House 2", strategy=InfluxCombinedStrategy(query = DataQueryMQTT(connection_pxl, power_column="Ptot", device="berg-house2_main-distribution", tablename="smartpi"))),                                    
                 ]
             ),
             Area("Commercial Energy Producer",
@@ -83,4 +92,4 @@ def get_setup(config):
 
 
 # pip install -e .
-# gsy-e run --setup bc4p -s 15m --enable-external-connection --start-date 2022-10-10
+# gsy-e run --setup bc4p -s 15m --enable-external-connection --start-date 2022-11-4
