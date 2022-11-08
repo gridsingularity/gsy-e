@@ -162,6 +162,10 @@ class SimulationEndpointBuffer:
         area_dict["type"] = (str(target_area.strategy.__class__.__name__)
                              if target_area.strategy is not None else "Area")
         area_dict["children"] = []
+
+        if ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS:
+            area_dict["capacity_kWh"] = target_area.strategy.capacity_kW
+
         return area_dict
 
     def _create_area_tree_dict(self, area: "AreaBase") -> Dict:
@@ -372,7 +376,7 @@ class CoefficientEndpointBuffer(SimulationEndpointBuffer):
     def _create_endpoint_buffer(self, should_export_plots):
         return ResultsHandler(should_export_plots, is_scm=True)
 
-    def update_coefficient_stats(
+    def update_coefficient_stats(  # pylint: disable=too-many-arguments
             self, area: "AreaBase", simulation_status: str,
             progress_info: "SimulationProgressInfo", sim_state: Dict,
             calculate_results: bool, scm_manager: "SCMManager") -> None:
