@@ -20,16 +20,20 @@ from gsy_e.models.strategy.commercial_producer import CommercialStrategy
 from gsy_framework.constants_limits import ConstSettings
 from gsy_e.utils.influx_area_factory import InfluxAreaFactory
 from gsy_e.models.strategy.influx import InfluxLoadStrategy
+from gsy_e.models.strategy.pv import PVStrategy
 
 def get_setup(config):
     ConstSettings.GeneralSettings.RUN_IN_REALTIME = True
     factory = InfluxAreaFactory("influx_fhaachen.cfg", power_column="P_ges", tablename="Strom", keyname="id")
+    pvstrat = strategy=PVStrategy(60, 80)
+    print(pvstrat.serialize())
     area = Area(
         "Grid",
         [
+            Area("FH Campus PV", strategy=PVStrategy(panel_count = 1, capacity_kW = 1400, initial_selling_rate = 40)),
             factory.getArea("FH Campus"),
             Area("Commercial Energy Producer",
-                 strategy=CommercialStrategy(energy_rate=30)
+                 strategy=CommercialStrategy(energy_rate=50)
                  )
         ],
         config=config
@@ -38,4 +42,4 @@ def get_setup(config):
 
 
 # pip install -e .
-# gsy-e run --setup bc4p_fhcampus -s 15m --enable-external-connection --start-date 2022-10-10
+# gsy-e run --setup bc4p_fhcampus -s 15m --enable-external-connection --start-date 2022-11-07
