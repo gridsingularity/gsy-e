@@ -27,7 +27,8 @@ def forward_setup_fixture():
     area = MagicMock(
         forward_markets=forward_markets,
         config=MagicMock(slot_length=slot_length),
-        uuid="AREA")
+        uuid="AREA",
+        strategy=None)
     area.name = "area-name"
     area.parent = None
 
@@ -135,7 +136,7 @@ class TestSimulationEndpointBuffer:
                 "name": "area-name",
                 "uuid": "AREA",
                 "parent_uuid": "",
-                "type": "MagicMock",
+                "type": "Area",
                 "children": []
             }
         }
@@ -203,7 +204,6 @@ class TestSimulationEndpointBuffer:
         child_2.parent = area
 
         area.children = [child_1, child_2]
-        area.strategy = None
 
         endpoint_buffer = SimulationEndpointBuffer(
             job_id="JOB_1",
