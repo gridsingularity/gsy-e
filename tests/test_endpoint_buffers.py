@@ -185,7 +185,7 @@ class TestSimulationEndpointBuffer:
             "mocked-results": "some-results"
         }
 
-    def test_update_stats(self, forward_setup):
+    def test_update_stats_forward_markets(self, forward_setup):
         # pylint: disable=protected-access
         area, _ = forward_setup
         area.current_market = MagicMock(
