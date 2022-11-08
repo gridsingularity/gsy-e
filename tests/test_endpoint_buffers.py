@@ -195,13 +195,15 @@ class TestSimulationEndpointBuffer:
         # Popoulate strategy and children to update the result_area_uuids dictionary
         child_1 = MagicMock(uuid="child-uuid-1")
         child_1.name = "child_1"
+        child_1.strategy = MagicMock(capacity_kWh=2)
         child_1.parent = area
         child_2 = MagicMock(uuid="child-uuid-2")
         child_2.name = "child_2"
+        child_2.strategy = MagicMock(capacity_kWh=1.5)
         child_2.parent = area
 
         area.children = [child_1, child_2]
-        area.strategy = MagicMock(name="some-strategy")
+        area.strategy = None
 
         endpoint_buffer = SimulationEndpointBuffer(
             job_id="JOB_1",
@@ -232,7 +234,7 @@ class TestSimulationEndpointBuffer:
             "name": "area-name",
             "uuid": "AREA",
             "parent_uuid": "",
-            "type": "MagicMock",
+            "type": "Area",
             "children": [
                 {
                     "children": [],
@@ -240,6 +242,7 @@ class TestSimulationEndpointBuffer:
                     "parent_uuid": "AREA",
                     "type": "MagicMock",
                     "uuid": "child-uuid-1",
+                    "capacity_kWh": child_1.strategy.capacity_kWh
                 },
                 {
                     "children": [],
@@ -247,6 +250,7 @@ class TestSimulationEndpointBuffer:
                     "parent_uuid": "AREA",
                     "type": "MagicMock",
                     "uuid": "child-uuid-2",
+                    "capacity_kWh": child_2.strategy.capacity_kWh
                 },
             ],
         }

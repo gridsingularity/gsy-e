@@ -163,8 +163,9 @@ class SimulationEndpointBuffer:
                              if target_area.strategy is not None else "Area")
         area_dict["children"] = []
 
-        if ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS:
-            area_dict["capacity_kWh"] = target_area.strategy.capacity_kW
+        if (ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS and
+                target_area.strategy is not None):
+            area_dict["capacity_kWh"] = target_area.strategy.capacity_kWh
 
         return area_dict
 
