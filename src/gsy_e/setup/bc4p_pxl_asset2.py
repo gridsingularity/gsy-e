@@ -20,7 +20,7 @@ from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.influx_connection.connection import InfluxConnection
 from gsy_framework.influx_connection.queries_pxl import DataQueryPXL
-from gsy_e.models.strategy.external_strategies influx import InfluxLoadExternalStrategy, InfluxPVExternalStrategy
+from gsy_e.models.strategy.external_strategies.influx import InfluxLoadExternalStrategy, InfluxPVExternalStrategy
 
 # init with influx load profile
 

@@ -1,6 +1,8 @@
 from typing import Dict, Union
 from pathlib import Path
 from pendulum import duration
+from gsy_e.gsy_e_core.util import d3a_path
+import os
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.influx_connection.connection import InfluxConnection
@@ -9,7 +11,6 @@ from gsy_framework.influx_connection.queries import InfluxQuery
 from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy
 from gsy_e.models.strategy.predefined_pv import PVUserProfileStrategy
 from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
-
 
 class InfluxCombinedStrategy(SmartMeterStrategy):
     """Class defining a strategy for Smart Meter devices."""
@@ -31,7 +32,8 @@ class InfluxCombinedStrategy(SmartMeterStrategy):
 
         combined_strategy = query.exec()
         if(combined_strategy == False):
-            raise ValueError("Query Result not usable as daily profile")
+            print("Combined Profile for Query:\n" + query.getQueryString() + "\nnot valid. Using Zero Curve.")
+            combined_strategy = os.path.join(d3a_path, "resources", "Zero_Curve.csv")
 
         super().__init__(smart_meter_profile=combined_strategy,
                      initial_selling_rate=initial_selling_rate,
@@ -78,7 +80,9 @@ class InfluxLoadStrategy(DefinedLoadStrategy):
         """
         load_profile = query.exec()
         if(load_profile == False):
-            raise ValueError("Query Result not usable as daily profile")
+            #raise ValueError("Query Result not usable as daily profile")
+            print("Load Profile for Query:\n" + query.getQueryString() + "\nnot valid. Using Zero Curve.")
+            load_profile = os.path.join(d3a_path, "resources", "Zero_Curve.csv")
 
         super().__init__(daily_load_profile=load_profile,
                          fit_to_limit=fit_to_limit,
@@ -105,7 +109,9 @@ class InfluxPVStrategy(PVUserProfileStrategy):
 
         pv_profile = query.exec()
         if(pv_profile == False):
-            raise ValueError("Query Result not usable as daily profile")
+            #raise ValueError("Query Result not usable as daily profile")
+            print("PV Profile for Query:\n" + query.getQueryString() + "\nnot valid. Using Zero Curve.")
+            pv_profile = os.path.join(d3a_path, "resources", "Zero_Curve.csv")
 
         super().__init__(power_profile=pv_profile,
                          panel_count=panel_count,
