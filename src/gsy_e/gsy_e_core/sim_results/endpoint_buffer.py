@@ -165,7 +165,7 @@ class SimulationEndpointBuffer:
 
         if (ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS and
                 target_area.strategy is not None):
-            area_dict["capacity_kWh"] = target_area.strategy.capacity_kWh
+            area_dict["capacity_kW"] = target_area.strategy._energy_params.capacity_kW
 
         return area_dict
 
