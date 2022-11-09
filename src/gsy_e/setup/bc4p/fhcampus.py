@@ -42,4 +42,4 @@ def get_setup(config):
 
 
 # pip install -e .
-# gsy-e run --setup bc4p_fhcampus -s 15m --enable-external-connection --start-date 2022-11-07
+# gsy-e run --setup bc4p.fhcampus -s 15m --enable-external-connection --start-date 2022-11-07

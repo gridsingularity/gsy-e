@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from gsy_e.models.area import Area
-from gsy_e.models.strategy.commercial_producer import CommercialStrategy
+from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.influx_connection.connection import InfluxConnection
 from gsy_framework.influx_connection.queries_fhac import DataFHAachenAggregated
@@ -84,9 +84,7 @@ def get_setup(config):
                     Area("Berg House 2", strategy=InfluxCombinedExternalStrategy(query = DataQueryMQTT(connection_pxl, power_column="Ptot", device="berg-house2_main-distribution", tablename="smartpi"))),                                    
                 ], grid_fee_constant=0, external_connection_available=True
             ),
-            Area("Commercial Energy Producer",
-                 strategy=CommercialStrategy(energy_rate=30)
-                 ),
+            Area("Market Maker", strategy=InfiniteBusStrategy(energy_buy_rate=21, energy_sell_rate=22)),
         ],
         config=config, 
         grid_fee_constant=1, 
@@ -98,4 +96,4 @@ def get_setup(config):
 
 
 # pip install -e .
-# gsy-e run --setup bc4p.asset.demonstration --enable-external-connection --start-date 2022-11-07 --paused
+# gsy-e run --setup bc4p.assets.demonstration --enable-external-connection --start-date 2022-11-07 --paused

@@ -92,4 +92,4 @@ def get_setup(config):
 
 
 # pip install -e .
-# gsy-e run --setup bc4p -s 15m --enable-external-connection --start-date 2022-11-4
+# gsy-e run --setup bc4p.demonstration -s 15m --enable-external-connection --start-date 2022-11-4
