@@ -16,21 +16,23 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from gsy_e.models.area import Area
-from gsy_e.models.strategy.commercial_producer import CommercialStrategy
+from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
 from gsy_framework.constants_limits import ConstSettings
-from gsy_e.utils.influx_area_factory import InfluxAreaFactory
 from gsy_e.models.strategy.influx import InfluxLoadStrategy
+from gsy_e.models.strategy.pv import PVStrategy
+from gsy_framework.influx_connection.connection import InfluxConnection
+from gsy_framework.influx_connection.queries_fhac import DataFHAachenAggregated
 
 def get_setup(config):
     ConstSettings.GeneralSettings.RUN_IN_REALTIME = True
-    factory = InfluxAreaFactory("influx_fhaachen.cfg", power_column="P_ges", tablename="Strom", keyname="id")
+    connection_fhaachen = InfluxConnection("influx_fhaachen.cfg")
+
     area = Area(
         "Grid",
         [
-            factory.getArea("FH Campus"),
-            Area("Commercial Energy Producer",
-                 strategy=CommercialStrategy(energy_rate=30)
-                 )
+            Area("FH Campus Load", strategy=InfluxLoadStrategy(query = DataFHAachenAggregated(connection_fhaachen, power_column="P_ges", tablename="Strom"), initial_buying_rate=20, final_buying_rate=40)),
+            Area("FH Campus PV", strategy=PVStrategy(panel_count = 1, capacity_kW = 300, initial_selling_rate=30, final_selling_rate=10)),
+            Area("Infinite Bus", strategy=InfiniteBusStrategy(energy_buy_rate=10, energy_sell_rate=40)),
         ],
         config=config
     )
@@ -38,4 +40,4 @@ def get_setup(config):
 
 
 # pip install -e .
-# gsy-e run --setup bc4p_fhcampus -s 15m --enable-external-connection --start-date 2022-10-10
+# gsy-e run --setup bc4p_fhcampus -s 15m --enable-external-connection --start-date 2022-11-07

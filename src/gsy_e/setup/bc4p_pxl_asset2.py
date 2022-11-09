@@ -20,7 +20,7 @@ from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.influx_connection.connection import InfluxConnection
 from gsy_framework.influx_connection.queries_pxl import DataQueryPXL
-from gsy_e.models.strategy.external_strategies influx import InfluxLoadExternalStrategy, InfluxPVExternalStrategy
+from gsy_e.models.strategy.external_strategies.influx import InfluxLoadExternalStrategy, InfluxPVExternalStrategy
 
 # init with influx load profile
 
@@ -57,5 +57,6 @@ def get_setup(config):
 
 
 # pip install -e .
-# gsy-e run --setup bc4p_pxl_asset2 --slot-length-realtime 10 --slot-length-realtime 10 --enable-external-connection --start-date 2022-10-10 --paused 
+# gsy-e run --setup bc4p_pxl_asset2 --enable-external-connection --start-date 2022-11-07 --paused
+
 
