@@ -59,7 +59,7 @@ To run the BC4P simulation use:
     
 .. code-block::
     
-    gsy-e run --setup bc4p --enable-bc
+    gsy-e run --setup bc4p.demonstration --enable-bc
 
 
 This would start the simulation with the integrated ganache-cli and blockchain integration - which does not work yet.
@@ -69,7 +69,7 @@ To allow the integration of other workers through the redis connection, one can 
 
 .. code-block::
     
-    gsy-e run --setup bc4p -t 30s -s 15m --enable-external-connection --start-date 2022-07-01
+    gsy-e run --setup bc4p.demonstration -t 30s -s 15m --enable-external-connection --start-date 2022-07-01
 
 Controlling the simulation
 --------------------------
@@ -94,7 +94,7 @@ InfluxDb Configuration
 ===========
 Edit following config file example:
 .. code-block::
-    src/gsy_e/resources/influxdb.cfg.example
+    src/gsy_e/gsy-framework/gsy-framework/influx_connection/resources/influxdb.cfg.example
 
 1. edit password and username of InfluxDB (and or change the other settings, if another InfluxDB should be used)
 2. save as new file with name "influxdb.cfg" (This file will not be tracked in git)

@@ -146,4 +146,4 @@ def run(setup_module_name, settings_file, duration, slot_length, tick_length,
 
 
 if __name__ == '__main__':
-    run(['--setup', 'bc4p_fhcampus', '--start-date', '2022-11-01'])
+    run(['--setup', 'bc4p.fhcampus', '--start-date', '2022-11-01'])

@@ -57,6 +57,6 @@ def get_setup(config):
 
 
 # pip install -e .
-# gsy-e run --setup bc4p_pxl_asset2 --enable-external-connection --start-date 2022-11-07 --paused
+# gsy-e run --setup bc4p.asset.pxl --enable-external-connection --start-date 2022-11-07 --paused
 
 
