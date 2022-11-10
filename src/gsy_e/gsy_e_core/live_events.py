@@ -126,18 +126,19 @@ class ForwardMarketsEvent:
 class LiveEvents:
     """Manage the incoming live events."""
     def __init__(self, config):
-        self.event_buffer = []
-        self.lock = Lock()
-        self.config = config
+        self._event_buffer = []
+        self._tick_event_buffer = []
+        self._lock = Lock()
+        self._config = config
 
     def add_event(self, event_dict, bulk_event=False):
         """Add a new event in order to be processed on the next market cycle."""
-        with self.lock:
+        with self._lock:
             try:
                 logging.debug("Received live event %s.", event_dict)
                 if event_dict["eventType"] == "create_area":
                     event_object = CreateAreaEvent(
-                        event_dict["parent_uuid"], event_dict["area_representation"], self.config)
+                        event_dict["parent_uuid"], event_dict["area_representation"], self._config)
                 elif event_dict["eventType"] == "delete_area":
                     event_object = DeleteAreaEvent(event_dict["area_uuid"])
                 elif event_dict["eventType"] == "update_area":
@@ -145,12 +146,14 @@ class LiveEvents:
                         event_dict["area_uuid"], event_dict["area_representation"])
                 elif B2BLiveEvents.is_supported_event(event_dict["eventType"]):
                     event_object = ForwardMarketsEvent(event_dict["area_uuid"], event_dict)
+                    self._tick_event_buffer.append(event_object)
+                    return
                 else:
                     raise LiveEventException(f"Incorrect event type ({event_dict})")
-                self.event_buffer.append(event_object)
+                self._event_buffer.append(event_object)
             except Exception as ex:
                 if bulk_event:
-                    self.event_buffer = []
+                    self._event_buffer = []
                 raise LiveEventException(ex) from ex
 
     def _handle_event(self, area, event):
@@ -168,10 +171,17 @@ class LiveEvents:
                 return True
         return False
 
-    def handle_all_events(self, root_area):
-        """Handle all events that arrived during the past market slot."""
-        with self.lock:
-            for event in self.event_buffer:
+    def _handle_events(self, root_area, event_buffer):
+        with self._lock:
+            for event in event_buffer:
                 if self._handle_event(root_area, event) is False:
                     logging.warning("Event %s not applied.", event)
-            self.event_buffer.clear()
+            event_buffer.clear()
+
+    def handle_all_events(self, root_area):
+        """Handle all events that arrived during the past market slot."""
+        self._handle_events(root_area, self._event_buffer)
+
+    def handle_tick_events(self, root_area):
+        """Handle all events that arrived during the past tick."""
+        self._handle_events(root_area, self._tick_event_buffer)

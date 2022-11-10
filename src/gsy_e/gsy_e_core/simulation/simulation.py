@@ -237,6 +237,8 @@ class Simulation:
                     self._simulation_finish_actions(slot_count)
                     return
 
+                self._external_events.tick_update(self.area)
+
             self._results.update_csv_on_market_cycle(slot_no, self.area)
             self.status.handle_incremental_mode()
         self._simulation_finish_actions(slot_count)
