@@ -8,6 +8,34 @@ from gsy_framework.utils import str_to_pendulum_datetime
 from gsy_e.models.strategy.forward.order_updater import OrderUpdater
 
 
+class ForwardValidator:
+    """Contain decorators that validate the start / stop trading live event arguments."""
+    # pylint: disable=protected-access
+
+    @staticmethod
+    def start_trading(func):
+        """Validate that the start trading live event contains all the required arguments."""
+        return ForwardValidator._validate_method(func, start_trading=True)
+
+    @staticmethod
+    def stop_trading(func):
+        """Validate that the stop trading live event contains all the required arguments."""
+        return ForwardValidator._validate_method(func, start_trading=False)
+
+    @staticmethod
+    def _validate_method(func, start_trading=True):
+        def validate_event(*method_args):
+            self, args = method_args
+            if start_trading and not LiveEventArgsValidator(
+                    self._strategy.log.error).validate_start_trading_event_args(args):
+                return
+            if not start_trading and not LiveEventArgsValidator(
+                    self._strategy.log.error).validate_stop_trading_event_args(args):
+                return
+            func(self, args)
+        return validate_event
+
+
 class ForwardLiveEvents:
     """Handle live events for the forward strategies."""
     # pylint: disable=protected-access
@@ -31,15 +59,12 @@ class ForwardLiveEvents:
         if event.get("type") == B2BLiveEvents.REMOVE_ORDER_EVENT_NAME:
             self._remove_order_event(event.get("args"))
 
+    @ForwardValidator.start_trading
     def _auto_trading_event(self, args: Dict):
         """
         Enable energy trading, and create order updater for all open markets between the start and
         end time.
         """
-        if not LiveEventArgsValidator(
-                self._strategy.log.error).validate_start_trading_event_args(args):
-            return
-
         market_type = AvailableMarketTypes(args["market_type"])
         start_time = str_to_pendulum_datetime(args["start_time"])
         end_time = str_to_pendulum_datetime(args["end_time"])
@@ -69,16 +94,14 @@ class ForwardLiveEvents:
                 order_updater_params, market_parameters)
             self._strategy.post_order(market, slot)
 
+    @ForwardValidator.stop_trading
     def _stop_auto_trading_event(self, args: Dict):
         """Apply stop automatic trading event to the strategy."""
         self._remove_order_event(args)
 
+    @ForwardValidator.start_trading
     def _post_order_event(self, args: Dict):
         """Apply post order / manual trading event to the strategy."""
-        if not LiveEventArgsValidator(
-                self._strategy.log.error).validate_start_trading_event_args(args):
-            return
-
         market = self._strategy.area.forward_markets[AvailableMarketTypes(args["market_type"])]
         start_time = str_to_pendulum_datetime(args["start_time"])
         end_time = str_to_pendulum_datetime(args["end_time"])
@@ -88,12 +111,9 @@ class ForwardLiveEvents:
             if start_time <= slot <= end_time:
                 self._strategy.post_order(market, slot, capacity_percent, energy_rate)
 
+    @ForwardValidator.stop_trading
     def _remove_order_event(self, args: Dict):
         """Apply remove order event to the strategy."""
-        if not LiveEventArgsValidator(
-                self._strategy.log.error).validate_stop_trading_event_args(args):
-            return
-
         market = self._strategy.area.forward_markets[AvailableMarketTypes(args["market_type"])]
         start_time = str_to_pendulum_datetime(args["start_time"])
         end_time = str_to_pendulum_datetime(args["end_time"])
