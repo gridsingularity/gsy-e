@@ -87,8 +87,13 @@ class ForwardLiveEvents:
             order_updater_params = deepcopy(self._strategy._order_updater_params[market_type])
             order_updater_params.capacity_percent = capacity_percent
             order_updater_params.final_rate = energy_rate
-            order_updater_params.initial_rate = min(
-                order_updater_params.initial_rate, energy_rate)
+
+            # Clamping the value between the initial / final rate for the specified market in
+            # order to always fall in the accepted energy rate range.
+            order_updater_params.initial_rate = max(min(
+                order_updater_params.initial_rate,
+                energy_rate),
+                order_updater_params.final_rate)
 
             self._strategy._order_updaters[market][slot] = OrderUpdater(
                 order_updater_params, market_parameters)
