@@ -1,11 +1,14 @@
-from threading import Lock
 import logging
 import traceback
+from threading import Lock
+
+from gsy_framework.live_events.b2b import B2BLiveEvents
+
 from gsy_e.gsy_e_core.area_serializer import area_from_dict
 from gsy_e.gsy_e_core.exceptions import LiveEventException
 from gsy_e.models.area.event_dispatcher import DispatcherFactory
-from gsy_e.models.strategy.market_maker_strategy import MarketMakerStrategy
 from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
+from gsy_e.models.strategy.market_maker_strategy import MarketMakerStrategy
 
 
 class CreateAreaEvent:
@@ -103,6 +106,23 @@ class DeleteAreaEvent:
         return f"<DeleteAreaEvent - area UUID({self.area_uuid})>"
 
 
+class ForwardMarketsEvent:
+    """Add a forward market-related event."""
+    def __init__(self, area_uuid, event_params):
+        self._area_uuid = area_uuid
+        self._event_params = event_params
+
+    def apply(self, area):
+        """Trigger the forward market event."""
+        if self._area_uuid not in [c.uuid for c in area.children]:
+            return False
+        area.strategy.apply_live_event(self._event_params)
+        return True
+
+    def __repr__(self):
+        return f"<ForwardMarketsEvent - area UUID({self._area_uuid})>"
+
+
 class LiveEvents:
     """Manage the incoming live events."""
     def __init__(self, config):
@@ -123,6 +143,8 @@ class LiveEvents:
                 elif event_dict["eventType"] == "update_area":
                     event_object = UpdateAreaEvent(
                         event_dict["area_uuid"], event_dict["area_representation"])
+                elif B2BLiveEvents.is_supported_event(event_dict["eventType"]):
+                    event_object = ForwardMarketsEvent(event_dict["area_uuid"], event_dict)
                 else:
                     raise LiveEventException(f"Incorrect event type ({event_dict})")
                 self.event_buffer.append(event_object)

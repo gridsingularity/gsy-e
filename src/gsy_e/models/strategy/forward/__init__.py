@@ -27,10 +27,7 @@ class ForwardStrategyBase(EventMixin, AreaBehaviorBase, ABC):
             sum(params.capacity_percent for params in order_updater_parameters.values()) <=
             100.0)
         super().__init__()
-        self.enabled = True
         self._create_order_updater = ConstSettings.ForwardMarketSettings.FULLY_AUTO_TRADING
-        self._allowed_disable_events = [
-            AreaEvent.ACTIVATE, MarketEvent.OFFER_TRADED, MarketEvent.BID_TRADED]
         self._order_updater_params: Dict[AvailableMarketTypes,
                                          OrderUpdaterParameters] = order_updater_parameters
         self._order_updaters = {}
@@ -110,8 +107,7 @@ class ForwardStrategyBase(EventMixin, AreaBehaviorBase, ABC):
 
     def event_listener(self, event_type: Union[AreaEvent, MarketEvent], **kwargs):
         """Dispatches the events received by the strategy to the respective methods."""
-        if self.enabled or event_type in self._allowed_disable_events:
-            super().event_listener(event_type, **kwargs)
+        super().event_listener(event_type, **kwargs)
 
     def event_offer_traded(self, *, market_id, trade):
         """Method triggered by the MarketEvent.OFFER_TRADED event."""
@@ -122,11 +118,10 @@ class ForwardStrategyBase(EventMixin, AreaBehaviorBase, ABC):
     @property
     def fully_automated_trading(self):
         """Is the strategy in fully automated trading mode."""
-        return self.enabled and self._create_order_updater
+        return self._create_order_updater
 
     def event_tick(self):
-        if self.enabled:
-            self._update_open_orders()
+        self._update_open_orders()
 
     def event_market_cycle(self):
         self._delete_past_order_updaters()
@@ -203,9 +198,9 @@ class ForwardLiveEvents:
                 order_updater_params, market_parameters)
             self._strategy.post_order(market, slot)
 
-    def _stop_auto_trading_event(self, event: Dict):
+    def _stop_auto_trading_event(self, args: Dict):
         """Apply stop automatic trading event to the strategy."""
-        self._remove_order_event(event)
+        self._remove_order_event(args)
 
     def _post_order_event(self, args: Dict):
         """Apply post order / manual trading event to the strategy."""
