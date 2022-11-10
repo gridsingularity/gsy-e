@@ -27,7 +27,8 @@ def forward_setup_fixture():
     area = MagicMock(
         forward_markets=forward_markets,
         config=MagicMock(slot_length=slot_length),
-        uuid="AREA")
+        uuid="AREA",
+        strategy=None)
     area.name = "area-name"
     area.parent = None
 
@@ -135,7 +136,7 @@ class TestSimulationEndpointBuffer:
                 "name": "area-name",
                 "uuid": "AREA",
                 "parent_uuid": "",
-                "type": "MagicMock",
+                "type": "Area",
                 "children": []
             }
         }
@@ -184,7 +185,7 @@ class TestSimulationEndpointBuffer:
             "mocked-results": "some-results"
         }
 
-    def test_update_stats(self, forward_setup):
+    def test_update_stats_forward_markets(self, forward_setup):
         # pylint: disable=protected-access
         area, _ = forward_setup
         area.current_market = MagicMock(
@@ -195,13 +196,14 @@ class TestSimulationEndpointBuffer:
         # Popoulate strategy and children to update the result_area_uuids dictionary
         child_1 = MagicMock(uuid="child-uuid-1")
         child_1.name = "child_1"
+        child_1.strategy = MagicMock(_energy_params=MagicMock(capacity_kW=2))
         child_1.parent = area
         child_2 = MagicMock(uuid="child-uuid-2")
         child_2.name = "child_2"
+        child_2.strategy = MagicMock(_energy_params=MagicMock(capacity_kW=1.5))
         child_2.parent = area
 
         area.children = [child_1, child_2]
-        area.strategy = MagicMock(name="some-strategy")
 
         endpoint_buffer = SimulationEndpointBuffer(
             job_id="JOB_1",
@@ -232,7 +234,7 @@ class TestSimulationEndpointBuffer:
             "name": "area-name",
             "uuid": "AREA",
             "parent_uuid": "",
-            "type": "MagicMock",
+            "type": "Area",
             "children": [
                 {
                     "children": [],
@@ -240,6 +242,7 @@ class TestSimulationEndpointBuffer:
                     "parent_uuid": "AREA",
                     "type": "MagicMock",
                     "uuid": "child-uuid-1",
+                    "capacity_kW": 2
                 },
                 {
                     "children": [],
@@ -247,6 +250,7 @@ class TestSimulationEndpointBuffer:
                     "parent_uuid": "AREA",
                     "type": "MagicMock",
                     "uuid": "child-uuid-2",
+                    "capacity_kW": 1.5
                 },
             ],
         }
