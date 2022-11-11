@@ -27,10 +27,10 @@ class ForwardValidator:
         def validate_event(*method_args):
             self, args = method_args
             if start_trading and not LiveEventArgsValidator(
-                    self._strategy.log.error).validate_start_trading_event_args(args):
+                    self._strategy.log.error).are_start_trading_event_args_valid(args):
                 return
             if not start_trading and not LiveEventArgsValidator(
-                    self._strategy.log.error).validate_stop_trading_event_args(args):
+                    self._strategy.log.error).are_stop_trading_event_args_valid(args):
                 return
             func(self, args)
         return validate_event
