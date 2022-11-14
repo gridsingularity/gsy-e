@@ -95,6 +95,7 @@ class InfluxLoadStrategy(DefinedLoadStrategy):
         if self.query.qstring != qstring:
             self.query.qstring = qstring
             self._energy_params._load_profile_input = self.query.exec()
+            super().area_reconfigure_event(daily_load_profile=self._energy_params._load_profile_input)
         super().event_market_cycle()
 
 
