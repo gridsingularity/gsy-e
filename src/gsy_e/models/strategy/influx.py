@@ -31,9 +31,6 @@ class InfluxCombinedStrategy(SmartMeterStrategy):
             smart_meter_profile_uuid: str = None):
 
         combined_strategy = query.exec()
-        if(combined_strategy == False):
-            print("Combined Profile for Query:\n" + query.getQueryString() + "\nnot valid. Using Zero Curve.")
-            combined_strategy = os.path.join(d3a_path, "resources", "Zero_Curve.csv")
 
         super().__init__(smart_meter_profile=combined_strategy,
                      initial_selling_rate=initial_selling_rate,
@@ -78,11 +75,8 @@ class InfluxLoadStrategy(DefinedLoadStrategy):
         :param use_market_maker_rate: If set to True, Load would track its final buying rate
         as per utility's trading rate
         """
+        self.query = query
         load_profile = query.exec()
-        if(load_profile == False):
-            #raise ValueError("Query Result not usable as daily profile")
-            print("Load Profile for Query:\n" + query.getQueryString() + "\nnot valid. Using Zero Curve.")
-            load_profile = os.path.join(d3a_path, "resources", "Zero_Curve.csv")
 
         super().__init__(daily_load_profile=load_profile,
                          fit_to_limit=fit_to_limit,
@@ -93,6 +87,16 @@ class InfluxLoadStrategy(DefinedLoadStrategy):
                          balancing_energy_ratio=balancing_energy_ratio,
                          use_market_maker_rate=use_market_maker_rate,
                          daily_load_profile_uuid=daily_load_profile_uuid)
+
+    def event_market_cycle(self):
+        qstring = self.query.query_string(duration(days=1),
+                        self.area.spot_market.time_slot._start_of_day(),
+                        GlobalConfig().slot_length.in_minutes())
+        if self.query.qstring != qstring:
+            self.query.qstring = qstring
+            self._energy_params._load_profile_input = self.query.exec()
+        super().event_market_cycle()
+
 
 class InfluxPVStrategy(PVUserProfileStrategy):  
     # pylint: disable=too-many-arguments
@@ -110,7 +114,7 @@ class InfluxPVStrategy(PVUserProfileStrategy):
         pv_profile = query.exec()
         if(pv_profile == False):
             #raise ValueError("Query Result not usable as daily profile")
-            print("PV Profile for Query:\n" + query.getQueryString() + "\nnot valid. Using Zero Curve.")
+            print("PV Profile for Query:\n" + query.qstring + "\nnot valid. Using Zero Curve.")
             pv_profile = os.path.join(d3a_path, "resources", "Zero_Curve.csv")
 
         super().__init__(power_profile=pv_profile,

@@ -23,9 +23,10 @@ from gsy_e.models.strategy.pv import PVStrategy
 from gsy_framework.influx_connection.connection import InfluxConnection
 from gsy_framework.influx_connection.queries_fhac import DataFHAachenAggregated
 from gsy_e.models.strategy.storage import StorageStrategy
+import gsy_e.constants
 
 def get_setup(config):
-    ConstSettings.GeneralSettings.RUN_IN_REALTIME = True
+    #gsy_e.constants.RUN_IN_REALTIME = True
     connection_fhaachen = InfluxConnection("influx_fhaachen.cfg")
 
     area = Area(

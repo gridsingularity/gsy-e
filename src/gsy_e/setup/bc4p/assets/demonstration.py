@@ -79,7 +79,7 @@ def get_setup(config):
             Area(
                 "Berg",
                 [
-                    Area("Berg Business", strategy=InfluxCombinedExternalStrategy(query = DataQueryMQTT(connection_pxl, power_column="Ptot", device="berg-business_main-distribution", tablename="smartpi", invert = True))),
+                    Area("Berg Business", strategy=InfluxCombinedExternalStrategy(query = DataQueryMQTT(connection_pxl, power_column="Ptot", device="berg-business_main-distribution", tablename="smartpi", multiplier = -1))),
                     Area("Berg House 1", strategy=InfluxCombinedExternalStrategy(query = DataQueryMQTT(connection_pxl, power_column="Ptot", device="berg-house1_main-distribution", tablename="smartpi"))),
                     Area("Berg House 2", strategy=InfluxCombinedExternalStrategy(query = DataQueryMQTT(connection_pxl, power_column="Ptot", device="berg-house2_main-distribution", tablename="smartpi"))),                                    
                 ], grid_fee_constant=0, external_connection_available=True
