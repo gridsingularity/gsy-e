@@ -17,6 +17,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import json
+from logging import getLogger
 
 from gsy_framework.utils import convert_pendulum_to_str_in_dict, key_in_dict_and_not_none
 from gsy_framework.constants_limits import ConstSettings, SpotMarketTypeEnum, GlobalConfig
@@ -35,8 +36,11 @@ from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy # NOQA
 from gsy_e.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy  # NOQA
 from gsy_e.models.strategy.finite_power_plant import FinitePowerPlant # NOQA
 
-from gsy_e.models.leaves import Leaf, scm_leaf_mapping, CoefficientLeaf # NOQA
+from gsy_e.models.leaves import (
+    Leaf, scm_leaf_mapping, CoefficientLeaf, forward_leaf_mapping) # NOQA
 from gsy_e.models.leaves import *  # NOQA  # pylint: disable=wildcard-import
+
+logger = getLogger(__name__)
 
 
 class AreaEncoder(json.JSONEncoder):
@@ -113,7 +117,15 @@ def _instance_from_dict(description):
 
 
 def _leaf_from_dict(description, config):
-    if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
+    if ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS:
+        strategy_type = description.pop("type")
+        leaf_type = forward_leaf_mapping.get(strategy_type)
+        if not leaf_type:
+            return None
+        if not issubclass(leaf_type, Leaf):
+            raise ValueError(f"Unknown forward leaf type '{leaf_type}'")
+        description = leaf_type.strategy_type.deserialize_args(description)
+    elif ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
         strategy_type = description.pop("type")
         leaf_type = scm_leaf_mapping.get(strategy_type)
         if not leaf_type:
@@ -127,9 +139,10 @@ def _leaf_from_dict(description, config):
     display_type = description.pop("display_type", None)
     try:
         leaf_object = leaf_type(**description, config=config)
-    except KeyError:
+    except KeyError as exc:
         # If the strategy is not supported in SCM or normal operating mode, do
         # not create the area at all.
+        logger.error("Failed to create leaf %s %s %s", leaf_type, description, exc)
         return None
     if display_type is not None:
         leaf_object.display_type = display_type

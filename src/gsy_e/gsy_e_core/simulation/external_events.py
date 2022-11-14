@@ -49,3 +49,9 @@ class SimulationExternalEvents:
         Update the simulation according to any live events received. Triggered every market slot.
         """
         self.live_events.handle_all_events(area)
+
+    def tick_update(self, area: "AreaBase") -> None:
+        """
+        Update the simulation according to any live events received. Triggered every tick.
+        """
+        self.live_events.handle_tick_events(area)
