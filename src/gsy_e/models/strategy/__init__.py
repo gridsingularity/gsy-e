@@ -429,10 +429,13 @@ class Offers:
         """Update contents of posted and sold dicts on the event of an offer being traded"""
         try:
             if trade.seller == self.strategy.owner.name:
-                if trade.offer_bid.id in self.split and trade.offer_bid in self.posted:
-                    # remove from posted as it is traded already
-                    self._remove(self.split[trade.offer_bid.id])
-                self.sold_offer(trade.offer_bid, market_id)
+                for offer_or_bid in trade.match_details.values():
+                    if not offer_or_bid:
+                        continue
+                    if offer_or_bid.id in self.split and offer_or_bid in self.posted:
+                        # remove from posted as it is traded already
+                        self._remove(self.split[offer_or_bid.id])
+                    self.sold_offer(offer_or_bid, market_id)
         except AttributeError as ex:
             raise SimulationException("Trade event before strategy was initialized.") from ex
 
@@ -600,7 +603,7 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
                 trade_bid_info, buyer_origin, buyer_origin_id, buyer_id)
         )
 
-        self.offers.bought_offer(trade.offer_bid, market.id)
+        self.offers.bought_offer(trade.match_details["offer"], market.id)
         return trade
 
     def delete_offer(self, market: "OneSidedMarket", offer: Offer) -> None:
@@ -639,8 +642,9 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
         self.event_responses = []
 
     def _assert_if_trade_offer_price_is_too_low(self, market_id: str, trade: Trade) -> None:
-        if trade.is_offer_trade and trade.offer_bid.seller == self.owner.name:
-            offer = [o for o in self.offers.sold[market_id] if o.id == trade.offer_bid.id][0]
+        if trade.is_offer_trade and trade.match_details["offer"].seller == self.owner.name:
+            offer = [o for o in self.offers.sold[market_id]
+                     if o.id == trade.match_details["offer"].id][0]
             assert (trade.trade_rate >=
                     offer.energy_rate - FLOATING_POINT_TOLERANCE)
 
@@ -965,7 +969,7 @@ class BidEnabledStrategy(BaseStrategy):
         self._assert_bid_can_be_posted_on_market(market_id)
 
         if bid_trade.buyer == self.owner.name:
-            self.add_bid_to_bought(bid_trade.offer_bid, market_id)
+            self.add_bid_to_bought(bid_trade.match_details["bid"], market_id)
 
     def _get_future_bids_from_list(self, bids: List) -> List:
         update_bids_list = []
@@ -1001,6 +1005,7 @@ class BidEnabledStrategy(BaseStrategy):
         Returns: None
 
         """
-        if trade.is_bid_trade and trade.offer_bid.buyer == self.owner.name:
-            bid = [bid for bid in self.get_posted_bids(market) if bid.id == trade.offer_bid.id][0]
+        if trade.is_bid_trade and trade.match_details["bid"].buyer == self.owner.name:
+            bid = [bid for bid in self.get_posted_bids(market)
+                   if bid.id == trade.match_details["bid"].id][0]
             assert trade.trade_rate <= bid.energy_rate + FLOATING_POINT_TOLERANCE

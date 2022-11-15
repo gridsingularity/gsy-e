@@ -285,7 +285,7 @@ def test_event_trade_after_offer_changed_partial_offer(area_test2, bus_test2):
     bus_test2.event_offer_traded(market_id=area_test2.test_market.id,
                                  trade=Trade(id="id",
                                              creation_time="time",
-                                             offer_bid=original_offer,
+                                             offer=original_offer,
                                              seller="FakeArea",
                                              buyer="buyer",
                                              traded_energy=1, trade_price=1)

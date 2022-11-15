@@ -15,7 +15,7 @@ see <http://www.gnu.org/licenses/>.
 from typing import Optional, Dict, Iterable, TYPE_CHECKING
 
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.data_classes import Offer, Bid, Trade
+from gsy_framework.data_classes import Bid, Trade
 from gsy_framework.utils import format_datetime
 from pendulum import duration
 
@@ -201,7 +201,7 @@ class SettlementMarketStrategy(SettlementMarketStrategyInterface):
         Returns: None
 
         """
-        if isinstance(bid_trade.offer_bid, Offer):
+        if bid_trade.is_offer_trade:
             return
         market = self._get_settlement_market_by_id(strategy, market_id)
         if not market:

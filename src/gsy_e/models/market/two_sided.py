@@ -510,10 +510,10 @@ class TwoSidedMarket(OneSidedMarket):
             return recommendation
 
         def replace_recommendations_with_residuals(recommendation: Dict):
-            if (recommendation["offer"]["id"] == offer_trade.offer_bid.id and
+            if (recommendation["offer"]["id"] == offer_trade.match_details["offer"].id and
                     offer_trade.residual is not None):
                 recommendation["offer"] = offer_trade.residual.serializable_dict()
-            if (recommendation["bid"]["id"] == bid_trade.offer_bid.id and
+            if (recommendation["bid"]["id"] == bid_trade.match_details["bid"].id and
                     bid_trade.residual is not None):
                 recommendation["bid"] = bid_trade.residual.serializable_dict()
                 recommendation = _adapt_matching_requirements_in_residuals(recommendation)

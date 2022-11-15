@@ -158,12 +158,12 @@ class MAEngine:
 
     def event_offer_traded(self, *, trade):
         """Perform actions that need to be done when OFFER_TRADED event is triggered."""
-        offer_info = self.forwarded_offers.get(trade.offer_bid.id)
+        offer_info = self.forwarded_offers.get(trade.match_details["offer"].id)
         if not offer_info:
             # Trade doesn't concern us
             return
 
-        if trade.offer_bid.id == offer_info.target_offer.id:
+        if trade.match_details["offer"].id == offer_info.target_offer.id:
             # Offer was accepted in target market - buy in source
             source_rate = offer_info.source_offer.energy_rate
             target_rate = offer_info.target_offer.energy_rate
@@ -202,7 +202,7 @@ class MAEngine:
             self._delete_forwarded_offer_entries(offer_info.source_offer)
             self.offer_age.pop(offer_info.source_offer.id, None)
 
-        elif trade.offer_bid.id == offer_info.source_offer.id:
+        elif trade.match_details["offer"].id == offer_info.source_offer.id:
             # Offer was bought in source market by another party
             try:
                 self.owner.delete_offer(self.markets.target, offer_info.target_offer)

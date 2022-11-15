@@ -528,9 +528,9 @@ class ExternalMixin:
                                    if trade.buyer_id == self.device.uuid else "anonymous",
                                    "seller_origin": trade.seller_origin,
                                    "buyer_origin": trade.buyer_origin,
-                                   "bid_id": trade.offer_bid.id
+                                   "bid_id": trade.match_details["bid"].id
                                    if trade.is_bid_trade else "None",
-                                   "offer_id": trade.offer_bid.id
+                                   "offer_id": trade.match_details["offer"].id
                                    if trade.is_offer_trade else "None",
                                    "residual_bid_id": trade.residual.id
                                    if trade.residual is not None and trade.is_bid_trade
@@ -560,7 +560,8 @@ class ExternalMixin:
             bid_offer_key = "bid_id" if is_bid_trade else "offer_id"
             event_response_dict["event_type"] = (
                 "buy" if trade.buyer == self.device.name else "sell")
-            event_response_dict[bid_offer_key] = trade.offer_bid.id
+            event_response_dict[bid_offer_key] = (
+                trade.match_details["bid"].id if is_bid_trade else trade.match_details["offer"].id)
 
             trade_event_channel = f"{self.channel_prefix}/events/trade"
             self.redis.publish_json(trade_event_channel, event_response_dict)

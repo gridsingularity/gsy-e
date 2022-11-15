@@ -389,7 +389,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
         if not self.area.is_market_spot_or_future(market_id):
             return
-        if bid_trade.offer_bid.buyer == self.owner.name:
+        if bid_trade.match_details["bid"].buyer == self.owner.name:
             self._energy_params.decrement_energy_requirement(
                 energy_kWh=bid_trade.traded_energy,
                 time_slot=bid_trade.time_slot,

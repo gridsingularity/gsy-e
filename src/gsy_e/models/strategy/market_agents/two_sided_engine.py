@@ -140,11 +140,11 @@ class TwoSidedEngine(MAEngine):
 
     def event_bid_traded(self, *, bid_trade):
         """Perform actions that need to be done when BID_TRADED event is triggered."""
-        bid_info = self.forwarded_bids.get(bid_trade.offer_bid.id)
+        bid_info = self.forwarded_bids.get(bid_trade.match_details["bid"].id)
         if not bid_info:
             return
 
-        if bid_trade.offer_bid.id == bid_info.target_bid.id:
+        if bid_trade.match_details["bid"].id == bid_info.target_bid.id:
             # Bid was traded in target market, buy in source
             market_bid = self.markets.source.bids[bid_info.source_bid.id]
             assert bid_trade.traded_energy <= market_bid.energy, \
@@ -182,7 +182,7 @@ class TwoSidedEngine(MAEngine):
             self._delete_forwarded_bids(bid_info)
             self.bid_age.pop(bid_info.source_bid.id, None)
 
-        elif bid_trade.offer_bid.id == bid_info.source_bid.id:
+        elif bid_trade.match_details["bid"].id == bid_info.source_bid.id:
             # Bid was traded in the source market by someone else
 
             self._delete_forwarded_bids(bid_info)
