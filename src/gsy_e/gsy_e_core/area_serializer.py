@@ -17,7 +17,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import json
-import logging  # NOQA
+from logging import getLogger
 
 from gsy_framework.utils import convert_pendulum_to_str_in_dict, key_in_dict_and_not_none
 from gsy_framework.constants_limits import ConstSettings, SpotMarketTypeEnum, GlobalConfig
@@ -39,6 +39,8 @@ from gsy_e.models.strategy.finite_power_plant import FinitePowerPlant # NOQA
 from gsy_e.models.leaves import (
     Leaf, scm_leaf_mapping, CoefficientLeaf, forward_leaf_mapping) # NOQA
 from gsy_e.models.leaves import *  # NOQA  # pylint: disable=wildcard-import
+
+logger = getLogger(__name__)
 
 
 class AreaEncoder(json.JSONEncoder):
@@ -140,7 +142,7 @@ def _leaf_from_dict(description, config):
     except KeyError as exc:
         # If the strategy is not supported in SCM or normal operating mode, do
         # not create the area at all.
-        logging.error("Failed to create leaf %s %s %s", leaf_type, description, exc)
+        logger.error("Failed to create leaf %s %s %s", leaf_type, description, exc)
         return None
     if display_type is not None:
         leaf_object.display_type = display_type

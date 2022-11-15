@@ -120,8 +120,6 @@ class LeafBase:
                 uuid=uuid
             )
         except TypeError as ex:
-            print(self.strategy_type)
-            print(kwargs)
             logging.error("Cannot create leaf area %s with strategy %s and parameters %s.",
                           name, self.strategy_type, kwargs)
             raise ex

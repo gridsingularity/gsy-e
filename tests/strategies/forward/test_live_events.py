@@ -1,3 +1,4 @@
+import itertools
 from typing import Tuple, TYPE_CHECKING
 from unittest.mock import MagicMock
 
@@ -40,6 +41,18 @@ class TestForwardLiveEvents:
     # pylint: disable=protected-access
 
     @staticmethod
+    def _assert_order_count_from_strategy(
+            strategy: "ForwardStrategyBase", market_type: AvailableMarketTypes, order_count: int):
+        if isinstance(strategy, ForwardPVStrategy):
+            order_mapping = strategy.area.forward_markets[market_type].slot_offer_mapping
+            order_list = strategy.area.forward_markets[market_type].get_offers()
+        else:
+            order_mapping = strategy.area.forward_markets[market_type].slot_bid_mapping
+            order_list = strategy.area.forward_markets[market_type].get_bids()
+        assert len(order_list) == order_count
+        assert len(list(itertools.chain(*order_mapping.values()))) == order_count
+
+    @staticmethod
     def test_no_orders_posted_without_live_events(forward_strategy_fixture):
         strategy = forward_strategy_fixture[0]
         area = forward_strategy_fixture[1]
@@ -69,7 +82,8 @@ class TestForwardLiveEvents:
                 "energy_rate": 30.0
             }})
         market = area.forward_markets[AvailableMarketTypes.INTRADAY]
-        assert (len(market.get_bids()) == 7 or len(market.get_offers()) == 7)
+        TestForwardLiveEvents._assert_order_count_from_strategy(
+            strategy, AvailableMarketTypes.INTRADAY, 7)
         assert len(strategy._order_updaters.get(market, [])) == (
             7 if event_name == "enable_trading" else 0)
 
@@ -83,7 +97,8 @@ class TestForwardLiveEvents:
                 "energy_rate": 30.0
             }})
         market = area.forward_markets[AvailableMarketTypes.DAY_FORWARD]
-        assert (len(market.get_bids()) == 24 or len(market.get_offers()) == 24)
+        TestForwardLiveEvents._assert_order_count_from_strategy(
+            strategy, AvailableMarketTypes.DAY_FORWARD, 24)
         assert len(strategy._order_updaters.get(market, [])) == (
             24 if event_name == "enable_trading" else 0)
 
@@ -97,7 +112,8 @@ class TestForwardLiveEvents:
                 "energy_rate": 30.0
             }})
         market = area.forward_markets[AvailableMarketTypes.WEEK_FORWARD]
-        assert (len(market.get_bids()) == 6 or len(market.get_offers()) == 6)
+        TestForwardLiveEvents._assert_order_count_from_strategy(
+            strategy, AvailableMarketTypes.WEEK_FORWARD, 6)
         assert len(strategy._order_updaters.get(market, [])) == (
             6 if event_name == "enable_trading" else 0)
 
@@ -111,7 +127,8 @@ class TestForwardLiveEvents:
                 "energy_rate": 30.0
             }})
         market = area.forward_markets[AvailableMarketTypes.MONTH_FORWARD]
-        assert (len(market.get_bids()) == 5 or len(market.get_offers()) == 5)
+        TestForwardLiveEvents._assert_order_count_from_strategy(
+            strategy, AvailableMarketTypes.MONTH_FORWARD, 5)
         assert len(strategy._order_updaters.get(market, [])) == (
             5 if event_name == "enable_trading" else 0)
 
@@ -125,7 +142,8 @@ class TestForwardLiveEvents:
                 "energy_rate": 30.0
             }})
         market = area.forward_markets[AvailableMarketTypes.YEAR_FORWARD]
-        assert (len(market.get_bids()) == 2 or len(market.get_offers()) == 2)
+        TestForwardLiveEvents._assert_order_count_from_strategy(
+            strategy, AvailableMarketTypes.YEAR_FORWARD, 2)
         assert len(strategy._order_updaters.get(market, [])) == (
             2 if event_name == "enable_trading" else 0)
 
@@ -154,5 +172,6 @@ class TestForwardLiveEvents:
                 "end_time": "2022-06-13T02:00",
             }})
         market = area.forward_markets[AvailableMarketTypes.INTRADAY]
-        assert (len(market.get_bids()) == 0 and len(market.get_offers()) == 0)
+        TestForwardLiveEvents._assert_order_count_from_strategy(
+            strategy, AvailableMarketTypes.INTRADAY, 0)
         assert len(strategy._order_updaters.get(market, [])) == 0

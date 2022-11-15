@@ -51,8 +51,8 @@ class ForwardLoadStrategy(ForwardStrategyBase):
         if not bids:
             self.log.error("Bid with id %s does not exist on the market %s %s.",
                            order_uuid, market.market_type, market_slot)
-        for bid in bids:
-            market.delete_bid(bid)
+            return
+        market.delete_bid(bids[0])
 
     def remove_open_orders(self, market: "ForwardMarketBase", market_slot: DateTime):
         bids = [bid
