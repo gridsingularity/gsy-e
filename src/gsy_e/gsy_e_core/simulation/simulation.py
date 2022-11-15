@@ -309,7 +309,7 @@ class Simulation:
             paused_flag = True
             if console:
                 self._handle_input(console, 0.1)
-                self.status.handle_pause_timeout(self._time.tick_time_counter)
+                self.status.handle_pause_timeout()
             sleep(0.5)
 
         if console and paused_flag:
