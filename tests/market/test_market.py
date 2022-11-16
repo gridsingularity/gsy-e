@@ -155,7 +155,7 @@ def test_market_trade(market, offer, accept_offer):
     assert trade.id
     assert trade.creation_time == market.now
     assert trade.time_slot == market.time_slot
-    assert trade.offer_bid == e_offer
+    assert trade.match_details["offer"] == e_offer
     assert trade.seller == "A"
     assert trade.buyer == "B"
 
@@ -205,7 +205,7 @@ def test_balancing_market_negative_offer_trade(market=BalancingMarket(
     assert trade.id
     assert trade.creation_time == market.now
     assert trade.time_slot == market.time_slot
-    assert trade.offer_bid is offer
+    assert trade.match_details["offer"] is offer
     assert trade.seller == "A"
     assert trade.buyer == "B"
 
@@ -270,10 +270,10 @@ def test_market_trade_partial(market, offer, accept_offer):
     assert trade
     assert trade == market.trades[0]
     assert trade.id
-    assert trade.offer_bid is not e_offer
+    assert trade.match_details["offer"] is not e_offer
     assert trade.traded_energy == 5
     assert trade.trade_price == 5
-    assert trade.offer_bid.seller == "A"
+    assert trade.match_details["offer"].seller == "A"
     assert trade.seller == "A"
     assert trade.buyer == "B"
     assert len(market.offers) == 1
@@ -492,7 +492,7 @@ def test_market_accept_offer_yields_partial_trade(market, offer, accept_offer):
     """Test market accept offer returns partial trade."""
     e_offer = getattr(market, offer)(2.0, 4, "seller", "seller")
     trade = getattr(market, accept_offer)(e_offer, "buyer", energy=1)
-    assert (trade.offer_bid.id == e_offer.id
+    assert (trade.match_details["offer"].id == e_offer.id
             and trade.traded_energy == 1
             and trade.residual.energy == 3)
 

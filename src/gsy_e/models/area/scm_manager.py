@@ -124,7 +124,7 @@ class HomeAfterMeterData:
             f"{self.energy_need_kWh}) of the home ({self.home_name})."
 
         trade = Trade(
-            str(uuid4()), current_time_slot, None,
+            str(uuid4()), current_time_slot,
             seller_name, self.home_name,
             traded_energy=traded_energy_kWh, trade_price=trade_price_cents, residual=None,
             offer_bid_trade_info=None,
@@ -142,7 +142,7 @@ class HomeAfterMeterData:
             f"Cannot sell more energy ({traded_energy_kWh}) than the energy surplus (" \
             f"{self.energy_surplus_kWh}) of the home ({self.home_name})."
         trade = Trade(
-            str(uuid4()), current_time_slot, None,
+            str(uuid4()), current_time_slot,
             self.home_name, buyer_name,
             traded_energy=traded_energy_kWh, trade_price=trade_price_cents, residual=None,
             offer_bid_trade_info=None,

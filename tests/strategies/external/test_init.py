@@ -238,14 +238,16 @@ class TestExternalMixin:
         current_time = now()
         if isinstance(offer_bid, Bid):
             self.area.strategy.add_bid_to_posted(market.id, offer_bid)
-            trade = Trade("id", current_time, offer_bid,
+            trade = Trade("id", current_time,
                           "parent_area", "test_area", fee_price=0.23, seller_id=self.area.uuid,
+                          bid=offer_bid,
                           buyer_id=self.parent.uuid,
                           traded_energy=1, trade_price=20)
         else:
             self.area.strategy.offers.post(offer_bid, market.id)
-            trade = Trade("id", current_time, offer_bid,
+            trade = Trade("id", current_time,
                           "test_area", "parent_area", fee_price=0.23, buyer_id=self.area.uuid,
+                          offer=offer_bid,
                           seller_id=self.parent.uuid,
                           traded_energy=1, trade_price=20)
 
@@ -269,13 +271,13 @@ class TestExternalMixin:
         assert call_args["residual_bid_id"] == "None"
         assert call_args["residual_offer_id"] == "None"
         if isinstance(offer_bid, Bid):
-            assert call_args["bid_id"] == trade.offer_bid.id
+            assert call_args["bid_id"] == trade.match_details["bid"].id
             assert call_args["offer_id"] == "None"
             assert call_args["seller"] == trade.seller
             assert call_args["buyer"] == "anonymous"
         else:
             assert call_args["bid_id"] == "None"
-            assert call_args["offer_id"] == trade.offer_bid.id
+            assert call_args["offer_id"] == trade.match_details["offer"].id
             assert call_args["seller"] == "anonymous"
             assert call_args["buyer"] == trade.buyer
 
@@ -294,8 +296,9 @@ class TestExternalMixin:
         strategy.state.pledged_sell_kWh = {market.time_slot: 0.0}
         strategy.state.offered_sell_kWh = {market.time_slot: 0.0}
         current_time = now()
-        trade = Trade("id", current_time, Offer("offer_id", now(), 20, 1.0, "test_area"),
+        trade = Trade("id", current_time,
                       "test_area", "parent_area", fee_price=0.23,
+                      offer=Offer("offer_id", now(), 20, 1.0, "test_area"),
                       traded_energy=1, trade_price=20)
         strategy.event_offer_traded(market_id="test_market", trade=trade)
         assert strategy.redis.publish_json.call_args_list[0][0][0] == "test_area/events/trade"
@@ -305,7 +308,7 @@ class TestExternalMixin:
         assert call_args["trade_price"] == 20
         assert call_args["traded_energy"] == 1.0
         assert call_args["fee_price"] == 0.23
-        assert call_args["offer_id"] == trade.offer_bid.id
+        assert call_args["offer_id"] == trade.match_details["offer"].id
         assert call_args["residual_id"] == "None"
         assert call_args["time"] == current_time.isoformat()
         assert call_args["seller"] == trade.seller
@@ -331,7 +334,7 @@ class TestExternalMixin:
             bid = Bid("offer_id", now(), 20, 1.0, "test_area")
             strategy.add_bid_to_posted(market.id, bid)
             skipped_trade = (
-                Trade("id", current_time, bid, "test_area", "parent_area",
+                Trade("id", current_time, "test_area", "parent_area", bid=bid,
                       fee_price=0.23, traded_energy=1, trade_price=1))
 
             strategy.event_offer_traded(market_id=market.id, trade=skipped_trade)
@@ -339,8 +342,8 @@ class TestExternalMixin:
             assert call_args == []
 
             published_trade = (
-                Trade("id", current_time, bid, "parent_area", "test_area",
-                      fee_price=0.23, traded_energy=1, trade_price=1))
+                Trade("id", current_time, "parent_area", "test_area",
+                      fee_price=0.23, bid=bid, traded_energy=1, trade_price=1))
             strategy.event_offer_traded(market_id=market.id, trade=published_trade)
             assert strategy.redis.aggregator.add_batch_trade_event.call_args_list[0][0][0] == \
                 self.area.uuid
@@ -348,7 +351,7 @@ class TestExternalMixin:
             offer = Offer("offer_id", now(), 20, 1.0, "test_area")
             strategy.offers.post(offer, market.id)
             skipped_trade = (
-                Trade("id", current_time, offer, "parent_area", "test_area",
+                Trade("id", current_time, "parent_area", "test_area", offer=offer,
                       fee_price=0.23, traded_energy=1, trade_price=1))
             strategy.offers.sold_offer(offer, market.id)
 
@@ -357,7 +360,7 @@ class TestExternalMixin:
             assert call_args == []
 
             published_trade = (
-                Trade("id", current_time, offer, "test_area", "parent_area",
+                Trade("id", current_time, "test_area", "parent_area", offer=offer,
                       fee_price=0.23, traded_energy=1, trade_price=1))
             strategy.event_offer_traded(market_id=market.id, trade=published_trade)
             assert strategy.redis.aggregator.add_batch_trade_event.call_args_list[0][0][0] == \

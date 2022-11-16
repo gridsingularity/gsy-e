@@ -88,8 +88,9 @@ class FakeOffer:
 
 
 def _trade(price, buyer, energy=1, seller=None, fee_price=0.):
-    return Trade('id', now(tz=constants.TIME_ZONE), FakeOffer(price, energy, seller),
-                 seller, buyer, energy, price, None, fee_price=fee_price)
+    return Trade('id', now(tz=constants.TIME_ZONE),
+                 seller, buyer, energy, price, offer=FakeOffer(price, energy, seller),
+                 fee_price=fee_price)
 
 
 @pytest.fixture

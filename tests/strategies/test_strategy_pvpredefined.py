@@ -154,7 +154,8 @@ class FakeMarketTimeSlot(FakeMarket):
 
 class FakeTrade:
     def __init__(self, offer):
-        self.offer_bid = offer
+        self.offer = offer
+        self.match_details = {"offer": offer, "bid": None}
         self.seller = "FakeSeller"
         self.traded_energy = offer.energy
         self.trade_price = offer.price
@@ -169,7 +170,7 @@ class FakeTrade:
 
     @property
     def trade_rate(self):
-        return self.offer_bid.energy_rate
+        return self.offer.energy_rate
 
 
 """TEST1"""

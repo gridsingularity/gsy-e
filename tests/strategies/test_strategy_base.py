@@ -112,7 +112,7 @@ class FakeMarket:
         if energy is None:
             energy = offer.energy
         offer.energy = energy
-        return Trade("trade", 0, offer, offer.seller, "FakeOwner",
+        return Trade("trade", 0, offer.seller, "FakeOwner", offer=offer,
                      traded_energy=offer.energy, trade_price=offer.price,
                      seller_origin=offer.seller_origin, buyer_origin=buyer_origin,
                      buyer_origin_id=buyer_origin_id, buyer_id=buyer_id)
@@ -195,8 +195,8 @@ def test_offers_partial_offer(offer1, offers3):
     accepted_offer = Offer("id", pendulum.now(), 1, 0.6, offer1.seller, "market")
     residual_offer = Offer("new_id", pendulum.now(), 1, 1.2, offer1.seller, "market")
     offers3.on_offer_split(offer1, accepted_offer, residual_offer, "market")
-    trade = Trade("trade_id", pendulum.now(tz=TIME_ZONE), accepted_offer, offer1.seller, "buyer",
-                  traded_energy=0.6, trade_price=1)
+    trade = Trade("trade_id", pendulum.now(tz=TIME_ZONE), offer1.seller, "buyer",
+                  offer=accepted_offer, traded_energy=0.6, trade_price=1)
     offers3.on_trade("market", trade)
     assert len(offers3.sold_in_market("market")) == 1
     assert accepted_offer in offers3.sold_in_market("market")
@@ -318,7 +318,7 @@ def test_bid_traded_moves_bid_from_posted_to_traded(base):
     test_bid = Bid("123", pendulum.now(), 12, 23, base.owner.name, "B")
     trade = MagicMock()
     trade.buyer = base.owner.name
-    trade.offer_bid = test_bid
+    trade.match_details = {"bid": test_bid, "offer": None}
     market = FakeMarket(raises=False, id=21)
     base.area._market = market
     base._bids[market.id] = [test_bid]

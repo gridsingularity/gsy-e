@@ -126,7 +126,7 @@ class FakeMarket:
                      trade_rate: float = None, trade_bid_info=None, buyer_origin=None,
                      buyer_origin_id=None, buyer_id=None):
         offer = offer_or_id
-        trade = Trade("trade_id", time, offer, offer.seller, buyer,
+        trade = Trade("trade_id", time, offer.seller, buyer, offer=offer,
                       seller_origin=offer.seller_origin, buyer_origin=buyer_origin,
                       buyer_origin_id=buyer_origin_id, buyer_id=buyer_id,
                       traded_energy=1, trade_price=1)
@@ -242,8 +242,8 @@ def test_event_trade(area_test2, bus_test2):
         id="id", creation_time=pendulum.now(), price=20, energy=1, seller="FakeArea",)
     bus_test2.event_offer_traded(market_id=area_test2.test_market.id,
                                  trade=Trade(id="id",
-                                             creation_time="time",
-                                             offer_bid=traded_offer,
+                                             creation_time=pendulum.now(),
+                                             offer=traded_offer,
                                              seller="FakeArea",
                                              buyer="buyer",
                                              traded_energy=1, trade_price=1)

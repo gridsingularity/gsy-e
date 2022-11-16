@@ -151,7 +151,8 @@ class FakeMarket:
 
 class FakeTrade:
     def __init__(self, offer):
-        self.offer_bid = offer
+        self.offer = offer
+        self.match_details = {"offer": offer, "bid": None}
         self.seller = "FakeSeller"
         self.traded_energy = offer.energy
         self.trade_price = offer.price
@@ -166,7 +167,7 @@ class FakeTrade:
 
     @property
     def trade_rate(self):
-        return self.offer_bid.energy_rate
+        return self.offer.energy_rate
 
 
 """TEST1"""
@@ -301,9 +302,9 @@ def testing_event_trade(area_test3, pv_test4):
     pv_test4.event_offer_traded(market_id=area_test3.test_market.id,
                                 trade=Trade(id="id", creation_time=pendulum.now(),
                                             traded_energy=1, trade_price=20,
-                                            offer_bid=Offer(id="id", creation_time=TIME,
-                                                            price=20,
-                                                            energy=1, seller="FakeArea"),
+                                            offer=Offer(id="id", creation_time=TIME,
+                                                        price=20,
+                                                        energy=1, seller="FakeArea"),
                                             seller=area_test3.name, buyer="buyer",
                                             time_slot=area_test3.test_market.time_slot)
                                 )
@@ -583,8 +584,8 @@ def pv_test11(area_test3):
 def test_assert_if_trade_rate_is_lower_than_offer_rate(pv_test11):
     market_id = "market_id"
     pv_test11.offers.sold[market_id] = [Offer("offer_id", pendulum.now(), 30, 1, "FakeArea")]
-    to_cheap_offer = Offer("offer_id", pendulum.now(), 29, 1, "FakeArea")
-    trade = Trade("trade_id", "time", to_cheap_offer, pv_test11, "buyer",
+    too_cheap_offer = Offer("offer_id", pendulum.now(), 29, 1, "FakeArea")
+    trade = Trade("trade_id", "time", pv_test11, "buyer", offer=too_cheap_offer,
                   traded_energy=1, trade_price=1)
 
     with pytest.raises(AssertionError):

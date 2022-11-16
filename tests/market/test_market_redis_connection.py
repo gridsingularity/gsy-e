@@ -41,7 +41,7 @@ class TestMarketRedisEventPublisher(unittest.TestCase):
 
     def test_publish_event_subscribes_to_response_and_publishes(self):
         offer = Offer("1", now(), 2, 3, "A")
-        trade = Trade("2", now(), Offer("accepted", now(), 7, 8, "Z"), "B", "C",
+        trade = Trade("2", now(), "B", "C", offer=Offer("accepted", now(), 7, 8, "Z"),
                       traded_energy=1, trade_price=1)
         new_offer = Offer("3", now(), 4, 5, "D")
         existing_offer = Offer("4", now(), 5, 6, "E")
@@ -138,7 +138,7 @@ class TestMarketRedisEventSubscriber(unittest.TestCase):
                 "transaction_uuid": "trans_id"
             })
         }
-        trade = Trade(id="trade_id", creation_time=now(), offer_bid=offer,
+        trade = Trade(id="trade_id", creation_time=now(), offer=offer,
                       seller="trade_seller", buyer="trade_buyer",
                       traded_energy=1, trade_price=1)
         self.market.accept_offer = MagicMock(return_value=trade)
@@ -227,7 +227,7 @@ class TestTwoSidedMarketRedisEventSubscriber(unittest.TestCase):
                 "transaction_uuid": "trans_id"
             })
         }
-        trade = Trade(id="trade_id", creation_time=now(), offer_bid=bid,
+        trade = Trade(id="trade_id", creation_time=now(), bid=bid,
                       seller="trade_seller", buyer="trade_buyer",
                       traded_energy=1, trade_price=1)
         self.market.accept_bid = MagicMock(return_value=trade)

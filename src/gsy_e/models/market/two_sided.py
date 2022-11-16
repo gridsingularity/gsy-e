@@ -262,8 +262,8 @@ class TwoSidedMarket(OneSidedMarket):
             trade_offer_info, ignore_fees=True
         )
 
-        trade = Trade(str(uuid.uuid4()), self.now, bid, seller,
-                      buyer, traded_energy=energy, trade_price=trade_price,
+        trade = Trade(str(uuid.uuid4()), self.now, seller,
+                      buyer, bid=bid, traded_energy=energy, trade_price=trade_price,
                       residual=residual_bid, already_tracked=already_tracked,
                       offer_bid_trade_info=updated_bid_trade_info,
                       buyer_origin=bid.buyer_origin, seller_origin=seller_origin,

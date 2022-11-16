@@ -74,10 +74,11 @@ class FakeBalancingMarket:
             residual = BalancingOffer("res", pendulum.now(), offer.price, residual_energy,
                                       offer.seller)
             traded = BalancingOffer(offer.id, pendulum.now(), offer.price, energy, offer.seller)
-            return BalancingTrade("trade_id", time, traded, traded.seller, buyer, residual,
-                                  traded_energy=1, trade_price=1)
+            return BalancingTrade(
+                "trade_id", time, traded.seller, buyer, residual=residual, offer=traded,
+                traded_energy=1, trade_price=1)
 
-        return BalancingTrade("trade_id", time, offer, offer.seller, buyer,
+        return BalancingTrade("trade_id", time, offer.seller, buyer, offer=offer,
                               traded_energy=1, trade_price=1)
 
 
@@ -94,9 +95,9 @@ def balancing_agent_fixture():
 def test_baa_event_trade(balancing_agent):
     trade = Trade("trade_id",
                   balancing_agent.lower_market.time_slot,
-                  Offer("A", pendulum.now(), 2, 2, "B"),
                   "someone_else",
-                  "MA owner", traded_energy=1, trade_price=1)
+                  "MA owner", offer=Offer("A", pendulum.now(), 2, 2, "B"),
+                  traded_energy=1, trade_price=1)
     fake_spot_market = FakeMarket([])
     fake_spot_market.set_time_slot(balancing_agent.lower_market.time_slot)
     balancing_agent.event_offer_traded(trade=trade, market_id=fake_spot_market.id)
@@ -119,9 +120,9 @@ def balancing_agent_2_fixture():
 def test_baa_unmatched_event_trade(balancing_agent_2):
     trade = Trade("trade_id",
                   pendulum.now(tz=TIME_ZONE),
-                  Offer("A", pendulum.now(), 2, 2, "B"),
                   "someone_else",
-                  "owner", traded_energy=1, trade_price=1)
+                  "owner", offer=Offer("A", pendulum.now(), 2, 2, "B"),
+                  traded_energy=1, trade_price=1)
     fake_spot_market = FakeMarket([])
     fake_spot_market.set_time_slot(balancing_agent_2.lower_market.time_slot)
     balancing_agent_2.owner.fake_spot_market = fake_spot_market
