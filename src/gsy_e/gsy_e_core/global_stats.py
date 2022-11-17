@@ -15,10 +15,12 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from typing import Dict
+
 import gsy_e.constants
+from gsy_e.gsy_e_core.market_counters import ExternalTickCounter
 from gsy_e.gsy_e_core.util import (find_object_of_same_weekday_and_time,
                                    get_market_maker_rate_from_config)
-from gsy_e.gsy_e_core.market_counters import ExternalTickCounter
 
 
 class ExternalConnectionGlobalStatistics:
@@ -93,3 +95,34 @@ class ExternalConnectionGlobalStatistics:
             outdict[area.uuid] = area.strategy.market_info_dict \
                 if isinstance(area.strategy, ExternalMixin) else {}
             outdict[area.uuid].update({'area_name': area.name})
+
+
+class SCMExternalConnectionGlobalStatistics:
+    """Placeholder for global statistics and information send to the sdk."""
+
+    def __init__(self):
+        self.area = None
+        self.area_stats_tree_dict: Dict = {}
+
+    def __call__(self, root_area):
+        self.area = root_area
+
+    def _create_grid_tree_dict(self):
+        self._add_to_grid_tree_dict(self.area)
+        for house in self.area.children:
+            self._add_to_grid_tree_dict(house)
+            for child in house.children:
+                self._add_to_grid_tree_dict(child)
+
+    def _add_to_grid_tree_dict(self, area):
+        """
+        This method could be used to put more information into the grid_tree for scm simulations.
+        """
+        if area.strategy:
+            self.area_stats_tree_dict[area.uuid] = {"type": str(area.strategy.__class__.__name__)}
+        else:
+            self.area_stats_tree_dict[area.uuid] = {"type": "CommunityArea"}
+        self.area_stats_tree_dict[area.uuid]["area_name"] = area.name
+
+    def update(self):
+        self._create_grid_tree_dict()

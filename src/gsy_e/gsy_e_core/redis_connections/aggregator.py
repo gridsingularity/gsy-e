@@ -3,10 +3,13 @@ import logging
 from copy import deepcopy
 from threading import Lock
 
-import gsy_e.constants
-from gsy_e.gsy_e_core.global_objects_singleton import global_objects
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.utils import create_subdict_or_update
 from redis import Redis
+
+import gsy_e.constants
+from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 
 
 class AggregatorHandler:
@@ -68,8 +71,11 @@ class AggregatorHandler:
     def _create_grid_tree_event_dict(self, aggregator_uuid: str) -> dict:
         """Accumulate area_stats_tree_dict information and initiate a event dictionary
         to be sent to the client"""
-        return {"grid_tree": self._delete_not_owned_devices_from_dict(
-            global_objects.external_global_stats.area_stats_tree_dict, aggregator_uuid),
+        if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
+            return {"grid_tree": global_objects.scm_external_global_stats.area_stats_tree_dict}
+        else:
+            return {"grid_tree": self._delete_not_owned_devices_from_dict(
+                global_objects.external_global_stats.area_stats_tree_dict, aggregator_uuid),
                 "feed_in_tariff_rate": global_objects.external_global_stats.current_feed_in_tariff,
                 "market_maker_rate":
                 global_objects.external_global_stats.current_market_maker_rate}
@@ -259,10 +265,12 @@ class AggregatorHandler:
             publish_event_dict = {
                 **event,
                 "event": event_type,
-                "num_ticks": 100 / gsy_e.constants.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT,
-                'simulation_id': gsy_e.constants.CONFIGURATION_ID if
+                "simulation_id": gsy_e.constants.CONFIGURATION_ID if
                 gsy_e.constants.EXTERNAL_CONNECTION_WEB else None
             }
+            if ConstSettings.MASettings.MARKET_TYPE != SpotMarketTypeEnum.COEFFICIENTS.value:
+                publish_event_dict["num_ticks"] = (
+                        100 / gsy_e.constants.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT)
             redis.publish_json(event_channel, publish_event_dict)
 
         event_dict.clear()

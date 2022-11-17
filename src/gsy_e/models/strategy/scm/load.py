@@ -37,14 +37,14 @@ class SCMLoadHoursStrategy(SCMStrategy):
         self._update_energy_requirement_and_measurement(area)
 
     def _update_energy_requirement_and_measurement(self, area: "AreaBase"):
-        self._energy_params.update_energy_requirement(area._current_market_time_slot)
+        self._energy_params.update_energy_requirement(area.current_market_time_slot)
 
-        if not self._energy_params.allowed_operating_hours(area._current_market_time_slot):
+        if not self._energy_params.allowed_operating_hours(area.current_market_time_slot):
             # Overwrite desired energy to 0 in case the previous step has populated the
             # desired energy by the hrs_per_day have been exhausted.
-            self._energy_params.state.set_desired_energy(0.0, area._current_market_time_slot, True)
-        if area._current_market_time_slot:
-            self._energy_params.state.update_total_demanded_energy(area._current_market_time_slot)
+            self._energy_params.state.set_desired_energy(0.0, area.current_market_time_slot, True)
+        if area.current_market_time_slot:
+            self._energy_params.state.update_total_demanded_energy(area.current_market_time_slot)
         self._energy_params.set_energy_measurement_kWh(area.past_market_time_slot)
 
     def get_energy_to_buy_kWh(self, time_slot: DateTime) -> float:
@@ -82,7 +82,7 @@ class SCMLoadProfileStrategy(SCMStrategy):
     def market_cycle(self, area: "AreaBase") -> None:
         """Update the load forecast and measurements for the next/previous market slot."""
         self._energy_params._energy_profile.read_or_rotate_profiles()
-        slot_time = area._current_market_time_slot
+        slot_time = area.current_market_time_slot
         self._energy_params.update_energy_requirement(slot_time, area.name)
 
     def get_available_energy_kWh(self, time_slot: DateTime) -> float:

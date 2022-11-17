@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from abc import ABC, abstractmethod
+from statistics import mean
 from typing import TYPE_CHECKING, Dict, List
 
 from gsy_framework.constants_limits import ConstSettings
@@ -307,7 +308,7 @@ class CoefficientDataExporter(BaseDataExporter):
 
     @property
     def rows(self) -> List:
-        from statistics import mean
+
         if not self._scm:
             return []
         area_results = self._scm.get_area_results(self._area.uuid, serializable=False)
@@ -325,7 +326,7 @@ class CoefficientDataExporter(BaseDataExporter):
             t.traded_energy
             for t in area_results["after_meter_data"]["trades"]
         ]
-        return [[self._area.past_market_time_slot,
+        return [[self._area.current_market_time_slot,
                 mean(trade_rates) if trade_rates else 0.,
                 min(trade_rates) if trade_rates else 0.,
                 max(trade_rates) if trade_rates else 0.,
@@ -350,7 +351,7 @@ class CoefficientLeafDataExporter(BaseDataExporter):
 
     @property
     def rows(self):
-        slot = self._area.past_market_time_slot
+        slot = self._area.current_market_time_slot
         if slot is None:
             return []
         if isinstance(self._area.strategy, SCMStorageStrategy):
@@ -362,9 +363,9 @@ class CoefficientLeafDataExporter(BaseDataExporter):
         elif isinstance(self._area.strategy, (SCMLoadHoursStrategy, SCMLoadProfileStrategy)):
             desired = self._area.strategy.state.get_desired_energy_Wh(slot) / 1000
             # All energy is traded in SCM
-            return [[self._area.past_market_time_slot, desired, 0.]]
+            return [[slot, desired, 0.]]
         elif isinstance(self._area.strategy, SCMPVStrategy):
             not_sold = self._area.strategy.state.get_available_energy_kWh(slot)
             produced = self._area.strategy.state.get_energy_production_forecast_kWh(slot, 0.0)
-            return [[self._area.past_market_time_slot, produced, not_sold]]
+            return [[slot, produced, not_sold]]
         return []

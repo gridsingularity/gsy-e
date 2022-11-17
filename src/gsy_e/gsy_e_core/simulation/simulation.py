@@ -411,6 +411,9 @@ class CoefficientSimulation(Simulation):
 
         self.area.activate_energy_parameters(self.config.start_date)
 
+        if self.config.external_connection_enabled:
+            global_objects.scm_external_global_stats(self.area)
+
     @property
     def _time_since_start(self) -> Duration:
         """Return pendulum duration since start of simulation."""
@@ -422,13 +425,20 @@ class CoefficientSimulation(Simulation):
         return current_time - self.config.start_date
 
     def _deactivate_areas(self, area: "AreaBase"):
-        pass
+        if area.strategy:
+            area.strategy.deactivate()
+        for child in area.children:
+            self._deactivate_areas(child)
 
     def _execute_simulation(
             self, slot_resume: int, _tick_resume: int, console: NonBlockingConsole = None) -> None:
         slot_count, slot_resume = (
             self._time.calc_resume_slot_and_count_realtime(
                 self.config, slot_resume))
+
+        if self.config.external_connection_enabled:
+            self.config.external_redis_communicator.sub_to_aggregator()
+            self.config.external_redis_communicator.start_communication()
 
         self._time.reset(not_restored_from_state=(slot_resume == 0))
 
@@ -438,9 +448,23 @@ class CoefficientSimulation(Simulation):
             self.progress_info.update(slot_no, slot_count, self._time, self.config)
 
             self.area.cycle_coefficients_trading(self.progress_info.current_slot_time)
+            log.error(self.area.current_market_time_slot)
+
+            if self.config.external_connection_enabled:
+                global_objects.scm_external_global_stats.update()
+                self.area.publish_market_cycle_to_external_clients()
 
             global_objects.profiles_handler.update_time_and_buffer_profiles(
                 self._get_current_market_time_slot(slot_no), area=self.area)
+
+            if self.config.external_connection_enabled:
+
+                self.config.external_redis_communicator.approve_aggregator_commands()
+
+                self.area.market_cycle_external()
+
+                self.config.external_redis_communicator.\
+                    publish_aggregator_commands_responses_events()
 
             scm_manager = SCMManager(self.area, self._get_current_market_time_slot(slot_no))
 
