@@ -13,6 +13,7 @@ from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 
 
 class AggregatorHandler:
+    # pylint: disable=too-many-instance-attributes
     """
     Handles event sending, command responses to all connected aggregators
     """
@@ -42,6 +43,7 @@ class AggregatorHandler:
         }
 
     def is_controlling_device(self, device_uuid):
+        """Return if the aggregator is controlling the device with specified uuid."""
         return device_uuid in self.device_aggregator_mapping
 
     def _add_batch_event(self, device_uuid: str, event: dict, batch_event_dict: dict):
@@ -73,27 +75,30 @@ class AggregatorHandler:
         to be sent to the client"""
         if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
             return {"grid_tree": global_objects.scm_external_global_stats.area_stats_tree_dict}
-        else:
-            return {"grid_tree": self._delete_not_owned_devices_from_dict(
-                global_objects.external_global_stats.area_stats_tree_dict, aggregator_uuid),
-                "feed_in_tariff_rate": global_objects.external_global_stats.current_feed_in_tariff,
-                "market_maker_rate":
-                global_objects.external_global_stats.current_market_maker_rate}
+        return {"grid_tree": self._delete_not_owned_devices_from_dict(
+            global_objects.external_global_stats.area_stats_tree_dict, aggregator_uuid),
+            "feed_in_tariff_rate": global_objects.external_global_stats.current_feed_in_tariff,
+            "market_maker_rate":
+            global_objects.external_global_stats.current_market_maker_rate}
 
     def add_batch_market_event(self, device_uuid: str, market_info: dict):
+        """Add market_cycle event to the event buffer."""
         aggregator_uuid = self.device_aggregator_mapping[device_uuid]
         market_info.update(self._create_grid_tree_event_dict(aggregator_uuid))
         self._add_batch_event(device_uuid, market_info, self.batch_market_cycle_events)
 
     def add_batch_tick_event(self, device_uuid: str, tick_info: dict):
+        """Add tick event to the event buffer."""
         aggregator_uuid = self.device_aggregator_mapping[device_uuid]
         tick_info.update(self._create_grid_tree_event_dict(aggregator_uuid))
         self._add_batch_event(device_uuid, tick_info, self.batch_tick_events)
 
     def add_batch_finished_event(self, device_uuid: str, finish_info: dict):
+        """Add finish event to the event buffer."""
         self._add_batch_event(device_uuid, finish_info, self.batch_finished_events)
 
     def add_batch_trade_event(self, device_uuid: str, trade_info: dict):
+        """Add trade event to the event buffer."""
         aggregator_uuid = self.device_aggregator_mapping[device_uuid]
         if aggregator_uuid not in self.batch_trade_events:
             self.batch_trade_events[aggregator_uuid] = {"trade_list": []}
@@ -106,7 +111,7 @@ class AggregatorHandler:
         """Entrypoint for aggregator related commands"""
         message = json.loads(payload["data"])
         if gsy_e.constants.EXTERNAL_CONNECTION_WEB is True and \
-                message['config_uuid'] != gsy_e.constants.CONFIGURATION_ID:
+                message["config_uuid"] != gsy_e.constants.CONFIGURATION_ID:
             return
         if message["type"] == "CREATE":
             self._create_aggregator(message)
@@ -163,7 +168,7 @@ class AggregatorHandler:
                 self.redis_db.publish(
                     "aggregator_response", json.dumps(response_message)
                 )
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-except
                 response_message = {
                     "status": "error", "aggregator_uuid": message["aggregator_uuid"],
                     "device_uuid": message["device_uuid"],
@@ -211,6 +216,7 @@ class AggregatorHandler:
             )
 
     def receive_batch_commands_callback(self, payload):
+        """Buffer the received batch commands."""
         batch_command_message = json.loads(payload["data"])
         transaction_id = batch_command_message["transaction_id"]
         with self.lock:
@@ -230,8 +236,8 @@ class AggregatorHandler:
         """Processing all batch commands and collecting and sending responses."""
         for transaction_id, command_to_process in self.processing_batch_commands.items():
             if "aggregator_uuid" not in command_to_process:
-                logging.error(f"Aggregator uuid parameter missing from transaction with "
-                              f"id {transaction_id}. Full command {command_to_process}.")
+                logging.error("Aggregator uuid parameter missing from transaction with "
+                              "id %s. Full command %s.", transaction_id, command_to_process)
                 continue
             aggregator_uuid = command_to_process["aggregator_uuid"]
             area_commands = command_to_process["batch_commands"].pop(area_uuid, None)
@@ -248,7 +254,8 @@ class AggregatorHandler:
             self.responses_batch_commands[transaction_id][aggregator_uuid][area_uuid] \
                 .extend(response)
 
-    def _publish_all_events_from_one_type(self, redis, event_dict: dict, event_type: str):
+    @staticmethod
+    def _publish_all_events_from_one_type(redis, event_dict: dict, event_type: str):
         """Reading from the event buffers and publishing all events of one type to the clients
         Args:
             redis: ExternalConnectionCommunicator

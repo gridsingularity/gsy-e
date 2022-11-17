@@ -79,22 +79,22 @@ class ExternalConnectionGlobalStatistics:
         outdict[area.uuid] = {}
         if area.children:
             if area.current_market:
-                area_dict = {'last_market_bill': area.stats.get_last_market_bills(),
-                             'last_market_stats': area.stats.get_price_stats_current_market(),
-                             'last_market_fee': area.current_market.fee_class.grid_fee_rate,
-                             'current_market_fee': area.get_grid_fee(),
-                             'area_name': area.name,
-                             'children': {}}
+                area_dict = {"last_market_bill": area.stats.get_last_market_bills(),
+                             "last_market_stats": area.stats.get_price_stats_current_market(),
+                             "last_market_fee": area.current_market.fee_class.grid_fee_rate,
+                             "current_market_fee": area.get_grid_fee(),
+                             "area_name": area.name,
+                             "children": {}}
             else:
-                area_dict = {'children': {},
-                             'area_name': area.name}
+                area_dict = {"children": {},
+                             "area_name": area.name}
             outdict[area.uuid].update(area_dict)
             for child in area.children:
-                self._create_grid_tree_dict(child, outdict[area.uuid]['children'])
+                self._create_grid_tree_dict(child, outdict[area.uuid]["children"])
         else:
             outdict[area.uuid] = area.strategy.market_info_dict \
                 if isinstance(area.strategy, ExternalMixin) else {}
-            outdict[area.uuid].update({'area_name': area.name})
+            outdict[area.uuid].update({"area_name": area.name})
 
 
 class SCMExternalConnectionGlobalStatistics:
@@ -125,4 +125,5 @@ class SCMExternalConnectionGlobalStatistics:
         self.area_stats_tree_dict[area.uuid]["area_name"] = area.name
 
     def update(self):
+        """Update grid_tree_dict with latest stats."""
         self._create_grid_tree_dict()

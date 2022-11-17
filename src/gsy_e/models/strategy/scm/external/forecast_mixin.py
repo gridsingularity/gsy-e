@@ -26,6 +26,7 @@ if TYPE_CHECKING:
 
 
 class SCMForecastExternalMixin(ForecastExternalMixin):
+    """External mixin for forecast strategies in SCM simulations."""
 
     def activate(self, area: "CoefficientArea") -> None:
         """Activate the device."""
@@ -54,6 +55,7 @@ class SCMForecastExternalMixin(ForecastExternalMixin):
         return {"market_slot": self.owner.current_market_time_slot.format(DATE_TIME_FORMAT)}
 
     def market_cycle(self, _area) -> None:
+        """Call forecast and measurement update."""
         self.update_energy_forecast()
         self.update_energy_measurement()
         self._clear_energy_buffers()
