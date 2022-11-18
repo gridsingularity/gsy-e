@@ -36,6 +36,8 @@ from gsy_e.models.strategy.scm.load import SCMLoadHoursStrategy, SCMLoadProfileS
 from gsy_e.models.strategy.scm.pv import SCMPVPredefinedStrategy, SCMPVStrategy, SCMPVUserProfile
 from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
 from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
+from gsy_e.models.strategy.forward.pv import ForwardPVStrategy
+from gsy_e.models.strategy.forward.load import ForwardLoadStrategy
 
 
 # pylint: disable=protected-access
@@ -305,3 +307,33 @@ def test_area_does_not_allow_duplicate_subarea_names():
 
     # Does not raise an assertion
     are_all_areas_unique(area, set())
+
+
+@pytest.fixture
+def _forward_fixture():
+    ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS = True
+    yield
+    ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS = False
+
+
+def test_leaf_deserialization_works_for_forward_strategies(_forward_fixture):
+    deserialized_area = area_from_string(
+        '''
+        {
+             "name": "house",
+             "children": [
+                 {"name": "pv1", "type": "PV", "capacity_kW": 1000},
+                 {"name": "load1", "type": "LoadHours", "capacity_kW": 2000}
+             ]
+        }
+        ''',
+        _create_config()
+    )
+
+    assert deserialized_area.children[0].strategy is not None
+    assert isinstance(deserialized_area.children[0].strategy, ForwardPVStrategy)
+    assert deserialized_area.children[0].strategy._energy_params.capacity_kW == 1000.0
+
+    assert deserialized_area.children[1].strategy is not None
+    assert isinstance(deserialized_area.children[1].strategy, ForwardLoadStrategy)
+    assert deserialized_area.children[1].strategy._energy_params.capacity_kW == 2000.0
