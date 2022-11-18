@@ -13,6 +13,7 @@ from gsy_e.models.strategy.predefined_pv import PVUserProfileStrategy
 from gsy_e.models.strategy.scm.load import SCMLoadProfileStrategy
 from gsy_e.models.strategy.scm.smart_meter import SCMSmartMeterStrategy
 from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
+from gsy_e.models.strategy.scm.pv import SCMPVUserProfile
 
 
 class TestStrategyInheritance:
@@ -24,7 +25,8 @@ class TestStrategyInheritance:
                                      LoadProfileExternalStrategy,
                                      LoadProfileForecastExternalStrategy]],
         ["power_profile_uuid", [PVUserProfileStrategy,
-                                PVUserProfileExternalStrategy]],
+                                PVUserProfileExternalStrategy,
+                                SCMPVUserProfile]],
         ["smart_meter_profile_uuid", [SmartMeterStrategy,
                                       SmartMeterExternalStrategy,
                                       SCMSmartMeterStrategy]],
