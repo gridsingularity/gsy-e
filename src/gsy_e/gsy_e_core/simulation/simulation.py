@@ -237,6 +237,8 @@ class Simulation:
                     self._simulation_finish_actions(slot_count)
                     return
 
+                self._external_events.tick_update(self.area)
+
             self._results.update_csv_on_market_cycle(slot_no, self.area)
             self.status.handle_incremental_mode()
         self._simulation_finish_actions(slot_count)
@@ -307,7 +309,7 @@ class Simulation:
             paused_flag = True
             if console:
                 self._handle_input(console, 0.1)
-                self.status.handle_pause_timeout(self._time.tick_time_counter)
+                self.status.handle_pause_timeout()
             sleep(0.5)
 
         if console and paused_flag:

@@ -25,6 +25,7 @@ from gsy_e.models.strategy.forward.order_updater import OrderUpdaterParameters
 from gsy_e.models.strategy.forward.pv import ForwardPVStrategy
 
 ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS = True
+ConstSettings.ForwardMarketSettings.FULLY_AUTO_TRADING = True
 ConstSettings.MASettings.MARKET_TYPE = SpotMarketTypeEnum.TWO_SIDED.value
 
 load_updaters = {

@@ -1,7 +1,7 @@
 from typing import Dict, TYPE_CHECKING
 
 from gsy_framework.enums import AvailableMarketTypes
-from pendulum import DateTime
+from pendulum import DateTime, duration
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.models.strategy.energy_parameters.energy_params_eb import (
@@ -15,6 +15,15 @@ if TYPE_CHECKING:
     from gsy_e.models.state import PVState
 
 
+DEFAULT_PV_ORDER_UPDATER_PARAMS = {
+    AvailableMarketTypes.INTRADAY: OrderUpdaterParameters(duration(minutes=5), 10, 10, 10),
+    AvailableMarketTypes.DAY_FORWARD: OrderUpdaterParameters(duration(minutes=30), 10, 10, 10),
+    AvailableMarketTypes.WEEK_FORWARD: OrderUpdaterParameters(duration(days=1), 10, 10, 10),
+    AvailableMarketTypes.MONTH_FORWARD: OrderUpdaterParameters(duration(weeks=1), 10, 10, 20),
+    AvailableMarketTypes.YEAR_FORWARD: OrderUpdaterParameters(duration(months=1), 10, 10, 50)
+}
+
+
 class ForwardPVStrategy(ForwardStrategyBase):
     """
     Strategy that models a PV that trades with a Standard Solar Profile on the forward
@@ -22,7 +31,10 @@ class ForwardPVStrategy(ForwardStrategyBase):
     """
     def __init__(
             self, capacity_kW: float,
-            order_updater_parameters: Dict[AvailableMarketTypes, OrderUpdaterParameters]):
+            order_updater_parameters: Dict[AvailableMarketTypes, OrderUpdaterParameters] = None):
+        if not order_updater_parameters:
+            order_updater_parameters = DEFAULT_PV_ORDER_UPDATER_PARAMS
+
         super().__init__(order_updater_parameters)
         self._energy_params = ProductionStandardProfileEnergyParameters(capacity_kW)
 
@@ -40,11 +52,24 @@ class ForwardPVStrategy(ForwardStrategyBase):
         for offer in offers:
             market.delete_offer(offer)
 
-    def post_order(self, market: "ForwardMarketBase", market_slot: DateTime):
-        order_rate = self._order_updaters[market][market_slot].get_energy_rate(
-            self.area.now)
+    def remove_order(self, market: "ForwardMarketBase", market_slot: DateTime, order_uuid: str):
+        offers = [offer
+                  for offer in market.slot_offer_mapping[market_slot]
+                  if offer.seller == self.owner.name and offer.id == order_uuid]
+        if not offers:
+            self.log.error("Bid with id %s does not exist on the market %s %s.",
+                           order_uuid, market.market_type, market_slot)
+            return
+        market.delete_offer(offers[0])
 
-        capacity_percent = self._order_updaters[market][market_slot].capacity_percent / 100.0
+    def post_order(self, market: "ForwardMarketBase", market_slot: DateTime,
+                   order_rate: float = None, capacity_percent: float = None):
+        if not order_rate:
+            order_rate = self._order_updaters[market][market_slot].get_energy_rate(
+                self.area.now)
+
+        if not capacity_percent:
+            capacity_percent = self._order_updaters[market][market_slot].capacity_percent / 100.0
         max_energy_kWh = self._energy_params.peak_energy_kWh * capacity_percent
         available_energy_kWh = self._energy_params.get_available_energy_kWh(
             market_slot, market.market_type)
