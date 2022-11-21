@@ -177,9 +177,6 @@ class Simulation:
             self._time.calculate_total_initial_ticks_slots(
                 self.config, slot_resume, tick_resume, self.area))
 
-        self.config.external_redis_communicator.sub_to_aggregator()
-        self.config.external_redis_communicator.start_communication()
-
         for slot_no in range(slot_resume, slot_count):
             self.progress_info.update(
                 slot_no, slot_count, self._time, self.config)
@@ -436,10 +433,6 @@ class CoefficientSimulation(Simulation):
             self._time.calc_resume_slot_and_count_realtime(
                 self.config, slot_resume))
 
-        if self.config.external_connection_enabled:
-            self.config.external_redis_communicator.sub_to_aggregator()
-            self.config.external_redis_communicator.start_communication()
-
         self._time.reset(not_restored_from_state=(slot_resume == 0))
 
         for slot_no in range(slot_resume, slot_count):
@@ -448,7 +441,6 @@ class CoefficientSimulation(Simulation):
             self.progress_info.update(slot_no, slot_count, self._time, self.config)
 
             self.area.cycle_coefficients_trading(self.progress_info.current_slot_time)
-            log.error(self.area.current_market_time_slot)
 
             if self.config.external_connection_enabled:
                 global_objects.scm_external_global_stats.update()
