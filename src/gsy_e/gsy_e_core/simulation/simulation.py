@@ -427,6 +427,20 @@ class CoefficientSimulation(Simulation):
         for child in area.children:
             self._deactivate_areas(child)
 
+    def _handle_external_communication(self):
+
+        if self.config.external_connection_enabled:
+            global_objects.scm_external_global_stats.update()
+
+        self.area.publish_market_cycle_to_external_clients()
+
+        self.config.external_redis_communicator.approve_aggregator_commands()
+
+        self.area.market_cycle_external()
+
+        self.config.external_redis_communicator. \
+            publish_aggregator_commands_responses_events()
+
     def _execute_simulation(
             self, slot_resume: int, _tick_resume: int, console: NonBlockingConsole = None) -> None:
         slot_count, slot_resume = (
@@ -442,21 +456,10 @@ class CoefficientSimulation(Simulation):
 
             self.area.cycle_coefficients_trading(self.progress_info.current_slot_time)
 
-            if self.config.external_connection_enabled:
-                global_objects.scm_external_global_stats.update()
-                self.area.publish_market_cycle_to_external_clients()
-
             global_objects.profiles_handler.update_time_and_buffer_profiles(
                 self._get_current_market_time_slot(slot_no), area=self.area)
 
-            if self.config.external_connection_enabled:
-
-                self.config.external_redis_communicator.approve_aggregator_commands()
-
-                self.area.market_cycle_external()
-
-                self.config.external_redis_communicator.\
-                    publish_aggregator_commands_responses_events()
+            self._handle_external_communication()
 
             scm_manager = SCMManager(self.area, self._get_current_market_time_slot(slot_no))
 
