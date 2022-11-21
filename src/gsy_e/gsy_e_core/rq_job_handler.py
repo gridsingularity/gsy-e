@@ -80,7 +80,7 @@ def launch_simulation_from_rq_job(scenario: Dict,
             GlobalConfig.IS_CANARY_NETWORK = scenario.pop("is_canary_network", False)
             gsy_e.constants.RUN_IN_REALTIME = GlobalConfig.IS_CANARY_NETWORK
 
-            if settings["type"] == ConfigurationType.B2B.value:
+            if settings.get("type") == ConfigurationType.B2B.value:
                 ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS = True
                 # Disable fully automatic trading mode for the template strategies in favor of
                 # UI manual and auto modes.
