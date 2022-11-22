@@ -118,12 +118,15 @@ class TestFutureMarketStrategy:
         storage_strategy_fixture.state.pledged_buy_kWh[self.time_slot] = 0.
         storage_strategy_fixture.state.get_available_energy_to_buy_kWh = Mock(return_value=3)
         storage_strategy_fixture.state.get_available_energy_to_sell_kWh = Mock(return_value=2)
+        storage_strategy_fixture.state.register_energy_from_posted_offer = Mock()
+        storage_strategy_fixture.state.register_energy_from_posted_bid = Mock()
         future_strategy.event_market_cycle(storage_strategy_fixture)
         self.future_markets.offer.assert_called_once_with(
             price=50.0 * 2, energy=2, seller=self.area_mock.name,
             seller_origin=self.area_mock.name,
             seller_origin_id=self.area_mock.uuid, seller_id=self.area_mock.uuid,
             time_slot=self.time_slot)
+        storage_strategy_fixture.state.register_energy_from_posted_offer.assert_called_once()
 
         self.future_markets.bid.assert_called_once_with(
             10.0 * 3, 3, self.area_mock.name, original_price=10.0 * 3,
@@ -131,6 +134,8 @@ class TestFutureMarketStrategy:
             buyer_id=self.area_mock.uuid, attributes=None, requirements=None,
             time_slot=self.time_slot
         )
+
+        storage_strategy_fixture.state.register_energy_from_posted_bid.assert_called_once()
 
     @pytest.mark.parametrize(
         "future_strategy_fixture", [LoadHoursStrategy(100), PVStrategy(),
@@ -156,7 +161,8 @@ class TestFutureMarketStrategy:
             future_strategy_fixture.state.offered_buy_kWh[self.time_slot] = 0.
             future_strategy_fixture.state.pledged_sell_kWh[self.time_slot] = 0.
             future_strategy_fixture.state.pledged_buy_kWh[self.time_slot] = 0.
-
+            future_strategy_fixture.state.register_energy_from_posted_offer = Mock()
+            future_strategy_fixture.state.register_energy_from_posted_bid = Mock()
         future_strategy_fixture.area.current_tick = 0
         future_strategy.event_market_cycle(future_strategy_fixture)
 
