@@ -16,4 +16,5 @@ psutil
 psycopg2-binary
 pandas
 influxdb
+web3
 -e gsy-framework
