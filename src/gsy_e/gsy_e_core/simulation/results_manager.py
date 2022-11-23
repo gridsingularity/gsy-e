@@ -32,7 +32,7 @@ from gsy_e.gsy_e_core.sim_results.endpoint_buffer import (
 from gsy_e.models.area.scm_manager import SCMManager
 
 if TYPE_CHECKING:
-    from gsy_e.models.area import Area, AreaBase
+    from gsy_e.models.area import Area, AreaBase, CoefficientArea
     from gsy_e.gsy_e_core.simulation.setup import SimulationSetup
     from gsy_e.gsy_e_core.simulation.simulation import Simulation
 
@@ -141,7 +141,7 @@ class SimulationResultsManager:
 class CoefficientSimulationResultsManager(SimulationResultsManager):
     """Maintain and populate the SCM simulation results and publishing to the message broker."""
 
-    def init_results(self, redis_job_id: str, area: "AreaBase",
+    def init_results(self, redis_job_id: str, area: "CoefficientArea",
                      config_params: "SimulationSetup") -> None:
         """Construct objects that contain the simulation results for the broker and CSV output."""
         self._endpoint_buffer = CoefficientEndpointBuffer(
@@ -157,20 +157,20 @@ class CoefficientSimulationResultsManager(SimulationResultsManager):
         self._scm_manager = scm_manager
 
     @classmethod
-    def _update_area_stats(cls, area: "Area", endpoint_buffer: "SimulationEndpointBuffer") -> None:
+    def _update_area_stats(
+            cls, area: "CoefficientArea", endpoint_buffer: "SimulationEndpointBuffer") -> None:
         return
 
-    def update_csv_files(self, slot_no: int, current_time_slot: DateTime, area: "Area",
+    def update_csv_files(self, slot_no: int, current_time_slot: DateTime, area: "CoefficientArea",
                          scm_manager: SCMManager) -> None:
         """Update the csv results on market cycle."""
         if self.export_results_on_finish:
             self._export.data_to_csv(area, current_time_slot, slot_no == 0, scm_manager)
 
-    def save_csv_results(self, area: "Area") -> None:
+    def save_csv_results(self, area: "CoefficientArea") -> None:
         """Update the CSV results on finish, and write the CSV files."""
         if self.export_results_on_finish:
             log.info("Exporting simulation data.")
-            self._export.data_to_csv(area, False, None)
             self._export.area_tree_summary_to_json(self._endpoint_buffer.area_result_dict)
             self._export.export(power_flow=None)
 

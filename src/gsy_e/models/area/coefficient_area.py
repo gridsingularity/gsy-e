@@ -24,6 +24,7 @@ from pendulum import DateTime
 
 from gsy_e.models.area.area_base import AreaBase
 from gsy_e.models.config import SimulationConfig
+from gsy_e.models.strategy.external_strategies import ExternalMixin
 from gsy_e.models.strategy.scm import SCMStrategy
 
 log = getLogger(__name__)
@@ -75,17 +76,18 @@ class CoefficientArea(AreaBase):
 
     def activate_energy_parameters(self, current_time_slot: DateTime) -> None:
         """Activate the coefficient-based area parameters."""
-        self._current_market_time_slot = current_time_slot
+        self.current_market_time_slot = current_time_slot
 
         if self.strategy:
+            self.strategy.owner = self
             self.strategy.activate(self)
         for child in self.children:
             child.activate_energy_parameters(current_time_slot)
 
     def cycle_coefficients_trading(self, current_time_slot: DateTime) -> None:
         """Perform operations that should be executed on coefficients trading cycle."""
-        self.past_market_time_slot = self._current_market_time_slot
-        self._current_market_time_slot = current_time_slot
+        self.past_market_time_slot = self.current_market_time_slot
+        self.current_market_time_slot = current_time_slot
 
         if self.strategy:
             self.strategy.market_cycle(self)
@@ -149,3 +151,20 @@ class CoefficientArea(AreaBase):
             self._change_home_coefficient_percentage(scm_manager)
         for child in self.children:
             child.change_home_coefficient_percentage(scm_manager)
+
+    def _consume_commands_from_aggregator(self):
+        if self.strategy and getattr(self.strategy, "is_aggregator_controlled", False):
+            self.strategy.redis.aggregator.consume_all_area_commands(
+                self.uuid, self.strategy.trigger_aggregator_commands)
+
+    def market_cycle_external(self):
+        self._consume_commands_from_aggregator()
+        for child in self.children:
+            child.market_cycle_external()
+
+    def publish_market_cycle_to_external_clients(self):
+        """Recursively notify children and external clients about the market cycle event."""
+        if self.strategy and isinstance(self.strategy, ExternalMixin):
+            self.strategy.publish_market_cycle()
+        for child in self.children:
+            child.publish_market_cycle_to_external_clients()

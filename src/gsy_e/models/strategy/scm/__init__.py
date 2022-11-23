@@ -52,9 +52,10 @@ class SCMStrategy(ABC):
     def decrease_energy_to_buy(
             self, traded_energy_kWh: float, time_slot: DateTime, area: "CoefficientArea"):
         """Decrease traded energy from the state and the strategy parameters."""
-        pass
 
     def decrease_energy_to_sell(
             self, traded_energy_kWh: float, time_slot: DateTime, area: "CoefficientArea"):
         """Decrease traded energy from the state and the strategy parameters."""
-        pass
+
+    def deactivate(self):
+        """Should be called when the simulation is ended."""

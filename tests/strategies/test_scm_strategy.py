@@ -32,7 +32,7 @@ class TestSCMLoadStrategies:
     def test_scm_load_profile_strategy_updates_energy_forecast():
         # pylint: disable=protected-access
         energy_params = MagicMock(spec=DefinedLoadEnergyParameters)
-        energy_params._energy_profile = MagicMock(spec=EnergyProfile)
+        energy_params.energy_profile = MagicMock(spec=EnergyProfile)
         load = SCMLoadProfileStrategy()
         area = CoefficientArea(name="load", strategy=load)
 
@@ -42,5 +42,5 @@ class TestSCMLoadStrategies:
 
         energy_params.reset_mock()
         load.market_cycle(area)
-        energy_params._energy_profile.read_or_rotate_profiles.assert_called_once()
+        energy_params.energy_profile.read_or_rotate_profiles.assert_called_once()
         energy_params.update_energy_requirement.assert_called_once()

@@ -74,7 +74,7 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         self.daily_load_profile_uuid = daily_load_profile_uuid  # needed for profile_handler
 
     def event_market_cycle(self):
-        self._energy_params._energy_profile.read_or_rotate_profiles()
+        self._energy_params.energy_profile.read_or_rotate_profiles()
         super().event_market_cycle()
 
     def _update_energy_requirement_spot_market(self):
@@ -82,7 +82,7 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         Update required energy values for each market slot.
         :return: None
         """
-        self._energy_params._energy_profile.read_or_rotate_profiles()
+        self._energy_params.energy_profile.read_or_rotate_profiles()
 
         slot_time = self.area.spot_market.time_slot
         self._energy_params.update_energy_requirement(slot_time, self.owner.name)
