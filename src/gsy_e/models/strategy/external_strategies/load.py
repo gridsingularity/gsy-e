@@ -457,7 +457,9 @@ class LoadProfileForecastExternalStrategy(
                          final_buying_rate=final_buying_rate,
                          initial_buying_rate=initial_buying_rate,
                          balancing_energy_ratio=balancing_energy_ratio,
-                         use_market_maker_rate=use_market_maker_rate)
+                         use_market_maker_rate=use_market_maker_rate,
+                         daily_load_profile_uuid=daily_load_profile_uuid,
+                         )
 
         self._energy_params = LoadProfileForecastEnergyParams(
             daily_load_profile, daily_load_profile_uuid)
