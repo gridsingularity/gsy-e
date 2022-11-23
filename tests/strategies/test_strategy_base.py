@@ -23,7 +23,7 @@ from uuid import uuid4
 import pendulum
 import pytest
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.data_classes import Offer, Trade, Bid
+from gsy_framework.data_classes import Offer, Trade, Bid, TraderDetails
 from gsy_framework.enums import SpotMarketTypeEnum
 
 from gsy_e.constants import TIME_ZONE
@@ -112,17 +112,16 @@ class FakeMarket:
         if energy is None:
             energy = offer.energy
         offer.energy = energy
-        return Trade("trade", 0, offer.seller, "FakeOwner", offer=offer,
-                     traded_energy=offer.energy, trade_price=offer.price,
-                     seller_origin=offer.seller_origin, buyer_origin=buyer_origin,
-                     buyer_origin_id=buyer_origin_id, buyer_id=buyer_id)
+        return Trade("trade", 0, offer.seller,
+                     TraderDetails("FakeOwner", buyer_id, buyer_origin, buyer_origin_id),
+                     offer=offer, traded_energy=offer.energy, trade_price=offer.price)
 
     def bid(self, price, energy, buyer, original_price=None,
             buyer_origin=None, buyer_origin_id=None, buyer_id=None,
             attributes=None, requirements=None, time_slot=None):
-        return Bid(123, pendulum.now(), price, energy, buyer, original_price,
-                   buyer_origin=buyer_origin, buyer_origin_id=buyer_origin_id,
-                   buyer_id=buyer_id, attributes=attributes, requirements=requirements,
+        return Bid(123, pendulum.now(), price, energy,
+                   TraderDetails(buyer, buyer_id, buyer_origin, buyer_origin_id),
+                   original_price, attributes=attributes, requirements=requirements,
                    time_slot=time_slot)
 
 
@@ -179,23 +178,24 @@ def test_offers_in_market(offers2):
 
 @pytest.fixture(name="offer1")
 def offer1_fixture():
-    return Offer("id", pendulum.now(), 1, 3, "FakeOwner", "market")
+    return Offer("id", pendulum.now(), 1, 3, TraderDetails("FakeOwner", ""))
 
 
 @pytest.fixture(name="offers3")
 def offers3_fixture(offer1):
     fixture = Offers(FakeStrategy())
     fixture.post(offer1, "market")
-    fixture.post(Offer("id2", pendulum.now(), 1, 1, "FakeOwner", "market"), "market")
-    fixture.post(Offer("id3", pendulum.now(), 1, 1, "FakeOwner", "market2"), "market2")
+    fixture.post(Offer("id2", pendulum.now(), 1, 1, TraderDetails("FakeOwner", "")), "market")
+    fixture.post(Offer("id3", pendulum.now(), 1, 1, TraderDetails("FakeOwner", "")), "market2")
     return fixture
 
 
 def test_offers_partial_offer(offer1, offers3):
-    accepted_offer = Offer("id", pendulum.now(), 1, 0.6, offer1.seller, "market")
-    residual_offer = Offer("new_id", pendulum.now(), 1, 1.2, offer1.seller, "market")
+    accepted_offer = Offer("id", pendulum.now(), 1, 0.6, offer1.seller)
+    residual_offer = Offer("new_id", pendulum.now(), 1, 1.2, offer1.seller)
     offers3.on_offer_split(offer1, accepted_offer, residual_offer, "market")
-    trade = Trade("trade_id", pendulum.now(tz=TIME_ZONE), offer1.seller, "buyer",
+    trade = Trade("trade_id", pendulum.now(tz=TIME_ZONE), offer1.seller,
+                  TraderDetails("buyer", ""),
                   offer=accepted_offer, traded_energy=0.6, trade_price=1)
     offers3.on_trade("market", trade)
     assert len(offers3.sold_in_market("market")) == 1
@@ -204,7 +204,7 @@ def test_offers_partial_offer(offer1, offers3):
 
 @pytest.fixture(name="offer_to_accept")
 def offer_to_accept_fixture():
-    return Offer("new", pendulum.now(), 1.0, 0.5, "someone")
+    return Offer("new", pendulum.now(), 1.0, 0.5, TraderDetails("someone", ""))
 
 
 @pytest.fixture(name="base")
@@ -249,7 +249,7 @@ def test_accept_post_bid(base):
     assert base.get_posted_bids(market)[0] == bid
     assert bid.energy == 5
     assert bid.price == 10
-    assert bid.buyer == "FakeOwner"
+    assert bid.buyer.name == "FakeOwner"
 
 
 @patch("gsy_framework.constants_limits.ConstSettings.MASettings.MARKET_TYPE",
@@ -280,7 +280,7 @@ def test_add_bid_to_bought(base):
 
 def test_bid_events_fail_for_one_sided_market(base):
     ConstSettings.MASettings.MARKET_TYPE = 1
-    test_bid = Bid("123", pendulum.now(), 12, 23, "A", "B")
+    test_bid = Bid("123", pendulum.now(), 12, 23, TraderDetails("A", ""))
     with pytest.raises(AssertionError):
         base.event_bid_traded(market_id=123, bid_trade=test_bid)
     with pytest.raises(AssertionError):
@@ -292,7 +292,7 @@ def test_bid_events_fail_for_one_sided_market(base):
 
 def test_bid_deleted_removes_bid_from_posted(base):
     ConstSettings.MASettings.MARKET_TYPE = 2
-    test_bid = Bid("123", pendulum.now(), 12, 23, base.owner.name, "B")
+    test_bid = Bid("123", pendulum.now(), 12, 23, TraderDetails(base.owner.name, ""))
     market = FakeMarket(raises=False, id=21)
     base.area._market = market
     base._bids[market.id] = [test_bid]
@@ -302,9 +302,9 @@ def test_bid_deleted_removes_bid_from_posted(base):
 
 def test_bid_split_adds_bid_to_posted(base):
     ConstSettings.MASettings.MARKET_TYPE = 2
-    test_bid = Bid("123", pendulum.now(), 12, 12, base.owner.name, "B")
-    accepted_bid = Bid("123", pendulum.now(), 8, 8, base.owner.name, "B")
-    residual_bid = Bid("456", pendulum.now(), 4, 4, base.owner.name, "B")
+    test_bid = Bid("123", pendulum.now(), 12, 12, TraderDetails(base.owner.name, ""))
+    accepted_bid = Bid("123", pendulum.now(), 8, 8, TraderDetails(base.owner.name, ""))
+    residual_bid = Bid("456", pendulum.now(), 4, 4, TraderDetails(base.owner.name, ""))
     market = FakeMarket(raises=False, id=21)
     base.area._market = market
     base._bids[market.id] = []
@@ -315,9 +315,9 @@ def test_bid_split_adds_bid_to_posted(base):
 
 def test_bid_traded_moves_bid_from_posted_to_traded(base):
     ConstSettings.MASettings.MARKET_TYPE = 2
-    test_bid = Bid("123", pendulum.now(), 12, 23, base.owner.name, "B")
+    test_bid = Bid("123", pendulum.now(), 12, 23, TraderDetails(base.owner.name, ""))
     trade = MagicMock()
-    trade.buyer = base.owner.name
+    trade.buyer.name = base.owner.name
     trade.match_details = {"bid": test_bid, "offer": None}
     market = FakeMarket(raises=False, id=21)
     base.area._market = market
@@ -336,11 +336,14 @@ def test_can_offer_be_posted(market_class):
     time_slot = pendulum.now(tz=TIME_ZONE)
     market = market_class(time_slot=time_slot)
 
-    base.offers.post(Offer("id", time_slot.add(seconds=1), price=1, energy=12, seller="A",
+    base.offers.post(Offer("id", time_slot.add(seconds=1), price=1, energy=12,
+                           seller=TraderDetails("A", ""),
                            time_slot=time_slot), market.id)
-    base.offers.post(Offer("id2", time_slot.add(seconds=2), price=1, energy=13, seller="A",
+    base.offers.post(Offer("id2", time_slot.add(seconds=2), price=1, energy=13,
+                           seller=TraderDetails("A", ""),
                            time_slot=time_slot), market.id)
-    base.offers.post(Offer("id3", time_slot.add(seconds=3), price=1, energy=20, seller="A",
+    base.offers.post(Offer("id3", time_slot.add(seconds=3), price=1, energy=20,
+                           seller=TraderDetails("A", ""),
                            time_slot=time_slot), market.id)
 
     assert base.can_offer_be_posted(4.999, 1, 50, market, time_slot=None) is True
@@ -432,8 +435,8 @@ def test_post_offer_creates_offer_with_correct_parameters(market_class):
     # The offer is created with the expected parameters
     assert offer.price == 1
     assert offer.energy == 1
-    assert offer.seller == "seller-name"
-    assert offer.seller_origin == "seller-origin-name"
+    assert offer.seller.name == "seller-name"
+    assert offer.seller.origin == "seller-origin-name"
 
 
 @pytest.mark.parametrize("market_class", [OneSidedMarket, TwoSidedMarket])
@@ -470,9 +473,9 @@ def test_energy_traded_and_cost_traded(base):
     ConstSettings.MASettings.MARKET_TYPE = 2
     market = FakeMarket(raises=True)
     base.area._market = market
-    o1 = Offer("id", pendulum.now(), price=1, energy=23, seller="A")
-    o2 = Offer("id2", pendulum.now(), price=1, energy=27, seller="A")
-    o3 = Offer("id3", pendulum.now(), price=1, energy=10, seller="A")
+    o1 = Offer("id", pendulum.now(), price=1, energy=23, seller=TraderDetails("A", ""))
+    o2 = Offer("id2", pendulum.now(), price=1, energy=27, seller=TraderDetails("A", ""))
+    o3 = Offer("id3", pendulum.now(), price=1, energy=10, seller=TraderDetails("A", ""))
     base.offers.sold_offer(o1, market.id)
     base.offers.sold_offer(o2, market.id)
     base.offers.sold_offer(o3, market.id)

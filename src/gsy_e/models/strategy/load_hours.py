@@ -389,7 +389,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
         if not self.area.is_market_spot_or_future(market_id):
             return
-        if bid_trade.match_details["bid"].buyer == self.owner.name:
+        if bid_trade.match_details["bid"].buyer.name == self.owner.name:
             self._energy_params.decrement_energy_requirement(
                 energy_kWh=bid_trade.traded_energy,
                 time_slot=bid_trade.time_slot,
@@ -439,7 +439,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
     def _supply_balancing_offer(self, market, trade):
         if not self._is_eligible_for_balancing_market:
             return
-        if trade.buyer != self.owner.name:
+        if trade.buyer.name != self.owner.name:
             return
         ramp_down_energy = self.balancing_energy_ratio.supply * trade.traded_energy
         ramp_down_price = DeviceRegistry.REGISTRY[self.owner.name][1] * ramp_down_energy

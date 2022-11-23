@@ -75,8 +75,8 @@ class MAEngine:
             "seller": self.owner.name,
             "original_price": offer.original_price,
             "dispatch_event": False,
-            "seller_origin": offer.seller_origin,
-            "seller_origin_id": offer.seller_origin_id,
+            "seller_origin": offer.seller.origin,
+            "seller_origin_id": offer.seller.origin_uuid,
             "seller_id": self.owner.uuid,
             "time_slot": offer.time_slot,
             "attributes": offer.attributes,
@@ -147,7 +147,7 @@ class MAEngine:
             # Should never reach this point.
             # This means that the MA is forwarding offers with the same seller and buyer name.
             # If we ever again reach a situation like this, we should never forward the offer.
-            if self.owner.name == offer.seller:
+            if self.owner.name == offer.seller.name:
                 self.offer_age.pop(offer_id, None)
                 continue
 
@@ -189,8 +189,8 @@ class MAEngine:
                     buyer=self.owner.name,
                     trade_rate=trade_offer_rate,
                     trade_bid_info=updated_trade_bid_info,
-                    buyer_origin=trade.buyer_origin,
-                    buyer_origin_id=trade.buyer_origin_id,
+                    buyer_origin=trade.buyer.origin,
+                    buyer_origin_id=trade.buyer.origin_uuid,
                     buyer_id=self.owner.uuid
                 )
 

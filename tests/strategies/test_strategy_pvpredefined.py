@@ -24,7 +24,7 @@ from uuid import uuid4
 import pendulum
 import pytest
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
-from gsy_framework.data_classes import Offer
+from gsy_framework.data_classes import Offer, TraderDetails
 from gsy_framework.exceptions import GSyDeviceException
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from gsy_framework.utils import generate_market_slot_list
@@ -56,7 +56,6 @@ TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 class FakeArea:
     def __init__(self, count):
         self.current_tick = 2
-        self.appliance = None
         self.name = 'FakeArea'
         self.uuid = str(uuid4())
         self.count = count
@@ -122,14 +121,15 @@ class FakeMarket:
         self.id = str(count)
         self.created_offers = []
         self.offers = {
-            'id': Offer(id='id', creation_time=pendulum.now(), price=10, energy=0.5, seller='A')}
+            'id': Offer(id='id', creation_time=pendulum.now(), price=10, energy=0.5,
+                        seller=TraderDetails("A", ""))}
         self._time_slot = TIME
 
     def offer(self, price, energy, seller, original_price=None, seller_origin=None,
               seller_origin_id=None, seller_id=None, time_slot=None):
-        offer = Offer(str(uuid.uuid4()), pendulum.now(), price, energy, seller,
-                      original_price, seller_origin=seller_origin,
-                      seller_origin_id=seller_origin_id, seller_id=seller_id, time_slot=time_slot)
+        offer = Offer(str(uuid.uuid4()), pendulum.now(), price, energy,
+                      TraderDetails(seller, seller_id, seller_origin, seller_origin_id),
+                      original_price, time_slot=time_slot)
         self.created_offers.append(offer)
         self.offers[offer.id] = offer
         return offer
@@ -156,7 +156,7 @@ class FakeTrade:
     def __init__(self, offer):
         self.offer = offer
         self.match_details = {"offer": offer, "bid": None}
-        self.seller = "FakeSeller"
+        self.seller = TraderDetails("FakeSeller", "")
         self.traded_energy = offer.energy
         self.trade_price = offer.price
 
@@ -214,7 +214,8 @@ def pv_test3(area_test3):
     p = PVPredefinedStrategy(cloud_coverage=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE)
     p.area = area_test3
     p.owner = area_test3
-    p.offers.posted = {Offer('id', pendulum.now(), 30, 1, 'FakeArea'): area_test3.test_market.id}
+    p.offers.posted = {Offer('id', pendulum.now(), 30, 1,
+                             TraderDetails("FakeArea", "")): area_test3.test_market.id}
     return p
 
 
@@ -241,7 +242,7 @@ def pv_test4(area_test3, called):
     p.owner = area_test3
     p.offers.posted = {
         Offer(id='id', creation_time=pendulum.now(), price=20, energy=1,
-              seller='FakeArea'): area_test3.test_market.id
+              seller=TraderDetails("FakeArea", "")): area_test3.test_market.id
     }
     return p
 
@@ -341,7 +342,7 @@ def test_does_not_offer_sold_energy_again(pv_test6, market_test3):
     assert market_test3.created_offers[0].energy == \
         pv_test6.state._energy_production_forecast_kWh[TIME]
     fake_trade = FakeTrade(market_test3.created_offers[0])
-    fake_trade.seller = pv_test6.owner.name
+    fake_trade.seller.name = pv_test6.owner.name
     fake_trade.time_slot = market_test3.time_slot
     pv_test6.event_offer_traded(market_id=market_test3.id, trade=fake_trade)
     market_test3.created_offers = []

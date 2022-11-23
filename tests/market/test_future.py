@@ -19,7 +19,7 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 from gsy_framework.constants_limits import GlobalConfig, DATE_TIME_FORMAT, ConstSettings
-from gsy_framework.data_classes import Bid, Offer, Trade, TradeBidOfferInfo
+from gsy_framework.data_classes import Bid, Offer, Trade, TradeBidOfferInfo, TraderDetails
 from gsy_framework.utils import datetime_to_string_incl_seconds
 from pendulum import datetime, duration, now
 from tests.market import count_orders_in_buffers
@@ -61,14 +61,15 @@ def active_future_market() -> FutureMarkets:
 def offer_fixture() -> Offer:
     """Return an offer instance."""
     return Offer("id1", datetime(2021, 10, 19, 0, 0),
-                 10, 10, seller="seller", time_slot=datetime(2021, 10, 19, 0, 0))
+                 10, 10, seller=TraderDetails("seller", ""),
+                 time_slot=datetime(2021, 10, 19, 0, 0))
 
 
 @pytest.fixture(name="bid")
 def bid_fixture() -> Bid:
     """Return a bid instance."""
     return Bid("id1", datetime(2021, 10, 19, 0, 0),
-               10, 10, buyer="buyer", time_slot=datetime(2021, 10, 19, 0, 0))
+               10, 10, buyer=TraderDetails("buyer", ""), time_slot=datetime(2021, 10, 19, 0, 0))
 
 
 class TestFutureMarkets:
@@ -230,16 +231,18 @@ class TestFutureMarkets:
         time_slot1 = now()
         time_slot2 = time_slot1.add(minutes=15)
         future_market.bids = {"bid1": Bid(
-            "bid1", time_slot1, 10, 10, "buyer", time_slot=time_slot1)}
+            "bid1", time_slot1, 10, 10, TraderDetails("buyer", ""), time_slot=time_slot1)}
         future_market.offers = {"offer1": Offer(
-            "offer1", time_slot2, 10, 10, "seller", time_slot=time_slot2)}
+            "offer1", time_slot2, 10, 10, TraderDetails("seller", ""), time_slot=time_slot2)}
         assert future_market.orders_per_slot() == {
             time_slot1.format(DATE_TIME_FORMAT): {
                 "bids": [{"attributes": None,
-                          "buyer": "buyer",
-                          "buyer_id": None,
-                          "buyer_origin": None,
-                          "buyer_origin_id": None,
+                          "buyer": {
+                              "name": "buyer",
+                              "uuid": "",
+                              "origin": None,
+                              "origin_uuid": None,
+                          },
                           "energy": 10,
                           "energy_rate": 1.0,
                           "id": "bid1",
@@ -258,10 +261,12 @@ class TestFutureMarkets:
                             "original_price": 10,
                             "requirements": None,
                             "time_slot": datetime_to_string_incl_seconds(time_slot2),
-                            "seller": "seller",
-                            "seller_id": None,
-                            "seller_origin": None,
-                            "seller_origin_id": None,
+                            "seller": {
+                                "name": "seller",
+                                "uuid": "",
+                                "origin": None,
+                                "origin_uuid": None,
+                            },
                             "creation_time": datetime_to_string_incl_seconds(time_slot2),
                             "type": "Offer"}]}}
 

@@ -22,7 +22,8 @@ from math import isclose
 from typing import Dict, List, Union, Tuple, Optional
 
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.data_classes import Bid, Offer, Trade, TradeBidOfferInfo, BidOfferMatch
+from gsy_framework.data_classes import (
+    Bid, Offer, Trade, TradeBidOfferInfo, BidOfferMatch, TraderDetails)
 from gsy_framework.enums import BidOfferMatchAlgoEnum
 from gsy_framework.matching_algorithms.requirements_validators import RequirementsSatisfiedChecker
 from pendulum import DateTime
@@ -126,8 +127,8 @@ class TwoSidedMarket(OneSidedMarket):
                 "Negative price after taxes, bid cannot be posted.")
 
         bid = Bid(str(uuid.uuid4()) if bid_id is None else bid_id,
-                  self.now, price, energy, buyer, original_price, buyer_origin,
-                  buyer_origin_id=buyer_origin_id, buyer_id=buyer_id,
+                  self.now, price, energy,
+                  TraderDetails(buyer, buyer_id, buyer_origin, buyer_origin_id), original_price,
                   attributes=attributes, requirements=requirements, time_slot=time_slot)
         if adapt_price_with_fees:
             bid.requirements = self._update_requirements_prices(bid)
@@ -160,11 +161,11 @@ class TwoSidedMarket(OneSidedMarket):
         accepted_bid = self.bid(bid_id=original_bid.id,
                                 price=original_bid.price * (energy / original_bid.energy),
                                 energy=energy,
-                                buyer=original_bid.buyer,
+                                buyer=original_bid.buyer.name,
                                 original_price=original_accepted_price,
-                                buyer_origin=original_bid.buyer_origin,
-                                buyer_origin_id=original_bid.buyer_origin_id,
-                                buyer_id=original_bid.buyer_id,
+                                buyer_origin=original_bid.buyer.origin,
+                                buyer_origin_id=original_bid.buyer.origin_uuid,
+                                buyer_id=original_bid.buyer.uuid,
                                 adapt_price_with_fees=False,
                                 add_to_history=False,
                                 attributes=original_bid.attributes,
@@ -179,11 +180,11 @@ class TwoSidedMarket(OneSidedMarket):
 
         residual_bid = self.bid(price=residual_price,
                                 energy=residual_energy,
-                                buyer=original_bid.buyer,
+                                buyer=original_bid.buyer.name,
                                 original_price=original_residual_price,
-                                buyer_origin=original_bid.buyer_origin,
-                                buyer_origin_id=original_bid.buyer_origin_id,
-                                buyer_id=original_bid.buyer_id,
+                                buyer_origin=original_bid.buyer.origin,
+                                buyer_origin_id=original_bid.buyer.origin_uuid,
+                                buyer_id=original_bid.buyer.uuid,
                                 adapt_price_with_fees=False,
                                 add_to_history=True,
                                 attributes=original_bid.attributes,
@@ -262,14 +263,13 @@ class TwoSidedMarket(OneSidedMarket):
             trade_offer_info, ignore_fees=True
         )
 
-        trade = Trade(str(uuid.uuid4()), self.now, seller,
-                      buyer, bid=bid, traded_energy=energy, trade_price=trade_price,
+        trade = Trade(str(uuid.uuid4()), self.now,
+                      TraderDetails(seller, seller_id, seller_origin, seller_origin_id),
+                      bid.buyer,
+                      bid=bid, traded_energy=energy, trade_price=trade_price,
                       residual=residual_bid, already_tracked=already_tracked,
                       offer_bid_trade_info=updated_bid_trade_info,
-                      buyer_origin=bid.buyer_origin, seller_origin=seller_origin,
-                      fee_price=fee_price, seller_origin_id=seller_origin_id,
-                      buyer_origin_id=bid.buyer_origin_id, seller_id=seller_id,
-                      buyer_id=bid.buyer_id, time_slot=bid.time_slot,
+                      fee_price=fee_price, time_slot=bid.time_slot,
                       matching_requirements=trade_offer_info.matching_requirements
                       )
 
@@ -288,24 +288,24 @@ class TwoSidedMarket(OneSidedMarket):
         # pylint: disable=too-many-arguments
         already_tracked = bid.buyer == offer.seller
         trade = self.accept_offer(offer_or_id=offer,
-                                  buyer=bid.buyer,
+                                  buyer=bid.buyer.name,
                                   energy=selected_energy,
                                   trade_rate=clearing_rate,
                                   already_tracked=already_tracked,
                                   trade_bid_info=trade_bid_info,
-                                  buyer_origin=bid.buyer_origin,
-                                  buyer_origin_id=bid.buyer_origin_id,
-                                  buyer_id=bid.buyer_id)
+                                  buyer_origin=bid.buyer.origin,
+                                  buyer_origin_id=bid.buyer.origin_uuid,
+                                  buyer_id=bid.buyer.uuid)
 
         bid_trade = self.accept_bid(bid=bid,
                                     energy=selected_energy,
-                                    seller=offer.seller,
-                                    buyer=bid.buyer,
+                                    seller=offer.seller.name,
+                                    buyer=bid.buyer.name,
                                     already_tracked=True,
                                     trade_offer_info=trade_bid_info,
-                                    seller_origin=offer.seller_origin,
-                                    seller_origin_id=offer.seller_origin_id,
-                                    seller_id=offer.seller_id)
+                                    seller_origin=offer.seller.origin,
+                                    seller_origin_id=offer.seller.origin_uuid,
+                                    seller_id=offer.seller.uuid)
         return bid_trade, trade
 
     def _get_offer_from_seller_origin_id(self, seller_origin_id):
@@ -317,7 +317,7 @@ class TwoSidedMarket(OneSidedMarket):
 
         return next(iter(
             [offer for offer in self.offers.values()
-             if offer.seller_origin_id == seller_origin_id]), None)
+             if offer.seller.origin_uuid == seller_origin_id]), None)
 
     def _get_bid_from_buyer_origin_id(self, buyer_origin_id):
         if buyer_origin_id is None:
@@ -326,7 +326,7 @@ class TwoSidedMarket(OneSidedMarket):
 
         return next(iter(
             [bid for bid in self.bids.values()
-             if bid.buyer_origin_id == buyer_origin_id]), None)
+             if bid.buyer.origin_uuid == buyer_origin_id]), None)
 
     def match_recommendations(
             self, recommendations: List[BidOfferMatch.serializable_dict]) -> bool:

@@ -357,10 +357,11 @@ class StorageStrategy(BidEnabledStrategy):
         if not market:
             return
 
+        print("HERE")
         self.assert_if_trade_bid_price_is_too_high(market, trade)
         self._assert_if_trade_offer_price_is_too_low(market_id, trade)
 
-        if trade.seller == self.owner.name:
+        if trade.seller.name == self.owner.name:
             self.state.register_energy_from_offer_trade(trade.traded_energy, trade.time_slot)
 
     def _track_bought_energy_origin(self, seller):
@@ -376,10 +377,10 @@ class StorageStrategy(BidEnabledStrategy):
         if not self.area.is_market_spot_or_future(market_id):
             return
 
-        if bid_trade.buyer == self.owner.name:
+        if bid_trade.buyer.name == self.owner.name:
             self.state.register_energy_from_bid_trade(
                 bid_trade.traded_energy, bid_trade.time_slot,
-                self._track_bought_energy_origin(bid_trade.seller))
+                self._track_bought_energy_origin(bid_trade.seller.name))
 
     def _cycle_state(self):
         current_market = self.area.spot_market
@@ -427,7 +428,7 @@ class StorageStrategy(BidEnabledStrategy):
                                                                               self.owner.name)
 
     def _try_to_buy_offer(self, offer, market, max_affordable_offer_rate):
-        if offer.seller == self.owner.name:
+        if offer.seller.name == self.owner.name:
             # Don't buy our own offer
             return None
         # Check if the price is cheap enough
@@ -441,7 +442,8 @@ class StorageStrategy(BidEnabledStrategy):
             max_energy = min(offer.energy, max_energy)
             if max_energy > 0.0:
                 self.state.register_energy_from_one_sided_market_accept_offer(
-                    max_energy, market.time_slot, self._track_bought_energy_origin(offer.seller))
+                    max_energy, market.time_slot,
+                    self._track_bought_energy_origin(offer.seller.name))
                 self.accept_offer(market, offer, energy=max_energy,
                                   buyer_origin=self.owner.name,
                                   buyer_origin_id=self.owner.uuid,
@@ -530,8 +532,8 @@ class StorageStrategy(BidEnabledStrategy):
             # sometimes the offer event arrives earlier than the market_cycle event,
             # so the default values have to be written here too:
             self._update_profiles_with_default_values()
-            if (offer.id in market.offers and offer.seller != self.owner.name and
-                    offer.seller != self.area.name):
+            if (offer.id in market.offers and offer.seller.name != self.owner.name and
+                    offer.seller.name != self.area.name):
                 self._buy_energy_one_sided_spot_market(market, offer)
 
     def _delete_past_state(self):

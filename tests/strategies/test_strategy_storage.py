@@ -32,7 +32,7 @@ from gsy_e.constants import TIME_ZONE
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.util import change_global_config
 from gsy_e.models.config import SimulationConfig
-from gsy_framework.data_classes import Offer, Trade, BalancingOffer, Bid
+from gsy_framework.data_classes import Offer, Trade, BalancingOffer, Bid, TraderDetails
 from gsy_e.models.state import EnergyOrigin, ESSEnergyOrigin
 from gsy_e.models.strategy.storage import StorageStrategy
 
@@ -53,8 +53,7 @@ def auto_fixture():
 
 class FakeArea:
     def __init__(self, count):
-        self.appliance = None
-        self.name = 'FakeArea'
+        self.name = "FakeArea"
         self.uuid = str(uuid4())
         self.count = count
         self.current_tick = 0
@@ -90,11 +89,11 @@ class FakeArea:
     @property
     def cheapest_offers(self):
         offers = [
-            [Offer('id', 12, 0.4, 'A', self)],
-            [Offer('id', 12, 0.4, 'A', self)],
-            [Offer('id', 20, 1, 'A', self)],
-            [Offer('id', 20, 5.1, 'A', self)],
-            [Offer('id', 20, 5.1, 'A', market=self.current_market)]
+            [Offer("id", now(), 12, 0.4, TraderDetails("A", ""))],
+            [Offer("id", now(), 12, 0.4, TraderDetails("A", ""))],
+            [Offer("id", now(), 20, 1, TraderDetails("A", ""))],
+            [Offer("id", now(), 20, 5.1, TraderDetails("A", ""))],
+            [Offer("id", now(), 20, 5.1, TraderDetails("A", ""))]
         ]
         return offers[self.count]
 
@@ -104,7 +103,7 @@ class FakeArea:
 
     @property
     def now(self):
-        return DateTime.now(tz=TIME_ZONE).start_of('day') + (
+        return DateTime.now(tz=TIME_ZONE).start_of("day") + (
             self.config.tick_length * self.current_tick
         )
 
@@ -130,25 +129,25 @@ class FakeMarket:
     def __init__(self, count):
         self.count = count
         self.id = str(count)
-        self.trade = Trade('id', 'time',
-                           'FakeArea', 'buyer', time_slot=self.time_slot,
-                           offer=Offer('id', now(), 11.8, 0.5, 'FakeArea'),
+        self.trade = Trade("id", now(), TraderDetails("FakeArea", ""),
+                           TraderDetails("buyer", ""), time_slot=self.time_slot,
+                           offer=Offer("id", now(), 11.8, 0.5, TraderDetails("FakeArea", "")),
                            traded_energy=0.5, trade_price=11.8)
         self.created_offers = []
-        self.offers = {'id': Offer('id', now(), 11.8, 0.5, 'FakeArea'),
-                       'id2': Offer('id2', now(), 20, 0.5, 'A'),
-                       'id3': Offer('id3', now(), 20, 1, 'A'),
-                       'id4': Offer('id4', now(), 19, 5.1, 'A')}
+        self.offers = {"id": Offer("id", now(), 11.8, 0.5, TraderDetails("FakeArea", "")),
+                       "id2": Offer("id2", now(), 20, 0.5, TraderDetails("A", "")),
+                       "id3": Offer("id3", now(), 20, 1, TraderDetails("A", "")),
+                       "id4": Offer("id4", now(), 19, 5.1, TraderDetails("A", ""))}
         self.bids = {}
         self.created_balancing_offers = []
 
     @property
     def sorted_offers(self):
         offers = [
-            [Offer('id', now(), 11.8, 0.5, 'A')],
-            [Offer('id2', now(), 20, 0.5, 'A')],
-            [Offer('id3', now(), 20, 1, 'A')],
-            [Offer('id4', now(), 19, 5.1, 'A')]
+            [Offer("id", now(), 11.8, 0.5, TraderDetails("A", ""))],
+            [Offer("id2", now(), 20, 0.5, TraderDetails("A", ""))],
+            [Offer("id3", now(), 20, 1, TraderDetails("A", ""))],
+            [Offer("id4", now(), 19, 5.1, TraderDetails("A", ""))]
         ]
         return offers[self.count]
 
@@ -157,7 +156,7 @@ class FakeMarket:
 
     @property
     def time_slot(self):
-        return DateTime.now(tz=TIME_ZONE).start_of('day')
+        return DateTime.now(tz=TIME_ZONE).start_of("day")
 
     @property
     def time_slot_str(self):
@@ -168,16 +167,16 @@ class FakeMarket:
 
     def offer(self, price, energy, seller, original_price=None, seller_origin=None,
               seller_origin_id=None, seller_id=None, time_slot=None):
-        offer = Offer('id', now(), price, energy, seller, original_price,
-                      seller_origin=seller_origin, seller_origin_id=seller_origin_id,
-                      seller_id=seller_id)
+        offer = Offer("id", now(), price, energy,
+                      TraderDetails(seller, seller_id, seller_origin, seller_origin_id),
+                      original_price)
         self.created_offers.append(offer)
         return offer
 
     def balancing_offer(self, price, energy, seller):
-        offer = BalancingOffer('id', now(), price, energy, seller)
+        offer = BalancingOffer("id", now(), price, energy, seller)
         self.created_balancing_offers.append(offer)
-        offer.id = 'id'
+        offer.id = "id"
         return offer
 
     def bid(self, price, energy, buyer, market=None, original_price=None,
@@ -245,13 +244,13 @@ def test_if_storage_doesnt_buy_30ct(storage_strategy_test2, area_test2):
 def test_if_storage_doesnt_buy_above_break_even_point(storage_strategy_test2, area_test2):
     storage_strategy_test2.event_activate()
     storage_strategy_test2.break_even_buy = 10.0
-    area_test2.current_market.offers = {'id': Offer('id', now(), 10.1, 1,
-                                                    'FakeArea',
+    area_test2.current_market.offers = {"id": Offer("id", now(), 10.1, 1,
+                                                    TraderDetails("FakeArea", ""),
                                                     area_test2.current_market)}
     storage_strategy_test2.event_tick()
     assert len(storage_strategy_test2.accept_offer.calls) == 0
-    area_test2.current_market.offers = {'id': Offer('id', now(), 9.9, 1,
-                                                    'FakeArea',
+    area_test2.current_market.offers = {"id": Offer("id", now(), 9.9, 1,
+                                                    TraderDetails("FakeArea", ""),
                                                     area_test2.current_market)}
     storage_strategy_test2.event_tick()
     assert len(storage_strategy_test2.accept_offer.calls) == 0
@@ -346,15 +345,15 @@ def storage_strategy_test5(area_test5, called):
     s.area = area_test5
     s._sell_energy_to_spot_market = called
     area_test5.past_market.offers = {
-        'id': Offer('id', now(), 20, 1, 'A'),
-        'id2': Offer('id2', now(), 20, 3, 'FakeArea'),
-        'id3': Offer('id3', now(), 100, 1, 'FakeArea')
+        "id": Offer("id", now(), 20, 1, TraderDetails("A", "")),
+        "id2": Offer("id2", now(), 20, 3, TraderDetails("FakeArea", "")),
+        "id3": Offer("id3", now(), 100, 1, TraderDetails("FakeArea", ""))
     }
 
-    s.offers.bought_offer(area_test5.past_market.offers['id'], area_test5.past_market.id)
-    s.offers.post(area_test5.past_market.offers['id3'], area_test5.past_market.id)
-    s.offers.post(area_test5.past_market.offers['id2'], area_test5.past_market.id)
-    s.offers.sold_offer(area_test5.past_market.offers['id2'], area_test5.past_market)
+    s.offers.bought_offer(area_test5.past_market.offers["id"], area_test5.past_market.id)
+    s.offers.post(area_test5.past_market.offers["id3"], area_test5.past_market.id)
+    s.offers.post(area_test5.past_market.offers["id2"], area_test5.past_market.id)
+    s.offers.sold_offer(area_test5.past_market.offers["id2"], area_test5.past_market)
     assert s.state.used_storage == 5
     return s
 
@@ -435,7 +434,7 @@ def test_sell_energy_function(storage_strategy_test7, area_test7: FakeArea):
     assert len(storage_strategy_test7.offers.posted_in_market(sell_market.id)) > 0
 
 
-@pytest.mark.skip('ESS IS NOT REDUCING OFFER RATE ATM')
+@pytest.mark.skip("ESS IS NOT REDUCING OFFER RATE ATM")
 def test_calculate_sell_energy_rate_lower_bound(storage_strategy_test7):
     storage_strategy_test7.event_activate()
     market = storage_strategy_test7.area.current_market
@@ -469,8 +468,8 @@ def storage_strategy_test7_3(area_test7):
                         initial_buying_rate=15, final_buying_rate=16)
     s.owner = area_test7
     s.area = area_test7
-    s.offers.posted = {Offer('id', now(),
-                             30, 1, 'FakeArea'): area_test7.current_market.id}
+    s.offers.posted = {Offer("id", now(),
+                             30, 1, TraderDetails("FakeArea", "")): area_test7.current_market.id}
     s.market = area_test7.current_market
     return s
 
@@ -748,7 +747,7 @@ def test_balancing_offers_are_not_created_if_device_not_in_registry(
 def test_balancing_offers_are_created_if_device_in_registry(
         storage_strategy_test13, area_test13):
     ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
-    DeviceRegistry.REGISTRY = {'FakeArea': (30, 40)}
+    DeviceRegistry.REGISTRY = {"FakeArea": (30, 40)}
     storage_strategy_test13.event_activate()
     storage_strategy_test13.event_market_cycle()
     storage_strategy_test13.event_balancing_market_cycle()
@@ -846,10 +845,10 @@ def test_energy_origin(storage_strategy_test15, market_test15):
 
     # Validate that local energy origin is correctly registered
     current_market = storage_strategy_test15.area.current_market
-    offer = Offer('id', now(), 20, 1.0, 'OtherChildArea')
+    offer = Offer("id", now(), 20, 1.0, TraderDetails("OtherChildArea", ""))
     storage_strategy_test15._try_to_buy_offer(offer, current_market, 21)
     storage_strategy_test15.area.current_market.trade = Trade(
-        'id', now(), 'OtherChildArea', 'Storage',
+        "id", now(), TraderDetails("OtherChildArea", ""), TraderDetails("Storage", ""),
         offer=offer, traded_energy=1, trade_price=20)
     storage_strategy_test15.event_offer_traded(market_id=market_test15.id,
                                                trade=current_market.trade)
@@ -858,10 +857,10 @@ def test_energy_origin(storage_strategy_test15, market_test15):
         ESSEnergyOrigin.EXTERNAL, 15), EnergyOrigin(ESSEnergyOrigin.LOCAL, 1)]
 
     # Validate that local energy origin with the same seller / buyer is correctly registered
-    offer = Offer('id', now(), 20, 2.0, 'Storage')
+    offer = Offer("id", now(), 20, 2.0, TraderDetails("Storage", ""))
     storage_strategy_test15._try_to_buy_offer(offer, current_market, 21)
     storage_strategy_test15.area.current_market.trade = Trade(
-        'id', now(), 'Storage', 'A',
+        "id", now(), TraderDetails("Storage", ""), TraderDetails("A", ""),
         time_slot=current_market.time_slot,
         offer=offer, traded_energy=2, trade_price=20)
     storage_strategy_test15.event_offer_traded(
@@ -872,10 +871,11 @@ def test_energy_origin(storage_strategy_test15, market_test15):
         ESSEnergyOrigin.EXTERNAL, 13), EnergyOrigin(ESSEnergyOrigin.LOCAL, 1)]
 
     # Validate that external energy origin is correctly registered
-    offer = Offer('id', now(), 20, 1.0, 'FakeArea')
+    offer = Offer("id", now(), 20, 1.0, TraderDetails("FakeArea", ""))
     storage_strategy_test15._try_to_buy_offer(offer, current_market, 21)
-    current_market.trade = Trade('id', now(), 'FakeArea', 'Storage',
-                                 offer=offer, traded_energy=1, trade_price=20)
+    current_market.trade = Trade(
+        "id", now(), TraderDetails("FakeArea", ""), TraderDetails("Storage", ""),
+        offer=offer, traded_energy=1, trade_price=20)
     storage_strategy_test15.event_offer_traded(
         market_id=market_test15.id,
         trade=current_market.trade)
@@ -909,9 +909,10 @@ def storage_test11(area_test3):
 
 def test_assert_if_trade_rate_is_lower_than_offer_rate(storage_test11):
     market_id = "market_id"
-    storage_test11.offers.sold[market_id] = [Offer("offer_id", now(), 30, 1, "FakeArea")]
-    too_cheap_offer = Offer("offer_id", now(), 29, 1, "FakeArea")
-    trade = Trade("trade_id", "time", storage_test11, "buyer",
+    storage_test11.offers.sold[market_id] = [
+        Offer("offer_id", now(), 30, 1, TraderDetails("FakeArea", ""))]
+    too_cheap_offer = Offer("offer_id", now(), 29, 1, TraderDetails("FakeArea", ""))
+    trade = Trade("trade_id", now(), TraderDetails("FakeArea", ""), TraderDetails("buyer", ""),
                   offer=too_cheap_offer, traded_energy=1, trade_price=29)
 
     with pytest.raises(AssertionError):
@@ -921,10 +922,11 @@ def test_assert_if_trade_rate_is_lower_than_offer_rate(storage_test11):
 def test_assert_if_trade_rate_is_higher_than_bid_rate(storage_test11):
     market_id = "2"
     storage_test11.area.spot_market.id = market_id
-    storage_test11._bids[market_id] = [Bid("bid_id", now(), 30, 1, buyer="FakeArea")]
-    expensive_bid = Bid("bid_id", now(), 31, 1, buyer="FakeArea")
-    trade = Trade("trade_id", "time", "FakeArea", "buyer",
-                  bid=expensive_bid, traded_energy=1, trade_price=31)
-
+    storage_test11._bids[market_id] = [
+        Bid("bid_id", now(), 30, 1, buyer=TraderDetails("FakeArea", ""))]
+    expensive_bid = Bid("bid_id", now(), 31, 1, buyer=TraderDetails("FakeArea", ""))
+    trade = Trade("trade_id", now(), TraderDetails("FakeArea", ""), TraderDetails("FakeArea", ""),
+                  bid=expensive_bid, traded_energy=1, trade_price=31,
+                  time_slot=storage_test11.area.spot_market.time_slot)
     with pytest.raises(AssertionError):
         storage_test11.event_offer_traded(market_id=market_id, trade=trade)

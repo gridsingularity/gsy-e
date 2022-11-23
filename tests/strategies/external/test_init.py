@@ -22,7 +22,7 @@ from unittest.mock import MagicMock, Mock, PropertyMock, patch
 
 import pytest
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
-from gsy_framework.data_classes import Bid, Offer, Trade
+from gsy_framework.data_classes import Bid, Offer, Trade, TraderDetails
 from gsy_framework.utils import format_datetime
 from parameterized import parameterized
 from pendulum import datetime, duration, now
@@ -218,13 +218,13 @@ class TestExternalMixin:
 
     @parameterized.expand([
         [LoadHoursExternalStrategy(100),
-         Bid("bid_id", now(), 20, 1.0, "test_area")],
+         Bid("bid_id", now(), 20, 1.0, TraderDetails("test_area", ""))],
         [PVExternalStrategy(2, capacity_kW=0.16),
-         Offer("offer_id", now(), 20, 1.0, "test_area")],
+         Offer("offer_id", now(), 20, 1.0, TraderDetails("test_area", ""))],
         [StorageExternalStrategy(),
-         Bid("bid_id", now(), 20, 1.0, "test_area")],
+         Bid("bid_id", now(), 20, 1.0, TraderDetails("test_area", ""))],
         [StorageExternalStrategy(),
-         Offer("offer_id", now(), 20, 1.0, "test_area")]
+         Offer("offer_id", now(), 20, 1.0, TraderDetails("test_area", ""))]
     ])
     def test_dispatch_event_trade_to_external_aggregator(self, strategy, offer_bid):
         strategy._track_energy_sell_type = lambda _: None
@@ -239,16 +239,16 @@ class TestExternalMixin:
         if isinstance(offer_bid, Bid):
             self.area.strategy.add_bid_to_posted(market.id, offer_bid)
             trade = Trade("id", current_time,
-                          "parent_area", "test_area", fee_price=0.23, seller_id=self.area.uuid,
-                          bid=offer_bid,
-                          buyer_id=self.parent.uuid,
+                          TraderDetails("parent_area", str(self.area.uuid)),
+                          TraderDetails("test_area", str(self.parent.uuid)),
+                          fee_price=0.23, bid=offer_bid,
                           traded_energy=1, trade_price=20)
         else:
             self.area.strategy.offers.post(offer_bid, market.id)
             trade = Trade("id", current_time,
-                          "test_area", "parent_area", fee_price=0.23, buyer_id=self.area.uuid,
-                          offer=offer_bid,
-                          seller_id=self.parent.uuid,
+                          TraderDetails("test_area", str(self.parent.uuid)),
+                          TraderDetails("parent_area", str(self.area.uuid)),
+                          fee_price=0.23, offer=offer_bid,
                           traded_energy=1, trade_price=20)
 
         strategy.event_offer_traded(market_id="test_market", trade=trade)
@@ -273,13 +273,13 @@ class TestExternalMixin:
         if isinstance(offer_bid, Bid):
             assert call_args["bid_id"] == trade.match_details["bid"].id
             assert call_args["offer_id"] == "None"
-            assert call_args["seller"] == trade.seller
+            assert call_args["seller"] == trade.seller.name
             assert call_args["buyer"] == "anonymous"
         else:
             assert call_args["bid_id"] == "None"
             assert call_args["offer_id"] == trade.match_details["offer"].id
             assert call_args["seller"] == "anonymous"
-            assert call_args["buyer"] == trade.buyer
+            assert call_args["buyer"] == trade.buyer.name
 
     @parameterized.expand([
         [LoadHoursExternalStrategy(100)],
@@ -297,8 +297,11 @@ class TestExternalMixin:
         strategy.state.offered_sell_kWh = {market.time_slot: 0.0}
         current_time = now()
         trade = Trade("id", current_time,
-                      "test_area", "parent_area", fee_price=0.23,
-                      offer=Offer("offer_id", now(), 20, 1.0, "test_area"),
+                      TraderDetails("test_area", str(self.area.uuid)),
+                      TraderDetails("parent_area", str(self.parent.uuid)),
+                      fee_price=0.23,
+                      offer=Offer("offer_id", now(), 20, 1.0,
+                                  TraderDetails("test_area", str(self.area.uuid))),
                       traded_energy=1, trade_price=20)
         strategy.event_offer_traded(market_id="test_market", trade=trade)
         assert strategy.redis.publish_json.call_args_list[0][0][0] == "test_area/events/trade"
@@ -311,7 +314,7 @@ class TestExternalMixin:
         assert call_args["offer_id"] == trade.match_details["offer"].id
         assert call_args["residual_id"] == "None"
         assert call_args["time"] == current_time.isoformat()
-        assert call_args["seller"] == trade.seller
+        assert call_args["seller"] == trade.seller.name
         assert call_args["buyer"] == "anonymous"
         assert call_args["device_info"] == strategy._device_info_dict
 
@@ -331,10 +334,11 @@ class TestExternalMixin:
         strategy.state.offered_sell_kWh = {market.time_slot: 0.0}
         current_time = now()
         if isinstance(strategy, BidEnabledStrategy):
-            bid = Bid("offer_id", now(), 20, 1.0, "test_area")
+            bid = Bid("offer_id", now(), 20, 1.0, TraderDetails("test_area", ""))
             strategy.add_bid_to_posted(market.id, bid)
             skipped_trade = (
-                Trade("id", current_time, "test_area", "parent_area", bid=bid,
+                Trade("id", current_time, TraderDetails("test_area", ""),
+                      TraderDetails("parent_area", ""), bid=bid,
                       fee_price=0.23, traded_energy=1, trade_price=1))
 
             strategy.event_offer_traded(market_id=market.id, trade=skipped_trade)
@@ -342,16 +346,18 @@ class TestExternalMixin:
             assert call_args == []
 
             published_trade = (
-                Trade("id", current_time, "parent_area", "test_area",
-                      fee_price=0.23, bid=bid, traded_energy=1, trade_price=1))
+                Trade("id", current_time, TraderDetails("parent_area", ""),
+                      TraderDetails("test_area", ""), fee_price=0.23, bid=bid,
+                      traded_energy=1, trade_price=1))
             strategy.event_offer_traded(market_id=market.id, trade=published_trade)
             assert strategy.redis.aggregator.add_batch_trade_event.call_args_list[0][0][0] == \
                 self.area.uuid
         else:
-            offer = Offer("offer_id", now(), 20, 1.0, "test_area")
+            offer = Offer("offer_id", now(), 20, 1.0, TraderDetails("test_area", ""))
             strategy.offers.post(offer, market.id)
             skipped_trade = (
-                Trade("id", current_time, "parent_area", "test_area", offer=offer,
+                Trade("id", current_time, TraderDetails("parent_area", ""),
+                      TraderDetails("test_area", ""), offer=offer,
                       fee_price=0.23, traded_energy=1, trade_price=1))
             strategy.offers.sold_offer(offer, market.id)
 
@@ -360,7 +366,8 @@ class TestExternalMixin:
             assert call_args == []
 
             published_trade = (
-                Trade("id", current_time, "test_area", "parent_area", offer=offer,
+                Trade("id", current_time, TraderDetails("test_area", ""),
+                      TraderDetails("parent_area", ""), offer=offer,
                       fee_price=0.23, traded_energy=1, trade_price=1))
             strategy.event_offer_traded(market_id=market.id, trade=published_trade)
             assert strategy.redis.aggregator.add_batch_trade_event.call_args_list[0][0][0] == \

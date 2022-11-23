@@ -220,12 +220,12 @@ class SmartMeterStrategy(BidEnabledStrategy):
         if not market:
             return
 
-        if self.owner.name not in (trade.seller, trade.buyer):
+        if self.owner.name not in (trade.seller.name, trade.buyer.name):
             return  # Only react to trades in which the device took part
 
         super().event_offer_traded(market_id=market_id, trade=trade)
 
-        is_buyer = self.owner.name == trade.buyer
+        is_buyer = self.owner.name == trade.buyer.name
         if is_buyer:
             self.assert_if_trade_bid_price_is_too_high(market, trade)
             if ConstSettings.BalancingSettings.FLEXIBLE_LOADS_SUPPORT:
@@ -243,7 +243,7 @@ class SmartMeterStrategy(BidEnabledStrategy):
 
         This method is triggered by the MarketEvent.BID_TRADED event.
         """
-        if self.owner.name != bid_trade.buyer:
+        if self.owner.name != bid_trade.buyer.name:
             return
 
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)

@@ -20,8 +20,7 @@ from logging import getLogger
 from typing import Union, Dict, List, Optional  # noqa
 
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.data_classes import BalancingOffer, BalancingTrade
-from gsy_framework.data_classes import Offer
+from gsy_framework.data_classes import BalancingOffer, BalancingTrade, Offer, TraderDetails
 from pendulum import DateTime
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
@@ -92,9 +91,8 @@ class BalancingMarket(OneSidedMarket):
             offer_id = str(uuid.uuid4())
 
         offer = BalancingOffer(
-            offer_id, self.now, price, energy, seller,
-            seller_origin=seller_origin, attributes=attributes,
-            requirements=requirements, time_slot=self.time_slot)
+            offer_id, self.now, price, energy, TraderDetails(seller, seller_origin),
+            attributes=attributes, requirements=requirements, time_slot=self.time_slot)
         self.offers[offer.id] = offer
 
         self.offer_history.append(offer)
@@ -112,9 +110,9 @@ class BalancingMarket(OneSidedMarket):
                                               price=original_offer.price *
                                               (energy / original_offer.energy),
                                               energy=energy,
-                                              seller=original_offer.seller,
+                                              seller=original_offer.seller.name,
                                               dispatch_event=False,
-                                              seller_origin=original_offer.seller_origin,
+                                              seller_origin=original_offer.seller.origin,
                                               from_agent=True,
                                               attributes=original_offer.attributes,
                                               requirements=original_offer.requirements)
@@ -128,10 +126,10 @@ class BalancingMarket(OneSidedMarket):
 
         residual_offer = self.balancing_offer(price=residual_price,
                                               energy=residual_energy,
-                                              seller=original_offer.seller,
+                                              seller=original_offer.seller.name,
                                               original_price=original_residual_price,
                                               dispatch_event=False,
-                                              seller_origin=original_offer.seller_origin,
+                                              seller_origin=original_offer.seller.origin,
                                               adapt_price_with_fees=False,
                                               from_agent=True,
                                               attributes=original_offer.attributes,
@@ -222,14 +220,15 @@ class BalancingMarket(OneSidedMarket):
 
         trade_id, residual_offer = self.bc_interface.handle_blockchain_trade_event(
             offer, buyer, original_offer, residual_offer)
-        trade = BalancingTrade(trade_id, self.now, offer.seller, buyer, offer=offer,
+        trade = BalancingTrade(trade_id, self.now, offer.seller,
+                               buyer=TraderDetails(
+                                   name=buyer, uuid=buyer_id,
+                                   origin=buyer_origin, origin_uuid=buyer_origin_id),
+                               offer=offer,
                                traded_energy=energy, trade_price=trade_price,
-                               residual=residual_offer, seller_origin=offer.seller_origin,
-                               buyer_origin=buyer_origin, fee_price=fees,
-                               seller_origin_id=offer.seller_origin_id,
-                               seller_id=offer.seller_id,
-                               buyer_origin_id=buyer_origin_id,
-                               buyer_id=buyer_id, time_slot=offer.time_slot)
+                               residual=residual_offer,
+                               fee_price=fees,
+                               time_slot=offer.time_slot)
         self.bc_interface.track_trade_event(self.time_slot, trade)
 
         if already_tracked is False:

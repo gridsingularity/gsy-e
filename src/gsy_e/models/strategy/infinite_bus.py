@@ -93,7 +93,7 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
     def buy_energy(self, market):
         """Buy energy."""
         for offer in market.sorted_offers:
-            if offer.seller == self.owner.name:
+            if offer.seller.name == self.owner.name:
                 # Don't buy our own offer
                 continue
             if offer.energy_rate <= find_object_of_same_weekday_and_time(

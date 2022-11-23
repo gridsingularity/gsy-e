@@ -24,7 +24,7 @@ import pendulum
 import pytest
 
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.data_classes import BalancingOffer, BalancingTrade, Offer, Trade
+from gsy_framework.data_classes import BalancingOffer, BalancingTrade, Offer, Trade, TraderDetails
 
 from gsy_e.constants import TIME_ZONE
 from gsy_e.gsy_e_core.exceptions import InvalidBalancingTradeException
@@ -84,8 +84,9 @@ class FakeBalancingMarket:
 
 @pytest.fixture(name="balancing_agent")
 def balancing_agent_fixture():
-    lower_market = FakeBalancingMarket([BalancingOffer("id", pendulum.now(), 2, 2, "other"),
-                                        BalancingOffer("id", pendulum.now(), 2, -2, "other")])
+    lower_market = FakeBalancingMarket([
+        BalancingOffer("id", pendulum.now(), 2, 2, TraderDetails("other", "")),
+        BalancingOffer("id", pendulum.now(), 2, -2, TraderDetails("other", ""))])
     higher_market = FakeBalancingMarket([])
     owner = FakeArea("owner")
     baa = BalancingAgent(owner=owner, lower_market=lower_market, higher_market=higher_market)
@@ -95,8 +96,9 @@ def balancing_agent_fixture():
 def test_baa_event_trade(balancing_agent):
     trade = Trade("trade_id",
                   balancing_agent.lower_market.time_slot,
-                  "someone_else",
-                  "MA owner", offer=Offer("A", pendulum.now(), 2, 2, "B"),
+                  TraderDetails("someone_else", ""),
+                  TraderDetails("MA owner", ""),
+                  offer=Offer("A", pendulum.now(), 2, 2, TraderDetails("B", "")),
                   traded_energy=1, trade_price=1)
     fake_spot_market = FakeMarket([])
     fake_spot_market.set_time_slot(balancing_agent.lower_market.time_slot)
@@ -108,8 +110,9 @@ def test_baa_event_trade(balancing_agent):
 
 @pytest.fixture(name="balancing_agent_2")
 def balancing_agent_2_fixture():
-    lower_market = FakeBalancingMarket([BalancingOffer("id", pendulum.now(), 2, 0.2, "other"),
-                                        BalancingOffer("id", pendulum.now(), 2, -0.2, "other")])
+    lower_market = FakeBalancingMarket([
+        BalancingOffer("id", pendulum.now(), 2, 0.2, TraderDetails("other", "")),
+        BalancingOffer("id", pendulum.now(), 2, -0.2, TraderDetails("other", ""))])
     higher_market = FakeBalancingMarket([])
     owner = FakeArea("owner")
     baa = BalancingAgent(owner=owner, lower_market=lower_market, higher_market=higher_market)
@@ -120,8 +123,9 @@ def balancing_agent_2_fixture():
 def test_baa_unmatched_event_trade(balancing_agent_2):
     trade = Trade("trade_id",
                   pendulum.now(tz=TIME_ZONE),
-                  "someone_else",
-                  "owner", offer=Offer("A", pendulum.now(), 2, 2, "B"),
+                  TraderDetails("someone_else", ""),
+                  TraderDetails("owner", ""),
+                  offer=Offer("A", pendulum.now(), 2, 2, TraderDetails("B", "")),
                   traded_energy=1, trade_price=1)
     fake_spot_market = FakeMarket([])
     fake_spot_market.set_time_slot(balancing_agent_2.lower_market.time_slot)

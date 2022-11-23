@@ -71,7 +71,7 @@ class BalancingAgent(OneSidedAgent):
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
 
     def _calculate_and_buy_balancing_energy(self, market, trade):
-        if trade.buyer != self.owner.name or \
+        if trade.buyer.name != self.owner.name or \
                 market.time_slot != self.lower_market.time_slot:
             return
         positive_balancing_energy = \
@@ -104,7 +104,7 @@ class BalancingAgent(OneSidedAgent):
     def _balancing_trade(self, offer, target_energy):
         trade = None
         buyer = self.owner.name \
-            if self.owner.name != offer.seller \
+            if self.owner.name != offer.seller.name \
             else f"{self.owner.name} Reserve"
         if abs(offer.energy) <= abs(target_energy):
             trade = self.lower_market.accept_offer(offer_or_id=offer,

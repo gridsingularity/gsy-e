@@ -3,7 +3,7 @@ import logging
 from concurrent.futures import ThreadPoolExecutor
 from uuid import uuid4
 
-from gsy_framework.data_classes import BaseBidOffer, Trade
+from gsy_framework.data_classes import BaseBidOffer, Trade, Bid, Offer
 from gsy_framework.utils import key_in_dict_and_not_none
 
 from gsy_e.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT, MAX_WORKER_THREADS
@@ -121,7 +121,9 @@ class MarketRedisEventSubscriber:
 
     def _parse_payload(self, payload):
         data_dict = json.loads(payload["data"])
-        return MarketRedisEventSubscriber._parse_order_objects(data_dict)
+        retval = MarketRedisEventSubscriber._parse_order_objects(data_dict)
+        print(retval)
+        return retval
 
     @classmethod
     def _parse_order_objects(cls, data_dict):
@@ -129,9 +131,9 @@ class MarketRedisEventSubscriber:
                 and isinstance(data_dict["offer_or_id"], str)):
             data_dict["offer_or_id"] = BaseBidOffer.from_json(data_dict["offer_or_id"])
         if key_in_dict_and_not_none(data_dict, "offer") and isinstance(data_dict["offer"], str):
-            data_dict["offer"] = BaseBidOffer.from_json(data_dict["offer"])
+            data_dict["offer"] = Offer.from_json(data_dict["offer"])
         if key_in_dict_and_not_none(data_dict, "bid") and isinstance(data_dict["bid"], str):
-            data_dict["bid"] = BaseBidOffer.from_json(data_dict["bid"])
+            data_dict["bid"] = Bid.from_json(data_dict["bid"])
         if key_in_dict_and_not_none(data_dict, "trade") and isinstance(data_dict["trade"], str):
             data_dict["trade"] = Trade.from_json(data_dict["trade"])
 

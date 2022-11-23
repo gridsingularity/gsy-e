@@ -104,7 +104,7 @@ class _TradeLookerUpper:
     def __getitem__(self, market: MarketBase) -> Generator[Trade, None, None]:
         for trade in market.trades:
             owner_name = self.owner_name
-            if owner_name in (trade.seller, trade.buyer):
+            if owner_name in (trade.seller.name, trade.buyer.name):
                 yield trade
 
 
@@ -428,7 +428,7 @@ class Offers:
     def on_trade(self, market_id: str, trade: Trade) -> None:
         """Update contents of posted and sold dicts on the event of an offer being traded"""
         try:
-            if trade.seller == self.strategy.owner.name:
+            if trade.seller.name == self.strategy.owner.name:
                 for offer_or_bid in trade.match_details.values():
                     if not offer_or_bid:
                         continue
@@ -442,7 +442,7 @@ class Offers:
     def on_offer_split(self, original_offer: Offer, accepted_offer: Offer, residual_offer: Offer,
                        market_id: str) -> None:
         """React to the event of an offer split"""
-        if original_offer.seller == self.strategy.owner.name:
+        if original_offer.seller.name == self.strategy.owner.name:
             self.split[original_offer.id] = accepted_offer
             self.post(residual_offer, market_id)
             if original_offer in self.posted:
@@ -536,7 +536,7 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
                          initial_energy_rate: float) -> Optional[Offer]:
         """Post first and only offer for the strategy. Will fail if another offer already
          exists."""
-        if any(offer.seller_id == self.owner.uuid for offer in market.get_offers().values()):
+        if any(offer.seller.uuid == self.owner.uuid for offer in market.get_offers().values()):
             self.owner.log.debug("There is already another offer posted on the market, therefore"
                                  " do not repost another first offer.")
             return None
@@ -642,7 +642,7 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
         self.event_responses = []
 
     def _assert_if_trade_offer_price_is_too_low(self, market_id: str, trade: Trade) -> None:
-        if trade.is_offer_trade and trade.match_details["offer"].seller == self.owner.name:
+        if trade.is_offer_trade and trade.seller.name == self.owner.name:
             offer = [o for o in self.offers.sold[market_id]
                      if o.id == trade.match_details["offer"].id][0]
             assert (trade.trade_rate >=
@@ -704,8 +704,8 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
                     offer.energy,
                     self.owner.name,
                     original_price=updated_price,
-                    seller_origin=offer.seller_origin,
-                    seller_origin_id=offer.seller_origin_id,
+                    seller_origin=offer.seller.origin,
+                    seller_origin_id=offer.seller.origin_uuid,
                     seller_id=self.owner.uuid,
                     time_slot=offer.time_slot or market.time_slot or time_slot
                 )
@@ -745,7 +745,7 @@ class BidEnabledStrategy(BaseStrategy):
     def _remove_existing_bids(self, market: MarketBase) -> None:
         """Remove all existing bids in the market."""
         for bid in self.get_posted_bids(market):
-            assert bid.buyer == self.owner.name
+            assert bid.buyer.name == self.owner.name
             self.remove_bid_from_pending(market.id, bid.id)
 
     # pylint: disable=too-many-arguments
@@ -793,7 +793,7 @@ class BidEnabledStrategy(BaseStrategy):
         for bid in self.get_posted_bids(market, time_slot):
             if abs(bid.energy_rate - updated_rate) <= FLOATING_POINT_TOLERANCE:
                 continue
-            assert bid.buyer == self.owner.name
+            assert bid.buyer.name == self.owner.name
 
             self.remove_bid_from_pending(market.id, bid.id)
             self.post_bid(market, bid.energy * updated_rate,
@@ -920,7 +920,7 @@ class BidEnabledStrategy(BaseStrategy):
         # should be only bid from a device to a market at all times, which will be replaced if
         # it needs to be updated. If this check is not there, the market cycle event will post
         # one bid twice, which actually happens on the very first market slot cycle.
-        if any(bid.buyer == self.owner.name for bid in market.get_bids().values()):
+        if any(bid.buyer.name == self.owner.name for bid in market.get_bids().values()):
             self.owner.log.debug("There is already another bid posted on the market, therefore"
                                  " do not repost another first bid.")
             return None
@@ -947,7 +947,7 @@ class BidEnabledStrategy(BaseStrategy):
     def event_bid_deleted(self, *, market_id: str, bid: Bid) -> None:
         self._assert_bid_can_be_posted_on_market(market_id)
 
-        if bid.buyer != self.owner.name:
+        if bid.buyer.name != self.owner.name:
             return
         self.remove_bid_from_pending(market_id, bid.id)
 
@@ -956,7 +956,7 @@ class BidEnabledStrategy(BaseStrategy):
                         residual_bid: Bid) -> None:
         self._assert_bid_can_be_posted_on_market(market_id)
 
-        if accepted_bid.buyer != self.owner.name:
+        if accepted_bid.buyer.name != self.owner.name:
             return
         self.add_bid_to_posted(market_id, bid=accepted_bid)
         self.add_bid_to_posted(market_id, bid=residual_bid)
@@ -968,7 +968,7 @@ class BidEnabledStrategy(BaseStrategy):
         """
         self._assert_bid_can_be_posted_on_market(market_id)
 
-        if bid_trade.buyer == self.owner.name:
+        if bid_trade.buyer.name == self.owner.name:
             self.add_bid_to_bought(bid_trade.match_details["bid"], market_id)
 
     def _get_future_bids_from_list(self, bids: List) -> List:
@@ -1005,7 +1005,7 @@ class BidEnabledStrategy(BaseStrategy):
         Returns: None
 
         """
-        if trade.is_bid_trade and trade.match_details["bid"].buyer == self.owner.name:
+        if trade.is_bid_trade and trade.buyer.name == self.owner.name:
             bid = [bid for bid in self.get_posted_bids(market)
                    if bid.id == trade.match_details["bid"].id][0]
             assert trade.trade_rate <= bid.energy_rate + FLOATING_POINT_TOLERANCE

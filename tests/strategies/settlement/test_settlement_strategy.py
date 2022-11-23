@@ -20,7 +20,7 @@ from unittest.mock import Mock, MagicMock
 
 import pytest
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.data_classes import Bid, Offer, Trade
+from gsy_framework.data_classes import Bid, Offer, Trade, TraderDetails
 from pendulum import today, duration
 
 from gsy_e.constants import TIME_ZONE
@@ -39,14 +39,16 @@ class TestSettlementMarketStrategy:
         self.market_mock = MagicMock(spec=TwoSidedMarket)
         self.market_mock.time_slot = self.time_slot
         self.market_mock.id = str(uuid.uuid4())
-        self.test_bid = Bid("123", self.time_slot, 10, 1, buyer="test_name")
-        self.test_offer = Offer("234", self.time_slot, 50, 1, seller="test_name")
+        self.test_bid = Bid("123", self.time_slot, 10, 1, buyer=TraderDetails("test_name", ""))
+        self.test_offer = Offer("234", self.time_slot, 50, 1,
+                                seller=TraderDetails("test_name", ""))
         self.market_mock.bid = MagicMock(return_value=self.test_bid)
         self.market_mock.offer = MagicMock(return_value=self.test_offer)
         self.market_mock.bids = {self.test_bid.id: self.test_bid}
         self.area_mock = Mock()
         self.area_mock.name = "test_name"
         self.area_mock.uuid = str(uuid.uuid4())
+        self._area_trader_details = TraderDetails(self.area_mock.name, self.area_mock.uuid)
         self.settlement_markets = {
             self.time_slot: self.market_mock
         }
@@ -139,7 +141,7 @@ class TestSettlementMarketStrategy:
         self.settlement_strategy.event_market_cycle(strategy_fixture)
         self.settlement_strategy.event_offer_traded(
             strategy_fixture, self.market_mock.id,
-            Trade("456", self.time_slot, self.area_mock.name, self.area_mock.name,
+            Trade("456", self.time_slot, self._area_trader_details, self._area_trader_details,
                   offer=self.test_offer, traded_energy=1, trade_price=1)
         )
         assert strategy_fixture.state.get_unsettled_deviation_kWh(self.time_slot) == 9
@@ -152,7 +154,7 @@ class TestSettlementMarketStrategy:
         self.settlement_strategy.event_market_cycle(strategy_fixture)
         self.settlement_strategy.event_bid_traded(
             strategy_fixture, self.market_mock.id,
-            Trade("456", self.time_slot, self.area_mock.name, self.area_mock.name,
+            Trade("456", self.time_slot, self._area_trader_details, self._area_trader_details,
                   bid=self.test_bid, traded_energy=1, trade_price=1)
         )
         assert strategy_fixture.state.get_unsettled_deviation_kWh(self.time_slot) == 14

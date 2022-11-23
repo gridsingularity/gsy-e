@@ -24,7 +24,7 @@ from unittest.mock import MagicMock
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.data_classes import (
-    Offer, Trade, TradeBidOfferInfo)
+    Offer, Trade, TradeBidOfferInfo, TraderDetails)
 from parameterized import parameterized
 from pendulum import datetime
 
@@ -256,12 +256,12 @@ class TestRedisMarketEventDispatcher(unittest.TestCase):
 
     def test_publish_event_converts_python_objects_to_json(self):
         now = datetime(2021, 11, 3, 10, 45)
-        offer = Offer("1", now, 2, 3, "A")
-        trade = Trade("2", now.add(minutes=1), "B", "C",
-                      3, 2, offer=Offer("accepted", now, 7, 8, "Z"),
+        offer = Offer("1", now, 2, 3, TraderDetails("A", ""))
+        trade = Trade("2", now.add(minutes=1), TraderDetails("B", ""), TraderDetails("C", ""),
+                      3, 2, offer=Offer("accepted", now, 7, 8, TraderDetails("Z", "")),
                       offer_bid_trade_info=TradeBidOfferInfo(None, None, None, None, None))
-        new_offer = Offer("3", now, 4, 5, "D")
-        existing_offer = Offer("4", now, 5, 6, "E")
+        new_offer = Offer("3", now, 4, 5, TraderDetails("D", ""))
+        existing_offer = Offer("4", now, 5, 6, TraderDetails("E", ""))
         kwargs = {"offer": offer,
                   "trade": trade,
                   "new_offer": new_offer,

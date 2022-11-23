@@ -77,7 +77,7 @@ class LoadExternalMixin(ExternalMixin):
         return [
             {"id": bid.id, "price": bid.price, "energy": bid.energy}
             for _, bid in market.get_bids().items()
-            if bid.buyer == self.device.name]
+            if bid.buyer.name == self.device.name]
 
     def event_activate(self, **kwargs):
         """Activate the device."""

@@ -26,7 +26,7 @@ import pendulum
 import pytest
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
-from gsy_framework.data_classes import Bid, MarketClearingState, Offer, Trade
+from gsy_framework.data_classes import Bid, MarketClearingState, Offer, Trade, TraderDetails
 
 from gsy_e.constants import TIME_FORMAT, TIME_ZONE
 from gsy_e.models.market import GridFee
@@ -104,19 +104,16 @@ class FakeMarket:
         if energy < offer.energy:
             residual_energy = offer.energy - energy
             residual = Offer(
-                "res", offer.creation_time, offer.price, residual_energy, offer.seller,
-                seller_origin="res")
-            traded = Offer(offer.id, offer.creation_time, offer.price, energy,
-                           offer.seller, seller_origin="res")
-            return Trade("trade_id", time, traded.seller, buyer, residual=residual, offer=traded,
-                         seller_origin=offer.seller_origin, buyer_origin=buyer_origin,
-                         buyer_origin_id=buyer_origin_id, buyer_id=buyer_id,
+                "res", offer.creation_time, offer.price, residual_energy, offer.seller)
+            traded = Offer(offer.id, offer.creation_time, offer.price, energy, offer.seller)
+            return Trade("trade_id", time, traded.seller,
+                         TraderDetails(buyer, buyer_id, buyer_origin, buyer_origin_id),
+                         residual=residual, offer=traded,
                          traded_energy=1, trade_price=1)
 
-        return Trade("trade_id", time, offer.seller, buyer, offer=offer,
-                     seller_origin=offer.seller_origin, buyer_origin=buyer_origin,
-                     buyer_origin_id=buyer_origin_id, buyer_id=buyer_id,
-                     traded_energy=1, trade_price=1)
+        return Trade("trade_id", time, offer.seller,
+                     TraderDetails(buyer, buyer_id, buyer_origin, buyer_origin_id),
+                     offer=offer, traded_energy=1, trade_price=1)
 
     # pylint: disable=unused-argument
     # pylint: disable=too-many-locals
@@ -134,19 +131,17 @@ class FakeMarket:
         market_bid = [b for b in self._bids if b.id == bid.id][0]
         if energy < market_bid.energy:
             residual_energy = bid.energy - energy
-            residual = Bid("res", bid.creation_time, bid.price, residual_energy, bid.buyer,
-                           buyer_origin="res")
-            traded = Bid(bid.id, bid.creation_time, (trade_rate * energy), energy, bid.buyer,
-                         buyer_origin="res")
-            return Trade("trade_id", time, seller, bid.buyer, bid=traded, residual=residual,
-                         buyer_origin=bid.buyer_origin, seller_origin=seller_origin,
-                         seller_id=seller_id, traded_energy=1, trade_price=1)
+            residual = Bid("res", bid.creation_time, bid.price, residual_energy, bid.buyer)
+            traded = Bid(bid.id, bid.creation_time, (trade_rate * energy), energy, bid.buyer)
+            return Trade("trade_id", time,
+                         TraderDetails(seller, seller_id, seller_origin, seller_origin_id),
+                         bid.buyer, bid=traded, residual=residual,
+                         traded_energy=1, trade_price=1)
 
-        traded = Bid(bid.id, bid.creation_time, (trade_rate * energy), energy, bid.buyer,
-                     buyer_origin=bid.id)
-        return Trade("trade_id", time, seller, bid.buyer, bid=traded,
-                     buyer_origin=bid.buyer_origin, seller_origin=seller_origin,
-                     seller_id=seller_id, traded_energy=1, trade_price=1)
+        traded = Bid(bid.id, bid.creation_time, (trade_rate * energy), energy, bid.buyer)
+        return Trade("trade_id", time,
+                     TraderDetails(seller, seller_id, seller_origin, seller_origin_id),
+                     bid.buyer, bid=traded, traded_energy=1, trade_price=1)
 
     def delete_offer(self, *args):
         pass
@@ -173,9 +168,9 @@ class FakeMarket:
             offer_id = "uuid"
         if adapt_price_with_fees:
             price = self._update_new_offer_price_with_fee(price, original_price, energy)
-        offer = Offer(offer_id, pendulum.now(), price, energy, seller, original_price,
-                      seller_origin=seller_origin, seller_origin_id=seller_origin_id,
-                      seller_id=seller_id)
+        offer = Offer(offer_id, pendulum.now(), price, energy,
+                      TraderDetails(seller, seller_id, seller_origin, seller_origin_id),
+                      original_price)
         self.offers[offer.id] = deepcopy(offer)
         self.forwarded_offer = deepcopy(offer)
 
@@ -199,10 +194,9 @@ class FakeMarket:
         if adapt_price_with_fees:
             price = self._update_new_bid_price_with_fee(price, original_price)
 
-        bid = Bid(bid_id, pendulum.now(), price, energy, buyer,
-                  original_price=original_price,
-                  buyer_origin=buyer_origin, buyer_origin_id=buyer_origin_id,
-                  buyer_id=buyer_id, requirements=requirements, attributes=attributes)
+        bid = Bid(bid_id, pendulum.now(), price, energy,
+                  TraderDetails(buyer, buyer_id, buyer_origin, buyer_origin_id),
+                  original_price=original_price, requirements=requirements, attributes=attributes)
         self._bids.append(bid)
         self.forwarded_bid = bid
 
@@ -214,9 +208,9 @@ class FakeMarket:
         accepted_offer = self.offer(offer_id=original_offer.id,
                                     price=original_offer.price * (energy / original_offer.energy),
                                     energy=energy,
-                                    seller=original_offer.seller,
+                                    seller=original_offer.seller.name,
                                     dispatch_event=False,
-                                    seller_origin=original_offer.seller_origin)
+                                    seller_origin=original_offer.seller.origin)
 
         residual_price = (1 - energy / original_offer.energy) * original_offer.price
         residual_energy = original_offer.energy - energy
@@ -225,10 +219,10 @@ class FakeMarket:
 
         residual_offer = self.offer(price=residual_price,
                                     energy=residual_energy,
-                                    seller=original_offer.seller,
+                                    seller=original_offer.seller.name,
                                     original_price=original_residual_price,
                                     dispatch_event=False,
-                                    seller_origin=original_offer.seller_origin,
+                                    seller_origin=original_offer.seller.origin,
                                     adapt_price_with_fees=False)
 
         return accepted_offer, residual_offer
@@ -240,7 +234,7 @@ class FakeMarket:
                                 buyer=original_bid.buyer,
                                 price=original_bid.price * (energy / original_bid.energy),
                                 energy=energy,
-                                buyer_origin=original_bid.buyer_origin)
+                                buyer_origin=original_bid.buyer.origin)
         residual_price = (1 - energy / original_bid.energy) * original_bid.price
         residual_energy = original_bid.energy - energy
         original_residual_price = \
@@ -250,7 +244,7 @@ class FakeMarket:
                                 buyer=original_bid.buyer,
                                 energy=residual_energy,
                                 original_price=original_residual_price,
-                                buyer_origin=original_bid.buyer_origin,
+                                buyer_origin=original_bid.buyer.origin,
                                 adapt_price_with_fees=False)
         return accepted_bid, residual_bid
 
@@ -265,13 +259,14 @@ class TestMAGridFee:
     @staticmethod
     @pytest.fixture(name="market_agent")
     def market_agent_fixture():
-        lower_market = FakeMarket([Offer("id", pendulum.now(), 1, 1, "other", 1)],
+        lower_market = FakeMarket([
+            Offer("id", pendulum.now(), 1, 1, TraderDetails("other", ""), 1)],
                                   transfer_fees=GridFee(grid_fee_percentage=0.1,
                                                         grid_fee_const=2))
-        higher_market = FakeMarket([Offer("id2", pendulum.now(), 3, 3, "owner", 3),
-                                    Offer("id3", pendulum.now(), 0.5, 1, "owner", 0.5)],
-                                   transfer_fees=GridFee(grid_fee_percentage=0.1,
-                                                         grid_fee_const=2))
+        higher_market = FakeMarket([
+            Offer("id2", pendulum.now(), 3, 3, TraderDetails("owner", ""), 3),
+            Offer("id3", pendulum.now(), 0.5, 1, TraderDetails("owner", ""), 0.5)],
+            transfer_fees=GridFee(grid_fee_percentage=0.1, grid_fee_const=2))
         owner = FakeArea("owner")
         market_agent = OneSidedAgent(
             owner=owner, higher_market=higher_market, lower_market=lower_market)
@@ -296,12 +291,14 @@ class TestMAGridFee:
     @pytest.mark.parametrize("market_agent_fee", [0.1, 0, 0.5, 0.75, 0.05, 0.02, 0.03])
     def test_ma_forwards_bids_according_to_percentage(market_agent_fee):
         ConstSettings.MASettings.MARKET_TYPE = 2
-        lower_market = FakeMarket([], [Bid("id", pendulum.now(), 1, 1, "this", 1,
-                                           requirements=[{"price": 2}])],
+        lower_market = FakeMarket([], [
+            Bid("id", pendulum.now(), 1, 1, TraderDetails("this", ""), 1,
+                requirements=[{"price": 2}])],
                                   transfer_fees=GridFee(grid_fee_percentage=market_agent_fee,
                                                         grid_fee_const=0),
                                   name="FakeMarket")
-        higher_market = FakeMarket([], [Bid("id2", pendulum.now(), 3, 3, "child", 3)],
+        higher_market = FakeMarket([], [
+            Bid("id2", pendulum.now(), 3, 3, TraderDetails("child", ""), 3)],
                                    transfer_fees=GridFee(grid_fee_percentage=market_agent_fee,
                                                          grid_fee_const=0),
                                    name="FakeMarket")
@@ -324,10 +321,12 @@ class TestMAGridFee:
     @pytest.mark.skip("need to define if we need a constant fee")
     def test_ma_forwards_bids_according_to_constantfee(market_agent_fee_const):
         ConstSettings.MASettings.MARKET_TYPE = 2
-        lower_market = FakeMarket([], [Bid("id", pendulum.now(), 15, 1, "this", 15)],
+        lower_market = FakeMarket([], [
+            Bid("id", pendulum.now(), 15, 1, TraderDetails("this", ""), 15)],
                                   transfer_fees=GridFee(grid_fee_percentage=0,
                                                         grid_fee_const=market_agent_fee_const))
-        higher_market = FakeMarket([], [Bid("id2", pendulum.now(), 35, 3, "child", 35)],
+        higher_market = FakeMarket([], [
+            Bid("id2", pendulum.now(), 35, 3, TraderDetails("child", ""), 35)],
                                    transfer_fees=GridFee(grid_fee_percentage=0,
                                                          grid_fee_const=market_agent_fee_const))
         market_agent = TwoSidedAgent(
@@ -345,12 +344,11 @@ class TestMAGridFee:
 @pytest.fixture(name="market_agent_bid", params=[TwoSidedAgent, SettlementAgent])
 def market_agent_bid_fixture(request):
     ConstSettings.MASettings.MARKET_TYPE = 2
-    lower_market = FakeMarket([], [Bid("id", pendulum.now(), 1, 1, "this", 1,
-                                       buyer_origin="id")])
-    higher_market = FakeMarket([], [Bid("id2", pendulum.now(), 1, 1, "child", 1,
-                                        buyer_origin="id2"),
-                                    Bid("id3", pendulum.now(), 0.5, 1, "child", 1,
-                                        buyer_origin="id3")])
+    lower_market = FakeMarket([], [
+        Bid("id", pendulum.now(), 1, 1, TraderDetails("this", ""), 1)])
+    higher_market = FakeMarket([], [
+        Bid("id2", pendulum.now(), 1, 1, TraderDetails("child", ""), 1),
+        Bid("id3", pendulum.now(), 0.5, 1, TraderDetails("child", ""), 1)])
     owner = FakeArea("owner")
 
     agent_class = request.param
@@ -364,10 +362,10 @@ def market_agent_bid_fixture(request):
 @pytest.fixture(name="market_agent_double_sided")
 def market_agent_double_sided_fixture():
     ConstSettings.MASettings.MARKET_TYPE = 2
-    lower_market = FakeMarket(offers=[Offer("id", pendulum.now(), 2, 2, "other", 2)],
-                              bids=[Bid("bid_id", pendulum.now(), 10, 10, "B", 10)],
-                              transfer_fees=GridFee(grid_fee_percentage=0.01,
-                                                    grid_fee_const=0))
+    lower_market = FakeMarket(
+        offers=[Offer("id", pendulum.now(), 2, 2, TraderDetails("other", ""), 2)],
+        bids=[Bid("bid_id", pendulum.now(), 10, 10, TraderDetails("B", ""), 10)],
+        transfer_fees=GridFee(grid_fee_percentage=0.01, grid_fee_const=0))
     higher_market = FakeMarket([], [], transfer_fees=GridFee(grid_fee_percentage=0.01,
                                                              grid_fee_const=0))
     owner = FakeArea("owner")
@@ -406,8 +404,8 @@ class TestMABid:
         market_agent_bid.event_bid_traded(
             bid_trade=Trade("trade_id",
                             pendulum.now(tz=TIME_ZONE),
-                            "someone_else",
-                            "owner",
+                            TraderDetails("someone_else", ""),
+                            TraderDetails("owner", ""),
                             bid=market_agent_bid.higher_market.bids["id3"],
                             traded_energy=1, trade_price=1),
             market_id=market_agent_bid.higher_market.id)
@@ -422,8 +420,8 @@ class TestMABid:
             bid_trade=Trade("trade_id",
                             pendulum.now(tz=TIME_ZONE),
                             bid=market_agent_bid.higher_market.bids["id3"],
-                            seller="owner",
-                            buyer="someone_else",
+                            seller=TraderDetails("owner", ""),
+                            buyer=TraderDetails("someone_else", ""),
                             traded_energy=1, trade_price=1))
         assert len(market_agent_bid.lower_market.delete_bid.calls) == 0
 
@@ -471,8 +469,8 @@ class TestMABid:
             bid_trade=Trade("trade_id",
                             pendulum.now(tz=TIME_ZONE),
                             bid=accepted_bid,
-                            seller="someone_else",
-                            buyer="owner",
+                            seller=TraderDetails("someone_else", ""),
+                            buyer=TraderDetails("owner", ""),
                             residual=residual_bid,
                             traded_energy=1, trade_price=1))
 
@@ -492,8 +490,8 @@ class TestMABid:
         market_agent_double_sided.event_bid_traded(
             bid_trade=Trade("trade_id",
                             pendulum.now(tz=TIME_ZONE),
-                            "owner",
-                            "someone_else",
+                            TraderDetails("owner", ""),
+                            TraderDetails("someone_else", ""),
                             bid=market_agent_double_sided.higher_market.forwarded_bid,
                             traded_energy=1, trade_price=1),
             market_id=market_agent_double_sided.higher_market.id)
@@ -508,8 +506,8 @@ class TestMABid:
         market_agent_double_sided.event_bid_traded(
             bid_trade=Trade("trade_id",
                             pendulum.now(tz=TIME_ZONE),
-                            "owner",
-                            "someone_else",
+                            TraderDetails("owner", ""),
+                            TraderDetails("someone_else", ""),
                             bid=market_agent_double_sided.higher_market.forwarded_bid,
                             traded_energy=1, trade_price=1),
             market_id=market_agent_double_sided.higher_market.id)
@@ -538,8 +536,8 @@ class TestMABid:
         market_agent_double_sided.event_bid_traded(
             bid_trade=Trade("trade_id",
                             pendulum.now(tz=TIME_ZONE),
-                            "owner",
-                            "someone_else",
+                            TraderDetails("owner", ""),
+                            TraderDetails("someone_else", ""),
                             bid=accepted_bid,
                             residual="residual_offer", traded_energy=1, trade_price=1),
             market_id=market_agent_double_sided.higher_market.id)
@@ -577,9 +575,11 @@ class TestMAOffer:
     @staticmethod
     @pytest.fixture(name="market_agent")
     def market_agent_fixture():
-        lower_market = FakeMarket([Offer("id", pendulum.now(), 1, 1, "other", 1)])
-        higher_market = FakeMarket([Offer("id2", pendulum.now(), 3, 3, "higher", 3),
-                                    Offer("id3", pendulum.now(), 0.5, 1, "higher", 0.5)])
+        lower_market = FakeMarket([
+            Offer("id", pendulum.now(), 1, 1, TraderDetails("other", ""), 1)])
+        higher_market = FakeMarket([
+            Offer("id2", pendulum.now(), 3, 3, TraderDetails("higher", ""), 3),
+            Offer("id3", pendulum.now(), 0.5, 1, TraderDetails("higher", ""), 0.5)])
         owner = FakeArea("owner")
         maa = OneSidedAgent(owner=owner,
                             higher_market=higher_market,
@@ -593,7 +593,8 @@ class TestMAOffer:
     @staticmethod
     @pytest.fixture(name="market_agent_2")
     def market_agent_2_fixture():
-        lower_market = FakeMarket([Offer("id", pendulum.now(), 2, 2, "other", 2)], m_id=123)
+        lower_market = FakeMarket([
+            Offer("id", pendulum.now(), 2, 2, TraderDetails("other", ""), 2)], m_id=123)
         higher_market = FakeMarket([], m_id=234)
         owner = FakeArea("owner")
         owner.future_market = lower_market
@@ -616,8 +617,8 @@ class TestMAOffer:
             trade=Trade(
                 "trade_id",
                 pendulum.now(tz=TIME_ZONE),
-                "higher",
-                "someone_else", offer=market_agent.higher_market.offers["id3"],
+                TraderDetails("higher", ""),
+                TraderDetails("someone_else", ""), offer=market_agent.higher_market.offers["id3"],
                 traded_energy=1, trade_price=1),
             market_id=market_agent.higher_market.id)
         assert len(market_agent.lower_market.delete_offer.calls) == 1
@@ -628,8 +629,8 @@ class TestMAOffer:
             trade=Trade(
                 "trade_id",
                 pendulum.now(tz=TIME_ZONE),
-                "owner",
-                "someone_else",
+                TraderDetails("owner", ""),
+                TraderDetails("someone_else", ""),
                 offer=market_agent_2.higher_market.forwarded_offer,
                 fee_price=0.0, traded_energy=1, trade_price=1),
             market_id=market_agent_2.higher_market.id)
@@ -645,8 +646,8 @@ class TestMAOffer:
             trade=Trade(
                 "trade_id",
                 pendulum.now(tz=TIME_ZONE),
-                "owner",
-                "someone_else",
+                TraderDetails("owner", ""),
+                TraderDetails("someone_else", ""),
                 offer=accepted_offer, traded_energy=1, trade_price=1,
                 residual="residual_offer",
                 fee_price=0.0, ),
@@ -686,8 +687,8 @@ class TestMAOffer:
             trade=Trade(
                 "trade_id",
                 pendulum.now(tz=TIME_ZONE),
-                "owner",
-                "someone_else",
+                TraderDetails("owner", ""),
+                TraderDetails("someone_else", ""),
                 offer=accepted,
                 traded_energy=1, trade_price=1,
                 residual=residual,

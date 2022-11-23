@@ -206,7 +206,7 @@ class SettlementMarketStrategy(SettlementMarketStrategyInterface):
         market = self._get_settlement_market_by_id(strategy, market_id)
         if not market:
             return
-        if bid_trade.match_details["bid"].buyer == strategy.owner.name:
+        if bid_trade.match_details["bid"].buyer.name == strategy.owner.name:
             strategy.state.decrement_unsettled_deviation(
                 bid_trade.traded_energy, market.time_slot)
 
@@ -227,7 +227,7 @@ class SettlementMarketStrategy(SettlementMarketStrategyInterface):
         market = self._get_settlement_market_by_id(strategy, market_id)
         if not market:
             return
-        if trade.match_details["offer"].seller == strategy.owner.name:
+        if trade.match_details["offer"].seller.name == strategy.owner.name:
             strategy.state.decrement_unsettled_deviation(
                 trade.traded_energy, market.time_slot)
 

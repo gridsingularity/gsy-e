@@ -256,7 +256,7 @@ class SmartMeterExternalMixin(ExternalMixin):
         return [
             {"id": v.id, "price": v.price, "energy": v.energy}
             for _, v in market.get_offers().items()
-            if v.seller == self.device.name]
+            if v.seller.name == self.device.name]
 
     def filtered_market_bids(self, market: MarketBase) -> List[Dict]:
         """
@@ -269,7 +269,7 @@ class SmartMeterExternalMixin(ExternalMixin):
         return [
             {"id": bid.id, "price": bid.price, "energy": bid.energy}
             for _, bid in market.get_bids().items()
-            if bid.buyer == self.device.name]
+            if bid.buyer.name == self.device.name]
 
     def _bid_aggregator(self, arguments: Dict) -> Dict:
         """Post the bid to the market."""
