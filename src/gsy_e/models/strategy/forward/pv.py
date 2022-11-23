@@ -48,14 +48,14 @@ class ForwardPVStrategy(ForwardStrategyBase):
     def remove_open_orders(self, market: "ForwardMarketBase", market_slot: DateTime):
         offers = [offer
                   for offer in market.slot_offer_mapping[market_slot]
-                  if offer.seller == self.owner.name]
+                  if offer.seller.name == self.owner.name]
         for offer in offers:
             market.delete_offer(offer)
 
     def remove_order(self, market: "ForwardMarketBase", market_slot: DateTime, order_uuid: str):
         offers = [offer
                   for offer in market.slot_offer_mapping[market_slot]
-                  if offer.seller == self.owner.name and offer.id == order_uuid]
+                  if offer.seller.name == self.owner.name and offer.id == order_uuid]
         if not offers:
             self.log.error("Bid with id %s does not exist on the market %s %s.",
                            order_uuid, market.market_type, market_slot)
@@ -101,7 +101,7 @@ class ForwardPVStrategy(ForwardStrategyBase):
         if not market:
             return
 
-        if trade.seller_id != self.owner.uuid:
+        if trade.seller.uuid != self.owner.uuid:
             return
 
         self._energy_params.event_traded_energy(trade.traded_energy,

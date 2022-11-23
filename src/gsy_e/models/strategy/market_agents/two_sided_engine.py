@@ -63,7 +63,7 @@ class TwoSidedEngine(MAEngine):
         return requirements
 
     def _forward_bid(self, bid):
-        if bid.buyer == self.markets.target.name:
+        if bid.buyer.name == self.markets.target.name:
             return None
 
         if bid.price < 0.0:
@@ -76,8 +76,8 @@ class TwoSidedEngine(MAEngine):
                 energy=bid.energy,
                 buyer=self.owner.name,
                 original_price=bid.original_price,
-                buyer_origin=bid.buyer_origin,
-                buyer_origin_id=bid.buyer_origin_id,
+                buyer_origin=bid.buyer.origin,
+                buyer_origin_id=bid.buyer.origin_uuid,
                 buyer_id=self.owner.uuid,
                 time_slot=bid.time_slot,
                 requirements=self._update_requirements_prices(bid),
@@ -109,7 +109,7 @@ class TwoSidedEngine(MAEngine):
         if not self.owner.usable_bid(bid):
             return False
 
-        if self.owner.name == bid.buyer:
+        if self.owner.name == bid.buyer.name:
             return False
 
         if current_tick - self.bid_age[bid.id] < self.min_bid_age:
@@ -175,8 +175,8 @@ class TwoSidedEngine(MAEngine):
                 seller=self.owner.name,
                 already_tracked=False,
                 trade_offer_info=trade_offer_info,
-                seller_origin=bid_trade.seller_origin,
-                seller_origin_id=bid_trade.seller_origin_id,
+                seller_origin=bid_trade.seller.origin,
+                seller_origin_id=bid_trade.seller.origin_uuid,
                 seller_id=self.owner.uuid
             )
             self._delete_forwarded_bids(bid_info)

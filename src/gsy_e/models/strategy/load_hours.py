@@ -439,7 +439,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
     def _supply_balancing_offer(self, market, trade):
         if not self._is_eligible_for_balancing_market:
             return
-        if trade.buyer != self.owner.name:
+        if trade.buyer.name != self.owner.name:
             return
         ramp_down_energy = self.balancing_energy_ratio.supply * trade.traded_energy
         ramp_down_price = DeviceRegistry.REGISTRY[self.owner.name][1] * ramp_down_energy

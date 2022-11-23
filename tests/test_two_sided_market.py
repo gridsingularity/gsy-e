@@ -289,8 +289,8 @@ class TestTwoSidedMarket:
         assert trade.id
         assert trade.trade_price == bid.price
         assert trade.traded_energy == bid.energy
-        assert trade.seller == "B"
-        assert trade.buyer == "A"
+        assert trade.seller.name == "B"
+        assert trade.buyer.name == "A"
         assert not trade.residual
 
     @staticmethod
@@ -315,14 +315,14 @@ class TestTwoSidedMarket:
         assert trade.match_details["bid"] is not bid
         assert trade.traded_energy == 5
         assert trade.trade_price == 5
-        assert trade.seller == "B"
-        assert trade.buyer == "A"
+        assert trade.seller.name == "B"
+        assert trade.buyer.name == "A"
         assert trade.residual
         assert len(market.bids) == 1
         assert trade.residual.id in market.bids
         assert market.bids[trade.residual.id].energy == 15
         assert isclose(market.bids[trade.residual.id].price, 15)
-        assert market.bids[trade.residual.id].buyer == "A"
+        assert market.bids[trade.residual.id].buyer.name == "A"
 
     @staticmethod
     def test_market_accept_bid_emits_bid_split_on_partial_bid(

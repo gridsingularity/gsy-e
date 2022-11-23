@@ -69,11 +69,11 @@ class TestForwardStrategies:
             assert order.energy_rate == energy_rate
             assert order.energy == energy
             if isinstance(strategy, ForwardLoadStrategy):
-                assert order.buyer == order.buyer_origin == strategy.owner.name
-                assert order.buyer_id == order.buyer_origin_id == strategy.owner.uuid
+                assert order.buyer.name == order.buyer.origin == strategy.owner.name
+                assert order.buyer.uuid == order.buyer.origin_uuid == strategy.owner.uuid
             else:
-                assert order.seller == order.seller_origin == strategy.owner.name
-                assert order.seller_id == order.seller_origin_id == strategy.owner.uuid
+                assert order.seller.name == order.seller.origin == strategy.owner.name
+                assert order.seller.uuid == order.seller.origin_uuid == strategy.owner.uuid
 
     @staticmethod
     @pytest.mark.parametrize("market_type, expected_order_updater_count, next_slot_timestamp, ", [
@@ -174,9 +174,9 @@ class TestForwardStrategies:
                 assert updated_order.id != old_order_list[0].id
                 assert updated_order.energy == old_order_list[0].energy
                 if isinstance(strategy, ForwardPVStrategy):
-                    assert updated_order.seller_id == old_order_list[0].seller_id
+                    assert updated_order.seller.uuid == old_order_list[0].seller.uuid
                 else:
-                    assert updated_order.buyer_id == old_order_list[0].buyer_id
+                    assert updated_order.buyer.uuid == old_order_list[0].buyer.uuid
                 market_params = area.forward_markets[
                     market_type].get_market_parameters_for_market_slot(time_slot)
                 slot_completion_ratio = updater_params.update_interval.total_minutes() / (

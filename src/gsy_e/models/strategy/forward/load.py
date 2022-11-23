@@ -47,7 +47,7 @@ class ForwardLoadStrategy(ForwardStrategyBase):
     def remove_order(self, market: "ForwardMarketBase", market_slot: DateTime, order_uuid: str):
         bids = [bid
                 for bid in market.slot_bid_mapping[market_slot]
-                if bid.buyer == self.owner.name and bid.id == order_uuid]
+                if bid.buyer.name == self.owner.name and bid.id == order_uuid]
         if not bids:
             self.log.error("Bid with id %s does not exist on the market %s %s.",
                            order_uuid, market.market_type, market_slot)
@@ -57,7 +57,7 @@ class ForwardLoadStrategy(ForwardStrategyBase):
     def remove_open_orders(self, market: "ForwardMarketBase", market_slot: DateTime):
         bids = [bid
                 for bid in market.slot_bid_mapping[market_slot]
-                if bid.buyer == self.owner.name]
+                if bid.buyer.name == self.owner.name]
         for bid in bids:
             market.delete_bid(bid)
 
@@ -99,7 +99,7 @@ class ForwardLoadStrategy(ForwardStrategyBase):
         if not market:
             return
 
-        if bid_trade.buyer_id != self.owner.uuid:
+        if bid_trade.buyer.uuid != self.owner.uuid:
             return
 
         self._energy_params.event_traded_energy(bid_trade.traded_energy,

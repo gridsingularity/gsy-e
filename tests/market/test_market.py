@@ -22,7 +22,7 @@ from uuid import uuid4
 
 import pytest
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.data_classes import Bid, Offer
+from gsy_framework.data_classes import Bid, Offer, TraderDetails
 from gsy_framework.utils import datetime_to_string_incl_seconds
 from hypothesis import strategies as st
 from hypothesis.control import assume
@@ -80,7 +80,7 @@ def test_market_offer(market, offer):
     assert market.offers[e_offer.id] == e_offer
     assert e_offer.energy == 20
     assert e_offer.price == 10
-    assert e_offer.seller == "someone"
+    assert e_offer.seller.name == "someone"
     assert len(e_offer.id) == 36
     assert e_offer.creation_time == market.now
     assert e_offer.time_slot == market.time_slot
@@ -96,7 +96,7 @@ def test_market_bid(market):
     assert market.bids[bid.id] == bid
     assert bid.energy == 20
     assert bid.price == 10
-    assert bid.buyer == "someone"
+    assert bid.buyer.name == "someone"
     assert len(bid.id) == 36
     assert bid.creation_time == market.now
     assert bid.time_slot == market.time_slot
@@ -156,15 +156,16 @@ def test_market_trade(market, offer, accept_offer):
     assert trade.creation_time == market.now
     assert trade.time_slot == market.time_slot
     assert trade.match_details["offer"] == e_offer
-    assert trade.seller == "A"
-    assert trade.buyer == "B"
+    assert trade.seller.name == "A"
+    assert trade.buyer.name == "B"
 
 
 def test_orders_per_slot(market):
     """Test whether the orders_per_slot method returns order in format format."""
     creation_time = now()
-    market.bids = {"bid1": Bid("bid1", creation_time, 10, 10, "buyer")}
-    market.offers = {"offer1": Offer("offer1", creation_time, 10, 10, "seller")}
+    market.bids = {"bid1": Bid("bid1", creation_time, 10, 10, TraderDetails("buyer", ""))}
+    market.offers = {"offer1": Offer(
+        "offer1", creation_time, 10, 10, TraderDetails("seller", ""))}
     assert market.orders_per_slot() == {
         market.time_slot_str: {"bids": [{"attributes": None,
                                          "buyer": "buyer",
@@ -206,8 +207,8 @@ def test_balancing_market_negative_offer_trade(market=BalancingMarket(
     assert trade.creation_time == market.now
     assert trade.time_slot == market.time_slot
     assert trade.match_details["offer"] is offer
-    assert trade.seller == "A"
-    assert trade.buyer == "B"
+    assert trade.seller.name == "A"
+    assert trade.buyer.name == "B"
 
 
 @pytest.mark.parametrize("market, offer, accept_offer", [
@@ -273,15 +274,15 @@ def test_market_trade_partial(market, offer, accept_offer):
     assert trade.match_details["offer"] is not e_offer
     assert trade.traded_energy == 5
     assert trade.trade_price == 5
-    assert trade.match_details["offer"].seller == "A"
-    assert trade.seller == "A"
-    assert trade.buyer == "B"
+    assert trade.match_details["offer"].seller.name == "A"
+    assert trade.seller.name == "A"
+    assert trade.buyer.name == "B"
     assert len(market.offers) == 1
     new_offer = list(market.offers.values())[0]
     assert new_offer is not e_offer
     assert new_offer.energy == 15
     assert new_offer.price == 15
-    assert new_offer.seller == "A"
+    assert new_offer.seller.name == "A"
     assert new_offer.id != e_offer.id
 
 
@@ -535,8 +536,8 @@ class MarketStateMachine(RuleBasedStateMachine):
     def check_acct(self):
         actor_sums = {}
         for t in self.market.trades:
-            actor_sums = add_or_create_key(actor_sums, t.seller, t.traded_energy)
-            actor_sums = subtract_or_create_key(actor_sums, t.buyer, t.traded_energy)
+            actor_sums = add_or_create_key(actor_sums, t.seller.name, t.traded_energy)
+            actor_sums = subtract_or_create_key(actor_sums, t.buyer.name, t.traded_energy)
         for actor, sum_ in actor_sums.items():
             assert self.market.traded_energy[actor] == sum_
         assert sum(self.market.traded_energy.values()) == 0

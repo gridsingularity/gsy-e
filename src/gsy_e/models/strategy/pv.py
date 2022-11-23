@@ -293,7 +293,7 @@ class PVStrategy(BidEnabledStrategy):
 
         self._assert_if_trade_offer_price_is_too_low(market_id, trade)
 
-        if trade.seller == self.owner.name:
+        if trade.seller.name == self.owner.name:
             self.state.decrement_available_energy(
                 trade.traded_energy, trade.time_slot, self.owner.name)
 

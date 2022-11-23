@@ -24,7 +24,7 @@ from uuid import uuid4
 
 import pytest
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
-from gsy_framework.data_classes import Offer, BalancingOffer, Bid, Trade
+from gsy_framework.data_classes import Offer, BalancingOffer, Bid, Trade, TraderDetails
 from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.exceptions import GSyDeviceException
 from pendulum import DateTime, duration, today, now
@@ -425,7 +425,8 @@ def test_event_bid_traded_removes_bid_for_partial_and_non_trade(load_hours_strat
 
     # Increase energy requirement to cover the energy from the bid
     load_hours_strategy_test5.state._energy_requirement_Wh[TIME] = 1000
-    trade = Trade('idt', None, 'B', load_hours_strategy_test5.owner.name, bid=bid,
+    trade = Trade('idt', None, TraderDetails("B", ""),
+                  TraderDetails(load_hours_strategy_test5.owner.name, ""), bid=bid,
                   residual=partial, time_slot=TIME, traded_energy=1, trade_price=1)
     load_hours_strategy_test5.event_bid_traded(market_id=trade_market.id, bid_trade=trade)
 
@@ -448,7 +449,8 @@ def test_event_bid_traded_removes_bid_from_pending_if_energy_req_0(load_hours_st
     bid = list(load_hours_strategy_test5._bids.values())[0][0]
     # Increase energy requirement to cover the energy from the bid + threshold
     load_hours_strategy_test5.state._energy_requirement_Wh[TIME] = bid.energy * 1000 + 0.000009
-    trade = Trade('idt', None, 'B', load_hours_strategy_test5.owner.name, residual=True, bid=bid,
+    trade = Trade('idt', None, TraderDetails("B", ""),
+                  TraderDetails(load_hours_strategy_test5.owner.name, ""), residual=True, bid=bid,
                   time_slot=TIME, traded_energy=bid.energy, trade_price=bid.price)
     load_hours_strategy_test5.event_bid_traded(market_id=trade_market.id, bid_trade=trade)
 
@@ -505,8 +507,8 @@ def test_balancing_offers_are_created_if_device_in_registry(
                                                      offer=selected_offer,
                                                      traded_energy=selected_offer.energy,
                                                      trade_price=selected_offer.price,
-                                                     seller='B',
-                                                     buyer='FakeArea',
+                                                     seller=TraderDetails("B", ""),
+                                                     buyer=TraderDetails("FakeArea", ""),
                                                      time_slot=area_test2.current_market.time_slot)
                                          )
     assert len(area_test2.test_balancing_market.created_balancing_offers) == 2
@@ -599,7 +601,8 @@ def test_assert_if_trade_rate_is_higher_than_bid_rate(load_hours_strategy_test3)
     load_hours_strategy_test3._bids[market_id] = \
         [Bid("bid_id", now(), 30, 1, buyer="FakeArea")]
     expensive_bid = Bid("bid_id", now(), 31, 1, buyer="FakeArea")
-    trade = Trade("trade_id", "time", load_hours_strategy_test3, "buyer", bid=expensive_bid,
+    trade = Trade("trade_id", "time", load_hours_strategy_test3,
+                  TraderDetails("buyer", ""), bid=expensive_bid,
                   traded_energy=1, trade_price=31)
 
     with pytest.raises(AssertionError):
@@ -671,8 +674,9 @@ def test_event_bid_traded_calls_settlement_market_event_bid_traded(load_hours_fi
     """Test if _settlement_market_strategy.event_bid_traded was called
     although no spot market can be found by event_bid_traded."""
     load_hours_fixture._settlement_market_strategy = Mock()
-    bid = Bid("bid", None, 1, 1, "buyer")
-    trade = Trade('idt', None, 'B', load_hours_fixture.owner.name, bid=bid,
+    bid = Bid("bid", None, 1, 1, TraderDetails("buyer", ""))
+    trade = Trade('idt', None, TraderDetails("B", ""),
+                  TraderDetails(load_hours_fixture.owner.name, ""), bid=bid,
                   traded_energy=1, trade_price=1)
     load_hours_fixture.event_bid_traded(market_id="not existing", bid_trade=trade)
     load_hours_fixture._settlement_market_strategy.event_bid_traded.assert_called_once()
@@ -682,8 +686,9 @@ def test_event_offer_traded_calls_settlement_market_event_offer_traded(load_hour
     """Test if _settlement_market_strategy.event_offer_traded was called
     although no spot market can be found by event_offer_traded."""
     load_hours_fixture._settlement_market_strategy = Mock()
-    offer = Offer("oid", None, 1, 1, "seller")
-    trade = Trade('idt', None, 'B', load_hours_fixture.owner.name, offer=offer,
+    offer = Offer("oid", None, 1, 1, TraderDetails("seller", ""))
+    trade = Trade('idt', None, TraderDetails("B", ""),
+                  TraderDetails(load_hours_fixture.owner.name, ""), offer=offer,
                   traded_energy=1, trade_price=1)
     load_hours_fixture.event_offer_traded(market_id="not existing", trade=trade)
     load_hours_fixture._settlement_market_strategy.event_offer_traded.assert_called_once()

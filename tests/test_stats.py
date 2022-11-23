@@ -15,17 +15,19 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from unittest.mock import MagicMock, Mock
 from math import isclose
+from unittest.mock import MagicMock, Mock
 from uuid import uuid4
+
 import pytest
-from pendulum import today, now
+from gsy_framework.data_classes import Trade, TraderDetails
+from gsy_framework.sim_results.bills import MarketEnergyBills
 from gsy_framework.unit_test_utils import assert_dicts_identical, \
     assert_lists_contain_same_elements
-from gsy_framework.sim_results.bills import MarketEnergyBills
-from gsy_framework.data_classes import Trade
-from gsy_e.gsy_e_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
+from pendulum import today, now
+
 from gsy_e import constants
+from gsy_e.gsy_e_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
 from gsy_e.models.area.throughput_parameters import ThroughputParameters
 
 
@@ -89,7 +91,8 @@ class FakeOffer:
 
 def _trade(price, buyer, energy=1, seller=None, fee_price=0.):
     return Trade('id', now(tz=constants.TIME_ZONE),
-                 seller, buyer, energy, price, offer=FakeOffer(price, energy, seller),
+                 TraderDetails(seller, ""), TraderDetails(buyer, ""),
+                 energy, price, offer=FakeOffer(price, energy, seller),
                  fee_price=fee_price)
 
 
