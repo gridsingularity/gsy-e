@@ -38,6 +38,7 @@ def forward_setup_fixture():
     GlobalConfig.market_maker_rate = original_market_marker_rate
     ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS = original_enable_forward_markets
 
+
 @pytest.fixture(name="general_setup")
 def general_setup_fixture():
     """Create area with spot market"""
@@ -178,8 +179,8 @@ class TestSimulationEndpointBuffer:
 
                 market.trades.extend([
                     self._generate_order(
-                    creation_time=current_time - slot_length,
-                    time_slot=f"TIME_SLOT_{i}") for i in range(2)])
+                        creation_time=current_time - slot_length,
+                        time_slot=f"TIME_SLOT_{i}") for i in range(2)])
             current_time += slot_length
 
             # check results are generated correctly.
@@ -201,6 +202,7 @@ class TestSimulationEndpointBuffer:
                         assert (current_time - slot_length <=
                                 orders[0]["creation_time"] < current_time)
                 current_time += slot_length
+
 
 class TestSimulationEndpointBufferForward:
     """Tests for the SimulationEndpointBuffer class."""
