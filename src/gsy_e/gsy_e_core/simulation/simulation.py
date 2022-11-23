@@ -428,9 +428,10 @@ class CoefficientSimulation(Simulation):
             self._deactivate_areas(child)
 
     def _handle_external_communication(self):
+        if not self.config.external_connection_enabled:
+            return
 
-        if self.config.external_connection_enabled:
-            global_objects.scm_external_global_stats.update()
+        global_objects.scm_external_global_stats.update()
 
         self.area.publish_market_cycle_to_external_clients()
 

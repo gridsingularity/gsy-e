@@ -357,7 +357,7 @@ class CoefficientDataExporter(BaseDataExporter):
 
 
 class CoefficientLeafDataExporter(BaseDataExporter):
-    """LeafDataExporter for SCm simulations."""
+    """LeafDataExporter for SCM simulations."""
 
     def __init__(self, area: "CoefficientArea"):
         self._area = area
