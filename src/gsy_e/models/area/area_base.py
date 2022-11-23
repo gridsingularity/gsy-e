@@ -109,12 +109,12 @@ class AreaBase:
         self.strategy = strategy
         self._config = config
         self._set_grid_fees(grid_fee_constant, grid_fee_percentage)
-        self._current_market_time_slot = None
+        self.current_market_time_slot = None
 
     @property
     def now(self) -> DateTime:
         """Get the current time of the simulation."""
-        return self._current_market_time_slot
+        return self.current_market_time_slot
 
     @property
     def trades(self) -> List["Trade"]:
@@ -231,5 +231,5 @@ class AreaBase:
     def get_results_dict(self):
         """Calculate the results dict for the coefficients trading."""
         if self.strategy is not None:
-            return self.strategy.state.get_results_dict(self._current_market_time_slot)
+            return self.strategy.state.get_results_dict(self.current_market_time_slot)
         return {}

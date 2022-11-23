@@ -233,9 +233,9 @@ def test_leaf_deserialization_scm():
     assert isinstance(recovered.children[2].strategy, SCMPVUserProfile)
 
     assert recovered.children[2].strategy._energy_params.\
-        _energy_profile.input_profile == "test1.csv"
+        energy_profile.input_profile == "test1.csv"
     assert recovered.children[2].strategy._energy_params.\
-        _energy_profile.input_profile_uuid is None
+        energy_profile.input_profile_uuid is None
 
     assert isinstance(recovered.children[3], SCMLoadHours)
     assert isinstance(recovered.children[3].strategy, SCMLoadHoursStrategy)
@@ -244,9 +244,9 @@ def test_leaf_deserialization_scm():
     assert isinstance(recovered.children[4], SCMLoadProfile)
     assert isinstance(recovered.children[4].strategy, SCMLoadProfileStrategy)
     assert recovered.children[4].strategy._energy_params.\
-        _energy_profile.input_profile == "test.csv"
+        energy_profile.input_profile == "test.csv"
     assert recovered.children[4].strategy._energy_params.\
-        _energy_profile.input_profile_uuid is None
+        energy_profile.input_profile_uuid is None
 
     assert isinstance(recovered.children[5], SCMStorage)
     assert isinstance(recovered.children[5].strategy, SCMStorageStrategy)
