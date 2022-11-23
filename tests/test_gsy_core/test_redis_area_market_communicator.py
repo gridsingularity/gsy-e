@@ -63,7 +63,12 @@ class TestExternalConnectionCommunicator:
     def test_start_communication(self, enabled_communicator, disabled_communicator):
         disabled_communicator.start_communication()
         assert not hasattr(disabled_communicator, "pubsub")
+        enabled_communicator.pubsub.subscribed = False
+        enabled_communicator.start_communication()
+        enabled_communicator.pubsub.run_in_thread.assert_not_called()
 
+        enabled_communicator.pubsub.subscribed = True
+        enabled_communicator.start_communication()
         enabled_communicator.pubsub.run_in_thread.assert_called_once()
 
     def test_sub_to_aggregator(self, enabled_communicator, disabled_communicator):
@@ -74,6 +79,8 @@ class TestExternalConnectionCommunicator:
                 enabled_communicator.aggregator.receive_batch_commands_callback,
             "aggregator": enabled_communicator.aggregator.aggregator_callback
         }
+
+        enabled_communicator.sub_to_aggregator()
         enabled_communicator.pubsub.psubscribe.assert_called_once_with(
             **channel_callback_dict
         )

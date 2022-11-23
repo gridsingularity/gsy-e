@@ -177,6 +177,8 @@ class Simulation:
             self._time.calculate_total_initial_ticks_slots(
                 self.config, slot_resume, tick_resume, self.area))
 
+        self.config.external_redis_communicator.activate()
+
         for slot_no in range(slot_resume, slot_count):
             self.progress_info.update(
                 slot_no, slot_count, self._time, self.config)
@@ -447,6 +449,8 @@ class CoefficientSimulation(Simulation):
         slot_count, slot_resume = (
             self._time.calc_resume_slot_and_count_realtime(
                 self.config, slot_resume))
+
+        self.config.external_redis_communicator.activate()
 
         self._time.reset(not_restored_from_state=(slot_resume == 0))
 

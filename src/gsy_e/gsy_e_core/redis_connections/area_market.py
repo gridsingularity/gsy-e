@@ -155,8 +155,12 @@ class ExternalConnectionCommunicator(ResettableCommunicator):
             super().__init__()
             self.channel_callback_dict = {}
             self.aggregator = AggregatorHandler(self.redis_db)
-            self.sub_to_aggregator()
-            self.start_communication()
+
+    def activate(self):
+        """Connect to aggregator.
+        Two stage init is needed here because redis might not be initiated at this point"""
+        self.sub_to_aggregator()
+        self.start_communication()
 
     def sub_to_channel(self, channel: str, callback: Callable):
         if not self.is_enabled:
