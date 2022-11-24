@@ -267,7 +267,7 @@ class MAEngine:
         elif market == self.markets.source and accepted_offer.id in self.forwarded_offers:
             # offer was split in source market, also split in target market
             if not self.owner.usable_offer(accepted_offer) or \
-                    self.owner.name == accepted_offer.seller:
+                    self.owner.name == accepted_offer.seller.name:
                 return
 
             local_offer = self.forwarded_offers[original_offer.id].source_offer

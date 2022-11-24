@@ -270,4 +270,4 @@ class MarketBase:  # pylint: disable=too-many-instance-attributes
     def total_earned(self, seller: str) -> float:
         """Return the aggregated money earned by the passed-in seller."""
 
-        return sum(trade.trade_price for trade in self.trades if trade.seller == seller)
+        return sum(trade.trade_price for trade in self.trades if trade.seller.name == seller)

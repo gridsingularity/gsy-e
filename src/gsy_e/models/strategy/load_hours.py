@@ -354,7 +354,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         return self._is_market_active(market) and self.state.can_buy_more_energy(market.time_slot)
 
     def _offer_comes_from_different_seller(self, offer):
-        return offer.seller not in [self.owner.name, self.area.name]
+        return offer.seller.name not in [self.owner.name, self.area.name]
 
     def _post_first_bid(self):
         if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:

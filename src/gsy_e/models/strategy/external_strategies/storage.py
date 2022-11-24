@@ -62,7 +62,7 @@ class StorageExternalMixin(ExternalMixin):
         return [
             {"id": bid.id, "price": bid.price, "energy": bid.energy}
             for _, bid in market.get_bids().items()
-            if bid.buyer == self.device.name]
+            if bid.buyer.name == self.device.name]
 
     def event_activate(self, **kwargs) -> None:
         """Activate the device."""
@@ -94,7 +94,7 @@ class StorageExternalMixin(ExternalMixin):
             market = self._get_market_from_command_argument(arguments)
             filtered_offers = [{"id": v.id, "price": v.price, "energy": v.energy}
                                for _, v in market.get_offers().items()
-                               if v.seller == self.device.name]
+                               if v.seller.name == self.device.name]
             response = {"command": "list_offers", "status": "ready",
                         "offer_list": filtered_offers,
                         "transaction_id": arguments.get("transaction_id")}

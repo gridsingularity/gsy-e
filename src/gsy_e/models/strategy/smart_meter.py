@@ -532,7 +532,7 @@ class SmartMeterStrategy(BidEnabledStrategy):
         pass
 
     def _offer_comes_from_different_seller(self, offer):
-        return offer.seller not in [self.owner.name, self.area.name]
+        return offer.seller.name not in [self.owner.name, self.area.name]
 
     @property
     def asset_type(self):
