@@ -7,7 +7,7 @@ from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.models.strategy.energy_parameters.energy_params_eb import (
     ConsumptionStandardProfileEnergyParameters)
 from gsy_e.models.strategy.forward import ForwardStrategyBase
-from gsy_e.models.strategy.forward.order_updater import OrderUpdaterParameters
+from gsy_e.models.strategy.forward.order_updater import ForwardOrderUpdaterParameters
 
 if TYPE_CHECKING:
     from gsy_e.models.market.forward import ForwardMarketBase
@@ -16,11 +16,16 @@ if TYPE_CHECKING:
 
 
 DEFAULT_LOAD_ORDER_UPDATER_PARAMS = {
-    AvailableMarketTypes.INTRADAY: OrderUpdaterParameters(duration(minutes=5), 10, 40, 10),
-    AvailableMarketTypes.DAY_FORWARD: OrderUpdaterParameters(duration(minutes=30), 20, 40, 10),
-    AvailableMarketTypes.WEEK_FORWARD: OrderUpdaterParameters(duration(days=1), 30, 50, 10),
-    AvailableMarketTypes.MONTH_FORWARD: OrderUpdaterParameters(duration(weeks=1), 40, 60, 20),
-    AvailableMarketTypes.YEAR_FORWARD: OrderUpdaterParameters(duration(months=1), 50, 70, 50)
+    AvailableMarketTypes.INTRADAY: ForwardOrderUpdaterParameters(
+        duration(minutes=5), 10, 40, 10),
+    AvailableMarketTypes.DAY_FORWARD: ForwardOrderUpdaterParameters(
+        duration(minutes=30), 20, 40, 10),
+    AvailableMarketTypes.WEEK_FORWARD: ForwardOrderUpdaterParameters(
+        duration(days=1), 30, 50, 10),
+    AvailableMarketTypes.MONTH_FORWARD: ForwardOrderUpdaterParameters(
+        duration(weeks=1), 40, 60, 20),
+    AvailableMarketTypes.YEAR_FORWARD: ForwardOrderUpdaterParameters(
+        duration(months=1), 50, 70, 50)
 }
 
 
@@ -31,7 +36,8 @@ class ForwardLoadStrategy(ForwardStrategyBase):
     """
     def __init__(
             self, capacity_kW: float,
-            order_updater_parameters: Dict[AvailableMarketTypes, OrderUpdaterParameters] = None):
+            order_updater_parameters: Dict[
+                AvailableMarketTypes, ForwardOrderUpdaterParameters] = None):
         if not order_updater_parameters:
             order_updater_parameters = DEFAULT_LOAD_ORDER_UPDATER_PARAMS
         super().__init__(order_updater_parameters)

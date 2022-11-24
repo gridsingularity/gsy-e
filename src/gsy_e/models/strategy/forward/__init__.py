@@ -8,7 +8,8 @@ from pendulum import DateTime, duration
 from gsy_e.events import EventMixin
 from gsy_e.models.base import AreaBehaviorBase
 from gsy_e.models.strategy.forward.live_event_handler import ForwardLiveEvents
-from gsy_e.models.strategy.forward.order_updater import OrderUpdater, OrderUpdaterParameters
+from gsy_e.models.strategy.forward.order_updater import (
+    ForwardOrderUpdater, ForwardOrderUpdaterParameters)
 
 if TYPE_CHECKING:
     from gsy_e.models.market.forward import ForwardMarketBase
@@ -18,7 +19,8 @@ if TYPE_CHECKING:
 class ForwardStrategyBase(EventMixin, AreaBehaviorBase, ABC):
     """Base class for the forward market strategies."""
     def __init__(self,
-                 order_updater_parameters: Dict[AvailableMarketTypes, OrderUpdaterParameters]):
+                 order_updater_parameters: Dict[
+                     AvailableMarketTypes, ForwardOrderUpdaterParameters]):
         assert ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS is True
         assert (
             0.0 <=
@@ -27,7 +29,7 @@ class ForwardStrategyBase(EventMixin, AreaBehaviorBase, ABC):
         super().__init__()
         self._create_order_updater = ConstSettings.ForwardMarketSettings.FULLY_AUTO_TRADING
         self._order_updater_params: Dict[AvailableMarketTypes,
-                                         OrderUpdaterParameters] = order_updater_parameters
+                                         ForwardOrderUpdaterParameters] = order_updater_parameters
         self._order_updaters = {}
         self._live_event_handler = ForwardLiveEvents(self)
 
@@ -36,7 +38,7 @@ class ForwardStrategyBase(EventMixin, AreaBehaviorBase, ABC):
         """Deserialize the constructor arguments for the forward classes."""
         if "order_updater_params" in constructor_args:
             constructor_args["order_updater_params"] = {
-                AvailableMarketTypes(market_type): OrderUpdaterParameters(
+                AvailableMarketTypes(market_type): ForwardOrderUpdaterParameters(
                     duration(minutes=updater_params[0]), updater_params[1],
                     updater_params[2], updater_params[3]
                 )
@@ -68,7 +70,7 @@ class ForwardStrategyBase(EventMixin, AreaBehaviorBase, ABC):
                         market_parameters.closing_time <= self.area.now):
                     continue
                 if not self._order_updater_for_market_slot_exists(market, market_slot):
-                    self._order_updaters[market][market_slot] = OrderUpdater(
+                    self._order_updaters[market][market_slot] = ForwardOrderUpdater(
                         self._order_updater_params[market_type],
                         market_parameters
                     )
