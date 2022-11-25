@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from logging import getLogger
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
 from gsy_framework.area_validator import validate_area
 from gsy_framework.constants_limits import ConstSettings
@@ -41,13 +41,15 @@ from gsy_e.models.area.throughput_parameters import ThroughputParameters
 from gsy_e.models.config import SimulationConfig
 from gsy_e.models.market.forward import ForwardMarketBase
 from gsy_e.models.market.future import FutureMarkets
-from gsy_e.models.strategy import BaseStrategy
+
 from gsy_e.models.strategy.external_strategies import ExternalMixin
 
 log = getLogger(__name__)
 
 if TYPE_CHECKING:
     from gsy_e.models.market import MarketBase
+    from gsy_e.models.strategy import BaseStrategy
+    from gsy_e.models.strategy.new_base_strategy import NewStrategyBase
 
 
 class Area(AreaBase):
@@ -60,7 +62,7 @@ class Area(AreaBase):
     # pylint: disable=too-many-arguments,too-many-instance-attributes
     def __init__(self, name: str = None, children: List["Area"] = None,
                  uuid: str = None,
-                 strategy: BaseStrategy = None,
+                 strategy: Optional[Union["BaseStrategy", "NewStrategyBase"]] = None,
                  config: SimulationConfig = None,
                  balancing_spot_trade_ratio=ConstSettings.BalancingSettings.SPOT_TRADE_RATIO,
                  event_list=None,

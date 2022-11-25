@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from logging import getLogger
-from typing import TYPE_CHECKING, List, Union
+from typing import TYPE_CHECKING, List, Union, Optional
 from uuid import uuid4
 
 from gsy_framework.area_validator import validate_area
@@ -29,13 +29,15 @@ from slugify import slugify
 from gsy_e.gsy_e_core.exceptions import AreaException, GSyException
 from gsy_e.gsy_e_core.util import TaggedLogWrapper
 from gsy_e.models.config import SimulationConfig
-from gsy_e.models.strategy import BaseStrategy
+
 
 log = getLogger(__name__)
 
 if TYPE_CHECKING:
     from gsy_e.models.area import Area
     from gsy_framework.data_classes import Trade
+    from gsy_e.models.strategy import BaseStrategy
+    from gsy_e.models.strategy.new_base_strategy import NewStrategyBase
 
 
 def check_area_name_exists_in_parent_area(parent_area, name):
@@ -82,7 +84,7 @@ class AreaBase:
     def __init__(self, name: str = None,
                  children: List["Area"] = None,
                  uuid: str = None,
-                 strategy: BaseStrategy = None,
+                 strategy: Optional[Union["BaseStrategy", "NewStrategyBase"]] = None,
                  config: SimulationConfig = None,
                  grid_fee_percentage: float = None,
                  grid_fee_constant: float = None):
