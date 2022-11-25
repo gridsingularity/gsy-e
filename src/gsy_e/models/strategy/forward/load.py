@@ -69,10 +69,11 @@ class ForwardLoadStrategy(ForwardStrategyBase):
 
     def post_order(
             self, market: "ForwardMarketBase", market_slot: DateTime, order_rate: float = None,
-            capacity_percent: float = None):
+            **kwargs):
         if not order_rate:
             order_rate = self._order_updaters[market][market_slot].get_energy_rate(
                 self.area.now)
+        capacity_percent = kwargs.get("capacity_percent")
         if not capacity_percent:
             capacity_percent = self._order_updaters[market][market_slot].capacity_percent / 100.0
         max_energy_kWh = self._energy_params.peak_energy_kWh * capacity_percent

@@ -114,7 +114,8 @@ class ForwardLiveEvents:
         energy_rate = args["energy_rate"]
         for slot in market.market_time_slots:
             if start_time <= slot <= end_time:
-                self._strategy.post_order(market, slot, capacity_percent, energy_rate)
+                self._strategy.post_order(market, slot, energy_rate,
+                                          capacity_percent=capacity_percent)
 
     @ForwardValidator.stop_trading
     def _remove_order_event(self, args: Dict):
