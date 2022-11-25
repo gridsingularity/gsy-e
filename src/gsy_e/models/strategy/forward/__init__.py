@@ -14,6 +14,7 @@ from gsy_e.models.strategy.forward.order_updater import (
 if TYPE_CHECKING:
     from gsy_e.models.market.forward import ForwardMarketBase
     from gsy_e.models.state import StateInterface
+    from gsy_e.models.market import MarketBase
 
 
 class ForwardStrategyBase(EventMixin, AreaBehaviorBase, ABC):
@@ -30,7 +31,7 @@ class ForwardStrategyBase(EventMixin, AreaBehaviorBase, ABC):
         self._create_order_updater = ConstSettings.ForwardMarketSettings.FULLY_AUTO_TRADING
         self._order_updater_params: Dict[AvailableMarketTypes,
                                          ForwardOrderUpdaterParameters] = order_updater_parameters
-        self._order_updaters = {}
+        self._order_updaters: Dict["MarketBase", Dict[DateTime, ForwardOrderUpdater]] = {}
         self._live_event_handler = ForwardLiveEvents(self)
 
     @staticmethod
@@ -47,9 +48,9 @@ class ForwardStrategyBase(EventMixin, AreaBehaviorBase, ABC):
         return constructor_args
 
     def _order_updater_for_market_slot_exists(self, market: "ForwardMarketBase", market_slot):
-        if market.id not in self._order_updaters:
+        if market not in self._order_updaters:
             return False
-        return market_slot in self._order_updaters[market.id]
+        return market_slot in self._order_updaters[market]
 
     def _update_open_orders(self):
         for market, market_slot_updater_dict in self._order_updaters.items():
