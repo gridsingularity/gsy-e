@@ -1,5 +1,6 @@
 from typing import Dict, TYPE_CHECKING
 
+from gsy_framework.data_classes import TraderDetails
 from gsy_framework.enums import AvailableMarketTypes
 from pendulum import DateTime, duration
 
@@ -82,11 +83,9 @@ class ForwardLoadStrategy(ForwardStrategyBase):
             return
         market.bid(
             order_rate * order_energy_kWh, order_energy_kWh,
-            buyer=self.owner.name,
+            buyer=TraderDetails(self.owner.name, self.owner.uuid,
+                                self.owner.name, self.owner.uuid),
             original_price=order_rate * order_energy_kWh,
-            buyer_origin=self.owner.name,
-            buyer_origin_id=self.owner.uuid,
-            buyer_id=self.owner.uuid,
             time_slot=market_slot)
         self._energy_params.increment_posted_energy(
             market_slot, order_energy_kWh, market.market_type)

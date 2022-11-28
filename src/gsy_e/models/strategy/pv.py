@@ -19,6 +19,7 @@ import traceback
 from logging import getLogger
 
 from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.data_classes import TraderDetails
 from gsy_framework.exceptions import GSyException
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from gsy_framework.utils import (
@@ -273,11 +274,9 @@ class PVStrategy(BidEnabledStrategy):
                 offer = market.offer(
                     offer_price,
                     offer_energy_kWh,
-                    self.owner.name,
+                    TraderDetails(self.owner.name, self.owner.uuid, self.owner.name,
+                                  self.owner.uuid),
                     original_price=offer_price,
-                    seller_origin=self.owner.name,
-                    seller_origin_id=self.owner.uuid,
-                    seller_id=self.owner.uuid,
                     time_slot=market.time_slot
                 )
                 self.offers.post(offer, market.id)

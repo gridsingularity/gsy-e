@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Dict, Union
 
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.data_classes import Offer
+from gsy_framework.data_classes import Offer, TraderDetails
 from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.read_user_profile import InputProfileTypes, read_arbitrary_profile
 from gsy_framework.utils import find_object_of_same_weekday_and_time, limit_float_precision
@@ -381,11 +381,9 @@ class SmartMeterStrategy(BidEnabledStrategy):
                 offer = market.offer(
                     offer_price,
                     offer_energy_kWh,
-                    self.owner.name,
-                    original_price=offer_price,
-                    seller_origin=self.owner.name,
-                    seller_origin_id=self.owner.uuid,
-                    seller_id=self.owner.uuid)
+                    TraderDetails(self.owner.name, self.owner.uuid, self.owner.name,
+                                  self.owner.uuid),
+                    original_price=offer_price)
                 self.offers.post(offer, market.id)
             except MarketException:
                 pass
@@ -509,10 +507,9 @@ class SmartMeterStrategy(BidEnabledStrategy):
                 # If the device can still buy more energy
                 energy_Wh = self.state.calculate_energy_to_accept(
                     acceptable_offer.energy * 1000.0, time_slot)
-                self.accept_offer(market, acceptable_offer, energy=energy_Wh / 1000.0,
-                                  buyer_origin=self.owner.name,
-                                  buyer_origin_id=self.owner.uuid,
-                                  buyer_id=self.owner.uuid)
+                self.accept_offer(market, acceptable_offer, buyer=TraderDetails(
+                    self.owner.name, self.owner.uuid, self.owner.name, self.owner.uuid
+                ), energy=energy_Wh / 1000.0)
 
                 self._energy_params.decrement_energy_requirement(
                     energy_kWh=energy_Wh / 1000,

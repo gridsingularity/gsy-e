@@ -134,11 +134,9 @@ class FakeMarket:
             "id": Offer(id="id", creation_time=pendulum.now(), price=10, energy=0.5,
                         seller=TraderDetails("A", ""))}
 
-    def offer(self, price, energy, seller, original_price=None, seller_origin=None,
-              seller_origin_id=None, seller_id=None, time_slot=None):
+    def offer(self, price, energy, seller, original_price=None, time_slot=None):
         # pylint: disable=too-many-arguments
-        offer = Offer(str(uuid.uuid4()), pendulum.now(), price, energy,
-                      TraderDetails(seller, seller_id, seller_origin, seller_origin_id),
+        offer = Offer(str(uuid.uuid4()), pendulum.now(), price, energy, seller,
                       original_price, time_slot=time_slot)
         self.created_offers.append(offer)
         self.offers[offer.id] = offer

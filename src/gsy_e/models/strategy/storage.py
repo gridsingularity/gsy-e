@@ -21,6 +21,7 @@ from logging import getLogger
 from typing import Union
 
 from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.data_classes import TraderDetails
 from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.exceptions import GSyException
 from gsy_framework.read_user_profile import InputProfileTypes, read_arbitrary_profile
@@ -357,7 +358,6 @@ class StorageStrategy(BidEnabledStrategy):
         if not market:
             return
 
-        print("HERE")
         self.assert_if_trade_bid_price_is_too_high(market, trade)
         self._assert_if_trade_offer_price_is_too_low(market_id, trade)
 
@@ -410,6 +410,8 @@ class StorageStrategy(BidEnabledStrategy):
 
         current_market = self.area.spot_market
         free_storage = self.state.free_storage(current_market.time_slot)
+        seller_details = TraderDetails(
+            self.owner.name, self.owner.uuid, self.owner.name, self.owner.uuid)
         if free_storage > 0:
             charge_energy = self.balancing_energy_ratio.demand * free_storage
             charge_price = DeviceRegistry.REGISTRY[self.owner.name][0] * charge_energy
@@ -417,7 +419,7 @@ class StorageStrategy(BidEnabledStrategy):
                 # committing to start charging when required
                 self.area.get_balancing_market(self.area.now).balancing_offer(charge_price,
                                                                               -charge_energy,
-                                                                              self.owner.name)
+                                                                              seller_details)
         if self.state.used_storage > 0:
             discharge_energy = self.balancing_energy_ratio.supply * self.state.used_storage
             discharge_price = DeviceRegistry.REGISTRY[self.owner.name][1] * discharge_energy
@@ -425,7 +427,7 @@ class StorageStrategy(BidEnabledStrategy):
             if discharge_energy != 0 and discharge_price != 0:
                 self.area.get_balancing_market(self.area.now).balancing_offer(discharge_price,
                                                                               discharge_energy,
-                                                                              self.owner.name)
+                                                                              seller_details)
 
     def _try_to_buy_offer(self, offer, market, max_affordable_offer_rate):
         if offer.seller.name == self.owner.name:
@@ -444,10 +446,9 @@ class StorageStrategy(BidEnabledStrategy):
                 self.state.register_energy_from_one_sided_market_accept_offer(
                     max_energy, market.time_slot,
                     self._track_bought_energy_origin(offer.seller.name))
-                self.accept_offer(market, offer, energy=max_energy,
-                                  buyer_origin=self.owner.name,
-                                  buyer_origin_id=self.owner.uuid,
-                                  buyer_id=self.owner.uuid)
+                self.accept_offer(market, offer, buyer=TraderDetails(
+                    self.owner.name, self.owner.uuid, self.owner.name, self.owner.uuid),
+                    energy=max_energy)
             return None
         except MarketException:
             # Offer already gone etc., try next one.

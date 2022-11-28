@@ -103,8 +103,7 @@ class FakeMarket:
         self.time_slot = pendulum.now()
 
     def accept_offer(self, offer_or_id, *, buyer="", energy=None, time=None, already_tracked=False,
-                     trade_rate: float = None, trade_bid_info=None, buyer_origin=None,
-                     buyer_origin_id=None, buyer_id=None):
+                     trade_rate: float = None, trade_bid_info=None):
         offer = offer_or_id
         if self.raises:
             raise MarketException
@@ -113,14 +112,12 @@ class FakeMarket:
             energy = offer.energy
         offer.energy = energy
         return Trade("trade", 0, offer.seller,
-                     TraderDetails("FakeOwner", buyer_id, buyer_origin, buyer_origin_id),
+                     TraderDetails("FakeOwner", ""),
                      offer=offer, traded_energy=offer.energy, trade_price=offer.price)
 
     def bid(self, price, energy, buyer, original_price=None,
-            buyer_origin=None, buyer_origin_id=None, buyer_id=None,
             attributes=None, requirements=None, time_slot=None):
-        return Bid(123, pendulum.now(), price, energy,
-                   TraderDetails(buyer, buyer_id, buyer_origin, buyer_origin_id),
+        return Bid(123, pendulum.now(), price, energy, buyer,
                    original_price, attributes=attributes, requirements=requirements,
                    time_slot=time_slot)
 
@@ -428,15 +425,14 @@ def test_post_offer_creates_offer_with_correct_parameters(market_class):
     strategy.area._market = market
 
     offer_args = {
-        "price": 1, "energy": 1, "seller": "seller-name", "seller_origin": "seller-origin-name"}
+        "price": 1, "energy": 1}
 
     offer = strategy.post_offer(market, replace_existing=False, **offer_args)
 
     # The offer is created with the expected parameters
     assert offer.price == 1
     assert offer.energy == 1
-    assert offer.seller.name == "seller-name"
-    assert offer.seller.origin == "seller-origin-name"
+    assert offer.seller.name == strategy.owner.name
 
 
 @pytest.mark.parametrize("market_class", [OneSidedMarket, TwoSidedMarket])
@@ -452,19 +448,19 @@ def test_post_offer_with_replace_existing(market_class):
 
     # Post a first offer on the market
     offer_1_args = {
-        "price": 1, "energy": 1, "seller": "seller-name", "seller_origin": "seller-origin-name"}
+        "price": 1, "energy": 1, "seller": "seller-name"}
     offer = strategy.post_offer(market, replace_existing=False, **offer_1_args)
     assert strategy.offers.open_in_market(market.id) == [offer]
 
     # Post a new offer not replacing the previous ones
     offer_2_args = {
-        "price": 1, "energy": 1, "seller": "seller-name", "seller_origin": "seller-origin-name"}
+        "price": 1, "energy": 1, "seller": "seller-name"}
     offer_2 = strategy.post_offer(market, replace_existing=False, **offer_2_args)
     assert strategy.offers.open_in_market(market.id) == [offer, offer_2]
 
     # Post a new offer replacing the previous ones (default behavior)
     offer_3_args = {
-        "price": 1, "energy": 1, "seller": "seller-name", "seller_origin": "seller-origin-name"}
+        "price": 1, "energy": 1, "seller": "seller-name"}
     offer_3 = strategy.post_offer(market, **offer_3_args)
     assert strategy.offers.open_in_market(market.id) == [offer_3]
 

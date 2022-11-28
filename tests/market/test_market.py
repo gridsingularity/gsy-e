@@ -45,9 +45,13 @@ from gsy_e.models.market.two_sided import TwoSidedMarket
 
 device_registry_dict = {
     "A": {"balancing rates": (33, 35)},
+    "S": {"balancing rates": (33, 35)},
     "someone": {"balancing rates": (33, 35)},
     "seller": {"balancing rates": (33, 35)},
 }
+
+seller_details = TraderDetails("S", "", "S", "")
+buyer_details = TraderDetails("B", "", "B", "")
 
 
 @pytest.fixture(scope="function", autouse=True)
@@ -67,7 +71,7 @@ def market_fixture():
 
 def test_device_registry(market=BalancingMarket()):
     with pytest.raises(DeviceNotInRegistryError):
-        market.balancing_offer(10, 10, "noone")
+        market.balancing_offer(10, 10, TraderDetails("noone", ""))
 
 
 @pytest.mark.parametrize("market, offer", [
@@ -77,7 +81,7 @@ def test_device_registry(market=BalancingMarket()):
 ])
 def test_market_offer(market, offer):
     ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
-    e_offer = getattr(market, offer)(10, 20, "someone", "someone")
+    e_offer = getattr(market, offer)(10, 20, TraderDetails("someone", "", "someone", ""))
     assert market.offers[e_offer.id] == e_offer
     assert e_offer.energy == 20
     assert e_offer.price == 10
@@ -93,11 +97,11 @@ def test_market_offer(market, offer):
 ])
 def test_market_bid(market):
     ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
-    bid = market.bid(10, 20, "someone", "someone")
+    bid = market.bid(10, 20, buyer_details)
     assert market.bids[bid.id] == bid
     assert bid.energy == 20
     assert bid.price == 10
-    assert bid.buyer.name == "someone"
+    assert bid.buyer.name == buyer_details.name
     assert len(bid.id) == 36
     assert bid.creation_time == market.now
     assert bid.time_slot == market.time_slot
@@ -105,7 +109,7 @@ def test_market_bid(market):
 
 def test_market_offer_invalid(market: OneSidedMarket):
     with pytest.raises(NegativeEnergyOrderException):
-        market.offer(10, -1, "someone", "someone")
+        market.offer(10, -1, buyer_details)
 
 
 @pytest.mark.parametrize("market, offer", [
@@ -116,7 +120,7 @@ def test_market_offer_invalid(market: OneSidedMarket):
 def test_market_offer_readonly(market, offer):
     market.readonly = True
     with pytest.raises(MarketReadOnlyException):
-        getattr(market, offer)(10, 10, "A", "A")
+        getattr(market, offer)(10, 10, seller_details)
 
 
 @pytest.mark.parametrize("market",
@@ -148,8 +152,8 @@ def test_market_offer_delete_readonly(market):
      "offer", "accept_offer")
 ])
 def test_market_trade(market, offer, accept_offer):
-    e_offer = getattr(market, offer)(20, 10, "A", "A")
-    trade = getattr(market, accept_offer)(offer_or_id=e_offer, buyer="B",
+    e_offer = getattr(market, offer)(20, 10, seller_details)
+    trade = getattr(market, accept_offer)(offer_or_id=e_offer, buyer=buyer_details,
                                           energy=10)
     assert trade
     assert trade == market.trades[0]
@@ -157,8 +161,8 @@ def test_market_trade(market, offer, accept_offer):
     assert trade.creation_time == market.now
     assert trade.time_slot == market.time_slot
     assert trade.match_details["offer"] == e_offer
-    assert trade.seller.name == "A"
-    assert trade.buyer.name == "B"
+    assert trade.seller.name == seller_details.name
+    assert trade.buyer.name == buyer_details.name
 
 
 def test_orders_per_slot(market):
@@ -205,16 +209,16 @@ def test_orders_per_slot(market):
 
 def test_balancing_market_negative_offer_trade(market=BalancingMarket(
         bc=NonBlockchainInterface(str(uuid4())))):  # NOQA
-    offer = market.balancing_offer(20, -10, "A", "A")
-    trade = market.accept_offer(offer, "B", energy=-10)
+    offer = market.balancing_offer(20, -10, seller_details)
+    trade = market.accept_offer(offer, buyer_details, energy=-10)
     assert trade
     assert trade == market.trades[0]
     assert trade.id
     assert trade.creation_time == market.now
     assert trade.time_slot == market.time_slot
     assert trade.match_details["offer"] is offer
-    assert trade.seller.name == "A"
-    assert trade.buyer.name == "B"
+    assert trade.seller.name == seller_details.name
+    assert trade.buyer.name == buyer_details.name
 
 
 @pytest.mark.parametrize("market, offer, accept_offer", [
@@ -226,8 +230,8 @@ def test_balancing_market_negative_offer_trade(market=BalancingMarket(
      "offer", "accept_offer")
 ])
 def test_market_trade_by_id(market, offer, accept_offer):
-    e_offer = getattr(market, offer)(20, 10, "A", "A")
-    trade = getattr(market, accept_offer)(offer_or_id=e_offer.id, buyer="B", energy=10)
+    e_offer = getattr(market, offer)(20, 10, seller_details)
+    trade = getattr(market, accept_offer)(offer_or_id=e_offer.id, buyer=buyer_details, energy=10)
     assert trade
 
 
@@ -240,10 +244,10 @@ def test_market_trade_by_id(market, offer, accept_offer):
      "offer", "accept_offer")
 ])
 def test_market_trade_readonly(market, offer, accept_offer):
-    e_offer = getattr(market, offer)(20, 10, "A", "A")
+    e_offer = getattr(market, offer)(20, 10, seller_details)
     market.readonly = True
     with pytest.raises(MarketReadOnlyException):
-        getattr(market, accept_offer)(e_offer, "B")
+        getattr(market, accept_offer)(e_offer, buyer_details)
 
 
 @pytest.mark.parametrize("market, offer, accept_offer", [
@@ -255,11 +259,11 @@ def test_market_trade_readonly(market, offer, accept_offer):
      "offer", "accept_offer")
 ])
 def test_market_trade_not_found(market, offer, accept_offer):
-    e_offer = getattr(market, offer)(20, 10, "A", "A")
+    e_offer = getattr(market, offer)(20, 10, seller_details)
 
-    assert getattr(market, accept_offer)(offer_or_id=e_offer, buyer="B", energy=10)
+    assert getattr(market, accept_offer)(offer_or_id=e_offer, buyer=buyer_details, energy=10)
     with pytest.raises(OfferNotFoundException):
-        getattr(market, accept_offer)(offer_or_id=e_offer, buyer="B", energy=10)
+        getattr(market, accept_offer)(offer_or_id=e_offer, buyer=buyer_details, energy=10)
 
 
 @pytest.mark.parametrize("market, offer, accept_offer", [
@@ -271,24 +275,24 @@ def test_market_trade_not_found(market, offer, accept_offer):
      "offer", "accept_offer")
 ])
 def test_market_trade_partial(market, offer, accept_offer):
-    e_offer = getattr(market, offer)(20, 20, "A", "A")
+    e_offer = getattr(market, offer)(20, 20, seller_details)
 
-    trade = getattr(market, accept_offer)(offer_or_id=e_offer, buyer="B", energy=5)
+    trade = getattr(market, accept_offer)(offer_or_id=e_offer, buyer=buyer_details, energy=5)
     assert trade
     assert trade == market.trades[0]
     assert trade.id
     assert trade.match_details["offer"] is not e_offer
     assert trade.traded_energy == 5
     assert trade.trade_price == 5
-    assert trade.match_details["offer"].seller.name == "A"
-    assert trade.seller.name == "A"
-    assert trade.buyer.name == "B"
+    assert trade.match_details["offer"].seller.name == seller_details.name
+    assert trade.seller.name == seller_details.name
+    assert trade.buyer.name == buyer_details.name
     assert len(market.offers) == 1
     new_offer = list(market.offers.values())[0]
     assert new_offer is not e_offer
     assert new_offer.energy == 15
     assert new_offer.price == 15
-    assert new_offer.seller.name == "A"
+    assert new_offer.seller.name == seller_details.name
     assert new_offer.id != e_offer.id
 
 
@@ -309,15 +313,16 @@ def test_market_trade_partial(market, offer, accept_offer):
      "offer", "accept_offer", 21, InvalidTrade),
 ])
 def test_market_trade_partial_invalid(market, offer, accept_offer, energy, exception):
-    e_offer = getattr(market, offer)(20, 20, "A", "A")
+    e_offer = getattr(market, offer)(20, 20, seller_details)
     with pytest.raises(exception):
-        getattr(market, accept_offer)(offer_or_id=e_offer, buyer="B", energy=energy)
+        getattr(market, accept_offer)(
+            offer_or_id=e_offer, buyer=buyer_details.name, energy=energy)
 
 
 def test_market_acct_simple(market=OneSidedMarket(bc=NonBlockchainInterface(str(uuid4())),
                                                   time_slot=now())):
-    offer = market.offer(20, 10, "A", "A")
-    market.accept_offer(offer, "B")
+    offer = market.offer(20, 10, TraderDetails("A", "", "A", ""))
+    market.accept_offer(offer, TraderDetails("B", "", "B", ""))
 
     assert market.traded_energy["A"] == offer.energy
     assert market.traded_energy["B"] == -offer.energy
@@ -329,10 +334,10 @@ def test_market_acct_simple(market=OneSidedMarket(bc=NonBlockchainInterface(str(
 
 def test_market_acct_multiple(market=OneSidedMarket(bc=NonBlockchainInterface(str(uuid4())),
                                                     time_slot=now())):
-    offer1 = market.offer(10, 20, "A", "A")
-    offer2 = market.offer(10, 10, "A", "A")
-    market.accept_offer(offer1, "B")
-    market.accept_offer(offer2, "C")
+    offer1 = market.offer(10, 20, TraderDetails("A", "", "A", ""))
+    offer2 = market.offer(10, 10, TraderDetails("A", "", "A", ""))
+    market.accept_offer(offer1, TraderDetails("B", "", "B", ""))
+    market.accept_offer(offer2, TraderDetails("C", "", "C", ""))
 
     assert market.traded_energy["A"] == offer1.energy + offer2.energy == 30
     assert market.traded_energy["B"] == -offer1.energy == -20
@@ -349,11 +354,11 @@ def test_market_acct_multiple(market=OneSidedMarket(bc=NonBlockchainInterface(st
     (SettlementMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()), "offer")
 ])
 def test_market_sorted_offers(market, offer):
-    getattr(market, offer)(5, 1, "A", "A")
-    getattr(market, offer)(3, 1, "A", "A")
-    getattr(market, offer)(1, 1, "A", "A")
-    getattr(market, offer)(2, 1, "A", "A")
-    getattr(market, offer)(4, 1, "A", "A")
+    getattr(market, offer)(5, 1, seller_details)
+    getattr(market, offer)(3, 1, seller_details)
+    getattr(market, offer)(1, 1, seller_details)
+    getattr(market, offer)(2, 1, seller_details)
+    getattr(market, offer)(4, 1, seller_details)
 
     assert [o.price for o in market.sorted_offers] == [1, 2, 3, 4, 5]
 
@@ -364,14 +369,14 @@ def test_market_sorted_offers(market, offer):
     (SettlementMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now()), "offer")
 ])
 def test_market_most_affordable_offers(market, offer):
-    getattr(market, offer)(5, 1, "A", "A")
-    getattr(market, offer)(3, 1, "A", "A")
-    getattr(market, offer)(1, 1, "A", "A")
-    getattr(market, offer)(10, 10, "A", "A")
-    getattr(market, offer)(20, 20, "A", "A")
-    getattr(market, offer)(20000, 20000, "A", "A")
-    getattr(market, offer)(2, 1, "A", "A")
-    getattr(market, offer)(4, 1, "A", "A")
+    getattr(market, offer)(5, 1, seller_details)
+    getattr(market, offer)(3, 1, seller_details)
+    getattr(market, offer)(1, 1, seller_details)
+    getattr(market, offer)(10, 10, seller_details)
+    getattr(market, offer)(20, 20, seller_details)
+    getattr(market, offer)(20000, 20000, seller_details)
+    getattr(market, offer)(2, 1, seller_details)
+    getattr(market, offer)(4, 1, seller_details)
 
     assert {o.price for o in market.most_affordable_offers} == {1, 10, 20, 20000}
 
@@ -383,7 +388,7 @@ def test_market_most_affordable_offers(market, offer):
 ])
 def test_market_listeners_init(market, offer, called):
     markt = market(bc=MagicMock(), time_slot=now(), notification_listener=called)
-    getattr(markt, offer)(10, 20, "A", "A")
+    getattr(markt, offer)(10, 20, seller_details)
     assert len(called.calls) == 1
 
 
@@ -394,7 +399,7 @@ def test_market_listeners_init(market, offer, called):
 ])
 def test_market_listeners_add(market, offer, add_listener, called):
     getattr(market, add_listener)(called)
-    getattr(market, offer)(10, 20, "A", "A")
+    getattr(market, offer)(10, 20, seller_details)
 
     assert len(called.calls) == 1
 
@@ -409,7 +414,7 @@ def test_market_listeners_add(market, offer, add_listener, called):
 ])
 def test_market_listeners_offer(market, offer, add_listener, event, called):
     getattr(market, add_listener)(called)
-    e_offer = getattr(market, offer)(10, 20, "A", "A")
+    e_offer = getattr(market, offer)(10, 20, seller_details)
     assert len(called.calls) == 1
     assert called.calls[0][0] == (repr(event),)
     assert called.calls[0][1] == {"offer": repr(e_offer), "market_id": repr(market.id)}
@@ -429,8 +434,8 @@ def test_market_listeners_offer(market, offer, add_listener, event, called):
 def test_market_listeners_offer_split(market, offer, accept_offer, add_listener, event, called):
     # pylint: disable=too-many-arguments
     getattr(market, add_listener)(called)
-    e_offer = getattr(market, offer)(10., 20, "A", "A")
-    getattr(market, accept_offer)(e_offer, "B", energy=3.)
+    e_offer = getattr(market, offer)(10., 20, seller_details)
+    getattr(market, accept_offer)(e_offer, buyer_details, energy=3.)
     assert len(called.calls) == 3
     assert called.calls[1][0] == (repr(event),)
     call_kwargs = called.calls[1][1]
@@ -459,7 +464,7 @@ def test_market_listeners_offer_split(market, offer, accept_offer, add_listener,
 def test_market_listeners_offer_deleted(market, offer, delete_offer, add_listener, event, called):
     # pylint: disable=too-many-arguments
     getattr(market, add_listener)(called)
-    e_offer = getattr(market, offer)(10, 20, "A", "A")
+    e_offer = getattr(market, offer)(10, 20, seller_details)
     getattr(market, delete_offer)(e_offer)
 
     assert len(called.calls) == 2
@@ -477,13 +482,13 @@ def test_market_listeners_offer_deleted(market, offer, delete_offer, add_listene
 )
 def test_market_issuance_acct_reverse(last_offer_size, traded_energy):
     market = OneSidedMarket(bc=NonBlockchainInterface(str(uuid4())), time_slot=now())
-    offer1 = market.offer(10, 20, "A", "A")
-    offer2 = market.offer(10, 10, "A", "A")
-    offer3 = market.offer(10, last_offer_size, "D", "D")
+    offer1 = market.offer(10, 20, TraderDetails("A", "", "A", ""))
+    offer2 = market.offer(10, 10, TraderDetails("A", "", "A", ""))
+    offer3 = market.offer(10, last_offer_size, TraderDetails("D", "", "D", ""))
 
-    market.accept_offer(offer1, "B")
-    market.accept_offer(offer2, "C")
-    market.accept_offer(offer3, "A")
+    market.accept_offer(offer1, TraderDetails("B", "", "B", ""))
+    market.accept_offer(offer2, TraderDetails("C", ""))
+    market.accept_offer(offer3, TraderDetails("A", "", "A", ""))
     assert market.traded_energy["A"] == traded_energy
 
 
@@ -497,8 +502,8 @@ def test_market_issuance_acct_reverse(last_offer_size, traded_energy):
 ])
 def test_market_accept_offer_yields_partial_trade(market, offer, accept_offer):
     """Test market accept offer returns partial trade."""
-    e_offer = getattr(market, offer)(2.0, 4, "seller", "seller")
-    trade = getattr(market, accept_offer)(e_offer, "buyer", energy=1)
+    e_offer = getattr(market, offer)(2.0, 4, seller_details)
+    trade = getattr(market, accept_offer)(e_offer, buyer_details, energy=1)
     assert (trade.match_details["offer"].id == e_offer.id
             and trade.traded_energy == 1
             and trade.residual.energy == 3)
@@ -523,12 +528,12 @@ class MarketStateMachine(RuleBasedStateMachine):
     @rule(target=offers, seller=actors, energy=st.integers(min_value=1),
           price=st.integers(min_value=0))
     def offer(self, seller, energy, price):
-        return self.market.offer(price, energy, seller, seller)
+        return self.market.offer(price, energy, TraderDetails(seller, ""))
 
     @rule(offer=offers, buyer=actors)
     def trade(self, offer, buyer):
         assume(offer.id in self.market.offers)
-        self.market.accept_offer(offer, buyer)
+        self.market.accept_offer(offer, TraderDetails(buyer, ""))
 
     @precondition(lambda self: self.market.trades)
     @rule()

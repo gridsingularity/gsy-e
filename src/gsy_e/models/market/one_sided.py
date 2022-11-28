@@ -95,14 +95,12 @@ class OneSidedMarket(MarketBase):
 
     @lock_market_action
     def offer(  # pylint: disable=too-many-arguments, too-many-locals
-            self, price: float, energy: float, seller: str, seller_origin: str,
+            self, price: float, energy: float, seller: TraderDetails,
             offer_id: Optional[str] = None,
             original_price: Optional[float] = None,
             dispatch_event: bool = True,
             adapt_price_with_fees: bool = True,
             add_to_history: bool = True,
-            seller_origin_id: Optional[str] = None,
-            seller_id: Optional[str] = None,
             attributes: Optional[Dict] = None,
             requirements: Optional[List[Dict]] = None,
             time_slot: Optional[DateTime] = None) -> Offer:
@@ -128,8 +126,7 @@ class OneSidedMarket(MarketBase):
         if offer_id is None:
             offer_id = self.bc_interface.create_new_offer(energy, price, seller)
         offer = Offer(offer_id, self.now, price, energy,
-                      TraderDetails(seller, seller_id, seller_origin, seller_origin_id),
-                      original_price, attributes=attributes, requirements=requirements,
+                      seller, original_price, attributes=attributes, requirements=requirements,
                       time_slot=time_slot)
 
         self.offers[offer.id] = offer
@@ -185,12 +182,9 @@ class OneSidedMarket(MarketBase):
         accepted_offer = self.offer(offer_id=original_offer.id,
                                     price=original_offer.price * (energy / original_offer.energy),
                                     energy=energy,
-                                    seller=original_offer.seller.name,
+                                    seller=original_offer.seller,
                                     original_price=original_accepted_price,
                                     dispatch_event=False,
-                                    seller_origin=original_offer.seller.origin,
-                                    seller_origin_id=original_offer.seller.origin_uuid,
-                                    seller_id=original_offer.seller.uuid,
                                     adapt_price_with_fees=False,
                                     add_to_history=False,
                                     attributes=original_offer.attributes,
@@ -205,12 +199,9 @@ class OneSidedMarket(MarketBase):
 
         residual_offer = self.offer(price=residual_price,
                                     energy=residual_energy,
-                                    seller=original_offer.seller.name,
+                                    seller=original_offer.seller,
                                     original_price=original_residual_price,
                                     dispatch_event=False,
-                                    seller_origin=original_offer.seller.origin,
-                                    seller_origin_id=original_offer.seller.origin_uuid,
-                                    seller_id=original_offer.seller.uuid,
                                     adapt_price_with_fees=False,
                                     add_to_history=True,
                                     attributes=original_offer.attributes,
@@ -248,14 +239,11 @@ class OneSidedMarket(MarketBase):
 
     @lock_market_action
     def accept_offer(  # pylint: disable=too-many-locals
-            self, offer_or_id: Union[str, Offer], buyer: str, *,
+            self, offer_or_id: Union[str, Offer], buyer: TraderDetails, *,
             energy: Optional[float] = None,
             already_tracked: bool = False,
             trade_rate: Optional[float] = None,
-            trade_bid_info: Optional[TradeBidOfferInfo] = None,
-            buyer_origin: Optional[str] = None,
-            buyer_origin_id: Optional[str] = None,
-            buyer_id: Optional[str] = None) -> Trade:
+            trade_bid_info: Optional[TradeBidOfferInfo] = None) -> Trade:
         """Accept an offer and create a Trade."""
 
         if self.readonly:
@@ -316,8 +304,7 @@ class OneSidedMarket(MarketBase):
             trade_original_info=trade_bid_info)
 
         trade = Trade(trade_id, self.now, offer.seller,
-                      buyer=TraderDetails(name=buyer, uuid=buyer_id,
-                                          origin=buyer_origin, origin_uuid=buyer_origin_id),
+                      buyer=buyer,
                       offer=offer,
                       traded_energy=energy, trade_price=trade_price, residual=residual_offer,
                       offer_bid_trade_info=offer_bid_trade_info,

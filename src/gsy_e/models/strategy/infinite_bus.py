@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.data_classes import TraderDetails
 from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.read_user_profile import InputProfileTypes
 from gsy_framework.utils import (convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict,
@@ -100,9 +101,8 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
                     self.energy_buy_rate,
                     market.time_slot):
                 try:
-                    self.accept_offer(market, offer, buyer_origin=self.owner.name,
-                                      buyer_origin_id=self.owner.uuid,
-                                      buyer_id=self.owner.uuid)
+                    self.accept_offer(market, offer, buyer=TraderDetails(
+                        self.owner.name, self.owner.uuid, self.owner.name, self.owner.uuid))
                 except MarketException:
                     # Offer already gone etc., try next one.
                     continue

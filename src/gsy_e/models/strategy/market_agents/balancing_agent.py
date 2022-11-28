@@ -15,11 +15,13 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.data_classes import TraderDetails
 from numpy.random import random
+
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.models.strategy.market_agents.one_sided_agent import OneSidedAgent
 from gsy_e.models.strategy.market_agents.one_sided_engine import BalancingEngine
-from gsy_framework.constants_limits import ConstSettings
 
 
 class BalancingAgent(OneSidedAgent):
@@ -103,9 +105,12 @@ class BalancingAgent(OneSidedAgent):
 
     def _balancing_trade(self, offer, target_energy):
         trade = None
-        buyer = self.owner.name \
-            if self.owner.name != offer.seller.name \
-            else f"{self.owner.name} Reserve"
+        buyer = TraderDetails(
+            (self.owner.name
+             if self.owner.name != offer.seller.name
+             else f"{self.owner.name} Reserve"),
+            self.owner.uuid)
+
         if abs(offer.energy) <= abs(target_energy):
             trade = self.lower_market.accept_offer(offer_or_id=offer,
                                                    buyer=buyer,

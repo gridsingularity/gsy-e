@@ -125,10 +125,8 @@ class FakeMarket:
                         seller=TraderDetails("A", ""))}
         self._time_slot = TIME
 
-    def offer(self, price, energy, seller, original_price=None, seller_origin=None,
-              seller_origin_id=None, seller_id=None, time_slot=None):
-        offer = Offer(str(uuid.uuid4()), pendulum.now(), price, energy,
-                      TraderDetails(seller, seller_id, seller_origin, seller_origin_id),
+    def offer(self, price, energy, seller, original_price=None, time_slot=None):
+        offer = Offer(str(uuid.uuid4()), pendulum.now(), price, energy, seller,
                       original_price, time_slot=time_slot)
         self.created_offers.append(offer)
         self.offers[offer.id] = offer

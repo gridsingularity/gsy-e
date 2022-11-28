@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from collections import namedtuple
 from typing import Dict, TYPE_CHECKING
 
-from gsy_framework.data_classes import Bid
+from gsy_framework.data_classes import Bid, TraderDetails
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.exceptions import BidNotFoundException, MarketException
@@ -74,11 +74,9 @@ class TwoSidedEngine(MAEngine):
                 price=(self.markets.source.fee_class.update_forwarded_bid_with_fee(
                     bid.energy_rate, bid.original_price / bid.energy)) * bid.energy,
                 energy=bid.energy,
-                buyer=self.owner.name,
+                buyer=TraderDetails(
+                    self.owner.name, self.owner.uuid, bid.buyer.origin, bid.buyer.origin_uuid),
                 original_price=bid.original_price,
-                buyer_origin=bid.buyer.origin,
-                buyer_origin_id=bid.buyer.origin_uuid,
-                buyer_id=self.owner.uuid,
                 time_slot=bid.time_slot,
                 requirements=self._update_requirements_prices(bid),
                 attributes=bid.attributes
@@ -172,12 +170,11 @@ class TwoSidedEngine(MAEngine):
             self.markets.source.accept_bid(
                 bid=market_bid,
                 energy=bid_trade.traded_energy,
-                seller=self.owner.name,
+                seller=TraderDetails(
+                    self.owner.name, self.owner.uuid,
+                    bid_trade.seller.origin, bid_trade.seller.origin_uuid),
                 already_tracked=False,
                 trade_offer_info=trade_offer_info,
-                seller_origin=bid_trade.seller.origin,
-                seller_origin_id=bid_trade.seller.origin_uuid,
-                seller_id=self.owner.uuid
             )
             self._delete_forwarded_bids(bid_info)
             self.bid_age.pop(bid_info.source_bid.id, None)

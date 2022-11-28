@@ -96,8 +96,7 @@ class FakeMarket:
 
     # pylint: disable=unused-argument
     def accept_offer(self, offer_or_id, buyer, *, energy=None, time=None, already_tracked=False,
-                     trade_rate: float = None, trade_bid_info=None, buyer_origin=None,
-                     buyer_origin_id=None, buyer_id=None):
+                     trade_rate: float = None, trade_bid_info=None):
         offer = offer_or_id
         self.calls_energy.append(energy)
         self.calls_offers.append(offer)
@@ -107,19 +106,18 @@ class FakeMarket:
                 "res", offer.creation_time, offer.price, residual_energy, offer.seller)
             traded = Offer(offer.id, offer.creation_time, offer.price, energy, offer.seller)
             return Trade("trade_id", time, traded.seller,
-                         TraderDetails(buyer, buyer_id, buyer_origin, buyer_origin_id),
+                         TraderDetails(buyer, ""),
                          residual=residual, offer=traded,
                          traded_energy=1, trade_price=1)
 
         return Trade("trade_id", time, offer.seller,
-                     TraderDetails(buyer, buyer_id, buyer_origin, buyer_origin_id),
+                     TraderDetails(buyer, ""),
                      offer=offer, traded_energy=1, trade_price=1)
 
     # pylint: disable=unused-argument
     # pylint: disable=too-many-locals
     def accept_bid(self, bid, energy, seller, buyer=None, *, time=None, trade_rate: float = None,
-                   trade_offer_info=None, already_tracked=False, seller_origin=None,
-                   seller_origin_id=None, seller_id=None):
+                   trade_offer_info=None, already_tracked=False):
         self.calls_energy_bids.append(energy)
         self.calls_bids.append(bid)
         self.calls_bids_price.append(bid.price)
@@ -133,14 +131,12 @@ class FakeMarket:
             residual_energy = bid.energy - energy
             residual = Bid("res", bid.creation_time, bid.price, residual_energy, bid.buyer)
             traded = Bid(bid.id, bid.creation_time, (trade_rate * energy), energy, bid.buyer)
-            return Trade("trade_id", time,
-                         TraderDetails(seller, seller_id, seller_origin, seller_origin_id),
+            return Trade("trade_id", time, seller,
                          bid.buyer, bid=traded, residual=residual,
                          traded_energy=1, trade_price=1)
 
         traded = Bid(bid.id, bid.creation_time, (trade_rate * energy), energy, bid.buyer)
-        return Trade("trade_id", time,
-                     TraderDetails(seller, seller_id, seller_origin, seller_origin_id),
+        return Trade("trade_id", time, seller,
                      bid.buyer, bid=traded, traded_energy=1, trade_price=1)
 
     def delete_offer(self, *args):
@@ -156,10 +152,9 @@ class FakeMarket:
         return self.fee_class.update_incoming_bid_with_fee(
             bid_price, original_price)
 
-    def offer(self, price: float, energy: float, seller: str, offer_id=None,
-              original_price=None, dispatch_event=True, seller_origin=None,
-              adapt_price_with_fees=True, seller_origin_id=None,
-              seller_id=None, attributes=None, requirements=None, time_slot=None) -> Offer:
+    def offer(self, price: float, energy: float, seller: TraderDetails, offer_id=None,
+              original_price=None, dispatch_event=True, adapt_price_with_fees=True,
+              attributes=None, requirements=None, time_slot=None) -> Offer:
         self.offer_call_count += 1
 
         if original_price is None:
@@ -168,9 +163,7 @@ class FakeMarket:
             offer_id = "uuid"
         if adapt_price_with_fees:
             price = self._update_new_offer_price_with_fee(price, original_price, energy)
-        offer = Offer(offer_id, pendulum.now(), price, energy,
-                      TraderDetails(seller, seller_id, seller_origin, seller_origin_id),
-                      original_price)
+        offer = Offer(offer_id, pendulum.now(), price, energy, seller, original_price)
         self.offers[offer.id] = deepcopy(offer)
         self.forwarded_offer = deepcopy(offer)
 
@@ -179,10 +172,9 @@ class FakeMarket:
     def dispatch_market_offer_event(self, offer):
         pass
 
-    def bid(self, price: float, energy: float, buyer: str,
-            bid_id: str = None, original_price=None, buyer_origin=None,
-            adapt_price_with_fees=True, buyer_origin_id=None, buyer_id=None,
-            time_slot=None, requirements=None, attributes=None):
+    def bid(self, price: float, energy: float, buyer: TraderDetails,
+            bid_id: str = None, original_price=None,
+            adapt_price_with_fees=True, time_slot=None, requirements=None, attributes=None):
         self.bid_call_count += 1
 
         if original_price is None:
@@ -194,8 +186,7 @@ class FakeMarket:
         if adapt_price_with_fees:
             price = self._update_new_bid_price_with_fee(price, original_price)
 
-        bid = Bid(bid_id, pendulum.now(), price, energy,
-                  TraderDetails(buyer, buyer_id, buyer_origin, buyer_origin_id),
+        bid = Bid(bid_id, pendulum.now(), price, energy, buyer,
                   original_price=original_price, requirements=requirements, attributes=attributes)
         self._bids.append(bid)
         self.forwarded_bid = bid
@@ -208,9 +199,8 @@ class FakeMarket:
         accepted_offer = self.offer(offer_id=original_offer.id,
                                     price=original_offer.price * (energy / original_offer.energy),
                                     energy=energy,
-                                    seller=original_offer.seller.name,
-                                    dispatch_event=False,
-                                    seller_origin=original_offer.seller.origin)
+                                    seller=original_offer.seller,
+                                    dispatch_event=False)
 
         residual_price = (1 - energy / original_offer.energy) * original_offer.price
         residual_energy = original_offer.energy - energy
@@ -219,10 +209,9 @@ class FakeMarket:
 
         residual_offer = self.offer(price=residual_price,
                                     energy=residual_energy,
-                                    seller=original_offer.seller.name,
+                                    seller=original_offer.seller,
                                     original_price=original_residual_price,
                                     dispatch_event=False,
-                                    seller_origin=original_offer.seller.origin,
                                     adapt_price_with_fees=False)
 
         return accepted_offer, residual_offer
@@ -233,8 +222,7 @@ class FakeMarket:
         accepted_bid = self.bid(bid_id=original_bid.id,
                                 buyer=original_bid.buyer,
                                 price=original_bid.price * (energy / original_bid.energy),
-                                energy=energy,
-                                buyer_origin=original_bid.buyer.origin)
+                                energy=energy)
         residual_price = (1 - energy / original_bid.energy) * original_bid.price
         residual_energy = original_bid.energy - energy
         original_residual_price = \
@@ -244,7 +232,6 @@ class FakeMarket:
                                 buyer=original_bid.buyer,
                                 energy=residual_energy,
                                 original_price=original_residual_price,
-                                buyer_origin=original_bid.buyer.origin,
                                 adapt_price_with_fees=False)
         return accepted_bid, residual_bid
 

@@ -106,36 +106,31 @@ class FakeMarket:
         return TIME
 
     def offer(self, price, energy, seller, original_price=None,
-              seller_origin=None, seller_origin_id=None, seller_id=None,
               attributes=None, requirements=None, time_slot=None):
-        offer = Offer("id", pendulum.now(), price, energy,
-                      TraderDetails(seller, seller_id, seller_origin, seller_origin_id),
+        offer = Offer("id", pendulum.now(), price, energy, seller,
                       attributes=attributes, requirements=requirements, time_slot=time_slot)
         self.created_offers.append(offer)
         offer.id = "id"
         return offer
 
     def balancing_offer(self, price, energy, seller):
-        offer = BalancingOffer("id", pendulum.now(), price, energy, TraderDetails(seller, ""))
+        offer = BalancingOffer("id", pendulum.now(), price, energy, seller)
         self.created_balancing_offers.append(offer)
         offer.id = "id"
         return offer
 
     def accept_offer(self, offer_or_id, buyer, *, energy=None, time=None, already_tracked=False,
-                     trade_rate: float = None, trade_bid_info=None, buyer_origin=None,
-                     buyer_origin_id=None, buyer_id=None):
+                     trade_rate: float = None, trade_bid_info=None):
         offer = offer_or_id
         trade = Trade("trade_id", time, offer.seller,
-                      TraderDetails(buyer, buyer_id, buyer_origin, buyer_origin_id),
+                      TraderDetails(buyer, ""),
                       offer=offer, traded_energy=1, trade_price=1)
         self.traded_offers.append(trade)
         return trade
 
     def bid(self, price, energy, buyer, original_price=None,
-            buyer_origin=None, buyer_origin_id=None, buyer_id=None,
             attributes=None, requirements=None, time_slot=None):
-        bid = Bid("bid_id", pendulum.now(), price, energy,
-                  TraderDetails(buyer, buyer_id, buyer_origin, buyer_origin_id),
+        bid = Bid("bid_id", pendulum.now(), price, energy, buyer,
                   attributes=attributes, requirements=requirements, time_slot=time_slot)
         return bid
 

@@ -86,16 +86,17 @@ class TestSettlementMarketStrategy:
         self.settlement_strategy.event_market_cycle(strategy_fixture)
         if can_post_settlement_bid:
             self.market_mock.bid.assert_called_once_with(
-                10.0, 1.0, self.area_mock.name, original_price=10.0,
-                buyer_origin=self.area_mock.name, buyer_origin_id=self.area_mock.uuid,
-                buyer_id=self.area_mock.uuid, attributes=None, requirements=None,
+                10.0, 1.0, TraderDetails(
+                    self.area_mock.name, self.area_mock.uuid,
+                    self.area_mock.name, self.area_mock.uuid), original_price=10.0,
+                attributes=None, requirements=None,
                 time_slot=self.time_slot
             )
         if can_post_settlement_offer:
             self.market_mock.offer.assert_called_once_with(
-                price=50.0, energy=1.0, seller=self.area_mock.name,
-                seller_origin=self.area_mock.name,
-                seller_origin_id=self.area_mock.uuid, seller_id=self.area_mock.uuid,
+                price=50.0, energy=1.0, seller=TraderDetails(
+                    self.area_mock.name, self.area_mock.uuid,
+                    self.area_mock.name, self.area_mock.uuid),
                 time_slot=self.time_slot
             )
 
@@ -121,16 +122,17 @@ class TestSettlementMarketStrategy:
         self.settlement_strategy.event_tick(strategy_fixture)
         if can_post_settlement_bid:
             self.market_mock.bid.assert_called_once_with(
-                30.0, 1.0, self.area_mock.name, original_price=30.0,
-                buyer_origin=self.area_mock.name, buyer_origin_id=self.area_mock.uuid,
-                buyer_id=self.area_mock.uuid, attributes=None, requirements=None,
+                30.0, 1.0, TraderDetails(
+                    self.area_mock.name, self.area_mock.uuid,
+                    self.area_mock.name, self.area_mock.uuid), original_price=30.0,
+                attributes=None, requirements=None,
                 time_slot=self.time_slot
             )
         if can_post_settlement_offer:
             self.market_mock.offer.assert_called_once_with(
-                35, 1, self.area_mock.name, original_price=35,
-                seller_origin=None, seller_origin_id=None, seller_id=self.area_mock.uuid,
-                time_slot=self.time_slot
+                35.0, 1, TraderDetails(
+                    self.area_mock.name, self.area_mock.uuid),
+                original_price=35.0, time_slot=self.time_slot
             )
 
     @pytest.mark.parametrize(

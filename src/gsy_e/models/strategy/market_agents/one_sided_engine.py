@@ -19,7 +19,7 @@ from collections import namedtuple
 from typing import Dict, Optional  # noqa
 
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.data_classes import Offer
+from gsy_framework.data_classes import Offer, TraderDetails
 from gsy_framework.enums import SpotMarketTypeEnum
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
@@ -72,12 +72,12 @@ class MAEngine:
         kwargs = {
             "price": updated_price,
             "energy": offer.energy,
-            "seller": self.owner.name,
+            "seller": TraderDetails(
+                self.owner.name, self.owner.uuid,
+                offer.seller.origin, offer.seller.origin_uuid
+            ),
             "original_price": offer.original_price,
             "dispatch_event": False,
-            "seller_origin": offer.seller.origin,
-            "seller_origin_id": offer.seller.origin_uuid,
-            "seller_id": self.owner.uuid,
             "time_slot": offer.time_slot,
             "attributes": offer.attributes,
             "requirements": self._update_offer_requirements_prices(offer)
@@ -186,12 +186,11 @@ class MAEngine:
                     market=self.markets.source,
                     offer=offer_info.source_offer,
                     energy=trade.traded_energy,
-                    buyer=self.owner.name,
+                    buyer=TraderDetails(
+                        self.owner.name, self.owner.uuid,
+                        trade.buyer.origin, trade.buyer.origin_uuid),
                     trade_rate=trade_offer_rate,
                     trade_bid_info=updated_trade_bid_info,
-                    buyer_origin=trade.buyer.origin,
-                    buyer_origin_id=trade.buyer.origin_uuid,
-                    buyer_id=self.owner.uuid
                 )
 
             except OfferNotFoundException as ex:
@@ -304,9 +303,9 @@ class BalancingEngine(MAEngine):
 
     def _forward_offer(self, offer):
         forwarded_balancing_offer = self.markets.target.balancing_offer(
-            offer.price,
-            offer.energy,
-            self.owner.name,
+            offer.price, offer.energy,
+            TraderDetails(
+                self.owner.name, self.owner.uuid, offer.seller.origin, offer.seller.origin_uuid),
             from_agent=True
         )
         self._add_to_forward_offers(offer, forwarded_balancing_offer)

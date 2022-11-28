@@ -129,10 +129,9 @@ class FakeMarket:
         return deepcopy(self.bids)
 
     def bid(self, price: float, energy: float, buyer: str, original_price=None,
-            buyer_origin=None, buyer_origin_id=None, buyer_id=None,
             attributes=None, requirements=None, time_slot=None) -> Bid:
         bid = Bid(id="bid_id", creation_time=now(), price=price, energy=energy,
-                  buyer=TraderDetails(buyer, buyer_id, buyer_origin, buyer_origin_id),
+                  buyer=buyer,
                   original_price=original_price, attributes=attributes, requirements=requirements,
                   time_slot=time_slot)
         self.bids[bid.id] = bid

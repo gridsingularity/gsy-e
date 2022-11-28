@@ -25,7 +25,7 @@ from typing import List, Dict, Union, Optional, Generator, Callable, TYPE_CHECKI
 from uuid import uuid4
 
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.data_classes import (Offer, Bid, Trade)
+from gsy_framework.data_classes import Offer, Bid, Trade, TraderDetails
 from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.utils import limit_float_precision
 from pendulum import DateTime
@@ -62,26 +62,20 @@ class AcceptOfferParameters:
     """Parameters for the accept_offer MarketStrategyConnectionAdapter methods"""
     market: Union["OneSidedMarket", str]
     offer: Offer
-    buyer: str
+    buyer: TraderDetails
     energy: float
     trade_rate: float
     already_tracked: bool
     trade_bid_info: "TradeBidOfferInfo"
-    buyer_origin: str
-    buyer_origin_id: str
-    buyer_id: str
 
     def to_dict(self) -> dict:
         """Convert dataclass to dict in order to be able to send these arguments via Redis."""
         return {"offer_or_id": self.offer.to_json_string(),
-                "buyer": self.buyer,
+                "buyer": self.buyer.serializable_dict(),
                 "energy": self.energy,
                 "trade_rate": self.trade_rate,
                 "already_tracked": self.already_tracked,
-                "trade_bid_info": self.trade_bid_info,
-                "buyer_origin": self.buyer_origin,
-                "buyer_origin_id": self.buyer_origin_id,
-                "buyer_id": self.buyer_id}
+                "trade_bid_info": self.trade_bid_info}
 
     def accept_offer_using_market_object(self) -> Trade:
         """Calls accept offer on the market object that is contained in the dataclass,
@@ -90,10 +84,7 @@ class AcceptOfferParameters:
             offer_or_id=self.offer, buyer=self.buyer,
             energy=self.energy, trade_rate=self.trade_rate,
             already_tracked=self.already_tracked,
-            trade_bid_info=self.trade_bid_info,
-            buyer_origin=self.buyer_origin,
-            buyer_origin_id=self.buyer_origin_id,
-            buyer_id=self.buyer_id)
+            trade_bid_info=self.trade_bid_info)
 
 
 class _TradeLookerUpper:
@@ -516,14 +507,10 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
             # Remove all existing offers that are still open in the market
             self.offers.remove_offer_from_cache_and_market(market)
 
-        if not offer_kwargs.get("seller"):
-            offer_kwargs["seller"] = self.owner.name
-        if not offer_kwargs.get("seller_origin"):
-            offer_kwargs["seller_origin"] = self.owner.name
-        if not offer_kwargs.get("seller_origin_id"):
-            offer_kwargs["seller_origin_id"] = self.owner.uuid
-        if not offer_kwargs.get("seller_id"):
-            offer_kwargs["seller_id"] = self.owner.uuid
+        if (not offer_kwargs.get("seller") or
+                not isinstance(offer_kwargs.get("seller"), TraderDetails)):
+            offer_kwargs["seller"] = TraderDetails(
+                self.owner.name, self.owner.uuid, self.owner.name, self.owner.uuid)
         if not offer_kwargs.get("time_slot"):
             offer_kwargs["time_slot"] = market.time_slot
 
@@ -570,10 +557,9 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
         """Checks if any offers have been posted in the market slot with the given ID."""
         return len(self.offers.posted_in_market(market_id)) > 0
 
-    def accept_offer(self, market: "OneSidedMarket", offer: Offer, *, buyer: str = None,
+    def accept_offer(self, market: "OneSidedMarket", offer: Offer, *, buyer: TraderDetails = None,
                      energy: float = None, already_tracked: bool = False, trade_rate: float = None,
-                     trade_bid_info: "TradeBidOfferInfo" = None, buyer_origin: str = None,
-                     buyer_origin_id: str = None, buyer_id: str = None):
+                     trade_bid_info: "TradeBidOfferInfo" = None):
         """
         Accept an offer on a market.
         Args:
@@ -586,9 +572,6 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
             trade_rate: Trade rate of the selected offer
             trade_bid_info: Only populated for chain trades, contains pricing info about the
                             source seller and buyer of the chain trade
-            buyer_origin: The source buyer of the offer in a chain trade
-            buyer_origin_id: The id of the source buyer of the offer
-            buyer_id: The id of the direct buyer of the offer (can be the interarea agent)
 
         Returns: Trade object
 
@@ -600,7 +583,7 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
         trade = self._market_adapter.accept_offer(
             AcceptOfferParameters(
                 market, offer, buyer, energy, trade_rate, already_tracked,
-                trade_bid_info, buyer_origin, buyer_origin_id, buyer_id)
+                trade_bid_info)
         )
 
         self.offers.bought_offer(trade.match_details["offer"], market.id)
@@ -702,11 +685,11 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
                 new_offer = market.offer(
                     updated_price,
                     offer.energy,
-                    self.owner.name,
+                    TraderDetails(self.owner.name,
+                                  self.owner.uuid,
+                                  offer.seller.origin,
+                                  offer.seller.origin_uuid),
                     original_price=updated_price,
-                    seller_origin=offer.seller.origin,
-                    seller_origin_id=offer.seller.origin_uuid,
-                    seller_id=self.owner.uuid,
                     time_slot=offer.time_slot or market.time_slot or time_slot
                 )
                 self.offers.replace(offer, new_offer, market.id)
@@ -775,11 +758,10 @@ class BidEnabledStrategy(BaseStrategy):
         bid = market.bid(
             price,
             energy,
-            self.owner.name,
+            TraderDetails(
+                self.owner.name, self.owner.uuid,
+                self.owner.name, self.owner.uuid),
             original_price=price,
-            buyer_origin=self.owner.name,
-            buyer_origin_id=self.owner.uuid,
-            buyer_id=self.owner.uuid,
             attributes=attributes,
             requirements=requirements,
             time_slot=time_slot or market.time_slot
