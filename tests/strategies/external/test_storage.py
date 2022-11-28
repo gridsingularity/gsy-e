@@ -15,20 +15,21 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-# pylint: disable=missing-function-docstring
-
+import json
 import uuid
 
 import pytest
-from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.constants_limits import DATE_TIME_FORMAT, ConstSettings
 
 from gsy_e.models.strategy.external_strategies.storage import StorageExternalStrategy
-from tests.strategies.external.fixtures import (future_market_fixture,  # noqa
-                                                settlement_market_fixture)
+from tests.strategies.external.fixtures import future_market_fixture  # noqa
+from tests.strategies.external.fixtures import settlement_market_fixture  # noqa
 from tests.strategies.external.utils import (
     assert_bid_offer_aggregator_commands_return_value,
     check_external_command_endpoint_with_correct_payload_succeeds,
     create_areas_markets_for_strategy_fixture)
+
+# pylint: disable=missing-function-docstring
 
 
 @pytest.fixture(name="external_storage")
@@ -172,6 +173,52 @@ class TestStorageExternalStrategy:
         assert len(settlement_market.bids.values()) == 0
 
     @staticmethod
+    def test_bid_aggregator_places_future_bid(external_storage, future_markets):
+        future_energy_kWh = 0.2
+        external_storage.area._markets.future_markets = future_markets
+
+        for time_slot in future_markets.market_time_slots:
+            external_storage.state.energy_to_buy_dict[time_slot] = future_energy_kWh
+            external_storage.state.offered_buy_kWh[time_slot] = 0.1
+            external_storage.state.pledged_buy_kWh[time_slot] = 0.1
+            return_value = external_storage.trigger_aggregator_commands(
+                {
+                    "type": "bid",
+                    "price": 200.0,
+                    "energy": future_energy_kWh,
+                    "time_slot": time_slot.format(DATE_TIME_FORMAT),
+                    "transaction_id": str(uuid.uuid4())
+                }
+            )
+            assert return_value["status"] == "ready"
+            bid_id = json.loads(return_value["bid"])["id"]
+            assert future_markets.bids[bid_id].energy == future_energy_kWh
+        assert len(future_markets.bids.values()) == len(future_markets.market_time_slots)
+
+    @staticmethod
+    def test_bid_aggregator_fails_placing_future_bid_more_than_required_energy(
+            external_storage, future_markets):
+        future_energy_kWh = 0.4
+        external_storage.area._markets.future_markets = future_markets
+
+        for time_slot in future_markets.market_time_slots:
+            external_storage.state.energy_to_buy_dict[time_slot] = 0.2
+            external_storage.state.offered_buy_kWh[time_slot] = 0.1
+            external_storage.state.pledged_buy_kWh[time_slot] = 0.1
+            return_value = external_storage.trigger_aggregator_commands(
+                {
+                    "type": "bid",
+                    "price": 200.0,
+                    "energy": future_energy_kWh,
+                    "time_slot": time_slot.format(DATE_TIME_FORMAT),
+                    "transaction_id": str(uuid.uuid4())
+                }
+            )
+
+            assert return_value["status"] == "error"
+            assert len(future_markets.offers.values()) == 0
+
+    @staticmethod
     def test_offer_aggregator(external_storage):
         """The _offer_aggregator command succeeds."""
         external_storage.state.energy_to_sell_dict[
@@ -266,3 +313,49 @@ class TestStorageExternalStrategy:
         })
         assert return_value["status"] == "error"
         assert len(settlement_market.offers.values()) == 0
+
+    @staticmethod
+    def test_offer_aggregator_places_future_offer(external_storage, future_markets):
+        future_energy_kWh = 0.2
+        external_storage.area._markets.future_markets = future_markets
+
+        for time_slot in future_markets.market_time_slots:
+            external_storage.state.energy_to_sell_dict[time_slot] = future_energy_kWh
+            external_storage.state.offered_sell_kWh[time_slot] = 0.1
+            external_storage.state.pledged_sell_kWh[time_slot] = 0.1
+            return_value = external_storage.trigger_aggregator_commands(
+                {
+                    "type": "offer",
+                    "price": 200.0,
+                    "energy": future_energy_kWh,
+                    "time_slot": time_slot.format(DATE_TIME_FORMAT),
+                    "transaction_id": str(uuid.uuid4())
+                }
+            )
+            assert return_value["status"] == "ready"
+            offer_id = json.loads(return_value["offer"])["id"]
+            assert future_markets.offers[offer_id].energy == future_energy_kWh
+        assert len(future_markets.offers.values()) == len(future_markets.market_time_slots)
+
+    @staticmethod
+    def test_offer_aggregator_fails_placing_future_offer_more_than_available_energy(
+            external_storage, future_markets):
+        future_energy_kWh = 0.4
+        external_storage.area._markets.future_markets = future_markets
+
+        for time_slot in future_markets.market_time_slots:
+            external_storage.state.energy_to_sell_dict[time_slot] = 0.2
+            external_storage.state.offered_sell_kWh[time_slot] = 0.1
+            external_storage.state.pledged_sell_kWh[time_slot] = 0.1
+            return_value = external_storage.trigger_aggregator_commands(
+                {
+                    "type": "offer",
+                    "price": 200.0,
+                    "energy": future_energy_kWh,
+                    "time_slot": time_slot.format(DATE_TIME_FORMAT),
+                    "transaction_id": str(uuid.uuid4())
+                }
+            )
+
+            assert return_value["status"] == "error"
+            assert len(future_markets.offers.values()) == 0
