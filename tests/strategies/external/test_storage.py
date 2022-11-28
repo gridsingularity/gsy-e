@@ -246,7 +246,7 @@ class TestStorageExternalStrategy:
         assert list(settlement_market.offers.values())[0].energy == unsettled_energy_kWh
 
     @staticmethod
-    def test_offer_aggregator_fails_placing_settlement_offer_more_than_avaialble_energy(
+    def test_offer_aggregator_fails_placing_settlement_offer_more_than_available_energy(
             external_storage, settlement_market):
         unsettled_energy_kWh = 0.2
         external_storage.area._markets.settlement_market_ids = [settlement_market.id]
