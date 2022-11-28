@@ -195,8 +195,9 @@ class BalancingMarket(OneSidedMarket):
                 offer = accepted_offer
                 offer.update_price(trade_price)
 
-            elif abs(energy) > abs(offer.energy):
-                raise InvalidBalancingTradeException("Energy can't be greater than offered energy")
+            elif abs(energy - offer.energy) > FLOATING_POINT_TOLERANCE:
+                raise InvalidBalancingTradeException(
+                    f"Energy ({energy}) can't be greater than offered energy ({offer.energy}).")
             else:
                 # Requested energy is equal to offer's energy - just proceed normally
                 fees, trade_price = self._update_offer_fee_and_calculate_final_price(
