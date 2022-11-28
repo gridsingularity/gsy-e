@@ -226,6 +226,8 @@ class TwoSidedMarket(OneSidedMarket):
         if market_bid is None:
             raise BidNotFoundException("During accept bid: " + str(bid))
 
+        buyer = market_bid.buyer if buyer is None else buyer
+
         if energy is None or isclose(energy, market_bid.energy, abs_tol=1e-8):
             energy = market_bid.energy
 
@@ -284,7 +286,7 @@ class TwoSidedMarket(OneSidedMarket):
                               selected_energy: float) -> Tuple[Trade, Trade]:
         """Accept bid and offers in pair when a trade is happening."""
         # pylint: disable=too-many-arguments
-        already_tracked = bid.buyer.uuid == offer.seller.uuid
+        already_tracked = bid.buyer.name == offer.seller.name
         trade = self.accept_offer(offer_or_id=offer,
                                   buyer=bid.buyer.name,
                                   energy=selected_energy,

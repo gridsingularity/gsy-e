@@ -91,7 +91,7 @@ class BalancingMarket(OneSidedMarket):
             offer_id = str(uuid.uuid4())
 
         offer = BalancingOffer(
-            offer_id, self.now, price, energy, TraderDetails(seller, seller_origin),
+            offer_id, self.now, price, energy, TraderDetails(seller, "", seller_origin, ""),
             attributes=attributes, requirements=requirements, time_slot=self.time_slot)
         self.offers[offer.id] = offer
 
