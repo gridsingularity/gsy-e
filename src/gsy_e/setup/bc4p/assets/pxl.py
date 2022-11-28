@@ -25,7 +25,6 @@ from gsy_e.models.strategy.external_strategies.influx import InfluxLoadExternalS
 # init with influx load profile
 
 def get_setup(config):
-    ConstSettings.GeneralSettings.RUN_IN_REALTIME = True
     connection = InfluxConnection("influx_pxl.cfg")
     tablename = "Total_Electricity"
 

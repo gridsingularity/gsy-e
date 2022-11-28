@@ -23,7 +23,6 @@ from gsy_e.models.strategy.pv import PVStrategy
 from gsy_e.utils.influx_area_factory import InfluxAreaFactory
 
 def get_setup(config):
-    ConstSettings.GeneralSettings.RUN_IN_REALTIME = True
     factory = InfluxAreaFactory("influx_fhaachen.cfg", power_column="P_ges", tablename="Strom", keyname="id")
 
     area = Area(

@@ -23,9 +23,11 @@ from gsy_framework.influx_connection.queries_fhac import DataFHAachenAggregated
 from gsy_framework.influx_connection.queries_pxl import DataQueryPXL
 from gsy_framework.influx_connection.queries import DataQueryMQTT
 from gsy_e.models.strategy.influx import InfluxLoadStrategy, InfluxPVStrategy, InfluxCombinedStrategy
+from gsy_framework.constants_limits import GlobalConfig
 
 def get_setup(config):
-    ConstSettings.GeneralSettings.RUN_IN_REALTIME = True
+    #ConstSettings.GeneralSettings.RUN_REAL_TIME = True
+    #gsy_e.constants.RUN_IN_REALTIME = True
     connection_pxl = InfluxConnection("influx_pxl.cfg")
     connection_fhaachen = InfluxConnection("influx_fhaachen.cfg")
 

@@ -25,7 +25,6 @@ from gsy_framework.influx_connection.queries import DataQueryMQTT
 from gsy_e.models.strategy.external_strategies.influx import InfluxLoadExternalStrategy, InfluxPVExternalStrategy, InfluxCombinedExternalStrategy
 
 def get_setup(config):
-    ConstSettings.GeneralSettings.RUN_IN_REALTIME = True
     connection_pxl = InfluxConnection("influx_pxl.cfg")
     connection_fhaachen = InfluxConnection("influx_fhaachen.cfg")
 
