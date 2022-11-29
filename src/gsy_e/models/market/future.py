@@ -24,7 +24,7 @@ from typing import Dict, List, Optional, TYPE_CHECKING
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig, DATE_TIME_FORMAT
 from gsy_framework.data_classes import Bid, Offer, Trade
 from gsy_framework.utils import is_time_slot_in_simulation_duration
-from pendulum import DateTime
+from pendulum import DateTime, duration
 
 from gsy_e.gsy_e_core.blockchain_interface import NonBlockchainInterface
 from gsy_e.models.market import GridFee, lock_market_action, MarketSlotParams
@@ -296,6 +296,7 @@ class FutureMarkets(TwoSidedMarket):
                 delivery_start_time=market_slot,
                 delivery_end_time=(
                         market_slot + self._get_market_slot_duration(None)),
-                opening_time=current_market_slot,
+                opening_time=market_slot - duration(
+                    hours=ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS),
                 closing_time=self._calculate_closing_time(market_slot)
             )
