@@ -107,7 +107,7 @@ class TwoSidedMarket(OneSidedMarket):
             time_slot: Optional[DateTime] = None) -> Bid:
         """Create bid object."""
         # pylint: disable=too-many-arguments
-        if energy <= 0:
+        if energy <= FLOATING_POINT_TOLERANCE:
             raise NegativeEnergyOrderException("Energy value for bid can not be negative.")
 
         if not time_slot:
@@ -291,8 +291,6 @@ class TwoSidedMarket(OneSidedMarket):
                                     buyer=bid.buyer,
                                     trade_offer_info=trade_bid_info,
                                     offer=offer)
-        trade.match_details["bid"] = bid
-        trade.match_details["offer"] = offer
         return bid_trade, trade
 
     def _get_offer_from_seller_origin_id(self, seller_origin_id):

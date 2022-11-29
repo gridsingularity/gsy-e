@@ -20,6 +20,7 @@ from logging import getLogger
 from math import isclose
 from typing import Union, Dict, List, Optional, Callable, Tuple
 
+from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Offer, Trade, TradeBidOfferInfo, TraderDetails, Bid
 from gsy_framework.enums import SpotMarketTypeEnum
@@ -108,7 +109,7 @@ class OneSidedMarket(MarketBase):
 
         if self.readonly:
             raise MarketReadOnlyException()
-        if energy <= 0:
+        if energy <= FLOATING_POINT_TOLERANCE:
             raise NegativeEnergyOrderException("Energy value for offer can not be negative.")
         if original_price is None:
             original_price = price
