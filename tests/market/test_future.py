@@ -242,8 +242,7 @@ class TestFutureMarkets:
             "offer1", time_slot2, 10, 10, seller, time_slot=time_slot2)}
         assert future_market.orders_per_slot() == {
             time_slot1.format(DATE_TIME_FORMAT): {
-                "bids": [{"attributes": None,
-                          "buyer": {
+                "bids": [{"buyer": {
                               "name": "buyer",
                               "uuid": "",
                               "origin": "buyer_origin",
@@ -253,19 +252,16 @@ class TestFutureMarkets:
                           "energy_rate": 1.0,
                           "id": "bid1",
                           "original_price": 10,
-                          "requirements": None,
                           "time_slot": datetime_to_string_incl_seconds(time_slot1),
                           "creation_time": datetime_to_string_incl_seconds(time_slot1),
                           "type": "Bid"}],
                 "offers": []},
             time_slot2.format(DATE_TIME_FORMAT): {
                 "bids": [],
-                "offers": [{"attributes": None,
-                            "energy": 10,
+                "offers": [{"energy": 10,
                             "energy_rate": 1.0,
                             "id": "offer1",
                             "original_price": 10,
-                            "requirements": None,
                             "time_slot": datetime_to_string_incl_seconds(time_slot2),
                             "seller": {
                                 "name": "seller",

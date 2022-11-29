@@ -172,8 +172,7 @@ def test_orders_per_slot(market):
     market.offers = {"offer1": Offer(
         "offer1", creation_time, 10, 10, TraderDetails("seller", ""))}
     order_dict_diff = DeepDiff(market.orders_per_slot(), {
-        market.time_slot_str: {"bids": [{"attributes": None,
-                                         "buyer": {
+        market.time_slot_str: {"bids": [{"buyer": {
                                              "name": "buyer",
                                              "uuid": "",
                                              "origin": None,
@@ -183,17 +182,14 @@ def test_orders_per_slot(market):
                                          "energy_rate": 1.0,
                                          "id": "bid1",
                                          "original_price": 10,
-                                         "requirements": None,
                                          "time_slot": "",
                                          "creation_time": datetime_to_string_incl_seconds(
                                              creation_time),
                                          "type": "Bid"}],
-                               "offers": [{"attributes": None,
-                                           "energy": 10,
+                               "offers": [{"energy": 10,
                                            "energy_rate": 1.0,
                                            "id": "offer1",
                                            "original_price": 10,
-                                           "requirements": None,
                                            "seller": {
                                                "name": "seller",
                                                "uuid": "",

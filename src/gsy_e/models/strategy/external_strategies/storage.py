@@ -155,9 +155,7 @@ class StorageExternalMixin(ExternalMixin):
         transaction_id = self._get_transaction_id(payload)
         required_args = {"price", "energy", "transaction_id"}
         allowed_args = required_args.union({"replace_existing",
-                                            "time_slot",
-                                            "attributes",
-                                            "requirements"})
+                                            "time_slot"})
 
         offer_response_channel = f"{self.channel_prefix}/response/offer"
         if not ExternalStrategyConnectionManager.check_for_connected_and_reply(
@@ -360,9 +358,7 @@ class StorageExternalMixin(ExternalMixin):
                 market,
                 arguments["price"],
                 arguments["energy"],
-                replace_existing=replace_existing,
-                attributes=arguments.get("attributes"),
-                requirements=arguments.get("requirements")
+                replace_existing=replace_existing
             )
             self.state.reset_offered_buy_energy(self.posted_bid_energy(market.id),
                                                 market.time_slot)
@@ -572,9 +568,7 @@ class StorageExternalMixin(ExternalMixin):
                 market,
                 arguments["price"],
                 arguments["energy"],
-                replace_existing=replace_existing,
-                attributes=arguments.get("attributes"),
-                requirements=arguments.get("requirements")
+                replace_existing=replace_existing
             )
 
             self.state.reset_offered_buy_energy(

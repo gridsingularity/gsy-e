@@ -331,9 +331,7 @@ class ExternalMixin:
 
         required_args = {"price", "energy", "type", "transaction_id"}
         allowed_args = required_args.union({"replace_existing",
-                                            "time_slot",
-                                            "attributes",
-                                            "requirements"})
+                                            "time_slot"})
         try:
             # Check that all required arguments have been provided
             assert all(arg in arguments.keys() for arg in required_args)
@@ -391,9 +389,7 @@ class ExternalMixin:
 
         required_args = {"price", "energy", "type", "transaction_id"}
         allowed_args = required_args.union({"replace_existing",
-                                            "time_slot",
-                                            "attributes",
-                                            "requirements"})
+                                            "time_slot"})
 
         try:
             # Check that all required arguments have been provided
@@ -411,8 +407,6 @@ class ExternalMixin:
                 arguments["price"],
                 arguments["energy"],
                 replace_existing=replace_existing,
-                attributes=arguments.get("attributes"),
-                requirements=arguments.get("requirements"),
                 time_slot=time_slot
             )
             response = {
@@ -521,9 +515,6 @@ class ExternalMixin:
                                    "local_market_fee":
                                        self.area.current_market.fee_class.grid_fee_rate
                                        if self.area.current_market is not None else "None",
-                                   "attributes": (trade.match_details["offer"].attributes
-                                                  if trade.is_offer_trade
-                                                  else trade.match_details["bid"].attributes),
                                    "seller": trade.seller.name
                                    if trade.seller.uuid == self.device.uuid else "anonymous",
                                    "buyer": trade.buyer.name

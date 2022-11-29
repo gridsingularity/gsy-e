@@ -72,6 +72,7 @@ class TestStorageExternalStrategy:
             external_storage, "delete_bid", {})
 
     @staticmethod
+    @pytest.mark.skip("Attributes / requirements feature disabled.")
     def test_bid_aggregator_succeeds_with_warning_if_dof_are_disabled(external_storage):
         """
         The _bid_aggregator command succeeds, but it shows a warning if Degrees of Freedom are
@@ -94,6 +95,7 @@ class TestStorageExternalStrategy:
             "your order: ['requirements', 'attributes'].")
 
     @staticmethod
+    @pytest.mark.skip("Attributes / requirements feature disabled.")
     def test_offer_aggregator_succeeds_with_warning_if_dof_are_disabled(external_storage):
         """
         The _offer_aggregator command succeeds, but it shows a warning if Degrees of Freedom are

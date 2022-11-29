@@ -154,7 +154,7 @@ class FakeMarket:
 
     def offer(self, price: float, energy: float, seller: TraderDetails, offer_id=None,
               original_price=None, dispatch_event=True, adapt_price_with_fees=True,
-              attributes=None, requirements=None, time_slot=None) -> Offer:
+              time_slot=None) -> Offer:
         self.offer_call_count += 1
 
         if original_price is None:
@@ -174,7 +174,7 @@ class FakeMarket:
 
     def bid(self, price: float, energy: float, buyer: TraderDetails,
             bid_id: str = None, original_price=None,
-            adapt_price_with_fees=True, time_slot=None, requirements=None, attributes=None):
+            adapt_price_with_fees=True, time_slot=None):
         self.bid_call_count += 1
 
         if original_price is None:
@@ -187,7 +187,7 @@ class FakeMarket:
             price = self._update_new_bid_price_with_fee(price, original_price)
 
         bid = Bid(bid_id, pendulum.now(), price, energy, buyer,
-                  original_price=original_price, requirements=requirements, attributes=attributes)
+                  original_price=original_price)
         self._bids.append(bid)
         self.forwarded_bid = bid
 
@@ -279,8 +279,7 @@ class TestMAGridFee:
     def test_ma_forwards_bids_according_to_percentage(market_agent_fee):
         ConstSettings.MASettings.MARKET_TYPE = 2
         lower_market = FakeMarket([], [
-            Bid("id", pendulum.now(), 1, 1, TraderDetails("this", ""), 1,
-                requirements=[{"price": 2}])],
+            Bid("id", pendulum.now(), 1, 1, TraderDetails("this", ""), 1)],
                                   transfer_fees=GridFee(grid_fee_percentage=market_agent_fee,
                                                         grid_fee_const=0),
                                   name="FakeMarket")
@@ -298,10 +297,6 @@ class TestMAGridFee:
         assert market_agent.higher_market.bid_call_count == 1
         assert (market_agent.higher_market.forwarded_bid.price ==
                 list(market_agent.lower_market.bids.values())[-1].price * (1 - market_agent_fee))
-
-        assert (market_agent.higher_market.forwarded_bid.requirements[0]["price"] ==
-                list(market_agent.lower_market.bids.values())[-1].requirements[0]["price"] * (
-                        1 - market_agent_fee))
 
     @staticmethod
     @pytest.mark.parametrize("market_agent_fee_const", [0.5, 1, 5, 10])

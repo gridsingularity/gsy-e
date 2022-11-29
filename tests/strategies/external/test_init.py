@@ -256,7 +256,7 @@ class TestExternalMixin:
             self.area.uuid
 
         call_args = strategy.redis.aggregator.add_batch_trade_event.call_args_list[0][0][1]
-        assert set(call_args.keys()) == {"attributes", "residual_bid_id", "asset_id", "buyer",
+        assert set(call_args.keys()) == {"residual_bid_id", "asset_id", "buyer",
                                          "local_market_fee", "residual_offer_id", "total_fee",
                                          "traded_energy", "bid_id", "time", "seller",
                                          "trade_price", "trade_id", "offer_id", "event",

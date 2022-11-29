@@ -102,8 +102,6 @@ class TwoSidedMarket(OneSidedMarket):
             original_price: Optional[float] = None,
             adapt_price_with_fees: bool = True,
             add_to_history: bool = True,
-            attributes: Optional[Dict] = None,
-            requirements: Optional[List[Dict]] = None,
             time_slot: Optional[DateTime] = None) -> Bid:
         """Create bid object."""
         # pylint: disable=too-many-arguments
@@ -127,9 +125,8 @@ class TwoSidedMarket(OneSidedMarket):
         bid = Bid(str(uuid.uuid4()) if bid_id is None else bid_id,
                   self.now, price, energy,
                   buyer, original_price,
-                  attributes=attributes, requirements=requirements, time_slot=time_slot)
-        if adapt_price_with_fees:
-            bid.requirements = self._update_requirements_prices(bid)
+                  time_slot=time_slot)
+
         self.bids[bid.id] = bid
         if add_to_history is True:
             self.bid_history.append(bid)
@@ -163,8 +160,6 @@ class TwoSidedMarket(OneSidedMarket):
                                 original_price=original_accepted_price,
                                 adapt_price_with_fees=False,
                                 add_to_history=False,
-                                attributes=original_bid.attributes,
-                                requirements=original_bid.requirements,
                                 time_slot=original_bid.time_slot)
 
         residual_price = (1 - energy / original_bid.energy) * original_bid.price
@@ -179,8 +174,6 @@ class TwoSidedMarket(OneSidedMarket):
                                 original_price=original_residual_price,
                                 adapt_price_with_fees=False,
                                 add_to_history=True,
-                                attributes=original_bid.attributes,
-                                requirements=original_bid.requirements,
                                 time_slot=original_bid.time_slot)
 
         log.debug("%s[BID][SPLIT][%s, %s] (%s into %s and %s",
@@ -258,9 +251,7 @@ class TwoSidedMarket(OneSidedMarket):
                       bid=bid, offer=offer, traded_energy=energy, trade_price=trade_price,
                       residual=residual_bid,
                       offer_bid_trade_info=updated_bid_trade_info,
-                      fee_price=fee_price, time_slot=bid.time_slot,
-                      matching_requirements=trade_offer_info.matching_requirements
-                      )
+                      fee_price=fee_price, time_slot=bid.time_slot)
 
         if not offer:
             # This is a chain trade, therefore needs to be tracked. For the trade on the market
@@ -369,7 +360,6 @@ class TwoSidedMarket(OneSidedMarket):
                 original_offer_rate=market_offer.original_price / market_offer.energy,
                 propagated_offer_rate=market_offer.energy_rate,
                 trade_rate=trade_rate,
-                matching_requirements=recommended_pair.matching_requirements
             )
 
             bid_trade, offer_trade = self.accept_bid_offer_pair(

@@ -100,6 +100,7 @@ class TestTwoSidedMarket:
         assert market.fee_class.update_incoming_bid_with_fee.called
 
     @staticmethod
+    @pytest.mark.skip("Attributes / requirements feature disabled.")
     def test_bid_with_requirements(market):
         market.fee_class.update_incoming_bid_with_fee = MagicMock(return_value=5/2)
         buyer = TraderDetails("buyer", "", "buyer_origin", "")
@@ -126,6 +127,7 @@ class TestTwoSidedMarket:
             market.delete_bid(bid2)
 
     @staticmethod
+    @pytest.mark.skip("Attributes / requirements feature disabled.")
     def test_double_sided_validate_requirements_satisfied(market):
         offer = Offer("id", pendulum.now(), 2, 2, TraderDetails("other", ""), 2,
                       requirements=[{"trading_partners": ["bid_id2"]}],
@@ -473,6 +475,7 @@ class TestTwoSidedMarket:
         assert matches[1]["bid"]["id"] == "residual_bid_2"
 
     @staticmethod
+    @pytest.mark.skip("Attributes / requirements feature disabled.")
     def test_matching_list_gets_updated_with_residual_orders_with_requirements():
         seller = TraderDetails("S", "")
         buyer = TraderDetails("B", "")
@@ -535,6 +538,7 @@ class TestTwoSidedMarketMatchRecommendations:
         assert len(market.trades) == 1
 
     @staticmethod
+    @pytest.mark.skip("Attributes / requirements feature disabled.")
     def test_recommendation_with_valid_match_requirements_gets_accepted(market):
         """Test recommended match with valid requirements gets accepted."""
         bid = Bid(
@@ -562,6 +566,7 @@ class TestTwoSidedMarketMatchRecommendations:
         assert len(market.trades) == 1
 
     @staticmethod
+    @pytest.mark.skip("Attributes / requirements feature disabled.")
     def test_recommendations_with_invalid_match_requirements_get_rejected(market):
         """Test recommendations with invalid match_requirements get rejected."""
         bid = Bid(
@@ -683,6 +688,7 @@ class TestTwoSidedMarketMatchRecommendations:
         assert len(market.trades) == 0
 
     @staticmethod
+    @pytest.mark.skip("Attributes / requirements feature disabled.")
     def test_validate_recommendation_bid_requirement_price(market):
         """Test validate bid price requirement in PAY_AS_BID market."""
         ConstSettings.MASettings.BID_OFFER_MATCH_TYPE = BidOfferMatchAlgoEnum.PAY_AS_BID.value
@@ -712,6 +718,7 @@ class TestTwoSidedMarketMatchRecommendations:
         assert market.accumulated_trade_price == 45
 
     @staticmethod
+    @pytest.mark.skip("Attributes / requirements feature disabled.")
     def test_validate_recommended_bid_requirement_energy(market):
         """Test validate bid energy requirement in PAY_AS_BID market."""
         ConstSettings.MASettings.BID_OFFER_MATCH_TYPE = BidOfferMatchAlgoEnum.PAY_AS_BID.value
