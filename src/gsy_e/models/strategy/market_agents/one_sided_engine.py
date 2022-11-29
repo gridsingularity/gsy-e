@@ -184,6 +184,8 @@ class MAEngine:
                                 offer_info.source_offer.original_price /
                                 offer_info.source_offer.energy), source_rate, 0.)
                     updated_trade_bid_info.trade_rate = trade_offer_rate
+                else:
+                    updated_trade_bid_info.trade_rate = None
 
                 trade_source = self.owner.accept_offer(
                     market=self.markets.source,

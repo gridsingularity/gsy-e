@@ -223,8 +223,9 @@ class BalancingMarket(OneSidedMarket):
                                time_slot=offer.time_slot)
         self.bc_interface.track_trade_event(self.time_slot, trade)
 
-        self._update_stats_after_trade(trade, offer)
-        log.info("[BALANCING_TRADE] [%s] %s", self.time_slot_str, trade)
+        if offer.seller != buyer:
+            self._update_stats_after_trade(trade, offer)
+            log.info("[BALANCING_TRADE] [%s] %s", self.time_slot_str, trade)
 
         self._notify_listeners(MarketEvent.BALANCING_TRADE, trade=trade)
         return trade
