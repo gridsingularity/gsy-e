@@ -207,8 +207,8 @@ class TwoSidedMarket(OneSidedMarket):
                    energy: Optional[float] = None,
                    seller: Optional[TraderDetails] = None,
                    buyer: Optional[TraderDetails] = None,
-                   already_tracked: bool = False,
-                   trade_offer_info: Optional[TradeBidOfferInfo] = None) -> Trade:
+                   trade_offer_info: Optional[TradeBidOfferInfo] = None,
+                   offer: Offer = None) -> Trade:
         """Accept bid and create Trade object."""
         # pylint: disable=too-many-arguments, too-many-locals
         market_bid = self.bids.pop(bid.id, None)
@@ -255,15 +255,18 @@ class TwoSidedMarket(OneSidedMarket):
         trade = Trade(str(uuid.uuid4()), self.now,
                       seller,
                       bid.buyer,
-                      bid=bid, traded_energy=energy, trade_price=trade_price,
-                      residual=residual_bid, already_tracked=already_tracked,
+                      bid=bid, offer=offer, traded_energy=energy, trade_price=trade_price,
+                      residual=residual_bid,
                       offer_bid_trade_info=updated_bid_trade_info,
                       fee_price=fee_price, time_slot=bid.time_slot,
                       matching_requirements=trade_offer_info.matching_requirements
                       )
 
-        if already_tracked is False:
-            self._update_stats_after_trade(trade, bid, already_tracked)
+        if not offer:
+            # This is a chain trade, therefore needs to be tracked. For the trade on the market
+            # that the match is performed, the tracking should have already been done by the offer
+            # trade.
+            self._update_stats_after_trade(trade, bid)
             log.info("%s[TRADE][BID] [%s] [%s] {%s}",
                      self._debug_log_market_type_identifier, self.name, trade.time_slot, trade)
 
@@ -275,20 +278,21 @@ class TwoSidedMarket(OneSidedMarket):
                               selected_energy: float) -> Tuple[Trade, Trade]:
         """Accept bid and offers in pair when a trade is happening."""
         # pylint: disable=too-many-arguments
-        already_tracked = bid.buyer.name == offer.seller.name
+        assert isclose(clearing_rate, trade_bid_info.trade_rate)
         trade = self.accept_offer(offer_or_id=offer,
                                   buyer=bid.buyer,
                                   energy=selected_energy,
-                                  trade_rate=clearing_rate,
-                                  already_tracked=already_tracked,
-                                  trade_bid_info=trade_bid_info)
+                                  trade_bid_info=trade_bid_info,
+                                  bid=bid)
 
         bid_trade = self.accept_bid(bid=bid,
                                     energy=selected_energy,
                                     seller=offer.seller,
                                     buyer=bid.buyer,
-                                    already_tracked=True,
-                                    trade_offer_info=trade_bid_info)
+                                    trade_offer_info=trade_bid_info,
+                                    offer=offer)
+        trade.match_details["bid"] = bid
+        trade.match_details["offer"] = offer
         return bid_trade, trade
 
     def _get_offer_from_seller_origin_id(self, seller_origin_id):

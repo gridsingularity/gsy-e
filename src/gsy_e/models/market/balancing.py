@@ -20,7 +20,8 @@ from logging import getLogger
 from typing import Union, Dict, List, Optional  # noqa
 
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.data_classes import BalancingOffer, BalancingTrade, Offer, TraderDetails
+from gsy_framework.data_classes import (
+    BalancingOffer, BalancingTrade, Offer, TraderDetails, TradeBidOfferInfo)
 from pendulum import DateTime
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
@@ -154,8 +155,7 @@ class BalancingMarket(OneSidedMarket):
     def accept_offer(  # pylint: disable=too-many-locals
             self, offer_or_id: Union[str, BalancingOffer], buyer: TraderDetails, *,
             energy: int = None,
-            already_tracked: bool = False, trade_rate: float = None,
-            trade_bid_info: float = None) -> BalancingTrade:
+            trade_bid_info: Optional[TradeBidOfferInfo] = None) -> BalancingTrade:
         if self.readonly:
             raise MarketReadOnlyException()
 
@@ -174,8 +174,7 @@ class BalancingMarket(OneSidedMarket):
         original_offer = offer
         residual_offer = None
 
-        if trade_rate is None:
-            trade_rate = offer.energy_rate
+        trade_rate = offer.energy_rate if not trade_bid_info else trade_bid_info.trade_rate
 
         orig_offer_price = offer.original_price or offer.price
 
@@ -202,7 +201,7 @@ class BalancingMarket(OneSidedMarket):
                 # Requested energy is equal to offer's energy - just proceed normally
                 fees, trade_price = self._update_offer_fee_and_calculate_final_price(
                     energy, trade_rate, 1, orig_offer_price
-                ) if already_tracked is False else energy * trade_rate
+                )
                 offer.update_price(trade_price)
 
         except Exception:
@@ -224,9 +223,8 @@ class BalancingMarket(OneSidedMarket):
                                time_slot=offer.time_slot)
         self.bc_interface.track_trade_event(self.time_slot, trade)
 
-        if already_tracked is False:
-            self._update_stats_after_trade(trade, offer)
-            log.info("[BALANCING_TRADE] [%s] %s", self.time_slot_str, trade)
+        self._update_stats_after_trade(trade, offer)
+        log.info("[BALANCING_TRADE] [%s] %s", self.time_slot_str, trade)
 
         self._notify_listeners(MarketEvent.BALANCING_TRADE, trade=trade)
         return trade

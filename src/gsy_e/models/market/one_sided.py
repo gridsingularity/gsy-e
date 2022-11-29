@@ -21,7 +21,7 @@ from math import isclose
 from typing import Union, Dict, List, Optional, Callable, Tuple
 
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.data_classes import Offer, Trade, TradeBidOfferInfo, TraderDetails
+from gsy_framework.data_classes import Offer, Trade, TradeBidOfferInfo, TraderDetails, Bid
 from gsy_framework.enums import SpotMarketTypeEnum
 from pendulum import DateTime
 
@@ -241,9 +241,8 @@ class OneSidedMarket(MarketBase):
     def accept_offer(  # pylint: disable=too-many-locals
             self, offer_or_id: Union[str, Offer], buyer: TraderDetails, *,
             energy: Optional[float] = None,
-            already_tracked: bool = False,
-            trade_rate: Optional[float] = None,
-            trade_bid_info: Optional[TradeBidOfferInfo] = None) -> Trade:
+            trade_bid_info: Optional[TradeBidOfferInfo] = None,
+            bid: Optional[Bid] = None) -> Trade:
         """Accept an offer and create a Trade."""
 
         if self.readonly:
@@ -261,7 +260,9 @@ class OneSidedMarket(MarketBase):
         original_offer = offer
         residual_offer = None
 
-        if trade_rate is None:
+        if trade_bid_info is not None:
+            trade_rate = trade_bid_info.trade_rate
+        else:
             trade_rate = offer.energy_rate
 
         orig_offer_price = offer.original_price or offer.price
@@ -306,6 +307,7 @@ class OneSidedMarket(MarketBase):
         trade = Trade(trade_id, self.now, offer.seller,
                       buyer=buyer,
                       offer=offer,
+                      bid=bid,
                       traded_energy=energy, trade_price=trade_price, residual=residual_offer,
                       offer_bid_trade_info=offer_bid_trade_info,
                       fee_price=fee_price, time_slot=offer.time_slot,
@@ -315,10 +317,9 @@ class OneSidedMarket(MarketBase):
 
         self.bc_interface.track_trade_event(self.time_slot, trade)
 
-        if already_tracked is False:
-            self._update_stats_after_trade(trade, offer)
-            log.info("%s[TRADE][OFFER] [%s] [%s] %s",
-                     self._debug_log_market_type_identifier, self.name, trade.time_slot, trade)
+        self._update_stats_after_trade(trade, offer)
+        log.info("%s[TRADE][OFFER] [%s] [%s] %s",
+                 self._debug_log_market_type_identifier, self.name, trade.time_slot, trade)
 
         self._notify_listeners(MarketEvent.OFFER_TRADED, trade=trade)
         return trade

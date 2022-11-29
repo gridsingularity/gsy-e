@@ -102,8 +102,7 @@ class FakeMarket:
         self.id = id
         self.time_slot = pendulum.now()
 
-    def accept_offer(self, offer_or_id, *, buyer="", energy=None, time=None, already_tracked=False,
-                     trade_rate: float = None, trade_bid_info=None):
+    def accept_offer(self, offer_or_id, *, buyer="", energy=None, time=None, trade_bid_info=None):
         offer = offer_or_id
         if self.raises:
             raise MarketException

@@ -64,8 +64,6 @@ class AcceptOfferParameters:
     offer: Offer
     buyer: TraderDetails
     energy: float
-    trade_rate: float
-    already_tracked: bool
     trade_bid_info: "TradeBidOfferInfo"
 
     def to_dict(self) -> dict:
@@ -73,8 +71,6 @@ class AcceptOfferParameters:
         return {"offer_or_id": self.offer.to_json_string(),
                 "buyer": self.buyer.serializable_dict(),
                 "energy": self.energy,
-                "trade_rate": self.trade_rate,
-                "already_tracked": self.already_tracked,
                 "trade_bid_info": self.trade_bid_info}
 
     def accept_offer_using_market_object(self) -> Trade:
@@ -82,8 +78,7 @@ class AcceptOfferParameters:
          using the arguments from the other dataclass members"""
         return self.market.accept_offer(
             offer_or_id=self.offer, buyer=self.buyer,
-            energy=self.energy, trade_rate=self.trade_rate,
-            already_tracked=self.already_tracked,
+            energy=self.energy,
             trade_bid_info=self.trade_bid_info)
 
 
@@ -558,8 +553,7 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
         return len(self.offers.posted_in_market(market_id)) > 0
 
     def accept_offer(self, market: "OneSidedMarket", offer: Offer, *, buyer: TraderDetails = None,
-                     energy: float = None, already_tracked: bool = False, trade_rate: float = None,
-                     trade_bid_info: "TradeBidOfferInfo" = None):
+                     energy: float = None, trade_bid_info: "TradeBidOfferInfo" = None):
         """
         Accept an offer on a market.
         Args:
@@ -567,9 +561,6 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
             offer: Offer object that will be accepted
             buyer: Buyer of the offer
             energy: Selected energy from the offer
-            already_tracked: Do not track the result trade in the market results. kept for
-                             conforming to the MarketStrategyConnectionAdapter interface
-            trade_rate: Trade rate of the selected offer
             trade_bid_info: Only populated for chain trades, contains pricing info about the
                             source seller and buyer of the chain trade
 
@@ -582,8 +573,7 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
             offer = market.offers[offer]
         trade = self._market_adapter.accept_offer(
             AcceptOfferParameters(
-                market, offer, buyer, energy, trade_rate, already_tracked,
-                trade_bid_info)
+                market, offer, buyer, energy, trade_bid_info)
         )
 
         self.offers.bought_offer(trade.match_details["offer"], market.id)

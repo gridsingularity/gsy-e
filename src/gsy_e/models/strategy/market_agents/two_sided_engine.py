@@ -173,7 +173,6 @@ class TwoSidedEngine(MAEngine):
                 seller=TraderDetails(
                     self.owner.name, self.owner.uuid,
                     bid_trade.seller.origin, bid_trade.seller.origin_uuid),
-                already_tracked=False,
                 trade_offer_info=trade_offer_info,
             )
             self._delete_forwarded_bids(bid_info)

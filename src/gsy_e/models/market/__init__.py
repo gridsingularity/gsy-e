@@ -197,12 +197,10 @@ class MarketBase:  # pylint: disable=too-many-instance-attributes
                 listener(event, market_id=self.id, **kwargs)
 
     def _update_stats_after_trade(
-            self, trade: Trade, order: Union[Offer, Bid], already_tracked: bool = False) -> None:
+            self, trade: Trade, order: Union[Offer, Bid]) -> None:
         """Update the instance state in response to an occurring trade."""
-
-        if not already_tracked:
-            self.trades.append(trade)
-            self.market_fee += trade.fee_price
+        self.trades.append(trade)
+        self.market_fee += trade.fee_price
         self._update_accumulated_trade_price_energy(trade)
         self.traded_energy = add_or_create_key(
             self.traded_energy, trade.seller.name, order.energy)
