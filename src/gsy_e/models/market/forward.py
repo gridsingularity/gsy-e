@@ -25,7 +25,7 @@ from pendulum import DateTime, duration
 
 from gsy_e.constants import FORWARD_MARKET_MAX_DURATION_YEARS
 from gsy_e.gsy_e_core.blockchain_interface import NonBlockchainInterface
-from gsy_e.models.market import GridFee
+from gsy_e.models.market import GridFee, MarketSlotParams
 from gsy_e.models.market.future import FutureMarkets
 
 if TYPE_CHECKING:
@@ -63,6 +63,21 @@ class ForwardMarketBase(FutureMarkets):
 
         self.set_open_market_slot_parameters(current_market_time_slot, created_future_slots)
         return created_future_slots
+
+    def set_open_market_slot_parameters(
+            self, current_market_slot: DateTime, created_market_slots: List[DateTime]):
+        """Update the parameters of the newly opened market slots."""
+        for market_slot in created_market_slots:
+            if market_slot in self._open_market_slot_parameters:
+                continue
+
+            self._open_market_slot_parameters[market_slot] = MarketSlotParams(
+                delivery_start_time=market_slot,
+                delivery_end_time=(
+                        market_slot + self._get_market_slot_duration(None)),
+                opening_time=current_market_slot,
+                closing_time=self._calculate_closing_time(market_slot)
+            )
 
 
 class IntradayMarket(ForwardMarketBase):
