@@ -279,6 +279,7 @@ class TwoSidedMarket(OneSidedMarket):
         """Accept bid and offers in pair when a trade is happening."""
         # pylint: disable=too-many-arguments
         assert isclose(clearing_rate, trade_bid_info.trade_rate)
+        assert bid.buyer.uuid != offer.seller.uuid
         trade = self.accept_offer(offer_or_id=offer,
                                   buyer=bid.buyer,
                                   energy=selected_energy,
@@ -436,6 +437,9 @@ class TwoSidedMarket(OneSidedMarket):
             raise InvalidBidOfferPairException(
                 f"Trade rate {clearing_rate} is lower than offer energy rate "
                 f"{market_offer.energy_rate}.")
+        if market_offer.seller == market_bid.buyer:
+            raise InvalidBidOfferPairException(
+                "The bid offer pair should not include a bid and an offer from the same trader.")
 
         self._validate_matching_requirements(recommendation)
         self._validate_requirements_satisfied(recommendation)
