@@ -516,10 +516,10 @@ class TestTwoSidedMarketMatchRecommendations:
     def test_match_recommendations(market):
         """Test match_recommendations() method of TwoSidedMarket."""
         bid = Bid("bid_id1", pendulum.now(),
-                  price=2, energy=1, buyer=TraderDetails("Buyer", ""),
+                  price=2, energy=1, buyer=TraderDetails("Buyer", "buyer_id"),
                   time_slot="2021-10-06T12:00")
         offer = Offer("offer_id1", pendulum.now(),
-                      price=2, energy=1, seller=TraderDetails("Seller", ""),
+                      price=2, energy=1, seller=TraderDetails("Seller", "seller_id"),
                       time_slot="2021-10-06T12:00")
 
         market.bids = {"bid_id1": bid}

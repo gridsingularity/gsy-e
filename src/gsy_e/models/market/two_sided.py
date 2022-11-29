@@ -342,6 +342,10 @@ class TwoSidedMarket(OneSidedMarket):
                     raise InvalidBidOfferPairException("Bid does not exist in the market")
             recommended_pair.bid = market_bid.serializable_dict()
 
+            if market_offer.seller.uuid == market_bid.buyer.uuid:
+                # Cannot clear a bid with an offer from the same direct origin.
+                continue
+
             try:
                 self.validate_bid_offer_match(recommended_pair)
             except InvalidBidOfferPairException as invalid_bop_exception:
@@ -437,9 +441,6 @@ class TwoSidedMarket(OneSidedMarket):
             raise InvalidBidOfferPairException(
                 f"Trade rate {clearing_rate} is lower than offer energy rate "
                 f"{market_offer.energy_rate}.")
-        if market_offer.seller == market_bid.buyer:
-            raise InvalidBidOfferPairException(
-                "The bid offer pair should not include a bid and an offer from the same trader.")
 
         self._validate_matching_requirements(recommendation)
         self._validate_requirements_satisfied(recommendation)
