@@ -37,7 +37,8 @@ from gsy_e.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProf
 from gsy_e.models.strategy.finite_power_plant import FinitePowerPlant # NOQA
 
 from gsy_e.models.leaves import (
-    Leaf, scm_leaf_mapping, CoefficientLeaf, forward_leaf_mapping, external_scm_leaf_mapping) # NOQA
+    Leaf, scm_leaf_mapping, CoefficientLeaf, forward_leaf_mapping,
+    external_scm_leaf_mapping) # NOQA
 from gsy_e.models.leaves import *  # NOQA  # pylint: disable=wildcard-import
 
 logger = getLogger(__name__)
@@ -124,7 +125,6 @@ def _leaf_from_dict(description, config):
             return None
         if not issubclass(leaf_type, Leaf):
             raise ValueError(f"Unknown forward leaf type '{leaf_type}'")
-        description = leaf_type.strategy_type.deserialize_args(description)
     elif ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
         strategy_type = description.pop("type")
         if (config.external_connection_enabled and
@@ -140,6 +140,7 @@ def _leaf_from_dict(description, config):
         leaf_type = globals().get(description.pop("type"), type(None))
         if not issubclass(leaf_type, Leaf):
             raise ValueError(f"Unknown leaf type '{leaf_type}'")
+    description = leaf_type.strategy_type.deserialize_args(description)
     display_type = description.pop("display_type", None)
     try:
         leaf_object = leaf_type(**description, config=config)

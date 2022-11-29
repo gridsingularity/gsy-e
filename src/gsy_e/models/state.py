@@ -891,5 +891,25 @@ class StorageState(StateInterface):
         }
 
 
+class HeatPumpState(StateInterface):
+    """State for the heat pump strategy."""
+
+    def get_state(self) -> Dict:
+        """To be implemented in the frame of GSYE-426"""
+        return {}
+
+    def restore_state(self, state_dict: Dict):
+        """To be implemented in the frame of GSYE-426"""
+
+    def delete_past_state_values(self, current_time_slot: DateTime):
+        """To be implemented in the frame of GSYE-426"""
+
+    def get_results_dict(self, current_time_slot: DateTime) -> dict:
+        """To be implemented in the frame of GSYE-426"""
+
+    def __str__(self):
+        return self.__class__.__name__
+
+
 class UnexpectedStateException(Exception):
     """Exception raised when the state of a device is unexpected."""
