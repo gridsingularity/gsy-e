@@ -37,7 +37,7 @@ if TYPE_CHECKING:
     from gsy_e.models.area import Area
     from gsy_framework.data_classes import Trade
     from gsy_e.models.strategy import BaseStrategy
-    from gsy_e.models.strategy.new_base_strategy import NewStrategyBase
+    from gsy_e.models.strategy.trading_strategy_base import TradingStrategyBase
 
 
 def check_area_name_exists_in_parent_area(parent_area, name):
@@ -84,7 +84,7 @@ class AreaBase:
     def __init__(self, name: str = None,
                  children: List["Area"] = None,
                  uuid: str = None,
-                 strategy: Optional[Union["BaseStrategy", "NewStrategyBase"]] = None,
+                 strategy: Optional[Union["BaseStrategy", "TradingStrategyBase"]] = None,
                  config: SimulationConfig = None,
                  grid_fee_percentage: float = None,
                  grid_fee_constant: float = None):

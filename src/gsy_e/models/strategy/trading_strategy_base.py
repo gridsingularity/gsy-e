@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from gsy_e.models.market import MarketBase
 
 
-class NewStrategyBase(EventMixin, AreaBehaviorBase, ABC):
+class TradingStrategyBase(EventMixin, AreaBehaviorBase, ABC):
     """Base class for the new market strategies."""
     def __init__(self,
                  order_updater_parameters: Dict[
