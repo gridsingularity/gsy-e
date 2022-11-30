@@ -340,7 +340,9 @@ def test_does_not_offer_sold_energy_again(pv_test6, market_test3):
     assert market_test3.created_offers[0].energy == \
         pv_test6.state._energy_production_forecast_kWh[TIME]
     fake_trade = FakeTrade(market_test3.created_offers[0])
-    fake_trade.seller.name = pv_test6.owner.name
+    fake_trade.seller = TraderDetails(
+        pv_test6.owner.name, fake_trade.seller.uuid,
+        fake_trade.seller.origin, fake_trade.seller.origin_uuid)
     fake_trade.time_slot = market_test3.time_slot
     pv_test6.event_offer_traded(market_id=market_test3.id, trade=fake_trade)
     market_test3.created_offers = []
