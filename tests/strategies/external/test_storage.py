@@ -76,7 +76,7 @@ class TestStorageExternalStrategy:
 
     # Aggregator tests
     @staticmethod
-    def test_bid_aggregator(external_storage):
+    def test_bid_aggregator_post_bid_succeeds(external_storage):
         """The _bid_aggregator command succeeds."""
         external_storage.state.energy_to_buy_dict[
             external_storage.spot_market.time_slot] = 1
@@ -92,7 +92,7 @@ class TestStorageExternalStrategy:
         assert return_value["message"] == ""
 
     @staticmethod
-    def test_bid_aggregator_fails_to_place_bid_more_than_desired_energy(external_storage):
+    def test_bid_aggregator_post_bid_with_more_than_desired_energy_fails(external_storage):
         external_storage.state.energy_to_buy_dict[
             external_storage.spot_market.time_slot] = 1
         return_value = external_storage.trigger_aggregator_commands({
@@ -128,7 +128,7 @@ class TestStorageExternalStrategy:
             "your order: ['requirements', 'attributes'].")
 
     @staticmethod
-    def test_bid_aggregator_places_future_bid(external_storage, future_markets):
+    def test_bid_aggregator_post_future_bid_succeeds(external_storage, future_markets):
         future_energy_kWh = 0.2
         external_storage.area._markets.future_markets = future_markets
 
@@ -151,7 +151,7 @@ class TestStorageExternalStrategy:
         assert len(future_markets.bids.values()) == len(future_markets.market_time_slots)
 
     @staticmethod
-    def test_bid_aggregator_fails_placing_future_bid_more_than_required_energy(
+    def test_bid_aggregator_post_future_bid_more_than_required_energy_fails(
             external_storage, future_markets):
         future_energy_kWh = 0.4
         external_storage.area._markets.future_markets = future_markets
@@ -174,7 +174,7 @@ class TestStorageExternalStrategy:
             assert len(future_markets.offers.values()) == 0
 
     @staticmethod
-    def test_offer_aggregator(external_storage):
+    def test_offer_aggregator_post_offer_succeeds(external_storage):
         """The _offer_aggregator command succeeds."""
         external_storage.state.energy_to_sell_dict[
             external_storage.spot_market.time_slot] = 1
@@ -190,7 +190,7 @@ class TestStorageExternalStrategy:
         assert return_value["message"] == ""
 
     @staticmethod
-    def test_offer_aggregator_fails_to_place_bid_more_than_available_energy(external_storage):
+    def test_offer_aggregator_post_offer_more_than_available_energy_fails(external_storage):
         external_storage.state.energy_to_sell_dict[
             external_storage.spot_market.time_slot] = 1
         return_value = external_storage.trigger_aggregator_commands({
@@ -226,7 +226,7 @@ class TestStorageExternalStrategy:
             "your order: ['requirements', 'attributes'].")
 
     @staticmethod
-    def test_offer_aggregator_places_future_offer(external_storage, future_markets):
+    def test_offer_aggregator_post_future_offer_succeeds(external_storage, future_markets):
         future_energy_kWh = 0.2
         external_storage.area._markets.future_markets = future_markets
 
@@ -249,7 +249,7 @@ class TestStorageExternalStrategy:
         assert len(future_markets.offers.values()) == len(future_markets.market_time_slots)
 
     @staticmethod
-    def test_offer_aggregator_fails_placing_future_offer_more_than_available_energy(
+    def test_offer_aggregator_post_future_offer_more_than_available_energy_fails(
             external_storage, future_markets):
         future_energy_kWh = 0.4
         external_storage.area._markets.future_markets = future_markets
