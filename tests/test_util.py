@@ -131,6 +131,8 @@ class TestD3ACoreUtil:
                 ConstSettings.MASettings.MARKET_TYPE)
 
     @staticmethod
+    @patch("gsy_framework.constants_limits.ConstSettings.FutureMarketSettings."
+           "FUTURE_MARKET_DURATION_HOURS", 1)
     def test_future_market_counter():
         """Test the counter of future market clearing."""
         with patch("gsy_framework.constants_limits.ConstSettings.FutureMarketSettings."
