@@ -48,6 +48,12 @@ class FutureMarketCounter(MarketCounter):
             clearing_interval_min=ConstSettings.FutureMarketSettings.
             FUTURE_MARKET_CLEARING_INTERVAL_MINUTES)
 
+    def is_time_for_clearing(self, current_time: DateTime) -> bool:
+        """Only return if future markets are enabled."""
+        if ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS > 0:
+            return super().is_time_for_clearing(current_time)
+        return False
+
 
 class ExternalTickCounter:
     """External tick counter."""
