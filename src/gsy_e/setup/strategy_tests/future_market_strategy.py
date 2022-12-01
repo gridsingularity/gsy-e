@@ -63,7 +63,7 @@ def get_setup(config):
                      Area(
                          "Load",
                          strategy=LoadHoursStrategy(
-                             avg_power_W=1000,
+                             avg_power_W=100000,
                              hrs_per_day=24,
                              hrs_of_day=list(range(0, 24)),
                              initial_buying_rate=3,
@@ -77,7 +77,7 @@ def get_setup(config):
                      Area(
                          "ESS",
                          strategy=StorageStrategy(
-                             initial_soc=50, battery_capacity_kWh=20,
+                             initial_soc=50, battery_capacity_kWh=1000000,
                              initial_selling_rate=47, final_selling_rate=25,
                              initial_buying_rate=3, final_buying_rate=24)
                      )
@@ -93,5 +93,5 @@ def get_var_from_env(var_name: str, default_val: float):
     """Read variable from env and parse as string"""
     var = os.environ.get(var_name)
     if var is not None:
-        return int(var)
+        return float(var)
     return default_val
