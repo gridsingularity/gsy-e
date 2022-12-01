@@ -906,6 +906,7 @@ class HeatPumpState(StateInterface):
 
     def get_results_dict(self, current_time_slot: DateTime) -> dict:
         """To be implemented in the frame of GSYE-426"""
+        return {}
 
     def __str__(self):
         return self.__class__.__name__

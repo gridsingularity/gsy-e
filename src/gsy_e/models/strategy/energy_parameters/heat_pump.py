@@ -19,8 +19,8 @@ class HeatPumpEnergyParameters:
                  external_temperatur_C: float = ConstSettings.HeatPumpSettings.EXT_TEMP_C,
                  tank_volume_l: float = ConstSettings.HeatPumpSettings.TANK_VOL_L,
                  average_consumption: float =
-                 ConstSettings.HeatPumpSettings.AVERAGE_CONSUMPTION_KW,
-                 source_type: int = ConstSettings.HeatPumpSettings.TYPE):
+                 ConstSettings.HeatPumpSettings.CONSUMPTION_KW,
+                 source_type: int = ConstSettings.HeatPumpSettings.SOURCE_TYPE):
 
         self.maximum_power_rating = maximum_power_rating
         self.min_temperatur_C = min_temperatur_C

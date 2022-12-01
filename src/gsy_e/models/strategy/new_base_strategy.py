@@ -7,7 +7,7 @@ from pendulum import DateTime, duration
 from gsy_e.events import EventMixin
 from gsy_e.models.base import AreaBehaviorBase
 from gsy_e.models.strategy.order_updater import (OrderUpdater, OrderUpdaterParameters)
-
+from gsy_e.models.strategy import _TradeLookerUpper
 if TYPE_CHECKING:
     from gsy_e.models.state import StateInterface
     from gsy_e.models.market import MarketBase
@@ -94,3 +94,8 @@ class NewStrategyBase(EventMixin, AreaBehaviorBase, ABC):
     def state(self) -> "StateInterface":
         """Get the state class of the strategy. Needs to be implemented by all strategies"""
         raise NotImplementedError
+
+    @property
+    def trades(self):
+        """Return the tracked trades of the strategy"""
+        return _TradeLookerUpper(self.owner.name)
