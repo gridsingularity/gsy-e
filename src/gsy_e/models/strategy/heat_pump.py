@@ -8,7 +8,7 @@ from pendulum import DateTime, duration
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.models.state import HeatPumpState
 from gsy_e.models.strategy.energy_parameters.heat_pump import HeatPumpEnergyParameters
-from gsy_e.models.strategy.new_base_strategy import NewStrategyBase
+from gsy_e.models.strategy.trading_strategy_base import TradingStrategyBase
 from gsy_e.models.strategy.order_updater import OrderUpdaterParameters, OrderUpdater
 
 DEFAULT_HEAT_PUMP_ORDER_UPDATE_PARAMS = {
@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from gsy_e.models.market import MarketBase
 
 
-class HeatPumpStrategy(NewStrategyBase):
+class HeatPumpStrategy(TradingStrategyBase):
     """Strategy for heat pumps with storages."""
     # pylint: disable=too-many-arguments)
     def __init__(self,
