@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from abc import ABC, abstractmethod
+from collections import defaultdict
 from collections import namedtuple
 from enum import Enum
 from math import isclose, copysign
@@ -25,7 +26,7 @@ from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.utils import (
     convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict, convert_kW_to_kWh,
     limit_float_precision)
-from pendulum import DateTime
+from pendulum import DateTime, duration
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.util import is_time_slot_in_past_markets, write_default_to_dict
@@ -894,6 +895,48 @@ class StorageState(StateInterface):
 class HeatPumpState(StateInterface):
     """State for the heat pump strategy."""
 
+    def __init__(self, initial_temp_C: float):
+        # the defaultdict was only selected for the initial slot
+        self._storage_temp_C: Dict[DateTime, float] = defaultdict(lambda: initial_temp_C)
+        self._min_energy_demand_kWh: Dict[DateTime, float] = {}
+        self._max_energy_demand_kWh: Dict[DateTime, float] = {}
+        # buffer for decrease of storage temp due to heat consumption
+        self._temp_decrease_K: Dict[DateTime, float] = {}
+
+    def copy_to_next_slot(self, current_market_slot: DateTime, slot_length: duration):
+        next_slot = current_market_slot.add(minutes=slot_length.total_minutes())
+        self._storage_temp_C[next_slot] = self._storage_temp_C[current_market_slot]
+
+    def get_storage_temp_C(self, time_slot: DateTime) -> float:
+        return self._storage_temp_C[time_slot]
+
+    def update_storage_temp(self, time_slot: DateTime, temp: float):
+        self._storage_temp_C[time_slot] += temp
+
+    def set_min_energy_demand_kWh(self, time_slot: DateTime, energy_kWh: float):
+        self._min_energy_demand_kWh[time_slot] = energy_kWh
+
+    def set_max_energy_demand_kWh(self, time_slot: DateTime, energy_kWh: float):
+        self._max_energy_demand_kWh[time_slot] = energy_kWh
+
+    def get_temp_decrease_K(self, time_slot: DateTime) -> float:
+        return self._temp_decrease_K.get(time_slot, 0)
+
+    def get_min_energy_demand_kWh(self, time_slot: DateTime) -> float:
+        return self._min_energy_demand_kWh.get(time_slot, 0)
+
+    def get_max_energy_demand_kWh(self, time_slot: DateTime) -> float:
+        return self._max_energy_demand_kWh.get(time_slot, 0)
+
+    def update_temp_decrease_K(self, time_slot: DateTime, temp_diff_K: float):
+        self._temp_decrease_K[time_slot] = temp_diff_K
+
+    def delete_old_time_slots(self, current_time_slot: DateTime):
+        if not current_time_slot:
+            return
+        self._delete_time_slots(self._min_energy_demand_kWh, current_time_slot)
+        self._delete_time_slots(self._max_energy_demand_kWh, current_time_slot)
+
     def get_state(self) -> Dict:
         """To be implemented in the frame of GSYE-426"""
         return {}
@@ -904,8 +947,20 @@ class HeatPumpState(StateInterface):
     def delete_past_state_values(self, current_time_slot: DateTime):
         """To be implemented in the frame of GSYE-426"""
 
-    def get_results_dict(self, current_time_slot: DateTime) -> dict:
+    def get_results_dict(self, current_time_slot: DateTime) -> Dict:
         """To be implemented in the frame of GSYE-426"""
+        return {
+            "storage_temp_C": self._storage_temp_C.get(current_time_slot, 0)
+        }
+
+    @staticmethod
+    def _delete_time_slots(profile: Dict, current_time_stamp: DateTime):
+        stamps_to_delete = []
+        for time_slot in profile:
+            if time_slot < current_time_stamp:
+                stamps_to_delete.append(time_slot)
+        for stamp in stamps_to_delete:
+            profile.pop(stamp, None)
 
     def __str__(self):
         return self.__class__.__name__

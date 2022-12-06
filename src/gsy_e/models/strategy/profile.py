@@ -44,8 +44,9 @@ class EnergyProfile:
             self._read_input_profile_type()
 
         if not self.profile or reconfigure:
-            profile = self.input_energy_rate if self.input_energy_rate is not None else\
-                self.input_profile
+            profile = (self.input_energy_rate
+                       if self.input_energy_rate is not None
+                       else self.input_profile)
         else:
             profile = self.profile
 
