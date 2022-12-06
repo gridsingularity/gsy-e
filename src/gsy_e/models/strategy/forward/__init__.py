@@ -7,13 +7,13 @@ from pendulum import duration
 from gsy_e.models.strategy.forward.live_event_handler import ForwardLiveEvents
 from gsy_e.models.strategy.forward.order_updater import (
     ForwardOrderUpdater, ForwardOrderUpdaterParameters)
-from gsy_e.models.strategy.new_base_strategy import NewStrategyBase
+from gsy_e.models.strategy.trading_strategy_base import TradingStrategyBase
 
 if TYPE_CHECKING:
     from gsy_e.models.state import StateInterface
 
 
-class ForwardStrategyBase(NewStrategyBase):
+class ForwardStrategyBase(TradingStrategyBase):
     """Base class for the forward market strategies."""
     def __init__(self,
                  order_updater_parameters: Dict[

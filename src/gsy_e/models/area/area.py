@@ -49,7 +49,7 @@ log = getLogger(__name__)
 if TYPE_CHECKING:
     from gsy_e.models.market import MarketBase
     from gsy_e.models.strategy import BaseStrategy
-    from gsy_e.models.strategy.new_base_strategy import NewStrategyBase
+    from gsy_e.models.strategy.trading_strategy_base import TradingStrategyBase
 
 
 class Area(AreaBase):
@@ -62,7 +62,7 @@ class Area(AreaBase):
     # pylint: disable=too-many-arguments,too-many-instance-attributes
     def __init__(self, name: str = None, children: List["Area"] = None,
                  uuid: str = None,
-                 strategy: Optional[Union["BaseStrategy", "NewStrategyBase"]] = None,
+                 strategy: Optional[Union["BaseStrategy", "TradingStrategyBase"]] = None,
                  config: SimulationConfig = None,
                  balancing_spot_trade_ratio=ConstSettings.BalancingSettings.SPOT_TRADE_RATIO,
                  event_list=None,
