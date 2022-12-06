@@ -15,6 +15,7 @@ from gsy_e.gsy_e_core.simulation import run_simulation
 from gsy_e.gsy_e_core.util import update_advanced_settings
 from gsy_e.models.config import SimulationConfig
 
+logging.getLogger().setLevel(logging.ERROR)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -29,11 +30,15 @@ def launch_simulation_from_rq_job(scenario: Dict,
                                   connect_to_profiles_db: bool = True):
     # pylint: disable=too-many-arguments, too-many-locals
     """Launch simulation from rq job."""
-    logging.getLogger().setLevel(logging.ERROR)
-    logger.info("Starting simulation with job_id: %s and configuration id: %s",
-                job_id, gsy_e.constants.CONFIGURATION_ID)
 
+    gsy_e.constants.CONFIGURATION_ID = scenario.pop("configuration_uuid", None)
     try:
+        if not gsy_e.constants.CONFIGURATION_ID:
+            raise Exception("configuration_uuid was not provided")
+
+        logger.error("Starting simulation with job_id: %s and configuration id: %s",
+                     job_id, gsy_e.constants.CONFIGURATION_ID)
+
         if settings is None:
             settings = {}
         else:
@@ -73,7 +78,6 @@ def launch_simulation_from_rq_job(scenario: Dict,
         }
 
         assert isinstance(scenario, dict)
-        gsy_e.constants.CONFIGURATION_ID = scenario.pop("configuration_uuid")
         if "collaboration_uuid" in scenario or settings.get("type") in [
                 ConfigurationType.CANARY_NETWORK.value, ConfigurationType.B2B.value]:
             gsy_e.constants.EXTERNAL_CONNECTION_WEB = True
@@ -140,7 +144,9 @@ def launch_simulation_from_rq_job(scenario: Dict,
     except Exception:
         # pylint: disable=import-outside-toplevel
         from gsy_e.gsy_e_core.redis_connections.simulation import publish_job_error_output
+        logger.error("Error on jobId, %s, configuration id: %s",
+                     job_id, gsy_e.constants.CONFIGURATION_ID)
         publish_job_error_output(job_id, traceback.format_exc())
-        logger.exception("Error on jobId, %s, configuration id: %s",
-                         job_id, gsy_e.constants.CONFIGURATION_ID)
+        logger.error("Error on jobId, %s, configuration id: %s: error sent to gsy-web",
+                     job_id, gsy_e.constants.CONFIGURATION_ID)
         raise
