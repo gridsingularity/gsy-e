@@ -22,7 +22,7 @@ from gsy_framework.matching_algorithms import (AttributedMatchingAlgorithm,
                                                PayAsClearMatchingAlgorithm)
 
 from gsy_e.gsy_e_core.exceptions import WrongMarketTypeException
-from gsy_e.gsy_e_core.global_objects_singleton import global_objects
+from gsy_e.gsy_e_core.market_counters import FutureMarketCounter
 from gsy_e.models.myco_matcher.myco_matcher_interface import MycoMatcherInterface
 
 
@@ -32,9 +32,11 @@ class MycoInternalMatcher(MycoMatcherInterface):
     def __init__(self):
         super().__init__()
         self.match_algorithm = None
+        self._future_market_counter = None
 
     def activate(self):
         self.match_algorithm = self._get_matching_algorithm_spot_markets()
+        self._future_market_counter = FutureMarketCounter()
 
     def _get_matches_recommendations(self, data):
         """Wrapper for matching algorithm's matches recommendations."""
@@ -64,7 +66,7 @@ class MycoInternalMatcher(MycoMatcherInterface):
         for area_uuid, area_data in self.area_uuid_markets_mapping.items():
             markets = [*area_data[AvailableMarketTypes.SPOT],
                        *area_data[AvailableMarketTypes.SETTLEMENT]]
-            if global_objects.future_market_counter.is_time_for_clearing(
+            if self._future_market_counter.is_time_for_clearing(
                     area_data["current_time"]):
                 markets.append(area_data[AvailableMarketTypes.FUTURE])
             self._match_recommendations(area_uuid, area_data, markets,

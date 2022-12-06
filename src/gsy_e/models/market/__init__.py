@@ -16,7 +16,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import uuid
-from abc import abstractmethod
 from collections import namedtuple
 from dataclasses import dataclass
 from functools import wraps
@@ -293,7 +292,6 @@ class MarketBase:  # pylint: disable=too-many-instance-attributes
         return sum(trade.trade_price for trade in self.trades if trade.seller == seller)
 
     @staticmethod
-    @abstractmethod
     def _calculate_closing_time(delivery_time: DateTime) -> DateTime:
         """
         Closing time of the market. Uses as basis the delivery time in order to calculate it.

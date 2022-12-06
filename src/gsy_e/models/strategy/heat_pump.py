@@ -6,10 +6,9 @@ from gsy_framework.enums import AvailableMarketTypes
 from pendulum import DateTime, duration
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
-from gsy_e.constants import FutureTemplateStrategiesConstants
 from gsy_e.models.state import HeatPumpState
 from gsy_e.models.strategy.energy_parameters.heat_pump import HeatPumpEnergyParameters
-from gsy_e.models.strategy.new_base_strategy import NewStrategyBase
+from gsy_e.models.strategy.trading_strategy_base import TradingStrategyBase
 from gsy_e.models.strategy.order_updater import OrderUpdaterParameters, OrderUpdater
 
 DEFAULT_HEAT_PUMP_ORDER_UPDATE_PARAMS = {
@@ -18,18 +17,13 @@ DEFAULT_HEAT_PUMP_ORDER_UPDATE_PARAMS = {
         final_rate=ConstSettings.HeatPumpSettings.BUYING_RATE_RANGE.final,
         update_interval=duration(
                 minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)),
-    AvailableMarketTypes.FUTURE: OrderUpdaterParameters(
-        initial_rate=FutureTemplateStrategiesConstants.INITIAL_BUYING_RATE,
-        final_rate=FutureTemplateStrategiesConstants.FINAL_BUYING_RATE,
-        update_interval=duration(
-            minutes=FutureTemplateStrategiesConstants.UPDATE_INTERVAL_MIN)),
 }
 
 if TYPE_CHECKING:
     from gsy_e.models.market import MarketBase
 
 
-class HeatPumpStrategy(NewStrategyBase):
+class HeatPumpStrategy(TradingStrategyBase):
     """Strategy for heat pumps with storages."""
     # pylint: disable=too-many-arguments)
     def __init__(self,
@@ -68,7 +62,6 @@ class HeatPumpStrategy(NewStrategyBase):
         )
 
         self.preferred_buying_rate = preferred_buying_rate
-        self._markets_buffer = []  # TODO: discuss if this buffer is really necessary
 
     def serialize(self):
         """Return serialised energy params."""
@@ -80,12 +73,6 @@ class HeatPumpStrategy(NewStrategyBase):
 
     def event_activate(self, **kwargs):
         self._energy_params.event_activate()
-        self._populate_markets()
-
-    def _populate_markets(self):
-        self._markets_buffer = [self.area.spot_market]
-        if ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS > 0:
-            self._markets_buffer.append(self.area.future_markets)
 
     def event_market_cycle(self) -> None:
         super().event_market_cycle()
@@ -98,9 +85,9 @@ class HeatPumpStrategy(NewStrategyBase):
     def event_tick(self):
         self._update_open_orders()
 
-    def event_bid_traded(self, *, market_id: str, bid_trade: Trade) -> None:
+    def event_bid_traded(self, *, _market_id: str, bid_trade: Trade) -> None:
         """TODO: to be tested in the frame of GSYE-426"""
-        market = [market for market in self._markets_buffer if market_id == market.id]
+        market = self.area.spot_market
         if not market:
             return
 
@@ -111,7 +98,7 @@ class HeatPumpStrategy(NewStrategyBase):
         self._energy_params.event_traded_energy(time_slot, bid_trade.traded_energy)
 
     def remove_order(self, market: "MarketBase", market_slot: DateTime, order_uuid: str):
-        """TODO: discuss if this is needed and decide: implement or pass"""
+        pass
 
     def post_order(
             self, market: "MarketBase", market_slot: DateTime, order_rate: float = None, **kwargs):
@@ -123,6 +110,7 @@ class HeatPumpStrategy(NewStrategyBase):
 
         if order_energy_kWh <= FLOATING_POINT_TOLERANCE:
             return
+
         market.bid(
             order_rate * order_energy_kWh, order_energy_kWh,
             buyer=self.owner.name,
@@ -164,15 +152,8 @@ class HeatPumpStrategy(NewStrategyBase):
         self.post_order(market, market_slot)
 
     def _post_orders_to_new_markets(self):
-        for market in self._markets_buffer:
-            print(market, self.area.is_market_spot(market.id))
-            if self.area.is_market_spot(market.id):
-                self._post_order_to_new_market(
-                    self.area.spot_market, self.area.spot_market.time_slot)
-            else:
-                for market_slot in market.market_time_slots:
-                    self._post_order_to_new_market(market, market_slot,
-                                                   market_type=AvailableMarketTypes.FUTURE)
+        self._post_order_to_new_market(
+            self.area.spot_market, self.area.spot_market.time_slot)
 
     def _update_open_orders(self):
         for market, market_slot_updater_dict in self._order_updaters.items():
