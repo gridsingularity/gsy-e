@@ -16,9 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from dataclasses import dataclass
 from abc import abstractmethod
-from typing import Optional, TYPE_CHECKING, List, Dict
+from typing import Optional, TYPE_CHECKING, List
 
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.enums import AvailableMarketTypes
@@ -26,26 +25,12 @@ from pendulum import DateTime, duration
 
 from gsy_e.constants import FORWARD_MARKET_MAX_DURATION_YEARS
 from gsy_e.gsy_e_core.blockchain_interface import NonBlockchainInterface
-from gsy_e.models.market import GridFee
+from gsy_e.models.market import GridFee, MarketSlotParams
 from gsy_e.models.market.future import FutureMarkets
 
 if TYPE_CHECKING:
     from gsy_e.models.config import SimulationConfig
     from gsy_e.models.area.event_dispatcher import AreaDispatcher
-
-
-@dataclass(frozen=True)
-class ForwardMarketSlot:
-    """Parameters that describe a forward market slot."""
-    opening_time: DateTime
-    closing_time: DateTime
-    delivery_start_time: DateTime
-    delivery_end_time: DateTime
-
-    def __post_init__(self):
-        assert self.delivery_end_time > self.delivery_start_time
-        assert self.closing_time <= self.delivery_start_time
-        assert self.closing_time > self.opening_time
 
 
 class ForwardMarketBase(FutureMarkets):
@@ -64,17 +49,11 @@ class ForwardMarketBase(FutureMarkets):
         super().__init__(bc=bc, notification_listener=notification_listener,
                          readonly=readonly, grid_fee_type=grid_fee_type,
                          grid_fees=grid_fees, name=name)
-        self._open_market_slot_parameters: Dict[DateTime, ForwardMarketSlot] = {}
 
     @property
     @abstractmethod
     def market_type(self):
         """Return the market type from the AvailableMarketTypes enum."""
-
-    @staticmethod
-    @abstractmethod
-    def _get_market_slot_duration(current_time: DateTime, _config) -> duration:
-        """Return duration of market slots inside the market block."""
 
     def create_future_market_slots(self, current_market_time_slot: DateTime,
                                    config: "SimulationConfig") -> List[DateTime]:
@@ -82,30 +61,20 @@ class ForwardMarketBase(FutureMarkets):
             return []
         created_future_slots = self._create_future_market_slots(config, current_market_time_slot)
 
-        self._set_open_market_slot_parameters(current_market_time_slot, created_future_slots)
+        self.set_open_market_slot_parameters(current_market_time_slot, created_future_slots)
         return created_future_slots
 
-    def get_market_parameters_for_market_slot(
-            self, market_slot: DateTime) -> ForwardMarketSlot:
-        """Retrieve the parameters for the selected market slot."""
-        return self._open_market_slot_parameters.get(market_slot)
-
-    @property
-    def open_market_slot_info(self) -> Dict[DateTime, ForwardMarketSlot]:
-        """Retrieve the parameters for the selected market slot."""
-        return self._open_market_slot_parameters
-
-    def _set_open_market_slot_parameters(
+    def set_open_market_slot_parameters(
             self, current_market_slot: DateTime, created_market_slots: List[DateTime]):
         """Update the parameters of the newly opened market slots."""
         for market_slot in created_market_slots:
             if market_slot in self._open_market_slot_parameters:
                 continue
 
-            self._open_market_slot_parameters[market_slot] = ForwardMarketSlot(
+            self._open_market_slot_parameters[market_slot] = MarketSlotParams(
                 delivery_start_time=market_slot,
                 delivery_end_time=(
-                        market_slot + self._get_market_slot_duration(market_slot, None)),
+                        market_slot + self._get_market_slot_duration(None)),
                 opening_time=current_market_slot,
                 closing_time=self._calculate_closing_time(market_slot)
             )
@@ -127,7 +96,7 @@ class IntradayMarket(ForwardMarketBase):
         return current_time.add(days=1)
 
     @staticmethod
-    def _get_market_slot_duration(_current_time: DateTime, _config) -> duration:
+    def _get_market_slot_duration(_config) -> duration:
         return duration(minutes=15)
 
     @staticmethod
@@ -160,7 +129,7 @@ class DayForwardMarket(ForwardMarketBase):
         return current_time.set(hour=0, minute=0).add(weeks=1, days=1, hours=-1)
 
     @staticmethod
-    def _get_market_slot_duration(_current_time: DateTime, _config) -> duration:
+    def _get_market_slot_duration(_config) -> duration:
         return duration(hours=1)
 
     @staticmethod
@@ -196,7 +165,7 @@ class WeekForwardMarket(ForwardMarketBase):
         return current_time.set(hour=0, minute=0).add(years=1)
 
     @staticmethod
-    def _get_market_slot_duration(_current_time: DateTime, _config) -> duration:
+    def _get_market_slot_duration(_config) -> duration:
         return duration(weeks=1)
 
     @staticmethod
@@ -232,7 +201,7 @@ class MonthForwardMarket(ForwardMarketBase):
         return current_time.set(day=1, hour=0, minute=0).add(years=2)
 
     @staticmethod
-    def _get_market_slot_duration(current_time: DateTime, _config) -> duration:
+    def _get_market_slot_duration(_config) -> duration:
         return duration(months=1)
 
     @staticmethod
@@ -268,7 +237,7 @@ class YearForwardMarket(ForwardMarketBase):
         return current_time.start_of("year").add(years=FORWARD_MARKET_MAX_DURATION_YEARS)
 
     @staticmethod
-    def _get_market_slot_duration(current_time: DateTime, _config) -> duration:
+    def _get_market_slot_duration(_config) -> duration:
         return duration(years=1)
 
     @staticmethod
