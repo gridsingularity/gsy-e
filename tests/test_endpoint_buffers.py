@@ -4,11 +4,13 @@ from uuid import uuid4
 
 import pytest
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
-from pendulum import DateTime, duration
+from pendulum  import datetime
+import pendulum
 
-from gsy_framework.enums import AvailableMarketTypes
+from gsy_framework.enums import AvailableMarketTypes, SpotMarketTypeEnum
 from gsy_e.gsy_e_core.enums import FORWARD_MARKET_TYPES
-from gsy_e.gsy_e_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
+from gsy_e.gsy_e_core.sim_results.endpoint_buffer import SimulationEndpointBuffer, CoefficientEndpointBuffer
+from gsy_e.models.area.scm_manager import SCMManager
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +22,7 @@ def forward_setup_fixture():
     original_enable_forward_markets = ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS
     GlobalConfig.market_maker_rate = 30
     ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS = True
-    slot_length = duration(minutes=15)
+    slot_length = pendulum.duration(minutes=15)
     forward_markets = {  # each forward market will have 5 timeslots.
         market_type: MagicMock(market_time_slots=[f"TIME_SLOT_{i}" for i in range(5)])
         for market_type in FORWARD_MARKET_TYPES
@@ -44,7 +46,7 @@ def general_setup_fixture():
     """Create area with spot market"""
     general_market_maker_rate = GlobalConfig.market_maker_rate
     GlobalConfig.market_maker_rate = 30
-    slot_length = duration(minutes=15)
+    slot_length = pendulum.duration(minutes=15)
     spot_market = AvailableMarketTypes.SPOT
     area = MagicMock(
         spot_markets=spot_market,
@@ -57,6 +59,26 @@ def general_setup_fixture():
     yield area, slot_length
 
     GlobalConfig.market_maker_rate = general_market_maker_rate
+
+
+@pytest.fixture(name="scm_setup")
+def scm_setup_fixture():
+    """Create a SCM area"""
+    ConstSettings.MASettings.MARKET_TYPE = SpotMarketTypeEnum.COEFFICIENTS.value
+    scm = SpotMarketTypeEnum.COEFFICIENTS.value
+    slot_length = pendulum.duration(minutes=15)
+    CoefficientArea = MagicMock(
+        area="Community",
+        scm=scm,
+        config=MagicMock(slot_length=slot_length),
+        uuid="AREA",
+        strategy=None)
+    CoefficientArea.name = "Community"
+    CoefficientArea.parent = None
+    scm_manager = SCMManager(area=CoefficientArea, time_slot=datetime(2022, 10, 30))
+    _scm_manager = scm_manager
+
+    yield CoefficientArea, slot_length
 
 
 class TestSimulationEndpointBuffer:
@@ -150,58 +172,86 @@ class TestSimulationEndpointBuffer:
             "mocked-results": "some-results"
         }
 
-    def test_general_results_are_generated(  # pylint: disable-msg=too-many-locals
-            self, general_setup):
-        """Test results are being correctly generated with respect to
-        spot market"""
-        area, slot_length = general_setup
+    def test_update_stats_spot_markets(self, general_setup):
+        # pylint: disable=protected-access
+        area, _ = general_setup
+        area.current_market = MagicMock(
+            name="current-market",
+            time_slot=pendulum.DateTime(2022, 10, 30),
+            time_slot_str="2021-10-30T00:00:00+00:00")
 
-        progress_info = MagicMock()
-        endpoint_buffer = SimulationEndpointBuffer("JOB_1", 41, area, False)
+        # Popoulate strategy and children to update the result_area_uuids dictionary
+        child_1 = MagicMock(uuid="child-uuid-1")
+        child_1.name = "child_1"
+        child_1.strategy = MagicMock()
+        child_1.parent = area
+        child_2 = MagicMock(uuid="child-uuid-2")
+        child_2.name = "child_2"
+        child_2.strategy = MagicMock()
+        child_2.parent = area
 
-        # add bids/offers/trades
-        start_time = DateTime(2020, 1, 1, 0, 15)
-        for market in area.spot_market():
-            current_time = start_time
+        area.children = [child_1, child_2]
 
-            market.bids = {}
-            market.offers = {}
-            market.trades = []
+        endpoint_buffer = SimulationEndpointBuffer(
+            job_id="JOB_1",
+            random_seed=41,
+            area=area,
+            should_export_plots=False)
 
-            for i in range(2):
-                market.bids[uuid4()] = self._generate_order(
-                    creation_time=current_time - slot_length,
-                    time_slot=f"TIME_SLOT_{i}")
+        endpoint_buffer._populate_core_stats_and_sim_state = MagicMock()
 
-                market.offers[uuid4()] = self._generate_order(
-                    creation_time=current_time - slot_length,
-                    time_slot=f"TIME_SLOT_{i}")
+        sim_state_mock = MagicMock(name="sim-state")
+        progress_info_mock = MagicMock(
+            name="progress-info",
+            eta=pendulum.duration(minutes=15),
+            elapsed_time=pendulum.duration(minutes=30),
+            percentage_complete=1)
 
-                market.trades.extend([
-                    self._generate_order(
-                        creation_time=current_time - slot_length,
-                        time_slot=f"TIME_SLOT_{i}") for i in range(2)])
-            current_time += slot_length
+        endpoint_buffer.update_stats(
+            area=area,
+            simulation_status="some-state",
+            progress_info=progress_info_mock,
+            sim_state=sim_state_mock,
+            calculate_results=False)
 
-            # check results are generated correctly.
-            current_time = start_time
-            area.now = current_time
-            endpoint_buffer.update_stats(area, "running", progress_info, {}, False)
-            # pylint: disable=protected-access
-            raw_results = endpoint_buffer._generate_result_report()["simulation_raw_data"]
-            area_general_stats = raw_results[area.uuid]["general_market_stats"]
+        assert endpoint_buffer.area_result_dict == {
+            "name": "area-name",
+            "uuid": "AREA",
+            "parent_uuid": "",
+            "type": "Area",
+            "children": [
+                {
+                    "children": [],
+                    "name": "child_1",
+                    "parent_uuid": "AREA",
+                    "type": "MagicMock",
+                    "uuid": "child-uuid-1"
+                },
+                {
+                    "children": [],
+                    "name": "child_2",
+                    "parent_uuid": "AREA",
+                    "type": "MagicMock",
+                    "uuid": "child-uuid-2"
+                },
+            ],
+        }
 
-            for market_type in AvailableMarketTypes.SPOT:
-                market_stats = area_general_stats[market_type.value]
-                for i in range(2):
-                    timeslot_stats = market_stats[f"TIME_SLOT_{i}"]
-                    for order_type in ("bids", "offers", "trades"):
-                        orders = timeslot_stats[order_type]
-                        assert len(orders) == 1
-                        assert orders[0]["time_slot"] == f"TIME_SLOT_{i}"
-                        assert (current_time - slot_length <=
-                                orders[0]["creation_time"] < current_time)
-                current_time += slot_length
+        assert endpoint_buffer.status == "some-state"
+        assert endpoint_buffer.simulation_state["general"] == sim_state_mock
+
+        assert endpoint_buffer.current_market_time_slot_str == "2021-10-30T00:00:00+00:00"
+        assert endpoint_buffer.current_market_ui_time_slot_str == "October 30 2022, 00:00 h"
+        assert endpoint_buffer.current_market_time_slot == pendulum.DateTime(2022, 10, 30)
+
+        endpoint_buffer._populate_core_stats_and_sim_state.assert_called_once_with(area)
+        assert endpoint_buffer.simulation_progress == {
+            "eta_seconds": 900,
+            "elapsed_time_seconds": 1800,
+            "percentage_completed": 1
+        }
+
+        assert endpoint_buffer.result_area_uuids == {"AREA", "child-uuid-2", "child-uuid-1"}
 
 
 class TestSimulationEndpointBufferForward:
@@ -227,7 +277,7 @@ class TestSimulationEndpointBufferForward:
         endpoint_buffer = SimulationEndpointBuffer("JOB_1", 41, area, False)
 
         # add bids/offers/trades for 3 consequent slots for all forward timeslots.
-        start_time = DateTime(2020, 1, 1, 0, 15)
+        start_time = pendulum.DateTime(2020, 1, 1, 0, 15)
         for market in area.forward_markets.values():
             current_time = start_time
 
@@ -356,7 +406,7 @@ class TestSimulationEndpointBufferForward:
         area, _ = forward_setup
         area.current_market = MagicMock(
             name="current-market",
-            time_slot=DateTime(2022, 10, 30),
+            time_slot=pendulum.DateTime(2022, 10, 30),
             time_slot_str="2021-10-30T00:00:00+00:00")
 
         # Popoulate strategy and children to update the result_area_uuids dictionary
@@ -385,8 +435,8 @@ class TestSimulationEndpointBufferForward:
         sim_state_mock = MagicMock(name="sim-state")
         progress_info_mock = MagicMock(
             name="progress-info",
-            eta=duration(minutes=15),
-            elapsed_time=duration(minutes=30),
+            eta=pendulum.duration(minutes=15),
+            elapsed_time=pendulum.duration(minutes=30),
             percentage_complete=1)
 
         endpoint_buffer.update_stats(
@@ -425,7 +475,7 @@ class TestSimulationEndpointBufferForward:
 
         assert endpoint_buffer.current_market_time_slot_str == "2021-10-30T00:00:00+00:00"
         assert endpoint_buffer.current_market_ui_time_slot_str == "October 30 2022, 00:00 h"
-        assert endpoint_buffer.current_market_time_slot == DateTime(2022, 10, 30)
+        assert endpoint_buffer.current_market_time_slot == pendulum.DateTime(2022, 10, 30)
 
         endpoint_buffer._populate_core_stats_and_sim_state.assert_called_once_with(area)
         assert endpoint_buffer.simulation_progress == {
@@ -439,3 +489,33 @@ class TestSimulationEndpointBufferForward:
 
 class TestCoefficientEndpointBuffer(TestSimulationEndpointBuffer):
     """Tests for the CoefficientEndpointBuffer class."""
+    def test_update_stats_scm(self, scm_setup):
+        CoefficientArea, _ = scm_setup
+
+        endpoint_buffer = CoefficientEndpointBuffer(
+            job_id="JOB_1",
+            random_seed=41,
+            area=CoefficientArea,
+            should_export_plots=False)
+
+        endpoint_buffer._populate_core_stats_and_sim_state = MagicMock()
+
+        sim_state_mock = MagicMock(name="sim-state")
+        progress_info_mock = MagicMock(
+            name="progress-info",
+            eta=pendulum.duration(minutes=15),
+            elapsed_time=pendulum.duration(minutes=30),
+            percentage_complete=1)
+
+        endpoint_buffer.update_coefficient_stats(
+            area=CoefficientArea,
+            simulation_status="some-state",
+            progress_info=progress_info_mock,
+            sim_state=sim_state_mock,
+            scm_manager=SCMManager(area=CoefficientArea, time_slot=datetime(2022, 10, 30)),
+            calculate_results=False)
+
+        assert isinstance(endpoint_buffer._scm_manager, SCMManager)
+        assert endpoint_buffer.current_market_time_slot_str == progress_info_mock.current_slot_str
+        assert endpoint_buffer.current_market_time_slot == progress_info_mock.current_slot_time
+        assert endpoint_buffer.current_market_time_slot_unix == progress_info_mock.current_slot_time.timestamp()
