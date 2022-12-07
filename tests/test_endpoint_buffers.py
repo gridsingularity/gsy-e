@@ -4,12 +4,13 @@ from uuid import uuid4
 
 import pytest
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
-from pendulum  import datetime
+from pendulum import datetime
 import pendulum
 
 from gsy_framework.enums import AvailableMarketTypes, SpotMarketTypeEnum
 from gsy_e.gsy_e_core.enums import FORWARD_MARKET_TYPES
-from gsy_e.gsy_e_core.sim_results.endpoint_buffer import SimulationEndpointBuffer, CoefficientEndpointBuffer
+from gsy_e.gsy_e_core.sim_results.endpoint_buffer import \
+    SimulationEndpointBuffer, CoefficientEndpointBuffer
 from gsy_e.models.area.scm_manager import SCMManager
 
 logger = logging.getLogger(__name__)
@@ -75,8 +76,6 @@ def scm_setup_fixture():
         strategy=None)
     CoefficientArea.name = "Community"
     CoefficientArea.parent = None
-    scm_manager = SCMManager(area=CoefficientArea, time_slot=datetime(2022, 10, 30))
-    _scm_manager = scm_manager
 
     yield CoefficientArea, slot_length
 
@@ -94,7 +93,6 @@ class TestSimulationEndpointBuffer:
                 "creation_time": creation_time, "time_slot": time_slot})
 
     def test_prepare_results_for_publish(self, general_setup):
-
         area, slot_length = general_setup
         endpoint_buffer = SimulationEndpointBuffer(
             job_id="JOB_1",
@@ -516,6 +514,9 @@ class TestCoefficientEndpointBuffer(TestSimulationEndpointBuffer):
             calculate_results=False)
 
         assert isinstance(endpoint_buffer._scm_manager, SCMManager)
-        assert endpoint_buffer.current_market_time_slot_str == progress_info_mock.current_slot_str
-        assert endpoint_buffer.current_market_time_slot == progress_info_mock.current_slot_time
-        assert endpoint_buffer.current_market_time_slot_unix == progress_info_mock.current_slot_time.timestamp()
+        assert endpoint_buffer.current_market_time_slot_str == \
+               progress_info_mock.current_slot_str
+        assert endpoint_buffer.current_market_time_slot == \
+               progress_info_mock.current_slot_time
+        assert endpoint_buffer.current_market_time_slot_unix == \
+               progress_info_mock.current_slot_time.timestamp()
