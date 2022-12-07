@@ -501,7 +501,7 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
     def _remove_existing_offers(self, market: "OneSidedMarket", time_slot: DateTime) -> None:
         """Remove all existing offers in the market with respect to time_slot."""
         for offer in self.get_posted_offers(market, time_slot):
-            assert offer.seller == self.owner.name
+            assert offer.seller.name == self.owner.name
             self.offers.remove_offer_from_cache_and_market(market, offer.id)
 
     def post_offer(self, market, replace_existing=True, **offer_kwargs) -> Offer:

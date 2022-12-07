@@ -448,19 +448,22 @@ def test_post_offer_with_replace_existing(market_class):
 
     # Post a first offer on the market
     offer_1_args = {
-        "price": 1, "energy": 1, "seller": "seller-name", "seller_origin": "seller-origin-name"}
+        "price": 1, "energy": 1, "seller": TraderDetails(
+            "FakeOwner", "", "FakeOwnerOrigin", "")}
     offer = strategy.post_offer(market, replace_existing=False, **offer_1_args)
     assert strategy.offers.open_in_market(market.id) == [offer]
 
     # Post a new offer not replacing the previous ones
     offer_2_args = {
-        "price": 1, "energy": 1, "seller": "seller-name", "seller_origin": "seller-origin-name"}
+        "price": 1, "energy": 1, "seller": TraderDetails(
+            "FakeOwner", "", "FakeOwnerOrigin", "")}
     offer_2 = strategy.post_offer(market, replace_existing=False, **offer_2_args)
     assert strategy.offers.open_in_market(market.id) == [offer, offer_2]
 
     # Post a new offer replacing the previous ones (default behavior)
     offer_3_args = {
-        "price": 1, "energy": 1, "seller": "seller-name", "seller_origin": "seller-origin-name"}
+        "price": 1, "energy": 1, "seller": TraderDetails(
+            "FakeOwner", "", "FakeOwnerOrigin", "")}
     offer_3 = strategy.post_offer(market, **offer_3_args)
     assert strategy.offers.open_in_market(market.id) == [offer_3]
 
