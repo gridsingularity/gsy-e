@@ -40,6 +40,7 @@ class SimulationStatusManager:
     stopped: bool = False
     sim_status = "initializing"
     incremental: bool = False
+    _pause_time: float = time()
 
     @property
     def status(self) -> str:
@@ -51,6 +52,11 @@ class SimulationStatusManager:
         if self.paused:
             return "paused"
         return self.sim_status
+
+    def _pause(self):
+        """Set the simulation to paused and save the current time."""
+        self.paused = True
+        self._pause_time = time()
 
     def stop(self) -> None:
         """Stop simulation."""
@@ -65,21 +71,24 @@ class SimulationStatusManager:
         """Pause or resume simulation."""
         if self.finished:
             return False
-        self.paused = not self.paused
+        if self.paused:
+            self.paused = False
+        else:
+            self._pause()
         return True
 
     def handle_pause_after(self, time_since_start: Duration) -> None:
         """Deals with pause-after parameter, which pauses the simulation after some time."""
         if self.pause_after and time_since_start >= self.pause_after:
-            self.paused = True
+            self._pause()
             self.pause_after = None
 
-    def handle_pause_timeout(self, tick_time_counter: float) -> None:
+    def handle_pause_timeout(self) -> None:
         """
         Deals with the case that the pause time exceeds the simulation timeout, in which case the
         simulation should be stopped.
         """
-        if time() - tick_time_counter > SIMULATION_PAUSE_TIMEOUT:
+        if time() - self._pause_time > SIMULATION_PAUSE_TIMEOUT:
             self.timed_out = True
             self.stopped = True
             self.paused = False
@@ -91,4 +100,4 @@ class SimulationStatusManager:
         Handle incremental paused mode, where simulation is paused after each market slot.
         """
         if self.incremental:
-            self.paused = True
+            self._pause()

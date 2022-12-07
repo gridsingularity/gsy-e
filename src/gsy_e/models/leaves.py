@@ -42,6 +42,10 @@ from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
 from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
 from gsy_e.models.strategy.storage import StorageStrategy
 from gsy_e.models.strategy.predefined_wind import WindUserProfileStrategy
+from gsy_e.models.strategy.forward.pv import ForwardPVStrategy
+from gsy_e.models.strategy.forward.load import ForwardLoadStrategy
+from gsy_e.models.strategy.scm.external.pv import ExternalSCMPVStrategy
+from gsy_e.models.strategy.scm.external.load import ExternalSCMLoadHoursStrategy
 
 external_strategies_mapping = {
     LoadHoursStrategy: LoadHoursExternalStrategy,
@@ -183,6 +187,14 @@ class SmartMeter(Leaf):
     strategy_type = SmartMeterStrategy
 
 
+class ForwardLoad(Leaf):
+    strategy_type = ForwardLoadStrategy
+
+
+class ForwardPV(Leaf):
+    strategy_type = ForwardPVStrategy
+
+
 class FiniteDieselGenerator(Leaf):
     strategy_type = FinitePowerPlant
 
@@ -218,4 +230,17 @@ scm_leaf_mapping = {
     "PV": SCMPV,
     "PredefinedPV": SCMPredefinedPV,
     "PVProfile": SCMPVProfile
+}
+
+external_scm_leaf_mapping = {
+    "LoadHours": ExternalSCMLoadHoursStrategy,
+    "LoadProfile": ExternalSCMLoadHoursStrategy,
+    "PV": ExternalSCMPVStrategy,
+    "PredefinedPV": ExternalSCMPVStrategy,
+    "PVProfile": ExternalSCMPVStrategy
+}
+
+forward_leaf_mapping = {
+    "LoadHours": ForwardLoad,
+    "PV": ForwardPV
 }

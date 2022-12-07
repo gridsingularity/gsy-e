@@ -1,12 +1,14 @@
+# pylint: disable=protected-access, disable=missing-function-docstring, missing-class-docstring
+# pylint: disable=too-many-public-methods, unused-import
+import json
 import uuid
 
 import pytest
 from gsy_framework.constants_limits import DATE_TIME_FORMAT, ConstSettings
-from pendulum import datetime
 
-from gsy_e.gsy_e_core.blockchain_interface import NonBlockchainInterface
-from gsy_e.models.market.settlement import SettlementMarket
 from gsy_e.models.strategy.external_strategies.smart_meter import SmartMeterExternalStrategy
+from tests.strategies.external.fixtures import future_market_fixture  # noqa
+from tests.strategies.external.fixtures import settlement_market_fixture  # noqa
 from tests.strategies.external.utils import (
     assert_bid_offer_aggregator_commands_return_value,
     check_external_command_endpoint_with_correct_payload_succeeds,
@@ -14,8 +16,8 @@ from tests.strategies.external.utils import (
 
 
 @pytest.fixture(name="external_smart_meter")
-def external_storage_fixture():
-    """Create a StorageExternalStrategy instance in a two-sided market."""
+def external_smart_meter_fixture():
+    """Create a SmartMeterExternalStrategy instance in a two-sided market."""
     ConstSettings.MASettings.MARKET_TYPE = 2
     yield create_areas_markets_for_strategy_fixture(SmartMeterExternalStrategy(
         smart_meter_profile={
@@ -23,13 +25,6 @@ def external_storage_fixture():
         }
     ))
     ConstSettings.MASettings.MARKET_TYPE = 1
-
-
-@pytest.fixture(name="settlement_market")
-def settlement_market_fixture():
-    """Create a SettlementMarket."""
-    return SettlementMarket(bc=NonBlockchainInterface(str(uuid.uuid4())),
-                            time_slot=datetime(2021, 1, 1, 00, 00))
 
 
 class TestSmartMeterExternalStrategy:
@@ -100,6 +95,28 @@ class TestSmartMeterExternalStrategy:
         assert return_value["status"] == "ready"
         assert len(settlement_market.bids.values()) == 1
         assert list(settlement_market.bids.values())[0].energy == unsettled_energy_kWh
+
+    @staticmethod
+    def test_bid_aggregator_places_future_bid(external_smart_meter, future_markets):
+        future_energy_kWh = 0.5
+        external_smart_meter.area._markets.future_markets = future_markets
+
+        for time_slot in future_markets.market_time_slots:
+            external_smart_meter.state._energy_requirement_Wh[time_slot] = future_energy_kWh * 1000
+            return_value = external_smart_meter.trigger_aggregator_commands(
+                {
+                    "type": "bid",
+                    "price": 200.0,
+                    "energy": future_energy_kWh,
+                    "time_slot": time_slot.format(DATE_TIME_FORMAT),
+                    "transaction_id": str(uuid.uuid4())
+                }
+            )
+
+            assert return_value["status"] == "ready"
+            bid_id = json.loads(return_value["bid"])["id"]
+            assert future_markets.bids[bid_id].energy == future_energy_kWh
+        assert len(future_markets.bids.values()) == len(future_markets.market_time_slots)
 
     @staticmethod
     def test_bid_aggregator_succeeds_with_warning_if_dof_are_disabled(
@@ -215,6 +232,28 @@ class TestSmartMeterExternalStrategy:
         assert list(settlement_market.offers.values())[0].energy == unsettled_energy_kWh
 
     @staticmethod
+    def test_offer_aggregator_places_future_offer(external_smart_meter, future_markets):
+        future_energy_kWh = 0.5
+        external_smart_meter.area._markets.future_markets = future_markets
+
+        for time_slot in future_markets.market_time_slots:
+            external_smart_meter.state._available_energy_kWh[time_slot] = future_energy_kWh
+            return_value = external_smart_meter.trigger_aggregator_commands(
+                {
+                    "type": "offer",
+                    "price": 200.0,
+                    "energy": future_energy_kWh,
+                    "time_slot": time_slot.format(DATE_TIME_FORMAT),
+                    "transaction_id": str(uuid.uuid4())
+                }
+            )
+
+            assert return_value["status"] == "ready"
+            offer_id = json.loads(return_value["offer"])["id"]
+            assert future_markets.offers[offer_id].energy == future_energy_kWh
+        assert len(future_markets.offers.values()) == len(future_markets.market_time_slots)
+
+    @staticmethod
     def test_offer_aggregator_succeeds_with_warning_if_dof_are_disabled(
             external_smart_meter: SmartMeterExternalStrategy):
         """
@@ -249,6 +288,48 @@ class TestSmartMeterExternalStrategy:
         assert return_value["status"] == "ready"
         assert return_value["command"] == "offer_delete"
         assert return_value["deleted_offers"] == [offer.id]
+
+    @staticmethod
+    def test_delete_offer_aggregator_deletes_offer_from_future_market(
+            external_smart_meter, future_markets):
+        external_smart_meter.area._markets.future_markets = future_markets
+        for time_slot in future_markets.market_time_slots:
+            offer = external_smart_meter.post_offer(
+                external_smart_meter.area.future_markets, False, price=200.0, energy=1.0,
+                time_slot=time_slot)
+
+            return_value = external_smart_meter.trigger_aggregator_commands(
+                {
+                    "type": "delete_offer",
+                    "offer": str(offer.id),
+                    "transaction_id": str(uuid.uuid4()),
+                    "time_slot": time_slot.format(DATE_TIME_FORMAT)
+                }
+            )
+            assert return_value["status"] == "ready"
+            assert return_value["command"] == "offer_delete"
+            assert return_value["deleted_offers"] == [offer.id]
+
+    @staticmethod
+    def test_delete_bid_aggregator_deletes_bid_from_future_market(
+            external_smart_meter, future_markets):
+        external_smart_meter.area._markets.future_markets = future_markets
+        for time_slot in future_markets.market_time_slots:
+            bid = external_smart_meter.post_bid(
+                external_smart_meter.area.future_markets, 200.0, 1.0,
+                time_slot=time_slot)
+
+            return_value = external_smart_meter.trigger_aggregator_commands(
+                {
+                    "type": "delete_bid",
+                    "offer": str(bid.id),
+                    "transaction_id": str(uuid.uuid4()),
+                    "time_slot": time_slot.format(DATE_TIME_FORMAT)
+                }
+            )
+            assert return_value["status"] == "ready"
+            assert return_value["command"] == "bid_delete"
+            assert return_value["deleted_bids"] == [bid.id]
 
     @staticmethod
     def test_list_offers_aggregator(external_smart_meter: SmartMeterExternalStrategy):

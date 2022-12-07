@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from abc import ABC
 from logging import getLogger
 from typing import Dict
 
@@ -35,19 +36,19 @@ class BaseRotator:
         """Deletion/move to past of unneeded markets."""
 
 
-class FutureMarketRotator:
+class FutureMarketRotator(BaseRotator):
     """Handle rotation of future markets."""
 
     def __init__(self, markets: FutureMarkets):
         self.markets = markets
 
-    def rotate(self, current_time: DateTime) -> None:
+    def rotate(self, current_time_slot: DateTime) -> None:
         """Delete orders in expired future markets."""
         self.markets.delete_orders_in_old_future_markets(
-            last_slot_to_be_deleted=current_time)
+            last_slot_to_be_deleted=current_time_slot)
 
 
-class ForwardMarketRotatorBase:
+class ForwardMarketRotatorBase(BaseRotator, ABC):
     """Handle rotation of day-ahead markets."""
 
     def __init__(self, markets: ForwardMarketBase):
@@ -57,12 +58,12 @@ class ForwardMarketRotatorBase:
     def _is_it_time_to_rotate(current_time: DateTime) -> bool:
         """Return True if it is time to rotate markets."""
 
-    def rotate(self, current_time: DateTime) -> None:
+    def rotate(self, current_time_slot: DateTime) -> None:
         """Delete orders in expired day-ahead markets."""
-        if self._is_it_time_to_rotate(current_time):
+        if self._is_it_time_to_rotate(current_time_slot):
             slots_deleted = []
             for delivery_time, market_slot_info in self.markets.open_market_slot_info.items():
-                if market_slot_info.closing_time <= current_time:
+                if market_slot_info.closing_time <= current_time_slot:
                     self.markets.delete_orders_in_old_future_markets(
                         last_slot_to_be_deleted=delivery_time)
                     slots_deleted.append(delivery_time)

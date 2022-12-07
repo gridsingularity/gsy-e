@@ -176,13 +176,13 @@ class DefinedLoadEnergyParameters(LoadHoursPerDayEnergyParameters):
     """Energy parameters for the defined load strategy class."""
     def __init__(self, daily_load_profile=None, daily_load_profile_uuid: str = None):
         super().__init__(avg_power_W=0, hrs_per_day=24, hrs_of_day=list(range(0, 24)))
-        self._energy_profile = EnergyProfile(daily_load_profile, daily_load_profile_uuid)
+        self.energy_profile = EnergyProfile(daily_load_profile, daily_load_profile_uuid)
         self.state = LoadState()
 
     def serialize(self):
         return {
-            "daily_load_profile": self._energy_profile.input_profile,
-            "daily_load_profile_uuid": self._energy_profile.input_profile_uuid
+            "daily_load_profile": self.energy_profile.input_profile,
+            "daily_load_profile_uuid": self.energy_profile.input_profile_uuid
         }
 
     def event_activate_energy(self, area):
@@ -190,21 +190,21 @@ class DefinedLoadEnergyParameters(LoadHoursPerDayEnergyParameters):
         Runs on activate event.
         :return: None
         """
-        self._energy_profile.read_or_rotate_profiles()
+        self.energy_profile.read_or_rotate_profiles()
         super().event_activate_energy(area)
 
     def reset(self, time_slot: DateTime, **kwargs) -> None:
         if kwargs.get("daily_load_profile") is not None:
-            self._energy_profile.input_profile = kwargs["daily_load_profile"]
-            self._energy_profile.read_or_rotate_profiles(reconfigure=True)
+            self.energy_profile.input_profile = kwargs["daily_load_profile"]
+            self.energy_profile.read_or_rotate_profiles(reconfigure=True)
 
     def update_energy_requirement(self, time_slot, overwrite=False):
-        if not self._energy_profile.profile:
+        if not self.energy_profile.profile:
             raise GSyException(
                 "Load tries to set its energy forecasted requirement "
                 "without a profile.")
         load_energy_kwh = find_object_of_same_weekday_and_time(
-            self._energy_profile.profile, time_slot)
+            self.energy_profile.profile, time_slot)
         self.state.set_desired_energy(load_energy_kwh * 1000, time_slot, overwrite=False)
         self.state.update_total_demanded_energy(time_slot)
 
@@ -232,6 +232,9 @@ class LoadForecastExternalEnergyParamsMixin:
 
     def event_activate_energy(self, area):
         """Overridden with empty implementation to disable profile activation."""
+
+    def decrease_hours_per_day(self, time_slot, energy_Wh):
+        """Overridden with empty implementation to disable template strategy energy tracking."""
 
 
 class LoadProfileForecastEnergyParams(

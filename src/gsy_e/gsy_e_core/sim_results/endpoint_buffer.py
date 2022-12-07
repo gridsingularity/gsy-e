@@ -69,7 +69,6 @@ class SimulationEndpointBuffer:
         }
 
         self.bids_offers_trades = {}
-        self.last_energy_trades_high_resolution = {}
         self.results_handler = self._create_endpoint_buffer(should_export_plots)
         self.simulation_state = {"general": {}, "areas": {}}
 
@@ -162,6 +161,11 @@ class SimulationEndpointBuffer:
         area_dict["type"] = (str(target_area.strategy.__class__.__name__)
                              if target_area.strategy is not None else "Area")
         area_dict["children"] = []
+
+        if (ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS and
+                target_area.strategy is not None):
+            area_dict["capacity_kW"] = target_area.strategy._energy_params.capacity_kW
+
         return area_dict
 
     def _create_area_tree_dict(self, area: "AreaBase") -> Dict:
@@ -288,7 +292,9 @@ class SimulationEndpointBuffer:
         core_stats_dict = {"bids": [], "offers": [], "trades": [], "market_fee": 0.0}
 
         if area.current_market:
-            core_stats_dict.update(self._read_market_stats_to_dict(area.current_market))
+            if not ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS:
+                # Spot market cannot operate in parallel with the forward markets
+                core_stats_dict.update(self._read_market_stats_to_dict(area.current_market))
 
             if ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS:
                 core_stats_dict["settlement_market_stats"] = (
@@ -302,7 +308,8 @@ class SimulationEndpointBuffer:
                     self._read_forward_markets_stats_to_dict(area)
                 )
 
-        if isinstance(area.strategy, CommercialStrategy):
+        if (isinstance(area.strategy, CommercialStrategy) and not
+                ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS):
             if isinstance(area.strategy, FinitePowerPlant):
                 core_stats_dict["production_kWh"] = area.strategy.energy_per_slot_kWh
                 if area.parent.current_market is not None:
@@ -314,7 +321,7 @@ class SimulationEndpointBuffer:
                         area.strategy.energy_rate.get(area.parent.current_market.time_slot, None))
                     for trade in area.strategy.trades[area.parent.current_market]:
                         core_stats_dict["trades"].append(trade.serializable_dict())
-        else:
+        elif not ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS:
             core_stats_dict.update(area.get_results_dict())
             if area.parent and area.parent.current_market and area.strategy:
                 for trade in area.strategy.trades[area.parent.current_market]:
@@ -369,7 +376,7 @@ class CoefficientEndpointBuffer(SimulationEndpointBuffer):
     def _create_endpoint_buffer(self, should_export_plots):
         return ResultsHandler(should_export_plots, is_scm=True)
 
-    def update_coefficient_stats(
+    def update_coefficient_stats(  # pylint: disable=too-many-arguments
             self, area: "AreaBase", simulation_status: str,
             progress_info: "SimulationProgressInfo", sim_state: Dict,
             calculate_results: bool, scm_manager: "SCMManager") -> None:
