@@ -216,7 +216,7 @@ class StorageExternalMixin(ExternalMixin):
                 response_channel,
                 {"command": "offer", "status": "ready",
                  "market_type": market.type_name,
-                 "offer": offer.to_json_string(replace_existing=replace_existing),
+                 "offer": offer.to_json_string(),
                  "transaction_id": arguments.get("transaction_id")})
         except Exception:
             logging.exception("Error when handling offer create on area %s: Offer Arguments: %s",
@@ -369,7 +369,7 @@ class StorageExternalMixin(ExternalMixin):
             response = {
                 "command": "bid",
                 "status": "ready",
-                "bid": bid.to_json_string(replace_existing=replace_existing),
+                "bid": bid.to_json_string(),
                 "market_type": market.type_name,
                 "transaction_id": arguments.get("transaction_id"),
                 "message": response_message}
@@ -531,7 +531,7 @@ class StorageExternalMixin(ExternalMixin):
                 "area_uuid": self.device.uuid,
                 "market_type": market.type_name,
                 "status": "ready",
-                "offer": offer.to_json_string(replace_existing=replace_existing),
+                "offer": offer.to_json_string(),
                 "transaction_id": arguments.get("transaction_id"),
                 "message": response_message}
         except Exception:
@@ -581,7 +581,7 @@ class StorageExternalMixin(ExternalMixin):
                 self.posted_bid_energy(market.id), market.time_slot)
             response = {
                 "command": "bid", "status": "ready",
-                "bid": bid.to_json_string(replace_existing=replace_existing),
+                "bid": bid.to_json_string(),
                 "market_type": market.type_name,
                 "area_uuid": self.device.uuid,
                 "transaction_id": arguments.get("transaction_id"),

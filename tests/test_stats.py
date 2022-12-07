@@ -88,6 +88,9 @@ class FakeOffer:
         self.energy_rate = price / energy
         self.id = str(uuid4())
 
+    def serializable_dict(self):
+        return self.__dict__
+
 
 def _trade(price, buyer, energy=1, seller=None, fee_price=0.):
     return Trade('id', now(tz=constants.TIME_ZONE),

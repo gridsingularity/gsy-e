@@ -148,9 +148,15 @@ class TestMarketRedisEventSubscriber(unittest.TestCase):
         self.market.accept_offer = MagicMock(return_value=trade)
         self.subscriber._accept_offer(payload)
         wait(self.subscriber.futures)
-        self.subscriber.market.accept_offer.assert_called_once_with(
-            offer_or_id=offer, buyer=TraderDetails("mykonos", "").serializable_dict(), energy=12
+
+        assert (
+            offer.to_json_string() ==
+            self.subscriber.market.accept_offer.call_args.kwargs["offer_or_id"].to_json_string()
         )
+        assert self.subscriber.market.accept_offer.call_args.kwargs["energy"] == 12
+        assert self.subscriber.market.accept_offer.call_args.kwargs["buyer"] == TraderDetails(
+            "mykonos", "").serializable_dict()
+
         self.subscriber.redis_db.publish.assert_called_once_with(
             "id/ACCEPT_OFFER/RESPONSE", json.dumps({
                 "status": "ready", "trade": trade.to_json_string(), "transaction_uuid": "trans_id"
@@ -190,8 +196,9 @@ class TestMarketRedisEventSubscriber(unittest.TestCase):
         self.market.delete_offer = MagicMock(return_value=offer)
         self.subscriber._delete_offer(payload)
         wait(self.subscriber.futures)
-        self.subscriber.market.delete_offer.assert_called_once_with(
-            offer_or_id=offer
+        assert (
+            offer.to_json_string() ==
+            self.subscriber.market.delete_offer.call_args.kwargs["offer_or_id"].to_json_string()
         )
         self.subscriber.redis_db.publish.assert_called_once_with(
             "id/DELETE_OFFER/RESPONSE",
