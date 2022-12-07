@@ -21,22 +21,21 @@ import sys
 from abc import ABC
 from dataclasses import dataclass
 from logging import getLogger
-from typing import List, Dict, Union, Optional, Generator, Callable, TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable, Dict, Generator, List, Optional, Union
 from uuid import uuid4
 
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.data_classes import Offer, Bid, Trade, TraderDetails
+from gsy_framework.data_classes import Bid, Offer, Trade, TraderDetails
 from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.utils import limit_float_precision
 from pendulum import DateTime
 
 from gsy_e import constants
-from gsy_e.constants import FLOATING_POINT_TOLERANCE
-from gsy_e.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT
+from gsy_e.constants import FLOATING_POINT_TOLERANCE, REDIS_PUBLISH_RESPONSE_TIMEOUT
 from gsy_e.events import EventMixin
 from gsy_e.events.event_structures import AreaEvent, MarketEvent
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
-from gsy_e.gsy_e_core.exceptions import D3ARedisException, SimulationException, MarketException
+from gsy_e.gsy_e_core.exceptions import D3ARedisException, MarketException, SimulationException
 from gsy_e.gsy_e_core.redis_connections.area_market import BlockingCommunicator
 from gsy_e.gsy_e_core.util import append_or_create_key
 from gsy_e.models.base import AreaBehaviorBase
@@ -50,6 +49,7 @@ log = getLogger(__name__)
 
 if TYPE_CHECKING:
     from gsy_framework.data_classes import TradeBidOfferInfo
+
     from gsy_e.models.market.one_sided import OneSidedMarket
     from gsy_e.models.market.two_sided import TwoSidedMarket
 
@@ -446,6 +446,7 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
     markets, thus removing the need to access the market to view the offers that the strategy
     has posted. Define a common interface which all strategies should implement.
     """
+    # pylint: disable=too-many-public-methods
     def __init__(self):
         super().__init__()
         self.offers = Offers(self)
@@ -456,7 +457,9 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
         self._settlement_market_strategy = self._create_settlement_market_strategy()
         self._future_market_strategy = self._create_future_market_strategy()
 
-    def serialize(self):
+    @staticmethod
+    def serialize():
+        """Serialize strategy status."""
         return {}
 
     @property
@@ -495,6 +498,12 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
         return (self.owner.name in DeviceRegistry.REGISTRY and
                 ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET)
 
+    def _remove_existing_offers(self, market: "OneSidedMarket", time_slot: DateTime) -> None:
+        """Remove all existing offers in the market with respect to time_slot."""
+        for offer in self.get_posted_offers(market, time_slot):
+            assert offer.seller == self.owner.name
+            self.offers.remove_offer_from_cache_and_market(market, offer.id)
+
     def post_offer(self, market, replace_existing=True, **offer_kwargs) -> Offer:
         """Post the offer on the specified market.
 
@@ -505,7 +514,7 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
         """
         if replace_existing:
             # Remove all existing offers that are still open in the market
-            self.offers.remove_offer_from_cache_and_market(market)
+            self._remove_existing_offers(market, offer_kwargs.get("time_slot") or market.time_slot)
 
         if (not offer_kwargs.get("seller") or
                 not isinstance(offer_kwargs.get("seller"), TraderDetails)):
@@ -725,9 +734,9 @@ class BidEnabledStrategy(BaseStrategy):
         offer_costs = super().energy_traded_costs(market_id, time_slot)
         return offer_costs + self._traded_bid_costs(market_id, time_slot)
 
-    def _remove_existing_bids(self, market: MarketBase) -> None:
-        """Remove all existing bids in the market."""
-        for bid in self.get_posted_bids(market):
+    def _remove_existing_bids(self, market: MarketBase, time_slot: DateTime) -> None:
+        """Remove all existing bids in the market with respect to time_slot."""
+        for bid in self.get_posted_bids(market, time_slot=time_slot):
             assert bid.buyer.name == self.owner.name
             self.remove_bid_from_pending(market.id, bid.id)
 
@@ -753,7 +762,7 @@ class BidEnabledStrategy(BaseStrategy):
         """
         self._assert_bid_can_be_posted_on_market(market.id)
         if replace_existing:
-            self._remove_existing_bids(market)
+            self._remove_existing_bids(market, time_slot or market.time_slot)
 
         bid = market.bid(
             price,
@@ -980,12 +989,6 @@ class BidEnabledStrategy(BaseStrategy):
         Assert whether the bid rate of the trade is less than the original bid rate. Useful
         for asserting that the clearing rate is lower than the rate that was posted originally on
         the bid.
-        Args:
-            market: Market that the bid was posted
-            trade: Trade object that contains the traded bid
-
-        Returns: None
-
         """
         if trade.is_bid_trade and trade.buyer.name == self.owner.name:
             bid = [bid for bid in self.get_posted_bids(market)

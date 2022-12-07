@@ -20,6 +20,7 @@ import json
 import logging
 from typing import TYPE_CHECKING, Callable, Dict, List
 
+from gsy_framework.utils import str_to_pendulum_datetime
 from pendulum import DateTime
 
 from gsy_e.models.market import MarketBase
@@ -511,12 +512,14 @@ class StorageExternalMixin(ExternalMixin):
             # Check that every provided argument is allowed
             assert all(arg in allowed_args for arg in arguments.keys())
             market = self._get_market_from_command_argument(arguments)
+            time_slot = market.time_slot if market.time_slot else str_to_pendulum_datetime(
+                arguments["time_slot"])
 
             offer_arguments = {
                 k: v for k, v in arguments.items()
-                if k not in ["transaction_id", "type", "time_slot"]}
+                if k not in ["transaction_id", "type"]}
 
-            assert self.can_offer_be_posted(market.time_slot, offer_arguments)
+            assert self.can_offer_be_posted(time_slot, offer_arguments)
 
             replace_existing = offer_arguments.pop("replace_existing", True)
 
@@ -524,7 +527,7 @@ class StorageExternalMixin(ExternalMixin):
                 market, replace_existing=replace_existing, **offer_arguments)
 
             self.state.reset_offered_sell_energy(
-                self.offers.open_offer_energy(market.id), market.time_slot)
+                self.offers.open_offer_energy(market.id), time_slot)
 
             response = {
                 "command": "offer",
@@ -565,20 +568,24 @@ class StorageExternalMixin(ExternalMixin):
             assert all(arg in allowed_args for arg in arguments.keys())
 
             market = self._get_market_from_command_argument(arguments)
-            assert self._can_bid_be_posted(market.time_slot, arguments)
+            time_slot = market.time_slot if market.time_slot else str_to_pendulum_datetime(
+                arguments["time_slot"])
+
+            assert self._can_bid_be_posted(time_slot, arguments)
 
             replace_existing = arguments.pop("replace_existing", True)
             bid = self.post_bid(
                 market,
                 arguments["price"],
                 arguments["energy"],
+                time_slot=time_slot,
                 replace_existing=replace_existing,
                 attributes=arguments.get("attributes"),
                 requirements=arguments.get("requirements")
             )
 
             self.state.reset_offered_buy_energy(
-                self.posted_bid_energy(market.id), market.time_slot)
+                self.posted_bid_energy(market.id), time_slot)
             response = {
                 "command": "bid", "status": "ready",
                 "bid": bid.to_json_string(),

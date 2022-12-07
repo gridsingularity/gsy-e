@@ -23,7 +23,7 @@ from uuid import uuid4
 import pendulum
 import pytest
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.data_classes import Offer, Trade, Bid, TraderDetails
+from gsy_framework.data_classes import Bid, Offer, Trade, TraderDetails
 from gsy_framework.enums import SpotMarketTypeEnum
 
 from gsy_e.constants import TIME_ZONE
@@ -31,7 +31,7 @@ from gsy_e.gsy_e_core.blockchain_interface import NonBlockchainInterface
 from gsy_e.gsy_e_core.exceptions import MarketException
 from gsy_e.models.market.one_sided import OneSidedMarket
 from gsy_e.models.market.two_sided import TwoSidedMarket
-from gsy_e.models.strategy import BidEnabledStrategy, Offers, BaseStrategy
+from gsy_e.models.strategy import BaseStrategy, BidEnabledStrategy, Offers
 
 
 def teardown_function():
@@ -448,19 +448,19 @@ def test_post_offer_with_replace_existing(market_class):
 
     # Post a first offer on the market
     offer_1_args = {
-        "price": 1, "energy": 1, "seller": "seller-name"}
+        "price": 1, "energy": 1, "seller": "seller-name", "seller_origin": "seller-origin-name"}
     offer = strategy.post_offer(market, replace_existing=False, **offer_1_args)
     assert strategy.offers.open_in_market(market.id) == [offer]
 
     # Post a new offer not replacing the previous ones
     offer_2_args = {
-        "price": 1, "energy": 1, "seller": "seller-name"}
+        "price": 1, "energy": 1, "seller": "seller-name", "seller_origin": "seller-origin-name"}
     offer_2 = strategy.post_offer(market, replace_existing=False, **offer_2_args)
     assert strategy.offers.open_in_market(market.id) == [offer, offer_2]
 
     # Post a new offer replacing the previous ones (default behavior)
     offer_3_args = {
-        "price": 1, "energy": 1, "seller": "seller-name"}
+        "price": 1, "energy": 1, "seller": "seller-name", "seller_origin": "seller-origin-name"}
     offer_3 = strategy.post_offer(market, **offer_3_args)
     assert strategy.offers.open_in_market(market.id) == [offer_3]
 
