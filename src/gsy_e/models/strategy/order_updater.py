@@ -38,9 +38,9 @@ class OrderUpdater:
         current_time = start_time
         timepoints = []
         while current_time < end_time:
-            timepoints += current_time
+            timepoints.append(current_time)
             current_time += interval
-        timepoints += end_time
+        timepoints.append(end_time)
         return timepoints
 
     def is_time_for_update(
