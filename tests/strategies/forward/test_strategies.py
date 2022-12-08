@@ -191,7 +191,6 @@ class TestForwardStrategies:
                     market_type].get_market_parameters_for_market_slot(time_slot)
                 slot_completion_ratio = updater_params.update_interval.total_minutes() / (
                         market_params.closing_time - market_params.opening_time
-                        - GlobalConfig.tick_length
                 ).total_minutes()
                 if isinstance(strategy, ForwardPVStrategy):
                     assert isclose(

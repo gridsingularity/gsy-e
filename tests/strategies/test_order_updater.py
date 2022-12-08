@@ -37,20 +37,26 @@ class TestOrderUpdater:
         assert not updater.is_time_for_update(opening_time - duration(minutes=1))
         # Returns False at the market close time
         assert not updater.is_time_for_update(opening_time + duration(minutes=30))
+        # Returns True at one tick before the market close time
+        assert updater.is_time_for_update(
+            opening_time + duration(minutes=30) - duration(seconds=5))
 
         current_time = opening_time
-        while current_time <= opening_time + duration(minutes=30) - duration(seconds=5):
-            updater.is_time_for_update(current_time)
-            current_time += duration(seconds=5)
+        while current_time < opening_time + duration(minutes=30) - duration(seconds=5):
+            assert updater.is_time_for_update(current_time) is True
+            current_time += duration(minutes=5)
 
     @staticmethod
     def test_get_energy_rate(order_updater_fixture):
         opening_time = order_updater_fixture[0]
         updater = order_updater_fixture[1]
         rate_range = 70 - 30
-        update_time = duration(minutes=30) - duration(seconds=5)
+        update_time = duration(minutes=30)
+        closing_time = opening_time + update_time - duration(seconds=5)
         current_time = opening_time
-        while current_time <= opening_time + duration(minutes=30) - duration(seconds=5):
+        while current_time < closing_time:
             expected_rate = 30 + rate_range * ((current_time - opening_time) / update_time)
             assert isclose(updater.get_energy_rate(current_time), expected_rate)
-            current_time += duration(seconds=5)
+            current_time += duration(minutes=5)
+
+        assert updater.get_energy_rate(closing_time) == 70
