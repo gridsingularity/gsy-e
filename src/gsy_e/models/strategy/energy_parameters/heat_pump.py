@@ -1,18 +1,15 @@
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.enums import HeatPumpSourceType
+from gsy_framework.read_user_profile import InputProfileTypes
 from pendulum import DateTime
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.models.state import HeatPumpState
 from gsy_e.models.strategy.profile import EnergyProfile
 
-if TYPE_CHECKING:
-    pass
-
-
-SPECIFIC_HEAT_CONST_WATER = 0.000116  # [kWh K / kg]
+SPECIFIC_HEAT_CONST_WATER = 0.000116  # [kWh / (K * kg)]
 WATER_DENSITY = 1  # [kg / l]
 
 
@@ -39,29 +36,35 @@ class HeatPumpEnergyParameters:
         self._min_temp_C = min_temp_C
         self._max_temp_C = max_temp_C
         self._source_type = source_type
+        self._tank_volume_l = tank_volume_l
         self._Q_specific = SPECIFIC_HEAT_CONST_WATER * tank_volume_l * WATER_DENSITY
         self._slot_length = GlobalConfig.slot_length
-        self._max_energy_consumption = maximum_power_rating_kW * self._slot_length.total_hours()
+        self._max_energy_consumption_kWh = (
+                maximum_power_rating_kW * self._slot_length.total_hours())
 
-        self.state = HeatPumpState(initial_temp_C)
+        self.state = HeatPumpState(initial_temp_C, self._slot_length)
 
         if not consumption_profile_uuid and not consumption_kW:
             consumption_kW = ConstSettings.HeatPumpSettings.CONSUMPTION_KW
-        self._consumption_kW: [DateTime, float] = EnergyProfile(
+        self._consumption_kWh: [DateTime, float] = EnergyProfile(
             consumption_kW, consumption_profile_uuid)
 
         if not external_temp_profile_uuid and not external_temp_C:
             external_temp_C = ConstSettings.HeatPumpSettings.EXT_TEMP_C
         self._ext_temp_C: [DateTime, float] = EnergyProfile(
-            external_temp_C, external_temp_profile_uuid)
+            external_temp_C, external_temp_profile_uuid, profile_type=InputProfileTypes.IDENTITY)
 
     def serialize(self):
-        """TODO"""
+        """Return dict with the current energy parameter values."""
         return {
-            "consumption_kW": self._consumption_kW.input_profile,
-            "consumption_profile_uuid": self._consumption_kW.input_profile_uuid,
+            "consumption_kWh": self._consumption_kWh.input_profile,
+            "consumption_profile_uuid": self._consumption_kWh.input_profile_uuid,
             "external_temp_C": self._ext_temp_C.input_profile,
-            "external_temp_profile_uuid": self._ext_temp_C.input_profile_uuid
+            "external_temp_profile_uuid": self._ext_temp_C.input_profile_uuid,
+            "source_type": self._source_type,
+            "max_temp_C": self._max_temp_C,
+            "max_energy_consumption_kWh": self._max_energy_consumption_kWh,
+            "tank_volume_l": self._tank_volume_l
         }
 
     def event_activate(self):
@@ -69,76 +72,100 @@ class HeatPumpEnergyParameters:
         self._rotate_profiles()
 
     def event_market_cycle(self, current_time_slot):
-        # if not current_time_slot:
-        #     return
+        """To be called at the start of the market slot. """
         self._rotate_profiles(current_time_slot)
         self._populate_state(current_time_slot)
-        self.state.copy_to_next_slot(current_time_slot, self._slot_length)
 
     def event_traded_energy(self, time_slot: DateTime, energy_kWh: float):
-        temp_diff = (self._calc_temp_increase(time_slot, energy_kWh) -
-                     self.state.get_temp_decrease_K(time_slot))
-        self.state.update_storage_temp(time_slot, temp_diff)
-
+        """React to an event_traded_energy."""
         self._decrement_posted_energy(time_slot, energy_kWh)
 
+        self.state.update_temp_increase_K(
+            self._next_time_slot(time_slot), self._calc_temp_increase_K(time_slot, energy_kWh))
+
     def get_min_energy_demand_kWh(self, time_slot: DateTime) -> float:
+        """Get energy that is needed to compensate for the heat los due to heating."""
         return self.state.get_min_energy_demand_kWh(time_slot)
 
     def get_max_energy_demand_kWh(self, time_slot: DateTime) -> float:
+        """Get energy that is needed to heat up the storage to temp_max."""
         return self.state.get_max_energy_demand_kWh(time_slot)
 
+    def _next_time_slot(self, current_time_slot: DateTime) -> DateTime:
+        return current_time_slot + self._slot_length
+
+    def _temp_diff_to_energy(self, diff_temp_K: float) -> float:
+        return diff_temp_K * self._Q_specific
+
+    def _energy_to_temp_diff(self, energy_kWh: float) -> float:
+        return energy_kWh / self._Q_specific
+
     def _rotate_profiles(self, current_time_slot: Optional[DateTime] = None):
-        self._consumption_kW.read_or_rotate_profiles()
+        self._consumption_kWh.read_or_rotate_profiles()
         self._ext_temp_C.read_or_rotate_profiles()
 
-        self.state.delete_old_time_slots(current_time_slot)
+        self.state.delete_past_state_values(current_time_slot)
 
-    def _calc_energy_to_buy_greedy(self, time_slot: DateTime) -> float:
-        max_energy_consumption = ((self._max_temp_C -
-                                   self.state.get_storage_temp_C(time_slot) +
-                                   self.state.get_temp_decrease_K(time_slot)) * self._Q_specific)
-        return min(self._max_energy_consumption, max_energy_consumption)
+    def _calc_energy_to_buy_maximum(self, time_slot: DateTime) -> float:
+        max_energy_consumption = self._temp_diff_to_energy(
+            self._max_temp_C -
+            self.state.get_storage_temp_C(time_slot) +
+            self.state.get_temp_decrease_K(time_slot)) / self._get_cop(time_slot)
+
+        assert max_energy_consumption > -FLOATING_POINT_TOLERANCE
+        return min(self._max_energy_consumption_kWh, max_energy_consumption)
 
     def _calc_energy_to_buy_minimum(self, time_slot: DateTime) -> float:
         max_temp_decrease_allowed = (
                 self.state.get_storage_temp_C(time_slot) - self._min_temp_C)
         temp_diff = self.state.get_temp_decrease_K(time_slot) - max_temp_decrease_allowed
-        min_energy_consumption = temp_diff * self._Q_specific
-        return min(self._max_energy_consumption, min_energy_consumption)
+        if temp_diff < -FLOATING_POINT_TOLERANCE:
+            return 0
+        min_energy_consumption = self._temp_diff_to_energy(temp_diff) / self._get_cop(time_slot)
+        return min(self._max_energy_consumption_kWh, min_energy_consumption)
+
+    def _calc_temp_decrease_K(self, time_slot: DateTime) -> float:
+        return self._energy_to_temp_diff(self._calc_Q_consumption(
+            time_slot, self._consumption_kWh.profile[time_slot]))
+
+    def _calc_temp_increase_K(self, time_slot: DateTime, energy_kWh: float) -> float:
+        return self._energy_to_temp_diff(self._calc_Q_consumption(time_slot, energy_kWh))
 
     def _populate_state(self, time_slot: DateTime):
-        # order matters here!
-        self.state.update_temp_decrease_K(
-            time_slot, self._calc_Q_consumption(
-                time_slot, self._consumption_kW.profile[time_slot]) / self._Q_specific)
+        # order matters here
+        self.state.set_temp_decrease_K(
+            time_slot, self._calc_temp_decrease_K(time_slot))
+
+        self.state.update_storage_temp(time_slot)
+
+        self._calc_energy_demand(time_slot)
+
+    def _calc_energy_demand(self, time_slot: DateTime):
         self.state.set_min_energy_demand_kWh(
             time_slot, self._calc_energy_to_buy_minimum(time_slot))
         self.state.set_max_energy_demand_kWh(
-            time_slot, self._calc_energy_to_buy_greedy(time_slot))
+            time_slot, self._calc_energy_to_buy_maximum(time_slot))
 
-    def _calc_Q_consumption(self, time_slot: DateTime, consumption_kW: float) -> float:
-        cop = self._calc_cop(self.state.get_storage_temp_C(time_slot),
-                             self._ext_temp_C.profile[time_slot])
-        return cop * consumption_kW
+    def _calc_Q_consumption(self, time_slot: DateTime, consumption_kWh: float) -> float:
+        return self._get_cop(time_slot) * consumption_kWh
+
+    def _get_cop(self, time_slot: DateTime) -> float:
+        return self._calc_cop(self.state.get_storage_temp_C(time_slot),
+                              self._ext_temp_C.profile[time_slot])
 
     def _calc_cop(self, temp_current: float, temp_ambient: float) -> float:
         delta_temp = temp_current - temp_ambient
         if self._source_type == HeatPumpSourceType.AIR.value:
-            return 6.08 - 0.09 * delta_temp + 0.00005 * delta_temp**2
-        elif self._source_type == HeatPumpSourceType.GROUND.value:
+            return 6.08 - 0.09 * delta_temp + 0.0005 * delta_temp**2
+        if self._source_type == HeatPumpSourceType.GROUND.value:
             return 10.29 - 0.21 * delta_temp + 0.0012 * delta_temp**2
-        else:
-            raise HeatPumpEnergyParametersException("HeatPumpSourceType not supported")
 
-    def _calc_temp_increase(self, time_slot: DateTime, energy_kWh: float) -> float:
-        return self._calc_Q_consumption(time_slot, energy_kWh) / self._Q_specific
+        raise HeatPumpEnergyParametersException("HeatPumpSourceType not supported")
 
     def _decrement_posted_energy(self, time_slot: DateTime, energy_kWh: float):
-        updated_min_energy_demand_kWh = self.get_min_energy_demand_kWh(time_slot) - energy_kWh
-        assert updated_min_energy_demand_kWh > -FLOATING_POINT_TOLERANCE
-        updated_max_energy_demand_kWh = self.get_max_energy_demand_kWh(time_slot) - energy_kWh
-        assert updated_max_energy_demand_kWh > -FLOATING_POINT_TOLERANCE
-
+        updated_min_energy_demand_kWh = max(
+            0., self.get_min_energy_demand_kWh(time_slot) - energy_kWh)
+        updated_max_energy_demand_kWh = max(
+            0., self.get_max_energy_demand_kWh(time_slot) - energy_kWh)
         self.state.set_min_energy_demand_kWh(time_slot, updated_min_energy_demand_kWh)
         self.state.set_max_energy_demand_kWh(time_slot, updated_max_energy_demand_kWh)

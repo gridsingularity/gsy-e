@@ -1,11 +1,12 @@
 # pylint: disable=protected-access
 from math import isclose
 from typing import TYPE_CHECKING, Tuple
-from unittest.mock import patch, PropertyMock, MagicMock
+from unittest.mock import patch, PropertyMock, MagicMock, Mock
 
 import pytest
 from gsy_framework.constants_limits import GlobalConfig, ConstSettings
 from gsy_framework.enums import AvailableMarketTypes
+from gsy_framework.data_classes import Bid, Trade
 from pendulum import datetime
 
 from gsy_e.models.area import Area
@@ -18,16 +19,17 @@ CURRENT_MARKET_SLOT = datetime(2022, 6, 13, 0, 0)
 
 
 @pytest.fixture(name="heatpump_fixture")
-def heatpump_strategy_fixture() -> Tuple["TradingStrategyBase", "Area"]:
-    """Heatpump and area fixture."""
+def fixture_heatpump_strategy() -> Tuple["TradingStrategyBase", "Area"]:
     original_market_type = ConstSettings.MASettings.MARKET_TYPE
     ConstSettings.MASettings.MARKET_TYPE = 2
     orig_start_date = GlobalConfig.start_date
     strategy = HeatPumpStrategy()
+    strategy._energy_params = Mock()
     strategy_area = Area("asset", strategy=strategy)
     area = Area("grid", children=[strategy_area])
     area.config.start_date = CURRENT_MARKET_SLOT
     area.config.end_date = area.config.start_date.add(days=1)
+    area.activate()
     yield strategy, area
     GlobalConfig.start_date = orig_start_date
     ConstSettings.MASettings.MARKET_TYPE = original_market_type
@@ -48,7 +50,7 @@ class TestHeatPumpStrategy:
     def test_heatpump_creates_order_updater_on_spot_on_market_cycle(heatpump_fixture):
         strategy = heatpump_fixture[0]
         area = heatpump_fixture[1]
-        area.activate()
+        strategy._get_energy_buy_energy = MagicMock(return_value=1)
         strategy.event_market_cycle()
         market_object = area.spot_market
         assert len(strategy._order_updaters[market_object].keys()) == 1
@@ -65,7 +67,6 @@ class TestHeatPumpStrategy:
     def test_orders_are_updated_correctly_on_spot_on_tick(self, heatpump_fixture):
         strategy = heatpump_fixture[0]
         area = heatpump_fixture[1]
-        area.activate()
         energy_to_buy = 100
         strategy._get_energy_buy_energy = MagicMock(return_value=energy_to_buy)
         # post initial bid
@@ -85,7 +86,6 @@ class TestHeatPumpStrategy:
     def test_remove_open_orders_removes_all_orders_on_spot(heatpump_fixture):
         strategy = heatpump_fixture[0]
         area = heatpump_fixture[1]
-        area.activate()
         energy_to_buy = 100
         strategy._get_energy_buy_energy = MagicMock(return_value=energy_to_buy)
         # post initial bid
@@ -94,3 +94,28 @@ class TestHeatPumpStrategy:
         strategy.remove_open_orders(market_object, market_object.time_slot)
         orders = list(market_object.bids.values())
         assert len(orders) == 0
+
+    @staticmethod
+    def test_get_energy_buy_energy_returns_correct_value(heatpump_fixture):
+        strategy = heatpump_fixture[0]
+        strategy.preferred_buying_rate = 15
+        strategy._energy_params.get_min_energy_demand_kWh = MagicMock(return_value=1)
+        strategy._energy_params.get_max_energy_demand_kWh = MagicMock(return_value=2)
+        assert strategy._get_energy_buy_energy(14, CURRENT_MARKET_SLOT) == 2
+        assert strategy._get_energy_buy_energy(15, CURRENT_MARKET_SLOT) == 2
+        assert strategy._get_energy_buy_energy(16, CURRENT_MARKET_SLOT) == 1
+
+    @staticmethod
+    def test_event_bid_traded_calls_ep_event_traded_energy(heatpump_fixture):
+        strategy = heatpump_fixture[0]
+        area = heatpump_fixture[1]
+        traded_energy = 2
+        bid = Bid("id", CURRENT_MARKET_SLOT, traded_energy, 1, strategy.owner.name)
+        trade = Trade("id", CURRENT_MARKET_SLOT, bid,
+                      traded_energy=traded_energy, trade_price=1,
+                      seller="", time_slot=CURRENT_MARKET_SLOT,
+                      buyer=strategy.owner.name,  buyer_id=strategy.owner.uuid,
+                      )
+        strategy.event_bid_traded(market_id=area.spot_market.id, bid_trade=trade)
+        strategy._energy_params.event_traded_energy.assert_called_once_with(
+            CURRENT_MARKET_SLOT, traded_energy)

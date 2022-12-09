@@ -895,63 +895,100 @@ class StorageState(StateInterface):
 class HeatPumpState(StateInterface):
     """State for the heat pump strategy."""
 
-    def __init__(self, initial_temp_C: float):
+    def __init__(self, initial_temp_C: float, slot_length: duration):
         # the defaultdict was only selected for the initial slot
         self._storage_temp_C: Dict[DateTime, float] = defaultdict(lambda: initial_temp_C)
         self._min_energy_demand_kWh: Dict[DateTime, float] = {}
         self._max_energy_demand_kWh: Dict[DateTime, float] = {}
-        # buffer for decrease of storage temp due to heat consumption
-        self._temp_decrease_K: Dict[DateTime, float] = {}
-
-    def copy_to_next_slot(self, current_market_slot: DateTime, slot_length: duration):
-        next_slot = current_market_slot.add(minutes=slot_length.total_minutes())
-        self._storage_temp_C[next_slot] = self._storage_temp_C[current_market_slot]
+        # buffers for increase and  decrease of storage
+        self._temp_decrease_K: Dict[DateTime, float] = defaultdict(lambda: 0)
+        self._temp_increase_K: Dict[DateTime, float] = defaultdict(lambda: 0)
+        self._slot_length = slot_length
 
     def get_storage_temp_C(self, time_slot: DateTime) -> float:
+        """Return temperature of storage for a time slot in degree celsius."""
         return self._storage_temp_C[time_slot]
 
-    def update_storage_temp(self, time_slot: DateTime, temp: float):
-        self._storage_temp_C[time_slot] += temp
+    def update_storage_temp(self, current_time_slot: DateTime):
+        """Update storage temperature of the given slot with the accumulated changes. """
+        new_temp = (self.get_storage_temp_C(self._last_time_slot(current_time_slot))
+                    - self.get_temp_decrease_K(current_time_slot)
+                    + self.get_temp_increase_K(current_time_slot))
+        self._storage_temp_C[current_time_slot] = new_temp
 
     def set_min_energy_demand_kWh(self, time_slot: DateTime, energy_kWh: float):
+        """Set the minimal energy demanded for a given time slot."""
         self._min_energy_demand_kWh[time_slot] = energy_kWh
 
     def set_max_energy_demand_kWh(self, time_slot: DateTime, energy_kWh: float):
+        """Set the maximal energy demanded for a given time slot."""
         self._max_energy_demand_kWh[time_slot] = energy_kWh
 
-    def get_temp_decrease_K(self, time_slot: DateTime) -> float:
-        return self._temp_decrease_K.get(time_slot, 0)
+    def set_temp_decrease_K(self, time_slot: DateTime, temp_diff_K: float):
+        """Set the temperature decrease for a given time slot."""
+        self._temp_decrease_K[time_slot] = temp_diff_K
+
+    def update_temp_increase_K(self, time_slot: DateTime, temp_diff: float):
+        """Set the temperature increase for a given time slot."""
+        self._temp_increase_K[time_slot] += temp_diff
 
     def get_min_energy_demand_kWh(self, time_slot: DateTime) -> float:
+        """Return the minimal energy demanded for a given time slot."""
         return self._min_energy_demand_kWh.get(time_slot, 0)
 
     def get_max_energy_demand_kWh(self, time_slot: DateTime) -> float:
+        """Return the maximal energy demanded for a given time slot."""
         return self._max_energy_demand_kWh.get(time_slot, 0)
 
-    def update_temp_decrease_K(self, time_slot: DateTime, temp_diff_K: float):
-        self._temp_decrease_K[time_slot] = temp_diff_K
+    def get_temp_decrease_K(self, time_slot: DateTime) -> float:
+        """Return the temperature decrease for a given time slot."""
+        return self._temp_decrease_K.get(time_slot, 0)
 
-    def delete_old_time_slots(self, current_time_slot: DateTime):
-        if not current_time_slot:
-            return
-        self._delete_time_slots(self._min_energy_demand_kWh, current_time_slot)
-        self._delete_time_slots(self._max_energy_demand_kWh, current_time_slot)
+    def get_temp_increase_K(self, time_slot: DateTime) -> float:
+        """Return the temperature increase for a given time slot."""
+        return self._temp_increase_K.get(time_slot, 0)
 
     def get_state(self) -> Dict:
-        """To be implemented in the frame of GSYE-426"""
-        return {}
+        return {
+            "storage_temp_C": convert_pendulum_to_str_in_dict(self._storage_temp_C),
+            "temp_decrease_K": convert_pendulum_to_str_in_dict(self._temp_decrease_K),
+            "temp_increase_K": convert_pendulum_to_str_in_dict(self._temp_increase_K),
+            "min_energy_demand_kWh": convert_pendulum_to_str_in_dict(self._min_energy_demand_kWh),
+            "max_energy_demand_kWh": convert_pendulum_to_str_in_dict(self._max_energy_demand_kWh),
+        }
 
     def restore_state(self, state_dict: Dict):
-        """To be implemented in the frame of GSYE-426"""
+        self._storage_temp_C = convert_pendulum_to_str_in_dict(state_dict["storage_temp_C"])
+        self._temp_decrease_K = convert_pendulum_to_str_in_dict(state_dict["temp_decrease_K"])
+        self._temp_increase_K = convert_pendulum_to_str_in_dict(state_dict["temp_increase_K"])
+        self._min_energy_demand_kWh = convert_pendulum_to_str_in_dict(
+            state_dict["min_energy_demand_kWh"])
+        self._max_energy_demand_kWh = convert_pendulum_to_str_in_dict(
+            state_dict["max_energy_demand_kWh"])
 
     def delete_past_state_values(self, current_time_slot: DateTime):
-        """To be implemented in the frame of GSYE-426"""
+        if not current_time_slot:
+            return
+        self._delete_time_slots(self._min_energy_demand_kWh,
+                                self._last_time_slot(current_time_slot))
+        self._delete_time_slots(self._max_energy_demand_kWh,
+                                self._last_time_slot(current_time_slot))
+        self._delete_time_slots(self._storage_temp_C,
+                                self._last_time_slot(current_time_slot))
+        self._delete_time_slots(self._temp_increase_K,
+                                self._last_time_slot(current_time_slot))
+        self._delete_time_slots(self._temp_decrease_K,
+                                self._last_time_slot(current_time_slot))
 
     def get_results_dict(self, current_time_slot: DateTime) -> Dict:
-        """To be implemented in the frame of GSYE-426"""
         return {
-            "storage_temp_C": self._storage_temp_C.get(current_time_slot, 0)
+            "storage_temp_CC": self.get_storage_temp_C(current_time_slot),
+            "temp_decrease_KK": self.get_temp_decrease_K(current_time_slot),
+            "temp_increase_KK": self.get_temp_increase_K(current_time_slot)
         }
+
+    def _last_time_slot(self, current_market_slot: DateTime) -> DateTime:
+        return current_market_slot - self._slot_length
 
     @staticmethod
     def _delete_time_slots(profile: Dict, current_time_stamp: DateTime):

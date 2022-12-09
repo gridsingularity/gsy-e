@@ -30,6 +30,7 @@ from gsy_e.models.strategy.scm.load import SCMLoadHoursStrategy, SCMLoadProfileS
 from gsy_e.models.strategy.scm.pv import SCMPVStrategy
 from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
 from gsy_e.models.strategy.storage import StorageStrategy
+from gsy_e.models.strategy.heat_pump import HeatPumpStrategy
 
 if TYPE_CHECKING:
     from gsy_e.models.area import CoefficientArea
@@ -151,6 +152,8 @@ class LeafDataExporter(BaseDataExporter):
             return ["desired energy [kWh]", "deficit [kWh]"]
         if isinstance(self.area.strategy, PVStrategy):
             return ["produced [kWh]", "not sold [kWh]"]
+        if isinstance(self.area.strategy, HeatPumpStrategy):
+            return ["storage temperature C", "temp decrease K", "temp_increase K"]
         return []
 
     @property
@@ -181,6 +184,11 @@ class LeafDataExporter(BaseDataExporter):
             not_sold = self.area.strategy.state.get_available_energy_kWh(slot)
             produced = self.area.strategy.state.get_energy_production_forecast_kWh(slot, 0.0)
             return [produced, not_sold]
+        if isinstance(self.area.strategy, HeatPumpStrategy):
+            return [self.area.strategy.state.get_storage_temp_C(slot),
+                    self.area.strategy.state.get_temp_decrease_K(slot),
+                    self.area.strategy.state.get_temp_increase_K(slot)
+                    ]
         return []
 
 

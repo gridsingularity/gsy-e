@@ -8,8 +8,8 @@ from pendulum import DateTime, duration
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.models.state import HeatPumpState
 from gsy_e.models.strategy.energy_parameters.heat_pump import HeatPumpEnergyParameters
-from gsy_e.models.strategy.trading_strategy_base import TradingStrategyBase
 from gsy_e.models.strategy.order_updater import OrderUpdaterParameters, OrderUpdater
+from gsy_e.models.strategy.trading_strategy_base import TradingStrategyBase
 
 DEFAULT_HEAT_PUMP_ORDER_UPDATE_PARAMS = {
     AvailableMarketTypes.SPOT: OrderUpdaterParameters(
@@ -43,6 +43,9 @@ class HeatPumpStrategy(TradingStrategyBase):
                  preferred_buying_rate: float =
                  ConstSettings.HeatPumpSettings.PREFERRED_BUYING_RATE
                  ):
+
+        if ConstSettings.MASettings.MARKET_TYPE == 1:
+            raise NotImplementedError("Heatpump has not been implemented for the OneSidedMarket")
         if not order_updater_parameters:
             order_updater_parameters = DEFAULT_HEAT_PUMP_ORDER_UPDATE_PARAMS
 
@@ -76,19 +79,23 @@ class HeatPumpStrategy(TradingStrategyBase):
 
     def event_market_cycle(self) -> None:
         super().event_market_cycle()
-        current_market = self.area.current_market
-        if not current_market:
+        spot_market = self.area.spot_market
+        if not spot_market:
             return
-        self._energy_params.event_market_cycle(current_market.time_slot)
+
+        # Order matters: First update the energy state and then post orders
+        self._energy_params.event_market_cycle(spot_market.time_slot)
+
         self._post_orders_to_new_markets()
 
     def event_tick(self):
         self._update_open_orders()
 
-    def event_bid_traded(self, *, _market_id: str, bid_trade: Trade) -> None:
-        """TODO: to be tested in the frame of GSYE-426"""
-        market = self.area.spot_market
-        if not market:
+    def event_bid_traded(self, *, market_id: str, bid_trade: Trade) -> None:
+        spot_market = self.area.spot_market
+        if not spot_market:
+            return
+        if market_id != spot_market.id:
             return
 
         time_slot = bid_trade.time_slot
@@ -110,7 +117,6 @@ class HeatPumpStrategy(TradingStrategyBase):
 
         if order_energy_kWh <= FLOATING_POINT_TOLERANCE:
             return
-
         market.bid(
             order_rate * order_energy_kWh, order_energy_kWh,
             buyer=self.owner.name,
