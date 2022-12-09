@@ -1,16 +1,18 @@
 # pylint: disable=protected-access, disable=missing-function-docstring, missing-class-docstring
 # pylint: disable=too-many-public-methods, unused-import
+import json
 import uuid
 
 import pytest
-from gsy_framework.constants_limits import ConstSettings, DATE_TIME_FORMAT
+from gsy_framework.constants_limits import DATE_TIME_FORMAT, ConstSettings
 
 from gsy_e.models.strategy.external_strategies.smart_meter import SmartMeterExternalStrategy
-from tests.strategies.external.fixtures import (future_market_fixture,  # noqa
-                                                settlement_market_fixture)  # noqa
+from tests.strategies.external.fixtures import future_market_fixture  # noqa
+from tests.strategies.external.fixtures import settlement_market_fixture  # noqa
 from tests.strategies.external.utils import (
+    assert_bid_offer_aggregator_commands_return_value,
     check_external_command_endpoint_with_correct_payload_succeeds,
-    create_areas_markets_for_strategy_fixture, assert_bid_offer_aggregator_commands_return_value)
+    create_areas_markets_for_strategy_fixture)
 
 
 @pytest.fixture(name="external_smart_meter")
@@ -112,8 +114,9 @@ class TestSmartMeterExternalStrategy:
             )
 
             assert return_value["status"] == "ready"
-            assert len(future_markets.bids.values()) == 1
-            assert list(future_markets.bids.values())[0].energy == future_energy_kWh
+            bid_id = json.loads(return_value["bid"])["id"]
+            assert future_markets.bids[bid_id].energy == future_energy_kWh
+        assert len(future_markets.bids.values()) == len(future_markets.market_time_slots)
 
     @staticmethod
     def test_bid_aggregator_succeeds_with_warning_if_dof_are_disabled(
@@ -246,8 +249,9 @@ class TestSmartMeterExternalStrategy:
             )
 
             assert return_value["status"] == "ready"
-            assert len(future_markets.offers.values()) == 1
-            assert list(future_markets.offers.values())[0].energy == future_energy_kWh
+            offer_id = json.loads(return_value["offer"])["id"]
+            assert future_markets.offers[offer_id].energy == future_energy_kWh
+        assert len(future_markets.offers.values()) == len(future_markets.market_time_slots)
 
     @staticmethod
     def test_offer_aggregator_succeeds_with_warning_if_dof_are_disabled(
