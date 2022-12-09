@@ -410,15 +410,15 @@ def export_default_settings_to_json_file():
 def area_sells_to_child(trade, area_name, child_names):
     """Area sells to child."""
     return (
-        area_name_from_area_or_ma_name(trade.seller) == area_name
-        and area_name_from_area_or_ma_name(trade.buyer) in child_names)
+        area_name_from_area_or_ma_name(trade.seller.name) == area_name
+        and area_name_from_area_or_ma_name(trade.buyer.name) in child_names)
 
 
 def child_buys_from_area(trade, area_name, child_names):
     """Child buys from area."""
     return (
-        area_name_from_area_or_ma_name(trade.buyer) == area_name
-        and area_name_from_area_or_ma_name(trade.seller) in child_names)
+        area_name_from_area_or_ma_name(trade.buyer.name) == area_name
+        and area_name_from_area_or_ma_name(trade.seller.name) in child_names)
 
 
 def if_not_in_list_append(target_list, obj):

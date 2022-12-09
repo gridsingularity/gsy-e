@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from collections import namedtuple
 from typing import Dict, TYPE_CHECKING
 
-from gsy_framework.data_classes import Bid
+from gsy_framework.data_classes import Bid, TraderDetails
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.exceptions import BidNotFoundException, MarketException
@@ -63,7 +63,7 @@ class TwoSidedEngine(MAEngine):
         return requirements
 
     def _forward_bid(self, bid):
-        if bid.buyer == self.markets.target.name:
+        if bid.buyer.name == self.markets.target.name:
             return None
 
         if bid.price < 0.0:
@@ -74,11 +74,9 @@ class TwoSidedEngine(MAEngine):
                 price=(self.markets.source.fee_class.update_forwarded_bid_with_fee(
                     bid.energy_rate, bid.original_price / bid.energy)) * bid.energy,
                 energy=bid.energy,
-                buyer=self.owner.name,
+                buyer=TraderDetails(
+                    self.owner.name, self.owner.uuid, bid.buyer.origin, bid.buyer.origin_uuid),
                 original_price=bid.original_price,
-                buyer_origin=bid.buyer_origin,
-                buyer_origin_id=bid.buyer_origin_id,
-                buyer_id=self.owner.uuid,
                 time_slot=bid.time_slot,
                 requirements=self._update_requirements_prices(bid),
                 attributes=bid.attributes
@@ -109,7 +107,7 @@ class TwoSidedEngine(MAEngine):
         if not self.owner.usable_bid(bid):
             return False
 
-        if self.owner.name == bid.buyer:
+        if self.owner.name == bid.buyer.name:
             return False
 
         if current_tick - self.bid_age[bid.id] < self.min_bid_age:
@@ -140,11 +138,11 @@ class TwoSidedEngine(MAEngine):
 
     def event_bid_traded(self, *, bid_trade):
         """Perform actions that need to be done when BID_TRADED event is triggered."""
-        bid_info = self.forwarded_bids.get(bid_trade.offer_bid.id)
+        bid_info = self.forwarded_bids.get(bid_trade.match_details["bid"].id)
         if not bid_info:
             return
 
-        if bid_trade.offer_bid.id == bid_info.target_bid.id:
+        if bid_trade.match_details["bid"].id == bid_info.target_bid.id:
             # Bid was traded in target market, buy in source
             market_bid = self.markets.source.bids[bid_info.source_bid.id]
             assert bid_trade.traded_energy <= market_bid.energy, \
@@ -172,17 +170,16 @@ class TwoSidedEngine(MAEngine):
             self.markets.source.accept_bid(
                 bid=market_bid,
                 energy=bid_trade.traded_energy,
-                seller=self.owner.name,
+                seller=TraderDetails(
+                    self.owner.name, self.owner.uuid,
+                    bid_trade.seller.origin, bid_trade.seller.origin_uuid),
                 already_tracked=False,
                 trade_offer_info=trade_offer_info,
-                seller_origin=bid_trade.seller_origin,
-                seller_origin_id=bid_trade.seller_origin_id,
-                seller_id=self.owner.uuid
             )
             self._delete_forwarded_bids(bid_info)
             self.bid_age.pop(bid_info.source_bid.id, None)
 
-        elif bid_trade.offer_bid.id == bid_info.source_bid.id:
+        elif bid_trade.match_details["bid"].id == bid_info.source_bid.id:
             # Bid was traded in the source market by someone else
 
             self._delete_forwarded_bids(bid_info)

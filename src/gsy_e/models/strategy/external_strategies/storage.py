@@ -63,7 +63,7 @@ class StorageExternalMixin(ExternalMixin):
         return [
             {"id": bid.id, "price": bid.price, "energy": bid.energy}
             for _, bid in market.get_bids().items()
-            if bid.buyer == self.device.name]
+            if bid.buyer.name == self.device.name]
 
     def event_activate(self, **kwargs) -> None:
         """Activate the device."""
@@ -95,7 +95,7 @@ class StorageExternalMixin(ExternalMixin):
             market = self._get_market_from_command_argument(arguments)
             filtered_offers = [{"id": v.id, "price": v.price, "energy": v.energy}
                                for _, v in market.get_offers().items()
-                               if v.seller == self.device.name]
+                               if v.seller.name == self.device.name]
             response = {"command": "list_offers", "status": "ready",
                         "offer_list": filtered_offers,
                         "transaction_id": arguments.get("transaction_id")}
@@ -217,7 +217,7 @@ class StorageExternalMixin(ExternalMixin):
                 response_channel,
                 {"command": "offer", "status": "ready",
                  "market_type": market.type_name,
-                 "offer": offer.to_json_string(replace_existing=replace_existing),
+                 "offer": offer.to_json_string(),
                  "transaction_id": arguments.get("transaction_id")})
         except Exception:
             logging.exception("Error when handling offer create on area %s: Offer Arguments: %s",
@@ -370,7 +370,7 @@ class StorageExternalMixin(ExternalMixin):
             response = {
                 "command": "bid",
                 "status": "ready",
-                "bid": bid.to_json_string(replace_existing=replace_existing),
+                "bid": bid.to_json_string(),
                 "market_type": market.type_name,
                 "transaction_id": arguments.get("transaction_id"),
                 "message": response_message}
@@ -534,7 +534,7 @@ class StorageExternalMixin(ExternalMixin):
                 "area_uuid": self.device.uuid,
                 "market_type": market.type_name,
                 "status": "ready",
-                "offer": offer.to_json_string(replace_existing=replace_existing),
+                "offer": offer.to_json_string(),
                 "transaction_id": arguments.get("transaction_id"),
                 "message": response_message}
         except Exception:
@@ -588,7 +588,7 @@ class StorageExternalMixin(ExternalMixin):
                 self.posted_bid_energy(market.id), time_slot)
             response = {
                 "command": "bid", "status": "ready",
-                "bid": bid.to_json_string(replace_existing=replace_existing),
+                "bid": bid.to_json_string(),
                 "market_type": market.type_name,
                 "area_uuid": self.device.uuid,
                 "transaction_id": arguments.get("transaction_id"),

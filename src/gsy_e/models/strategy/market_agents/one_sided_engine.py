@@ -19,7 +19,7 @@ from collections import namedtuple
 from typing import Dict, Optional  # noqa
 
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.data_classes import Offer
+from gsy_framework.data_classes import Offer, TraderDetails
 from gsy_framework.enums import SpotMarketTypeEnum
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
@@ -72,12 +72,12 @@ class MAEngine:
         kwargs = {
             "price": updated_price,
             "energy": offer.energy,
-            "seller": self.owner.name,
+            "seller": TraderDetails(
+                self.owner.name, self.owner.uuid,
+                offer.seller.origin, offer.seller.origin_uuid
+            ),
             "original_price": offer.original_price,
             "dispatch_event": False,
-            "seller_origin": offer.seller_origin,
-            "seller_origin_id": offer.seller_origin_id,
-            "seller_id": self.owner.uuid,
             "time_slot": offer.time_slot,
             "attributes": offer.attributes,
             "requirements": self._update_offer_requirements_prices(offer)
@@ -147,7 +147,7 @@ class MAEngine:
             # Should never reach this point.
             # This means that the MA is forwarding offers with the same seller and buyer name.
             # If we ever again reach a situation like this, we should never forward the offer.
-            if self.owner.name == offer.seller:
+            if self.owner.name == offer.seller.name:
                 self.offer_age.pop(offer_id, None)
                 continue
 
@@ -158,12 +158,12 @@ class MAEngine:
 
     def event_offer_traded(self, *, trade):
         """Perform actions that need to be done when OFFER_TRADED event is triggered."""
-        offer_info = self.forwarded_offers.get(trade.offer_bid.id)
+        offer_info = self.forwarded_offers.get(trade.match_details["offer"].id)
         if not offer_info:
             # Trade doesn't concern us
             return
 
-        if trade.offer_bid.id == offer_info.target_offer.id:
+        if trade.match_details["offer"].id == offer_info.target_offer.id:
             # Offer was accepted in target market - buy in source
             source_rate = offer_info.source_offer.energy_rate
             target_rate = offer_info.target_offer.energy_rate
@@ -186,12 +186,11 @@ class MAEngine:
                     market=self.markets.source,
                     offer=offer_info.source_offer,
                     energy=trade.traded_energy,
-                    buyer=self.owner.name,
+                    buyer=TraderDetails(
+                        self.owner.name, self.owner.uuid,
+                        trade.buyer.origin, trade.buyer.origin_uuid),
                     trade_rate=trade_offer_rate,
                     trade_bid_info=updated_trade_bid_info,
-                    buyer_origin=trade.buyer_origin,
-                    buyer_origin_id=trade.buyer_origin_id,
-                    buyer_id=self.owner.uuid
                 )
 
             except OfferNotFoundException as ex:
@@ -202,7 +201,7 @@ class MAEngine:
             self._delete_forwarded_offer_entries(offer_info.source_offer)
             self.offer_age.pop(offer_info.source_offer.id, None)
 
-        elif trade.offer_bid.id == offer_info.source_offer.id:
+        elif trade.match_details["offer"].id == offer_info.source_offer.id:
             # Offer was bought in source market by another party
             try:
                 self.owner.delete_offer(self.markets.target, offer_info.target_offer)
@@ -267,7 +266,7 @@ class MAEngine:
         elif market == self.markets.source and accepted_offer.id in self.forwarded_offers:
             # offer was split in source market, also split in target market
             if not self.owner.usable_offer(accepted_offer) or \
-                    self.owner.name == accepted_offer.seller:
+                    self.owner.name == accepted_offer.seller.name:
                 return
 
             local_offer = self.forwarded_offers[original_offer.id].source_offer
@@ -304,9 +303,9 @@ class BalancingEngine(MAEngine):
 
     def _forward_offer(self, offer):
         forwarded_balancing_offer = self.markets.target.balancing_offer(
-            offer.price,
-            offer.energy,
-            self.owner.name,
+            offer.price, offer.energy,
+            TraderDetails(
+                self.owner.name, self.owner.uuid, offer.seller.origin, offer.seller.origin_uuid),
             from_agent=True
         )
         self._add_to_forward_offers(offer, forwarded_balancing_offer)

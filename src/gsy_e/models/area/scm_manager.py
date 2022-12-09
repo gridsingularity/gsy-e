@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional
 from uuid import uuid4
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
-from gsy_framework.data_classes import Trade
+from gsy_framework.data_classes import Trade, TraderDetails
 from pendulum import DateTime, duration
 
 import gsy_e.constants
@@ -125,14 +125,11 @@ class HomeAfterMeterData:
             f"{self.energy_need_kWh}) of the home ({self.home_name})."
 
         trade = Trade(
-            str(uuid4()), current_time_slot, None,
-            seller_name, self.home_name,
+            str(uuid4()), current_time_slot,
+            TraderDetails(seller_name, None, seller_name, None),
+            TraderDetails(self.home_name, self.home_uuid, self.home_name, self.home_uuid),
             traded_energy=traded_energy_kWh, trade_price=trade_price_cents, residual=None,
-            offer_bid_trade_info=None,
-            seller_origin=seller_name,
-            buyer_origin=self.home_name, fee_price=0., buyer_origin_id=self.home_uuid,
-            seller_origin_id=None, seller_id=None, buyer_id=self.home_uuid,
-            time_slot=current_time_slot)
+            offer_bid_trade_info=None, fee_price=0., time_slot=current_time_slot)
         self.trades.append(trade)
         logging.info("[SCM][TRADE][BID] [%s] [%s] %s", self.home_name, trade.time_slot, trade)
 
@@ -143,14 +140,11 @@ class HomeAfterMeterData:
             f"Cannot sell more energy ({traded_energy_kWh}) than the energy surplus (" \
             f"{self.energy_surplus_kWh}) of the home ({self.home_name})."
         trade = Trade(
-            str(uuid4()), current_time_slot, None,
-            self.home_name, buyer_name,
+            str(uuid4()), current_time_slot,
+            TraderDetails(self.home_name, self.home_uuid, self.home_name, self.home_uuid),
+            TraderDetails(buyer_name, None, buyer_name, None),
             traded_energy=traded_energy_kWh, trade_price=trade_price_cents, residual=None,
-            offer_bid_trade_info=None,
-            seller_origin=self.home_name,
-            buyer_origin=buyer_name, fee_price=0., buyer_origin_id=None,
-            seller_origin_id=self.home_uuid, seller_id=self.home_uuid, buyer_id=None,
-            time_slot=current_time_slot)
+            offer_bid_trade_info=None, fee_price=0., time_slot=current_time_slot)
         self.trades.append(trade)
         logging.info("[SCM][TRADE][OFFER] [%s] [%s] %s", self.home_name, trade.time_slot, trade)
 

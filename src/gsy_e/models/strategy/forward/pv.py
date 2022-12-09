@@ -1,5 +1,6 @@
 from typing import Dict, TYPE_CHECKING
 
+from gsy_framework.data_classes import TraderDetails
 from gsy_framework.enums import AvailableMarketTypes
 from pendulum import DateTime, duration
 
@@ -54,14 +55,14 @@ class ForwardPVStrategy(ForwardStrategyBase):
     def remove_open_orders(self, market: "ForwardMarketBase", market_slot: DateTime):
         offers = [offer
                   for offer in market.slot_offer_mapping[market_slot]
-                  if offer.seller == self.owner.name]
+                  if offer.seller.name == self.owner.name]
         for offer in offers:
             market.delete_offer(offer)
 
     def remove_order(self, market: "ForwardMarketBase", market_slot: DateTime, order_uuid: str):
         offers = [offer
                   for offer in market.slot_offer_mapping[market_slot]
-                  if offer.seller == self.owner.name and offer.id == order_uuid]
+                  if offer.seller.name == self.owner.name and offer.id == order_uuid]
         if not offers:
             self.log.error("Bid with id %s does not exist on the market %s %s.",
                            order_uuid, market.market_type, market_slot)
@@ -90,11 +91,8 @@ class ForwardPVStrategy(ForwardStrategyBase):
 
         market.offer(
             order_rate * order_energy_kWh, order_energy_kWh,
-            seller=self.owner.name,
+            TraderDetails(self.owner.name, self.owner.uuid, self.owner.name, self.owner.uuid),
             original_price=order_rate * order_energy_kWh,
-            seller_origin=self.owner.name,
-            seller_origin_id=self.owner.uuid,
-            seller_id=self.owner.uuid,
             time_slot=market_slot)
         self._energy_params.increment_posted_energy(
             market_slot, order_energy_kWh, market.market_type)
@@ -107,7 +105,7 @@ class ForwardPVStrategy(ForwardStrategyBase):
         if not market:
             return
 
-        if trade.seller_id != self.owner.uuid:
+        if trade.seller.uuid != self.owner.uuid:
             return
 
         self._energy_params.event_traded_energy(trade.traded_energy,

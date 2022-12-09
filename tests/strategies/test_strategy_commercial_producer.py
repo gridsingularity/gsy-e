@@ -21,7 +21,7 @@ from uuid import uuid4
 import pendulum
 import pytest
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
-from gsy_framework.data_classes import Offer, Trade, BalancingOffer
+from gsy_framework.data_classes import Offer, Trade, BalancingOffer, TraderDetails
 
 from gsy_e.constants import TIME_ZONE, TIME_FORMAT
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
@@ -53,7 +53,6 @@ class FakeArea:
     # pylint: disable=too-many-instance-attributes,missing-function-docstring
     def __init__(self, _count):
         self.current_tick = 2
-        self.appliance = None
         self.name = "FakeArea"
         self.uuid = str(uuid4())
         self.test_market = FakeMarket(0)
@@ -97,11 +96,9 @@ class FakeMarket:
         self.created_offers = []
         self.created_balancing_offers = []
 
-    def offer(self, price, energy, seller, original_price=None,
-              seller_origin=None, seller_origin_id=None, seller_id=None):
-        offer = Offer("id", pendulum.now(), price, energy, seller, original_price,
-                      seller_origin=seller_origin, seller_origin_id=seller_origin_id,
-                      seller_id=seller_id)
+    def offer(self, price, energy, seller, original_price=None):
+        offer = Offer(
+            "id", pendulum.now(), price, energy, seller, original_price)
         self.created_offers.append(offer)
         offer.id = "id"
         return offer
@@ -208,13 +205,14 @@ def test_event_trade(area_test2, commercial_test2):
     commercial_test2.event_activate()
     commercial_test2.event_market_cycle()
     traded_offer = Offer(
-        id="id", creation_time=pendulum.now(), price=20, energy=1, seller="FakeArea",)
+        id="id", creation_time=pendulum.now(), price=20, energy=1,
+        seller=TraderDetails("FakeArea", ""))
     commercial_test2.event_offer_traded(market_id=area_test2.test_market.id,
                                         trade=Trade(id="id",
+                                                    offer=traded_offer,
                                                     creation_time=pendulum.now(),
-                                                    offer_bid=traded_offer,
-                                                    seller="FakeArea",
-                                                    buyer="buyer",
+                                                    seller=TraderDetails("FakeArea", ""),
+                                                    buyer=TraderDetails("buyer", ""),
                                                     traded_energy=1, trade_price=1)
                                         )
     assert len(area_test2.test_market.created_offers) == 1
@@ -224,11 +222,12 @@ def test_event_trade(area_test2, commercial_test2):
 def test_on_offer_split(area_test2, commercial_test2):
     commercial_test2.event_activate()
     original_offer = Offer(id="id", creation_time=pendulum.now(), price=20,
-                           energy=1, seller="FakeArea")
+                           energy=1, seller=TraderDetails("FakeArea", ""))
     accepted_offer = Offer(id="new_id", creation_time=pendulum.now(), price=15,
-                           energy=0.75, seller="FakeArea")
+                           energy=0.75, seller=TraderDetails("FakeArea", ""))
     residual_offer = Offer(id="res_id", creation_time=pendulum.now(), price=55,
-                           energy=0.25, seller="FakeArea")
+                           energy=0.25, seller=TraderDetails("FakeArea", ""))
+    commercial_test2.offers.post(original_offer, area_test2.test_market.id)
     commercial_test2.event_offer_split(market_id=area_test2.test_market.id,
                                        original_offer=original_offer,
                                        accepted_offer=accepted_offer,
@@ -239,11 +238,11 @@ def test_on_offer_split(area_test2, commercial_test2):
 
 def test_event_trade_after_offer_changed_partial_offer(area_test2, commercial_test2):
     original_offer = Offer(id="old_id", creation_time=pendulum.now(),
-                           price=20, energy=1, seller="FakeArea")
+                           price=20, energy=1, seller=TraderDetails("FakeArea", ""))
     accepted_offer = Offer(id="old_id", creation_time=pendulum.now(),
-                           price=15, energy=0.75, seller="FakeArea")
+                           price=15, energy=0.75, seller=TraderDetails("FakeArea", ""))
     residual_offer = Offer(id="res_id", creation_time=pendulum.now(),
-                           price=5, energy=0.25, seller="FakeArea")
+                           price=5, energy=0.25, seller=TraderDetails("FakeArea", ""))
     commercial_test2.offers.post(original_offer, area_test2.test_market.id)
     commercial_test2.event_offer_split(market_id=area_test2.test_market.id,
                                        original_offer=original_offer,
@@ -253,10 +252,10 @@ def test_event_trade_after_offer_changed_partial_offer(area_test2, commercial_te
     assert commercial_test2.offers.split[original_offer.id] == accepted_offer
     commercial_test2.event_offer_traded(market_id=area_test2.test_market.id,
                                         trade=Trade(id="id",
+                                                    offer=original_offer,
                                                     creation_time=pendulum.now(),
-                                                    offer_bid=original_offer,
-                                                    seller="FakeArea",
-                                                    buyer="buyer",
+                                                    seller=TraderDetails("FakeArea", ""),
+                                                    buyer=TraderDetails("buyer", ""),
                                                     traded_energy=1, trade_price=1)
                                         )
 

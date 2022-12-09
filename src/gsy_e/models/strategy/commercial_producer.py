@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import logging
 
 from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.data_classes import TraderDetails
 from gsy_framework.utils import (convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict,
                                  find_object_of_same_weekday_and_time)
 from gsy_framework.validators import CommercialProducerValidator
@@ -93,11 +94,8 @@ class CommercialStrategy(BaseStrategy):
             offer = market.offer(
                 self.energy_per_slot_kWh * energy_rate,
                 self.energy_per_slot_kWh,
-                self.owner.name,
+                TraderDetails(self.owner.name, self.owner.uuid, self.owner.name, self.owner.uuid),
                 original_price=self.energy_per_slot_kWh * energy_rate,
-                seller_origin=self.owner.name,
-                seller_origin_id=self.owner.uuid,
-                seller_id=self.owner.uuid
             )
 
             self.offers.post(offer, market.id)
@@ -117,7 +115,7 @@ class CommercialStrategy(BaseStrategy):
         offer = market.balancing_offer(
             self.energy_per_slot_kWh * balancing_supply_rate,
             self.energy_per_slot_kWh,
-            self.owner.name
+            TraderDetails(self.owner.name, self.owner.uuid, self.owner.name, self.owner.uuid)
         )
         self.offers.post(offer, market.id)
 

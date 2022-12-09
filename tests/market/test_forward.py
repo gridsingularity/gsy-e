@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from unittest.mock import patch, MagicMock
 
 import pytest
-from gsy_framework.data_classes import Bid, Offer, Trade
+from gsy_framework.data_classes import Bid, Offer, Trade, TraderDetails
 from pendulum import datetime, duration
 
 from gsy_e.models.area import Area
@@ -106,11 +106,14 @@ class TestForwardMarkets:
                              rotation_time):
         forward_markets = self._create_forward_market(market_class, create=True)
         for time_slot in forward_markets.slot_bid_mapping:
-            bid = Bid(f"bid{time_slot}", time_slot, 1, 1, "buyer", time_slot=time_slot)
+            bid = Bid(f"bid{time_slot}", time_slot, 1, 1, TraderDetails("buyer", ""),
+                      time_slot=time_slot)
             forward_markets.bids[bid.id] = bid
-            offer = Offer(f"oid{time_slot}", time_slot, 1, 1, "seller", time_slot=time_slot)
+            offer = Offer(f"oid{time_slot}", time_slot, 1, 1, TraderDetails("seller", ""),
+                          time_slot=time_slot)
             forward_markets.offers[offer.id] = offer
-            trade = Trade(f"tid{time_slot}", time_slot, offer, "seller", "buyer",
+            trade = Trade(f"tid{time_slot}", time_slot, TraderDetails("seller", ""),
+                          TraderDetails("buyer", ""), offer=offer,
                           time_slot=time_slot, traded_energy=1, trade_price=1)
             forward_markets.trades.append(trade)
 
