@@ -75,7 +75,7 @@ class AcceptOfferParameters:
                 "energy": self.energy,
                 "trade_rate": self.trade_rate,
                 "already_tracked": self.already_tracked,
-                "trade_bid_info": self.trade_bid_info}
+                "trade_bid_info": self.trade_bid_info.serializable_dict()}
 
     def accept_offer_using_market_object(self) -> Trade:
         """Calls accept offer on the market object that is contained in the dataclass,
@@ -399,17 +399,15 @@ class Offers:
         return deleted_offer_ids
 
     def _remove(self, offer: Offer) -> bool:
-        try:
-            market_id = self.posted.pop(offer)
-            assert isinstance(market_id, str)
-            if market_id in self.sold and offer in self.sold[market_id]:
-                self.strategy.log.warning("Offer already sold, cannot remove it.")
-                self.posted[offer] = market_id
-                return False
-            return True
-        except KeyError:
-            self.strategy.log.warning("Could not find offer to remove")
+        market_id = self.posted.pop(offer)
+        if not market_id:
             return False
+        assert isinstance(market_id, str)
+        if market_id in self.sold and offer in self.sold[market_id]:
+            self.strategy.log.warning("Offer already sold, cannot remove it.")
+            self.posted[offer] = market_id
+            return False
+        return True
 
     def replace(self, old_offer: Offer, new_offer: Offer, market_id: str):
         """Replace old offer with new in the posted dict"""
@@ -419,14 +417,15 @@ class Offers:
     def on_trade(self, market_id: str, trade: Trade) -> None:
         """Update contents of posted and sold dicts on the event of an offer being traded"""
         try:
-            if trade.seller.name == self.strategy.owner.name:
-                for offer_or_bid in trade.match_details.values():
-                    if not offer_or_bid:
-                        continue
-                    if offer_or_bid.id in self.split and offer_or_bid in self.posted:
-                        # remove from posted as it is traded already
-                        self._remove(self.split[offer_or_bid.id])
-                    self.sold_offer(offer_or_bid, market_id)
+            if trade.seller.name != self.strategy.owner.name:
+                return
+            offer = trade.match_details.get("offer")
+            if not offer:
+                return
+            if offer.id in self.split and offer in self.posted:
+                # remove from posted as it is traded already
+                self._remove(self.split[offer.id])
+            self.sold_offer(offer, market_id)
         except AttributeError as ex:
             raise SimulationException("Trade event before strategy was initialized.") from ex
 

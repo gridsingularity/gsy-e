@@ -20,7 +20,8 @@ from logging import getLogger
 from typing import Union, Dict, List, Optional  # noqa
 
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.data_classes import BalancingOffer, BalancingTrade, Offer, TraderDetails
+from gsy_framework.data_classes import (
+    BalancingOffer, BalancingTrade, Offer, TraderDetails, TradeBidOfferInfo)
 from pendulum import DateTime
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
@@ -155,7 +156,7 @@ class BalancingMarket(OneSidedMarket):
             self, offer_or_id: Union[str, BalancingOffer], buyer: TraderDetails, *,
             energy: int = None,
             already_tracked: bool = False, trade_rate: float = None,
-            trade_bid_info: float = None) -> BalancingTrade:
+            trade_bid_info: Optional[TradeBidOfferInfo] = None) -> BalancingTrade:
         if self.readonly:
             raise MarketReadOnlyException()
 
