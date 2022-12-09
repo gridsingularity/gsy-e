@@ -32,7 +32,7 @@ from gsy_e.gsy_e_core.exceptions import GSyException, MarketException
 from gsy_e.gsy_e_core.util import get_market_maker_rate_from_config
 from gsy_e.models.base import AssetType
 from gsy_e.models.market import MarketBase
-from gsy_e.models.state import SmartMeterState
+from gsy_e.models.strategy.state import SmartMeterState
 from gsy_e.models.strategy import BidEnabledStrategy
 from gsy_e.models.strategy.energy_parameters.smart_meter import SmartMeterEnergyParameters
 from gsy_e.models.strategy.update_frequency import (TemplateStrategyBidUpdater,

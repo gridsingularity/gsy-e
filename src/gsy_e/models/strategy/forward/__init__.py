@@ -10,7 +10,7 @@ from gsy_e.models.strategy.forward.order_updater import (
 from gsy_e.models.strategy.trading_strategy_base import TradingStrategyBase
 
 if TYPE_CHECKING:
-    from gsy_e.models.state import StateInterface
+    from gsy_e.models.strategy.state import StateInterface
 
 
 class ForwardStrategyBase(TradingStrategyBase):

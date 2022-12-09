@@ -30,7 +30,7 @@ from gsy_e import constants
 from gsy_e.gsy_e_core.exceptions import MarketException
 from gsy_e.gsy_e_core.util import get_market_maker_rate_from_config
 from gsy_e.models.base import AssetType
-from gsy_e.models.state import PVState
+from gsy_e.models.strategy.state import PVState
 from gsy_e.models.strategy import BidEnabledStrategy
 from gsy_e.models.strategy.energy_parameters.pv import PVEnergyParameters
 from gsy_e.models.strategy.future.strategy import future_market_strategy_factory

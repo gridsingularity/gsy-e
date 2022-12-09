@@ -33,7 +33,7 @@ from gsy_e import constants
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.exceptions import MarketException
 from gsy_e.models.base import AssetType
-from gsy_e.models.state import ESSEnergyOrigin, StorageState
+from gsy_e.models.strategy.state import ESSEnergyOrigin, StorageState
 from gsy_e.models.strategy import BidEnabledStrategy
 from gsy_e.models.strategy.future.strategy import future_market_strategy_factory
 from gsy_e.models.strategy.update_frequency import (

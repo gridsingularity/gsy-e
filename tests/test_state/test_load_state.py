@@ -4,7 +4,7 @@ from math import isclose
 import pytest
 from pendulum import now
 
-from gsy_e.models.state import LoadState
+from gsy_e.models.strategy.state import LoadState
 from tests.test_state.test_consumption_state import TestConsumptionState
 
 

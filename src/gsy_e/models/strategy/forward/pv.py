@@ -12,7 +12,7 @@ from gsy_e.models.strategy.forward.order_updater import ForwardOrderUpdaterParam
 if TYPE_CHECKING:
     from gsy_e.models.market.forward import ForwardMarketBase
     from gsy_framework.data_classes import Trade
-    from gsy_e.models.state import PVState
+    from gsy_e.models.strategy.state import PVState
 
 
 DEFAULT_PV_ORDER_UPDATER_PARAMS = {

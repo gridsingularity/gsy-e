@@ -4,7 +4,7 @@ from unittest.mock import patch
 import pytest
 from pendulum import now, DateTime
 
-from gsy_e.models.state import ProductionState, StateInterface
+from gsy_e.models.strategy.state.base_states import ProductionState, StateInterface
 from tests.test_state.test_prosumption_interface import TestProsumptionInterface
 
 

@@ -26,7 +26,7 @@ from gsy_e.models.strategy.scm import SCMStrategy
 
 if TYPE_CHECKING:
     from gsy_e.models.area import AreaBase, CoefficientArea
-    from gsy_e.models.state import StateInterface
+    from gsy_e.models.strategy.state import StateInterface
 
 
 class SCMPVStrategy(SCMStrategy):

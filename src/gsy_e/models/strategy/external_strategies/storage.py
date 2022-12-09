@@ -29,7 +29,7 @@ from gsy_e.models.strategy.external_strategies import (ExternalMixin,
 from gsy_e.models.strategy.storage import StorageStrategy
 
 if TYPE_CHECKING:
-    from gsy_e.models.state import StorageState
+    from gsy_e.models.strategy.state import StorageState
     from gsy_e.models.strategy import Offers
 
 

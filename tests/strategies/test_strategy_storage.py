@@ -33,7 +33,7 @@ from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.util import change_global_config
 from gsy_e.models.config import SimulationConfig
 from gsy_framework.data_classes import Offer, Trade, BalancingOffer, Bid
-from gsy_e.models.state import EnergyOrigin, ESSEnergyOrigin
+from gsy_e.models.strategy.state import EnergyOrigin, ESSEnergyOrigin
 from gsy_e.models.strategy.storage import StorageStrategy
 
 DeviceRegistry.REGISTRY = {

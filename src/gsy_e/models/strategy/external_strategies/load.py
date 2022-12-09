@@ -35,7 +35,7 @@ from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy
 
 if TYPE_CHECKING:
     from gsy_e.models.market.two_sided import TwoSidedMarket
-    from gsy_e.models.state import LoadState
+    from gsy_e.models.strategy.state import LoadState
 
 logger = logging.getLogger(__name__)
 

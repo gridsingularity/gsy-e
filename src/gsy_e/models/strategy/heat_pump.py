@@ -6,7 +6,7 @@ from gsy_framework.enums import AvailableMarketTypes
 from pendulum import DateTime, duration
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
-from gsy_e.models.state import HeatPumpState
+from gsy_e.models.strategy.state import HeatPumpState
 from gsy_e.models.strategy.energy_parameters.heat_pump import HeatPumpEnergyParameters
 from gsy_e.models.strategy.order_updater import OrderUpdaterParameters, OrderUpdater
 from gsy_e.models.strategy.trading_strategy_base import TradingStrategyBase
