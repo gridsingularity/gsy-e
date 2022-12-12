@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Dict, TYPE_CHECKING, Optional
 
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.data_classes import Trade
+from gsy_framework.data_classes import Trade, TraderDetails
 from gsy_framework.enums import AvailableMarketTypes
 from pendulum import DateTime, duration
 
@@ -98,7 +98,7 @@ class HeatPumpStrategy(TradingStrategyBase):
             return
 
         time_slot = bid_trade.time_slot
-        if bid_trade.buyer_id != self.owner.uuid:
+        if bid_trade.buyer.origin_uuid != self.owner.uuid:
             return
 
         self._energy_params.event_traded_energy(market, time_slot)
@@ -120,22 +120,20 @@ class HeatPumpStrategy(TradingStrategyBase):
 
         market.bid(
             order_rate * order_energy_kWh, order_energy_kWh,
-            buyer=self.owner.name,
             original_price=order_rate * order_energy_kWh,
-            buyer_origin=self.owner.name,
-            buyer_origin_id=self.owner.uuid,
-            buyer_id=self.owner.uuid,
+            buyer=TraderDetails(self.owner.name, self.owner.uuid,
+                                self.owner.name, self.owner.uuid),
             time_slot=market_slot)
 
     def remove_open_orders(self, market: "MarketBase", market_slot: DateTime):
         if self.area.is_market_spot(market.id):
             bids = [bid
                     for bid in market.bids.values()
-                    if bid.buyer == self.owner.name]
+                    if bid.buyer.name == self.owner.name]
         else:
             bids = [bid
                     for bid in market.slot_bid_mapping[market_slot]
-                    if bid.buyer == self.owner.name]
+                    if bid.buyer.name == self.owner.name]
 
         for bid in bids:
             market.delete_bid(bid)

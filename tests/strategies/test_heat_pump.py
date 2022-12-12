@@ -43,8 +43,8 @@ class TestHeatPumpStrategy:
         order = orders[0]
         assert isclose(order.energy_rate, energy_rate, abs_tol=1e-5)
         assert order.energy == energy_to_buy
-        assert order.buyer == order.buyer_origin == strategy.owner.name
-        assert order.buyer_id == order.buyer_origin_id == strategy.owner.uuid
+        assert order.buyer.name == order.buyer.origin == strategy.owner.name
+        assert order.buyer.uuid == order.buyer.origin_uuid == strategy.owner.uuid
 
     @staticmethod
     def test_heatpump_creates_order_updater_on_spot_on_market_cycle(heatpump_fixture):
