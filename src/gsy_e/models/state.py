@@ -28,7 +28,7 @@ from gsy_framework.utils import (
     limit_float_precision)
 from pendulum import DateTime, duration
 
-from gsy_e.constants import FLOATING_POINT_TOLERANCE
+from gsy_e.constants import FLOATING_POINT_TOLERANCE, RETAIN_PAST_MARKET_STRATEGIES_STATE
 from gsy_e.gsy_e_core.util import is_time_slot_in_past_markets, write_default_to_dict
 
 StorageSettings = ConstSettings.StorageSettings
@@ -967,7 +967,7 @@ class HeatPumpState(StateInterface):
             state_dict["max_energy_demand_kWh"])
 
     def delete_past_state_values(self, current_time_slot: DateTime):
-        if not current_time_slot:
+        if not current_time_slot or RETAIN_PAST_MARKET_STRATEGIES_STATE:
             return
         self._delete_time_slots(self._min_energy_demand_kWh,
                                 self._last_time_slot(current_time_slot))
