@@ -9,7 +9,7 @@ from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.models.state import HeatPumpState
 from gsy_e.models.strategy.profile import EnergyProfile
 
-SPECIFIC_HEAT_CONST_WATER = 0.000116  # [kWh / (K * kg)]
+SPECIFIC_HEAT_CONST_WATER = 0.00116  # [kWh / (K * kg)]
 WATER_DENSITY = 1  # [kg / l]
 
 
@@ -37,7 +37,7 @@ class HeatPumpEnergyParameters:
         self._max_temp_C = max_temp_C
         self._source_type = source_type
         self._tank_volume_l = tank_volume_l
-        self._Q_specific = SPECIFIC_HEAT_CONST_WATER * tank_volume_l * WATER_DENSITY
+        self._Q_specific = SPECIFIC_HEAT_CONST_WATER * tank_volume_l * WATER_DENSITY  # [kWh / K]
         self._slot_length = GlobalConfig.slot_length
         self._max_energy_consumption_kWh = (
                 maximum_power_rating_kW * self._slot_length.total_hours())
@@ -47,7 +47,7 @@ class HeatPumpEnergyParameters:
         if not consumption_profile_uuid and not consumption_kW:
             consumption_kW = ConstSettings.HeatPumpSettings.CONSUMPTION_KW
         self._consumption_kWh: [DateTime, float] = EnergyProfile(
-            consumption_kW, consumption_profile_uuid)
+            consumption_kW * 1000, consumption_profile_uuid)  # EnergyProfile requires values in W
 
         if not external_temp_profile_uuid and not external_temp_C:
             external_temp_C = ConstSettings.HeatPumpSettings.EXT_TEMP_C
@@ -81,7 +81,7 @@ class HeatPumpEnergyParameters:
         self._decrement_posted_energy(time_slot, energy_kWh)
 
         self.state.update_temp_increase_K(
-            self._next_time_slot(time_slot), self._calc_temp_increase_K(time_slot, energy_kWh))
+            time_slot, self._calc_temp_increase_K(time_slot, energy_kWh))
 
     def get_min_energy_demand_kWh(self, time_slot: DateTime) -> float:
         """Get energy that is needed to compensate for the heat los due to heating."""
@@ -90,9 +90,6 @@ class HeatPumpEnergyParameters:
     def get_max_energy_demand_kWh(self, time_slot: DateTime) -> float:
         """Get energy that is needed to heat up the storage to temp_max."""
         return self.state.get_max_energy_demand_kWh(time_slot)
-
-    def _next_time_slot(self, current_time_slot: DateTime) -> DateTime:
-        return current_time_slot + self._slot_length
 
     def _temp_diff_to_energy(self, diff_temp_K: float) -> float:
         return diff_temp_K * self._Q_specific
@@ -133,10 +130,10 @@ class HeatPumpEnergyParameters:
 
     def _populate_state(self, time_slot: DateTime):
         # order matters here
+        self.state.update_storage_temp(time_slot)
+
         self.state.set_temp_decrease_K(
             time_slot, self._calc_temp_decrease_K(time_slot))
-
-        self.state.update_storage_temp(time_slot)
 
         self._calc_energy_demand(time_slot)
 

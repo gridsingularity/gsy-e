@@ -913,8 +913,10 @@ class HeatPumpState(StateInterface):
     def update_storage_temp(self, current_time_slot: DateTime):
         """Update storage temperature of the given slot with the accumulated changes. """
         new_temp = (self.get_storage_temp_C(self._last_time_slot(current_time_slot))
-                    - self.get_temp_decrease_K(current_time_slot)
-                    + self.get_temp_increase_K(current_time_slot))
+                    - self.get_temp_decrease_K(self._last_time_slot(current_time_slot))
+                    + self.get_temp_increase_K(self._last_time_slot(current_time_slot)))
+        if new_temp < -FLOATING_POINT_TOLERANCE:
+            raise UnexpectedStateException("Storage of heat pump should not drop below zero.")
         self._storage_temp_C[current_time_slot] = new_temp
 
     def set_min_energy_demand_kWh(self, time_slot: DateTime, energy_kWh: float):

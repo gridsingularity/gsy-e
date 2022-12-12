@@ -44,7 +44,7 @@ def get_setup(config):
                 [
                     Area(
                         "H1 Heat Pump",
-                        strategy=HeatPumpStrategy(consumption_kW=20),
+                        strategy=HeatPumpStrategy(),
                     ),
                 ],
                 grid_fee_percentage=0,
