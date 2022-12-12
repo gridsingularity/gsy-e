@@ -15,18 +15,20 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import json
 # pylint: disable=missing-function-docstring, protected-access, unused-import
 import uuid
 
 import pytest
-from gsy_framework.constants_limits import ConstSettings, DATE_TIME_FORMAT
+from gsy_framework.constants_limits import DATE_TIME_FORMAT, ConstSettings
 
 from gsy_e.models.strategy.external_strategies.load import LoadHoursExternalStrategy
-from tests.strategies.external.fixtures import (future_market_fixture, # noqa
-                                                settlement_market_fixture)  # noqa
+from tests.strategies.external.fixtures import future_market_fixture  # noqa
+from tests.strategies.external.fixtures import settlement_market_fixture  # noqa
 from tests.strategies.external.utils import (
+    assert_bid_offer_aggregator_commands_return_value,
     check_external_command_endpoint_with_correct_payload_succeeds,
-    create_areas_markets_for_strategy_fixture, assert_bid_offer_aggregator_commands_return_value)
+    create_areas_markets_for_strategy_fixture)
 
 
 @pytest.fixture(name="external_load")
@@ -122,8 +124,9 @@ class TestLoadForecastExternalStrategy:
             )
 
             assert return_value["status"] == "ready"
-            assert len(future_markets.bids.values()) == 1
-            assert list(future_markets.bids.values())[0].energy == future_energy_kWh
+            bid_id = json.loads(return_value["bid"])["id"]
+            assert future_markets.bids[bid_id].energy == future_energy_kWh
+        assert len(future_markets.bids.values()) == len(future_markets.market_time_slots)
 
     @staticmethod
     def test_offer_aggregator_places_settlement_offer(external_load, settlement_market):

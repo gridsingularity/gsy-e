@@ -40,7 +40,7 @@ class SmartMeterExternalMixin(ExternalMixin):
     Mixin for enabling an external api for the SmartMeter strategies.
     Should always be inherited together with a superclass of SmartMeterStrategy.
     """
-
+    # pylint: disable=broad-except
     # state
     state: "SmartMeterState"
     _delete_past_state: Callable
@@ -256,7 +256,7 @@ class SmartMeterExternalMixin(ExternalMixin):
         return [
             {"id": v.id, "price": v.price, "energy": v.energy}
             for _, v in market.get_offers().items()
-            if v.seller == self.device.name]
+            if v.seller.name == self.device.name]
 
     def filtered_market_bids(self, market: MarketBase) -> List[Dict]:
         """
@@ -269,7 +269,7 @@ class SmartMeterExternalMixin(ExternalMixin):
         return [
             {"id": bid.id, "price": bid.price, "energy": bid.energy}
             for _, bid in market.get_bids().items()
-            if bid.buyer == self.device.name]
+            if bid.buyer.name == self.device.name]
 
     def _bid_aggregator(self, arguments: Dict) -> Dict:
         """Post the bid to the market."""
@@ -318,7 +318,7 @@ class SmartMeterExternalMixin(ExternalMixin):
                 "command": "bid",
                 "status": "ready",
                 "area_uuid": self.device.uuid,
-                "bid": bid.to_json_string(replace_existing=replace_existing),
+                "bid": bid.to_json_string(),
                 "market_type": market.type_name,
                 "transaction_id": arguments.get("transaction_id"),
                 "message": response_message}
@@ -411,7 +411,7 @@ class SmartMeterExternalMixin(ExternalMixin):
                 **offer_arguments)
             response = {"command": "offer", "status": "ready",
                         "market_type": market.type_name,
-                        "offer": offer.to_json_string(replace_existing=replace_existing),
+                        "offer": offer.to_json_string(),
                         "area_uuid": self.device.uuid,
                         "transaction_id": arguments.get("transaction_id"),
                         "message": response_message}

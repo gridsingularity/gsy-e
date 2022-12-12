@@ -83,7 +83,7 @@ class PVExternalMixin(ExternalMixin):
             market = self._get_market_from_command_argument(arguments)
             filtered_offers = [{"id": v.id, "price": v.price, "energy": v.energy}
                                for _, v in market.get_offers().items()
-                               if v.seller == self.device.name]
+                               if v.seller.name == self.device.name]
             response = {"command": "list_offers", "status": "ready",
                         "offer_list": filtered_offers,
                         "transaction_id": arguments.get("transaction_id")}
@@ -193,7 +193,7 @@ class PVExternalMixin(ExternalMixin):
                 response_channel,
                 {"command": "offer", "status": "ready",
                  "market_type": market.type_name,
-                 "offer": offer.to_json_string(replace_existing=replace_existing),
+                 "offer": offer.to_json_string(),
                  "transaction_id": arguments.get("transaction_id")})
         except (AssertionError, GSyException):
             error_message = (f"Error when handling offer create on area {self.device.name}: "
@@ -295,7 +295,7 @@ class PVExternalMixin(ExternalMixin):
             market = self._get_market_from_command_argument(arguments)
             filtered_offers = [{"id": v.id, "price": v.price, "energy": v.energy}
                                for v in market.get_offers().values()
-                               if v.seller == self.device.name]
+                               if v.seller.name == self.device.name]
             response = {
                 "command": "list_offers", "status": "ready", "offer_list": filtered_offers,
                 "area_uuid": self.device.uuid,
@@ -391,7 +391,7 @@ class PVForecastExternalStrategy(ForecastExternalMixin, PVPredefinedExternalStra
     Strategy responsible for reading forecast and measurement production data via hardware API
     """
 
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments,unused-argument
     def __init__(
             self, panel_count=1,
             initial_selling_rate: float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,

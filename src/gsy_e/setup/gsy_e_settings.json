@@ -4,7 +4,7 @@
     "slot_length": "15m",
     "tick_length": "15s",
     "cloud_coverage": 0,
-    "start_date": "2022-11-10"
+    "start_date": "2022-11-28"
   },
   "advanced_settings": {
     "GeneralSettings": {
@@ -48,7 +48,8 @@
       "FUTURE_MARKET_CLEARING_INTERVAL_MINUTES": 15
     },
     "ForwardMarketSettings": {
-      "ENABLE_FORWARD_MARKETS": false
+      "ENABLE_FORWARD_MARKETS": false,
+      "FULLY_AUTO_TRADING": true
     },
     "AreaSettings": {
       "PERCENTAGE_FEE_LIMIT": [
