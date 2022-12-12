@@ -101,14 +101,14 @@ class TestHeatPumpStrategy:
 
     @staticmethod
     @pytest.mark.parametrize("heatpump_fixture", [{"order_updater_parameters": {}}], indirect=True)
+    @patch("gsy_framework.constants_limits.GlobalConfig.FEED_IN_TARIFF", 20)
+    @patch("gsy_framework.constants_limits.GlobalConfig.market_maker_rate", 30)
     def test_order_updater_parameters_get_initiated_with_default_values(heatpump_fixture):
         strategy = heatpump_fixture[0]
         strategy._get_energy_buy_energy = MagicMock(return_value=1)
         strategy.event_market_cycle()
-        assert strategy._order_updater_params[AvailableMarketTypes.SPOT].initial_rate == (
-            GlobalConfig.FEED_IN_TARIFF)
-        assert strategy._order_updater_params[
-                   AvailableMarketTypes.SPOT].final_rate == GlobalConfig.market_maker_rate
+        assert strategy._order_updater_params[AvailableMarketTypes.SPOT].initial_rate == 20
+        assert strategy._order_updater_params[AvailableMarketTypes.SPOT].final_rate == 30
 
     @staticmethod
     @patch("gsy_framework.constants_limits.GlobalConfig.FEED_IN_TARIFF", RATE_PROFILE)

@@ -30,7 +30,6 @@ class TestHeatPumpEnergyParameters:
         energy_params.event_activate()
         assert len(energy_params._consumption_kWh.profile) == 24
         assert len(energy_params._ext_temp_C.profile) == 24
-        # assert
 
     @staticmethod
     def test_event_market_cycle_populates_profiles(energy_params):
