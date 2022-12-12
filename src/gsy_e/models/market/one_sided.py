@@ -21,7 +21,7 @@ from math import isclose
 from typing import Union, Dict, List, Optional, Callable, Tuple
 
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.data_classes import Offer, Trade, TradeBidOfferInfo
+from gsy_framework.data_classes import Offer, Trade, TradeBidOfferInfo, TraderDetails
 from gsy_framework.enums import SpotMarketTypeEnum
 from pendulum import DateTime
 
@@ -95,14 +95,12 @@ class OneSidedMarket(MarketBase):
 
     @lock_market_action
     def offer(  # pylint: disable=too-many-arguments, too-many-locals
-            self, price: float, energy: float, seller: str, seller_origin: str,
+            self, price: float, energy: float, seller: TraderDetails,
             offer_id: Optional[str] = None,
             original_price: Optional[float] = None,
             dispatch_event: bool = True,
             adapt_price_with_fees: bool = True,
             add_to_history: bool = True,
-            seller_origin_id: Optional[str] = None,
-            seller_id: Optional[str] = None,
             attributes: Optional[Dict] = None,
             requirements: Optional[List[Dict]] = None,
             time_slot: Optional[DateTime] = None) -> Offer:
@@ -127,9 +125,8 @@ class OneSidedMarket(MarketBase):
 
         if offer_id is None:
             offer_id = self.bc_interface.create_new_offer(energy, price, seller)
-        offer = Offer(offer_id, self.now, price, energy, seller, original_price,
-                      seller_origin=seller_origin, seller_origin_id=seller_origin_id,
-                      seller_id=seller_id, attributes=attributes, requirements=requirements,
+        offer = Offer(offer_id, self.now, price, energy,
+                      seller, original_price, attributes=attributes, requirements=requirements,
                       time_slot=time_slot)
 
         self.offers[offer.id] = offer
@@ -188,9 +185,6 @@ class OneSidedMarket(MarketBase):
                                     seller=original_offer.seller,
                                     original_price=original_accepted_price,
                                     dispatch_event=False,
-                                    seller_origin=original_offer.seller_origin,
-                                    seller_origin_id=original_offer.seller_origin_id,
-                                    seller_id=original_offer.seller_id,
                                     adapt_price_with_fees=False,
                                     add_to_history=False,
                                     attributes=original_offer.attributes,
@@ -208,9 +202,6 @@ class OneSidedMarket(MarketBase):
                                     seller=original_offer.seller,
                                     original_price=original_residual_price,
                                     dispatch_event=False,
-                                    seller_origin=original_offer.seller_origin,
-                                    seller_origin_id=original_offer.seller_origin_id,
-                                    seller_id=original_offer.seller_id,
                                     adapt_price_with_fees=False,
                                     add_to_history=True,
                                     attributes=original_offer.attributes,
@@ -248,14 +239,11 @@ class OneSidedMarket(MarketBase):
 
     @lock_market_action
     def accept_offer(  # pylint: disable=too-many-locals
-            self, offer_or_id: Union[str, Offer], buyer: str, *,
+            self, offer_or_id: Union[str, Offer], buyer: TraderDetails, *,
             energy: Optional[float] = None,
             already_tracked: bool = False,
             trade_rate: Optional[float] = None,
-            trade_bid_info: Optional[TradeBidOfferInfo] = None,
-            buyer_origin: Optional[str] = None,
-            buyer_origin_id: Optional[str] = None,
-            buyer_id: Optional[str] = None) -> Trade:
+            trade_bid_info: Optional[TradeBidOfferInfo] = None) -> Trade:
         """Accept an offer and create a Trade."""
 
         if self.readonly:
@@ -315,13 +303,12 @@ class OneSidedMarket(MarketBase):
         offer_bid_trade_info = self.fee_class.propagate_original_bid_info_on_offer_trade(
             trade_original_info=trade_bid_info)
 
-        trade = Trade(trade_id, self.now, offer, offer.seller, buyer,
+        trade = Trade(trade_id, self.now, offer.seller,
+                      buyer=buyer,
+                      offer=offer,
                       traded_energy=energy, trade_price=trade_price, residual=residual_offer,
                       offer_bid_trade_info=offer_bid_trade_info,
-                      seller_origin=offer.seller_origin, buyer_origin=buyer_origin,
-                      fee_price=fee_price, buyer_origin_id=buyer_origin_id,
-                      seller_origin_id=offer.seller_origin_id,
-                      seller_id=offer.seller_id, buyer_id=buyer_id, time_slot=offer.time_slot,
+                      fee_price=fee_price, time_slot=offer.time_slot,
                       matching_requirements=offer_bid_trade_info.matching_requirements
                       if offer_bid_trade_info else None
                       )

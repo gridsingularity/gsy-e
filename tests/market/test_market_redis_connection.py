@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 
 from deepdiff import DeepDiff
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.data_classes import Offer, Trade, Bid
+from gsy_framework.data_classes import Offer, Trade, Bid, TraderDetails
 from pendulum import now, datetime
 
 import gsy_e.models.market.market_redis_connection
@@ -40,11 +40,12 @@ class TestMarketRedisEventPublisher(unittest.TestCase):
         assert "my_uuid" in self.publisher.event_response_uuids
 
     def test_publish_event_subscribes_to_response_and_publishes(self):
-        offer = Offer("1", now(), 2, 3, "A")
-        trade = Trade("2", now(), Offer("accepted", now(), 7, 8, "Z"), "B", "C",
+        offer = Offer("1", now(), 2, 3, TraderDetails("A", ""))
+        trade = Trade("2", now(), TraderDetails("B", ""), TraderDetails("C", ""),
+                      offer=Offer("accepted", now(), 7, 8, TraderDetails("Z", "")),
                       traded_energy=1, trade_price=1)
-        new_offer = Offer("3", now(), 4, 5, "D")
-        existing_offer = Offer("4", now(), 5, 6, "E")
+        new_offer = Offer("3", now(), 4, 5, TraderDetails("D", ""))
+        existing_offer = Offer("4", now(), 5, 6, TraderDetails("E", ""))
         kwargs = {"offer": offer,
                   "trade": trade,
                   "new_offer": new_offer,
@@ -105,10 +106,12 @@ class TestMarketRedisEventSubscriber(unittest.TestCase):
                 "original_bid_rate": 20, "propagated_bid_rate": 30,
                 "original_offer_rate": 99, "propagated_offer_rate": 10,
                 "trade_rate": 12},
-            "offer_or_id": json.dumps({"id": "offer_id2", "type": "Offer",
-                                       "price": 123, "energy": 4321, "seller": "offer_seller2"}),
-            "offer": json.dumps({"id": "offer_id", "type": "Offer",
-                                 "price": 654, "energy": 765, "seller": "offer_seller"}),
+            "offer_or_id": json.dumps({
+                "id": "offer_id2", "type": "Offer",
+                "price": 123, "energy": 4321, "seller": {"name": "offer_seller2", "uuid": ""}}),
+            "offer": json.dumps({
+                "id": "offer_id", "type": "Offer",
+                "price": 654, "energy": 765, "seller": {"name": "offer_seller", "uuid": ""}}),
         }
         output_data = self.subscriber._parse_order_objects(input_data)
         assert isinstance(output_data["offer"], Offer)
@@ -123,30 +126,32 @@ class TestMarketRedisEventSubscriber(unittest.TestCase):
         assert output_data["offer"].id == "offer_id"
         assert output_data["offer"].price == 654
         assert output_data["offer"].energy == 765
-        assert output_data["offer"].seller == "offer_seller"
+        assert output_data["offer"].seller.name == "offer_seller"
         assert output_data["offer_or_id"].id == "offer_id2"
         assert output_data["offer_or_id"].price == 123
         assert output_data["offer_or_id"].energy == 4321
-        assert output_data["offer_or_id"].seller == "offer_seller2"
+        assert output_data["offer_or_id"].seller.name == "offer_seller2"
 
     def test_accept_offer_calls_market_method_and_publishes_response(self):
-        offer = Offer("o_id", test_datetime, 12, 13, "o_seller")
+        offer = Offer("o_id", test_datetime, 12, 13, TraderDetails("o_seller", ""),
+                      time_slot=test_datetime)
         payload = {"data": json.dumps({
-                "buyer": "mykonos",
+                "buyer": TraderDetails("mykonos", "").serializable_dict(),
                 "energy": 12,
                 "offer_or_id": offer.to_json_string(),
                 "transaction_uuid": "trans_id"
             })
         }
-        trade = Trade(id="trade_id", creation_time=now(), offer_bid=offer,
-                      seller="trade_seller", buyer="trade_buyer",
+        trade = Trade(id="trade_id", creation_time=now(), offer=offer,
+                      seller=TraderDetails("trade_seller", ""),
+                      buyer=TraderDetails("trade_buyer", ""),
                       traded_energy=1, trade_price=1)
         self.market.accept_offer = MagicMock(return_value=trade)
         self.subscriber._accept_offer(payload)
         wait(self.subscriber.futures)
         self.subscriber.market.accept_offer.assert_called_once_with(
-            offer_or_id=offer, buyer="mykonos", energy=12
-        )
+            buyer=TraderDetails("mykonos", "").serializable_dict(), energy=12, offer_or_id=offer)
+
         self.subscriber.redis_db.publish.assert_called_once_with(
             "id/ACCEPT_OFFER/RESPONSE", json.dumps({
                 "status": "ready", "trade": trade.to_json_string(), "transaction_uuid": "trans_id"
@@ -156,18 +161,18 @@ class TestMarketRedisEventSubscriber(unittest.TestCase):
     def test_offer_calls_market_method_and_publishes_response(self):
 
         payload = {"data": json.dumps({
-                "seller": "mykonos",
+                "seller": TraderDetails("mykonos", "").serializable_dict(),
                 "energy": 12,
                 "price": 32,
                 "transaction_uuid": "trans_id"
             })
         }
-        offer = Offer("o_id", now(), 32, 12, "o_seller")
+        offer = Offer("o_id", now(), 32, 12, TraderDetails("o_seller", ""))
         self.market.offer = MagicMock(return_value=offer)
         self.subscriber._offer(payload)
         wait(self.subscriber.futures)
         self.subscriber.market.offer.assert_called_once_with(
-            seller="mykonos", energy=12, price=32
+            seller=TraderDetails("mykonos", "").serializable_dict(), energy=12, price=32
         )
         self.subscriber.redis_db.publish.assert_called_once_with(
             "id/OFFER/RESPONSE", json.dumps({
@@ -176,7 +181,8 @@ class TestMarketRedisEventSubscriber(unittest.TestCase):
         )
 
     def test_delete_offer_calls_market_method_and_publishes_response(self):
-        offer = Offer("o_id", test_datetime, 32, 12, "o_seller")
+        offer = Offer("o_id", test_datetime, 32, 12, TraderDetails("o_seller", ""),
+                      time_slot=test_datetime)
         payload = {"data": json.dumps({
                 "offer_or_id": offer.to_json_string(),
                 "transaction_uuid": "trans_id"
@@ -186,9 +192,7 @@ class TestMarketRedisEventSubscriber(unittest.TestCase):
         self.market.delete_offer = MagicMock(return_value=offer)
         self.subscriber._delete_offer(payload)
         wait(self.subscriber.futures)
-        self.subscriber.market.delete_offer.assert_called_once_with(
-            offer_or_id=offer
-        )
+        self.subscriber.market.delete_offer.assert_called_once_with(offer_or_id=offer)
         self.subscriber.redis_db.publish.assert_called_once_with(
             "id/DELETE_OFFER/RESPONSE",
             json.dumps({"status": "ready", "transaction_uuid": "trans_id"})
@@ -219,16 +223,17 @@ class TestTwoSidedMarketRedisEventSubscriber(unittest.TestCase):
         )
 
     def test_accept_bid_calls_market_method_and_publishes_response(self):
-        bid = Bid("b_id", now(), 12, 13, "b_buyer")
+        bid = Bid("b_id", now(), 12, 13, TraderDetails("b_buyer", ""))
         payload = {"data": json.dumps({
-                "seller": "mykonos",
+                "seller": TraderDetails("mykonos", "").serializable_dict(),
                 "energy": 12,
                 "bid": bid.to_json_string(),
                 "transaction_uuid": "trans_id"
             })
         }
-        trade = Trade(id="trade_id", creation_time=now(), offer_bid=bid,
-                      seller="trade_seller", buyer="trade_buyer",
+        trade = Trade(id="trade_id", creation_time=now(), bid=bid,
+                      seller=TraderDetails("trade_seller", ""),
+                      buyer=TraderDetails("trade_buyer", ""),
                       traded_energy=1, trade_price=1)
         self.market.accept_bid = MagicMock(return_value=trade)
         self.subscriber._accept_bid(payload)
@@ -243,18 +248,18 @@ class TestTwoSidedMarketRedisEventSubscriber(unittest.TestCase):
 
     def test_bid_calls_market_method_and_publishes_response(self):
         payload = {"data": json.dumps({
-                "buyer": "mykonos",
+                "buyer": TraderDetails("mykonos", "").serializable_dict(),
                 "energy": 12,
                 "price": 32,
                 "transaction_uuid": "trans_id"
             })
         }
-        bid = Bid("b_id", now(), 32, 12, "b_buyer", "b_seller")
+        bid = Bid("b_id", now(), 32, 12, TraderDetails("b_buyer", ""))
         self.market.bid = MagicMock(return_value=bid)
         self.subscriber._bid(payload)
         wait(self.subscriber.futures)
         self.subscriber.market.bid.assert_called_once_with(
-            buyer="mykonos", energy=12, price=32
+            buyer=TraderDetails("mykonos", "").serializable_dict(), energy=12, price=32
         )
         self.subscriber.redis_db.publish.assert_called_once_with(
             "id/BID/RESPONSE", json.dumps({
@@ -263,7 +268,7 @@ class TestTwoSidedMarketRedisEventSubscriber(unittest.TestCase):
         )
 
     def test_delete_bid_calls_market_method_and_publishes_response(self):
-        bid = Bid("b_id", now(), 32, 12, "b_buyer", "b_seller")
+        bid = Bid("b_id", now(), 32, 12, TraderDetails("b_buyer", ""))
         payload = {"data": json.dumps({
                 "bid": bid.to_json_string(),
                 "transaction_uuid": "trans_id"

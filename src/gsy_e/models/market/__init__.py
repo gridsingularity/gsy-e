@@ -224,9 +224,9 @@ class MarketBase:  # pylint: disable=too-many-instance-attributes
             self.market_fee += trade.fee_price
         self._update_accumulated_trade_price_energy(trade)
         self.traded_energy = add_or_create_key(
-            self.traded_energy, trade.seller, order.energy)
+            self.traded_energy, trade.seller.name, order.energy)
         self.traded_energy = subtract_or_create_key(
-            self.traded_energy, trade.buyer, order.energy)
+            self.traded_energy, trade.buyer.name, order.energy)
         self._update_min_max_avg_trade_prices(order.energy_rate)
 
     def _update_accumulated_trade_price_energy(self, trade: Trade):
@@ -274,22 +274,21 @@ class MarketBase:  # pylint: disable=too-many-instance-attributes
     def bought_energy(self, buyer: str) -> float:
         """Return the aggregated bought energy value by the passed-in buyer."""
 
-        return sum(trade.traded_energy for trade in self.trades if trade.buyer == buyer)
+        return sum(trade.traded_energy for trade in self.trades if trade.buyer.name == buyer)
 
     def sold_energy(self, seller: str) -> float:
         """Return the aggregated sold energy value by the passed-in seller."""
 
-        return sum(trade.traded_energy for trade in self.trades if trade.seller == seller)
+        return sum(trade.traded_energy for trade in self.trades if trade.seller.name == seller)
 
     def total_spent(self, buyer: str) -> float:
         """Return the aggregated money spent by the passed-in buyer."""
 
-        return sum(trade.trade_price for trade in self.trades if trade.buyer == buyer)
+        return sum(trade.trade_price for trade in self.trades if trade.buyer.name == buyer)
 
     def total_earned(self, seller: str) -> float:
         """Return the aggregated money earned by the passed-in seller."""
-
-        return sum(trade.trade_price for trade in self.trades if trade.seller == seller)
+        return sum(trade.trade_price for trade in self.trades if trade.seller.name == seller)
 
     @staticmethod
     def _calculate_closing_time(delivery_time: DateTime) -> DateTime:

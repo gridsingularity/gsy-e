@@ -35,27 +35,27 @@ class OfferBidTradeGraphStats:
             self.state[area.name][last_past_market.time_slot] = {}
 
         for bid in last_past_market.bid_history:
-            self.check_and_create_color_mapping(bid.buyer_origin)
+            self.check_and_create_color_mapping(bid.buyer.origin)
             self.check_and_create_list(area, last_past_market, bid)
             info_dict = {"rate": bid.energy_rate, "tag": "bid",
-                         "color": self.color_mapping[bid.buyer_origin],
-                         "buyer_origin": bid.buyer_origin, "energy": bid.energy}
+                         "color": self.color_mapping[bid.buyer.origin],
+                         "buyer_origin": bid.buyer.origin, "energy": bid.energy}
             self.state[area.name][last_past_market.time_slot][bid.creation_time].append(info_dict)
 
         for offer in last_past_market.offer_history:
-            self.check_and_create_color_mapping(offer.seller_origin)
+            self.check_and_create_color_mapping(offer.seller.origin)
             self.check_and_create_list(area, last_past_market, offer)
             self.state[area.name][last_past_market.time_slot][offer.creation_time].append(
                 {"rate": offer.energy_rate, "tag": "offer",
-                 "color": self.color_mapping[offer.seller_origin],
-                 "seller_origin": offer.seller_origin, "energy": offer.energy})
+                 "color": self.color_mapping[offer.seller.origin],
+                 "seller_origin": offer.seller.origin, "energy": offer.energy})
 
         for trade in last_past_market.trades:
-            self.check_and_create_color_mapping(trade.seller_origin)
+            self.check_and_create_color_mapping(trade.seller.origin)
             self.check_and_create_list(area, last_past_market, trade)
             info_dict = {"rate": trade.trade_rate, "tag": "trade",
-                         "color": self.color_mapping[trade.seller_origin],
-                         "seller_origin": trade.seller_origin, "buyer_origin": trade.buyer_origin,
+                         "color": self.color_mapping[trade.seller.origin],
+                         "seller_origin": trade.seller.origin, "buyer_origin": trade.buyer.origin,
                          "energy": trade.traded_energy}
             self.state[area.name][last_past_market.time_slot][trade.creation_time].append(
                 info_dict)
