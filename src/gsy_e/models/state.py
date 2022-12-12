@@ -985,9 +985,9 @@ class HeatPumpState(StateInterface):
 
     def get_results_dict(self, current_time_slot: DateTime) -> Dict:
         return {
-            "storage_temp_CC": self.get_storage_temp_C(current_time_slot),
-            "temp_decrease_KK": self.get_temp_decrease_K(current_time_slot),
-            "temp_increase_KK": self.get_temp_increase_K(current_time_slot)
+            "storage_temp_C": self.get_storage_temp_C(current_time_slot),
+            "temp_decrease_K": self.get_temp_decrease_K(current_time_slot),
+            "temp_increase_K": self.get_temp_increase_K(current_time_slot)
         }
 
     def _last_time_slot(self, current_market_slot: DateTime) -> DateTime:
