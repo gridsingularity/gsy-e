@@ -147,10 +147,18 @@ class HeatPumpEnergyParameters:
         return self._get_cop(time_slot) * consumption_kWh
 
     def _get_cop(self, time_slot: DateTime) -> float:
-        return self._calc_cop(self.state.get_storage_temp_C(time_slot),
-                              self._ext_temp_C.profile[time_slot])
+        """
+        Return the coefficient of performance (COP) for a given ambient and storage temperature.
+        The COP of a heat pump depends on various parameters, but can be modeled using
+        the two temperatures.
+        Generally, the higher the temperature difference between the source and the sink,
+        the lower the efficiency of the heat pump (the lower COP).
+        """
+        return self._cop_model(self.state.get_storage_temp_C(time_slot),
+                               self._ext_temp_C.profile[time_slot])
 
-    def _calc_cop(self, temp_current: float, temp_ambient: float) -> float:
+    def _cop_model(self, temp_current: float, temp_ambient: float) -> float:
+        """COP model following https://www.nature.com/articles/s41597-019-0199-y"""
         delta_temp = temp_current - temp_ambient
         if self._source_type == HeatPumpSourceType.AIR.value:
             return 6.08 - 0.09 * delta_temp + 0.0005 * delta_temp**2
