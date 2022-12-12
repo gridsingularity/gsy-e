@@ -1,4 +1,5 @@
-from typing import Dict, TYPE_CHECKING
+from dataclasses import dataclass
+from typing import Dict, TYPE_CHECKING, Optional
 
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Trade
@@ -6,25 +7,38 @@ from gsy_framework.enums import AvailableMarketTypes
 from pendulum import DateTime, duration
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
+from gsy_e.gsy_e_core.util import (get_market_maker_rate_from_config,
+                                   get_feed_in_tariff_rate_from_config)
 from gsy_e.models.state import HeatPumpState
 from gsy_e.models.strategy.energy_parameters.heat_pump import HeatPumpEnergyParameters
-from gsy_e.models.strategy.trading_strategy_base import TradingStrategyBase
 from gsy_e.models.strategy.order_updater import OrderUpdaterParameters, OrderUpdater
-
-DEFAULT_HEAT_PUMP_ORDER_UPDATE_PARAMS = {
-    AvailableMarketTypes.SPOT: OrderUpdaterParameters(
-        initial_rate=ConstSettings.HeatPumpSettings.BUYING_RATE_RANGE.initial,
-        final_rate=ConstSettings.HeatPumpSettings.BUYING_RATE_RANGE.final,
-        update_interval=duration(
-                minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)),
-}
+from gsy_e.models.strategy.trading_strategy_base import TradingStrategyBase
 
 if TYPE_CHECKING:
     from gsy_e.models.market import MarketBase
 
 
+@dataclass
+class HeatPumpOrderUpdaterParameters(OrderUpdaterParameters):
+    """Order updater parameters for the HeatPump"""
+    update_interval: Optional[duration] = None
+    initial_rate: Optional[float] = None
+    final_rate: Optional[float] = None
+
+    def update(self, market: "MarketBase", use_default: bool = False):
+        """Update class members if set to None or if global default values should be used."""
+        if use_default or self.update_interval is None:
+            self.update_interval = duration(
+                minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
+        if use_default or self.final_rate is None:
+            self.final_rate = get_market_maker_rate_from_config(market)
+        if use_default or self.initial_rate is None:
+            self.initial_rate = get_feed_in_tariff_rate_from_config(market)
+
+
 class HeatPumpStrategy(TradingStrategyBase):
     """Strategy for heat pumps with storages."""
+
     # pylint: disable=too-many-arguments)
     def __init__(self,
                  maximum_power_rating: float = ConstSettings.HeatPumpSettings.MAX_POWER_RATING_KW,
@@ -36,12 +50,16 @@ class HeatPumpStrategy(TradingStrategyBase):
                  ConstSettings.HeatPumpSettings.CONSUMPTION_KW,
                  source_type: int = ConstSettings.HeatPumpSettings.SOURCE_TYPE,
                  order_updater_parameters: Dict[
-                     AvailableMarketTypes, OrderUpdaterParameters] = None,
+                     AvailableMarketTypes, HeatPumpOrderUpdaterParameters] = None,
                  preferred_buying_rate: float =
                  ConstSettings.HeatPumpSettings.PREFERRED_BUYING_RATE
                  ):
-        if not order_updater_parameters:
-            order_updater_parameters = DEFAULT_HEAT_PUMP_ORDER_UPDATE_PARAMS
+
+        self.use_default_updater_params: bool = not order_updater_parameters
+
+        if self.use_default_updater_params:
+            order_updater_parameters = {
+                AvailableMarketTypes.SPOT: HeatPumpOrderUpdaterParameters()}
 
         super().__init__(order_updater_parameters=order_updater_parameters)
 
@@ -127,10 +145,12 @@ class HeatPumpStrategy(TradingStrategyBase):
             return self._energy_params.energy_loss_kWh.get(market_slot, 1)
         return self._energy_params.energy_demand_kWh.get(market_slot, 1)
 
-    def _create_order_updaters(self, market, market_slot, market_type):
+    def _create_order_updaters(
+            self, market: "MarketBase", market_slot: DateTime, market_type: AvailableMarketTypes):
         if not self._order_updater_for_market_slot_exists(market, market_slot):
             if market not in self._order_updaters:
                 self._order_updaters[market] = {}
+            self._order_updater_params[market_type].update(market, self.use_default_updater_params)
             self._order_updaters[market][market_slot] = OrderUpdater(
                 self._order_updater_params[market_type],
                 market.get_market_parameters_for_market_slot(market_slot))
