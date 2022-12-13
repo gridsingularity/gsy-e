@@ -174,6 +174,7 @@ class TwoSidedEngine(MAEngine):
                     self.owner.name, self.owner.uuid,
                     bid_trade.seller.origin, bid_trade.seller.origin_uuid),
                 trade_offer_info=trade_offer_info,
+                offer=None
             )
             self._delete_forwarded_bids(bid_info)
             self.bid_age.pop(bid_info.source_bid.id, None)
