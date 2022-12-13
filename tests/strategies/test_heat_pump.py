@@ -4,10 +4,10 @@ from typing import TYPE_CHECKING, Tuple
 from unittest.mock import patch, PropertyMock, MagicMock, Mock
 
 import pytest
-from gsy_framework.constants_limits import GlobalConfig, ConstSettings
+from gsy_framework.constants_limits import GlobalConfig, ConstSettings, TIME_ZONE
 from gsy_framework.data_classes import Trade, TraderDetails
 from gsy_framework.enums import AvailableMarketTypes
-from pendulum import datetime
+from pendulum import today
 
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.heat_pump import HeatPumpStrategy, HeatPumpOrderUpdaterParameters
@@ -15,7 +15,7 @@ from gsy_e.models.strategy.heat_pump import HeatPumpStrategy, HeatPumpOrderUpdat
 if TYPE_CHECKING:
     from gsy_e.models.strategy.trading_strategy_base import TradingStrategyBase
 
-CURRENT_MARKET_SLOT = datetime(2022, 6, 13, 0, 0)
+CURRENT_MARKET_SLOT = today(tz=TIME_ZONE)
 RATE_PROFILE = {CURRENT_MARKET_SLOT: 0, CURRENT_MARKET_SLOT.add(minutes=15): 2}
 
 
