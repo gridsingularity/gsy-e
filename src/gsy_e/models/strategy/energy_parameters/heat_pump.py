@@ -91,10 +91,10 @@ class HeatPumpEnergyParameters:
         """Get energy that is needed to heat up the storage to temp_max."""
         return self.state.get_max_energy_demand_kWh(time_slot)
 
-    def _temp_diff_to_energy(self, diff_temp_K: float) -> float:
+    def _temp_diff_to_Q_kWh(self, diff_temp_K: float) -> float:
         return diff_temp_K * self._Q_specific
 
-    def _energy_to_temp_diff(self, energy_kWh: float) -> float:
+    def _Q_kWh_to_temp_diff(self, energy_kWh: float) -> float:
         return energy_kWh / self._Q_specific
 
     def _rotate_profiles(self, current_time_slot: Optional[DateTime] = None):
@@ -104,7 +104,7 @@ class HeatPumpEnergyParameters:
         self.state.delete_past_state_values(current_time_slot)
 
     def _calc_energy_to_buy_maximum(self, time_slot: DateTime) -> float:
-        max_energy_consumption = self._temp_diff_to_energy(
+        max_energy_consumption = self._temp_diff_to_Q_kWh(
             self._max_temp_C -
             self.state.get_storage_temp_C(time_slot) +
             self.state.get_temp_decrease_K(time_slot)) / self._get_cop(time_slot)
@@ -118,15 +118,15 @@ class HeatPumpEnergyParameters:
         temp_diff = self.state.get_temp_decrease_K(time_slot) - max_temp_decrease_allowed
         if temp_diff < -FLOATING_POINT_TOLERANCE:
             return 0
-        min_energy_consumption = self._temp_diff_to_energy(temp_diff) / self._get_cop(time_slot)
+        min_energy_consumption = self._temp_diff_to_Q_kWh(temp_diff) / self._get_cop(time_slot)
         return min(self._max_energy_consumption_kWh, min_energy_consumption)
 
     def _calc_temp_decrease_K(self, time_slot: DateTime) -> float:
-        return self._energy_to_temp_diff(self._calc_Q_consumption(
+        return self._Q_kWh_to_temp_diff(self._calc_Q_from_energy_kWh(
             time_slot, self._consumption_kWh.profile[time_slot]))
 
     def _calc_temp_increase_K(self, time_slot: DateTime, energy_kWh: float) -> float:
-        return self._energy_to_temp_diff(self._calc_Q_consumption(time_slot, energy_kWh))
+        return self._Q_kWh_to_temp_diff(self._calc_Q_from_energy_kWh(time_slot, energy_kWh))
 
     def _populate_state(self, time_slot: DateTime):
         # order matters here
@@ -143,8 +143,8 @@ class HeatPumpEnergyParameters:
         self.state.set_max_energy_demand_kWh(
             time_slot, self._calc_energy_to_buy_maximum(time_slot))
 
-    def _calc_Q_consumption(self, time_slot: DateTime, consumption_kWh: float) -> float:
-        return self._get_cop(time_slot) * consumption_kWh
+    def _calc_Q_from_energy_kWh(self, time_slot: DateTime, energy_kWh: float) -> float:
+        return self._get_cop(time_slot) * energy_kWh
 
     def _get_cop(self, time_slot: DateTime) -> float:
         """
