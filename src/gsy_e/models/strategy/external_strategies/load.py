@@ -208,7 +208,7 @@ class LoadExternalMixin(ExternalMixin):
                 replace_existing=replace_existing)
             response = {
                     "command": "bid", "status": "ready",
-                    "bid": bid.to_json_string(replace_existing=replace_existing),
+                    "bid": bid.to_json_string(),
                     "market_type": market.type_name,
                     "transaction_id": arguments.get("transaction_id"),
                     "message": response_message}

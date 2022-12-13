@@ -354,7 +354,7 @@ class ExternalMixin:
             response = {
                 "command": "offer",
                 "status": "ready",
-                "offer": offer.to_json_string(replace_existing=replace_existing),
+                "offer": offer.to_json_string(),
                 "transaction_id": arguments.get("transaction_id"),
                 "area_uuid": self.device.uuid,
                 "market_type": market.type_name,
@@ -411,7 +411,7 @@ class ExternalMixin:
             )
             response = {
                 "command": "bid", "status": "ready",
-                "bid": bid.to_json_string(replace_existing=replace_existing),
+                "bid": bid.to_json_string(),
                 "area_uuid": self.device.uuid,
                 "transaction_id": arguments.get("transaction_id"),
                 "market_type": market.type_name,

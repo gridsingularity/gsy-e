@@ -249,6 +249,7 @@ class TestFutureMarkets:
                               "origin_uuid": "",
                           },
                           "energy": 10,
+                          "price": 10,
                           "energy_rate": 1.0,
                           "id": "bid1",
                           "original_price": 10,
@@ -259,6 +260,7 @@ class TestFutureMarkets:
             time_slot2.format(DATE_TIME_FORMAT): {
                 "bids": [],
                 "offers": [{"energy": 10,
+                            "price": 10,
                             "energy_rate": 1.0,
                             "id": "offer1",
                             "original_price": 10,

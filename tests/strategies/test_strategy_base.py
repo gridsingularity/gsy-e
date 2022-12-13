@@ -23,7 +23,7 @@ from uuid import uuid4
 import pendulum
 import pytest
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.data_classes import Offer, Trade, Bid, TraderDetails
+from gsy_framework.data_classes import Bid, Offer, Trade, TraderDetails
 from gsy_framework.enums import SpotMarketTypeEnum
 
 from gsy_e.constants import TIME_ZONE
@@ -31,7 +31,7 @@ from gsy_e.gsy_e_core.blockchain_interface import NonBlockchainInterface
 from gsy_e.gsy_e_core.exceptions import MarketException
 from gsy_e.models.market.one_sided import OneSidedMarket
 from gsy_e.models.market.two_sided import TwoSidedMarket
-from gsy_e.models.strategy import BidEnabledStrategy, Offers, BaseStrategy
+from gsy_e.models.strategy import BaseStrategy, BidEnabledStrategy, Offers
 
 
 def teardown_function():
@@ -321,6 +321,28 @@ def test_bid_traded_moves_bid_from_posted_to_traded(base):
     assert base._get_traded_bids_from_market(market.id) == [test_bid]
 
 
+def test_trades_returns_market_trades(base):
+    test_trades = [
+        Trade("123", pendulum.now(), TraderDetails(base.owner.name, ""),
+              TraderDetails("buyer", ""), 10, 5),
+        Trade("123", pendulum.now(), TraderDetails("seller", ""),
+              TraderDetails(base.owner.name, ""), 11, 6),
+        Trade("123", pendulum.now(), TraderDetails("seller", ""),
+              TraderDetails("buyer", ""), 12, 7),
+        Trade("123", pendulum.now(), TraderDetails(base.owner.name, ""),
+              TraderDetails("buyer", ""), 13, 8),
+    ]
+    market = FakeMarket(raises=False, id=21)
+    # pylint: disable=attribute-defined-outside-init
+    market.trades = test_trades
+    base.area._market = market
+    trade_list = list(base.trades[market])
+    assert len(trade_list) == 3
+    assert trade_list[0] == test_trades[0]
+    assert trade_list[1] == test_trades[1]
+    assert trade_list[2] == test_trades[3]
+
+
 @pytest.mark.parametrize("market_class", [OneSidedMarket, TwoSidedMarket])
 def test_can_offer_be_posted(market_class):
     base = BaseStrategy()
@@ -445,19 +467,22 @@ def test_post_offer_with_replace_existing(market_class):
 
     # Post a first offer on the market
     offer_1_args = {
-        "price": 1, "energy": 1, "seller": "seller-name"}
+        "price": 1, "energy": 1, "seller": TraderDetails(
+            "FakeOwner", "", "FakeOwnerOrigin", "")}
     offer = strategy.post_offer(market, replace_existing=False, **offer_1_args)
     assert strategy.offers.open_in_market(market.id) == [offer]
 
     # Post a new offer not replacing the previous ones
     offer_2_args = {
-        "price": 1, "energy": 1, "seller": "seller-name"}
+        "price": 1, "energy": 1, "seller": TraderDetails(
+            "FakeOwner", "", "FakeOwnerOrigin", "")}
     offer_2 = strategy.post_offer(market, replace_existing=False, **offer_2_args)
     assert strategy.offers.open_in_market(market.id) == [offer, offer_2]
 
     # Post a new offer replacing the previous ones (default behavior)
     offer_3_args = {
-        "price": 1, "energy": 1, "seller": "seller-name"}
+        "price": 1, "energy": 1, "seller": TraderDetails(
+            "FakeOwner", "", "FakeOwnerOrigin", "")}
     offer_3 = strategy.post_offer(market, **offer_3_args)
     assert strategy.offers.open_in_market(market.id) == [offer_3]
 
@@ -483,3 +508,9 @@ def test_energy_traded_and_cost_traded(base):
     # energy and costs get accumulated from both offers and bids
     assert base.energy_traded(market.id) == 120
     assert base.energy_traded_costs(market.id) == 6
+
+
+def test_get_market_from_id_returns_none_value_for_nonexistent_market(base):
+    base.area.settlement_markets = {}
+    market = base.get_market_from_id("123123123")
+    assert market is None

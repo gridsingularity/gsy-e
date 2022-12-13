@@ -74,5 +74,4 @@ def assert_bid_offer_aggregator_commands_return_value(return_value, is_offer):
     assert return_value[command_name]["original_price"] == 200.0
     assert return_value[command_name][
         "seller" if is_offer else "buyer"]["origin"] == "external_asset"
-    assert return_value[command_name]["replace_existing"] is True
     assert return_value[command_name]["type"] == "Offer" if is_offer else "Bid"

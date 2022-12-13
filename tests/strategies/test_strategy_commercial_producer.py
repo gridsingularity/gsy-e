@@ -227,6 +227,7 @@ def test_on_offer_split(area_test2, commercial_test2):
                            energy=0.75, seller=TraderDetails("FakeArea", ""))
     residual_offer = Offer(id="res_id", creation_time=pendulum.now(), price=55,
                            energy=0.25, seller=TraderDetails("FakeArea", ""))
+    commercial_test2.offers.post(original_offer, area_test2.test_market.id)
     commercial_test2.event_offer_split(market_id=area_test2.test_market.id,
                                        original_offer=original_offer,
                                        accepted_offer=accepted_offer,

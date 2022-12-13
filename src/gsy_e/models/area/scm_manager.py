@@ -1,8 +1,8 @@
 import logging
 from calendar import monthrange
-from dataclasses import dataclass, asdict, field
+from dataclasses import asdict, dataclass, field
 from math import isclose
-from typing import Dict, TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional
 from uuid import uuid4
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
@@ -10,8 +10,8 @@ from gsy_framework.data_classes import Trade, TraderDetails
 from pendulum import DateTime, duration
 
 import gsy_e.constants
-from gsy_e.constants import (
-    DEFAULT_SCM_GRID_NAME, DEFAULT_SCM_COMMUNITY_NAME, FLOATING_POINT_TOLERANCE)
+from gsy_e.constants import (DEFAULT_SCM_COMMUNITY_NAME, DEFAULT_SCM_GRID_NAME,
+                             FLOATING_POINT_TOLERANCE)
 from gsy_e.models.strategy.scm import SCMStrategy
 
 if TYPE_CHECKING:
@@ -40,6 +40,7 @@ class HomeAfterMeterData:
     community_total_production_kWh: float = 0.
     _self_production_for_community_kWh: float = 0.
     trades: List[Trade] = None
+    asset_energy_requirements_kWh: Dict[str, float] = field(default_factory=dict)
 
     def to_dict(self) -> Dict:
         """Dict representation of the home after meter data."""
@@ -330,7 +331,8 @@ class SCMManager:
                       taxes_surcharges: float, fixed_monthly_fee: float,
                       marketplace_monthly_fee: float,
                       market_maker_rate: float, feed_in_tariff: float,
-                      production_kWh: float, consumption_kWh: float):
+                      production_kWh: float, consumption_kWh: float,
+                      asset_energy_requirements_kWh: Dict[str, float]):
         # pylint: disable=too-many-arguments
         """Import data for one individual home."""
         if grid_fees is None:
@@ -344,7 +346,9 @@ class SCMManager:
             taxes_surcharges=taxes_surcharges,
             market_maker_rate=market_maker_rate,
             feed_in_tariff=feed_in_tariff,
-            production_kWh=production_kWh, consumption_kWh=consumption_kWh)
+            production_kWh=production_kWh,
+            consumption_kWh=consumption_kWh,
+            asset_energy_requirements_kWh=asset_energy_requirements_kWh)
 
     def calculate_community_after_meter_data(self):
         """Calculate community data by aggregating all single home data."""
