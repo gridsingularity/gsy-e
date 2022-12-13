@@ -16,7 +16,6 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 # pylint: disable=too-many-arguments, too-many-locals, no-member
-from abc import abstractmethod
 from collections import UserDict
 from copy import deepcopy
 from logging import getLogger
@@ -28,8 +27,7 @@ from gsy_framework.utils import is_time_slot_in_simulation_duration
 from pendulum import DateTime, duration
 
 from gsy_e.gsy_e_core.blockchain_interface import NonBlockchainInterface
-from gsy_e.models.market import GridFee
-from gsy_e.models.market import lock_market_action
+from gsy_e.models.market import GridFee, lock_market_action, MarketSlotParams
 from gsy_e.models.market.two_sided import TwoSidedMarket
 
 if TYPE_CHECKING:
@@ -193,11 +191,6 @@ class FutureMarkets(TwoSidedMarket):
             self.trades, last_slot_to_be_deleted)
 
     @staticmethod
-    def _get_market_slot_duration(_current_time: DateTime, config: "SimulationConfig") -> duration:
-        return config.slot_length
-
-    @staticmethod
-    @abstractmethod
     def _calculate_closing_time(delivery_time: DateTime) -> DateTime:
         """
         Closing time of the market. Uses as basis the delivery time in order to calculate it.
@@ -230,7 +223,7 @@ class FutureMarkets(TwoSidedMarket):
                 self.offers.slot_order_mapping[future_time_slot] = []
                 created_market_slots.append(future_time_slot)
             future_time_slot = (
-                future_time_slot + self._get_market_slot_duration(future_time_slot, config))
+                future_time_slot + self._get_market_slot_duration(config))
         return created_market_slots
 
     def create_future_market_slots(self, current_market_time_slot: DateTime,
@@ -238,7 +231,10 @@ class FutureMarkets(TwoSidedMarket):
         """Add sub dicts in order dictionaries for future market slots."""
         if not ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS:
             return []
-        return self._create_future_market_slots(config, current_market_time_slot)
+        created_future_slots = self._create_future_market_slots(config, current_market_time_slot)
+
+        self.set_open_market_slot_parameters(current_market_time_slot, created_future_slots)
+        return created_future_slots
 
     @lock_market_action
     def bid(self, price: float, energy: float, buyer: TraderDetails,
@@ -283,3 +279,19 @@ class FutureMarkets(TwoSidedMarket):
     def type_name(self):
         """Return the market type representation."""
         return "Future Market"
+
+    def set_open_market_slot_parameters(
+            self, current_market_slot: DateTime, created_market_slots: List[DateTime]):
+        """Update the parameters of the newly opened market slots."""
+        for market_slot in created_market_slots:
+            if market_slot in self._open_market_slot_parameters:
+                continue
+
+            self._open_market_slot_parameters[market_slot] = MarketSlotParams(
+                delivery_start_time=market_slot,
+                delivery_end_time=(
+                        market_slot + self._get_market_slot_duration(None)),
+                opening_time=market_slot - duration(
+                    hours=ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS),
+                closing_time=self._calculate_closing_time(market_slot)
+            )

@@ -21,6 +21,7 @@ from unittest.mock import Mock, MagicMock
 import pytest
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Bid, Offer, Trade, TraderDetails
+from gsy_framework.utils import format_datetime
 from pendulum import today, duration
 
 from gsy_e.constants import TIME_ZONE
@@ -31,7 +32,7 @@ from gsy_e.models.strategy.settlement.strategy import SettlementMarketStrategy
 
 
 class TestSettlementMarketStrategy:
-
+    # pylint: disable=attribute-defined-outside-init,too-many-instance-attributes
     def setup_method(self):
         ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS = True
         self.settlement_strategy = SettlementMarketStrategy(10, 50, 50, 20)
@@ -72,7 +73,8 @@ class TestSettlementMarketStrategy:
         strategy_fixture.simulation_config.sim_duration = duration(days=1)
         strategy_fixture.simulation_config.end_date = today() + duration(days=1)
 
-    def teardown_method(self):
+    @staticmethod
+    def teardown_method():
         ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS = False
 
     @pytest.mark.parametrize(
@@ -168,9 +170,41 @@ class TestSettlementMarketStrategy:
         strategy_fixture.state.set_energy_measurement_kWh(15, self.time_slot)
         unsettled_deviation_dict = self.settlement_strategy.get_unsettled_deviation_dict(
             strategy_fixture)
-        from gsy_framework.utils import format_datetime
         assert len(unsettled_deviation_dict["unsettled_deviation_kWh"]) == 1
         assert (list(unsettled_deviation_dict["unsettled_deviation_kWh"].keys()) ==
                 [format_datetime(self.time_slot)])
         assert (list(unsettled_deviation_dict["unsettled_deviation_kWh"].values()) ==
                 [strategy_fixture.state.get_signed_unsettled_deviation_kWh(self.time_slot)])
+
+    @pytest.mark.parametrize(
+        "strategy_fixture", [LoadHoursStrategy(100), PVStrategy()])
+    def test_get_market_from_id_works_for_settlement_markets(self, strategy_fixture):
+        self._setup_strategy_fixture(strategy_fixture, True, True)
+        market = strategy_fixture.get_market_from_id(self.settlement_markets[self.time_slot].id)
+        assert market == self.settlement_markets[self.time_slot]
+
+    def test_can_get_settlement_bid_be_posted(self):
+        strategy_fixture = LoadHoursStrategy(100)
+        self._setup_strategy_fixture(strategy_fixture, True, False)
+
+        assert strategy_fixture.can_settlement_offer_be_posted(
+            1.1, 1, self.settlement_markets[self.time_slot]) is False
+
+        assert strategy_fixture.can_settlement_bid_be_posted(
+            0.9, 1, self.settlement_markets[self.time_slot]) is True
+
+        assert strategy_fixture.can_settlement_bid_be_posted(
+            1.1, 1, self.settlement_markets[self.time_slot]) is False
+
+    def test_can_get_settlement_offer_be_posted(self):
+        strategy_fixture = PVStrategy()
+        self._setup_strategy_fixture(strategy_fixture, False, True)
+
+        assert strategy_fixture.can_settlement_bid_be_posted(
+            1.1, 1, self.settlement_markets[self.time_slot]) is False
+
+        assert strategy_fixture.can_settlement_offer_be_posted(
+            0.9, 1, self.settlement_markets[self.time_slot]) is True
+
+        assert strategy_fixture.can_settlement_offer_be_posted(
+            1.1, 1, self.settlement_markets[self.time_slot]) is False

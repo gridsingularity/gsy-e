@@ -20,6 +20,7 @@ import json
 import logging
 from typing import TYPE_CHECKING, Callable, Dict, List
 
+from gsy_framework.utils import str_to_pendulum_datetime
 from pendulum import DateTime
 
 from gsy_e.models.market import MarketBase
@@ -216,7 +217,7 @@ class StorageExternalMixin(ExternalMixin):
                 response_channel,
                 {"command": "offer", "status": "ready",
                  "market_type": market.type_name,
-                 "offer": offer.to_json_string(replace_existing=replace_existing),
+                 "offer": offer.to_json_string(),
                  "transaction_id": arguments.get("transaction_id")})
         except Exception:
             logging.exception("Error when handling offer create on area %s: Offer Arguments: %s",
@@ -369,7 +370,7 @@ class StorageExternalMixin(ExternalMixin):
             response = {
                 "command": "bid",
                 "status": "ready",
-                "bid": bid.to_json_string(replace_existing=replace_existing),
+                "bid": bid.to_json_string(),
                 "market_type": market.type_name,
                 "transaction_id": arguments.get("transaction_id"),
                 "message": response_message}
@@ -511,12 +512,14 @@ class StorageExternalMixin(ExternalMixin):
             # Check that every provided argument is allowed
             assert all(arg in allowed_args for arg in arguments.keys())
             market = self._get_market_from_command_argument(arguments)
+            time_slot = market.time_slot if market.time_slot else str_to_pendulum_datetime(
+                arguments["time_slot"])
 
             offer_arguments = {
                 k: v for k, v in arguments.items()
-                if k not in ["transaction_id", "type", "time_slot"]}
+                if k not in ["transaction_id", "type"]}
 
-            assert self.can_offer_be_posted(market.time_slot, offer_arguments)
+            assert self.can_offer_be_posted(time_slot, offer_arguments)
 
             replace_existing = offer_arguments.pop("replace_existing", True)
 
@@ -524,14 +527,14 @@ class StorageExternalMixin(ExternalMixin):
                 market, replace_existing=replace_existing, **offer_arguments)
 
             self.state.reset_offered_sell_energy(
-                self.offers.open_offer_energy(market.id), market.time_slot)
+                self.offers.open_offer_energy(market.id), time_slot)
 
             response = {
                 "command": "offer",
                 "area_uuid": self.device.uuid,
                 "market_type": market.type_name,
                 "status": "ready",
-                "offer": offer.to_json_string(replace_existing=replace_existing),
+                "offer": offer.to_json_string(),
                 "transaction_id": arguments.get("transaction_id"),
                 "message": response_message}
         except Exception:
@@ -565,23 +568,27 @@ class StorageExternalMixin(ExternalMixin):
             assert all(arg in allowed_args for arg in arguments.keys())
 
             market = self._get_market_from_command_argument(arguments)
-            assert self._can_bid_be_posted(market.time_slot, arguments)
+            time_slot = market.time_slot if market.time_slot else str_to_pendulum_datetime(
+                arguments["time_slot"])
+
+            assert self._can_bid_be_posted(time_slot, arguments)
 
             replace_existing = arguments.pop("replace_existing", True)
             bid = self.post_bid(
                 market,
                 arguments["price"],
                 arguments["energy"],
+                time_slot=time_slot,
                 replace_existing=replace_existing,
                 attributes=arguments.get("attributes"),
                 requirements=arguments.get("requirements")
             )
 
             self.state.reset_offered_buy_energy(
-                self.posted_bid_energy(market.id), market.time_slot)
+                self.posted_bid_energy(market.id), time_slot)
             response = {
                 "command": "bid", "status": "ready",
-                "bid": bid.to_json_string(replace_existing=replace_existing),
+                "bid": bid.to_json_string(),
                 "market_type": market.type_name,
                 "area_uuid": self.device.uuid,
                 "transaction_id": arguments.get("transaction_id"),

@@ -140,7 +140,9 @@ class TestTwoSidedMarket:
         with pytest.raises(InvalidBidOfferPairException):
             # should raise an exception as buyer_id is not in trading_partners
             market._validate_requirements_satisfied(recommendation)
-        recommendation.bid.buyer.uuid = "bid_id2"
+        recommendation.bid.buyer = TraderDetails(
+            recommendation.bid.buyer.name, "bid_id2",
+            recommendation.bid.buyer.origin, recommendation.bid.buyer.origin_uuid)
         market._validate_requirements_satisfied(recommendation)  # Should not raise any exceptions
         # bid.requirements.append({"energy_type": ["Grey"]})
         recommendation.matching_requirements["bid_requirement"] = {"energy_type": ["Grey"]}
