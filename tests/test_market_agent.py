@@ -115,7 +115,8 @@ class FakeMarket:
 
     # pylint: disable=unused-argument
     # pylint: disable=too-many-locals
-    def accept_bid(self, bid, energy, seller, buyer=None, *, time=None, trade_offer_info=None):
+    def accept_bid(self, bid, energy, seller, buyer=None, *,
+                   time=None, trade_offer_info=None, offer=None):
         self.calls_energy_bids.append(energy)
         self.calls_bids.append(bid)
         self.calls_bids_price.append(bid.price)

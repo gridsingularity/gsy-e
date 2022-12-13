@@ -540,6 +540,27 @@ class TestTwoSidedMarketMatchRecommendations:
         assert len(market.trades) == 1
 
     @staticmethod
+    def test_match_recommendations_fails_for_same_buyer_seller(market):
+        bid = Bid("bid_id1", pendulum.now(),
+                  price=2, energy=1, buyer=TraderDetails("Buyer", "buyer_id"),
+                  time_slot="2021-10-06T12:00")
+        offer = Offer("offer_id1", pendulum.now(),
+                      price=2, energy=1, seller=TraderDetails("Buyer", "buyer_id"),
+                      time_slot="2021-10-06T12:00")
+
+        market.bids = {"bid_id1": bid}
+        market.offers = {"offer_id1": offer}
+
+        recommendations = [
+            BidOfferMatch(
+                bid=bid.serializable_dict(), offer=offer.serializable_dict(),
+                trade_rate=2, selected_energy=1, market_id=market.id,
+                time_slot="2021-10-06T12:00").serializable_dict()
+        ]
+        market.match_recommendations(recommendations)
+        assert len(market.trades) == 0
+
+    @staticmethod
     @pytest.mark.skip("Attributes / requirements feature disabled.")
     def test_recommendation_with_valid_match_requirements_gets_accepted(market):
         """Test recommended match with valid requirements gets accepted."""
