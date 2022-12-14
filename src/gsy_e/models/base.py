@@ -110,3 +110,8 @@ class AreaBehaviorBase:
     def asset_type(self):
         """Return the asset type of the strategy. Should be implemented by all children."""
         raise NotImplementedError
+
+    @staticmethod
+    def deserialize_args(constructor_args: Dict) -> Dict:
+        """Deserialize the constructor arguments."""
+        return constructor_args
