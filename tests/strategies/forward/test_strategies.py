@@ -10,7 +10,7 @@ from pendulum import duration, datetime
 
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.forward.load import ForwardLoadStrategy
-from gsy_e.models.strategy.forward.order_updater import OrderUpdaterParameters
+from gsy_e.models.strategy.forward.order_updater import ForwardOrderUpdaterParameters
 from gsy_e.models.strategy.forward.pv import ForwardPVStrategy
 
 if TYPE_CHECKING:
@@ -19,20 +19,30 @@ if TYPE_CHECKING:
 CURRENT_MARKET_SLOT = datetime(2022, 6, 13, 0, 0)
 
 load_parameters = {
-    AvailableMarketTypes.INTRADAY: OrderUpdaterParameters(duration(minutes=5), 10, 40, 20),
-    AvailableMarketTypes.DAY_FORWARD: OrderUpdaterParameters(duration(minutes=30), 20, 40, 20),
-    AvailableMarketTypes.WEEK_FORWARD: OrderUpdaterParameters(duration(days=1), 30, 50, 20),
-    AvailableMarketTypes.MONTH_FORWARD: OrderUpdaterParameters(duration(weeks=1), 40, 60, 20),
-    AvailableMarketTypes.YEAR_FORWARD: OrderUpdaterParameters(duration(months=1), 50, 70, 20)
+    AvailableMarketTypes.INTRADAY: ForwardOrderUpdaterParameters(
+        duration(minutes=5), 10, 40, 20),
+    AvailableMarketTypes.DAY_FORWARD: ForwardOrderUpdaterParameters(
+        duration(minutes=30), 20, 40, 20),
+    AvailableMarketTypes.WEEK_FORWARD: ForwardOrderUpdaterParameters(
+        duration(days=1), 30, 50, 20),
+    AvailableMarketTypes.MONTH_FORWARD: ForwardOrderUpdaterParameters(
+        duration(weeks=1), 40, 60, 20),
+    AvailableMarketTypes.YEAR_FORWARD: ForwardOrderUpdaterParameters(
+        duration(months=1), 50, 70, 20)
 }
 
 
 pv_parameters = {
-    AvailableMarketTypes.INTRADAY: OrderUpdaterParameters(duration(minutes=5), 10, 8, 20),
-    AvailableMarketTypes.DAY_FORWARD: OrderUpdaterParameters(duration(minutes=30), 20, 18, 20),
-    AvailableMarketTypes.WEEK_FORWARD: OrderUpdaterParameters(duration(days=1), 30, 28, 20),
-    AvailableMarketTypes.MONTH_FORWARD: OrderUpdaterParameters(duration(weeks=1), 40, 38, 20),
-    AvailableMarketTypes.YEAR_FORWARD: OrderUpdaterParameters(duration(months=1), 50, 48, 20)
+    AvailableMarketTypes.INTRADAY: ForwardOrderUpdaterParameters(
+        duration(minutes=5), 10, 8, 20),
+    AvailableMarketTypes.DAY_FORWARD: ForwardOrderUpdaterParameters(
+        duration(minutes=30), 20, 18, 20),
+    AvailableMarketTypes.WEEK_FORWARD: ForwardOrderUpdaterParameters(
+        duration(days=1), 30, 28, 20),
+    AvailableMarketTypes.MONTH_FORWARD: ForwardOrderUpdaterParameters(
+        duration(weeks=1), 40, 38, 20),
+    AvailableMarketTypes.YEAR_FORWARD: ForwardOrderUpdaterParameters(
+        duration(months=1), 50, 48, 20)
 }
 
 
@@ -69,11 +79,11 @@ class TestForwardStrategies:
             assert order.energy_rate == energy_rate
             assert order.energy == energy
             if isinstance(strategy, ForwardLoadStrategy):
-                assert order.buyer == order.buyer_origin == strategy.owner.name
-                assert order.buyer_id == order.buyer_origin_id == strategy.owner.uuid
+                assert order.buyer.name == order.buyer.origin == strategy.owner.name
+                assert order.buyer.uuid == order.buyer.origin_uuid == strategy.owner.uuid
             else:
-                assert order.seller == order.seller_origin == strategy.owner.name
-                assert order.seller_id == order.seller_origin_id == strategy.owner.uuid
+                assert order.seller.name == order.seller.origin == strategy.owner.name
+                assert order.seller.uuid == order.seller.origin_uuid == strategy.owner.uuid
 
     @staticmethod
     @pytest.mark.parametrize("market_type, expected_order_updater_count, next_slot_timestamp, ", [
@@ -174,9 +184,9 @@ class TestForwardStrategies:
                 assert updated_order.id != old_order_list[0].id
                 assert updated_order.energy == old_order_list[0].energy
                 if isinstance(strategy, ForwardPVStrategy):
-                    assert updated_order.seller_id == old_order_list[0].seller_id
+                    assert updated_order.seller.uuid == old_order_list[0].seller.uuid
                 else:
-                    assert updated_order.buyer_id == old_order_list[0].buyer_id
+                    assert updated_order.buyer.uuid == old_order_list[0].buyer.uuid
                 market_params = area.forward_markets[
                     market_type].get_market_parameters_for_market_slot(time_slot)
                 slot_completion_ratio = updater_params.update_interval.total_minutes() / (

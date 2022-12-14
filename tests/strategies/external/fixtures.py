@@ -22,6 +22,7 @@ def future_market_fixture():
     """Return a futures markets object."""
     original_future_market_count = ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS
     ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS = 2
+    original_market_maker_rate = GlobalConfig.market_maker_rate
     GlobalConfig.market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
     config = create_simulation_config_from_global_config()
     config.start_date = today(tz=TIME_ZONE)
@@ -32,3 +33,4 @@ def future_market_fixture():
     assert len(future_markets.market_time_slots) == 2
     yield future_markets
     ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS = original_future_market_count
+    GlobalConfig.market_maker_rate = original_market_maker_rate

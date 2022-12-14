@@ -40,7 +40,7 @@ class SmartMeterExternalMixin(ExternalMixin):
     Mixin for enabling an external api for the SmartMeter strategies.
     Should always be inherited together with a superclass of SmartMeterStrategy.
     """
-
+    # pylint: disable=broad-except
     # state
     state: "SmartMeterState"
     _delete_past_state: Callable
@@ -109,9 +109,7 @@ class SmartMeterExternalMixin(ExternalMixin):
         transaction_id = self._get_transaction_id(payload)
         required_args = {"price", "energy", "transaction_id"}
         allowed_args = required_args.union({"replace_existing",
-                                            "time_slot",
-                                            "attributes",
-                                            "requirements"})
+                                            "time_slot"})
         offer_response_channel = f"{self.channel_prefix}/response/offer"
         if not ExternalStrategyConnectionManager.check_for_connected_and_reply(
                 self.redis, offer_response_channel, self.connected):
@@ -175,9 +173,7 @@ class SmartMeterExternalMixin(ExternalMixin):
         transaction_id = self._get_transaction_id(payload)
         required_args = {"price", "energy", "transaction_id"}
         allowed_args = required_args.union({"replace_existing",
-                                            "time_slot",
-                                            "attributes",
-                                            "requirements"})
+                                            "time_slot"})
         bid_response_channel = f"{self.channel_prefix}/response/bid"
         if not ExternalStrategyConnectionManager.check_for_connected_and_reply(
                 self.redis, bid_response_channel, self.connected):
@@ -256,7 +252,7 @@ class SmartMeterExternalMixin(ExternalMixin):
         return [
             {"id": v.id, "price": v.price, "energy": v.energy}
             for _, v in market.get_offers().items()
-            if v.seller == self.device.name]
+            if v.seller.name == self.device.name]
 
     def filtered_market_bids(self, market: MarketBase) -> List[Dict]:
         """
@@ -269,7 +265,7 @@ class SmartMeterExternalMixin(ExternalMixin):
         return [
             {"id": bid.id, "price": bid.price, "energy": bid.energy}
             for _, bid in market.get_bids().items()
-            if bid.buyer == self.device.name]
+            if bid.buyer.name == self.device.name]
 
     def _bid_aggregator(self, arguments: Dict) -> Dict:
         """Post the bid to the market."""
@@ -310,15 +306,13 @@ class SmartMeterExternalMixin(ExternalMixin):
                 arguments["price"],
                 arguments["energy"],
                 replace_existing=replace_existing,
-                attributes=arguments.get("attributes"),
-                requirements=arguments.get("requirements"),
                 time_slot=time_slot
             )
             response = {
                 "command": "bid",
                 "status": "ready",
                 "area_uuid": self.device.uuid,
-                "bid": bid.to_json_string(replace_existing=replace_existing),
+                "bid": bid.to_json_string(),
                 "market_type": market.type_name,
                 "transaction_id": arguments.get("transaction_id"),
                 "message": response_message}
@@ -411,7 +405,7 @@ class SmartMeterExternalMixin(ExternalMixin):
                 **offer_arguments)
             response = {"command": "offer", "status": "ready",
                         "market_type": market.type_name,
-                        "offer": offer.to_json_string(replace_existing=replace_existing),
+                        "offer": offer.to_json_string(),
                         "area_uuid": self.device.uuid,
                         "transaction_id": arguments.get("transaction_id"),
                         "message": response_message}

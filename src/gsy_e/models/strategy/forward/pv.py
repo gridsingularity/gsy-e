@@ -1,5 +1,6 @@
 from typing import Dict, TYPE_CHECKING
 
+from gsy_framework.data_classes import TraderDetails
 from gsy_framework.enums import AvailableMarketTypes
 from pendulum import DateTime, duration
 
@@ -7,7 +8,7 @@ from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.models.strategy.energy_parameters.energy_params_eb import (
     ProductionStandardProfileEnergyParameters)
 from gsy_e.models.strategy.forward import ForwardStrategyBase
-from gsy_e.models.strategy.forward.order_updater import OrderUpdaterParameters
+from gsy_e.models.strategy.forward.order_updater import ForwardOrderUpdaterParameters
 
 if TYPE_CHECKING:
     from gsy_e.models.market.forward import ForwardMarketBase
@@ -16,11 +17,16 @@ if TYPE_CHECKING:
 
 
 DEFAULT_PV_ORDER_UPDATER_PARAMS = {
-    AvailableMarketTypes.INTRADAY: OrderUpdaterParameters(duration(minutes=5), 10, 10, 10),
-    AvailableMarketTypes.DAY_FORWARD: OrderUpdaterParameters(duration(minutes=30), 10, 10, 10),
-    AvailableMarketTypes.WEEK_FORWARD: OrderUpdaterParameters(duration(days=1), 10, 10, 10),
-    AvailableMarketTypes.MONTH_FORWARD: OrderUpdaterParameters(duration(weeks=1), 10, 10, 20),
-    AvailableMarketTypes.YEAR_FORWARD: OrderUpdaterParameters(duration(months=1), 10, 10, 50)
+    AvailableMarketTypes.INTRADAY: ForwardOrderUpdaterParameters(
+        duration(minutes=5), 10, 10, 10),
+    AvailableMarketTypes.DAY_FORWARD: ForwardOrderUpdaterParameters(
+        duration(minutes=30), 10, 10, 10),
+    AvailableMarketTypes.WEEK_FORWARD: ForwardOrderUpdaterParameters(
+        duration(days=1), 10, 10, 10),
+    AvailableMarketTypes.MONTH_FORWARD: ForwardOrderUpdaterParameters(
+        duration(weeks=1), 10, 10, 20),
+    AvailableMarketTypes.YEAR_FORWARD: ForwardOrderUpdaterParameters(
+        duration(months=1), 10, 10, 50)
 }
 
 
@@ -31,7 +37,8 @@ class ForwardPVStrategy(ForwardStrategyBase):
     """
     def __init__(
             self, capacity_kW: float,
-            order_updater_parameters: Dict[AvailableMarketTypes, OrderUpdaterParameters] = None):
+            order_updater_parameters: Dict[
+                AvailableMarketTypes, ForwardOrderUpdaterParameters] = None):
         if not order_updater_parameters:
             order_updater_parameters = DEFAULT_PV_ORDER_UPDATER_PARAMS
 
@@ -48,14 +55,14 @@ class ForwardPVStrategy(ForwardStrategyBase):
     def remove_open_orders(self, market: "ForwardMarketBase", market_slot: DateTime):
         offers = [offer
                   for offer in market.slot_offer_mapping[market_slot]
-                  if offer.seller == self.owner.name]
+                  if offer.seller.name == self.owner.name]
         for offer in offers:
             market.delete_offer(offer)
 
     def remove_order(self, market: "ForwardMarketBase", market_slot: DateTime, order_uuid: str):
         offers = [offer
                   for offer in market.slot_offer_mapping[market_slot]
-                  if offer.seller == self.owner.name and offer.id == order_uuid]
+                  if offer.seller.name == self.owner.name and offer.id == order_uuid]
         if not offers:
             self.log.error("Bid with id %s does not exist on the market %s %s.",
                            order_uuid, market.market_type, market_slot)
@@ -63,11 +70,11 @@ class ForwardPVStrategy(ForwardStrategyBase):
         market.delete_offer(offers[0])
 
     def post_order(self, market: "ForwardMarketBase", market_slot: DateTime,
-                   order_rate: float = None, capacity_percent: float = None):
+                   order_rate: float = None, **kwargs):
         if not order_rate:
             order_rate = self._order_updaters[market][market_slot].get_energy_rate(
                 self.area.now)
-
+        capacity_percent = kwargs.get("capacity_percent")
         if not capacity_percent:
             capacity_percent = self._order_updaters[market][market_slot].capacity_percent / 100.0
         max_energy_kWh = self._energy_params.peak_energy_kWh * capacity_percent
@@ -84,11 +91,8 @@ class ForwardPVStrategy(ForwardStrategyBase):
 
         market.offer(
             order_rate * order_energy_kWh, order_energy_kWh,
-            seller=self.owner.name,
+            TraderDetails(self.owner.name, self.owner.uuid, self.owner.name, self.owner.uuid),
             original_price=order_rate * order_energy_kWh,
-            seller_origin=self.owner.name,
-            seller_origin_id=self.owner.uuid,
-            seller_id=self.owner.uuid,
             time_slot=market_slot)
         self._energy_params.increment_posted_energy(
             market_slot, order_energy_kWh, market.market_type)
@@ -101,7 +105,7 @@ class ForwardPVStrategy(ForwardStrategyBase):
         if not market:
             return
 
-        if trade.seller_id != self.owner.uuid:
+        if trade.seller.uuid != self.owner.uuid:
             return
 
         self._energy_params.event_traded_energy(trade.traded_energy,

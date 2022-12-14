@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from logging import getLogger
-from typing import TYPE_CHECKING, List, Union
+from typing import TYPE_CHECKING, List, Union, Optional
 from uuid import uuid4
 
 from gsy_framework.area_validator import validate_area
@@ -29,13 +29,15 @@ from slugify import slugify
 from gsy_e.gsy_e_core.exceptions import AreaException, GSyException
 from gsy_e.gsy_e_core.util import TaggedLogWrapper
 from gsy_e.models.config import SimulationConfig
-from gsy_e.models.strategy import BaseStrategy
+
 
 log = getLogger(__name__)
 
 if TYPE_CHECKING:
     from gsy_e.models.area import Area
     from gsy_framework.data_classes import Trade
+    from gsy_e.models.strategy import BaseStrategy
+    from gsy_e.models.strategy.trading_strategy_base import TradingStrategyBase
 
 
 def check_area_name_exists_in_parent_area(parent_area, name):
@@ -82,7 +84,7 @@ class AreaBase:
     def __init__(self, name: str = None,
                  children: List["Area"] = None,
                  uuid: str = None,
-                 strategy: BaseStrategy = None,
+                 strategy: Optional[Union["BaseStrategy", "TradingStrategyBase"]] = None,
                  config: SimulationConfig = None,
                  grid_fee_percentage: float = None,
                  grid_fee_constant: float = None):
@@ -109,12 +111,12 @@ class AreaBase:
         self.strategy = strategy
         self._config = config
         self._set_grid_fees(grid_fee_constant, grid_fee_percentage)
-        self._current_market_time_slot = None
+        self.current_market_time_slot = None
 
     @property
     def now(self) -> DateTime:
         """Get the current time of the simulation."""
-        return self._current_market_time_slot
+        return self.current_market_time_slot
 
     @property
     def trades(self) -> List["Trade"]:
@@ -231,5 +233,5 @@ class AreaBase:
     def get_results_dict(self):
         """Calculate the results dict for the coefficients trading."""
         if self.strategy is not None:
-            return self.strategy.state.get_results_dict(self._current_market_time_slot)
+            return self.strategy.state.get_results_dict(self.current_market_time_slot)
         return {}

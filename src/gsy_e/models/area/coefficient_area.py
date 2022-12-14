@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from collections import defaultdict
 from logging import getLogger
 from typing import TYPE_CHECKING, List, Optional
 
@@ -24,6 +25,7 @@ from pendulum import DateTime
 
 from gsy_e.models.area.area_base import AreaBase
 from gsy_e.models.config import SimulationConfig
+from gsy_e.models.strategy.external_strategies import ExternalMixin
 from gsy_e.models.strategy.scm import SCMStrategy
 
 log = getLogger(__name__)
@@ -75,17 +77,18 @@ class CoefficientArea(AreaBase):
 
     def activate_energy_parameters(self, current_time_slot: DateTime) -> None:
         """Activate the coefficient-based area parameters."""
-        self._current_market_time_slot = current_time_slot
+        self.current_market_time_slot = current_time_slot
 
         if self.strategy:
+            self.strategy.owner = self
             self.strategy.activate(self)
         for child in self.children:
             child.activate_energy_parameters(current_time_slot)
 
     def cycle_coefficients_trading(self, current_time_slot: DateTime) -> None:
         """Perform operations that should be executed on coefficients trading cycle."""
-        self.past_market_time_slot = self._current_market_time_slot
-        self._current_market_time_slot = current_time_slot
+        self.past_market_time_slot = self.current_market_time_slot
+        self.current_market_time_slot = current_time_slot
 
         if self.strategy:
             self.strategy.market_cycle(self)
@@ -106,14 +109,26 @@ class CoefficientArea(AreaBase):
 
     def _calculate_home_after_meter_data(
             self, current_time_slot: DateTime, scm_manager: "SCMManager") -> None:
-        production_kWh = sum(child.strategy.get_energy_to_sell_kWh(current_time_slot)
-                             for child in self.children)
-        consumption_kWh = sum(child.strategy.get_energy_to_buy_kWh(current_time_slot)
-                              for child in self.children)
+        home_production_kWh = 0
+        home_consumption_kWh = 0
+
+        asset_energy_requirements_kWh = defaultdict(lambda: 0)
+
+        for child in self.children:
+            # import
+            consumption_kWh = child.strategy.get_energy_to_buy_kWh(current_time_slot)
+            asset_energy_requirements_kWh[child.uuid] += consumption_kWh
+            home_consumption_kWh += consumption_kWh
+            # export
+            production_kWh = child.strategy.get_energy_to_sell_kWh(current_time_slot)
+            asset_energy_requirements_kWh[child.uuid] -= production_kWh
+            home_production_kWh += production_kWh
+
         scm_manager.add_home_data(
             self.uuid, self.name, self.grid_fee_constant, self.coefficient_percentage,
             self._taxes_surcharges, self._fixed_monthly_fee, self._marketplace_monthly_fee,
-            self._market_maker_rate, self._feed_in_tariff, production_kWh, consumption_kWh)
+            self._market_maker_rate, self._feed_in_tariff, home_production_kWh,
+            home_consumption_kWh, dict(asset_energy_requirements_kWh))
 
     def calculate_home_after_meter_data(
             self, current_time_slot: DateTime, scm_manager: "SCMManager") -> None:
@@ -149,3 +164,20 @@ class CoefficientArea(AreaBase):
             self._change_home_coefficient_percentage(scm_manager)
         for child in self.children:
             child.change_home_coefficient_percentage(scm_manager)
+
+    def _consume_commands_from_aggregator(self):
+        if self.strategy and getattr(self.strategy, "is_aggregator_controlled", False):
+            self.strategy.redis.aggregator.consume_all_area_commands(
+                self.uuid, self.strategy.trigger_aggregator_commands)
+
+    def market_cycle_external(self):
+        self._consume_commands_from_aggregator()
+        for child in self.children:
+            child.market_cycle_external()
+
+    def publish_market_cycle_to_external_clients(self):
+        """Recursively notify children and external clients about the market cycle event."""
+        if self.strategy and isinstance(self.strategy, ExternalMixin):
+            self.strategy.publish_market_cycle()
+        for child in self.children:
+            child.publish_market_cycle_to_external_clients()

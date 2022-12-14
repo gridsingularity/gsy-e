@@ -15,7 +15,7 @@ see <http://www.gnu.org/licenses/>.
 from typing import Optional, Dict, Iterable, TYPE_CHECKING
 
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.data_classes import Offer, Bid, Trade
+from gsy_framework.data_classes import Trade
 from gsy_framework.utils import format_datetime
 from pendulum import duration
 
@@ -201,12 +201,14 @@ class SettlementMarketStrategy(SettlementMarketStrategyInterface):
         Returns: None
 
         """
-        if isinstance(bid_trade.offer_bid, Offer):
-            return
         market = self._get_settlement_market_by_id(strategy, market_id)
         if not market:
             return
-        if bid_trade.offer_bid.buyer == strategy.owner.name:
+
+        if not bid_trade.is_bid_trade:
+            return
+
+        if bid_trade.match_details["bid"].buyer.name == strategy.owner.name:
             strategy.state.decrement_unsettled_deviation(
                 bid_trade.traded_energy, market.time_slot)
 
@@ -222,12 +224,14 @@ class SettlementMarketStrategy(SettlementMarketStrategyInterface):
         Returns: None
 
         """
-        if isinstance(trade.offer_bid, Bid):
-            return
         market = self._get_settlement_market_by_id(strategy, market_id)
         if not market:
             return
-        if trade.offer_bid.seller == strategy.owner.name:
+
+        if not trade.is_offer_trade:
+            return
+
+        if trade.match_details["offer"].seller.name == strategy.owner.name:
             strategy.state.decrement_unsettled_deviation(
                 trade.traded_energy, market.time_slot)
 

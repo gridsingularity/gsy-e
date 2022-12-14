@@ -5,7 +5,7 @@ from gsy_framework.enums import AvailableMarketTypes
 from gsy_framework.live_events.b2b import LiveEventArgsValidator, B2BLiveEvents
 from gsy_framework.utils import str_to_pendulum_datetime
 
-from gsy_e.models.strategy.forward.order_updater import OrderUpdater
+from gsy_e.models.strategy.forward.order_updater import ForwardOrderUpdater
 
 
 class ForwardValidator:
@@ -95,7 +95,7 @@ class ForwardLiveEvents:
                 energy_rate),
                 order_updater_params.final_rate)
 
-            self._strategy._order_updaters[market][slot] = OrderUpdater(
+            self._strategy._order_updaters[market][slot] = ForwardOrderUpdater(
                 order_updater_params, market_parameters)
             self._strategy.post_order(market, slot)
 
@@ -114,7 +114,8 @@ class ForwardLiveEvents:
         energy_rate = args["energy_rate"]
         for slot in market.market_time_slots:
             if start_time <= slot <= end_time:
-                self._strategy.post_order(market, slot, capacity_percent, energy_rate)
+                self._strategy.post_order(market, slot, energy_rate,
+                                          capacity_percent=capacity_percent)
 
     @ForwardValidator.stop_trading
     def _remove_order_event(self, args: Dict):

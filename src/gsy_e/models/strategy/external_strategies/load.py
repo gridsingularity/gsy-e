@@ -77,7 +77,7 @@ class LoadExternalMixin(ExternalMixin):
         return [
             {"id": bid.id, "price": bid.price, "energy": bid.energy}
             for _, bid in market.get_bids().items()
-            if bid.buyer == self.device.name]
+            if bid.buyer.name == self.device.name]
 
     def event_activate(self, **kwargs):
         """Activate the device."""
@@ -205,12 +205,10 @@ class LoadExternalMixin(ExternalMixin):
                 market,
                 arguments["price"],
                 arguments["energy"],
-                replace_existing=replace_existing,
-                attributes=arguments.get("attributes"),
-                requirements=arguments.get("requirements"))
+                replace_existing=replace_existing)
             response = {
                     "command": "bid", "status": "ready",
-                    "bid": bid.to_json_string(replace_existing=replace_existing),
+                    "bid": bid.to_json_string(),
                     "market_type": market.type_name,
                     "transaction_id": arguments.get("transaction_id"),
                     "message": response_message}
@@ -457,7 +455,9 @@ class LoadProfileForecastExternalStrategy(
                          final_buying_rate=final_buying_rate,
                          initial_buying_rate=initial_buying_rate,
                          balancing_energy_ratio=balancing_energy_ratio,
-                         use_market_maker_rate=use_market_maker_rate)
+                         use_market_maker_rate=use_market_maker_rate,
+                         daily_load_profile_uuid=daily_load_profile_uuid,
+                         )
 
         self._energy_params = LoadProfileForecastEnergyParams(
             daily_load_profile, daily_load_profile_uuid)

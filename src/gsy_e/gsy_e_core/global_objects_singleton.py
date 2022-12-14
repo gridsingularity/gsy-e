@@ -16,8 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from gsy_e.gsy_e_core.user_profile_handler import ProfilesHandler
-from gsy_e.gsy_e_core.global_stats import ExternalConnectionGlobalStatistics
-from gsy_e.gsy_e_core.market_counters import FutureMarketCounter
+from gsy_e.gsy_e_core.global_stats import (
+    ExternalConnectionGlobalStatistics, SCMExternalConnectionGlobalStatistics)
 
 
 class GlobalObjects:
@@ -25,7 +25,7 @@ class GlobalObjects:
 
     profiles_handler = ProfilesHandler()
     external_global_stats = ExternalConnectionGlobalStatistics()
-    future_market_counter = FutureMarketCounter()
+    scm_external_global_stats = SCMExternalConnectionGlobalStatistics()
 
 
 global_objects = GlobalObjects()
