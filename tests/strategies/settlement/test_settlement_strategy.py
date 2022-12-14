@@ -152,6 +152,19 @@ class TestSettlementMarketStrategy:
 
     @pytest.mark.parametrize(
         "strategy_fixture", [LoadHoursStrategy(100), PVStrategy()])
+    def test_event_trade_not_update_energy_deviation_on_bid_trade(self, strategy_fixture):
+        self._setup_strategy_fixture(strategy_fixture, False, True)
+        strategy_fixture.state.set_energy_measurement_kWh(10, self.time_slot)
+        self.settlement_strategy.event_market_cycle(strategy_fixture)
+        self.settlement_strategy.event_offer_traded(
+            strategy_fixture, self.market_mock.id,
+            Trade("456", self.time_slot, self._area_trader_details, self._area_trader_details,
+                  bid=self.test_bid, traded_energy=1, trade_price=1)
+        )
+        assert strategy_fixture.state.get_unsettled_deviation_kWh(self.time_slot) == 10
+
+    @pytest.mark.parametrize(
+        "strategy_fixture", [LoadHoursStrategy(100), PVStrategy()])
     def test_event_bid_trade_updates_energy_deviation(self, strategy_fixture):
         self._setup_strategy_fixture(strategy_fixture, True, False)
         strategy_fixture.state.set_energy_measurement_kWh(15, self.time_slot)
@@ -162,6 +175,19 @@ class TestSettlementMarketStrategy:
                   bid=self.test_bid, traded_energy=1, trade_price=1)
         )
         assert strategy_fixture.state.get_unsettled_deviation_kWh(self.time_slot) == 14
+
+    @pytest.mark.parametrize(
+        "strategy_fixture", [LoadHoursStrategy(100), PVStrategy()])
+    def test_event_bid_traded_does_not_update_energy_deviation_offer_trade(self, strategy_fixture):
+        self._setup_strategy_fixture(strategy_fixture, True, False)
+        strategy_fixture.state.set_energy_measurement_kWh(15, self.time_slot)
+        self.settlement_strategy.event_market_cycle(strategy_fixture)
+        self.settlement_strategy.event_bid_traded(
+            strategy_fixture, self.market_mock.id,
+            Trade("456", self.time_slot, self._area_trader_details, self._area_trader_details,
+                  offer=self.test_offer, traded_energy=1, trade_price=1)
+        )
+        assert strategy_fixture.state.get_unsettled_deviation_kWh(self.time_slot) == 15
 
     @pytest.mark.parametrize(
         "strategy_fixture", [LoadHoursStrategy(100), PVStrategy()])

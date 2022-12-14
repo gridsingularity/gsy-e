@@ -72,7 +72,7 @@ class ConstantGridFees(BaseClassGridFees):
         return trade_bid_info
 
     def propagate_original_bid_info_on_offer_trade(self, trade_original_info):
-        if trade_original_info is None:
+        if trade_original_info is None or trade_original_info.propagated_bid_rate is None:
             return None
         bid_rate = trade_original_info.propagated_bid_rate - self.grid_fee_rate
         trade_bid_info = TradeBidOfferInfo(

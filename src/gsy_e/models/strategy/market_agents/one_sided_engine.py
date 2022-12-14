@@ -19,7 +19,7 @@ from collections import namedtuple
 from typing import Dict, Optional  # noqa
 
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.data_classes import Offer, TraderDetails
+from gsy_framework.data_classes import Offer, TraderDetails, TradeBidOfferInfo
 from gsy_framework.enums import SpotMarketTypeEnum
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
@@ -170,17 +170,20 @@ class MAEngine:
             assert abs(source_rate) <= abs(target_rate) + FLOATING_POINT_TOLERANCE, \
                 f"offer: source_rate ({source_rate}) is not lower than target_rate ({target_rate})"
 
+            updated_trade_bid_info = \
+                self.markets.source.fee_class.update_forwarded_offer_trade_original_info(
+                    trade.offer_bid_trade_info, offer_info.source_offer)
             try:
                 if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
                     # One sided market should subtract the fees
                     trade_offer_rate = trade.trade_rate - \
                                        trade.fee_price / trade.traded_energy
-                else:
-                    # trade_offer_rate not used in two sided markets, trade_bid_info used instead
-                    trade_offer_rate = None
-                updated_trade_bid_info = \
-                    self.markets.source.fee_class.update_forwarded_offer_trade_original_info(
-                        trade.offer_bid_trade_info, offer_info.source_offer)
+                    if not updated_trade_bid_info:
+                        updated_trade_bid_info = TradeBidOfferInfo(
+                            None, None, (
+                                offer_info.source_offer.original_price /
+                                offer_info.source_offer.energy), source_rate, 0.)
+                    updated_trade_bid_info.trade_rate = trade_offer_rate
 
                 trade_source = self.owner.accept_offer(
                     market=self.markets.source,
@@ -189,7 +192,6 @@ class MAEngine:
                     buyer=TraderDetails(
                         self.owner.name, self.owner.uuid,
                         trade.buyer.origin, trade.buyer.origin_uuid),
-                    trade_rate=trade_offer_rate,
                     trade_bid_info=updated_trade_bid_info,
                 )
 
