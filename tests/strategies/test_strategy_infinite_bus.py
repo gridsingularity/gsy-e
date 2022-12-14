@@ -119,8 +119,7 @@ class FakeMarket:
         offer.id = "id"
         return offer
 
-    def accept_offer(self, offer_or_id, buyer, *, energy=None, time=None, already_tracked=False,
-                     trade_rate: float = None, trade_bid_info=None):
+    def accept_offer(self, offer_or_id, buyer, *, energy=None, time=None, trade_bid_info=None):
         offer = offer_or_id
         trade = Trade("trade_id", time, offer.seller,
                       TraderDetails(buyer, ""),

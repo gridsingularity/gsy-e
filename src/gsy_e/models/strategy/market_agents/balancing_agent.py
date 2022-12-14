@@ -62,7 +62,7 @@ class BalancingAgent(OneSidedAgent):
         super().event_offer_traded(market_id=market_id, trade=trade)
 
     def event_bid_traded(self, *, market_id, bid_trade):
-        if bid_trade.already_tracked:
+        if bid_trade.match_details.get("offer"):
             return
 
         market = self.get_market_from_market_id(market_id)

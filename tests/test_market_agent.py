@@ -95,8 +95,7 @@ class FakeMarket:
         self.time_slot = time_slot
 
     # pylint: disable=unused-argument
-    def accept_offer(self, offer_or_id, buyer, *, energy=None, time=None, already_tracked=False,
-                     trade_rate: float = None, trade_bid_info=None):
+    def accept_offer(self, offer_or_id, buyer, *, energy=None, time=None, trade_bid_info=None):
         offer = offer_or_id
         self.calls_energy.append(energy)
         self.calls_offers.append(offer)
@@ -116,15 +115,17 @@ class FakeMarket:
 
     # pylint: disable=unused-argument
     # pylint: disable=too-many-locals
-    def accept_bid(self, bid, energy, seller, buyer=None, *, time=None, trade_rate: float = None,
-                   trade_offer_info=None, already_tracked=False):
+    def accept_bid(self, bid, energy, seller, buyer=None, *,
+                   time=None, trade_offer_info=None, offer=None):
         self.calls_energy_bids.append(energy)
         self.calls_bids.append(bid)
         self.calls_bids_price.append(bid.price)
-        if trade_rate is None:
+        if trade_offer_info is None:
             trade_rate = bid.energy_rate
         else:
-            assert trade_rate <= bid.energy_rate
+            trade_rate = trade_offer_info.trade_rate
+
+        assert trade_rate <= bid.energy_rate
 
         market_bid = [b for b in self._bids if b.id == bid.id][0]
         if energy < market_bid.energy:
