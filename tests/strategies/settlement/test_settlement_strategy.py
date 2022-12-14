@@ -91,7 +91,6 @@ class TestSettlementMarketStrategy:
                 10.0, 1.0, TraderDetails(
                     self.area_mock.name, self.area_mock.uuid,
                     self.area_mock.name, self.area_mock.uuid), original_price=10.0,
-                attributes=None, requirements=None,
                 time_slot=self.time_slot
             )
         if can_post_settlement_offer:
@@ -127,7 +126,6 @@ class TestSettlementMarketStrategy:
                 30.0, 1.0, TraderDetails(
                     self.area_mock.name, self.area_mock.uuid,
                     self.area_mock.name, self.area_mock.uuid), original_price=30.0,
-                attributes=None, requirements=None,
                 time_slot=self.time_slot
             )
         if can_post_settlement_offer:

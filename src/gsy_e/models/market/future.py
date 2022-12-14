@@ -242,8 +242,6 @@ class FutureMarkets(TwoSidedMarket):
             original_price: Optional[float] = None,
             adapt_price_with_fees: bool = True,
             add_to_history: bool = True,
-            attributes: Optional[Dict] = None,
-            requirements: Optional[List[Dict]] = None,
             time_slot: Optional[DateTime] = None) -> Bid:
         """Call superclass bid and buffer returned bid object."""
         if not time_slot:
@@ -253,7 +251,7 @@ class FutureMarkets(TwoSidedMarket):
                           bid_id=bid_id, original_price=original_price,
                           add_to_history=add_to_history,
                           adapt_price_with_fees=adapt_price_with_fees,
-                          attributes=attributes, requirements=requirements, time_slot=time_slot)
+                          time_slot=time_slot)
         return bid
 
     @lock_market_action
@@ -263,8 +261,6 @@ class FutureMarkets(TwoSidedMarket):
               dispatch_event: bool = True,
               adapt_price_with_fees: bool = True,
               add_to_history: bool = True,
-              attributes: Optional[Dict] = None,
-              requirements: Optional[List[Dict]] = None,
               time_slot: Optional[DateTime] = None) -> Offer:
         """Call superclass offer and buffer returned offer object."""
         if not time_slot:
@@ -272,7 +268,7 @@ class FutureMarkets(TwoSidedMarket):
                                         "method in future markets.")
         offer = super().offer(price, energy, seller, offer_id, original_price,
                               dispatch_event, adapt_price_with_fees, add_to_history,
-                              attributes, requirements, time_slot)
+                              time_slot)
         return offer
 
     @property

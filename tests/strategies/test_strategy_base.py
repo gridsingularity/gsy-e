@@ -114,11 +114,9 @@ class FakeMarket:
                      TraderDetails("FakeOwner", ""),
                      offer=offer, traded_energy=offer.energy, trade_price=offer.price)
 
-    def bid(self, price, energy, buyer, original_price=None,
-            attributes=None, requirements=None, time_slot=None):
+    def bid(self, price, energy, buyer, original_price=None, time_slot=None):
         return Bid(123, pendulum.now(), price, energy, buyer,
-                   original_price, attributes=attributes, requirements=requirements,
-                   time_slot=time_slot)
+                   original_price, time_slot=time_slot)
 
 
 @pytest.fixture(name="offers")

@@ -22,6 +22,7 @@ import pytest
 from gsy_framework.constants_limits import DATE_TIME_FORMAT, ConstSettings
 
 from gsy_e.models.strategy.external_strategies.storage import StorageExternalStrategy
+# pylint: disable=unused-import
 from tests.strategies.external.fixtures import future_market_fixture  # noqa
 from tests.strategies.external.utils import (
     assert_bid_offer_aggregator_commands_return_value,
@@ -41,6 +42,7 @@ def external_storage_fixture():
 
 class TestStorageExternalStrategy:
     """Tests for the StorageExternalStrategy class."""
+    # pylint: disable=protected-access
 
     @staticmethod
     def test_offer_succeeds(external_storage):
@@ -106,6 +108,7 @@ class TestStorageExternalStrategy:
         assert return_value["status"] == "error"
 
     @staticmethod
+    @pytest.mark.skip("Attributes / requirements feature disabled.")
     def test_bid_aggregator_succeeds_with_warning_if_dof_are_disabled(external_storage):
         """
         The _bid_aggregator command succeeds, but it shows a warning if Degrees of Freedom are
@@ -182,8 +185,6 @@ class TestStorageExternalStrategy:
             "type": "offer",
             "price": 200.0,
             "energy": 0.5,
-            "attributes": {"energy_type": "Green"},
-            "requirements": [{"price": 12}],
             "transaction_id": str(uuid.uuid4())})
 
         assert_bid_offer_aggregator_commands_return_value(return_value, True)
@@ -204,6 +205,7 @@ class TestStorageExternalStrategy:
         assert return_value["status"] == "error"
 
     @staticmethod
+    @pytest.mark.skip("Attributes / requirements feature disabled.")
     def test_offer_aggregator_succeeds_with_warning_if_dof_are_disabled(external_storage):
         """
         The _offer_aggregator command succeeds, but it shows a warning if Degrees of Freedom are

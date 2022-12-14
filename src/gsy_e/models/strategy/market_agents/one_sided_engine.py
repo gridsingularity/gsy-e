@@ -78,9 +78,7 @@ class MAEngine:
             ),
             "original_price": offer.original_price,
             "dispatch_event": False,
-            "time_slot": offer.time_slot,
-            "attributes": offer.attributes,
-            "requirements": self._update_offer_requirements_prices(offer)
+            "time_slot": offer.time_slot
         }
 
         return self.owner.post_offer(market=self.markets.target, replace_existing=False, **kwargs)

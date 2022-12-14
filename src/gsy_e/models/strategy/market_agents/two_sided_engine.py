@@ -77,9 +77,7 @@ class TwoSidedEngine(MAEngine):
                 buyer=TraderDetails(
                     self.owner.name, self.owner.uuid, bid.buyer.origin, bid.buyer.origin_uuid),
                 original_price=bid.original_price,
-                time_slot=bid.time_slot,
-                requirements=self._update_requirements_prices(bid),
-                attributes=bid.attributes
+                time_slot=bid.time_slot
             )
         except MarketException:
             self.owner.log.debug("Bid is not forwarded because grid fees of the target market "

@@ -92,6 +92,7 @@ class TestMycoExternalMatcher:
         self.matcher.update_area_uuid_markets_mapping({"areax": {"markets": [self.market]}})
         assert mapping_dict == self.matcher.area_uuid_markets_mapping
 
+    @pytest.mark.skip("Attributes / requirements feature disabled.")
     def test_get_orders(self):
         self._populate_market_bids_offers()
         expected_orders = self.market.orders_per_slot()
