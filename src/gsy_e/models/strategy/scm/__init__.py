@@ -59,3 +59,8 @@ class SCMStrategy(ABC):
 
     def deactivate(self):
         """Should be called when the simulation is ended."""
+
+    @staticmethod
+    def deserialize_args(constructor_args: Dict) -> Dict:
+        """Deserialize the constructor arguments."""
+        return constructor_args
