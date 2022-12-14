@@ -58,7 +58,7 @@ class HeatPumpStrategy(TradingStrategyBase):
                  ConstSettings.HeatPumpSettings.PREFERRED_BUYING_RATE
                  ):
 
-        assert ConstSettings.MASettings.MARKET_TYPE == 1, (
+        assert ConstSettings.MASettings.MARKET_TYPE != 1, (
                 "Heatpump has not been implemented for the OneSidedMarket")
 
         self.use_default_updater_params: bool = not order_updater_parameters
