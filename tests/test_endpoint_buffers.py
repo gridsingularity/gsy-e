@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(name="forward_setup")
-def forward_setup_fixture():
+def fixture_forward_setup():
     """Create area with all the forward markets and pre added timeslots for each forward market."""
     original_market_marker_rate = GlobalConfig.market_maker_rate
     original_enable_forward_markets = ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS
@@ -43,7 +43,7 @@ def forward_setup_fixture():
 
 
 @pytest.fixture(name="general_setup")
-def general_setup_fixture():
+def fixture_general_setup():
     """Create area with spot market"""
     general_market_maker_rate = GlobalConfig.market_maker_rate
     GlobalConfig.market_maker_rate = 30
@@ -63,21 +63,21 @@ def general_setup_fixture():
 
 
 @pytest.fixture(name="scm_setup")
-def scm_setup_fixture():
+def fixture_scm_setup():
     """Create a SCM area"""
     ConstSettings.MASettings.MARKET_TYPE = SpotMarketTypeEnum.COEFFICIENTS.value
     scm = SpotMarketTypeEnum.COEFFICIENTS.value
     slot_length = pendulum.duration(minutes=15)
-    CoefficientArea = MagicMock(
+    coefficient_area = MagicMock(
         area="Community",
         scm=scm,
         config=MagicMock(slot_length=slot_length),
         uuid="AREA",
         strategy=None)
-    CoefficientArea.name = "Community"
-    CoefficientArea.parent = None
+    coefficient_area.name = "Community"
+    coefficient_area.parent = None
 
-    yield CoefficientArea, slot_length
+    yield coefficient_area, slot_length
 
 
 class TestSimulationEndpointBuffer:
@@ -92,7 +92,7 @@ class TestSimulationEndpointBuffer:
             serializable_dict=lambda: {
                 "creation_time": creation_time, "time_slot": time_slot})
 
-    def test_prepare_results_for_publish(self, general_setup):
+    def test_prepare_results_for_publish_creates_dict_successfully(self, general_setup):
         area, slot_length = general_setup
         endpoint_buffer = SimulationEndpointBuffer(
             job_id="JOB_1",
@@ -145,7 +145,7 @@ class TestSimulationEndpointBuffer:
 
         assert output == {}
 
-    def test_generate_json_report(self, general_setup):
+    def test_generate_json_report_returns_successfully(self, general_setup):
         area, _ = general_setup
         endpoint_buffer = SimulationEndpointBuffer(
             job_id="JOB_1",
@@ -170,7 +170,7 @@ class TestSimulationEndpointBuffer:
             "mocked-results": "some-results"
         }
 
-    def test_update_stats_spot_markets(self, general_setup):
+    def test_update_stats_spot_markets_updates_successfully(self, general_setup):
         # pylint: disable=protected-access
         area, _ = general_setup
         area.current_market = MagicMock(
@@ -374,7 +374,7 @@ class TestSimulationEndpointBufferForward:
 
         assert output == {}
 
-    def test_generate_json_report(self, forward_setup):
+    def test_generate_json_report_returns_successfully(self, forward_setup):
         area, _ = forward_setup
         endpoint_buffer = SimulationEndpointBuffer(
             job_id="JOB_1",
@@ -399,7 +399,7 @@ class TestSimulationEndpointBufferForward:
             "mocked-results": "some-results"
         }
 
-    def test_update_stats_forward_markets(self, forward_setup):
+    def test_update_stats_forward_markets_updated_successfully(self, forward_setup):
         # pylint: disable=protected-access
         area, _ = forward_setup
         area.current_market = MagicMock(
@@ -487,13 +487,13 @@ class TestSimulationEndpointBufferForward:
 
 class TestCoefficientEndpointBuffer(TestSimulationEndpointBuffer):
     """Tests for the CoefficientEndpointBuffer class."""
-    def test_update_stats_scm(self, scm_setup):
-        CoefficientArea, _ = scm_setup
+    def test_update_stats_scm_updated_successfully(self, scm_setup):
+        coefficient_area, _ = scm_setup
 
         endpoint_buffer = CoefficientEndpointBuffer(
             job_id="JOB_1",
             random_seed=41,
-            area=CoefficientArea,
+            area=coefficient_area,
             should_export_plots=False)
 
         endpoint_buffer._populate_core_stats_and_sim_state = MagicMock()
@@ -506,17 +506,17 @@ class TestCoefficientEndpointBuffer(TestSimulationEndpointBuffer):
             percentage_complete=1)
 
         endpoint_buffer.update_coefficient_stats(
-            area=CoefficientArea,
+            area=coefficient_area,
             simulation_status="some-state",
             progress_info=progress_info_mock,
             sim_state=sim_state_mock,
-            scm_manager=SCMManager(area=CoefficientArea, time_slot=datetime(2022, 10, 30)),
+            scm_manager=SCMManager(area=coefficient_area, time_slot=datetime(2022, 10, 30)),
             calculate_results=False)
 
         assert isinstance(endpoint_buffer._scm_manager, SCMManager)
-        assert endpoint_buffer.current_market_time_slot_str == \
-               progress_info_mock.current_slot_str
-        assert endpoint_buffer.current_market_time_slot == \
-               progress_info_mock.current_slot_time
-        assert endpoint_buffer.current_market_time_slot_unix == \
-               progress_info_mock.current_slot_time.timestamp()
+        assert (endpoint_buffer.current_market_time_slot_str ==
+               progress_info_mock.current_slot_str)
+        assert (endpoint_buffer.current_market_time_slot ==
+               progress_info_mock.current_slot_time)
+        assert (endpoint_buffer.current_market_time_slot_unix ==
+               progress_info_mock.current_slot_time.timestamp())
