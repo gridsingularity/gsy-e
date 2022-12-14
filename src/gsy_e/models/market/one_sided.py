@@ -20,12 +20,12 @@ from logging import getLogger
 from math import isclose
 from typing import Union, Dict, Optional, Callable, Tuple
 
-from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Offer, Trade, TradeBidOfferInfo, TraderDetails, Bid
 from gsy_framework.enums import SpotMarketTypeEnum
 from pendulum import DateTime
 
+from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.events.event_structures import MarketEvent
 from gsy_e.gsy_e_core.exceptions import (
     MarketReadOnlyException, OfferNotFoundException, InvalidTrade,
@@ -48,6 +48,7 @@ class OneSidedMarket(MarketBase):
             readonly: bool = False, grid_fee_type=ConstSettings.MASettings.GRID_FEE_TYPE,
             grid_fees: Optional[GridFee] = None, name: Optional[str] = None,
             in_sim_duration: bool = True):
+        assert ConstSettings.MASettings.MARKET_TYPE != SpotMarketTypeEnum.COEFFICIENTS.value
         super().__init__(time_slot, bc, notification_listener, readonly, grid_fee_type,
                          grid_fees, name)
 
@@ -226,6 +227,10 @@ class OneSidedMarket(MarketBase):
             return self._update_offer_fee_and_calculate_final_price(
                 energy, trade_rate, energy_portion, orig_offer_price
             )
+
+        if not trade_bid_info:
+            # If trade bid info is not populated, return zero grid fees
+            return 0., energy * trade_rate
 
         _, grid_fee_rate, trade_rate_incl_fees = self.fee_class.calculate_trade_price_and_fees(
                 trade_bid_info)
