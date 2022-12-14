@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from copy import deepcopy
 from logging import getLogger
 from math import isclose
-from typing import Union, Dict, List, Optional, Callable, Tuple
+from typing import Union, Dict, Optional, Callable, Tuple
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_framework.constants_limits import ConstSettings
@@ -102,8 +102,6 @@ class OneSidedMarket(MarketBase):
             dispatch_event: bool = True,
             adapt_price_with_fees: bool = True,
             add_to_history: bool = True,
-            attributes: Optional[Dict] = None,
-            requirements: Optional[List[Dict]] = None,
             time_slot: Optional[DateTime] = None) -> Offer:
         """Post offer inside the market."""
 
@@ -127,7 +125,7 @@ class OneSidedMarket(MarketBase):
         if offer_id is None:
             offer_id = self.bc_interface.create_new_offer(energy, price, seller)
         offer = Offer(offer_id, self.now, price, energy,
-                      seller, original_price, attributes=attributes, requirements=requirements,
+                      seller, original_price,
                       time_slot=time_slot)
 
         self.offers[offer.id] = offer
@@ -188,8 +186,6 @@ class OneSidedMarket(MarketBase):
                                     dispatch_event=False,
                                     adapt_price_with_fees=False,
                                     add_to_history=False,
-                                    attributes=original_offer.attributes,
-                                    requirements=original_offer.requirements,
                                     time_slot=original_offer.time_slot)
 
         residual_price = (1 - energy / original_offer.energy) * original_offer.price
@@ -205,8 +201,6 @@ class OneSidedMarket(MarketBase):
                                     dispatch_event=False,
                                     adapt_price_with_fees=False,
                                     add_to_history=True,
-                                    attributes=original_offer.attributes,
-                                    requirements=original_offer.requirements,
                                     time_slot=original_offer.time_slot)
 
         log.debug("%s[OFFER][SPLIT][%s, %s] (%s into %s and %s",
@@ -311,10 +305,7 @@ class OneSidedMarket(MarketBase):
                       bid=bid,
                       traded_energy=energy, trade_price=trade_price, residual=residual_offer,
                       offer_bid_trade_info=offer_bid_trade_info,
-                      fee_price=fee_price, time_slot=offer.time_slot,
-                      matching_requirements=offer_bid_trade_info.matching_requirements
-                      if offer_bid_trade_info else None
-                      )
+                      fee_price=fee_price, time_slot=offer.time_slot)
 
         self.bc_interface.track_trade_event(self.time_slot, trade)
 

@@ -732,7 +732,6 @@ class BidEnabledStrategy(BaseStrategy):
     # pylint: disable=too-many-arguments
     def post_bid(
             self, market: MarketBase, price: float, energy: float, replace_existing: bool = True,
-            attributes: Optional[Dict] = None, requirements: Optional[Dict] = None,
             time_slot: Optional[DateTime] = None) -> Bid:
         """
         Post bid to a specified market.
@@ -742,8 +741,6 @@ class BidEnabledStrategy(BaseStrategy):
             energy: Energy of the bid, in kWh
             replace_existing: Controls whether all existing bids from the same strategy should be
                               deleted or not
-            attributes: Attributes of the bid
-            requirements: Requirements of the bid
             time_slot: Time slot associated with the bid
 
         Returns: The bid posted to the market
@@ -760,8 +757,6 @@ class BidEnabledStrategy(BaseStrategy):
                 self.owner.name, self.owner.uuid,
                 self.owner.name, self.owner.uuid),
             original_price=price,
-            attributes=attributes,
-            requirements=requirements,
             time_slot=time_slot or market.time_slot
         )
         self.add_bid_to_posted(market.id, bid)
@@ -777,8 +772,7 @@ class BidEnabledStrategy(BaseStrategy):
 
             self.remove_bid_from_pending(market.id, bid.id)
             self.post_bid(market, bid.energy * updated_rate,
-                          bid.energy, replace_existing=False, attributes=bid.attributes,
-                          requirements=bid.requirements,
+                          bid.energy, replace_existing=False,
                           time_slot=bid.time_slot)
 
     # pylint: disable=too-many-arguments

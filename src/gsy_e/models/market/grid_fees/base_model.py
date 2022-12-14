@@ -70,8 +70,7 @@ class GridFees(BaseClassGridFees):
             propagated_bid_rate=market_bid.energy_rate,
             original_offer_rate=trade_original_info.original_offer_rate,
             propagated_offer_rate=trade_original_info.propagated_offer_rate,
-            trade_rate=trade_original_info.trade_rate,
-            matching_requirements=trade_original_info.matching_requirements)
+            trade_rate=trade_original_info.trade_rate)
         return trade_offer_info
 
     def update_forwarded_offer_trade_original_info(self, trade_original_info, market_offer):
@@ -82,8 +81,7 @@ class GridFees(BaseClassGridFees):
             propagated_bid_rate=trade_original_info.propagated_bid_rate,
             original_offer_rate=market_offer.original_price / market_offer.energy,
             propagated_offer_rate=market_offer.energy_rate,
-            trade_rate=trade_original_info.trade_rate,
-            matching_requirements=trade_original_info.matching_requirements)
+            trade_rate=trade_original_info.trade_rate)
         return trade_bid_info
 
     def propagate_original_bid_info_on_offer_trade(self, trade_original_info):
@@ -97,8 +95,7 @@ class GridFees(BaseClassGridFees):
             propagated_bid_rate=bid_rate,
             original_offer_rate=None,
             propagated_offer_rate=None,
-            trade_rate=trade_original_info.trade_rate,
-            matching_requirements=trade_original_info.matching_requirements)
+            trade_rate=trade_original_info.trade_rate)
         return trade_bid_info
 
     def propagate_original_offer_info_on_bid_trade(self, trade_original_info, ignore_fees=False):
@@ -111,8 +108,7 @@ class GridFees(BaseClassGridFees):
             propagated_bid_rate=None,
             original_offer_rate=trade_original_info.original_offer_rate,
             propagated_offer_rate=offer_rate,
-            trade_rate=trade_original_info.trade_rate,
-            matching_requirements=trade_original_info.matching_requirements)
+            trade_rate=trade_original_info.trade_rate)
         return trade_offer_info
 
     def calculate_trade_price_and_fees(self, trade_bid_info):

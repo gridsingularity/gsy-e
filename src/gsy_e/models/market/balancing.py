@@ -60,16 +60,13 @@ class BalancingMarket(OneSidedMarket):
             dispatch_event: bool = True,
             adapt_price_with_fees: bool = True,
             add_to_history: bool = True,
-            attributes: Optional[Dict] = None,
-            requirements: Optional[List[Dict]] = None,
             time_slot: Optional[DateTime] = None):
         assert False
 
     def balancing_offer(  # pylint: disable=too-many-arguments
             self, price: float, energy: float, seller: TraderDetails,
             original_price=None, offer_id=None, from_agent: bool = False,
-            adapt_price_with_fees: bool = False, dispatch_event=True,
-            attributes: Dict = None, requirements: List[Dict] = None) -> BalancingOffer:
+            adapt_price_with_fees: bool = False, dispatch_event=True) -> BalancingOffer:
         """Create a balancing offer."""
 
         if seller.name not in DeviceRegistry.REGISTRY.keys() and not from_agent:
@@ -90,7 +87,7 @@ class BalancingMarket(OneSidedMarket):
 
         offer = BalancingOffer(
             offer_id, self.now, price, energy, seller,
-            attributes=attributes, requirements=requirements, time_slot=self.time_slot)
+            time_slot=self.time_slot)
         self.offers[offer.id] = offer
 
         self.offer_history.append(offer)
@@ -110,9 +107,7 @@ class BalancingMarket(OneSidedMarket):
                                               energy=energy,
                                               seller=original_offer.seller,
                                               dispatch_event=False,
-                                              from_agent=True,
-                                              attributes=original_offer.attributes,
-                                              requirements=original_offer.requirements)
+                                              from_agent=True)
 
         residual_price = (1 - energy / original_offer.energy) * original_offer.price
         residual_energy = original_offer.energy - energy
@@ -127,9 +122,7 @@ class BalancingMarket(OneSidedMarket):
                                               original_price=original_residual_price,
                                               dispatch_event=False,
                                               adapt_price_with_fees=False,
-                                              from_agent=True,
-                                              attributes=original_offer.attributes,
-                                              requirements=original_offer.requirements)
+                                              from_agent=True)
 
         log.debug(
             "[BALANCING_OFFER][SPLIT][%s, %s] (%s into %s and %s",

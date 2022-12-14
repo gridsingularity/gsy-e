@@ -90,7 +90,7 @@ class TestFutureMarketStrategy:
             10.0 * 1.234, 1.234, TraderDetails(
                 self.area_mock.name, self.area_mock.uuid,
                 self.area_mock.name, self.area_mock.uuid),
-            original_price=10.0 * 1.234, attributes=None, requirements=None,
+            original_price=10.0 * 1.234,
             time_slot=self.time_slot
         )
 
@@ -134,7 +134,7 @@ class TestFutureMarketStrategy:
             10.0 * 3, 3, TraderDetails(
                 self.area_mock.name, self.area_mock.uuid,
                 self.area_mock.name, self.area_mock.uuid
-            ), original_price=10.0 * 3, attributes=None, requirements=None,
+            ), original_price=10.0 * 3,
             time_slot=self.time_slot
         )
 
