@@ -8,6 +8,13 @@ from pendulum import DateTime
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.models.state import HeatPumpState
 from gsy_e.models.strategy.profile import EnergyProfile
+# pylint: disable=pointless-string-statement
+"""
+Description of physical units and parameters:
+- K .. Kelvin:              Si unit, used for temperature differences
+- C .. degrees celsius:     Used for temperatures
+- Q .. heat/thermal energy: Energy that a body has or needs to have/get a certain temperature [kWh]
+"""
 
 SPECIFIC_HEAT_CONST_WATER = 0.00116  # [kWh / (K * kg)]
 WATER_DENSITY = 1  # [kg / l]
