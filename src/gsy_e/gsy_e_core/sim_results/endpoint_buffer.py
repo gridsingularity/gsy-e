@@ -69,7 +69,6 @@ class SimulationEndpointBuffer:
         }
 
         self.bids_offers_trades = {}
-        self.last_energy_trades_high_resolution = {}
         self.results_handler = self._create_endpoint_buffer(should_export_plots)
         self.simulation_state = {"general": {}, "areas": {}}
 

@@ -1,6 +1,9 @@
 from dataclasses import dataclass
+from typing import List
 
+from gsy_framework.constants_limits import GlobalConfig
 from pendulum import duration, DateTime, Duration
+
 from gsy_e.models.market import MarketSlotParams
 
 
@@ -24,28 +27,32 @@ class OrderUpdater:
                  market_params: MarketSlotParams):
         self._parameters = parameters
         self._market_params = market_params
-        self._update_times = self._calculate_update_timepoints(
-            self._market_params.opening_time, self._market_params.closing_time,
+        self._update_times: List[DateTime] = self._calculate_update_timepoints(
+            self._market_params.opening_time,
+            self._market_params.closing_time - GlobalConfig.tick_length,
             self._parameters.update_interval)
 
     @staticmethod
     def _calculate_update_timepoints(
-            start_time: DateTime, end_time: DateTime, interval: Duration):
+            start_time: DateTime, end_time: DateTime, interval: Duration) -> List[DateTime]:
         current_time = start_time
         timepoints = []
         while current_time < end_time:
             timepoints.append(current_time)
             current_time += interval
+        timepoints.append(end_time)
         return timepoints
 
     def is_time_for_update(
-            self, current_time_slot: DateTime):
+            self, current_time_slot: DateTime) -> bool:
         """Check if the orders need to be updated."""
         return current_time_slot in self._update_times
 
-    def get_energy_rate(self, current_time_slot: DateTime):
+    def get_energy_rate(self, current_time_slot: DateTime) -> float:
         """Calculate energy rate for the current time slot."""
         assert current_time_slot >= self._market_params.opening_time
+        if current_time_slot == self._market_params.closing_time - GlobalConfig.tick_length:
+            return self._parameters.final_rate
         time_elapsed_since_start = current_time_slot - self._market_params.opening_time
         total_slot_length = (
                 self._market_params.closing_time - self._market_params.opening_time)

@@ -1,5 +1,6 @@
 from typing import Dict, TYPE_CHECKING
 
+from gsy_framework.data_classes import TraderDetails
 from gsy_framework.enums import AvailableMarketTypes
 from pendulum import DateTime, duration
 
@@ -53,7 +54,7 @@ class ForwardLoadStrategy(ForwardStrategyBase):
     def remove_order(self, market: "ForwardMarketBase", market_slot: DateTime, order_uuid: str):
         bids = [bid
                 for bid in market.slot_bid_mapping[market_slot]
-                if bid.buyer == self.owner.name and bid.id == order_uuid]
+                if bid.buyer.name == self.owner.name and bid.id == order_uuid]
         if not bids:
             self.log.error("Bid with id %s does not exist on the market %s %s.",
                            order_uuid, market.market_type, market_slot)
@@ -63,7 +64,7 @@ class ForwardLoadStrategy(ForwardStrategyBase):
     def remove_open_orders(self, market: "ForwardMarketBase", market_slot: DateTime):
         bids = [bid
                 for bid in market.slot_bid_mapping[market_slot]
-                if bid.buyer == self.owner.name]
+                if bid.buyer.name == self.owner.name]
         for bid in bids:
             market.delete_bid(bid)
 
@@ -89,11 +90,9 @@ class ForwardLoadStrategy(ForwardStrategyBase):
             return
         market.bid(
             order_rate * order_energy_kWh, order_energy_kWh,
-            buyer=self.owner.name,
+            buyer=TraderDetails(self.owner.name, self.owner.uuid,
+                                self.owner.name, self.owner.uuid),
             original_price=order_rate * order_energy_kWh,
-            buyer_origin=self.owner.name,
-            buyer_origin_id=self.owner.uuid,
-            buyer_id=self.owner.uuid,
             time_slot=market_slot)
         self._energy_params.increment_posted_energy(
             market_slot, order_energy_kWh, market.market_type)
@@ -106,7 +105,7 @@ class ForwardLoadStrategy(ForwardStrategyBase):
         if not market:
             return
 
-        if bid_trade.buyer_id != self.owner.uuid:
+        if bid_trade.buyer.uuid != self.owner.uuid:
             return
 
         self._energy_params.event_traded_energy(bid_trade.traded_energy,

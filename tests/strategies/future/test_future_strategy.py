@@ -21,6 +21,7 @@ from unittest.mock import Mock, MagicMock
 
 import pytest
 from gsy_framework.constants_limits import GlobalConfig, ConstSettings
+from gsy_framework.data_classes import TraderDetails
 from pendulum import today, duration
 
 from gsy_e.constants import TIME_ZONE, FutureTemplateStrategiesConstants
@@ -86,9 +87,10 @@ class TestFutureMarketStrategy:
         load_strategy_fixture.state.set_desired_energy(1234.0, self.time_slot)
         future_strategy.event_market_cycle(load_strategy_fixture)
         self.future_markets.bid.assert_called_once_with(
-            10.0 * 1.234, 1.234, self.area_mock.name, original_price=10.0 * 1.234,
-            buyer_origin=self.area_mock.name, buyer_origin_id=self.area_mock.uuid,
-            buyer_id=self.area_mock.uuid, attributes=None, requirements=None,
+            10.0 * 1.234, 1.234, TraderDetails(
+                self.area_mock.name, self.area_mock.uuid,
+                self.area_mock.name, self.area_mock.uuid),
+            original_price=10.0 * 1.234,
             time_slot=self.time_slot
         )
 
@@ -100,9 +102,9 @@ class TestFutureMarketStrategy:
         pv_strategy_fixture.state.set_available_energy(321.3, self.time_slot)
         future_strategy.event_market_cycle(pv_strategy_fixture)
         self.future_markets.offer.assert_called_once_with(
-            price=50.0 * 321.3, energy=321.3, seller=self.area_mock.name,
-            seller_origin=self.area_mock.name,
-            seller_origin_id=self.area_mock.uuid, seller_id=self.area_mock.uuid,
+            price=50.0 * 321.3, energy=321.3, seller=TraderDetails(
+                self.area_mock.name, self.area_mock.uuid,
+                self.area_mock.name, self.area_mock.uuid),
             time_slot=self.time_slot
         )
 
@@ -122,16 +124,17 @@ class TestFutureMarketStrategy:
         storage_strategy_fixture.state.register_energy_from_posted_bid = Mock()
         future_strategy.event_market_cycle(storage_strategy_fixture)
         self.future_markets.offer.assert_called_once_with(
-            price=50.0 * 2, energy=2, seller=self.area_mock.name,
-            seller_origin=self.area_mock.name,
-            seller_origin_id=self.area_mock.uuid, seller_id=self.area_mock.uuid,
+            price=50.0 * 2, energy=2, seller=TraderDetails(
+                self.area_mock.name, self.area_mock.uuid,
+                self.area_mock.name, self.area_mock.uuid),
             time_slot=self.time_slot)
         storage_strategy_fixture.state.register_energy_from_posted_offer.assert_called_once()
 
         self.future_markets.bid.assert_called_once_with(
-            10.0 * 3, 3, self.area_mock.name, original_price=10.0 * 3,
-            buyer_origin=self.area_mock.name, buyer_origin_id=self.area_mock.uuid,
-            buyer_id=self.area_mock.uuid, attributes=None, requirements=None,
+            10.0 * 3, 3, TraderDetails(
+                self.area_mock.name, self.area_mock.uuid,
+                self.area_mock.name, self.area_mock.uuid
+            ), original_price=10.0 * 3,
             time_slot=self.time_slot
         )
 

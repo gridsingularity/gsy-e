@@ -3,7 +3,7 @@ import logging
 from concurrent.futures import ThreadPoolExecutor
 from uuid import uuid4
 
-from gsy_framework.data_classes import BaseBidOffer, Trade
+from gsy_framework.data_classes import BaseBidOffer, Trade, Bid, Offer
 from gsy_framework.utils import key_in_dict_and_not_none
 
 from gsy_e.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT, MAX_WORKER_THREADS
@@ -23,18 +23,22 @@ class MarketRedisEventPublisher:
         self.futures = []
 
     def event_channel_name(self):
+        """Channel name for notifying events."""
         return f"market/{self.market_id}/notify_event"
 
     def event_response_channel_name(self):
+        """Channel name for response of event notification messages."""
         return f"market/{self.market_id}/notify_event/response"
 
     def response_callback(self, payload):
+        """Callback method that gets triggered on response"""
         data = json.loads(payload["data"])
 
         if "response" in data:
             self.event_response_uuids.append(data["transaction_uuid"])
 
     def publish_event(self, event_type: MarketEvent, **kwargs):
+        """Publish event and wait for the event response."""
         for key in ["offer", "trade", "new_offer", "existing_offer",
                     "bid", "new_bid", "existing_bid", "bid_trade"]:
             if key in kwargs:
@@ -53,13 +57,15 @@ class MarketRedisEventPublisher:
         self.redis.poll_until_response_received(event_response_was_received_callback)
 
         if send_data["transaction_uuid"] not in self.event_response_uuids:
-            logging.error(f"Transaction ID not found after {REDIS_PUBLISH_RESPONSE_TIMEOUT} "
-                          f"seconds: {send_data} {self.market_id}")
+            logging.error("Transaction ID not found after %s seconds: %s %s",
+                          REDIS_PUBLISH_RESPONSE_TIMEOUT, send_data, self.market_id)
         else:
             self.event_response_uuids.remove(send_data["transaction_uuid"])
 
 
 class MarketRedisEventSubscriber:
+    """Redis subscriber to the market events."""
+    # pylint: disable=broad-except
     def __init__(self, market):
         self.market_object = market
         self.redis_db = ResettableCommunicator()
@@ -69,9 +75,11 @@ class MarketRedisEventSubscriber:
 
     @property
     def market(self):
+        """Market whose events the subscriber listens to."""
         return self.market_object
 
     def sub_to_external_requests(self):
+        """Subscribe to external requests / commands."""
         self.redis_db.sub_to_multiple_channels({
             self._offer_channel: self._offer,
             self._delete_offer_channel: self._delete_offer,
@@ -83,16 +91,17 @@ class MarketRedisEventSubscriber:
             try:
                 future.result(timeout=5)
             except TimeoutError:
-                logging.error(f"future {future} timed out")
+                logging.error("future %s timed out", future)
         self.futures = []
         # Stopping executor
         self.executor.shutdown(wait=True)
 
     def stop(self):
+        """Stop the subscriber."""
         self._stop_futures()
         self.redis_db.terminate_connection()
 
-    def publish(self, channel, data):
+    def _publish(self, channel, data):
         self.redis_db.publish(channel, json.dumps(data))
 
     @property
@@ -119,9 +128,11 @@ class MarketRedisEventSubscriber:
     def _accept_offer_response_channel(self):
         return f"{self._accept_offer_channel}/RESPONSE"
 
-    def _parse_payload(self, payload):
+    @staticmethod
+    def _parse_payload(payload):
         data_dict = json.loads(payload["data"])
-        return MarketRedisEventSubscriber._parse_order_objects(data_dict)
+        retval = MarketRedisEventSubscriber._parse_order_objects(data_dict)
+        return retval
 
     @classmethod
     def _parse_order_objects(cls, data_dict):
@@ -129,9 +140,9 @@ class MarketRedisEventSubscriber:
                 and isinstance(data_dict["offer_or_id"], str)):
             data_dict["offer_or_id"] = BaseBidOffer.from_json(data_dict["offer_or_id"])
         if key_in_dict_and_not_none(data_dict, "offer") and isinstance(data_dict["offer"], str):
-            data_dict["offer"] = BaseBidOffer.from_json(data_dict["offer"])
+            data_dict["offer"] = Offer.from_json(data_dict["offer"])
         if key_in_dict_and_not_none(data_dict, "bid") and isinstance(data_dict["bid"], str):
-            data_dict["bid"] = BaseBidOffer.from_json(data_dict["bid"])
+            data_dict["bid"] = Bid.from_json(data_dict["bid"])
         if key_in_dict_and_not_none(data_dict, "trade") and isinstance(data_dict["trade"], str):
             data_dict["trade"] = Trade.from_json(data_dict["trade"])
 
@@ -146,15 +157,15 @@ class MarketRedisEventSubscriber:
         transaction_uuid = arguments.pop("transaction_uuid", None)
         try:
             trade = self.market.accept_offer(**arguments)
-            self.publish(self._accept_offer_response_channel,
-                         {"status": "ready", "trade": trade.to_json_string(),
-                          "transaction_uuid": transaction_uuid})
+            self._publish(self._accept_offer_response_channel,
+                          {"status": "ready", "trade": trade.to_json_string(),
+                           "transaction_uuid": transaction_uuid})
         except Exception as e:
-            logging.error(f"Error when handling accept_offer on market {self.market.name}: "
-                          f"Exception: {str(e)}, Accept Offer Arguments: {arguments}")
-            self.publish(self._accept_offer_response_channel,
-                         {"status": "error",  "exception": str(type(e)),
-                          "error_message": str(e), "transaction_uuid": transaction_uuid})
+            logging.error("Error when handling accept_offer on market %s: Exception: %s, "
+                          "Accept Offer Arguments: %s", self.market.name, str(e), arguments)
+            self._publish(self._accept_offer_response_channel,
+                          {"status": "error",  "exception": str(type(e)),
+                           "error_message": str(e), "transaction_uuid": transaction_uuid})
 
     def _offer(self, payload):
         def thread_cb():
@@ -166,15 +177,15 @@ class MarketRedisEventSubscriber:
         transaction_uuid = arguments.pop("transaction_uuid", None)
         try:
             offer = self.market.offer(**arguments)
-            self.publish(self._offer_response_channel,
-                         {"status": "ready", "offer": offer.to_json_string(),
-                          "transaction_uuid": transaction_uuid})
+            self._publish(self._offer_response_channel,
+                          {"status": "ready", "offer": offer.to_json_string(),
+                           "transaction_uuid": transaction_uuid})
         except Exception as e:
-            logging.error(f"Error when handling offer on market {self.market.name}: "
-                          f"Exception: {str(e)}, Offer Arguments: {arguments}")
-            self.publish(self._offer_response_channel,
-                         {"status": "error",  "exception": str(type(e)),
-                          "error_message": str(e), "transaction_uuid": transaction_uuid})
+            logging.error("Error when handling offer on market %s: Exception: %s, "
+                          "Offer Arguments: %s", self.market.name, str(e), arguments)
+            self._publish(self._offer_response_channel,
+                          {"status": "error",  "exception": str(type(e)),
+                           "error_message": str(e), "transaction_uuid": transaction_uuid})
 
     def _delete_offer(self, payload):
 
@@ -187,20 +198,19 @@ class MarketRedisEventSubscriber:
         try:
             self.market.delete_offer(**arguments)
 
-            self.publish(self._delete_offer_response_channel,
-                         {"status": "ready", "transaction_uuid": transaction_uuid})
+            self._publish(self._delete_offer_response_channel,
+                          {"status": "ready", "transaction_uuid": transaction_uuid})
         except Exception as e:
-            logging.debug(f"Error when handling delete_offer on market {self.market.name}: "
-                          f"Exception: {str(e)}, Delete Offer Arguments: {arguments}")
-            self.publish(self._delete_offer_response_channel,
-                         {"status": "ready", "exception": str(type(e)),
-                          "error_message": str(e), "transaction_uuid": transaction_uuid})
+            logging.debug("Error when handling delete_offer on market %s: Exception: %s, "
+                          "Delete Offer Arguments: %s", self.market.name, str(e), arguments)
+            self._publish(self._delete_offer_response_channel,
+                          {"status": "ready", "exception": str(type(e)),
+                           "error_message": str(e), "transaction_uuid": transaction_uuid})
 
 
 class TwoSidedMarketRedisEventSubscriber(MarketRedisEventSubscriber):
-    def __init__(self, market):
-        super().__init__(market)
-
+    """Redis subscriber to the two sided market events."""
+    # pylint: disable=broad-except
     def sub_to_external_requests(self):
         self.redis_db.sub_to_multiple_channels({
             self._offer_channel: self._offer,
@@ -244,15 +254,15 @@ class TwoSidedMarketRedisEventSubscriber(MarketRedisEventSubscriber):
         transaction_uuid = arguments.pop("transaction_uuid", None)
         try:
             trade = self.market.accept_bid(**arguments)
-            self.publish(self._accept_bid_response_channel,
-                         {"status": "ready", "trade": trade.to_json_string(),
-                          "transaction_uuid": transaction_uuid})
+            self._publish(self._accept_bid_response_channel,
+                          {"status": "ready", "trade": trade.to_json_string(),
+                           "transaction_uuid": transaction_uuid})
         except Exception as e:
-            logging.error(f"Error when handling accept_bid on market {self.market.name}: "
-                          f"Exception: {str(e)}, Accept Bid Arguments: {arguments}")
-            self.publish(self._accept_bid_response_channel,
-                         {"status": "error",  "exception": str(type(e)),
-                          "error_message": str(e), "transaction_uuid": transaction_uuid})
+            logging.error("Error when handling accept_bid on market %s: Exception: %s, "
+                          "Accept Bid Arguments: %s", self.market.name, str(e), arguments)
+            self._publish(self._accept_bid_response_channel,
+                          {"status": "error",  "exception": str(type(e)),
+                           "error_message": str(e), "transaction_uuid": transaction_uuid})
 
     def _bid(self, payload):
         def thread_cb():
@@ -264,15 +274,15 @@ class TwoSidedMarketRedisEventSubscriber(MarketRedisEventSubscriber):
         transaction_uuid = arguments.pop("transaction_uuid", None)
         try:
             bid = self.market.bid(**arguments)
-            self.publish(self._bid_response_channel,
-                         {"status": "ready", "bid": bid.to_json_string(),
-                          "transaction_uuid": transaction_uuid})
+            self._publish(self._bid_response_channel,
+                          {"status": "ready", "bid": bid.to_json_string(),
+                           "transaction_uuid": transaction_uuid})
         except Exception as e:
-            logging.error(f"Error when handling bid create on market {self.market.name}: "
-                          f"Exception: {str(e)}, Bid Arguments: {arguments}")
-            self.publish(self._bid_response_channel,
-                         {"status": "error",  "exception": str(type(e)),
-                          "error_message": str(e), "transaction_uuid": transaction_uuid})
+            logging.error("Error when handling bid create on market %s: Exception: %s, "
+                          "Bid Arguments: %s", self.market.name, str(e), arguments)
+            self._publish(self._bid_response_channel,
+                          {"status": "error",  "exception": str(type(e)),
+                           "error_message": str(e), "transaction_uuid": transaction_uuid})
 
     def _delete_bid(self, payload):
         def thread_cb():
@@ -284,11 +294,11 @@ class TwoSidedMarketRedisEventSubscriber(MarketRedisEventSubscriber):
         try:
             self.market.delete_bid(**arguments)
 
-            self.publish(self._delete_bid_response_channel,
-                         {"status": "ready", "transaction_uuid": transaction_uuid})
+            self._publish(self._delete_bid_response_channel,
+                          {"status": "ready", "transaction_uuid": transaction_uuid})
         except Exception as e:
-            logging.debug(f"Error when handling bid delete on market {self.market.name}: "
-                          f"Exception: {str(e)}, Delete Bid Arguments: {arguments}")
-            self.publish(self._delete_bid_response_channel,
-                         {"status": "ready", "exception": str(type(e)),
-                          "error_message": str(e), "transaction_uuid": transaction_uuid})
+            logging.debug("Error when handling bid delete on market %s: Exception: %s, "
+                          "Delete Bid Arguments: %s", self.market.name, str(e), arguments)
+            self._publish(self._delete_bid_response_channel,
+                          {"status": "ready", "exception": str(type(e)),
+                           "error_message": str(e), "transaction_uuid": transaction_uuid})

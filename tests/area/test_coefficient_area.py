@@ -168,22 +168,22 @@ class TestCoefficientArea:
         trades = scm._home_data[house1.uuid].trades
         assert isclose(trades[0].trade_rate, 0.3)
         assert isclose(trades[0].traded_energy, 0.06)
-        assert trades[0].seller == "Community"
-        assert trades[0].buyer == "House 1"
+        assert trades[0].seller.name == "Community"
+        assert trades[0].buyer.name == "House 1"
         assert isclose(trades[1].trade_rate, 0.3)
         assert isclose(trades[1].traded_energy, 0.14)
-        assert trades[1].seller == "Grid"
-        assert trades[1].buyer == "House 1"
+        assert trades[1].seller.name == "Grid"
+        assert trades[1].buyer.name == "House 1"
         assert len(scm._home_data[house2.uuid].trades) == 2
         trades = scm._home_data[house2.uuid].trades
         assert isclose(trades[0].trade_rate, 0.24)
         assert isclose(trades[0].traded_energy, 0.06)
-        assert trades[0].seller == "House 2"
-        assert trades[0].buyer == "Community"
+        assert trades[0].seller.name == "House 2"
+        assert trades[0].buyer.name == "Community"
         assert isclose(trades[1].trade_rate, 0.05)
         assert isclose(trades[1].traded_energy, 0.04)
-        assert trades[1].seller == "House 2"
-        assert trades[1].buyer == "Grid"
+        assert trades[1].seller.name == "House 2"
+        assert trades[1].buyer.name == "Grid"
 
     @staticmethod
     def test_calculate_energy_benchmark():

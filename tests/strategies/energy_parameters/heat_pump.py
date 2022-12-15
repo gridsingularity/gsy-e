@@ -30,7 +30,6 @@ class TestHeatPumpEnergyParameters:
         energy_params.event_activate()
         assert len(energy_params._consumption_kWh.profile) == 24
         assert len(energy_params._ext_temp_C.profile) == 24
-        # assert
 
     @staticmethod
     def test_event_market_cycle_populates_profiles(energy_params):
@@ -45,12 +44,11 @@ class TestHeatPumpEnergyParameters:
         assert CURRENT_MARKET_SLOT not in energy_params.state._min_energy_demand_kWh
         assert CURRENT_MARKET_SLOT not in energy_params.state._max_energy_demand_kWh
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
-        assert energy_params.state._temp_decrease_K[CURRENT_MARKET_SLOT] == 0.28275862068965524
-        assert energy_params.state._storage_temp_C[CURRENT_MARKET_SLOT] == 49.717241379310344
-        assert (energy_params.state._min_energy_demand_kWh[CURRENT_MARKET_SLOT] ==
-                0.0009956960711739187)
+        assert energy_params.state._temp_decrease_K[CURRENT_MARKET_SLOT] == 28.27586206896552
+        assert energy_params.state._storage_temp_C[CURRENT_MARKET_SLOT] == 50
+        assert energy_params.state._min_energy_demand_kWh[CURRENT_MARKET_SLOT] == 0.5
         assert (energy_params.state._max_energy_demand_kWh[CURRENT_MARKET_SLOT] ==
-                0.027405927227311375)
+                0.7652439024390245)
 
     @staticmethod
     def test_event_traded_energy_decrements_posted_energy(energy_params):
@@ -67,22 +65,19 @@ class TestHeatPumpEnergyParameters:
     @staticmethod
     def test_event_traded_energy_updates_temp_increase(energy_params):
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
-        traded_energy = 0.00001
+        traded_energy = 0.1
         energy_params.event_traded_energy(CURRENT_MARKET_SLOT, traded_energy)
-        next_time_slot = CURRENT_MARKET_SLOT + GlobalConfig.slot_length
-        assert energy_params.state._temp_increase_K[CURRENT_MARKET_SLOT] == 0
-        assert energy_params.state._temp_increase_K[next_time_slot] == 0.005679617081471157
+        assert energy_params.state._temp_increase_K[CURRENT_MARKET_SLOT] == 5.655172413793104
 
     @staticmethod
     def test_get_min_energy_demand_kWh_returns_correct_value(energy_params):
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
         energy_params.get_min_energy_demand_kWh(CURRENT_MARKET_SLOT)
-        assert (energy_params.get_min_energy_demand_kWh(CURRENT_MARKET_SLOT) ==
-                0.0009956960711739187)
+        assert energy_params.get_min_energy_demand_kWh(CURRENT_MARKET_SLOT) == 0.5
 
     @staticmethod
     def test_get_max_energy_demand_kWh_returns_correct_value(energy_params):
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
         energy_params.get_max_energy_demand_kWh(CURRENT_MARKET_SLOT)
         assert (energy_params.get_max_energy_demand_kWh(CURRENT_MARKET_SLOT) ==
-                0.027405927227311375)
+                0.7652439024390245)

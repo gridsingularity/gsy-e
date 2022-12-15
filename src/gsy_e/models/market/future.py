@@ -22,7 +22,7 @@ from logging import getLogger
 from typing import Dict, List, Optional, TYPE_CHECKING
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig, DATE_TIME_FORMAT
-from gsy_framework.data_classes import Bid, Offer, Trade
+from gsy_framework.data_classes import Bid, Offer, Trade, TraderDetails
 from gsy_framework.utils import is_time_slot_in_simulation_duration
 from pendulum import DateTime, duration
 
@@ -237,47 +237,38 @@ class FutureMarkets(TwoSidedMarket):
         return created_future_slots
 
     @lock_market_action
-    def bid(self, price: float, energy: float, buyer: str, buyer_origin: str,
+    def bid(self, price: float, energy: float, buyer: TraderDetails,
             bid_id: Optional[str] = None,
             original_price: Optional[float] = None,
             adapt_price_with_fees: bool = True,
             add_to_history: bool = True,
-            buyer_origin_id: Optional[str] = None,
-            buyer_id: Optional[str] = None,
-            attributes: Optional[Dict] = None,
-            requirements: Optional[List[Dict]] = None,
             time_slot: Optional[DateTime] = None) -> Bid:
         """Call superclass bid and buffer returned bid object."""
         if not time_slot:
             raise FutureMarketException("time_slot parameter was not provided for bid "
                                         "method in future markets.")
-        bid = super().bid(price=price, energy=energy, buyer=buyer, buyer_origin=buyer_origin,
+        bid = super().bid(price=price, energy=energy, buyer=buyer,
                           bid_id=bid_id, original_price=original_price,
                           add_to_history=add_to_history,
                           adapt_price_with_fees=adapt_price_with_fees,
-                          buyer_origin_id=buyer_origin_id, buyer_id=buyer_id,
-                          attributes=attributes, requirements=requirements, time_slot=time_slot)
+                          time_slot=time_slot)
         return bid
 
     @lock_market_action
-    def offer(self, price: float, energy: float, seller: str, seller_origin: str,
+    def offer(self, price: float, energy: float, seller: TraderDetails,
               offer_id: Optional[str] = None,
               original_price: Optional[float] = None,
               dispatch_event: bool = True,
               adapt_price_with_fees: bool = True,
               add_to_history: bool = True,
-              seller_origin_id: Optional[str] = None,
-              seller_id: Optional[str] = None,
-              attributes: Optional[Dict] = None,
-              requirements: Optional[List[Dict]] = None,
               time_slot: Optional[DateTime] = None) -> Offer:
         """Call superclass offer and buffer returned offer object."""
         if not time_slot:
             raise FutureMarketException("time_slot parameter was not provided for offer "
                                         "method in future markets.")
-        offer = super().offer(price, energy, seller, seller_origin, offer_id, original_price,
+        offer = super().offer(price, energy, seller, offer_id, original_price,
                               dispatch_event, adapt_price_with_fees, add_to_history,
-                              seller_origin_id, seller_id, attributes, requirements, time_slot)
+                              time_slot)
         return offer
 
     @property

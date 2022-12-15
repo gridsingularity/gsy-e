@@ -216,17 +216,15 @@ class MarketBase:  # pylint: disable=too-many-instance-attributes
                 listener(event, market_id=self.id, **kwargs)
 
     def _update_stats_after_trade(
-            self, trade: Trade, order: Union[Offer, Bid], already_tracked: bool = False) -> None:
+            self, trade: Trade, order: Union[Offer, Bid]) -> None:
         """Update the instance state in response to an occurring trade."""
-
-        if not already_tracked:
-            self.trades.append(trade)
-            self.market_fee += trade.fee_price
+        self.trades.append(trade)
+        self.market_fee += trade.fee_price
         self._update_accumulated_trade_price_energy(trade)
         self.traded_energy = add_or_create_key(
-            self.traded_energy, trade.seller, order.energy)
+            self.traded_energy, trade.seller.name, order.energy)
         self.traded_energy = subtract_or_create_key(
-            self.traded_energy, trade.buyer, order.energy)
+            self.traded_energy, trade.buyer.name, order.energy)
         self._update_min_max_avg_trade_prices(order.energy_rate)
 
     def _update_accumulated_trade_price_energy(self, trade: Trade):
@@ -274,22 +272,21 @@ class MarketBase:  # pylint: disable=too-many-instance-attributes
     def bought_energy(self, buyer: str) -> float:
         """Return the aggregated bought energy value by the passed-in buyer."""
 
-        return sum(trade.traded_energy for trade in self.trades if trade.buyer == buyer)
+        return sum(trade.traded_energy for trade in self.trades if trade.buyer.name == buyer)
 
     def sold_energy(self, seller: str) -> float:
         """Return the aggregated sold energy value by the passed-in seller."""
 
-        return sum(trade.traded_energy for trade in self.trades if trade.seller == seller)
+        return sum(trade.traded_energy for trade in self.trades if trade.seller.name == seller)
 
     def total_spent(self, buyer: str) -> float:
         """Return the aggregated money spent by the passed-in buyer."""
 
-        return sum(trade.trade_price for trade in self.trades if trade.buyer == buyer)
+        return sum(trade.trade_price for trade in self.trades if trade.buyer.name == buyer)
 
     def total_earned(self, seller: str) -> float:
         """Return the aggregated money earned by the passed-in seller."""
-
-        return sum(trade.trade_price for trade in self.trades if trade.seller == seller)
+        return sum(trade.trade_price for trade in self.trades if trade.seller.name == seller)
 
     @staticmethod
     def _calculate_closing_time(delivery_time: DateTime) -> DateTime:

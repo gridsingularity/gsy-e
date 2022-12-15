@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from collections import defaultdict
 from logging import getLogger
 from typing import TYPE_CHECKING, List, Optional
 
@@ -108,14 +109,26 @@ class CoefficientArea(AreaBase):
 
     def _calculate_home_after_meter_data(
             self, current_time_slot: DateTime, scm_manager: "SCMManager") -> None:
-        production_kWh = sum(child.strategy.get_energy_to_sell_kWh(current_time_slot)
-                             for child in self.children)
-        consumption_kWh = sum(child.strategy.get_energy_to_buy_kWh(current_time_slot)
-                              for child in self.children)
+        home_production_kWh = 0
+        home_consumption_kWh = 0
+
+        asset_energy_requirements_kWh = defaultdict(lambda: 0)
+
+        for child in self.children:
+            # import
+            consumption_kWh = child.strategy.get_energy_to_buy_kWh(current_time_slot)
+            asset_energy_requirements_kWh[child.uuid] += consumption_kWh
+            home_consumption_kWh += consumption_kWh
+            # export
+            production_kWh = child.strategy.get_energy_to_sell_kWh(current_time_slot)
+            asset_energy_requirements_kWh[child.uuid] -= production_kWh
+            home_production_kWh += production_kWh
+
         scm_manager.add_home_data(
             self.uuid, self.name, self.grid_fee_constant, self.coefficient_percentage,
             self._taxes_surcharges, self._fixed_monthly_fee, self._marketplace_monthly_fee,
-            self._market_maker_rate, self._feed_in_tariff, production_kWh, consumption_kWh)
+            self._market_maker_rate, self._feed_in_tariff, home_production_kWh,
+            home_consumption_kWh, dict(asset_energy_requirements_kWh))
 
     def calculate_home_after_meter_data(
             self, current_time_slot: DateTime, scm_manager: "SCMManager") -> None:

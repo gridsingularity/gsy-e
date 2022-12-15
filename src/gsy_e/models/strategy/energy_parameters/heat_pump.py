@@ -8,8 +8,15 @@ from pendulum import DateTime
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.models.strategy.state import HeatPumpState
 from gsy_e.models.strategy.profile import EnergyProfile
+# pylint: disable=pointless-string-statement
+"""
+Description of physical units and parameters:
+- K .. Kelvin:              Si unit, used for temperature differences
+- C .. degrees celsius:     Used for temperatures
+- Q .. heat/thermal energy: Energy that a body has or needs to have/get a certain temperature [kWh]
+"""
 
-SPECIFIC_HEAT_CONST_WATER = 0.000116  # [kWh / (K * kg)]
+SPECIFIC_HEAT_CONST_WATER = 0.00116  # [kWh / (K * kg)]
 WATER_DENSITY = 1  # [kg / l]
 
 
@@ -37,7 +44,7 @@ class HeatPumpEnergyParameters:
         self._max_temp_C = max_temp_C
         self._source_type = source_type
         self._tank_volume_l = tank_volume_l
-        self._Q_specific = SPECIFIC_HEAT_CONST_WATER * tank_volume_l * WATER_DENSITY
+        self._Q_specific = SPECIFIC_HEAT_CONST_WATER * tank_volume_l * WATER_DENSITY  # [kWh / K]
         self._slot_length = GlobalConfig.slot_length
         self._max_energy_consumption_kWh = (
                 maximum_power_rating_kW * self._slot_length.total_hours())
@@ -47,7 +54,7 @@ class HeatPumpEnergyParameters:
         if not consumption_profile_uuid and not consumption_kW:
             consumption_kW = ConstSettings.HeatPumpSettings.CONSUMPTION_KW
         self._consumption_kWh: [DateTime, float] = EnergyProfile(
-            consumption_kW, consumption_profile_uuid)
+            consumption_kW * 1000, consumption_profile_uuid)  # EnergyProfile requires values in W
 
         if not external_temp_profile_uuid and not external_temp_C:
             external_temp_C = ConstSettings.HeatPumpSettings.EXT_TEMP_C
@@ -81,7 +88,7 @@ class HeatPumpEnergyParameters:
         self._decrement_posted_energy(time_slot, energy_kWh)
 
         self.state.update_temp_increase_K(
-            self._next_time_slot(time_slot), self._calc_temp_increase_K(time_slot, energy_kWh))
+            time_slot, self._calc_temp_increase_K(time_slot, energy_kWh))
 
     def get_min_energy_demand_kWh(self, time_slot: DateTime) -> float:
         """Get energy that is needed to compensate for the heat los due to heating."""
@@ -91,13 +98,10 @@ class HeatPumpEnergyParameters:
         """Get energy that is needed to heat up the storage to temp_max."""
         return self.state.get_max_energy_demand_kWh(time_slot)
 
-    def _next_time_slot(self, current_time_slot: DateTime) -> DateTime:
-        return current_time_slot + self._slot_length
-
-    def _temp_diff_to_energy(self, diff_temp_K: float) -> float:
+    def _temp_diff_to_Q_kWh(self, diff_temp_K: float) -> float:
         return diff_temp_K * self._Q_specific
 
-    def _energy_to_temp_diff(self, energy_kWh: float) -> float:
+    def _Q_kWh_to_temp_diff(self, energy_kWh: float) -> float:
         return energy_kWh / self._Q_specific
 
     def _rotate_profiles(self, current_time_slot: Optional[DateTime] = None):
@@ -107,7 +111,7 @@ class HeatPumpEnergyParameters:
         self.state.delete_past_state_values(current_time_slot)
 
     def _calc_energy_to_buy_maximum(self, time_slot: DateTime) -> float:
-        max_energy_consumption = self._temp_diff_to_energy(
+        max_energy_consumption = self._temp_diff_to_Q_kWh(
             self._max_temp_C -
             self.state.get_storage_temp_C(time_slot) +
             self.state.get_temp_decrease_K(time_slot)) / self._get_cop(time_slot)
@@ -121,22 +125,22 @@ class HeatPumpEnergyParameters:
         temp_diff = self.state.get_temp_decrease_K(time_slot) - max_temp_decrease_allowed
         if temp_diff < -FLOATING_POINT_TOLERANCE:
             return 0
-        min_energy_consumption = self._temp_diff_to_energy(temp_diff) / self._get_cop(time_slot)
+        min_energy_consumption = self._temp_diff_to_Q_kWh(temp_diff) / self._get_cop(time_slot)
         return min(self._max_energy_consumption_kWh, min_energy_consumption)
 
     def _calc_temp_decrease_K(self, time_slot: DateTime) -> float:
-        return self._energy_to_temp_diff(self._calc_Q_consumption(
+        return self._Q_kWh_to_temp_diff(self._calc_Q_from_energy_kWh(
             time_slot, self._consumption_kWh.profile[time_slot]))
 
     def _calc_temp_increase_K(self, time_slot: DateTime, energy_kWh: float) -> float:
-        return self._energy_to_temp_diff(self._calc_Q_consumption(time_slot, energy_kWh))
+        return self._Q_kWh_to_temp_diff(self._calc_Q_from_energy_kWh(time_slot, energy_kWh))
 
     def _populate_state(self, time_slot: DateTime):
         # order matters here
+        self.state.update_storage_temp(time_slot)
+
         self.state.set_temp_decrease_K(
             time_slot, self._calc_temp_decrease_K(time_slot))
-
-        self.state.update_storage_temp(time_slot)
 
         self._calc_energy_demand(time_slot)
 
@@ -146,14 +150,22 @@ class HeatPumpEnergyParameters:
         self.state.set_max_energy_demand_kWh(
             time_slot, self._calc_energy_to_buy_maximum(time_slot))
 
-    def _calc_Q_consumption(self, time_slot: DateTime, consumption_kWh: float) -> float:
-        return self._get_cop(time_slot) * consumption_kWh
+    def _calc_Q_from_energy_kWh(self, time_slot: DateTime, energy_kWh: float) -> float:
+        return self._get_cop(time_slot) * energy_kWh
 
     def _get_cop(self, time_slot: DateTime) -> float:
-        return self._calc_cop(self.state.get_storage_temp_C(time_slot),
-                              self._ext_temp_C.profile[time_slot])
+        """
+        Return the coefficient of performance (COP) for a given ambient and storage temperature.
+        The COP of a heat pump depends on various parameters, but can be modeled using
+        the two temperatures.
+        Generally, the higher the temperature difference between the source and the sink,
+        the lower the efficiency of the heat pump (the lower COP).
+        """
+        return self._cop_model(self.state.get_storage_temp_C(time_slot),
+                               self._ext_temp_C.profile[time_slot])
 
-    def _calc_cop(self, temp_current: float, temp_ambient: float) -> float:
+    def _cop_model(self, temp_current: float, temp_ambient: float) -> float:
+        """COP model following https://www.nature.com/articles/s41597-019-0199-y"""
         delta_temp = temp_current - temp_ambient
         if self._source_type == HeatPumpSourceType.AIR.value:
             return 6.08 - 0.09 * delta_temp + 0.0005 * delta_temp**2

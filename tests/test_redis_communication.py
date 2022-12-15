@@ -24,7 +24,7 @@ from unittest.mock import MagicMock
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.data_classes import (
-    Offer, Trade, TradeBidOfferInfo)
+    Offer, Trade, TradeBidOfferInfo, TraderDetails)
 from parameterized import parameterized
 from pendulum import datetime
 
@@ -256,11 +256,12 @@ class TestRedisMarketEventDispatcher(unittest.TestCase):
 
     def test_publish_event_converts_python_objects_to_json(self):
         now = datetime(2021, 11, 3, 10, 45)
-        offer = Offer("1", now, 2, 3, "A")
-        trade = Trade("2", now.add(minutes=1), Offer("accepted", now, 7, 8, "Z"), "B", "C",
-                      3, 2, None, None, TradeBidOfferInfo(None, None, None, None, None))
-        new_offer = Offer("3", now, 4, 5, "D")
-        existing_offer = Offer("4", now, 5, 6, "E")
+        offer = Offer("1", now, 2, 3, TraderDetails("A", ""))
+        trade = Trade("2", now.add(minutes=1), TraderDetails("B", ""), TraderDetails("C", ""),
+                      3, 2, offer=Offer("accepted", now, 7, 8, TraderDetails("Z", "")),
+                      offer_bid_trade_info=TradeBidOfferInfo(None, None, None, None, None))
+        new_offer = Offer("3", now, 4, 5, TraderDetails("D", ""))
+        existing_offer = Offer("4", now, 5, 6, TraderDetails("E", ""))
         kwargs = {"offer": offer,
                   "trade": trade,
                   "new_offer": new_offer,
@@ -272,10 +273,14 @@ class TestRedisMarketEventDispatcher(unittest.TestCase):
             assert dispatcher.redis.publish.call_count == 1
             payload = json.loads(dispatcher.redis.publish.call_args_list[0][0][1])
             assert isinstance(payload["kwargs"]["offer"], str)
-            assert Offer.from_json(payload["kwargs"]["offer"]) == offer
+            assert (Offer.from_json(payload["kwargs"]["offer"]).to_json_string() ==
+                    offer.to_json_string())
             assert isinstance(payload["kwargs"]["trade"], str)
-            assert Trade.from_json(payload["kwargs"]["trade"]) == trade
+            assert (Trade.from_json(payload["kwargs"]["trade"]).to_json_string() ==
+                    trade.to_json_string())
             assert isinstance(payload["kwargs"]["new_offer"], str)
-            assert Offer.from_json(payload["kwargs"]["new_offer"]) == new_offer
+            assert (Offer.from_json(payload["kwargs"]["new_offer"]).to_json_string() ==
+                    new_offer.to_json_string())
             assert isinstance(payload["kwargs"]["existing_offer"], str)
-            assert Offer.from_json(payload["kwargs"]["existing_offer"]) == existing_offer
+            assert (Offer.from_json(payload["kwargs"]["existing_offer"]).to_json_string() ==
+                    existing_offer.to_json_string())
