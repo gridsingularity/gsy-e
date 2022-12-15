@@ -24,7 +24,7 @@ from typing import Dict, List, Union, Tuple, Optional
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import (
     Bid, Offer, Trade, TradeBidOfferInfo, BidOfferMatch, TraderDetails)
-from gsy_framework.enums import BidOfferMatchAlgoEnum, SpotMarketTypeEnum
+from gsy_framework.enums import BidOfferMatchAlgoEnum
 from gsy_framework.matching_algorithms.requirements_validators import RequirementsSatisfiedChecker
 from pendulum import DateTime
 
@@ -54,7 +54,6 @@ class TwoSidedMarket(OneSidedMarket):
                  grid_fee_type=ConstSettings.MASettings.GRID_FEE_TYPE,
                  grid_fees=None, name=None, in_sim_duration=True):
         # pylint: disable=too-many-arguments
-        assert ConstSettings.MASettings.MARKET_TYPE != SpotMarketTypeEnum.ONE_SIDED.value
         super().__init__(time_slot, bc, notification_listener, readonly, grid_fee_type,
                          grid_fees, name, in_sim_duration=in_sim_duration)
 
