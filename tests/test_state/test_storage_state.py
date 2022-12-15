@@ -46,7 +46,8 @@ class TestStorageState:
         storage_state.add_default_values_to_state_profiles(active_market_slot_time_list)
         storage_state.offered_buy_kWh[future_time_slots[0]] = 10
         storage_state.offered_sell_kWh[future_time_slots[0]] = 10
-        with patch("gsy_e.models.state.GlobalConfig.FUTURE_MARKET_DURATION_HOURS", 5):
+        with patch("gsy_e.models.state.ConstSettings.FutureMarketSettings."
+                   "FUTURE_MARKET_DURATION_HOURS", 5):
             storage_state.market_cycle(past_time_slot, current_time_slot, future_time_slots)
             # The future_time_slots[0] is in the future, so it won't reset
             assert storage_state.offered_buy_kWh[future_time_slots[0]] == 10

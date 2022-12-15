@@ -17,12 +17,13 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import json
+from logging import getLogger
 
 from gsy_framework.utils import convert_pendulum_to_str_in_dict, key_in_dict_and_not_none
-from gsy_framework.constants_limits import ConstSettings, SpotMarketTypeEnum
+from gsy_framework.constants_limits import ConstSettings, SpotMarketTypeEnum, GlobalConfig
 from pendulum import Duration
 
-from gsy_e.models.area import AreaBase, Area # NOQA
+from gsy_e.models.area import CoefficientArea, Area # NOQA
 from gsy_e.models.strategy import BaseStrategy
 from gsy_e.models.area.throughput_parameters import ThroughputParameters
 
@@ -35,8 +36,12 @@ from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy # NOQA
 from gsy_e.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy  # NOQA
 from gsy_e.models.strategy.finite_power_plant import FinitePowerPlant # NOQA
 
-from gsy_e.models.leaves import Leaf # NOQA
+from gsy_e.models.leaves import (
+    Leaf, scm_leaf_mapping, CoefficientLeaf, forward_leaf_mapping,
+    external_scm_leaf_mapping) # NOQA
 from gsy_e.models.leaves import *  # NOQA  # pylint: disable=wildcard-import
+
+logger = getLogger(__name__)
 
 
 class AreaEncoder(json.JSONEncoder):
@@ -44,7 +49,7 @@ class AreaEncoder(json.JSONEncoder):
     def default(self, o):
         # Leaf classes are Areas too, therefore the Area/AreaBase classes need to be handled
         # separately.
-        if type(o) in [Area, AreaBase]:
+        if type(o) in [Area, CoefficientArea]:
             return self._encode_area(o)
         if isinstance(o, Leaf):
             return self._encode_leaf(o)
@@ -113,11 +118,37 @@ def _instance_from_dict(description):
 
 
 def _leaf_from_dict(description, config):
-    leaf_type = globals().get(description.pop("type"), type(None))
-    if not issubclass(leaf_type, Leaf):
-        raise ValueError(f"Unknown leaf type '{leaf_type}'")
+    if ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS:
+        strategy_type = description.pop("type")
+        leaf_type = forward_leaf_mapping.get(strategy_type)
+        if not leaf_type:
+            return None
+        if not issubclass(leaf_type, Leaf):
+            raise ValueError(f"Unknown forward leaf type '{leaf_type}'")
+    elif ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
+        strategy_type = description.pop("type")
+        if (config.external_connection_enabled and
+                description.get("forecast_stream_enabled", False) is True):
+            leaf_type = external_scm_leaf_mapping.get(strategy_type)
+        else:
+            leaf_type = scm_leaf_mapping.get(strategy_type)
+        if not leaf_type:
+            return None
+        if not issubclass(leaf_type, CoefficientLeaf):
+            raise ValueError(f"Unknown coefficient leaf type '{leaf_type}'")
+    else:
+        leaf_type = globals().get(description.pop("type"), type(None))
+        if not issubclass(leaf_type, Leaf):
+            raise ValueError(f"Unknown leaf type '{leaf_type}'")
+    description = leaf_type.strategy_type.deserialize_args(description)
     display_type = description.pop("display_type", None)
-    leaf_object = leaf_type(**description, config=config)
+    try:
+        leaf_object = leaf_type(**description, config=config)
+    except KeyError as exc:
+        # If the strategy is not supported in SCM or normal operating mode, do
+        # not create the area at all.
+        logger.error("Failed to create leaf %s %s %s", leaf_type, description, exc)
+        return None
     if display_type is not None:
         leaf_object.display_type = display_type
     return leaf_object
@@ -141,13 +172,25 @@ def area_from_dict(description, config):
             children = [area_from_dict(child, config) for child in description["children"]]
         else:
             children = None
+
         grid_fee_percentage = description.get("grid_fee_percentage", None)
         grid_fee_constant = description.get("grid_fee_constant", None)
+
         if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
-            # For the SCM only use the AreaBase strategy.
-            area = AreaBase(name, children, uuid, optional("strategy"), config,
-                            grid_fee_percentage=grid_fee_percentage,
-                            grid_fee_constant=grid_fee_constant)
+            # For the SCM only use the CoefficientArea strategy.
+            area = CoefficientArea(
+                name, children, uuid, optional("strategy"), config,
+                coefficient_percentage=description.get("coefficient_percentage", 0.0),
+                taxes_surcharges=description.get("taxes_surcharges", 0.0),
+                fixed_monthly_fee=description.get("fixed_monthly_fee", 0.0),
+                marketplace_monthly_fee=description.get("marketplace_monthly_fee", 0.0),
+                market_maker_rate=description.get(
+                    "market_maker_rate",
+                    ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE / 100.),
+                feed_in_tariff=description.get(
+                    "feed_in_tariff", GlobalConfig.FEED_IN_TARIFF / 100.,),
+                grid_fee_percentage=grid_fee_percentage,
+                grid_fee_constant=grid_fee_constant)
         else:
             area = Area(name, children, uuid, optional("strategy"), config,
                         grid_fee_percentage=grid_fee_percentage,

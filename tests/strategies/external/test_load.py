@@ -15,20 +15,20 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-# pylint: disable=missing-function-docstring, protected-access
+import json
+# pylint: disable=missing-function-docstring, protected-access, unused-import
 import uuid
 
 import pytest
-from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.constants_limits import DATE_TIME_FORMAT
-from pendulum import datetime
+from gsy_framework.constants_limits import DATE_TIME_FORMAT, ConstSettings
 
-from gsy_e.gsy_e_core.blockchain_interface import NonBlockchainInterface
-from gsy_e.models.market.settlement import SettlementMarket
 from gsy_e.models.strategy.external_strategies.load import LoadHoursExternalStrategy
+from tests.strategies.external.fixtures import future_market_fixture  # noqa
+from tests.strategies.external.fixtures import settlement_market_fixture  # noqa
 from tests.strategies.external.utils import (
+    assert_bid_offer_aggregator_commands_return_value,
     check_external_command_endpoint_with_correct_payload_succeeds,
-    create_areas_markets_for_strategy_fixture, assert_bid_offer_aggregator_commands_return_value)
+    create_areas_markets_for_strategy_fixture)
 
 
 @pytest.fixture(name="external_load")
@@ -36,12 +36,6 @@ def external_load_fixture():
     ConstSettings.MASettings.MARKET_TYPE = 2
     yield create_areas_markets_for_strategy_fixture(LoadHoursExternalStrategy(100))
     ConstSettings.MASettings.MARKET_TYPE = 1
-
-
-@pytest.fixture(name="settlement_market")
-def settlement_market_fixture():
-    return SettlementMarket(bc=NonBlockchainInterface(str(uuid.uuid4())),
-                            time_slot=datetime(2021, 12, 7, 12, 00))
 
 
 class TestLoadForecastExternalStrategy:
@@ -113,6 +107,28 @@ class TestLoadForecastExternalStrategy:
         assert list(settlement_market.bids.values())[0].energy == unsettled_energy_kWh
 
     @staticmethod
+    def test_bid_aggregator_places_future_bid(external_load, future_markets):
+        future_energy_kWh = 0.5
+        external_load.area._markets.future_markets = future_markets
+
+        for time_slot in future_markets.market_time_slots:
+            external_load.state._energy_requirement_Wh[time_slot] = future_energy_kWh * 1000
+            return_value = external_load.trigger_aggregator_commands(
+                {
+                    "type": "bid",
+                    "price": 200.0,
+                    "energy": future_energy_kWh,
+                    "time_slot": time_slot.format(DATE_TIME_FORMAT),
+                    "transaction_id": str(uuid.uuid4())
+                }
+            )
+
+            assert return_value["status"] == "ready"
+            bid_id = json.loads(return_value["bid"])["id"]
+            assert future_markets.bids[bid_id].energy == future_energy_kWh
+        assert len(future_markets.bids.values()) == len(future_markets.market_time_slots)
+
+    @staticmethod
     def test_offer_aggregator_places_settlement_offer(external_load, settlement_market):
         unsettled_energy_kWh = 0.5
         external_load.area._markets.settlement_market_ids = [settlement_market.id]
@@ -170,6 +186,26 @@ class TestLoadForecastExternalStrategy:
         assert return_value["status"] == "ready"
         assert return_value["command"] == "bid_delete"
         assert return_value["deleted_bids"] == [bid.id]
+
+    @staticmethod
+    def test_delete_bid_aggregator_deletes_bid_from_future_market(external_load, future_markets):
+        external_load.area._markets.future_markets = future_markets
+        for time_slot in future_markets.market_time_slots:
+            bid = external_load.post_bid(
+                external_load.area.future_markets, price=200.0, energy=1.0,
+                time_slot=time_slot)
+
+            return_value = external_load.trigger_aggregator_commands(
+                {
+                    "type": "delete_bid",
+                    "offer": str(bid.id),
+                    "transaction_id": str(uuid.uuid4()),
+                    "time_slot": time_slot.format(DATE_TIME_FORMAT)
+                }
+            )
+            assert return_value["status"] == "ready"
+            assert return_value["command"] == "bid_delete"
+            assert return_value["deleted_bids"] == [bid.id]
 
     @staticmethod
     def test_list_bids_aggregator(external_load):

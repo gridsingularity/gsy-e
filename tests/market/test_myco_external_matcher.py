@@ -3,13 +3,14 @@ import json
 from unittest.mock import MagicMock, patch
 
 import pytest
+from gsy_framework.enums import AvailableMarketTypes
 from pendulum import now
 
+from gsy_framework.data_classes import Offer, Bid, TraderDetails
 import gsy_e.constants
-import gsy_e.models.market.market_redis_connection
-from gsy_e.gsy_e_core.exceptions import MycoValidationException, InvalidBidOfferPairException
 import gsy_e.gsy_e_core.redis_connections.area_market
-from gsy_e.models.market import Offer, Bid
+import gsy_e.models.market.market_redis_connection
+from gsy_e.gsy_e_core.exceptions import InvalidBidOfferPairException, MycoValidationException
 from gsy_e.models.market.two_sided import TwoSidedMarket
 from gsy_e.models.myco_matcher import MycoExternalMatcher
 from gsy_e.models.myco_matcher.myco_external_matcher import MycoExternalMatcherValidator
@@ -32,11 +33,11 @@ class TestMycoExternalMatcher:
         cls.events_channel = f"{cls.channel_prefix}events/"
 
     def _populate_market_bids_offers(self):
-        self.market.offers = {"id1": Offer("id1", now(), 3, 3, "seller", 3),
-                              "id2": Offer("id2", now(), 0.5, 1, "seller", 0.5)}
+        self.market.offers = {"id1": Offer("id1", now(), 3, 3, TraderDetails("seller", ""), 3),
+                              "id2": Offer("id2", now(), 0.5, 1, TraderDetails("seller", ""), 0.5)}
 
-        self.market.bids = {"id3": Bid("id3", now(), 1, 1, "buyer", 1),
-                            "id4": Bid("id4", now(), 0.5, 1, "buyer", 1)}
+        self.market.bids = {"id3": Bid("id3", now(), 1, 1, TraderDetails("buyer", ""), 1),
+                            "id4": Bid("id4", now(), 0.5, 1, TraderDetails("buyer", ""), 1)}
 
     def test_subscribes_to_redis_channels(self):
         self.matcher.myco_ext_conn.sub_to_multiple_channels.assert_called_once_with(
@@ -91,6 +92,7 @@ class TestMycoExternalMatcher:
         self.matcher.update_area_uuid_markets_mapping({"areax": {"markets": [self.market]}})
         assert mapping_dict == self.matcher.area_uuid_markets_mapping
 
+    @pytest.mark.skip("Attributes / requirements feature disabled.")
     def test_get_orders(self):
         self._populate_market_bids_offers()
         expected_orders = self.market.orders_per_slot()
@@ -123,7 +125,8 @@ class TestMycoExternalMatcher:
             "event": "offers_bids_response",
             "bids_offers": {"area1": {}}
         }
-        self.matcher.update_area_uuid_markets_mapping({"area1": {"markets": [self.market]}})
+        self.matcher.update_area_uuid_markets_mapping(
+            {"area1": {AvailableMarketTypes.SPOT: [self.market]}})
         self.matcher._publish_orders_message_buffer = [payload]
         self.matcher._publish_orders()
         self.matcher.myco_ext_conn.publish_json.assert_called_once_with(

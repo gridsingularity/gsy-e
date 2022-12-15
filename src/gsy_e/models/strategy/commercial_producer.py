@@ -17,29 +17,39 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
 
-from gsy_framework.read_user_profile import InputProfileTypes
-from gsy_framework.utils import convert_str_to_pendulum_in_dict, convert_pendulum_to_str_in_dict
-from gsy_framework.utils import find_object_of_same_weekday_and_time
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.data_classes import TraderDetails
+from gsy_framework.utils import (convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict,
+                                 find_object_of_same_weekday_and_time)
 from gsy_framework.validators import CommercialProducerValidator
 
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.exceptions import MarketException
-from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.models.base import AssetType
-from gsy_e.models.strategy import BaseStrategy, INF_ENERGY
+from gsy_e.models.strategy import INF_ENERGY, BaseStrategy
+from gsy_e.models.strategy.profile import EnergyProfile
 
 
 class CommercialStrategy(BaseStrategy):
-
-    def serialize(self):
-        return {"energy_rate": self.energy_rate_input}
+    """Strategy class for commercial energy producer that can sell an infinite amount of energy."""
 
     def __init__(self, energy_rate=None):
         CommercialProducerValidator.validate(energy_rate=energy_rate)
         super().__init__()
-        self.energy_rate_input = energy_rate
-        self.energy_rate = None
         self.energy_per_slot_kWh = INF_ENERGY
+
+        if energy_rate is None:
+            energy_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
+        self._sell_energy_profile = EnergyProfile(input_energy_rate=energy_rate)
+
+    @property
+    def energy_rate(self):
+        # This method exists for backward compatibility.
+        """Return sell energy profile of the asset."""
+        return self._sell_energy_profile.profile
+
+    def serialize(self):
+        return {"energy_rate": self._sell_energy_profile.input_energy_rate}
 
     @property
     def state(self):
@@ -49,18 +59,13 @@ class CommercialStrategy(BaseStrategy):
         self._read_or_rotate_profiles()
 
     def _read_or_rotate_profiles(self, reconfigure=False):
-        if self.energy_rate_input is None:
-            self.energy_rate = self.simulation_config.market_maker_rate
-        else:
-            self.energy_rate = \
-                global_objects.profiles_handler.rotate_profile(
-                    InputProfileTypes.IDENTITY,
-                    self.energy_rate if self.energy_rate else self.energy_rate_input)
+        self._sell_energy_profile.read_or_rotate_profiles(reconfigure=reconfigure)
 
     def _markets_to_offer_on_activate(self):
         return self.area.all_markets
 
     def place_initial_offers(self):
+        """Placing initial offers on newly opened markets."""
         # That's usually an init function but the markets aren't open during the init call
         for market in self._markets_to_offer_on_activate():
             self.offer_energy(market)
@@ -82,22 +87,21 @@ class CommercialStrategy(BaseStrategy):
                 self._offer_balancing_energy(balancing_market)
 
     def offer_energy(self, market):
-        energy_rate = find_object_of_same_weekday_and_time(self.energy_rate, market.time_slot)
+        """Method for offering energy on a market."""
+        energy_rate = find_object_of_same_weekday_and_time(
+            self.energy_rate, market.time_slot)
         try:
             offer = market.offer(
                 self.energy_per_slot_kWh * energy_rate,
                 self.energy_per_slot_kWh,
-                self.owner.name,
+                TraderDetails(self.owner.name, self.owner.uuid, self.owner.name, self.owner.uuid),
                 original_price=self.energy_per_slot_kWh * energy_rate,
-                seller_origin=self.owner.name,
-                seller_origin_id=self.owner.uuid,
-                seller_id=self.owner.uuid
             )
 
             self.offers.post(offer, market.id)
         except MarketException:
             logging.error(f"Offer posted with negative energy rate {energy_rate}."
-                          f"Posting offer with zero energy rate instead.")
+                          "Posting offer with zero energy rate instead.")
 
     def _offer_balancing_energy(self, market):
         if not self._is_eligible_for_balancing_market:
@@ -111,15 +115,16 @@ class CommercialStrategy(BaseStrategy):
         offer = market.balancing_offer(
             self.energy_per_slot_kWh * balancing_supply_rate,
             self.energy_per_slot_kWh,
-            self.owner.name
+            TraderDetails(self.owner.name, self.owner.uuid, self.owner.name, self.owner.uuid)
         )
         self.offers.post(offer, market.id)
 
     def get_state(self):
-        return {"energy_rate": convert_pendulum_to_str_in_dict(self.energy_rate)}
+        return {"energy_rate": convert_pendulum_to_str_in_dict(self._sell_energy_profile.profile)}
 
     def restore_state(self, saved_state):
-        self.energy_rate.update(convert_str_to_pendulum_in_dict(saved_state["energy_rate"]))
+        self._sell_energy_profile.profile = convert_str_to_pendulum_in_dict(
+            saved_state["energy_rate"])
 
     @property
     def asset_type(self):

@@ -23,11 +23,12 @@ from typing import Dict, List
 
 from gsy_framework.constants_limits import GlobalConfig
 from gsy_framework.data_classes import BidOfferMatch
+from gsy_framework.enums import AvailableMarketTypes
 
 import gsy_e.constants
 from gsy_e.gsy_e_core.exceptions import InvalidBidOfferPairException, MycoValidationException
+from gsy_e.gsy_e_core.market_counters import ExternalTickCounter
 from gsy_e.gsy_e_core.redis_connections.area_market import myco_redis_communicator_factory
-from gsy_e.gsy_e_core.util import ExternalTickCounter
 from gsy_e.models.market.two_sided import TwoSidedMarket
 from gsy_e.models.myco_matcher.myco_matcher_interface import MycoMatcherInterface
 
@@ -88,7 +89,7 @@ class MycoExternalMatcher(MycoMatcherInterface):
             response_data = {"event": ExternalMatcherEventsEnum.OFFERS_BIDS_RESPONSE.value}
             filters = data.get("filters", {})
             # IDs of markets (Areas) the client is interested in
-            filtered_areas_uuids = filters.get("markets")
+            filtered_areas_uuids = filters.get(AvailableMarketTypes.SPOT)
             market_orders_list_mapping = {}
             for area_uuid, area_data in self.area_uuid_markets_mapping.items():
                 if filtered_areas_uuids and area_uuid not in filtered_areas_uuids:
@@ -96,7 +97,8 @@ class MycoExternalMatcher(MycoMatcherInterface):
                     continue
 
                 # Cache the market (needed while matching)
-                for market in area_data["markets"] + area_data.get("settlement_markets", []):
+                for market in (area_data[AvailableMarketTypes.SPOT] +
+                               area_data.get(AvailableMarketTypes.SETTLEMENT, [])):
                     self.area_markets_mapping.update(
                         {f"{area_uuid}-{market.time_slot_str}": market})
                     if area_uuid not in market_orders_list_mapping:
@@ -104,9 +106,9 @@ class MycoExternalMatcher(MycoMatcherInterface):
                     market_orders_list_mapping[area_uuid].update(
                         self._get_orders(market, filters))
 
-                if area_data.get("future_markets"):
+                if area_data.get(AvailableMarketTypes.FUTURE):
                     # Future markets
-                    market = area_data["future_markets"]
+                    market = area_data[AvailableMarketTypes.FUTURE]
                     self.area_markets_mapping.update(
                         {f"{area_uuid}-{time_slot_str}": market
                          for time_slot_str in market.orders_per_slot().keys()})

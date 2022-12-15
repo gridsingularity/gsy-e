@@ -1,49 +1,44 @@
 import ast
 import json
 import logging
-import pickle
 import traceback
 from datetime import datetime, date
 from typing import Dict, Optional
-from zlib import decompress
 
 from gsy_framework.constants_limits import GlobalConfig, ConstSettings
+from gsy_framework.enums import ConfigurationType
 from gsy_framework.settings_validators import validate_global_settings
 from pendulum import duration, instance
 
 import gsy_e.constants
 from gsy_e.gsy_e_core.simulation import run_simulation
-from gsy_e.gsy_e_core.util import available_simulation_scenarios, update_advanced_settings
+from gsy_e.gsy_e_core.util import update_advanced_settings
 from gsy_e.models.config import SimulationConfig
 
+logging.getLogger().setLevel(logging.ERROR)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-def decompress_and_decode_queued_strings(queued_string: bytes) -> Dict:
-    """Decompress and decode data sent via redis queue."""
-    return pickle.loads(decompress(queued_string))
-
-
-def launch_simulation_from_rq_job(scenario: bytes, settings: Optional[Dict],
-                                  events: Optional[str], aggregator_device_mapping: str,
-                                  saved_state: bytes, job_id: str,
+# pylint: disable=too-many-branches, too-many-statements
+def launch_simulation_from_rq_job(scenario: Dict,
+                                  settings: Optional[Dict],
+                                  events: Optional[str],
+                                  aggregator_device_mapping: str,
+                                  saved_state: Dict,
+                                  job_id: str,
                                   connect_to_profiles_db: bool = True):
     # pylint: disable=too-many-arguments, too-many-locals
     """Launch simulation from rq job."""
-    logging.getLogger().setLevel(logging.ERROR)
-    scenario = decompress_and_decode_queued_strings(scenario)
-    if isinstance(scenario, dict):
-        gsy_e.constants.CONFIGURATION_ID = scenario.pop("configuration_uuid")
-        if "collaboration_uuid" in scenario:
-            gsy_e.constants.EXTERNAL_CONNECTION_WEB = True
-            GlobalConfig.IS_CANARY_NETWORK = scenario.pop("is_canary_network", False)
-            gsy_e.constants.RUN_IN_REALTIME = GlobalConfig.IS_CANARY_NETWORK
-    saved_state = decompress_and_decode_queued_strings(saved_state)
-    logger.info("Starting simulation with job_id: %s and configuration id: %s",
-                job_id, gsy_e.constants.CONFIGURATION_ID)
 
+    gsy_e.constants.CONFIGURATION_ID = scenario.pop("configuration_uuid", None)
     try:
+        if not gsy_e.constants.CONFIGURATION_ID:
+            raise Exception("configuration_uuid was not provided")
+
+        logger.error("Starting simulation with job_id: %s and configuration id: %s",
+                     job_id, gsy_e.constants.CONFIGURATION_ID)
+
         if settings is None:
             settings = {}
         else:
@@ -82,6 +77,19 @@ def launch_simulation_from_rq_job(scenario: bytes, settings: Optional[Dict],
             "aggregator_device_mapping": aggregator_device_mapping
         }
 
+        assert isinstance(scenario, dict)
+        if "collaboration_uuid" in scenario or settings.get("type") in [
+                ConfigurationType.CANARY_NETWORK.value, ConfigurationType.B2B.value]:
+            gsy_e.constants.EXTERNAL_CONNECTION_WEB = True
+            GlobalConfig.IS_CANARY_NETWORK = scenario.pop("is_canary_network", False)
+            gsy_e.constants.RUN_IN_REALTIME = GlobalConfig.IS_CANARY_NETWORK
+
+            if settings.get("type") == ConfigurationType.B2B.value:
+                ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS = True
+                # Disable fully automatic trading mode for the template strategies in favor of
+                # UI manual and auto modes.
+                ConstSettings.ForwardMarketSettings.FULLY_AUTO_TRADING = False
+
         if GlobalConfig.IS_CANARY_NETWORK:
             config_settings["start_date"] = (
                 instance((datetime.combine(date.today(), datetime.min.time()))))
@@ -114,13 +122,8 @@ def launch_simulation_from_rq_job(scenario: bytes, settings: Optional[Dict],
             ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS
         )
 
-        if scenario is None:
-            scenario_name = "default_2a"
-        elif scenario in available_simulation_scenarios:
-            scenario_name = scenario
-        else:
-            scenario_name = "json_arg"
-            config.area = scenario
+        scenario_name = "json_arg"
+        config.area = scenario
 
         kwargs = {"no_export": True,
                   "seed": settings.get("random_seed", 0)}
@@ -141,7 +144,9 @@ def launch_simulation_from_rq_job(scenario: bytes, settings: Optional[Dict],
     except Exception:
         # pylint: disable=import-outside-toplevel
         from gsy_e.gsy_e_core.redis_connections.simulation import publish_job_error_output
+        logger.error("Error on jobId, %s, configuration id: %s",
+                     job_id, gsy_e.constants.CONFIGURATION_ID)
         publish_job_error_output(job_id, traceback.format_exc())
-        logger.exception("Error on jobId, %s, configuration id: %s",
-                         job_id, gsy_e.constants.CONFIGURATION_ID)
+        logger.error("Error on jobId, %s, configuration id: %s: error sent to gsy-web",
+                     job_id, gsy_e.constants.CONFIGURATION_ID)
         raise

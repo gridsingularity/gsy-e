@@ -1,31 +1,21 @@
 import json
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, PropertyMock
 
 import pytest
 from gsy_framework.exceptions import GSyAreaException
 
 import gsy_e
-from gsy_e.models.area import Area, RedisMarketExternalConnection
-
-# pylint:disable=protected-access
-# pylint:disable=no-self-use
+from gsy_e.models.area.redis_external_market_connection import RedisMarketExternalConnection
 
 
-@pytest.fixture(name="area")
-def area_fixture() -> Area:
-    """Create an area and yield it."""
-    config = Mock()
-    area = Area(name="parent_area", children=[], config=config,
-                external_connection_available=True)
-    yield area
+# pylint:disable=protected-access, disable=no-self-use
 
 
 @pytest.fixture(name="market_connection")
-def redis_external_market_connection_fixture(area) -> RedisMarketExternalConnection:
+def redis_external_market_connection_fixture() -> "RedisMarketExternalConnection":
     """Return the redis_ext_conn member of the area"""
-    assert area.redis_ext_conn
-    assert area.redis_ext_conn.aggregator is None
-    yield area.redis_ext_conn
+    area = Mock()
+    return RedisMarketExternalConnection(area)
 
 
 class TestRedisMarketExternalConnection:
@@ -80,7 +70,7 @@ class TestRedisMarketExternalConnection:
         assert market_connection._connected
         register_mock.assert_called_once_with(
             market_connection._redis_communicator, market_connection.channel_prefix,
-            False, "mock_transaction_id", area_uuid=str(market_connection.area.uuid))
+            False, "mock_transaction_id", area_uuid=market_connection.area.uuid)
 
     @patch("gsy_e.models.area.redis_external_market_connection."
            "ExternalStrategyConnectionManager.unregister")
@@ -126,7 +116,7 @@ class TestRedisMarketExternalConnection:
         # market_connection._connected is True
         # passing fee_percent while config.grid_fee_type != 2
         market_connection._connected = True
-        expected_response = {"area_uuid": str(market_connection.area.uuid),
+        expected_response = {"area_uuid": market_connection.area.uuid,
                              "command": "grid_fees", "status": "error", "error_message":
                                  "GridFee parameter conflicting with GlobalConfigFeeType",
                              "transaction_id": None}
@@ -150,13 +140,19 @@ class TestRedisMarketExternalConnection:
         response_channel = f"{market_connection.channel_prefix}/response/grid_fees"
 
         # passing fee_percent while config.grid_fee_type == 2
+        market_connection.area.grid_fee_constant = None
+        grid_fee_percentage = 12
+        market_connection.area.grid_fee_percentage = grid_fee_percentage
         market_connection.area.config.grid_fee_type = 2
-        expected_response = {"area_uuid": str(market_connection.area.uuid),
+
+        expected_response = {"area_uuid": market_connection.area.uuid,
                              "command": "grid_fees", "status": "ready", "market_fee_const":
-                                 "None", "market_fee_percent": "None", "transaction_id": None}
-        assert market_connection.set_grid_fees_callback({"data": {"fee_percent": 12}}) is None
+                                 "None", "market_fee_percent": str(grid_fee_percentage),
+                             "transaction_id": None}
+        assert market_connection.set_grid_fees_callback(
+            {"data": {"fee_percent": grid_fee_percentage}}) is None
         market_connection.area.area_reconfigure_event.assert_called_once_with(
-            grid_fee_percentage=12, grid_fee_constant=None)
+            grid_fee_percentage=grid_fee_percentage, grid_fee_constant=None)
         market_connection._redis_communicator.publish_json.assert_called_once_with(
             response_channel, expected_response)
 
@@ -165,7 +161,7 @@ class TestRedisMarketExternalConnection:
                    "RedisMarketExternalConnection.is_aggregator_controlled", True):
             expected_response.pop("transaction_id")
             assert market_connection.set_grid_fees_callback(
-                {"data": {"fee_percent": 12}}) == expected_response
+                {"data": {"fee_percent": grid_fee_percentage}}) == expected_response
 
     def test_set_grid_fees_callback_gsy_e_exception(self, market_connection):
         """Test the set_grid_fees callback when the area_reconfigure_event raises an exception."""
@@ -199,13 +195,15 @@ class TestRedisMarketExternalConnection:
     def test_publish_market_cycle(self, market_connection):
         """Test the publish_market_cycle method."""
         market_connection.aggregator = Mock()
+        type(market_connection.area).current_market = PropertyMock(return_value=None)
         market_connection.publish_market_cycle()
+
         market_connection.aggregator.add_batch_market_event.assert_not_called()
 
-        with patch("gsy_e.models.area.Area.current_market", True):
-            market_connection.publish_market_cycle()
+        type(market_connection.area).current_market = PropertyMock(return_value=True)
+        market_connection.publish_market_cycle()
         market_connection.aggregator.add_batch_market_event.assert_called_once_with(
-            str(market_connection.area.uuid), {})
+            market_connection.area.uuid, {})
 
     def test_deactivate(self, market_connection):
         """Test whether the deactivate method correctly dispatch the event."""

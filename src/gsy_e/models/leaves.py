@@ -18,13 +18,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import inspect
 import logging
 
-from gsy_framework.constants_limits import ConstSettings, SpotMarketTypeEnum
-
-from gsy_e.models.area import Area
+from gsy_e.models.area import Area, CoefficientArea
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
-from gsy_e.models.strategy.external_strategies.load import (LoadForecastExternalStrategy,
-                                                            LoadHoursExternalStrategy,
-                                                            LoadProfileExternalStrategy)
+from gsy_e.models.strategy.external_strategies.load import (
+    LoadHoursForecastExternalStrategy, LoadProfileForecastExternalStrategy,
+    LoadHoursExternalStrategy, LoadProfileExternalStrategy)
 from gsy_e.models.strategy.external_strategies.pv import (PVExternalStrategy,
                                                           PVForecastExternalStrategy,
                                                           PVPredefinedExternalStrategy,
@@ -32,13 +30,19 @@ from gsy_e.models.strategy.external_strategies.pv import (PVExternalStrategy,
 from gsy_e.models.strategy.external_strategies.smart_meter import SmartMeterExternalStrategy
 from gsy_e.models.strategy.external_strategies.storage import StorageExternalStrategy
 from gsy_e.models.strategy.finite_power_plant import FinitePowerPlant
+from gsy_e.models.strategy.forward.load import ForwardLoadStrategy
+from gsy_e.models.strategy.forward.pv import ForwardPVStrategy
+from gsy_e.models.strategy.heat_pump import HeatPumpStrategy
 from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_e.models.strategy.market_maker_strategy import MarketMakerStrategy
 from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy
 from gsy_e.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
+from gsy_e.models.strategy.predefined_wind import WindUserProfileStrategy
 from gsy_e.models.strategy.pv import PVStrategy
-from gsy_e.models.strategy.scm.load import SCMLoadHoursStrategy, SCMLoadProfile
+from gsy_e.models.strategy.scm.external.load import ExternalSCMLoadHoursStrategy
+from gsy_e.models.strategy.scm.external.pv import ExternalSCMPVStrategy
+from gsy_e.models.strategy.scm.load import SCMLoadHoursStrategy, SCMLoadProfileStrategy
 from gsy_e.models.strategy.scm.pv import SCMPVPredefinedStrategy, SCMPVStrategy, SCMPVUserProfile
 from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
 from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
@@ -58,36 +62,21 @@ forecast_strategy_mapping = {
     PVPredefinedStrategy: PVForecastExternalStrategy,
     PVStrategy: PVForecastExternalStrategy,
     PVUserProfileStrategy: PVForecastExternalStrategy,
-    DefinedLoadStrategy: LoadForecastExternalStrategy,
-    LoadHoursStrategy: LoadForecastExternalStrategy
-}
-
-scm_strategy_mapping = {
-    LoadHoursStrategy: SCMLoadHoursStrategy,
-    DefinedLoadStrategy: SCMLoadProfile,
-    PVStrategy: SCMPVStrategy,
-    PVPredefinedStrategy: SCMPVPredefinedStrategy,
-    PVUserProfileStrategy: SCMPVUserProfile,
-    StorageStrategy: SCMStorageStrategy
+    DefinedLoadStrategy: LoadProfileForecastExternalStrategy,
+    LoadHoursStrategy: LoadHoursForecastExternalStrategy
 }
 
 
-class Leaf(Area):
+class LeafBase:
     """
     Superclass for frequently used leaf Areas, so they can be
     instantiated and serialized in a more compact format
     """
     strategy_type = None
+    strategy = None
 
     def __init__(self, name, config, uuid=None, **kwargs):
-        if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
-            # For the SCM only use the SCM-enabled strategies and ignore the rest.
-            try:
-                self.strategy_type = scm_strategy_mapping[self.strategy_type]
-            except KeyError as e:
-                logging.error("Strategy %s not supported in SCM.", self.strategy_type)
-                raise e
-        elif config.external_connection_enabled:
+        if config.external_connection_enabled:
             if kwargs.get("forecast_stream_enabled", False) is True:
                 try:
                     self.strategy_type = forecast_strategy_mapping[self.strategy_type]
@@ -147,6 +136,14 @@ class Leaf(Area):
 # pylint: disable=missing-class-docstring
 
 
+class Leaf(LeafBase, Area):
+    pass
+
+
+class CoefficientLeaf(LeafBase, CoefficientArea):
+    pass
+
+
 class CommercialProducer(Leaf):
     strategy_type = CommercialStrategy
 
@@ -171,6 +168,10 @@ class PVProfile(Leaf):
     strategy_type = PVUserProfileStrategy
 
 
+class WindTurbine(Leaf):
+    strategy_type = WindUserProfileStrategy
+
+
 class LoadProfile(Leaf):
     strategy_type = DefinedLoadStrategy
 
@@ -187,5 +188,64 @@ class SmartMeter(Leaf):
     strategy_type = SmartMeterStrategy
 
 
+class ForwardLoad(Leaf):
+    strategy_type = ForwardLoadStrategy
+
+
+class ForwardPV(Leaf):
+    strategy_type = ForwardPVStrategy
+
+
+class HeatPump(Leaf):
+    strategy_type = HeatPumpStrategy
+
+
 class FiniteDieselGenerator(Leaf):
     strategy_type = FinitePowerPlant
+
+
+class SCMPV(CoefficientLeaf):
+    strategy_type = SCMPVStrategy
+
+
+class SCMPredefinedPV(CoefficientLeaf):
+    strategy_type = SCMPVPredefinedStrategy
+
+
+class SCMPVProfile(CoefficientLeaf):
+    strategy_type = SCMPVUserProfile
+
+
+class SCMLoadProfile(CoefficientLeaf):
+    strategy_type = SCMLoadProfileStrategy
+
+
+class SCMLoadHours(CoefficientLeaf):
+    strategy_type = SCMLoadHoursStrategy
+
+
+class SCMStorage(CoefficientLeaf):
+    strategy_type = SCMStorageStrategy
+
+
+scm_leaf_mapping = {
+    "LoadHours": SCMLoadHours,
+    "LoadProfile": SCMLoadProfile,
+    "Storage": SCMStorage,
+    "PV": SCMPV,
+    "PredefinedPV": SCMPredefinedPV,
+    "PVProfile": SCMPVProfile
+}
+
+external_scm_leaf_mapping = {
+    "LoadHours": ExternalSCMLoadHoursStrategy,
+    "LoadProfile": ExternalSCMLoadHoursStrategy,
+    "PV": ExternalSCMPVStrategy,
+    "PredefinedPV": ExternalSCMPVStrategy,
+    "PVProfile": ExternalSCMPVStrategy
+}
+
+forward_leaf_mapping = {
+    "LoadHours": ForwardLoad,
+    "PV": ForwardPV
+}

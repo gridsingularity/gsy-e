@@ -331,9 +331,7 @@ class ExternalMixin:
 
         required_args = {"price", "energy", "type", "transaction_id"}
         allowed_args = required_args.union({"replace_existing",
-                                            "time_slot",
-                                            "attributes",
-                                            "requirements"})
+                                            "time_slot"})
         try:
             # Check that all required arguments have been provided
             assert all(arg in arguments.keys() for arg in required_args)
@@ -349,15 +347,14 @@ class ExternalMixin:
 
             offer_arguments = {k: v
                                for k, v in arguments.items()
-                               if k not in ["transaction_id", "type", "time_slot"]}
+                               if k not in ["transaction_id", "type"]}
 
             offer = self.post_offer(
                 market, replace_existing=replace_existing, **offer_arguments)
-
             response = {
                 "command": "offer",
                 "status": "ready",
-                "offer": offer.to_json_string(replace_existing=replace_existing),
+                "offer": offer.to_json_string(),
                 "transaction_id": arguments.get("transaction_id"),
                 "area_uuid": self.device.uuid,
                 "market_type": market.type_name,
@@ -392,9 +389,7 @@ class ExternalMixin:
 
         required_args = {"price", "energy", "type", "transaction_id"}
         allowed_args = required_args.union({"replace_existing",
-                                            "time_slot",
-                                            "attributes",
-                                            "requirements"})
+                                            "time_slot"})
 
         try:
             # Check that all required arguments have been provided
@@ -412,12 +407,11 @@ class ExternalMixin:
                 arguments["price"],
                 arguments["energy"],
                 replace_existing=replace_existing,
-                attributes=arguments.get("attributes"),
-                requirements=arguments.get("requirements")
+                time_slot=time_slot
             )
             response = {
                 "command": "bid", "status": "ready",
-                "bid": bid.to_json_string(replace_existing=replace_existing),
+                "bid": bid.to_json_string(),
                 "area_uuid": self.device.uuid,
                 "transaction_id": arguments.get("transaction_id"),
                 "market_type": market.type_name,
@@ -497,13 +491,13 @@ class ExternalMixin:
 
     def _publish_trade_event(self, trade, is_bid_trade) -> None:
         """Publish trade event to external concerned device/aggregator."""
-        if self.device.name not in (trade.seller, trade.buyer):
+        if self.device.name not in (trade.seller.name, trade.buyer.name):
             # Trade does not concern this device, skip it.
             return
 
         if (ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value and
-                ((trade.buyer == self.device.name and trade.is_offer_trade) or
-                 (trade.seller == self.device.name and trade.is_bid_trade))):
+                ((trade.buyer.name == self.device.name and trade.is_offer_trade) or
+                 (trade.seller.name == self.device.name and trade.is_bid_trade))):
             # Do not track a 2-sided market trade that is originating from an Offer to a
             # consumer (which should have posted a bid). This occurs when the clearing
             # took place on the area market of the device, thus causing 2 trades, one for
@@ -521,16 +515,15 @@ class ExternalMixin:
                                    "local_market_fee":
                                        self.area.current_market.fee_class.grid_fee_rate
                                        if self.area.current_market is not None else "None",
-                                   "attributes": trade.offer_bid.attributes,
-                                   "seller": trade.seller
-                                   if trade.seller_id == self.device.uuid else "anonymous",
-                                   "buyer": trade.buyer
-                                   if trade.buyer_id == self.device.uuid else "anonymous",
-                                   "seller_origin": trade.seller_origin,
-                                   "buyer_origin": trade.buyer_origin,
-                                   "bid_id": trade.offer_bid.id
+                                   "seller": trade.seller.name
+                                   if trade.seller.uuid == self.device.uuid else "anonymous",
+                                   "buyer": trade.buyer.name
+                                   if trade.buyer.uuid == self.device.uuid else "anonymous",
+                                   "seller_origin": trade.seller.origin,
+                                   "buyer_origin": trade.buyer.origin,
+                                   "bid_id": trade.match_details["bid"].id
                                    if trade.is_bid_trade else "None",
-                                   "offer_id": trade.offer_bid.id
+                                   "offer_id": trade.match_details["offer"].id
                                    if trade.is_offer_trade else "None",
                                    "residual_bid_id": trade.residual.id
                                    if trade.residual is not None and trade.is_bid_trade
@@ -550,17 +543,18 @@ class ExternalMixin:
                                    "traded_energy": trade.traded_energy,
                                    "fee_price": trade.fee_price,
                                    "area_uuid": self.device.uuid,
-                                   "seller": trade.seller
-                                   if trade.seller == self.device.name else "anonymous",
-                                   "buyer": trade.buyer
-                                   if trade.buyer == self.device.name else "anonymous",
+                                   "seller": trade.seller.name
+                                   if trade.seller.uuid == self.device.uuid else "anonymous",
+                                   "buyer": trade.buyer.name
+                                   if trade.buyer.uuid == self.device.uuid else "anonymous",
                                    "residual_id": trade.residual.id
                                    if trade.residual is not None else "None"}
 
             bid_offer_key = "bid_id" if is_bid_trade else "offer_id"
             event_response_dict["event_type"] = (
-                "buy" if trade.buyer == self.device.name else "sell")
-            event_response_dict[bid_offer_key] = trade.offer_bid.id
+                "buy" if trade.buyer.name == self.device.name else "sell")
+            event_response_dict[bid_offer_key] = (
+                trade.match_details["bid"].id if is_bid_trade else trade.match_details["offer"].id)
 
             trade_event_channel = f"{self.channel_prefix}/events/trade"
             self.redis.publish_json(trade_event_channel, event_response_dict)

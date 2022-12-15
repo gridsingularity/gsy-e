@@ -24,7 +24,7 @@ from uuid import uuid4
 
 import pytest
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
-from gsy_framework.data_classes import Offer, BalancingOffer, Bid, Trade
+from gsy_framework.data_classes import Offer, BalancingOffer, Bid, Trade, TraderDetails
 from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.exceptions import GSyDeviceException
 from pendulum import DateTime, duration, today, now
@@ -44,16 +44,16 @@ MIN_BUY_ENERGY = 50  # wh
 
 @pytest.fixture(scope="function", autouse=True)
 def auto_fixture():
+    original_market_maker_rate = GlobalConfig.market_maker_rate
     GlobalConfig.market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
     yield
-    GlobalConfig.market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
+    GlobalConfig.market_maker_rate = original_market_maker_rate
     ConstSettings.MASettings.MARKET_TYPE = 1
 
 
 class FakeArea:
     def __init__(self):
         self.config = create_simulation_config_from_global_config()
-        self.appliance = None
         self.name = 'FakeArea'
         self.uuid = str(uuid4())
 
@@ -129,12 +129,10 @@ class FakeMarket:
         return deepcopy(self.bids)
 
     def bid(self, price: float, energy: float, buyer: str, original_price=None,
-            buyer_origin=None, buyer_origin_id=None, buyer_id=None,
-            attributes=None, requirements=None, time_slot=None) -> Bid:
-        bid = Bid(id="bid_id", creation_time=now(), price=price, energy=energy, buyer=buyer,
+            time_slot=None) -> Bid:
+        bid = Bid(id="bid_id", creation_time=now(), price=price, energy=energy,
+                  buyer=buyer,
                   original_price=original_price,
-                  buyer_origin=buyer_origin, buyer_origin_id=buyer_origin_id,
-                  buyer_id=buyer_id, attributes=attributes, requirements=requirements,
                   time_slot=time_slot)
         self.bids[bid.id] = bid
         return bid
@@ -148,25 +146,30 @@ class FakeMarket:
     @property
     def sorted_offers(self):
         offers = [
-            [Offer('id', now(), 1, (MIN_BUY_ENERGY/1000), 'A', self),  # Energyprice is 1
-             Offer('id', now(), 2, (MIN_BUY_ENERGY/1000), 'A', self),  # Energyprice is 2
-             Offer('id', now(), 3, (MIN_BUY_ENERGY/1000), 'A', self),  # Energyprice is 3
-             Offer('id', now(), 4, (MIN_BUY_ENERGY/1000), 'A', self),  # Energyprice is 4
+            # Energy price is 1
+            [Offer('id', now(), 1, (MIN_BUY_ENERGY/1000), TraderDetails("A", "")),
+             # Energy price is 2
+             Offer('id', now(), 2, (MIN_BUY_ENERGY/1000), TraderDetails("A", "")),
+             # Energy price is 3
+             Offer('id', now(), 3, (MIN_BUY_ENERGY/1000), TraderDetails("A", "")),
+             # Energy price is 4
+             Offer('id', now(), 4, (MIN_BUY_ENERGY/1000), TraderDetails("A", "")),
              ],
             [
-                Offer('id', now(), 1, (MIN_BUY_ENERGY * 0.033 / 1000), 'A', self),
-                Offer('id', now(), 2, (MIN_BUY_ENERGY * 0.033 / 1000), 'A', self)
+                Offer('id', now(), 1, (MIN_BUY_ENERGY * 0.033 / 1000), TraderDetails("A", "")),
+                Offer('id', now(), 2, (MIN_BUY_ENERGY * 0.033 / 1000), TraderDetails("A", ""))
             ],
             [
-                Offer('id', now(), 1, 5, 'A', self),
-                Offer('id2', now(), 2, (MIN_BUY_ENERGY / 1000), 'A', self)
+                Offer('id', now(), 1, 5, TraderDetails("A", "")),
+                Offer('id2', now(), 2, (MIN_BUY_ENERGY / 1000), TraderDetails("A", ""))
             ]
         ]
         return offers[self.count]
 
     @property
     def most_affordable_offers(self):
-        return [Offer('id_affordable', now(), 1, self.most_affordable_energy, 'A', self)]
+        return [Offer('id_affordable', now(), 1,
+                      self.most_affordable_energy, TraderDetails("A", ""))]
 
     @property
     def time_slot(self):
@@ -183,7 +186,7 @@ class FakeMarket:
         return offer
 
     def accept_offer(self, **kwargs):
-        return Trade("", now(), None, "", "", 0.1, 0.1)
+        return Trade("", now(), TraderDetails("", ""), TraderDetails("", ""), 0.1, 0.1)
 
 
 class TestLoadHoursStrategyInput(unittest.TestCase):
@@ -408,7 +411,8 @@ def test_device_operating_hours_deduction_with_partial_trade(load_hours_strategy
         round(((0.1/0.155) * 0.25), 2)
 
 
-@pytest.mark.parametrize("partial", [None, Bid('test_id', now(), 123, 321, 'A')])
+@pytest.mark.parametrize("partial", [None, Bid(
+    'test_id', now(), 123, 321, TraderDetails("A", ""))])
 def test_event_bid_traded_removes_bid_for_partial_and_non_trade(load_hours_strategy_test5,
                                                                 called,
                                                                 partial):
@@ -424,8 +428,9 @@ def test_event_bid_traded_removes_bid_for_partial_and_non_trade(load_hours_strat
 
     # Increase energy requirement to cover the energy from the bid
     load_hours_strategy_test5.state._energy_requirement_Wh[TIME] = 1000
-    trade = Trade('idt', None, bid, 'B', load_hours_strategy_test5.owner.name, residual=partial,
-                  time_slot=TIME, traded_energy=1, trade_price=1)
+    trade = Trade('idt', None, TraderDetails("B", ""),
+                  TraderDetails(load_hours_strategy_test5.owner.name, ""), bid=bid,
+                  residual=partial, time_slot=TIME, traded_energy=1, trade_price=1)
     load_hours_strategy_test5.event_bid_traded(market_id=trade_market.id, bid_trade=trade)
 
     assert len(load_hours_strategy_test5.remove_bid_from_pending.calls) == 1
@@ -447,7 +452,8 @@ def test_event_bid_traded_removes_bid_from_pending_if_energy_req_0(load_hours_st
     bid = list(load_hours_strategy_test5._bids.values())[0][0]
     # Increase energy requirement to cover the energy from the bid + threshold
     load_hours_strategy_test5.state._energy_requirement_Wh[TIME] = bid.energy * 1000 + 0.000009
-    trade = Trade('idt', None, bid, 'B', load_hours_strategy_test5.owner.name, residual=True,
+    trade = Trade('idt', None, TraderDetails("B", ""),
+                  TraderDetails(load_hours_strategy_test5.owner.name, ""), residual=True, bid=bid,
                   time_slot=TIME, traded_energy=bid.energy, trade_price=bid.price)
     load_hours_strategy_test5.event_bid_traded(market_id=trade_market.id, bid_trade=trade)
 
@@ -501,11 +507,11 @@ def test_balancing_offers_are_created_if_device_in_registry(
     balancing_fixture.event_offer_traded(market_id=area_test2.current_market.id,
                                          trade=Trade(id='id',
                                                      creation_time=area_test2.now,
-                                                     offer_bid=selected_offer,
+                                                     offer=selected_offer,
                                                      traded_energy=selected_offer.energy,
                                                      trade_price=selected_offer.price,
-                                                     seller='B',
-                                                     buyer='FakeArea',
+                                                     seller=TraderDetails("B", ""),
+                                                     buyer=TraderDetails("FakeArea", ""),
                                                      time_slot=area_test2.current_market.time_slot)
                                          )
     assert len(area_test2.test_balancing_market.created_balancing_offers) == 2
@@ -524,18 +530,21 @@ def test_balancing_offers_are_created_if_device_in_registry(
     [True, 9, ], [False, 33, ]
 ])
 def test_use_market_maker_rate_parameter_is_respected(use_mmr, expected_rate):
+    original_mmr = GlobalConfig.market_maker_rate
     GlobalConfig.market_maker_rate = 9
     load = LoadHoursStrategy(200, final_buying_rate=33, use_market_maker_rate=use_mmr)
     load.area = FakeArea()
     load.owner = load.area
     load.event_activate()
     assert all(v == expected_rate for v in load.bid_update.final_rate.values())
+    GlobalConfig.market_maker_rate = original_mmr
 
 
 @pytest.mark.parametrize("use_mmr, expected_rate", [
     [True, 9, ], [False, 33, ]
 ])
 def test_use_market_maker_rate_parameter_is_respected_for_load_profiles(use_mmr, expected_rate):
+    original_mmr = GlobalConfig.market_maker_rate
     GlobalConfig.market_maker_rate = 9
     user_profile_path = os.path.join(d3a_path, "resources/Solar_Curve_W_sunny.csv")
     load = DefinedLoadStrategy(
@@ -546,6 +555,7 @@ def test_use_market_maker_rate_parameter_is_respected_for_load_profiles(use_mmr,
     load.owner = load.area
     load.event_activate()
     assert all(v == expected_rate for v in load.bid_update.final_rate.values())
+    GlobalConfig.market_maker_rate = original_mmr
 
 
 def test_load_constructor_rejects_incorrect_rate_parameters():
@@ -570,7 +580,7 @@ def test_load_hour_strategy_increases_rate_when_fit_to_limit_is_false(market_tes
     load.owner = load.area
     load.event_activate()
     assert load.state._energy_requirement_Wh[TIME] == 25.0
-    offer = Offer('id', now(), 1, (MIN_BUY_ENERGY/500), 'A', market_test1)
+    offer = Offer('id', now(), 1, (MIN_BUY_ENERGY/500), TraderDetails("A", ""), market_test1)
     load._one_sided_market_event_tick(market_test1, offer)
     assert load.bid_update.get_updated_rate(TIME) == 0
     assert load.state._energy_requirement_Wh[TIME] == 25.0
@@ -592,9 +602,10 @@ def load_hours_strategy_test3(area_test1):
 def test_assert_if_trade_rate_is_higher_than_bid_rate(load_hours_strategy_test3):
     market_id = 0
     load_hours_strategy_test3._bids[market_id] = \
-        [Bid("bid_id", now(), 30, 1, buyer="FakeArea")]
-    expensive_bid = Bid("bid_id", now(), 31, 1, buyer="FakeArea")
-    trade = Trade("trade_id", "time", expensive_bid, load_hours_strategy_test3, "buyer",
+        [Bid("bid_id", now(), 30, 1, buyer=TraderDetails("FakeArea", ""))]
+    expensive_bid = Bid("bid_id", now(), 31, 1, buyer=TraderDetails("FakeArea", ""))
+    trade = Trade("trade_id", "time", TraderDetails(load_hours_strategy_test3.owner.name, ""),
+                  TraderDetails(load_hours_strategy_test3.owner.name, ""), bid=expensive_bid,
                   traded_energy=1, trade_price=31)
 
     with pytest.raises(AssertionError):
@@ -610,7 +621,7 @@ def test_event_market_cycle_updates_measurement_and_forecast(load_hours_strategy
     load_hours_strategy_test1._update_energy_requirement_in_state.assert_called_once()
 
 
-@patch("gsy_e.models.strategy.load_hours.utils")
+@patch("gsy_e.models.strategy.energy_parameters.load.utils")
 def test_set_energy_measurement_of_last_market(utils_mock, load_hours_strategy_test1):
     """The real energy of the last market is set when necessary."""
     # If we are in the first market slot, the real energy is not set
@@ -666,8 +677,9 @@ def test_event_bid_traded_calls_settlement_market_event_bid_traded(load_hours_fi
     """Test if _settlement_market_strategy.event_bid_traded was called
     although no spot market can be found by event_bid_traded."""
     load_hours_fixture._settlement_market_strategy = Mock()
-    bid = Bid("bid", None, 1, 1, "buyer")
-    trade = Trade('idt', None, bid, 'B', load_hours_fixture.owner.name,
+    bid = Bid("bid", None, 1, 1, TraderDetails("buyer", ""))
+    trade = Trade('idt', None, TraderDetails("B", ""),
+                  TraderDetails(load_hours_fixture.owner.name, ""), bid=bid,
                   traded_energy=1, trade_price=1)
     load_hours_fixture.event_bid_traded(market_id="not existing", bid_trade=trade)
     load_hours_fixture._settlement_market_strategy.event_bid_traded.assert_called_once()
@@ -677,8 +689,9 @@ def test_event_offer_traded_calls_settlement_market_event_offer_traded(load_hour
     """Test if _settlement_market_strategy.event_offer_traded was called
     although no spot market can be found by event_offer_traded."""
     load_hours_fixture._settlement_market_strategy = Mock()
-    offer = Offer("oid", None, 1, 1, "seller")
-    trade = Trade('idt', None, offer, 'B', load_hours_fixture.owner.name,
+    offer = Offer("oid", None, 1, 1, TraderDetails("seller", ""))
+    trade = Trade('idt', None, TraderDetails("B", ""),
+                  TraderDetails(load_hours_fixture.owner.name, ""), offer=offer,
                   traded_energy=1, trade_price=1)
     load_hours_fixture.event_offer_traded(market_id="not existing", trade=trade)
     load_hours_fixture._settlement_market_strategy.event_offer_traded.assert_called_once()

@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+# pylint: disable=missing-function-docstring,protected-access
 import os
 import uuid
 from typing import Dict  # NOQA
@@ -24,7 +25,7 @@ from uuid import uuid4
 import pendulum
 import pytest
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
-from gsy_framework.data_classes import Offer, Trade
+from gsy_framework.data_classes import Offer, Trade, TraderDetails
 from gsy_framework.exceptions import GSyDeviceException
 from gsy_framework.utils import generate_market_slot_list
 from parameterized import parameterized
@@ -41,18 +42,20 @@ TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 
 @pytest.fixture(scope="function", autouse=True)
 def auto_fixture():
+    original_market_maker_rate = GlobalConfig.market_maker_rate
     GlobalConfig.market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
     yield
-    GlobalConfig.market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
+    GlobalConfig.market_maker_rate = original_market_maker_rate
     GlobalConfig.sim_duration = pendulum.duration(days=GlobalConfig.DURATION_D)
     GlobalConfig.slot_length = pendulum.duration(minutes=GlobalConfig.SLOT_LENGTH_M)
 
 
 class FakeArea:
+    """Fake class that mimics the Area class."""
     def __init__(self):
         self.config = create_simulation_config_from_global_config()
         self.current_tick = 2
-        self.name = 'FakeArea'
+        self.name = "FakeArea"
         self.uuid = str(uuid4())
         self.test_market = FakeMarket(0)
         self._spot_market = FakeMarket(0)
@@ -60,7 +63,8 @@ class FakeArea:
     def get_spot_or_future_market_by_id(self, _):
         return self.test_market
 
-    def is_market_spot_or_future(self, _):
+    @staticmethod
+    def is_market_spot_or_future(_):
         return True
 
     @property
@@ -75,7 +79,8 @@ class FakeArea:
     def current_market(self):
         return self.test_market
 
-    def get_path_to_root_fees(self):
+    @staticmethod
+    def get_path_to_root_fees():
         return 0.
 
     @property
@@ -87,7 +92,7 @@ class FakeArea:
         In this default implementation 'current time' is defined by the number of ticks that
         have passed.
         """
-        return pendulum.DateTime.now(tz=TIME_ZONE).start_of('day') + (
+        return pendulum.DateTime.now(tz=TIME_ZONE).start_of("day") + (
             self.config.tick_length * self.current_tick
         )
 
@@ -103,8 +108,7 @@ class FakeArea:
 
 
 class FakeAreaTimeSlot(FakeArea):
-    def __init__(self):
-        super().__init__()
+    """Add fake implementation for the spot market creation."""
 
     @property
     def spot_market(self):
@@ -115,23 +119,25 @@ class FakeAreaTimeSlot(FakeArea):
 
 
 class FakeMarketTimeSlot:
+    """Add fake market implementation that contains the time slot."""
     def __init__(self, time_slot):
         self.time_slot = time_slot
 
 
 class FakeMarket:
+    """Fake class that mimics the Market class."""
     def __init__(self, count):
         self.count = count
         self.id = str(count)
         self.created_offers = []
         self.offers = {
-            'id': Offer(id='id', creation_time=pendulum.now(), price=10, energy=0.5, seller='A')}
+            "id": Offer(id="id", creation_time=pendulum.now(), price=10, energy=0.5,
+                        seller=TraderDetails("A", ""))}
 
-    def offer(self, price, energy, seller, original_price=None, seller_origin=None,
-              seller_origin_id=None, seller_id=None, time_slot=None):
+    def offer(self, price, energy, seller, original_price=None, time_slot=None):
+        # pylint: disable=too-many-arguments
         offer = Offer(str(uuid.uuid4()), pendulum.now(), price, energy, seller,
-                      original_price, seller_origin=seller_origin,
-                      seller_origin_id=seller_origin_id, seller_id=seller_id, time_slot=time_slot)
+                      original_price, time_slot=time_slot)
         self.created_offers.append(offer)
         self.offers[offer.id] = offer
         return offer
@@ -144,16 +150,20 @@ class FakeMarket:
     def time_slot_str(self):
         return self.time_slot.format(TIME_FORMAT)
 
-    def delete_offer(self, offer_id):
+    @staticmethod
+    def delete_offer(_offer_id):
         return
 
 
 class FakeTrade:
+    """Fake class that mimics the Trade class."""
     def __init__(self, offer):
-        self.offer_bid = offer
-        self.seller = "FakeSeller"
+        self.offer = offer
+        self.match_details = {"offer": offer, "bid": None}
+        self.seller = TraderDetails("FakeSeller", "")
         self.traded_energy = offer.energy
         self.trade_price = offer.price
+        self.time_slot = None
 
     @property
     def is_offer_trade(self):
@@ -165,14 +175,11 @@ class FakeTrade:
 
     @property
     def trade_rate(self):
-        return self.offer_bid.energy_rate
+        return self.offer.energy_rate
 
 
-"""TEST1"""
-
-
-@pytest.fixture()
-def area_test1():
+@pytest.fixture(name="area_test1")
+def fixture_area_test1():
     return FakeArea()
 
 
@@ -184,27 +191,18 @@ def fixture_pv_test1(area_test1):
     return p
 
 
-def testing_activation(pv_test1):
-    pv_test1.event_activate()
-    global ENERGY_FORECAST
-    ENERGY_FORECAST = pv_test1.state._energy_production_forecast_kWh
-
-
-"""TEST2"""
-
-
-@pytest.fixture()
-def area_test2():
+@pytest.fixture(name="area_test2")
+def fixture_area_test2():
     return FakeArea()
 
 
-@pytest.fixture()
-def market_test2(area_test2):
+@pytest.fixture(name="market_test2")
+def fixture_market_test2(area_test2):
     return area_test2.test_market
 
 
-@pytest.fixture()
-def pv_test2(area_test2):
+@pytest.fixture(name="pv_test2")
+def fixture_pv_test2(area_test2):
     p = PVStrategy()
     p.area = area_test2
     p.owner = area_test2
@@ -213,7 +211,7 @@ def pv_test2(area_test2):
     return p
 
 
-@pytest.mark.skip('broken as event_tick does not decrease offer price with every tick')
+@pytest.mark.skip("broken as event_tick does not decrease offer price with every tick")
 def testing_event_tick(pv_test2, market_test2, area_test2):
     pv_test2.event_activate()
     pv_test2.event_tick()
@@ -235,25 +233,25 @@ def testing_event_tick(pv_test2, market_test2, area_test2):
     # assert len(pv_test2.decrease_offer_price.calls) == 1
 
 
-"""TEST 3"""
-
-
-@pytest.fixture()
-def area_test3():
+@pytest.fixture(name="area_test3")
+def fixture_area_test3():
     return FakeArea()
 
 
-@pytest.fixture()
-def market_test3(area_test3):
+@pytest.fixture(name="market_test3")
+def fixture_market_test3(area_test3):
     return area_test3.test_market
 
 
-@pytest.fixture()
-def pv_test3(area_test3):
+@pytest.fixture(name="pv_test3")
+def fixture_pv_test3(area_test3):
     p = PVStrategy()
     p.area = area_test3
     p.owner = area_test3
-    p.offers.posted = {Offer('id', pendulum.now(), 1, 1, 'FakeArea'): area_test3.test_market.id}
+    p.offers.posted = {
+        Offer("id", pendulum.now(), 1, 1, TraderDetails("FakeArea", "")):
+            area_test3.test_market.id
+    }
     return p
 
 
@@ -262,7 +260,7 @@ def testing_decrease_offer_price(area_test3, pv_test3):
     pv_test3.event_activate()
     pv_test3.event_market_cycle()
     pv_test3.event_tick()
-    for i in range(2):
+    for _ in range(2):
         area_test3.current_tick += 310
         old_offer = list(pv_test3.offers.posted.keys())[0]
         pv_test3.event_tick()
@@ -280,17 +278,14 @@ def test_same_slot_price_drop_does_not_reduce_price_below_threshold(area_test3, 
     assert new_offer.energy_rate >= ConstSettings.PVSettings.SELLING_RATE_RANGE.final
 
 
-"""TEST 4"""
-
-
-@pytest.fixture()
-def pv_test4(area_test3, called):
+@pytest.fixture(name="pv_test4")
+def fixture_pv_test4(area_test3):
     p = PVStrategy()
     p.area = area_test3
     p.owner = area_test3
     p.offers.posted = {
-        Offer(id='id', creation_time=TIME, price=20,
-              energy=1, seller='FakeArea'): area_test3.test_market.id
+        Offer(id="id", creation_time=TIME, price=20,
+              energy=1, seller=TraderDetails("FakeArea", "")): area_test3.test_market.id
     }
     return p
 
@@ -298,34 +293,30 @@ def pv_test4(area_test3, called):
 def testing_event_trade(area_test3, pv_test4):
     pv_test4.state._available_energy_kWh[area_test3.test_market.time_slot] = 1
     pv_test4.event_offer_traded(market_id=area_test3.test_market.id,
-                                trade=Trade(id="id", creation_time=pendulum.now(),
-                                            traded_energy=1, trade_price=20,
-                                            offer_bid=Offer(id="id", creation_time=TIME,
-                                                            price=20,
-                                                            energy=1, seller="FakeArea"),
-                                            seller=area_test3.name, buyer="buyer",
-                                            time_slot=area_test3.test_market.time_slot)
+                                trade=Trade(
+                                    id="id", creation_time=pendulum.now(),
+                                    traded_energy=1, trade_price=20,
+                                    offer=Offer(id="id", creation_time=TIME,
+                                                price=20,
+                                                energy=1, seller=TraderDetails("FakeArea", "")),
+                                    seller=TraderDetails(area_test3.name, ""),
+                                    buyer=TraderDetails("buyer", ""),
+                                    time_slot=area_test3.test_market.time_slot)
                                 )
     assert len(pv_test4.offers.open) == 0
 
 
-"""TEST 5"""
-
-
-@pytest.fixture()
-def pv_test5(area_test3, called):
+@pytest.fixture(name="pv_test5")
+def fixture_pv_test5(area_test3):
     p = PVStrategy()
     p.area = area_test3
     p.owner = area_test3
-    p.offers.posted = {'id': area_test3.test_market}
+    p.offers.posted = {"id": area_test3.test_market}
     return p
 
 
-""" TEST 6"""
-
-
-@pytest.fixture()
-def pv_test6(area_test3):
+@pytest.fixture(name="pv_test6")
+def fixture_pv_test6(area_test3):
     p = PVStrategy()
     p.area = area_test3
     p.owner = area_test3
@@ -334,21 +325,23 @@ def pv_test6(area_test3):
     return p
 
 
-@pytest.fixture()
-def area_test66():
+@pytest.fixture(name="area_test66")
+def fixture_area_test66():
     return FakeAreaTimeSlot()
 
 
-@pytest.fixture()
-def pv_test66(area_test66):
-    original_future_markets_duration = GlobalConfig.FUTURE_MARKET_DURATION_HOURS
-    GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 0
+@pytest.fixture(name="pv_test66")
+def fixture_pv_test66(area_test66):
+    original_future_markets_duration = (
+        ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS)
+    ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS = 0
     p = PVStrategy()
     p.area = area_test66
     p.owner = area_test66
     p.offers.posted = {}
     yield p
-    GlobalConfig.FUTURE_MARKET_DURATION_HOURS = original_future_markets_duration
+    ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS = (
+        original_future_markets_duration)
 
 
 def testing_produced_energy_forecast_real_data(pv_test66):
@@ -360,15 +353,15 @@ def testing_produced_energy_forecast_real_data(pv_test66):
     morning_time = pendulum.today(tz=TIME_ZONE).at(hour=8, minute=20, second=0)
     afternoon_time = pendulum.today(tz=TIME_ZONE).at(hour=16, minute=40, second=0)
 
-    class Counts(object):
+    class _Counts:
         def __init__(self, time_of_day: str):
             self.total = 0
             self.count = 0
             self.time_of_day = time_of_day
-    morning_counts = Counts('morning')
-    afternoon_counts = Counts('afternoon')
-    evening_counts = Counts('evening')
-    for (time, power) in pv_test66.state._energy_production_forecast_kWh.items():
+    morning_counts = _Counts("morning")
+    afternoon_counts = _Counts("afternoon")
+    evening_counts = _Counts("evening")
+    for (time, _power) in pv_test66.state._energy_production_forecast_kWh.items():
         if time < morning_time:
             morning_counts.total += 1
             morning_counts.count = morning_counts.count + 1 \
@@ -413,7 +406,9 @@ def test_does_not_offer_sold_energy_again(pv_test6, market_test3):
     assert market_test3.created_offers[0].energy == \
         pv_test6.state._energy_production_forecast_kWh[TIME]
     fake_trade = FakeTrade(market_test3.created_offers[0])
-    fake_trade.seller = pv_test6.owner.name
+    fake_trade.seller = TraderDetails(
+        pv_test6.owner.name, fake_trade.seller.uuid,
+        fake_trade.seller.origin, fake_trade.seller.origin_uuid)
     fake_trade.time_slot = market_test3.time_slot
     pv_test6.event_offer_traded(market_id=market_test3.id, trade=fake_trade)
     market_test3.created_offers = []
@@ -434,45 +429,38 @@ def test_pv_constructor_rejects_incorrect_parameters():
         PVStrategy(fit_to_limit=False, energy_rate_decrease_per_update=-1)
 
 
-"""TEST7"""
-
-
-@pytest.fixture()
-def pv_test7(area_test3):
+@pytest.fixture(name="pv_test7")
+def fixture_pv_test7(area_test3):
     p = PVStrategy(panel_count=1, initial_selling_rate=30)
     p.area = area_test3
     p.owner = area_test3
-    p.offers.posted = {Offer('id', 1, 1, 'FakeArea'): area_test3.test_market.id}
+    p.offers.posted = {Offer(
+        "id", pendulum.now(), 1, 1, TraderDetails("FakeArea", "")): area_test3.test_market.id}
     return p
 
 
-"""TEST8"""
-
-
-@pytest.fixture()
-def pv_test8(area_test3):
+@pytest.fixture(name="pv_test8")
+def fixture_pv_test8(area_test3):
     p = PVStrategy(panel_count=1, initial_selling_rate=30)
     p.area = area_test3
     p.owner = area_test3
-    p.offers.posted = {Offer('id', pendulum.now(), 1, 1, 'FakeArea'): area_test3.test_market.id}
+    p.offers.posted = {Offer(
+        "id", pendulum.now(), 1, 1, TraderDetails("FakeArea", "")): area_test3.test_market.id}
     return p
 
 
-"""TEST9"""
-
-
-@pytest.fixture()
-def area_test9():
+@pytest.fixture(name="area_test9")
+def fixture_area_test9():
     return FakeArea()
 
 
-@pytest.fixture()
-def market_test9(area_test9):
+@pytest.fixture(name="market_test9")
+def fixture_market_test9(area_test9):
     return area_test9.test_market
 
 
-@pytest.fixture()
-def pv_test9(area_test9):
+@pytest.fixture(name="pv_test9")
+def fixture_pv_test9(area_test9):
     p = PVStrategy(panel_count=3)
     p.area = area_test9
     p.owner = area_test9
@@ -481,28 +469,25 @@ def pv_test9(area_test9):
     return p
 
 
-def testing_number_of_pv_sell_offers(pv_test9, market_test9, area_test9):
+def testing_number_of_pv_sell_offers(pv_test9, area_test9):
     pv_test9.event_activate()
     pv_test9.event_market_cycle()
     for m in area_test9.all_markets:
         assert len(m.created_offers) == 1
 
 
-"""TEST10"""
-
-
-@pytest.fixture()
-def area_test10():
+@pytest.fixture(name="area_test10")
+def fixture_area_test10():
     return FakeArea()
 
 
-@pytest.fixture
-def market_test10():
+@pytest.fixture(name="market_test10")
+def fixture_market_test10():
     return FakeMarket(0)
 
 
-@pytest.fixture()
-def pv_strategy_test10(area_test10, called):
+@pytest.fixture(name="pv_strategy_test10")
+def fixture_pv_strategy_test10(area_test10, called):
     s = PVStrategy(initial_selling_rate=25)
     s.owner = area_test10
     s.area = area_test10
@@ -522,6 +507,7 @@ def test_initial_selling_rate(pv_strategy_test10, area_test10):
     [PVStrategy, False, 19, ],
 ])
 def test_use_mmr_parameter_is_respected1(strategy_type, use_mmr, expected_rate):
+    original_mmr = GlobalConfig.market_maker_rate
     GlobalConfig.market_maker_rate = 12
     pv = strategy_type(initial_selling_rate=19, use_market_maker_rate=use_mmr,
                        capacity_kW=0.2)
@@ -529,6 +515,7 @@ def test_use_mmr_parameter_is_respected1(strategy_type, use_mmr, expected_rate):
     pv.owner = pv.area
     pv.event_activate()
     assert all(v == expected_rate for v in pv.offer_update.initial_rate.values())
+    GlobalConfig.market_maker_rate = original_mmr
 
 
 @parameterized.expand([
@@ -536,6 +523,7 @@ def test_use_mmr_parameter_is_respected1(strategy_type, use_mmr, expected_rate):
     [PVPredefinedStrategy, False, 19, ],
 ])
 def test_use_mmr_parameter_is_respected2(strategy_type, use_mmr, expected_rate):
+    original_mmr = GlobalConfig.market_maker_rate
     GlobalConfig.market_maker_rate = 12
     pv = strategy_type(initial_selling_rate=19, use_market_maker_rate=use_mmr,
                        cloud_coverage=1)
@@ -543,6 +531,7 @@ def test_use_mmr_parameter_is_respected2(strategy_type, use_mmr, expected_rate):
     pv.owner = pv.area
     pv.event_activate()
     assert all(v == expected_rate for v in pv.offer_update.initial_rate.values())
+    GlobalConfig.market_maker_rate = original_mmr
 
 
 @parameterized.expand([
@@ -550,6 +539,7 @@ def test_use_mmr_parameter_is_respected2(strategy_type, use_mmr, expected_rate):
     [False, 17, ],
 ])
 def test_use_mmr_parameter_is_respected_for_pv_profiles(use_mmr, expected_rate):
+    original_mmr = GlobalConfig.market_maker_rate
     GlobalConfig.market_maker_rate = 13
     user_profile_path = os.path.join(d3a_path, "resources/Solar_Curve_W_sunny.csv")
     pv = PVUserProfileStrategy(
@@ -558,13 +548,11 @@ def test_use_mmr_parameter_is_respected_for_pv_profiles(use_mmr, expected_rate):
     pv.owner = pv.area
     pv.event_activate()
     assert all(v == expected_rate for v in pv.offer_update.initial_rate.values())
+    GlobalConfig.market_maker_rate = original_mmr
 
 
-"""Test 11"""
-
-
-@pytest.fixture()
-def pv_test11(area_test3):
+@pytest.fixture(name="pv_test11")
+def fixture_pv_test11(area_test3):
     p = PVStrategy()
     p.area = area_test3
     p.owner = area_test3
@@ -573,10 +561,13 @@ def pv_test11(area_test3):
 
 def test_assert_if_trade_rate_is_lower_than_offer_rate(pv_test11):
     market_id = "market_id"
-    pv_test11.offers.sold[market_id] = [Offer("offer_id", pendulum.now(), 30, 1, "FakeArea")]
-    to_cheap_offer = Offer("offer_id", pendulum.now(), 29, 1, "FakeArea")
-    trade = Trade("trade_id", "time", to_cheap_offer, pv_test11, "buyer",
-                  traded_energy=1, trade_price=1)
+    pv_test11.offers.sold[market_id] = [
+        Offer("offer_id", pendulum.now(), 30, 1, TraderDetails("FakeArea", ""))]
+    too_cheap_offer = Offer("offer_id", pendulum.now(), 29, 1, TraderDetails("FakeArea", ""))
+    trade = Trade(
+        "trade_id", "time", TraderDetails(pv_test11.owner.name, ""),
+        TraderDetails("buyer", ""), offer=too_cheap_offer,
+        traded_energy=1, trade_price=1)
 
     with pytest.raises(AssertionError):
         pv_test11.event_offer_traded(market_id=market_id, trade=trade)
@@ -590,7 +581,7 @@ def fixture_pv_strategy():
     return pv_strategy
 
 
-@patch("gsy_e.models.strategy.pv.utils")
+@patch("gsy_e.models.strategy.energy_parameters.pv.utils")
 def test_set_energy_measurement_of_last_market(utils_mock, pv_strategy):
     """The real energy of the last market is set when necessary."""
     # If we are in the first market slot, the real energy is not set

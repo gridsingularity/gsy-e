@@ -21,6 +21,7 @@ from gsy_e.models.strategy.storage import StorageStrategy
 class TestLiveEvents(unittest.TestCase):
 
     def setUp(self):
+        GlobalConfig.FEED_IN_TARIFF = 20
         self.config = SimulationConfig(
             sim_duration=duration(hours=12),
             slot_length=duration(minutes=15),
@@ -68,6 +69,7 @@ class TestLiveEvents(unittest.TestCase):
 
     def tearDown(self) -> None:
         GlobalConfig.sim_duration = duration(days=GlobalConfig.DURATION_D)
+        GlobalConfig.FEED_IN_TARIFF = 20
 
     def test_create_area_event_is_creating_a_new_area(self):
         event_dict = {

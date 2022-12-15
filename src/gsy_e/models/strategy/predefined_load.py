@@ -18,84 +18,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from typing import Union
 
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.read_user_profile import InputProfileTypes
-from gsy_framework.utils import find_object_of_same_weekday_and_time
-from pendulum import duration, DateTime
+from pendulum import duration
 
-from gsy_e.gsy_e_core.exceptions import GSyException
-from gsy_e.gsy_e_core.global_objects_singleton import global_objects
-from gsy_e.gsy_e_core.util import should_read_profile_from_db
-from gsy_e.models.state import LoadState
-from gsy_e.models.strategy.load_hours import LoadHoursStrategy, LoadHoursPerDayEnergyParameters
-
-
-class DefinedLoadEnergyParameters(LoadHoursPerDayEnergyParameters):
-    """Energy parameters for the defined load strategy class."""
-    def __init__(self, daily_load_profile=None, daily_load_profile_uuid: str = None):
-        super().__init__(avg_power_W=0, hrs_per_day=24, hrs_of_day=list(range(0, 24)))
-        self.profile_uuid = daily_load_profile_uuid
-        self._load_profile_W = None
-        self._load_profile_kWh = {}
-        self.state = LoadState()
-
-        if should_read_profile_from_db(daily_load_profile_uuid):
-            self._load_profile_input = None
-        else:
-            self._load_profile_input = daily_load_profile
-
-    def serialize(self):
-        return {
-            "daily_load_profile": self._load_profile_input,
-            "daily_load_profile_uuid": self.profile_uuid
-        }
-
-    def event_activate_energy(self, area):
-        """
-        Runs on activate event.
-        :return: None
-        """
-        self.read_or_rotate_profiles()
-        super().event_activate_energy(area)
-
-    def reset(self, time_slot: DateTime, **kwargs) -> None:
-        if kwargs.get("daily_load_profile") is not None:
-            self._load_profile_input = kwargs["daily_load_profile"]
-            self.read_or_rotate_profiles(reconfigure=True)
-
-    def read_or_rotate_profiles(self, reconfigure=False):
-        """Read power profiles or rotate them, from the DB or from JSON dicts."""
-        input_profile = (self._load_profile_input
-                         if reconfigure or not self._load_profile_W
-                         else self._load_profile_W)
-
-        if global_objects.profiles_handler.should_create_profile(
-                self._load_profile_kWh) or reconfigure:
-            self._load_profile_kWh = (
-                global_objects.profiles_handler.rotate_profile(
-                    profile_type=InputProfileTypes.POWER,
-                    profile=input_profile,
-                    profile_uuid=self.profile_uuid))
-
-    def update_energy_requirement(self, time_slot, overwrite=False):
-        if not self._load_profile_kWh:
-            raise GSyException(
-                "Load tries to set its energy forecasted requirement "
-                "without a profile.")
-        load_energy_kwh = find_object_of_same_weekday_and_time(self._load_profile_kWh, time_slot)
-        self.state.set_desired_energy(load_energy_kwh * 1000, time_slot, overwrite=False)
-        self.state.update_total_demanded_energy(time_slot)
-
-    def _operating_hours(self, energy_kWh):
-        """
-        Disabled feature for this subclass
-        """
-        return 0
-
-    def allowed_operating_hours(self, time_slot):
-        """
-        Disabled feature for this subclass
-        """
-        return True
+from gsy_e.models.strategy.load_hours import LoadHoursStrategy
+from gsy_e.models.strategy.energy_parameters.load import DefinedLoadEnergyParameters
 
 
 class DefinedLoadStrategy(LoadHoursStrategy):
@@ -145,9 +71,10 @@ class DefinedLoadStrategy(LoadHoursStrategy):
                          use_market_maker_rate=use_market_maker_rate)
         self._energy_params = DefinedLoadEnergyParameters(
             daily_load_profile, daily_load_profile_uuid)
+        self.daily_load_profile_uuid = daily_load_profile_uuid  # needed for profile_handler
 
     def event_market_cycle(self):
-        self._energy_params.read_or_rotate_profiles()
+        self._energy_params.energy_profile.read_or_rotate_profiles()
         super().event_market_cycle()
 
     def _update_energy_requirement_spot_market(self):
@@ -155,7 +82,7 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         Update required energy values for each market slot.
         :return: None
         """
-        self._energy_params.read_or_rotate_profiles()
+        self._energy_params.energy_profile.read_or_rotate_profiles()
 
         slot_time = self.area.spot_market.time_slot
         self._energy_params.update_energy_requirement(slot_time, self.owner.name)

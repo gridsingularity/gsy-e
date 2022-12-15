@@ -20,7 +20,8 @@ from typing import TYPE_CHECKING
 from unittest.mock import Mock, MagicMock
 
 import pytest
-from gsy_framework.constants_limits import GlobalConfig
+from gsy_framework.constants_limits import GlobalConfig, ConstSettings
+from gsy_framework.data_classes import TraderDetails
 from pendulum import today, duration
 
 from gsy_e.constants import TIME_ZONE, FutureTemplateStrategiesConstants
@@ -40,8 +41,9 @@ class TestFutureMarketStrategy:
 
     def setup_method(self) -> None:
         """Preparation for the tests execution"""
-        self._original_future_markets_duration = GlobalConfig.FUTURE_MARKET_DURATION_HOURS
-        GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 24
+        self._original_future_markets_duration = (
+            ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS)
+        ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS = 24
         self.time_slot = today(tz=TIME_ZONE).at(hour=12, minute=0, second=0)
         self.area_mock = Mock()
         self.area_mock.name = "test_name"
@@ -59,7 +61,8 @@ class TestFutureMarketStrategy:
 
     def teardown_method(self) -> None:
         """Test cleanup"""
-        GlobalConfig.FUTURE_MARKET_DURATION_HOURS = self._original_future_markets_duration
+        ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS = (
+            self._original_future_markets_duration)
         FutureTemplateStrategiesConstants.INITIAL_BUYING_RATE = self._original_initial_buying_rate
         FutureTemplateStrategiesConstants.FINAL_BUYING_RATE = self._original_final_buying_rate
         FutureTemplateStrategiesConstants.INITIAL_SELLING_RATE = (
@@ -84,9 +87,10 @@ class TestFutureMarketStrategy:
         load_strategy_fixture.state.set_desired_energy(1234.0, self.time_slot)
         future_strategy.event_market_cycle(load_strategy_fixture)
         self.future_markets.bid.assert_called_once_with(
-            10.0 * 1.234, 1.234, self.area_mock.name, original_price=10.0 * 1.234,
-            buyer_origin=self.area_mock.name, buyer_origin_id=self.area_mock.uuid,
-            buyer_id=self.area_mock.uuid, attributes=None, requirements=None,
+            10.0 * 1.234, 1.234, TraderDetails(
+                self.area_mock.name, self.area_mock.uuid,
+                self.area_mock.name, self.area_mock.uuid),
+            original_price=10.0 * 1.234,
             time_slot=self.time_slot
         )
 
@@ -98,9 +102,9 @@ class TestFutureMarketStrategy:
         pv_strategy_fixture.state.set_available_energy(321.3, self.time_slot)
         future_strategy.event_market_cycle(pv_strategy_fixture)
         self.future_markets.offer.assert_called_once_with(
-            price=50.0 * 321.3, energy=321.3, seller=self.area_mock.name,
-            seller_origin=self.area_mock.name,
-            seller_origin_id=self.area_mock.uuid, seller_id=self.area_mock.uuid,
+            price=50.0 * 321.3, energy=321.3, seller=TraderDetails(
+                self.area_mock.name, self.area_mock.uuid,
+                self.area_mock.name, self.area_mock.uuid),
             time_slot=self.time_slot
         )
 
@@ -116,19 +120,25 @@ class TestFutureMarketStrategy:
         storage_strategy_fixture.state.pledged_buy_kWh[self.time_slot] = 0.
         storage_strategy_fixture.state.get_available_energy_to_buy_kWh = Mock(return_value=3)
         storage_strategy_fixture.state.get_available_energy_to_sell_kWh = Mock(return_value=2)
+        storage_strategy_fixture.state.register_energy_from_posted_offer = Mock()
+        storage_strategy_fixture.state.register_energy_from_posted_bid = Mock()
         future_strategy.event_market_cycle(storage_strategy_fixture)
         self.future_markets.offer.assert_called_once_with(
-            price=50.0 * 2, energy=2, seller=self.area_mock.name,
-            seller_origin=self.area_mock.name,
-            seller_origin_id=self.area_mock.uuid, seller_id=self.area_mock.uuid,
+            price=50.0 * 2, energy=2, seller=TraderDetails(
+                self.area_mock.name, self.area_mock.uuid,
+                self.area_mock.name, self.area_mock.uuid),
             time_slot=self.time_slot)
+        storage_strategy_fixture.state.register_energy_from_posted_offer.assert_called_once()
 
         self.future_markets.bid.assert_called_once_with(
-            10.0 * 3, 3, self.area_mock.name, original_price=10.0 * 3,
-            buyer_origin=self.area_mock.name, buyer_origin_id=self.area_mock.uuid,
-            buyer_id=self.area_mock.uuid, attributes=None, requirements=None,
+            10.0 * 3, 3, TraderDetails(
+                self.area_mock.name, self.area_mock.uuid,
+                self.area_mock.name, self.area_mock.uuid
+            ), original_price=10.0 * 3,
             time_slot=self.time_slot
         )
+
+        storage_strategy_fixture.state.register_energy_from_posted_bid.assert_called_once()
 
     @pytest.mark.parametrize(
         "future_strategy_fixture", [LoadHoursStrategy(100), PVStrategy(),
@@ -154,7 +164,8 @@ class TestFutureMarketStrategy:
             future_strategy_fixture.state.offered_buy_kWh[self.time_slot] = 0.
             future_strategy_fixture.state.pledged_sell_kWh[self.time_slot] = 0.
             future_strategy_fixture.state.pledged_buy_kWh[self.time_slot] = 0.
-
+            future_strategy_fixture.state.register_energy_from_posted_offer = Mock()
+            future_strategy_fixture.state.register_energy_from_posted_bid = Mock()
         future_strategy_fixture.area.current_tick = 0
         future_strategy.event_market_cycle(future_strategy_fixture)
 
@@ -167,8 +178,9 @@ class TestFutureMarketStrategy:
         future_strategy.event_tick(future_strategy_fixture)
         future_strategy_fixture.area.current_tick = ticks_for_update
         future_strategy.event_tick(future_strategy_fixture)
-        number_of_updates = ((GlobalConfig.FUTURE_MARKET_DURATION_HOURS * 60 /
-                             FutureTemplateStrategiesConstants.UPDATE_INTERVAL_MIN) - 1)
+        number_of_updates = (
+                (ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS * 60 /
+                 FutureTemplateStrategiesConstants.UPDATE_INTERVAL_MIN) - 1)
         bid_energy_rate = (50 - 10) / number_of_updates
         offer_energy_rate = (50 - 20) / number_of_updates
         if isinstance(future_strategy_fixture, LoadHoursStrategy):

@@ -12,9 +12,9 @@ General Public License for more details.
 You should have received a copy of the GNU General Public License along with this program. If not,
 see <http://www.gnu.org/licenses/>.
 """
-from typing import TYPE_CHECKING, List, Union
+from typing import TYPE_CHECKING, List, Union, Optional
 
-from gsy_framework.constants_limits import GlobalConfig
+from gsy_framework.constants_limits import ConstSettings
 from pendulum import duration, DateTime
 
 from gsy_e.constants import FutureTemplateStrategiesConstants
@@ -26,6 +26,7 @@ if TYPE_CHECKING:
     from gsy_e.models.area import Area
     from gsy_e.models.strategy import BaseStrategy
     from gsy_e.models.market.future import FutureMarkets
+    from gsy_framework.data_classes import Offer, Bid
 
 
 class FutureTemplateStrategyBidUpdater(TemplateStrategyBidUpdater):
@@ -33,7 +34,7 @@ class FutureTemplateStrategyBidUpdater(TemplateStrategyBidUpdater):
 
     @property
     def _time_slot_duration_in_seconds(self) -> int:
-        return GlobalConfig.FUTURE_MARKET_DURATION_HOURS * 60 * 60
+        return ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS * 60 * 60
 
     @staticmethod
     def get_all_markets(area: "Area") -> List["FutureMarkets"]:
@@ -71,7 +72,7 @@ class FutureTemplateStrategyOfferUpdater(TemplateStrategyOfferUpdater):
 
     @property
     def _time_slot_duration_in_seconds(self) -> int:
-        return GlobalConfig.FUTURE_MARKET_DURATION_HOURS * 60 * 60
+        return ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS * 60 * 60
 
     @staticmethod
     def get_all_markets(area: "Area") -> List["FutureMarkets"]:
@@ -217,54 +218,56 @@ class FutureMarketStrategy(FutureMarketStrategyInterface):
                     time_slot)
                 available_energy_buy_kWh = strategy.state.get_available_energy_to_buy_kWh(
                     time_slot)
-                self._post_producer_first_offer(strategy, time_slot, available_energy_sell_kWh)
-                self._post_consumer_first_bid(strategy, time_slot, available_energy_buy_kWh)
-                strategy.state.register_energy_from_posted_bid(available_energy_buy_kWh, time_slot)
-                strategy.state.register_energy_from_posted_offer(
-                    available_energy_sell_kWh, time_slot)
+                first_offer = self._post_producer_first_offer(
+                    strategy, time_slot, available_energy_sell_kWh)
+                first_bid = self._post_consumer_first_bid(
+                    strategy, time_slot, available_energy_buy_kWh)
+                if first_offer:
+                    strategy.state.register_energy_from_posted_offer(first_offer.energy, time_slot)
+                if first_bid:
+                    strategy.state.register_energy_from_posted_bid(first_bid.energy, time_slot)
+
             else:
                 assert False, ("Strategy %s has to be producer or consumer to be able to "
                                "participate in the future market.", strategy.owner.name)
 
     def _post_consumer_first_bid(
             self, strategy: "BaseStrategy", time_slot: DateTime,
-            available_buy_energy_kWh: float) -> None:
+            available_buy_energy_kWh: float) -> Optional["Bid"]:
         if available_buy_energy_kWh <= 0.0:
-            return
+            return None
         if strategy.get_posted_bids(strategy.area.future_markets, time_slot):
-            return
-        strategy.post_bid(
+            return None
+        bid = strategy.post_bid(
             market=strategy.area.future_markets,
             energy=available_buy_energy_kWh,
-            price=available_buy_energy_kWh * self._bid_updater.initial_rate[time_slot],
+            price=available_buy_energy_kWh * self._bid_updater.get_updated_rate(time_slot),
             time_slot=time_slot,
             replace_existing=False
         )
-        if self._bid_updater.update_counter[time_slot] == 0:
-            # update_counter is 0 only for the very first bid that hast not been updated
-            # has to be increased because the first price counts as a price update
-            # pylint: disable=no-member
-            self._bid_updater.increment_update_counter(strategy, time_slot)
+        # update_counter has to be increased because the first price counts as a price update
+        # pylint: disable=no-member
+        self._bid_updater.increment_update_counter(strategy, time_slot)
+        return bid
 
     def _post_producer_first_offer(
             self, strategy: "BaseStrategy", time_slot: DateTime,
-            available_sell_energy_kWh: float) -> None:
+            available_sell_energy_kWh: float) -> Optional["Offer"]:
         if available_sell_energy_kWh <= 0.0:
-            return
+            return None
         if strategy.get_posted_offers(strategy.area.future_markets, time_slot):
-            return
-        strategy.post_offer(
+            return None
+        offer = strategy.post_offer(
             market=strategy.area.future_markets,
             replace_existing=False,
             energy=available_sell_energy_kWh,
-            price=available_sell_energy_kWh * self._offer_updater.initial_rate[time_slot],
+            price=available_sell_energy_kWh * self._offer_updater.get_updated_rate(time_slot),
             time_slot=time_slot
         )
-        if self._offer_updater.update_counter[time_slot] == 0:
-            # update_counter is 0 only for the very first bid that hast not been updated
-            # has to be increased because the first price counts as a price update
-            # pylint: disable=no-member
-            self._offer_updater.increment_update_counter(strategy, time_slot)
+        # update_counter has to be increased because the first price counts as a price update
+        # pylint: disable=no-member
+        self._offer_updater.increment_update_counter(strategy, time_slot)
+        return offer
 
     def event_tick(self, strategy: "BaseStrategy") -> None:
         """
@@ -304,7 +307,7 @@ def future_market_strategy_factory(asset_type: AssetType) -> FutureMarketStrateg
     final_buying_rate = FutureTemplateStrategiesConstants.FINAL_BUYING_RATE
     initial_selling_rate = FutureTemplateStrategiesConstants.INITIAL_SELLING_RATE
     final_selling_rate = FutureTemplateStrategiesConstants.FINAL_SELLING_RATE
-    if GlobalConfig.FUTURE_MARKET_DURATION_HOURS > 0:
+    if ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS > 0:
         return FutureMarketStrategy(
             asset_type, initial_buying_rate, final_buying_rate,
             initial_selling_rate, final_selling_rate)

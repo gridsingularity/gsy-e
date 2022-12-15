@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.constants_limits import ConstSettings
 
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
@@ -27,7 +27,7 @@ ConstSettings.MASettings.MARKET_TYPE = 2
 def get_setup(config):
     """Return the setup to be used for the simulation."""
 
-    GlobalConfig.FUTURE_MARKET_DURATION_HOURS = 1
+    ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS = 1
     area = Area(
         "Grid",
         [

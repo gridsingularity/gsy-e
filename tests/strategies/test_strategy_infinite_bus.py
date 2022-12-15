@@ -23,7 +23,7 @@ from uuid import uuid4
 import pendulum
 import pytest
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
-from gsy_framework.data_classes import Offer, Trade, BalancingOffer, Bid
+from gsy_framework.data_classes import Offer, Trade, BalancingOffer, Bid, TraderDetails
 
 from gsy_e import constants
 from gsy_e.constants import TIME_ZONE
@@ -37,19 +37,20 @@ TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 @pytest.fixture(scope="function", autouse=True)
 def auto_fixture():
     constants.CONNECT_TO_PROFILES_DB = False
+    original_market_maker_rate = GlobalConfig.market_maker_rate
     GlobalConfig.market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
     yield
-    GlobalConfig.market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
+    GlobalConfig.market_maker_rate = original_market_maker_rate
     ConstSettings.MASettings.MARKET_TYPE = 1
     ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = False
     DeviceRegistry.REGISTRY = {}
+    GlobalConfig.FEED_IN_TARIFF = 20
 
 
 # pylint: disable=too-many-instance-attributes
 class FakeArea:
     def __init__(self):
         self.current_tick = 2
-        self.appliance = None
         self.name = "FakeArea"
         self.uuid = str(uuid4())
         self.test_market = FakeMarket(0)
@@ -95,8 +96,8 @@ class FakeMarket:
         self.count = count
         self.created_offers = []
         self.created_balancing_offers = []
-        self.sorted_offers = [Offer("id", pendulum.now(), 25., 1., "other"),
-                              Offer("id", pendulum.now(), 26., 1., "other")]
+        self.sorted_offers = [Offer("id", pendulum.now(), 25., 1., TraderDetails("other", "")),
+                              Offer("id", pendulum.now(), 26., 1., TraderDetails("other", ""))]
         self.traded_offers = []
         self._bids = {TIME: []}
 
@@ -104,12 +105,8 @@ class FakeMarket:
     def time_slot(self):
         return TIME
 
-    def offer(self, price, energy, seller, original_price=None,
-              seller_origin=None, seller_origin_id=None, seller_id=None,
-              attributes=None, requirements=None, time_slot=None):
-        offer = Offer("id", pendulum.now(), price, energy, seller, seller_origin=seller_origin,
-                      seller_origin_id=seller_origin_id, seller_id=seller_id,
-                      attributes=attributes, requirements=requirements, time_slot=time_slot)
+    def offer(self, price, energy, seller, original_price=None, time_slot=None):
+        offer = Offer("id", pendulum.now(), price, energy, seller, time_slot=time_slot)
         self.created_offers.append(offer)
         offer.id = "id"
         return offer
@@ -120,23 +117,17 @@ class FakeMarket:
         offer.id = "id"
         return offer
 
-    def accept_offer(self, offer_or_id, buyer, *, energy=None, time=None, already_tracked=False,
-                     trade_rate: float = None, trade_bid_info=None, buyer_origin=None,
-                     buyer_origin_id=None, buyer_id=None):
+    def accept_offer(self, offer_or_id, buyer, *, energy=None, time=None, trade_bid_info=None):
         offer = offer_or_id
-        trade = Trade("trade_id", time, offer, offer.seller, buyer,
-                      seller_origin=offer.seller_origin, buyer_origin=buyer_origin,
-                      buyer_origin_id=buyer_origin_id, buyer_id=buyer_id,
-                      traded_energy=1, trade_price=1)
+        trade = Trade("trade_id", time, offer.seller,
+                      TraderDetails(buyer, ""),
+                      offer=offer, traded_energy=1, trade_price=1)
         self.traded_offers.append(trade)
         return trade
 
-    def bid(self, price, energy, buyer, original_price=None,
-            buyer_origin=None, buyer_origin_id=None, buyer_id=None,
-            attributes=None, requirements=None, time_slot=None):
-        bid = Bid("bid_id", pendulum.now(), price, energy, buyer, buyer_origin=buyer_origin,
-                  buyer_origin_id=buyer_origin_id, buyer_id=buyer_id,
-                  attributes=attributes, requirements=requirements, time_slot=time_slot)
+    def bid(self, price, energy, buyer, original_price=None, time_slot=None):
+        bid = Bid("bid_id", pendulum.now(), price, energy, buyer,
+                  time_slot=time_slot)
         return bid
 
 
@@ -237,13 +228,14 @@ def test_event_trade(area_test2, bus_test2):
     bus_test2.event_activate()
     bus_test2.event_market_cycle()
     traded_offer = Offer(
-        id="id", creation_time=pendulum.now(), price=20, energy=1, seller="FakeArea",)
+        id="id", creation_time=pendulum.now(), price=20, energy=1,
+        seller=TraderDetails("FakeArea", ""))
     bus_test2.event_offer_traded(market_id=area_test2.test_market.id,
                                  trade=Trade(id="id",
-                                             creation_time="time",
-                                             offer_bid=traded_offer,
-                                             seller="FakeArea",
-                                             buyer="buyer",
+                                             creation_time=pendulum.now(),
+                                             offer=traded_offer,
+                                             seller=TraderDetails("FakeArea", ""),
+                                             buyer=TraderDetails("buyer", ""),
                                              traded_energy=1, trade_price=1)
                                  )
     assert len(area_test2.test_market.created_offers) == 1
@@ -253,11 +245,13 @@ def test_event_trade(area_test2, bus_test2):
 def test_on_offer_changed(area_test2, bus_test2):
     bus_test2.event_activate()
     original_offer = Offer(
-        id="id", creation_time=pendulum.now(), price=20, energy=1, seller="FakeArea")
+        id="id", creation_time=pendulum.now(), price=20, energy=1,
+        seller=TraderDetails("FakeArea", ""))
     accepted_offer = Offer(
-        id="new", creation_time=pendulum.now(), price=15, energy=0.75, seller="FakeArea")
+        id="new", creation_time=pendulum.now(), price=15, energy=0.75,
+        seller=TraderDetails("FakeArea", ""))
     residual_offer = Offer(id="new_id", creation_time=pendulum.now(), price=5,
-                           energy=0.25, seller="FakeArea")
+                           energy=0.25, seller=TraderDetails("FakeArea", ""))
     bus_test2.event_offer_split(market_id=area_test2.test_market.id,
                                 original_offer=original_offer,
                                 accepted_offer=accepted_offer,
@@ -268,11 +262,11 @@ def test_on_offer_changed(area_test2, bus_test2):
 
 def test_event_trade_after_offer_changed_partial_offer(area_test2, bus_test2):
     original_offer = Offer(id="old_id", creation_time=pendulum.now(),
-                           price=20, energy=1, seller="FakeArea")
+                           price=20, energy=1, seller=TraderDetails("FakeArea", ""))
     accepted_offer = Offer(id="old_id", creation_time=pendulum.now(),
-                           price=15, energy=0.75, seller="FakeArea")
+                           price=15, energy=0.75, seller=TraderDetails("FakeArea", ""))
     residual_offer = Offer(id="res_id", creation_time=pendulum.now(),
-                           price=5, energy=0.25, seller="FakeArea")
+                           price=5, energy=0.25, seller=TraderDetails("FakeArea", ""))
     bus_test2.offers.post(original_offer, area_test2.test_market.id)
     bus_test2.event_offer_split(market_id=area_test2.test_market.id,
                                 original_offer=original_offer,
@@ -282,10 +276,10 @@ def test_event_trade_after_offer_changed_partial_offer(area_test2, bus_test2):
     assert bus_test2.offers.split[original_offer.id] == accepted_offer
     bus_test2.event_offer_traded(market_id=area_test2.test_market.id,
                                  trade=Trade(id="id",
-                                             creation_time="time",
-                                             offer_bid=original_offer,
-                                             seller="FakeArea",
-                                             buyer="buyer",
+                                             creation_time=pendulum.now(),
+                                             offer=original_offer,
+                                             seller=TraderDetails("FakeArea", ""),
+                                             buyer=TraderDetails("buyer", ""),
                                              traded_energy=1, trade_price=1)
                                  )
 

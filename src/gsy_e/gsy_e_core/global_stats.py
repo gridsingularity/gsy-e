@@ -15,9 +15,12 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from typing import Dict
+
 import gsy_e.constants
+from gsy_e.gsy_e_core.market_counters import ExternalTickCounter
 from gsy_e.gsy_e_core.util import (find_object_of_same_weekday_and_time,
-                                   get_market_maker_rate_from_config, ExternalTickCounter)
+                                   get_market_maker_rate_from_config)
 
 
 class ExternalConnectionGlobalStatistics:
@@ -76,19 +79,51 @@ class ExternalConnectionGlobalStatistics:
         outdict[area.uuid] = {}
         if area.children:
             if area.current_market:
-                area_dict = {'last_market_bill': area.stats.get_last_market_bills(),
-                             'last_market_stats': area.stats.get_price_stats_current_market(),
-                             'last_market_fee': area.current_market.fee_class.grid_fee_rate,
-                             'current_market_fee': area.get_grid_fee(),
-                             'area_name': area.name,
-                             'children': {}}
+                area_dict = {"last_market_bill": area.stats.get_last_market_bills(),
+                             "last_market_stats": area.stats.get_price_stats_current_market(),
+                             "last_market_fee": area.current_market.fee_class.grid_fee_rate,
+                             "current_market_fee": area.get_grid_fee(),
+                             "area_name": area.name,
+                             "children": {}}
             else:
-                area_dict = {'children': {},
-                             'area_name': area.name}
+                area_dict = {"children": {},
+                             "area_name": area.name}
             outdict[area.uuid].update(area_dict)
             for child in area.children:
-                self._create_grid_tree_dict(child, outdict[area.uuid]['children'])
+                self._create_grid_tree_dict(child, outdict[area.uuid]["children"])
         else:
             outdict[area.uuid] = area.strategy.market_info_dict \
                 if isinstance(area.strategy, ExternalMixin) else {}
-            outdict[area.uuid].update({'area_name': area.name})
+            outdict[area.uuid].update({"area_name": area.name})
+
+
+class SCMExternalConnectionGlobalStatistics:
+    """Placeholder for global statistics and information send to the sdk."""
+
+    def __init__(self):
+        self.area = None
+        self.area_stats_tree_dict: Dict = {}
+
+    def __call__(self, root_area):
+        self.area = root_area
+
+    def _create_grid_tree_dict(self):
+        self._add_to_grid_tree_dict(self.area)
+        for house in self.area.children:
+            self._add_to_grid_tree_dict(house)
+            for child in house.children:
+                self._add_to_grid_tree_dict(child)
+
+    def _add_to_grid_tree_dict(self, area):
+        """
+        This method could be used to put more information into the grid_tree for scm simulations.
+        """
+        if area.strategy:
+            self.area_stats_tree_dict[area.uuid] = {"type": str(area.strategy.__class__.__name__)}
+        else:
+            self.area_stats_tree_dict[area.uuid] = {"type": "CommunityArea"}
+        self.area_stats_tree_dict[area.uuid]["area_name"] = area.name
+
+    def update(self):
+        """Update grid_tree_dict with latest stats."""
+        self._create_grid_tree_dict()

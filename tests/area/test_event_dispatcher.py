@@ -21,17 +21,15 @@ from unittest.mock import MagicMock, Mock, call
 
 import pytest
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
-from gsy_framework.enums import SpotMarketTypeEnum
-from pendulum import DateTime, datetime
-from pendulum import duration
+from gsy_framework.enums import AvailableMarketTypes, SpotMarketTypeEnum
+from pendulum import DateTime, datetime, duration
 
-from gsy_e.events.event_structures import MarketEvent, AreaEvent
+from gsy_e.events.event_structures import AreaEvent, MarketEvent
 from gsy_e.models.area import Area
 from gsy_e.models.area.event_dispatcher import AreaDispatcher
 from gsy_e.models.market import MarketBase
 from gsy_e.models.market.balancing import BalancingMarket
 from gsy_e.models.market.future import FutureMarkets
-from gsy_e.models.market.market_structures import AvailableMarketTypes
 from gsy_e.models.market.one_sided import OneSidedMarket
 from gsy_e.models.market.settlement import SettlementMarket
 from gsy_e.models.market.two_sided import TwoSidedMarket
@@ -42,8 +40,8 @@ from gsy_e.models.strategy.market_agents.one_sided_agent import OneSidedAgent
 from gsy_e.models.strategy.market_agents.settlement_agent import SettlementAgent
 from gsy_e.models.strategy.market_agents.two_sided_agent import TwoSidedAgent
 
-
 # pylint: disable=W0212
+
 
 @pytest.fixture(name="area_with_markets")
 def area_with_markets_fixture():
