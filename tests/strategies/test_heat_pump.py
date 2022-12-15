@@ -1,12 +1,13 @@
 # pylint: disable=protected-access
 from math import isclose
 from typing import TYPE_CHECKING, Tuple
-from unittest.mock import patch, PropertyMock, MagicMock
+from unittest.mock import patch, PropertyMock, MagicMock, Mock
 
 import pytest
-from gsy_framework.constants_limits import GlobalConfig, ConstSettings
+from gsy_framework.constants_limits import GlobalConfig, ConstSettings, TIME_ZONE
+from gsy_framework.data_classes import Trade, TraderDetails
 from gsy_framework.enums import AvailableMarketTypes
-from pendulum import datetime
+from pendulum import today
 
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.heat_pump import HeatPumpStrategy, HeatPumpOrderUpdaterParameters
@@ -14,7 +15,7 @@ from gsy_e.models.strategy.heat_pump import HeatPumpStrategy, HeatPumpOrderUpdat
 if TYPE_CHECKING:
     from gsy_e.models.strategy.trading_strategy_base import TradingStrategyBase
 
-CURRENT_MARKET_SLOT = datetime(2022, 6, 13, 0, 0)
+CURRENT_MARKET_SLOT = today(tz=TIME_ZONE)
 RATE_PROFILE = {CURRENT_MARKET_SLOT: 0, CURRENT_MARKET_SLOT.add(minutes=15): 2}
 
 
@@ -25,6 +26,7 @@ def fixture_heatpump_strategy(request) -> Tuple["TradingStrategyBase", "Area"]:
     orig_start_date = GlobalConfig.start_date
     strategy_params = request.param if hasattr(request, "param") else {}
     strategy = HeatPumpStrategy(**strategy_params)
+    strategy._energy_params = Mock()
     strategy_area = Area("asset", strategy=strategy)
     area = Area("grid", children=[strategy_area])
     area.config.start_date = CURRENT_MARKET_SLOT
@@ -50,6 +52,7 @@ class TestHeatPumpStrategy:
     def test_heatpump_creates_order_updater_on_spot_on_market_cycle(heatpump_fixture):
         strategy = heatpump_fixture[0]
         area = heatpump_fixture[1]
+        strategy._get_energy_buy_energy = MagicMock(return_value=1)
         strategy.event_market_cycle()
         market_object = area.spot_market
         assert len(strategy._order_updaters[market_object].keys()) == 1
@@ -98,13 +101,14 @@ class TestHeatPumpStrategy:
 
     @staticmethod
     @pytest.mark.parametrize("heatpump_fixture", [{"order_updater_parameters": {}}], indirect=True)
+    @patch("gsy_framework.constants_limits.GlobalConfig.FEED_IN_TARIFF", 20)
+    @patch("gsy_framework.constants_limits.GlobalConfig.market_maker_rate", 30)
     def test_order_updater_parameters_get_initiated_with_default_values(heatpump_fixture):
         strategy = heatpump_fixture[0]
+        strategy._get_energy_buy_energy = MagicMock(return_value=1)
         strategy.event_market_cycle()
-        assert strategy._order_updater_params[AvailableMarketTypes.SPOT].initial_rate == (
-            GlobalConfig.FEED_IN_TARIFF)
-        assert strategy._order_updater_params[
-                   AvailableMarketTypes.SPOT].final_rate == GlobalConfig.market_maker_rate
+        assert strategy._order_updater_params[AvailableMarketTypes.SPOT].initial_rate == 20
+        assert strategy._order_updater_params[AvailableMarketTypes.SPOT].final_rate == 30
 
     @staticmethod
     @patch("gsy_framework.constants_limits.GlobalConfig.FEED_IN_TARIFF", RATE_PROFILE)
@@ -113,6 +117,7 @@ class TestHeatPumpStrategy:
     def test_order_updater_parameters_get_initiated_with_default_profile(heatpump_fixture):
         strategy = heatpump_fixture[0]
         area = heatpump_fixture[1]
+        strategy._get_energy_buy_energy = MagicMock(return_value=1)
         strategy.event_market_cycle()
         assert strategy._order_updater_params[AvailableMarketTypes.SPOT].initial_rate == 0
         assert strategy._order_updater_params[
@@ -133,6 +138,32 @@ class TestHeatPumpStrategy:
     ], indirect=True)
     def test_order_updater_parameters_get_initiated_with_user_input(heatpump_fixture):
         strategy = heatpump_fixture[0]
+        strategy._get_energy_buy_energy = MagicMock(return_value=1)
         strategy.event_market_cycle()
         assert strategy._order_updater_params[AvailableMarketTypes.SPOT].initial_rate == 0
         assert strategy._order_updater_params[AvailableMarketTypes.SPOT].final_rate == 15
+
+    @staticmethod
+    def test_get_energy_buy_energy_returns_correct_value(heatpump_fixture):
+        strategy = heatpump_fixture[0]
+        strategy.preferred_buying_rate = 15
+        strategy._energy_params.get_min_energy_demand_kWh = MagicMock(return_value=1)
+        strategy._energy_params.get_max_energy_demand_kWh = MagicMock(return_value=2)
+        assert strategy._get_energy_buy_energy(14, CURRENT_MARKET_SLOT) == 2
+        assert strategy._get_energy_buy_energy(15, CURRENT_MARKET_SLOT) == 2
+        assert strategy._get_energy_buy_energy(16, CURRENT_MARKET_SLOT) == 1
+
+    @staticmethod
+    def test_event_bid_traded_calls_ep_event_traded_energy(heatpump_fixture):
+        strategy = heatpump_fixture[0]
+        area = heatpump_fixture[1]
+        traded_energy = 2
+        trade = Trade("id", CURRENT_MARKET_SLOT,
+                      traded_energy=traded_energy, trade_price=1, time_slot=CURRENT_MARKET_SLOT,
+                      buyer=TraderDetails(name=strategy.owner.name, uuid=strategy.owner.uuid,
+                                          origin=strategy.owner.name,
+                                          origin_uuid=strategy.owner.uuid),
+                      seller=TraderDetails("", ""))
+        strategy.event_bid_traded(market_id=area.spot_market.id, bid_trade=trade)
+        strategy._energy_params.event_traded_energy.assert_called_once_with(
+            CURRENT_MARKET_SLOT, traded_energy)
