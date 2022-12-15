@@ -78,6 +78,7 @@ def fixture_scm_setup():
     coefficient_area.parent = None
 
     yield coefficient_area, slot_length
+    ConstSettings.MASettings.MARKET_TYPE = SpotMarketTypeEnum.ONE_SIDED.value
 
 
 class TestSimulationEndpointBuffer:
