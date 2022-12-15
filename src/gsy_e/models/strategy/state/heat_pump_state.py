@@ -22,7 +22,9 @@ from gsy_framework.utils import (
     convert_pendulum_to_str_in_dict)
 from pendulum import DateTime, duration
 
-from gsy_e.models.strategy.state.base_states import StateInterface
+from gsy_e import constants
+from gsy_e.constants import FLOATING_POINT_TOLERANCE
+from gsy_e.models.strategy.state.base_states import StateInterface, UnexpectedStateException
 
 
 class HeatPumpState(StateInterface):
@@ -45,8 +47,10 @@ class HeatPumpState(StateInterface):
     def update_storage_temp(self, current_time_slot: DateTime):
         """Update storage temperature of the given slot with the accumulated changes. """
         new_temp = (self.get_storage_temp_C(self._last_time_slot(current_time_slot))
-                    - self.get_temp_decrease_K(current_time_slot)
-                    + self.get_temp_increase_K(current_time_slot))
+                    - self.get_temp_decrease_K(self._last_time_slot(current_time_slot))
+                    + self.get_temp_increase_K(self._last_time_slot(current_time_slot)))
+        if new_temp < -FLOATING_POINT_TOLERANCE:
+            raise UnexpectedStateException("Storage of heat pump should not drop below zero.")
         self._storage_temp_C[current_time_slot] = new_temp
 
     def set_min_energy_demand_kWh(self, time_slot: DateTime, energy_kWh: float):
@@ -100,7 +104,7 @@ class HeatPumpState(StateInterface):
             state_dict["max_energy_demand_kWh"])
 
     def delete_past_state_values(self, current_time_slot: DateTime):
-        if not current_time_slot:
+        if not current_time_slot or constants.RETAIN_PAST_MARKET_STRATEGIES_STATE:
             return
         self._delete_time_slots(self._min_energy_demand_kWh,
                                 self._last_time_slot(current_time_slot))
@@ -115,9 +119,9 @@ class HeatPumpState(StateInterface):
 
     def get_results_dict(self, current_time_slot: DateTime) -> Dict:
         return {
-            "storage_temp_CC": self.get_storage_temp_C(current_time_slot),
-            "temp_decrease_KK": self.get_temp_decrease_K(current_time_slot),
-            "temp_increase_KK": self.get_temp_increase_K(current_time_slot)
+            "storage_temp_C": self.get_storage_temp_C(current_time_slot),
+            "temp_decrease_K": self.get_temp_decrease_K(current_time_slot),
+            "temp_increase_K": self.get_temp_increase_K(current_time_slot)
         }
 
     def _last_time_slot(self, current_market_slot: DateTime) -> DateTime:
