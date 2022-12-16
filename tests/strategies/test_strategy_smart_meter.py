@@ -25,7 +25,7 @@ from pendulum import datetime, duration
 from gsy_e import constants
 from gsy_e.models.area import Area
 from gsy_e.models.market.one_sided import OneSidedMarket
-from gsy_e.models.state import SmartMeterState
+from gsy_e.models.strategy.state import SmartMeterState
 from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
 
 

@@ -33,7 +33,7 @@ from gsy_e.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProf
 from gsy_e.models.strategy.pv import PVStrategy
 
 if TYPE_CHECKING:
-    from gsy_e.models.state import PVState
+    from gsy_e.models.strategy.state import PVState
     from gsy_e.models.strategy import Offers
 
 

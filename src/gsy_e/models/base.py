@@ -29,7 +29,7 @@ log = getLogger(__name__)
 
 if TYPE_CHECKING:
     from gsy_e.models.area import Area
-    from gsy_e.models.state import StateInterface
+    from gsy_e.models.strategy.state import StateInterface
 
 
 class AssetType(Enum):

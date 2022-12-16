@@ -28,7 +28,7 @@ from pendulum.datetime import DateTime
 
 from gsy_e.gsy_e_core.exceptions import GSyException
 from gsy_e.gsy_e_core.util import d3a_path
-from gsy_e.models.state import PVState
+from gsy_e.models.strategy.state import PVState
 from gsy_e.models.strategy import utils
 from gsy_e.models.strategy.profile import EnergyProfile
 

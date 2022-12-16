@@ -5,7 +5,7 @@ from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.validators import StorageValidator
 from pendulum import DateTime
 
-from gsy_e.models.state import ESSEnergyOrigin, StorageState
+from gsy_e.models.strategy.state import ESSEnergyOrigin, StorageState
 from gsy_e.models.strategy.scm import SCMStrategy
 
 StorageSettings = ConstSettings.StorageSettings

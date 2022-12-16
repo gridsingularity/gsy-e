@@ -6,7 +6,7 @@ from gsy_framework.read_user_profile import InputProfileTypes
 from pendulum import DateTime
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
-from gsy_e.models.state import HeatPumpState
+from gsy_e.models.strategy.state import HeatPumpState
 from gsy_e.models.strategy.profile import EnergyProfile
 # pylint: disable=pointless-string-statement
 """

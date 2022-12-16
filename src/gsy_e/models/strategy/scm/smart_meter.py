@@ -8,7 +8,7 @@ from gsy_e.models.strategy.energy_parameters.smart_meter import SmartMeterEnergy
 
 if TYPE_CHECKING:
     from gsy_e.models.area import CoefficientArea
-    from gsy_e.models.state import SmartMeterState
+    from gsy_e.models.strategy.state import SmartMeterState
 
 
 class SCMSmartMeterStrategy(SCMStrategy):

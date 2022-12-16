@@ -9,7 +9,7 @@ from gsy_e.models.base import AreaBehaviorBase
 from gsy_e.models.strategy.order_updater import (OrderUpdater, OrderUpdaterParameters)
 from gsy_e.models.strategy import _TradeLookerUpper
 if TYPE_CHECKING:
-    from gsy_e.models.state import StateInterface
+    from gsy_e.models.strategy.state import StateInterface
     from gsy_e.models.market import MarketBase
 
 

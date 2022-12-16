@@ -4,7 +4,7 @@ import pytest
 from pendulum import now, DateTime
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
-from gsy_e.models.state import ConsumptionState, StateInterface
+from gsy_e.models.strategy.state.base_states import ConsumptionState, StateInterface
 from tests.test_state.test_prosumption_interface import TestProsumptionInterface
 
 

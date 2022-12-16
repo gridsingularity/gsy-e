@@ -25,7 +25,7 @@ from pendulum import DateTime, duration
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.exceptions import GSyException
-from gsy_e.models.state import LoadState
+from gsy_e.models.strategy.state import LoadState
 from gsy_e.models.strategy import utils
 from gsy_e.models.strategy.profile import EnergyProfile
 

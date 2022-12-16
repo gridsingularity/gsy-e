@@ -19,7 +19,7 @@ from gsy_framework.utils import find_object_of_same_weekday_and_time
 from pendulum.datetime import DateTime
 
 from gsy_e.gsy_e_core.exceptions import GSyException
-from gsy_e.models.state import SmartMeterState
+from gsy_e.models.strategy.state import SmartMeterState
 from gsy_e.models.strategy import utils
 from gsy_e.models.strategy.profile import EnergyProfile
 
