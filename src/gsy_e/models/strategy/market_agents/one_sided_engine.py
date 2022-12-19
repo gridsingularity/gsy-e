@@ -84,6 +84,7 @@ class MAEngine:
         return self.owner.post_offer(market=self.markets.target, replace_existing=False, **kwargs)
 
     def _forward_offer(self, offer: Offer) -> Optional[Offer]:
+        # pylint: disable=fixme
         # TODO: This is an ugly solution. After the december release this check needs to
         #  implemented after grid fee being incorporated while forwarding in target market
         if offer.price < 0.0:
@@ -296,6 +297,13 @@ class MAEngine:
         offer_info = OfferInfo(Offer.copy(source_offer), Offer.copy(target_offer))
         self.forwarded_offers[source_offer.id] = offer_info
         self.forwarded_offers[target_offer.id] = offer_info
+
+    def event_offer(self, *, _market_id: str, _bid: Offer) -> None:
+        """Perform actions on the event of the creation of a new offer."""
+        if (ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value and
+                self.min_offer_age == 0):
+            # Propagate offer immediately if the MIN_OFFER_AGE is set to zero.
+            self.tick(area=self.owner.owner)
 
 
 class BalancingEngine(MAEngine):

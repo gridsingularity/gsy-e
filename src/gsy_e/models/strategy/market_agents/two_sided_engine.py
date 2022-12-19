@@ -18,7 +18,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from collections import namedtuple
 from typing import Dict, TYPE_CHECKING
 
+from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Bid, TraderDetails
+from gsy_framework.enums import SpotMarketTypeEnum
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.exceptions import BidNotFoundException, MarketException
@@ -265,3 +267,10 @@ class TwoSidedEngine(MAEngine):
         bid_info = BidInfo(source_bid, target_bid)
         self.forwarded_bids[source_bid.id] = bid_info
         self.forwarded_bids[target_bid.id] = bid_info
+
+    def event_bid(self, *, _market_id: str, _bid: Bid) -> None:
+        """Perform actions on the event of the creation of a new bid."""
+        if (ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value and
+                self.min_bid_age == 0):
+            # Propagate bid immediately if the MIN_BID_AGE is set to zero.
+            self.tick(area=self.owner.owner)
