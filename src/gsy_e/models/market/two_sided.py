@@ -147,7 +147,7 @@ class TwoSidedMarket(OneSidedMarket):
         self._notify_listeners(MarketEvent.BID_DELETED, bid=bid)
 
     def split_bid(self, original_bid: Bid, energy: float, orig_bid_price: float):
-        """Split bit into two, one with provided energy, the other with the residual."""
+        """Split bid into two, one with provided energy, the other with the residual."""
 
         self.bids.pop(original_bid.id, None)
 
@@ -218,10 +218,10 @@ class TwoSidedMarket(OneSidedMarket):
 
         if energy <= 0:
             raise NegativeEnergyTradeException("Energy cannot be negative or zero.")
-        if energy > market_bid.energy:
+        if market_bid.energy - energy < -FLOATING_POINT_TOLERANCE:
             raise InvalidTrade(f"Traded energy ({energy}) cannot be more than the "
                                f"bid energy ({market_bid.energy}).")
-        if energy < market_bid.energy:
+        if market_bid.energy - energy > FLOATING_POINT_TOLERANCE:
             # partial bid trade
             accepted_bid, residual_bid = self.split_bid(market_bid, energy, orig_price)
             bid = accepted_bid
