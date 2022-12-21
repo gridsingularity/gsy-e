@@ -2161,7 +2161,7 @@
                 
                   <h1>Registration - Simulations run on the Backend</h1>
                 
-                <p><em>Note: If you are running the Grid Singularity exchange (currently via prior interface, D3A) using a virtual machine and <a href="../vm-installation-instructions/">vagrant</a>, the latest GSy-e SDK is already installed on your computer and you can skip to the Launch Simulation section below. If you are running the exchange software locally, please follow the following instructions.</em></p>
+                <p><em>Note: If you are running the Grid Singularity exchange (previously callled D3A) using a virtual machine and <a href="../vm-installation-instructions/">vagrant</a>, the latest GSy-e SDK is already installed on your computer and you can skip to the Launch Simulation section below. If you are running the exchange software locally, please follow the following instructions.</em></p>
 <h3 id="start-redis-server">Start Redis server<a class="headerlink" href="#start-redis-server" title="Permanent link">&para;</a></h3>
 <p>To use the API locally, your script interacts with the simulation using a local Redis instance. To start the redis instance, open a new terminal and run the following command :</p>
 <pre class="codehilite"><code>redis-server /usr/local/etc/redis.conf
@@ -2197,7 +2197,7 @@ initial_selling_rate=30,                                                        
 
 <p>By default, trading strategies do not allow API connections unless the <code>ExternalStrategy</code> is used. Please also ensure that the appropriate libraries are imported to use the API.</p>
 <h3 id="launch-simulation">Launch simulation<a class="headerlink" href="#launch-simulation" title="Permanent link">&para;</a></h3>
-<p>This requires you to have the backend codebase installed on your machine to run simulations (see <a href="../linux-installation-instructions/">Installation Instructions</a>). First, navigate to the Grid Singularity folder (currently still D3A) in a new terminal, then activate the Grid Singularity (currently still D3A) environment with the command:</p>
+<p>This requires you to have the backend codebase installed on your machine to run simulations (see <a href="../linux-installation-instructions/">Installation Instructions</a>). First, navigate to the Grid Singularity folder (gsy) in a new terminal, then activate the Grid Singularity (gsy-env) environment with the command:</p>
 <pre class="codehilite"><code>workon gsy-env
 </code></pre>
 

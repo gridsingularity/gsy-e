@@ -2028,15 +2028,15 @@
 
 <p>The arguments are :</p>
 <ul>
-<li><code>base-setup-path</code> --&gt; Set the base path where user's client script resides, otherwise <code>gsy-e-sdk/setups</code> is taken as default for user's client scripts. Users can provide either an absolute or a relative file path.</li>
+<li><code>base-setup-path</code> --&gt; Set the base path where the user's client script resides, otherwise <code>gsy-e-sdk/setups</code> is taken as default for the user's client scripts. Users can provide either an absolute or a relative file path.</li>
 <li><code>setup</code> --&gt; Name of user's SDK module/script.</li>
-<li><code>username</code> --&gt; Username of agent authorized to communicate with respective collaboration/CN.</li>
+<li><code>username</code> --&gt; Username of agent authorised to communicate with respective collaboration/CN.</li>
 <li><code>password</code> --&gt; Password of respective agent</li>
-<li><code>domain-name</code> --&gt; D3A domain name</li>
-<li><code>web-socket</code> --&gt; D3A websocket URI</li>
-<li><code>simulation-id</code> --&gt; UUID of the collaboration or Canary Network (CN)</li>
-<li><code>simulation-config-path</code> --&gt; Path to the JSON file that contains the user's collaboration/CN information. This file can be downloaded from the "Registry" page, currently still at d3a.io.</li>
-<li><code>run-on-redis</code> --&gt; This flag targets the local testing of the SDK, where no user authentication is required. A locally running redis server and Grid Singularity (d3a.io) simulation are needed here.</li>
+<li><code>domain-name</code> --&gt; Grid Singularity Exchange domain name</li>
+<li><code>web-socket</code> --&gt; Grid Singularity Exchange websocket URI</li>
+<li><code>simulation-id</code> --&gt; UUID of the collaboration or Canary Test Network</li>
+<li><code>simulation-config-path</code> --&gt; Path to the JSON file that contains the user's collaboration/CN information.</li>
+<li><code>run-on-redis</code> --&gt; This flag targets the local testing of the SDK, where no user authentication is required. A locally running redis server and a running Grid Singularity CLI simulation are needed here.</li>
 </ul>
 <p>The API agent can interface with a local simulation (<a href="../setup-configuration/">backend</a>) or a <a href="../collaboration/">collaboration</a>/<a href="../connect-ctn/">Canary Network</a> (<a href="https://www.d3a.io/">User-Interface</a>). There are 3 methods to parse the required information when launching the API to connect to the UI, as thoroughly explained in the text below:</p>
 <ol>
@@ -2071,7 +2071,7 @@ os.environ[&quot;API_CLIENT_SIMULATION_ID&quot;] = &quot;simulation_uuid&quot;
 
 <h4 id="local-simulation">Local simulation:<a class="headerlink" href="#local-simulation" title="Permanent link">&para;</a></h4>
 <p>To interact with a locally running simulation (backend simulation), username, passwords, domain and websocket names and simulation_id are not necessary. There is only an additional flag required in the CLI command : <code>--run-on-redis</code>.</p>
-<pre class="codehilite"><code>d3a-api-client --log-level INFO run --setup asset_api_template --run-on-redis
+<pre class="codehilite"><code>gsy-e-sdk --log-level INFO run --setup asset_api_template --run-on-redis
 </code></pre>
 
 <p>Once the Asset SDK Script has been launched, you can click on “Run” in the Results page of your Collaboration in the User-Interface.</p>
