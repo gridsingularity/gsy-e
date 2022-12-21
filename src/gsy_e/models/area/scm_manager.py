@@ -7,6 +7,7 @@ from uuid import uuid4
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.data_classes import Trade, TraderDetails
+from gsy_framework.sim_results.kpi_calculation_helper import KPICalculationHelper
 from pendulum import DateTime, duration
 
 import gsy_e.constants
@@ -258,23 +259,19 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
         # will be negative, and the producer will not have "savings". For a more realistic case
         # the revenue should be omitted from the calculation of the savings, however this needs
         # to be discussed.
-        return self.base_energy_bill - self.gsy_energy_bill
+        return KPICalculationHelper().saving_absolute(self.base_energy_bill, self.gsy_energy_bill)
 
     @property
     def savings_percent(self):
         """Percentage of the price savings of the home, compared to the base energy bill."""
-        return (
-            (self.savings / self.base_energy_bill) * 100.0
-            if self.base_energy_bill > 0. else 0.)
+        return KPICalculationHelper().saving_percentage(self.savings, self.base_energy_bill)
 
     @property
     def energy_benchmark(self):
         """Savings ranking compared to the homes with the min and max savings."""
-        if (self._max_community_savings_percent -
-                self._min_community_savings_percent) <= FLOATING_POINT_TOLERANCE:
-            return 0.
-        return ((self.savings_percent - self._min_community_savings_percent) /
-                (self._max_community_savings_percent - self._min_community_savings_percent))
+        return KPICalculationHelper().energy_benchmark(
+            self.savings_percent, self._min_community_savings_percent,
+            self._max_community_savings_percent)
 
     @property
     def gsy_energy_bill_excl_revenue(self):
