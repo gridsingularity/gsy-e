@@ -4,7 +4,7 @@ To send asset data without using the SDK Client or to set up a data pipeline in 
 
 Authentication is done via JSON Web Token (JWT). In order to retrieve the JWT, the following POST request has to be performed:
 ```
-POST https://d3aweb-dev.gridsingularity.com/api-token-auth/
+POST https://gsyweb.gridsingularity.com/api-token-auth/
 ```
 
 The body of the request needs to contain the following information (JSON string):
@@ -15,15 +15,13 @@ The body of the request needs to contain the following information (JSON string)
 
 The returned JWT needs to be sent via the Authorization HTTP header when sending the forecast data. For that the user needs to add the following key value pair to the header of **every** POST command: _Authorization: JWT <your_token>_.
 
-*Note: d3aweb will soon be changed to reflect Grid Singularity’s new user interface.*
-
 ##Send energy forecast
 
 The POST to send the energy value is (please fill in <Canary Network UUID> and <Asset UUID>):
 
 ```
-POST https://d3aweb-dev.gridsingularity.com/external-connection/api/<Canary Network
-UUID>/<Asset UUID>/set_energy_forecast/
+POST https://gsyweb.gridsingularity.com/external-connection/api/
+<Canary Network_UUID>/<Asset UUID>/set_energy_forecast/
 ```
 
 The body of the request needs to contain the following information (JSON string):

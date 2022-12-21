@@ -22,7 +22,7 @@ If set to `True`, the market  allows all the Grid Operator API to connect to tha
 
 ###Launch simulation
 
-This requires you to have the backend codebase installed on your machine to run simulations (see [Installation Instructions](linux-installation-instructions.md)). First, navigate to the Grid Singularity folder (currently still D3A) in a new terminal, then activate the Grid Singularity (currently still D3A) environment with the command:
+This requires you to have the backend codebase installed on your machine to run simulations (see [Installation Instructions](linux-installation-instructions.md)). First, navigate to the Grid Singularity folder (gsy) in a new terminal, then activate the Grid Singularity (gsy-env) environment with the command:
 ```
 workon gsy-env
 ```
