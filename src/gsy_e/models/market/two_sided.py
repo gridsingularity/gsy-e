@@ -102,6 +102,7 @@ class TwoSidedMarket(OneSidedMarket):
             original_price: Optional[float] = None,
             adapt_price_with_fees: bool = True,
             add_to_history: bool = True,
+            dispatch_event: bool = True,
             time_slot: Optional[DateTime] = None) -> Bid:
         """Create bid object."""
         # pylint: disable=too-many-arguments
@@ -130,9 +131,15 @@ class TwoSidedMarket(OneSidedMarket):
         self.bids[bid.id] = bid
         if add_to_history is True:
             self.bid_history.append(bid)
+        if dispatch_event is True:
+            self.dispatch_market_bid_event(bid)
         log.debug("%s[BID][NEW][%s] %s", self._debug_log_market_type_identifier,
                   self.time_slot_str or bid.time_slot, bid)
         return bid
+
+    def dispatch_market_bid_event(self, bid: Bid) -> None:
+        """Dispatch the BID event to the listeners."""
+        self._notify_listeners(MarketEvent.BID, bid=bid)
 
     @lock_market_action
     def delete_bid(self, bid_or_id: Union[str, Bid]):

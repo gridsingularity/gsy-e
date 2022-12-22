@@ -29,6 +29,7 @@ class MarketEvent(Enum):
     OFFER_SPLIT = 4
     OFFER_DELETED = 2
     OFFER_TRADED = 3
+    BID = 12
     BID_TRADED = 5
     BID_DELETED = 6
     BID_SPLIT = 7

@@ -38,6 +38,8 @@ class EventMixin:
             return self.event_offer_deleted
         elif event == MarketEvent.OFFER_TRADED:
             return self.event_offer_traded
+        elif event == MarketEvent.BID:
+            return self.event_bid
         elif event == MarketEvent.BID_TRADED:
             return self.event_bid_traded
         elif event == MarketEvent.BID_DELETED:
@@ -80,6 +82,9 @@ class EventMixin:
 
     def event_offer_traded(self, *, market_id, trade):
         """Method triggered by the MarketEvent.OFFER_TRADED event."""
+
+    def event_bid(self, *, market_id, bid):
+        pass
 
     def event_bid_traded(self, *, market_id, bid_trade):
         """Method triggered by the MarketEvent.BID_TRADED event."""

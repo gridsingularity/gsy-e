@@ -56,6 +56,11 @@ class TwoSidedAgent(OneSidedAgent):
         return all(bid.id not in engine.forwarded_bids.keys() for engine in self.engines)
 
     # pylint: disable=unused-argument
+    def event_bid(self, *, market_id: str, bid: "Bid"):
+        for engine in sorted(self.engines, key=lambda _: random()):
+            engine.event_bid()
+
+    # pylint: disable=unused-argument
     def event_bid_traded(self, *, market_id: str, bid_trade: "Trade"):
         for engine in sorted(self.engines, key=lambda _: random()):
             engine.event_bid_traded(bid_trade=bid_trade)

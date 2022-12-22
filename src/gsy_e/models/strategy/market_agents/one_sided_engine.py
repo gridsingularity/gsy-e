@@ -87,7 +87,7 @@ class MAEngine:
         # pylint: disable=fixme
         # TODO: This is an ugly solution. After the december release this check needs to
         #  implemented after grid fee being incorporated while forwarding in target market
-        if offer.price < 0.0:
+        if offer.price < -FLOATING_POINT_TOLERANCE:
             self.owner.log.debug("Offer is not forwarded because price < 0")
             return None
         try:
@@ -298,7 +298,7 @@ class MAEngine:
         self.forwarded_offers[source_offer.id] = offer_info
         self.forwarded_offers[target_offer.id] = offer_info
 
-    def event_offer(self, *, _market_id: str, _bid: Offer) -> None:
+    def event_offer(self) -> None:
         """Perform actions on the event of the creation of a new offer."""
         if (ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value and
                 self.min_offer_age == 0):

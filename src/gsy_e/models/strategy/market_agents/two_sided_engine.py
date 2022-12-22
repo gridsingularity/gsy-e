@@ -68,7 +68,7 @@ class TwoSidedEngine(MAEngine):
         if bid.buyer.name == self.markets.target.name:
             return None
 
-        if bid.price < 0.0:
+        if bid.price < -FLOATING_POINT_TOLERANCE:
             self.owner.log.debug("Bid is not forwarded because price < 0")
             return None
         try:
@@ -79,6 +79,7 @@ class TwoSidedEngine(MAEngine):
                 buyer=TraderDetails(
                     self.owner.name, self.owner.uuid, bid.buyer.origin, bid.buyer.origin_uuid),
                 original_price=bid.original_price,
+                dispatch_event=False,
                 time_slot=bid.time_slot
             )
         except MarketException:
@@ -88,6 +89,8 @@ class TwoSidedEngine(MAEngine):
 
         self._add_to_forward_bids(bid, forwarded_bid)
         self.owner.log.trace(f"Forwarding bid {bid} to {forwarded_bid}")
+
+        self.markets.target.dispatch_market_bid_event(forwarded_bid)
         return forwarded_bid
 
     def _delete_forwarded_bid_entries(self, bid):
@@ -268,7 +271,7 @@ class TwoSidedEngine(MAEngine):
         self.forwarded_bids[source_bid.id] = bid_info
         self.forwarded_bids[target_bid.id] = bid_info
 
-    def event_bid(self, *, _market_id: str, _bid: Bid) -> None:
+    def event_bid(self) -> None:
         """Perform actions on the event of the creation of a new bid."""
         if (ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value and
                 self.min_bid_age == 0):

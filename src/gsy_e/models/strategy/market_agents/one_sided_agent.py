@@ -61,6 +61,11 @@ class OneSidedAgent(MarketAgent):
             engine.tick(area=area)
 
     # pylint: disable=unused-argument
+    def event_offer(self, *, market_id: str, offer: "Offer"):
+        for engine in sorted(self.engines, key=lambda _: random()):
+            engine.event_offer()
+
+    # pylint: disable=unused-argument
     def event_offer_traded(self, *, market_id: str, trade: "Trade"):
         for engine in sorted(self.engines, key=lambda _: random()):
             engine.event_offer_traded(trade=trade)
