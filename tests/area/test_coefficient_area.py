@@ -163,7 +163,7 @@ class TestCoefficientArea:
         assert isclose(scm._bills[house2.uuid].base_energy_bill_revenue, 0.005)
         assert isclose(scm._bills[house2.uuid].gsy_energy_bill, -0.0164)
         assert isclose(scm._bills[house2.uuid].savings, 0.0114)
-        assert scm._bills[house2.uuid].savings_percent is None
+        assert isclose(scm._bills[house2.uuid].savings_percent, 0.0)
         assert len(scm._home_data[house1.uuid].trades) == 2
         trades = scm._home_data[house1.uuid].trades
         assert isclose(trades[0].trade_rate, 0.3)
