@@ -16,15 +16,16 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from enum import Enum
-from typing import Union, List  # noqa
 
 
 class OfferEvent(Enum):
+    """Events emitted by the Offer."""
     DELETED = 1
     ACCEPTED = 2
 
 
 class MarketEvent(Enum):
+    """Events emitted by the market classes."""
     OFFER = 1
     OFFER_SPLIT = 4
     OFFER_DELETED = 2
@@ -40,6 +41,7 @@ class MarketEvent(Enum):
 
 
 class AreaEvent(Enum):
+    """Events emitted by the Area class."""
     TICK = 1
     MARKET_CYCLE = 2
     BALANCING_MARKET_CYCLE = 3
