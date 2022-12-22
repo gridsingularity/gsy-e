@@ -108,6 +108,7 @@ class TwoSidedEngine(MAEngine):
             return False
 
         if not self.owner.usable_bid(bid):
+            self.bid_age.pop(bid.id, None)
             return False
 
         if self.owner.name == bid.buyer.name:
@@ -271,9 +272,16 @@ class TwoSidedEngine(MAEngine):
         self.forwarded_bids[source_bid.id] = bid_info
         self.forwarded_bids[target_bid.id] = bid_info
 
-    def event_bid(self) -> None:
+    def event_bid(self, bid: Bid) -> None:
         """Perform actions on the event of the creation of a new bid."""
         if (ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value and
                 self.min_bid_age == 0):
             # Propagate bid immediately if the MIN_BID_AGE is set to zero.
-            self.tick(area=self.owner.owner)
+            source_bid = self.markets.source.bids.get(bid.id)
+            if not source_bid:
+                self.bid_age.pop(bid.id, None)
+                return
+            if source_bid.id not in self.bid_age:
+                self.bid_age[source_bid.id] = self._current_tick
+            if self._should_forward_bid(source_bid, self._current_tick):
+                self._forward_bid(source_bid)

@@ -975,5 +975,7 @@ class BidEnabledStrategy(BaseStrategy):
         """
         if trade.is_bid_trade and trade.buyer.name == self.owner.name:
             bid = [bid for bid in self.get_posted_bids(market)
-                   if bid.id == trade.match_details["bid"].id][0]
-            assert trade.trade_rate <= bid.energy_rate + FLOATING_POINT_TOLERANCE
+                   if bid.id == trade.match_details["bid"].id]
+            if not bid:
+                return
+            assert trade.trade_rate <= bid[0].energy_rate + FLOATING_POINT_TOLERANCE

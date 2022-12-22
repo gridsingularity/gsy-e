@@ -58,7 +58,7 @@ class TwoSidedAgent(OneSidedAgent):
     # pylint: disable=unused-argument
     def event_bid(self, *, market_id: str, bid: "Bid"):
         for engine in sorted(self.engines, key=lambda _: random()):
-            engine.event_bid()
+            engine.event_bid(bid)
 
     # pylint: disable=unused-argument
     def event_bid_traded(self, *, market_id: str, bid_trade: "Trade"):
