@@ -348,10 +348,10 @@ class TestTwoSidedMarket:
         seller = TraderDetails("B", "", "B", "")
         trade = market.accept_bid(bid, energy=1, seller=seller, trade_offer_info=trade_offer_info)
         assert all(ev != repr(MarketEvent.BID_DELETED) for c in called.calls for ev in c[0])
-        assert len(called.calls) == 2
-        assert called.calls[0][0] == (repr(MarketEvent.BID_SPLIT),)
-        assert called.calls[1][0] == (repr(MarketEvent.BID_TRADED),)
-        assert called.calls[1][1] == {
+        assert len(called.calls) == 5
+        assert called.calls[3][0] == (repr(MarketEvent.BID_SPLIT),)
+        assert called.calls[4][0] == (repr(MarketEvent.BID_TRADED),)
+        assert called.calls[4][1] == {
             "market_id": repr(market.id),
             "bid_trade": repr(trade),
         }

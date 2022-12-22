@@ -255,6 +255,7 @@ class TestEventDispatcher:
     @staticmethod
     @pytest.mark.parametrize("event_type", [
         (MarketEvent.OFFER, ),
+        (MarketEvent.BID,),
         (MarketEvent.OFFER_TRADED,),
         (MarketEvent.OFFER_SPLIT, ),
         (MarketEvent.BID_TRADED, ),
@@ -270,6 +271,7 @@ class TestEventDispatcher:
     @staticmethod
     @pytest.mark.parametrize("event_type", [
         (MarketEvent.OFFER, ),
+        (MarketEvent.BID,),
         (MarketEvent.OFFER_TRADED,),
         (MarketEvent.OFFER_SPLIT, ),
         (MarketEvent.BID_TRADED, ),
@@ -285,6 +287,7 @@ class TestEventDispatcher:
     @staticmethod
     @pytest.mark.parametrize("event_type", [
         (MarketEvent.OFFER, ),
+        (MarketEvent.BID,),
         (MarketEvent.OFFER_TRADED,),
         (MarketEvent.OFFER_SPLIT, ),
         (MarketEvent.BID_TRADED, ),
