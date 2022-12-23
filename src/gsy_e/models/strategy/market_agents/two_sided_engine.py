@@ -112,6 +112,7 @@ class TwoSidedEngine(MAEngine):
             return False
 
         if self.owner.name == bid.buyer.name:
+            self.bid_age.pop(bid.id, None)
             return False
 
         if current_tick - self.bid_age[bid.id] < self.min_bid_age:
@@ -148,7 +149,9 @@ class TwoSidedEngine(MAEngine):
 
         if bid_trade.match_details["bid"].id == bid_info.target_bid.id:
             # Bid was traded in target market, buy in source
-            market_bid = self.markets.source.bids[bid_info.source_bid.id]
+            market_bid = self.markets.source.bids.get(bid_info.source_bid.id)
+            if not market_bid:
+                return
             assert bid_trade.traded_energy <= market_bid.energy, \
                 "Traded bid on target market has more energy than the market bid."
 

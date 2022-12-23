@@ -167,6 +167,7 @@ class TwoSidedMarket(OneSidedMarket):
                                 original_price=original_accepted_price,
                                 adapt_price_with_fees=False,
                                 add_to_history=False,
+                                dispatch_event=False,
                                 time_slot=original_bid.time_slot)
 
         residual_price = (1 - energy / original_bid.energy) * original_bid.price
@@ -181,6 +182,7 @@ class TwoSidedMarket(OneSidedMarket):
                                 original_price=original_residual_price,
                                 adapt_price_with_fees=False,
                                 add_to_history=True,
+                                dispatch_event=False,
                                 time_slot=original_bid.time_slot)
 
         log.debug("%s[BID][SPLIT][%s, %s] (%s into %s and %s",
@@ -269,6 +271,8 @@ class TwoSidedMarket(OneSidedMarket):
                      self._debug_log_market_type_identifier, self.name, trade.time_slot, trade)
 
         self._notify_listeners(MarketEvent.BID_TRADED, bid_trade=trade)
+        if residual_bid:
+            self.dispatch_market_bid_event(residual_bid)
         return trade
 
     def accept_bid_offer_pair(self, bid: Bid, offer: Offer, clearing_rate: float,
