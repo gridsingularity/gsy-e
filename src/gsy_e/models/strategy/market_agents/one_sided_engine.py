@@ -33,7 +33,7 @@ ResidualInfo = namedtuple("ResidualInfo", ("forwarded", "age"))
 
 class MAEngine:
     """Handle forwarding offers to the connected one-sided market."""
-    # pylint: disable = too-many-arguments
+    # pylint: disable=too-many-arguments,too-many-instance-attributes
 
     def __init__(self, name: str, market_1, market_2, min_offer_age: int, owner):
         self.name = name
@@ -45,6 +45,7 @@ class MAEngine:
         # Offer.id -> OfferInfo
         self.forwarded_offers: Dict[str, OfferInfo] = {}
         self.trade_residual: Dict[str, Offer] = {}
+        self._current_tick = 0
 
     def __repr__(self):
         return "<MAEngine [{s.owner.name}] {s.name} {s.markets.source.time_slot:%H:%M}>".format(
@@ -115,6 +116,7 @@ class MAEngine:
 
     def tick(self, *, area):
         """Perform actions that need to be done when TICK event is triggered."""
+        self._current_tick = area.current_tick
         self._propagate_offer(area.current_tick)
 
     def _propagate_offer(self, current_tick):
@@ -298,12 +300,35 @@ class MAEngine:
         self.forwarded_offers[source_offer.id] = offer_info
         self.forwarded_offers[target_offer.id] = offer_info
 
-    def event_offer(self) -> None:
+    def event_offer(self, offer: Offer) -> None:
         """Perform actions on the event of the creation of a new offer."""
         if (ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value and
                 self.min_offer_age == 0):
             # Propagate offer immediately if the MIN_OFFER_AGE is set to zero.
-            self.tick(area=self.owner.owner)
+            if offer.id not in self.offer_age:
+                self.offer_age[offer.id] = self._current_tick
+
+            if offer.id in self.forwarded_offers:
+                return
+
+            offer_age = self.offer_age[offer.id]
+            if self._current_tick - offer_age < self.min_offer_age:
+                return
+            offer = self.markets.source.offers.get(offer.id)
+            if not offer:
+                return
+            if not self.owner.usable_offer(offer):
+                self.offer_age.pop(offer.id, None)
+                return
+
+            if self.owner.name == offer.seller.name:
+                self.offer_age.pop(offer.id, None)
+                return
+
+            forwarded_offer = self._forward_offer(offer)
+            if forwarded_offer:
+                self.owner.log.debug(f"Forwarded offer to {self.markets.source.name} "
+                                     f"{self.owner.name}, {self.name} {forwarded_offer}")
 
 
 class BalancingEngine(MAEngine):
