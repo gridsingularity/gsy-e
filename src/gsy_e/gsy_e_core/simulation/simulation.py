@@ -51,6 +51,32 @@ if TYPE_CHECKING:
 log = getLogger(__name__)
 
 
+class WebsocketConnection:
+    pass
+
+class AccountAreaMapping:
+    pass
+
+
+class SimulationWebsocketConnection:
+    def __init__(self):
+        self._conn = WebsocketConnection()
+        self._mapping = AccountAreaMapping()
+
+    def get_creds_from_area(self, area_uuid):
+        self._mapping.get_area_creds(area_uuid)
+
+
+class AreaWebsocketConnection:
+
+    def __init__(self, bc: SimulationWebsocketConnection, area_uuid):
+        self._conn = bc._conn
+        self._area_creds = bc.get_creds_from_area(area_uuid)
+
+
+
+
+
 class SimulationResetException(Exception):
     """Exception for errors when resetting the simulation."""
 
@@ -63,7 +89,7 @@ class Simulation:
                  paused: bool = False, pause_after: Duration = None, repl: bool = False,
                  no_export: bool = False, export_path: str = None,
                  export_subdir: str = None, redis_job_id=None, enable_bc=False,
-                 slot_length_realtime: Duration = None, incremental: bool = False):
+                 slot_length_realtime: Duration = None, incremental: bool = False, bc_account_credentials: dict={}):
         self.status = SimulationStatusManager(
             paused=paused,
             pause_after=pause_after,
@@ -72,6 +98,8 @@ class Simulation:
         self._time = simulation_time_manager_factory(
             slot_length_realtime=slot_length_realtime,
         )
+
+        self._bc = BlockchainWebsocketConnection(bc_account_credentials)
 
         self._setup = SimulationSetup(
             seed=seed,
@@ -116,7 +144,7 @@ class Simulation:
 
         log.debug("Starting simulation with config %s", self.config)
 
-        self.area.activate(self._setup.enable_bc, simulation_id=self.simulation_id)
+        self.area.activate(self._bc, simulation_id=self.simulation_id)
 
     @property
     def config(self) -> SimulationConfig:

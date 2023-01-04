@@ -106,6 +106,8 @@ class OneSidedMarket(MarketBase):
             time_slot: Optional[DateTime] = None) -> Offer:
         """Post offer inside the market."""
 
+        self.bc_interface.send_extrinsic("")
+
         if self.readonly:
             raise MarketReadOnlyException()
         if energy < FLOATING_POINT_TOLERANCE:

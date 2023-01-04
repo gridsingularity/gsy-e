@@ -170,7 +170,7 @@ class Area(AreaBase):
         if current_tick is not None:
             self.current_tick = current_tick
 
-        self._bc = blockchain_interface_factory(bc, self.uuid, simulation_id)
+        self._bc = AreaWebsocketConnection(bc, self.uuid)
 
         if self.strategy:
             if self.parent:
