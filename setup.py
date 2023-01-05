@@ -20,6 +20,8 @@ with open("README.rst", "r", encoding="utf-8") as readme:
 
 if platform.python_implementation() == "PyPy":
     REQUIREMENTS.append("psycopg2cffi==2.9.0")
+elif platform.system() == "Linux":
+    REQUIREMENTS.append("psycopg2-binary==2.9.1")
 else:
     REQUIREMENTS.append("psycopg2==2.9.1")
 
