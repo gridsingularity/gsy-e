@@ -26,6 +26,7 @@ from gsy_framework.utils import key_in_dict_and_not_none
 from pendulum import DateTime
 
 import gsy_e.constants
+from gsy_e.gsy_e_core.bc_connection.simulation import AreaWebsocketConnection
 from gsy_e.gsy_e_core.blockchain_interface import blockchain_interface_factory
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.exceptions import AreaException
@@ -170,7 +171,7 @@ class Area(AreaBase):
         if current_tick is not None:
             self.current_tick = current_tick
 
-        self._bc = AreaWebsocketConnection(bc, self.uuid)
+        self._bc = AreaWebsocketConnection(bc, self.uuid, '//Alice')
 
         if self.strategy:
             if self.parent:

@@ -234,7 +234,7 @@ class AreaMarkets:
                        time_slot: Optional[DateTime], area: "Area",
                        market_type: AvailableMarketTypes) -> MarketBase:
         """Create market for specific time_slot and market type."""
-        market = TwoSidedMarket(
+        market = market_class(
             time_slot=time_slot,
             bc=area.bc,
             notification_listener=area.dispatcher.broadcast_notification,

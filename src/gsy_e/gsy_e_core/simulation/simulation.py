@@ -29,6 +29,7 @@ from gsy_framework.utils import format_datetime, str_to_pendulum_datetime
 from pendulum import DateTime, Duration, duration
 
 import gsy_e.constants
+from gsy_e.gsy_e_core.bc_connection.simulation import BcSimulationCommunication
 from gsy_e.gsy_e_core.exceptions import SimulationException
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.gsy_e_core.myco_singleton import bid_offer_matcher
@@ -49,32 +50,6 @@ if TYPE_CHECKING:
     from gsy_e.models.area import Area, AreaBase, CoefficientArea
 
 log = getLogger(__name__)
-
-
-class WebsocketConnection:
-    pass
-
-class AccountAreaMapping:
-    pass
-
-
-class SimulationWebsocketConnection:
-    def __init__(self):
-        self._conn = WebsocketConnection()
-        self._mapping = AccountAreaMapping()
-
-    def get_creds_from_area(self, area_uuid):
-        self._mapping.get_area_creds(area_uuid)
-
-
-class AreaWebsocketConnection:
-
-    def __init__(self, bc: SimulationWebsocketConnection, area_uuid):
-        self._conn = bc._conn
-        self._area_creds = bc.get_creds_from_area(area_uuid)
-
-
-
 
 
 class SimulationResetException(Exception):
@@ -99,7 +74,7 @@ class Simulation:
             slot_length_realtime=slot_length_realtime,
         )
 
-        self._bc = BlockchainWebsocketConnection(bc_account_credentials)
+        self._bc = BcSimulationCommunication()
 
         self._setup = SimulationSetup(
             seed=seed,
