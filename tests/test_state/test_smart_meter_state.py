@@ -4,7 +4,8 @@ from unittest.mock import patch
 import pytest
 from pendulum import now
 
-from gsy_e.models.state import SmartMeterState, UnexpectedStateException
+from gsy_e.models.strategy.state import SmartMeterState
+from gsy_e.models.strategy.state.base_states import UnexpectedStateException
 from tests.test_state.test_consumption_state import TestConsumptionState
 from tests.test_state.test_production_state import TestProductionState
 

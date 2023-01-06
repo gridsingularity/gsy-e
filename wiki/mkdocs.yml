@@ -52,7 +52,7 @@ nav:
     - 'Market Types':
       - 'Overview': 'market-types.md'
       - 'Spot Market':
-          - 'Spot Maket Types': 'spot-market-types.md'
+          - 'Spot Market Types': 'spot-market-types.md'
           - 'One-Sided Pay-as-Offer Market': 'one-sided-pay-as-offer.md'
           - 'Two-Sided Pay-as-Bid Market': 'two-sided-pay-as-bid.md'
           - 'Two-Sided Pay-as-Clear Market': 'two-sided-pay-as-clear.md'

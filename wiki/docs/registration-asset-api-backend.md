@@ -1,4 +1,4 @@
-*Note: If you are running the Grid Singularity exchange (currently via prior interface, D3A) using a virtual machine and [vagrant](vm-installation-instructions.md), the latest GSy-e SDK is already installed on your computer and you can skip to the Launch Simulation section below. If you are running the exchange software locally, please follow the following instructions.*
+*Note: If you are running the Grid Singularity exchange (previously callled D3A) using a virtual machine and [vagrant](vm-installation-instructions.md), the latest GSy-e SDK is already installed on your computer and you can skip to the Launch Simulation section below. If you are running the exchange software locally, please follow the following instructions.*
 
 ###Start Redis server
 
@@ -47,7 +47,7 @@ By default, trading strategies do not allow API connections unless the `External
 
 ###Launch simulation
 
-This requires you to have the backend codebase installed on your machine to run simulations (see [Installation Instructions](linux-installation-instructions.md)). First, navigate to the Grid Singularity folder (currently still D3A) in a new terminal, then activate the Grid Singularity (currently still D3A) environment with the command:
+This requires you to have the backend codebase installed on your machine to run simulations (see [Installation Instructions](linux-installation-instructions.md)). First, navigate to the Grid Singularity folder (gsy) in a new terminal, then activate the Grid Singularity (gsy-env) environment with the command:
 ```
 workon gsy-env
 ```

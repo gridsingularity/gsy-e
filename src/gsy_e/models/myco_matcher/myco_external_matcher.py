@@ -23,14 +23,14 @@ from typing import Dict, List
 
 from gsy_framework.constants_limits import GlobalConfig
 from gsy_framework.data_classes import BidOfferMatch
+from gsy_framework.enums import AvailableMarketTypes
 
 import gsy_e.constants
 from gsy_e.gsy_e_core.exceptions import InvalidBidOfferPairException, MycoValidationException
-from gsy_e.gsy_e_core.redis_connections.area_market import myco_redis_communicator_factory
 from gsy_e.gsy_e_core.market_counters import ExternalTickCounter
+from gsy_e.gsy_e_core.redis_connections.area_market import myco_redis_communicator_factory
 from gsy_e.models.market.two_sided import TwoSidedMarket
 from gsy_e.models.myco_matcher.myco_matcher_interface import MycoMatcherInterface
-from gsy_e.gsy_e_core.enums import AvailableMarketTypes
 
 # pylint: disable=fixme
 

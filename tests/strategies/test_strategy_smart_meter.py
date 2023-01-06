@@ -25,7 +25,7 @@ from pendulum import datetime, duration
 from gsy_e import constants
 from gsy_e.models.area import Area
 from gsy_e.models.market.one_sided import OneSidedMarket
-from gsy_e.models.state import SmartMeterState
+from gsy_e.models.strategy.state import SmartMeterState
 from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
 
 
@@ -221,7 +221,7 @@ class SmartMeterStrategyTest(unittest.TestCase):
         self.strategy.offer_update.delete_past_state_values.assert_called_once_with(
             self.area_mock.current_market.time_slot)
 
-    @patch("gsy_e.models.strategy.smart_meter.utils")
+    @patch("gsy_e.models.strategy.energy_parameters.smart_meter.utils")
     def test_set_energy_measurement_of_last_market(self, utils_mock):
         """The real energy of the last market is set when necessary."""
         # If we are in the first market slot, the real energy is not set

@@ -30,12 +30,18 @@ from gsy_e.models.strategy.external_strategies.pv import (PVExternalStrategy,
 from gsy_e.models.strategy.external_strategies.smart_meter import SmartMeterExternalStrategy
 from gsy_e.models.strategy.external_strategies.storage import StorageExternalStrategy
 from gsy_e.models.strategy.finite_power_plant import FinitePowerPlant
+from gsy_e.models.strategy.forward.load import ForwardLoadStrategy
+from gsy_e.models.strategy.forward.pv import ForwardPVStrategy
+from gsy_e.models.strategy.heat_pump import HeatPumpStrategy
 from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_e.models.strategy.market_maker_strategy import MarketMakerStrategy
 from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy
 from gsy_e.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
+from gsy_e.models.strategy.predefined_wind import WindUserProfileStrategy
 from gsy_e.models.strategy.pv import PVStrategy
+from gsy_e.models.strategy.scm.external.load import ExternalSCMLoadHoursStrategy
+from gsy_e.models.strategy.scm.external.pv import ExternalSCMPVStrategy
 from gsy_e.models.strategy.scm.load import SCMLoadHoursStrategy, SCMLoadProfileStrategy
 from gsy_e.models.strategy.scm.pv import SCMPVPredefinedStrategy, SCMPVStrategy, SCMPVUserProfile
 from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
@@ -60,15 +66,6 @@ forecast_strategy_mapping = {
     LoadHoursStrategy: LoadHoursForecastExternalStrategy
 }
 
-scm_strategy_mapping = {
-    LoadHoursStrategy: SCMLoadHoursStrategy,
-    DefinedLoadStrategy: SCMLoadProfileStrategy,
-    PVStrategy: SCMPVStrategy,
-    PVPredefinedStrategy: SCMPVPredefinedStrategy,
-    PVUserProfileStrategy: SCMPVUserProfile,
-    StorageStrategy: SCMStorageStrategy
-}
-
 
 class LeafBase:
     """
@@ -76,6 +73,7 @@ class LeafBase:
     instantiated and serialized in a more compact format
     """
     strategy_type = None
+    strategy = None
 
     def __init__(self, name, config, uuid=None, **kwargs):
         if config.external_connection_enabled:
@@ -170,6 +168,10 @@ class PVProfile(Leaf):
     strategy_type = PVUserProfileStrategy
 
 
+class WindTurbine(Leaf):
+    strategy_type = WindUserProfileStrategy
+
+
 class LoadProfile(Leaf):
     strategy_type = DefinedLoadStrategy
 
@@ -184,6 +186,18 @@ class Storage(Leaf):
 
 class SmartMeter(Leaf):
     strategy_type = SmartMeterStrategy
+
+
+class ForwardLoad(Leaf):
+    strategy_type = ForwardLoadStrategy
+
+
+class ForwardPV(Leaf):
+    strategy_type = ForwardPVStrategy
+
+
+class HeatPump(Leaf):
+    strategy_type = HeatPumpStrategy
 
 
 class FiniteDieselGenerator(Leaf):
@@ -221,4 +235,17 @@ scm_leaf_mapping = {
     "PV": SCMPV,
     "PredefinedPV": SCMPredefinedPV,
     "PVProfile": SCMPVProfile
+}
+
+external_scm_leaf_mapping = {
+    "LoadHours": ExternalSCMLoadHoursStrategy,
+    "LoadProfile": ExternalSCMLoadHoursStrategy,
+    "PV": ExternalSCMPVStrategy,
+    "PredefinedPV": ExternalSCMPVStrategy,
+    "PVProfile": ExternalSCMPVStrategy
+}
+
+forward_leaf_mapping = {
+    "LoadHours": ForwardLoad,
+    "PV": ForwardPV
 }

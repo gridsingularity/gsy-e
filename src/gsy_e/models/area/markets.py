@@ -19,10 +19,12 @@ from collections import OrderedDict
 from typing import Dict, TYPE_CHECKING, Optional, List
 
 from gsy_framework.constants_limits import ConstSettings, TIME_FORMAT
+from gsy_framework.enums import AvailableMarketTypes
 from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.utils import is_time_slot_in_simulation_duration
 from pendulum import DateTime
 
+from gsy_e.gsy_e_core.enums import FORWARD_MARKET_TYPES
 from gsy_e.models.area.market_rotators import (BaseRotator, DefaultMarketRotator,
                                                SettlementMarketRotator, FutureMarketRotator,
                                                ForwardMarketRotatorBase, DayForwardMarketRotator,
@@ -30,15 +32,14 @@ from gsy_e.models.area.market_rotators import (BaseRotator, DefaultMarketRotator
                                                YearForwardMarketRotator, IntradayMarketRotator)
 from gsy_e.models.market import GridFee, MarketBase
 from gsy_e.models.market.balancing import BalancingMarket
-from gsy_e.models.market.future import FutureMarkets
-from gsy_e.gsy_e_core.enums import AvailableMarketTypes, FORWARD_MARKET_TYPES
-from gsy_e.models.market.one_sided import OneSidedMarket
-from gsy_e.models.market.settlement import SettlementMarket
-from gsy_e.models.market.two_sided import TwoSidedMarket
 from gsy_e.models.market.forward import (
     ForwardMarketBase, DayForwardMarket, WeekForwardMarket, MonthForwardMarket, YearForwardMarket,
     IntradayMarket
 )
+from gsy_e.models.market.future import FutureMarkets
+from gsy_e.models.market.one_sided import OneSidedMarket
+from gsy_e.models.market.settlement import SettlementMarket
+from gsy_e.models.market.two_sided import TwoSidedMarket
 
 if TYPE_CHECKING:
     from gsy_e.models.area import Area
@@ -243,6 +244,7 @@ class AreaMarkets:
             name=area.name,
             in_sim_duration=is_time_slot_in_simulation_duration(time_slot, area.config)
         )
+        market.set_open_market_slot_parameters(time_slot, [time_slot])
 
         area.dispatcher.create_market_agents(market_type, market)
         return market

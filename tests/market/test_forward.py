@@ -18,8 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from unittest.mock import patch, MagicMock
 
 import pytest
-from gsy_framework.data_classes import Bid, Offer, Trade
-from pendulum import datetime
+from gsy_framework.data_classes import Bid, Offer, Trade, TraderDetails
+from pendulum import datetime, duration
 
 from gsy_e.models.area import Area
 from gsy_e.models.area.market_rotators import (DayForwardMarketRotator, IntradayMarketRotator,
@@ -48,10 +48,10 @@ class TestForwardMarkets:
         return forward_markets
 
     @pytest.mark.parametrize("market_class, expected_market_count",
-                             [[IntradayMarket, 24 * 4],
-                              [DayForwardMarket, 24 * 7],
-                              [WeekForwardMarket, 52],
-                              [MonthForwardMarket, 24],
+                             [[IntradayMarket, 24 * 4 - 1],
+                              [DayForwardMarket, 24 * 7 - 1],
+                              [WeekForwardMarket, 52 - 1],
+                              [MonthForwardMarket, 24 - 1],
                               [YearForwardMarket, 5]])
     @patch("gsy_e.models.market.future.is_time_slot_in_simulation_duration", MagicMock())
     def test_create_forward_markets(self, market_class, expected_market_count):
@@ -74,7 +74,7 @@ class TestForwardMarkets:
                            forward_markets.slot_trade_mapping]:
 
                 assert len(buffer.keys()) == expected_market_count
-                ahead_time_slot = market_class._get_start_time(CURRENT_MARKET_SLOT)
+                ahead_time_slot = market_class._get_start_time(CURRENT_MARKET_SLOT, area.config)
                 most_future_slot = market_class._get_end_time(CURRENT_MARKET_SLOT)
                 assert all(ahead_time_slot <= time_slot <= most_future_slot
                            for time_slot in buffer)
@@ -89,13 +89,13 @@ class TestForwardMarkets:
                     assert all(time_slot.month == 1 and time_slot.day == 1 for time_slot in buffer)
 
     @pytest.mark.parametrize("market_class, rotator_class, expected_market_count, rotation_time",
-                             [[IntradayMarket, IntradayMarketRotator, 24 * 4,
+                             [[IntradayMarket, IntradayMarketRotator, 24 * 4 - 1,
                                CURRENT_MARKET_SLOT.set(minute=15)],
-                              [DayForwardMarket, DayForwardMarketRotator, 24 * 7,
-                               CURRENT_MARKET_SLOT.add(days=1)],
-                              [WeekForwardMarket, WeekForwardMarketRotator, 52,
+                              [DayForwardMarket, DayForwardMarketRotator, 24 * 7 - 1,
+                               CURRENT_MARKET_SLOT.add(hours=1)],
+                              [WeekForwardMarket, WeekForwardMarketRotator, 51,
                                CURRENT_MARKET_SLOT.add(weeks=1)],
-                              [MonthForwardMarket, MonthForwardMarketRotator, 24,
+                              [MonthForwardMarket, MonthForwardMarketRotator, 23,
                                CURRENT_MARKET_SLOT.set(day=1).add(months=1)],
                               [YearForwardMarket, YearForwardMarketRotator, 5,
                                CURRENT_MARKET_SLOT.set(day=1, month=1).add(years=1)]
@@ -106,11 +106,14 @@ class TestForwardMarkets:
                              rotation_time):
         forward_markets = self._create_forward_market(market_class, create=True)
         for time_slot in forward_markets.slot_bid_mapping:
-            bid = Bid(f"bid{time_slot}", time_slot, 1, 1, "buyer", time_slot=time_slot)
+            bid = Bid(f"bid{time_slot}", time_slot, 1, 1, TraderDetails("buyer", ""),
+                      time_slot=time_slot)
             forward_markets.bids[bid.id] = bid
-            offer = Offer(f"oid{time_slot}", time_slot, 1, 1, "seller", time_slot=time_slot)
+            offer = Offer(f"oid{time_slot}", time_slot, 1, 1, TraderDetails("seller", ""),
+                          time_slot=time_slot)
             forward_markets.offers[offer.id] = offer
-            trade = Trade(f"tid{time_slot}", time_slot, offer, "seller", "buyer",
+            trade = Trade(f"tid{time_slot}", time_slot, TraderDetails("seller", ""),
+                          TraderDetails("buyer", ""), offer=offer,
                           time_slot=time_slot, traded_energy=1, trade_price=1)
             forward_markets.trades.append(trade)
 
@@ -122,3 +125,43 @@ class TestForwardMarkets:
         # Market should be deleted if the rotation time has been reached
         rotator.rotate(rotation_time)
         count_orders_in_buffers(forward_markets, expected_market_count - 1)
+
+    # pylint: disable=too-many-arguments
+    @pytest.mark.parametrize("market_class, expected_market_count, start_timedelta, "
+                             "delivery_duration, closing_delivery_timedelta, reference_time",
+                             [[IntradayMarket, 24 * 4 - 1, duration(minutes=30),
+                               duration(minutes=15), duration(minutes=15), CURRENT_MARKET_SLOT],
+                              [DayForwardMarket, 24 * 7 - 1, duration(days=1, hours=1),
+                               duration(hours=1), duration(days=1), CURRENT_MARKET_SLOT],
+                              [WeekForwardMarket, 51, duration(weeks=2),
+                               duration(weeks=1), duration(weeks=1), CURRENT_MARKET_SLOT],
+                              [MonthForwardMarket, 23, duration(months=2),
+                               duration(months=1), duration(months=1),
+                               CURRENT_MARKET_SLOT.set(day=1, hour=0, minute=0)],
+                              [YearForwardMarket, 5, duration(years=2),
+                               duration(years=1), duration(years=1),
+                               CURRENT_MARKET_SLOT.set(month=1, day=1, hour=0, minute=0)]
+                              ])
+    @patch("gsy_e.models.market.forward.ConstSettings.ForwardMarketSettings."
+           "ENABLE_FORWARD_MARKETS", True)
+    def test_forward_market_parameters(
+            self, market_class, expected_market_count, start_timedelta, delivery_duration,
+            closing_delivery_timedelta, reference_time
+    ):
+        forward_markets = self._create_forward_market(market_class, create=True)
+        slots_info = forward_markets.open_market_slot_info
+        assert len(slots_info) == expected_market_count
+
+        expected_open_time = CURRENT_MARKET_SLOT
+        # Reference time is the time that the markets use as a reference in order to calculate the
+        # slots they need to open. For instance, reference time for the yearly market is always the
+        # first hour of the first day of the current year, while for the monthly market is the
+        # first hour of the first day of the current month.
+        expected_delivery_time = reference_time + start_timedelta
+        for delivery_time, slot_info in slots_info.items():
+            assert delivery_time == expected_delivery_time
+            assert slot_info.delivery_start_time == expected_delivery_time
+            assert slot_info.delivery_end_time == expected_delivery_time + delivery_duration
+            assert slot_info.opening_time == expected_open_time
+            assert slot_info.closing_time == expected_delivery_time - closing_delivery_timedelta
+            expected_delivery_time = expected_delivery_time + delivery_duration

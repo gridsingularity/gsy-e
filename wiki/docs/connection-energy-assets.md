@@ -11,7 +11,7 @@ On the map, the Canary Network owner can click on the home and the asset they’
 
 It is possible to connect and register automatically to a running Canary Network:
 
-###User-Interface (currently d3a.io) (here the energy asset uuid has to be obtained first)
+###User-Interface (gridsingularity.com; please note that the energy asset uuid has to be obtained first for this option)
 ```
 asset_uuid = get_area_uuid_from_area_name_and_collaboration_id(
               <simulation_id>, <asset_name>, <domain_name>

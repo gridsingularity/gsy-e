@@ -18,7 +18,7 @@ from gsy_e.data_classes import PlotDescription
 from gsy_e.gsy_e_core.sim_results.plotly_graph import PlotlyGraph
 from gsy_e.gsy_e_core.util import round_floats_for_ui
 from gsy_e.models.area import Area
-from gsy_e.models.state import ESSEnergyOrigin
+from gsy_e.models.strategy.state import ESSEnergyOrigin
 from gsy_e.models.strategy.storage import StorageStrategy
 
 if TYPE_CHECKING:

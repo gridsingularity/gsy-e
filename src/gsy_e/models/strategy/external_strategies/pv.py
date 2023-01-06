@@ -21,6 +21,7 @@ from typing import TYPE_CHECKING, Callable, Dict
 
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Offer
+from gsy_framework.utils import str_to_pendulum_datetime
 from pendulum import duration
 
 from gsy_e.gsy_e_core.exceptions import GSyException
@@ -32,8 +33,11 @@ from gsy_e.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProf
 from gsy_e.models.strategy.pv import PVStrategy
 
 if TYPE_CHECKING:
-    from gsy_e.models.state import PVState
+    from gsy_e.models.strategy.state import PVState
     from gsy_e.models.strategy import Offers
+
+
+logger = logging.getLogger(__name__)
 
 
 class PVExternalMixin(ExternalMixin):
@@ -79,13 +83,13 @@ class PVExternalMixin(ExternalMixin):
             market = self._get_market_from_command_argument(arguments)
             filtered_offers = [{"id": v.id, "price": v.price, "energy": v.energy}
                                for _, v in market.get_offers().items()
-                               if v.seller == self.device.name]
+                               if v.seller.name == self.device.name]
             response = {"command": "list_offers", "status": "ready",
                         "offer_list": filtered_offers,
                         "transaction_id": arguments.get("transaction_id")}
         except GSyException:
             error_message = f"Error when handling list offers on area {self.device.name}"
-            logging.exception(error_message)
+            logger.exception(error_message)
             response = {"command": "list_offers", "status": "error",
                         "error_message": error_message,
                         "transaction_id": arguments.get("transaction_id")}
@@ -105,7 +109,7 @@ class PVExternalMixin(ExternalMixin):
                     market.id, arguments["offer"]):
                 raise GSyException("Offer_id is not associated with any posted offer.")
         except (GSyException, json.JSONDecodeError):
-            logging.exception("Error when handling delete offer request. Payload %s", payload)
+            logger.exception("Error when handling delete offer request. Payload %s", payload)
             self.redis.publish_json(
                 delete_offer_response_channel,
                 {"command": "offer_delete",
@@ -128,7 +132,7 @@ class PVExternalMixin(ExternalMixin):
         except GSyException:
             error_message = (f"Error when handling offer delete on area {self.device.name}: "
                              f"Offer Arguments: {arguments}")
-            logging.exception(error_message)
+            logger.exception(error_message)
             response = {"command": "offer_delete", "status": "error",
                         "error_message": error_message,
                         "transaction_id": arguments.get("transaction_id")}
@@ -139,9 +143,7 @@ class PVExternalMixin(ExternalMixin):
         transaction_id = self._get_transaction_id(payload)
         required_args = {"price", "energy", "transaction_id"}
         allowed_args = required_args.union({"replace_existing",
-                                            "time_slot",
-                                            "attributes",
-                                            "requirements"})
+                                            "time_slot"})
 
         offer_response_channel = f"{self.channel_prefix}/response/offer"
         if not ExternalStrategyConnectionManager.check_for_connected_and_reply(
@@ -156,7 +158,7 @@ class PVExternalMixin(ExternalMixin):
             assert all(arg in allowed_args for arg in arguments.keys())
 
         except (json.JSONDecodeError, AssertionError):
-            logging.exception("Incorrect offer request. Payload %s.", payload)
+            logger.exception("Incorrect offer request. Payload %s.", payload)
             self.redis.publish_json(
                 offer_response_channel,
                 {"command": "offer",
@@ -189,12 +191,12 @@ class PVExternalMixin(ExternalMixin):
                 response_channel,
                 {"command": "offer", "status": "ready",
                  "market_type": market.type_name,
-                 "offer": offer.to_json_string(replace_existing=replace_existing),
+                 "offer": offer.to_json_string(),
                  "transaction_id": arguments.get("transaction_id")})
         except (AssertionError, GSyException):
             error_message = (f"Error when handling offer create on area {self.device.name}: "
                              f"Offer Arguments: {arguments}")
-            logging.exception(error_message)
+            logger.exception(error_message)
             self.redis.publish_json(
                 response_channel,
                 {"command": "offer", "status": "error",
@@ -291,7 +293,7 @@ class PVExternalMixin(ExternalMixin):
             market = self._get_market_from_command_argument(arguments)
             filtered_offers = [{"id": v.id, "price": v.price, "energy": v.energy}
                                for v in market.get_offers().values()
-                               if v.seller == self.device.name]
+                               if v.seller.name == self.device.name]
             response = {
                 "command": "list_offers", "status": "ready", "offer_list": filtered_offers,
                 "area_uuid": self.device.uuid,
@@ -342,8 +344,15 @@ class PVExternalMixin(ExternalMixin):
                     raise OrderCanNotBePosted("The PV did not produce too much energy, "
                                               "settlement offer can not be posted.")
                 available_energy_kWh = self.state.get_unsettled_deviation_kWh(market.time_slot)
-            else:
+            elif self.area.is_market_future(market.id):
+                available_energy_kWh = self.state.get_available_energy_kWh(
+                    str_to_pendulum_datetime(arguments["time_slot"]))
+            elif self.area.is_market_spot(market.id):
                 available_energy_kWh = self.state.get_available_energy_kWh(market.time_slot)
+            else:
+                logger.debug("The order cannot be posted on the market. "
+                             "(arguments: %s, market_id: %s", arguments, market.id)
+                raise OrderCanNotBePosted("The order cannot be posted on the market.")
 
             response = (
                 self._offer_aggregator_impl(arguments, market,
@@ -380,7 +389,7 @@ class PVForecastExternalStrategy(ForecastExternalMixin, PVPredefinedExternalStra
     Strategy responsible for reading forecast and measurement production data via hardware API
     """
 
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments,unused-argument
     def __init__(
             self, panel_count=1,
             initial_selling_rate: float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,

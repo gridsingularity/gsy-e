@@ -4,7 +4,7 @@ from math import isclose
 import pytest
 from pendulum import now
 
-from gsy_e.models.state import PVState
+from gsy_e.models.strategy.state import PVState
 from tests.test_state.test_production_state import TestProductionState
 
 

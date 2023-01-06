@@ -15,25 +15,26 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import unittest
+# pylint: disable=no-member, missing-function-docstring
 import json
-from parameterized import parameterized
+import unittest
 from logging import getLogger
-from unittest.mock import MagicMock
 from threading import Event
+from unittest.mock import MagicMock
+
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.data_classes import (
+    Offer, Trade, TradeBidOfferInfo, TraderDetails)
+from parameterized import parameterized
 from pendulum import datetime
 
-import gsy_e.models.area
+import gsy_e.models.area.area
+from gsy_e.events.event_structures import AreaEvent, MarketEvent
+from gsy_e.gsy_e_core.redis_connections.area_market import RedisCommunicator
 from gsy_e.models.area import Area
-
+from gsy_e.models.area.event_dispatcher import RedisAreaDispatcher, AreaDispatcher
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_e.models.strategy.storage import StorageStrategy
-from gsy_framework.constants_limits import ConstSettings, GlobalConfig
-from gsy_e.models.area.event_dispatcher import RedisAreaDispatcher, AreaDispatcher
-from gsy_e.gsy_e_core.redis_connections.area_market import RedisCommunicator
-from gsy_e.events.event_structures import AreaEvent, MarketEvent
-from gsy_framework.data_classes import (
-    Offer, Trade, TradeBidOfferInfo)
 
 log = getLogger(__name__)
 
@@ -44,6 +45,7 @@ mock_redis.area_event = MagicMock(spec=Event)
 
 
 class MockDispatcherFactory:
+    """Mock for DispatcherFactory (inserting Redis mocks)"""
     def __init__(self, area):
         self.event_dispatching_via_redis = \
             ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS
@@ -54,7 +56,7 @@ class MockDispatcherFactory:
         return self.dispatcher
 
 
-gsy_e.models.area.DispatcherFactory = MockDispatcherFactory
+gsy_e.models.area.area.DispatcherFactory = MockDispatcherFactory
 
 
 class TestRedisEventDispatching(unittest.TestCase):
@@ -254,11 +256,12 @@ class TestRedisMarketEventDispatcher(unittest.TestCase):
 
     def test_publish_event_converts_python_objects_to_json(self):
         now = datetime(2021, 11, 3, 10, 45)
-        offer = Offer("1", now, 2, 3, "A")
-        trade = Trade("2", now.add(minutes=1), Offer("accepted", now, 7, 8, "Z"), "B", "C",
-                      3, 2, None, None, TradeBidOfferInfo(None, None, None, None, None))
-        new_offer = Offer("3", now, 4, 5, "D")
-        existing_offer = Offer("4", now, 5, 6, "E")
+        offer = Offer("1", now, 2, 3, TraderDetails("A", ""))
+        trade = Trade("2", now.add(minutes=1), TraderDetails("B", ""), TraderDetails("C", ""),
+                      3, 2, offer=Offer("accepted", now, 7, 8, TraderDetails("Z", "")),
+                      offer_bid_trade_info=TradeBidOfferInfo(None, None, None, None, None))
+        new_offer = Offer("3", now, 4, 5, TraderDetails("D", ""))
+        existing_offer = Offer("4", now, 5, 6, TraderDetails("E", ""))
         kwargs = {"offer": offer,
                   "trade": trade,
                   "new_offer": new_offer,
@@ -270,10 +273,14 @@ class TestRedisMarketEventDispatcher(unittest.TestCase):
             assert dispatcher.redis.publish.call_count == 1
             payload = json.loads(dispatcher.redis.publish.call_args_list[0][0][1])
             assert isinstance(payload["kwargs"]["offer"], str)
-            assert Offer.from_json(payload["kwargs"]["offer"]) == offer
+            assert (Offer.from_json(payload["kwargs"]["offer"]).to_json_string() ==
+                    offer.to_json_string())
             assert isinstance(payload["kwargs"]["trade"], str)
-            assert Trade.from_json(payload["kwargs"]["trade"]) == trade
+            assert (Trade.from_json(payload["kwargs"]["trade"]).to_json_string() ==
+                    trade.to_json_string())
             assert isinstance(payload["kwargs"]["new_offer"], str)
-            assert Offer.from_json(payload["kwargs"]["new_offer"]) == new_offer
+            assert (Offer.from_json(payload["kwargs"]["new_offer"]).to_json_string() ==
+                    new_offer.to_json_string())
             assert isinstance(payload["kwargs"]["existing_offer"], str)
-            assert Offer.from_json(payload["kwargs"]["existing_offer"]) == existing_offer
+            assert (Offer.from_json(payload["kwargs"]["existing_offer"]).to_json_string() ==
+                    existing_offer.to_json_string())
