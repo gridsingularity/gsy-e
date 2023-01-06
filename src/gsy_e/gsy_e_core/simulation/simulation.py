@@ -74,7 +74,8 @@ class Simulation:
             slot_length_realtime=slot_length_realtime,
         )
 
-        self._bc = BcSimulationCommunication()
+        if gsy_e.constants.BC_MODE_ENABLED:
+            self._bc = BcSimulationCommunication(bc_account_credentials)
 
         self._setup = SimulationSetup(
             seed=seed,

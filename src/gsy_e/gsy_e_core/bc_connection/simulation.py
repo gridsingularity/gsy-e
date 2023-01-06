@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
+import os
 from logging import getLogger
 
 from gsy_dex.substrate_connection import SubstrateConnection
@@ -27,29 +27,30 @@ NODE_URL = os.environ.get("NODE_URL", "ws://127.0.0.1:9944")
 
 
 class AccountAreaMapping:
-    def __init__(self):
-        self.mapping = {}
+    def __init__(self, bc_account_credentials):
+        self.mapping = bc_account_credentials
 
     def add_area_creds(self, area_uuid, uri):
         self.mapping[area_uuid] = KeyManager.generate_keypair_from_uri(uri)
 
     def get_area_creds(self, area_uuid):
-        self.mapping[area_uuid]
+        return self.mapping[area_uuid]
+
 
 class BcSimulationCommunication:
-    def __init__(self):
+    def __init__(self, bc_account_credentials):
         self._conn = SubstrateConnection(
             node_url=NODE_URL,
             address_format=42,
             type_registry_preset="substrate-node-template"
         )
-        self._mapping = AccountAreaMapping()
+        self._mapping = AccountAreaMapping(bc_account_credentials)
 
     def add_creds_for_area(self, area_uuid, uri):
         self._mapping.add_area_creds(area_uuid, uri)
 
     def get_creds_from_area(self, area_uuid):
-        self._mapping.get_area_creds(area_uuid)
+        return self._mapping.get_area_creds(area_uuid)
 
     @property
     def conn(self):
@@ -58,6 +59,7 @@ class BcSimulationCommunication:
     @property
     def mapping(self):
         return self._mapping
+
 
 class AreaWebsocketConnection:
     def __init__(self, bc: BcSimulationCommunication, area_uuid, uri):
