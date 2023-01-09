@@ -21,8 +21,6 @@ from logging import getLogger
 from math import isclose
 from typing import Union, Dict, Optional, Callable, Tuple
 
-from gsy_dex.gsy_orderbook import GSyOrderbook
-from gsy_dex.data_classes import Offer as BcOffer
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Offer, Trade, TradeBidOfferInfo, TraderDetails, Bid
 from gsy_framework.enums import SpotMarketTypeEnum
@@ -35,8 +33,6 @@ from gsy_e.gsy_e_core.exceptions import (
     NegativePriceOrdersException, NegativeEnergyOrderException)
 from gsy_e.gsy_e_core.util import short_offer_bid_log_str
 from gsy_e.models.market import MarketBase, lock_market_action, GridFee
-
-from substrateinterface.exceptions import SubstrateRequestException
 
 log = getLogger(__name__)
 
@@ -59,8 +55,6 @@ class OneSidedMarket(MarketBase):
 
         # If True, the current market slot is included in the expected duration of the simulation
         self.in_sim_duration = in_sim_duration
-        self.bc_orderbook = GSyOrderbook(self.bc_interface._conn.substrate)
-        self.nonce = 1
 
     def __repr__(self):
         return (
@@ -112,15 +106,6 @@ class OneSidedMarket(MarketBase):
             add_to_history: bool = True,
             time_slot: Optional[DateTime] = None) -> Offer:
         """Post offer inside the market."""
-        #TODO: here we need to build the offer struct to add to the call
-        #offer = BcOffer(seller=self.bc_interface._area_creds, nonce=self.nonce, area_uuid=)
-        self.nonce += 1
-        insert_order_call = self.bc_orderbook.create_insert_orders_call([offer.serializable_order_dict()])
-        signed_insert_order_call_extrinsic = self.bc_interface._conn.generate_signed_extrinsic(insert_order_call, self.bc_interface._area_creds)
-        try:
-            receipt = self.bc_interface._conn.submit_extrinsic(signed_insert_order_call_extrinsic)
-        except SubstrateRequestException as e:
-            logger.error("Failed to send the extrinsic to the node %s", e)
 
         if self.readonly:
             raise MarketReadOnlyException()
@@ -139,8 +124,8 @@ class OneSidedMarket(MarketBase):
             raise NegativePriceOrdersException(
                 "Negative price after taxes, offer cannot be posted.")
 
-        #if offer_id is None:
-            #offer_id = self.bc_interface.create_new_offer(energy, price, seller)
+        if offer_id is None:
+            offer_id = str(uuid.uuid4())
         offer = Offer(offer_id, self.now, price, energy,
                       seller, original_price,
                       time_slot=time_slot)
@@ -172,8 +157,6 @@ class OneSidedMarket(MarketBase):
         offer = self.offers.pop(offer_or_id, None)
         if not offer:
             raise OfferNotFoundException()
-        #TODO: here we need to add the method self.bc_orderbook.create_remove_orders_call passing the correct order struct
-        #self.bc_interface.cancel_offer(offer)
 
         log.debug("%s[OFFER][DEL][%s][%s] %s",
                   self._debug_log_market_type_identifier, self.name,
@@ -226,9 +209,6 @@ class OneSidedMarket(MarketBase):
                   self.time_slot_str or residual_offer.time_slot, self.name,
                   short_offer_bid_log_str(original_offer), short_offer_bid_log_str(accepted_offer),
                   short_offer_bid_log_str(residual_offer))
-
-        #TODO: here we need to evaluate how to hendle this case. Should we just create two different extrinsics (one for deleting the old order and one fro adding a new one?)
-        #self.bc_interface.change_offer(accepted_offer, original_offer, residual_offer)
 
         self._notify_listeners(
             MarketEvent.OFFER_SPLIT,
@@ -314,10 +294,6 @@ class OneSidedMarket(MarketBase):
             self.offers[offer.id] = offer
             raise
 
-        #TODO: need further clarification
-        #trade_id, residual_offer = self.bc_interface.handle_blockchain_trade_event(
-         #   offer, buyer, original_offer, residual_offer)
-
         trade_id = uuid.uuid4()
 
         # Delete the accepted offer from self.offers:
@@ -332,9 +308,6 @@ class OneSidedMarket(MarketBase):
                       traded_energy=energy, trade_price=trade_price, residual=residual_offer,
                       offer_bid_trade_info=offer_bid_trade_info,
                       fee_price=fee_price, time_slot=offer.time_slot)
-
-        #TODO: need further clarification
-        #self.bc_interface.track_trade_event(self.time_slot, trade)
 
         self._update_stats_after_trade(trade, offer)
         log.info("%s[TRADE][OFFER] [%s] [%s] %s",
