@@ -29,6 +29,8 @@ from gsy_framework.enums import SpotMarketTypeEnum
 from numpy.random import random
 from pendulum import DateTime, duration
 
+from gsy_dex.data_classes import Offer as BcOffer
+from gsy_dex.data_classes import Bid as BcBid
 from gsy_e.constants import FLOATING_POINT_TOLERANCE, DATE_TIME_FORMAT
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.util import add_or_create_key, subtract_or_create_key
@@ -97,11 +99,11 @@ class MarketBase:  # pylint: disable=too-many-instance-attributes
         self.time_slot = time_slot
         self.readonly = readonly
         # offer-id -> Offer
-        self.offers: Dict[str, Offer] = {}
-        self.offer_history: List[Offer] = []
+        self.offers: Dict[str, Union[Offer, BcOffer]] = {}
+        self.offer_history: List[Union[Offer, BcOffer]] = []
         self.notification_listeners: List[Callable] = []
-        self.bids: Dict[str, Bid] = {}
-        self.bid_history: List[Bid] = []
+        self.bids: Dict[str, Union[Bid, BcBid]] = {}
+        self.bid_history: List[Union[Bid, BcBid]] = []
         self.trades: List[Trade] = []
         self.const_fee_rate: Optional[float] = None
         self.now: DateTime = time_slot
