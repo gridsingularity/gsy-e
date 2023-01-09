@@ -110,7 +110,7 @@ class TwoSidedBcMarket(OneSidedBcMarket):
                 log.debug("%s[BID][NEW][%s][%s] %s",
                           self._debug_log_market_type_identifier, self.name,
                           self.time_slot_str or bid.time_slot, bid)
-                self.bids[(str(bid.nonce) + str(self.area.uuid))] = bid
+                self.bids[str(bid.nonce)] = bid
             else:
                 raise InvalidBid
         except SubstrateRequestException as e:
@@ -124,7 +124,7 @@ class TwoSidedBcMarket(OneSidedBcMarket):
     @lock_market_action
     def delete_bid(self, bid_or_id: Union[str, BcBid]):
         if isinstance(bid_or_id, BcBid):
-            bid_or_id = (str(bid_or_id.nonce) + str(self.area.uuid))
+            bid_or_id = str(bid_or_id.nonce)
         bid = self.bids.pop(bid_or_id, None)
         if not bid:
             raise BidNotFoundException(bid_or_id)

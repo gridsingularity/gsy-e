@@ -98,7 +98,7 @@ class OneSidedBcMarket(OneSidedMarket):
                 log.debug("%s[OFFER][NEW][%s][%s] %s",
                           self._debug_log_market_type_identifier, self.name,
                           self.time_slot_str or offer.time_slot, offer)
-                self.offers[(str(offer.nonce) + str(self.area.uuid))] = offer
+                self.offers[str(offer.nonce)] = offer
             else:
                 raise InvalidOffer
         except SubstrateRequestException as e:
@@ -111,7 +111,7 @@ class OneSidedBcMarket(OneSidedMarket):
         if self.readonly:
             raise MarketReadOnlyException()
         if isinstance(offer_or_id, BcOffer):
-            offer_or_id = (str(offer_or_id.nonce) + str(self.area.uuid))
+            offer_or_id = str(offer_or_id.nonce)
         offer = self.offers.pop(offer_or_id, None)
         if not offer:
             raise OfferNotFoundException()
