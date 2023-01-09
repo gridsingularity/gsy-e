@@ -45,12 +45,24 @@ class BcSimulationCommunication:
             type_registry_preset="substrate-node-template"
         )
         self._mapping = AccountAreaMapping(bc_account_credentials)
+        self._callback_mapping = {}
 
     def add_creds_for_area(self, area_uuid, uri):
         self._mapping.add_area_creds(area_uuid, uri)
 
     def get_creds_from_area(self, area_uuid):
         return self._mapping.get_area_creds(area_uuid)
+
+    def register_market_trade_callback(self, market_id, event_trade_cb):
+        self._callback_mapping[market_id] = event_trade_cb
+
+    def unregister_market_trade_callback(self, event_trade_cb):
+        pass
+
+    def _receive_bc_event(self, event):
+        if event.market_id in self._callback_mapping:
+            self._callback_mapping[event.market_id](
+                event.accepted_offer, event.residual_offer, event.trade)
 
     @property
     def conn(self):
@@ -66,3 +78,7 @@ class AreaWebsocketConnection:
         self._conn = bc.conn
         bc.add_creds_for_area(area_uuid, uri)
         self._area_creds = bc.get_creds_from_area(area_uuid)
+
+    def register_market_cb(self, markets: List[MarketBase]):
+        for market in markets:
+            self._conn.register_market_trade_callback(market.id, market.event_trade)

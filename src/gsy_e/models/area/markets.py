@@ -179,8 +179,13 @@ class AreaMarkets:
         self._update_indexed_future_markets()
 
     @staticmethod
-    def _select_market_class(market_type: AvailableMarketTypes) -> type(MarketBase):
+    def _select_market_class(market_type: AvailableMarketTypes, area: "Area") -> type(MarketBase):
         """Select market class dependent on the global config."""
+        if area._bc is not None:
+            if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
+                return OneSidedBcMarket
+            if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value:
+                return TwoSidedBcMarket
         if market_type == AvailableMarketTypes.SPOT:
             if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
                 return OneSidedMarket
@@ -210,7 +215,7 @@ class AreaMarkets:
                                market_type: AvailableMarketTypes, area: "Area") -> bool:
         """Create spot markets according to the market count."""
         markets = self.get_market_instances_from_class_type(market_type)
-        market_class = self._select_market_class(market_type)
+        market_class = self._select_market_class(market_type, area)
 
         changed = False
         if not markets or current_time not in markets:

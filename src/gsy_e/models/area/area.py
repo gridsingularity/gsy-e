@@ -197,6 +197,9 @@ class Area(AreaBase):
         if self.redis_ext_conn is not None:
             self.redis_ext_conn.sub_to_external_channels()
 
+        if self._bc:
+            self._bc.register_market_cb(self._markets.markets.values())
+
     def deactivate(self):
         """Deactivate the area."""
         self.cycle_markets(deactivate=True)
@@ -310,7 +313,7 @@ class Area(AreaBase):
         update cached myco matcher markets and match trades recommendations.
         """
         if (ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value
-                and not self.strategy):
+                and not self.strategy and not self._bc):
             if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
                 self.dispatcher.publish_market_clearing()
             elif is_external_matching_enabled():

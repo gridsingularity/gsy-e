@@ -129,3 +129,13 @@ class OneSidedBcMarket(OneSidedMarket):
                 raise InvalidOffer
         except SubstrateRequestException as e:
             log.error("Failed to send the extrinsic to the node %s", e)
+
+    def event_trade(self, bc_event):
+        """Implement the behavior of the accept_offer."""
+        accepted_offer = bc_event[0]
+        residual_offer = bc_event[1]
+        trade = bc_event[2]
+
+        self.offers.pop(accepted_offer.nonce)
+        self.offers[residual_offer.nonce] = residual_offer
+        self.trades.append(trade)
