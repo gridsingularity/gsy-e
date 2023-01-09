@@ -18,9 +18,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # Need to import required settings from gsy-framework in order to be available in d3a,
 # thus avoiding accessing the gsy-framework constants.
 # pylint: disable=unused-import
-from gsy_framework.constants_limits import TIME_FORMAT, DATE_FORMAT, GlobalConfig # NOQA
-from gsy_framework.constants_limits import DATE_TIME_FORMAT, DATE_TIME_UI_FORMAT, TIME_ZONE  # NOQA
+import os
 
+from gsy_framework.constants_limits import DATE_TIME_FORMAT, DATE_TIME_UI_FORMAT, TIME_ZONE  # NOQA
+from gsy_framework.constants_limits import TIME_FORMAT, DATE_FORMAT, GlobalConfig  # NOQA
 
 FLOATING_POINT_TOLERANCE = 0.00001
 
@@ -37,7 +38,7 @@ DISPATCH_EVENTS_BOTTOM_TO_TOP = True
 DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 10
 DISPATCH_MYCO_EVENT_TICK_FREQUENCY_PERCENT = 2
 
-CONFIGURATION_ID = ""
+CONFIGURATION_ID = os.environ.get("CONFIGURATION_ID", "")
 # Controls whether the external connection is for use with the redis api client
 # or with the gsy-web. Default is to connect via Redis.
 EXTERNAL_CONNECTION_WEB = False
@@ -64,6 +65,8 @@ SEND_EVENTS_RESPONSES_TO_SDK_VIA_RQ = False
 
 DEFAULT_SCM_COMMUNITY_NAME = "Community"
 DEFAULT_SCM_GRID_NAME = "Grid"
+
+FORWARD_MARKET_MAX_DURATION_YEARS = 6
 
 
 class SettlementTemplateStrategiesConstants:

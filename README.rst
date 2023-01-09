@@ -5,7 +5,7 @@ Grid Singularity Energy Exchange
 .. image:: https://codecov.io/gh/gridsingularity/gsy-e/branch/master/graph/badge.svg?token=XTWK3DAKUA
    :target: https://codecov.io/gh/gridsingularity/gsy-e
 
-The Grid Singularity Energy Exchange Engine is developed by `Grid Singularity <https://gridsingularity.com/>`__ as an interface (`Singularity Map <https://map.gridsingularity.com/singularity-map>`__) and open source codebase (see `Licensing <https://gridsingularity.github.io/d3a/licensing/>`__ to model, simulate, optimize and (coming soon) download and deploy interconnected, grid-aware energy marketplaces.
+The Grid Singularity Energy Exchange Engine is developed by `Grid Singularity <https://gridsingularity.com/>`__ as an interface (`Singularity Map <https://map.gridsingularity.com/singularity-map>`__) and open source codebase (see `Licensing <https://gridsingularity.github.io/gsy-e/licensing/>`__ to model, simulate, optimize and (coming soon) download and deploy interconnected, grid-aware energy marketplaces.
 Grid Singularity has been proclaimed the `World Tech Pioneer by the World Economic Forum <https://www.weforum.org/organizations/grid-singularity-gmbh-gsy-gmbh>`__ and is also known as a co-founder of the `Energy Web Foundation <https://www.energyweb.org/>`__ that gathers leading energy corporations globally co-developing a shared blockchain-based platform.
 
 Code of Conduct
@@ -25,7 +25,10 @@ Basic setup
 After cloning this project setup a Python 3.8 virtualenv and install `fabric3`_::
 
     ~# pip install fabric3
+    
+Without using virtualenv (e.g. using conda envs) you can just install gsy-e using
 
+    ~# pip install -e .
 
 The Simulation
 ==============
@@ -117,19 +120,19 @@ Command line parameters can be given normally after the image name::
 
 There is also a handy script that deals with the building of the image and running the provided command::
 
-    ~# ./run_d3a_on_docker.sh "$docker_command" $export_path
+    ~# ./run_gsy_e_on_docker.sh "$docker_command" $export_path
 
 
-where you can provide the d3a_command and export path where the simulation results are stored.
+where you can provide the gsy_e_command and export path where the simulation results are stored.
 For example::
 
-    ~# ./run_d3a_on_docker.sh "gsy-e -l ERROR run --setup default_2a -t 15s" $HOME/gsy-e-simulation
+    ~# ./run_gsy_e_on_docker.sh "gsy-e -l ERROR run --setup default_2a -t 15s" $HOME/gsy_e-simulation
 
 
 builds a gsy-e docker image (if not already present),
 runs the simulation with setup-file default_2a, tick-length 15s
-and stores the simulation output data into $HOME/gsy-e-simulation.
-If no export_path is provided, simulation results will be stored in $HOME/gsy-e-simulation.
+and stores the simulation output data into $HOME/gsy_e-simulation.
+If no export_path is provided, simulation results will be stored in $HOME/gsy_e-simulation.
 
 
 _`docker`: https://docker.io

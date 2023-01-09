@@ -57,7 +57,7 @@ jobs:
       run: |
         export SOLC_BINARY=$HOME/solc/usr/bin/solc
         export LD_LIBRARY_PATH=$HOME/solc/usr/lib:$LD_LIBRARY_PATH
-        pip install tox
+        pip install tox==3.24.4
         tox -e $TOXENV --verbose
 
     - name: Check coverage with Codecov

@@ -19,7 +19,7 @@ from collections import namedtuple
 from typing import Union, Dict
 
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.data_classes import Offer
+from gsy_framework.data_classes import Offer, TraderDetails
 from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.exceptions import GSyDeviceException
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
@@ -37,7 +37,7 @@ from gsy_e.gsy_e_core.exceptions import MarketException
 from gsy_e.gsy_e_core.util import get_market_maker_rate_from_config
 from gsy_e.models.base import AssetType
 from gsy_e.models.market import MarketBase
-from gsy_e.models.state import LoadState
+from gsy_e.models.strategy.state import LoadState
 from gsy_e.models.strategy import BidEnabledStrategy
 from gsy_e.models.strategy.energy_parameters.load import LoadHoursPerDayEnergyParameters
 from gsy_e.models.strategy.future.strategy import future_market_strategy_factory
@@ -301,10 +301,11 @@ class LoadHoursStrategy(BidEnabledStrategy):
                     and self._offer_rate_can_be_accepted(acceptable_offer, market)):
                 energy_Wh = self.state.calculate_energy_to_accept(
                     acceptable_offer.energy * 1000.0, time_slot)
-                self.accept_offer(market, acceptable_offer, energy=energy_Wh / 1000.0,
-                                  buyer_origin=self.owner.name,
-                                  buyer_origin_id=self.owner.uuid,
-                                  buyer_id=self.owner.uuid)
+                self.accept_offer(market, acceptable_offer,
+                                  buyer=TraderDetails(
+                                      self.owner.name, self.owner.uuid,
+                                      self.owner.name, self.owner.uuid),
+                                  energy=energy_Wh / 1000.0)
 
                 self._energy_params.decrement_energy_requirement(
                     energy_kWh=energy_Wh / 1000,
@@ -354,7 +355,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
         return self._is_market_active(market) and self.state.can_buy_more_energy(market.time_slot)
 
     def _offer_comes_from_different_seller(self, offer):
-        return offer.seller not in [self.owner.name, self.area.name]
+        return offer.seller.name not in [self.owner.name, self.area.name]
 
     def _post_first_bid(self):
         if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
@@ -389,7 +390,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
         if not self.area.is_market_spot_or_future(market_id):
             return
-        if bid_trade.offer_bid.buyer == self.owner.name:
+        if bid_trade.match_details["bid"].buyer.name == self.owner.name:
             self._energy_params.decrement_energy_requirement(
                 energy_kWh=bid_trade.traded_energy,
                 time_slot=bid_trade.time_slot,
@@ -433,19 +434,20 @@ class LoadHoursStrategy(BidEnabledStrategy):
         ramp_up_price = DeviceRegistry.REGISTRY[self.owner.name][0] * ramp_up_energy
         if ramp_up_energy != 0 and ramp_up_price != 0:
             self.area.get_balancing_market(market.time_slot).balancing_offer(
-                ramp_up_price, -ramp_up_energy, self.owner.name)
+                ramp_up_price, -ramp_up_energy, TraderDetails(
+                    self.owner.name, self.owner.uuid, self.owner.name, self.owner.uuid))
 
     # committing to reduce its consumption when required
     def _supply_balancing_offer(self, market, trade):
         if not self._is_eligible_for_balancing_market:
             return
-        if trade.buyer != self.owner.name:
+        if trade.buyer.name != self.owner.name:
             return
         ramp_down_energy = self.balancing_energy_ratio.supply * trade.traded_energy
         ramp_down_price = DeviceRegistry.REGISTRY[self.owner.name][1] * ramp_down_energy
-        self.area.get_balancing_market(market.time_slot).balancing_offer(ramp_down_price,
-                                                                         ramp_down_energy,
-                                                                         self.owner.name)
+        self.area.get_balancing_market(market.time_slot).balancing_offer(
+            ramp_down_price, ramp_down_energy, TraderDetails(
+                self.owner.name, self.owner.uuid, self.owner.name, self.owner.uuid))
 
     @property
     def active_markets(self):

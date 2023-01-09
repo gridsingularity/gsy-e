@@ -81,6 +81,7 @@ class TestD3ACoreUtil:
 
     @staticmethod
     def test_get_market_maker_rate_from_config():
+        original_mmr = GlobalConfig.market_maker_rate
         assert get_market_maker_rate_from_config(None, 2) == 2
         market = MagicMock()
         market.time_slot = datetime(year=2019, month=2, day=3)
@@ -90,6 +91,7 @@ class TestD3ACoreUtil:
         assert get_market_maker_rate_from_config(market, None) == 321
         GlobalConfig.market_maker_rate = 4321
         assert get_market_maker_rate_from_config(market, None) == 4321
+        GlobalConfig.market_maker_rate = original_mmr
 
     @staticmethod
     def test_export_default_settings_to_json_file():
@@ -129,7 +131,9 @@ class TestD3ACoreUtil:
                 ConstSettings.MASettings.MARKET_TYPE)
 
     @staticmethod
-    def test_future_market_counter():
+    @patch("gsy_framework.constants_limits.ConstSettings.FutureMarketSettings."
+           "FUTURE_MARKET_DURATION_HOURS", 1)
+    def test_future_is_time_for_clearing_respects_clearing_interval():
         """Test the counter of future market clearing."""
         with patch("gsy_framework.constants_limits.ConstSettings.FutureMarketSettings."
                    "FUTURE_MARKET_CLEARING_INTERVAL_MINUTES", 15):
@@ -145,3 +149,13 @@ class TestD3ACoreUtil:
             # Skip the 15 minutes duration
             current_time = current_time.add(minutes=15)
             assert future_market_counter.is_time_for_clearing(current_time) is True
+
+    @staticmethod
+    def test_future_is_time_for_clearing_returns_false_if_future_market_is_disabled():
+        """Test the counter of future market clearing."""
+        with patch("gsy_framework.constants_limits.ConstSettings.FutureMarketSettings."
+                   "FUTURE_MARKET_DURATION_HOURS", 0):
+            future_market_counter = FutureMarketCounter()
+            current_time = datetime(year=2021, month=11, day=2,
+                                    hour=1, minute=1, second=0)
+            assert future_market_counter.is_time_for_clearing(current_time) is False

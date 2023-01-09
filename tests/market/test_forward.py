@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from unittest.mock import patch, MagicMock
 
 import pytest
-from gsy_framework.data_classes import Bid, Offer, Trade
+from gsy_framework.data_classes import Bid, Offer, Trade, TraderDetails
 from pendulum import datetime, duration
 
 from gsy_e.models.area import Area
@@ -74,7 +74,7 @@ class TestForwardMarkets:
                            forward_markets.slot_trade_mapping]:
 
                 assert len(buffer.keys()) == expected_market_count
-                ahead_time_slot = market_class._get_start_time(CURRENT_MARKET_SLOT)
+                ahead_time_slot = market_class._get_start_time(CURRENT_MARKET_SLOT, area.config)
                 most_future_slot = market_class._get_end_time(CURRENT_MARKET_SLOT)
                 assert all(ahead_time_slot <= time_slot <= most_future_slot
                            for time_slot in buffer)
@@ -106,11 +106,14 @@ class TestForwardMarkets:
                              rotation_time):
         forward_markets = self._create_forward_market(market_class, create=True)
         for time_slot in forward_markets.slot_bid_mapping:
-            bid = Bid(f"bid{time_slot}", time_slot, 1, 1, "buyer", time_slot=time_slot)
+            bid = Bid(f"bid{time_slot}", time_slot, 1, 1, TraderDetails("buyer", ""),
+                      time_slot=time_slot)
             forward_markets.bids[bid.id] = bid
-            offer = Offer(f"oid{time_slot}", time_slot, 1, 1, "seller", time_slot=time_slot)
+            offer = Offer(f"oid{time_slot}", time_slot, 1, 1, TraderDetails("seller", ""),
+                          time_slot=time_slot)
             forward_markets.offers[offer.id] = offer
-            trade = Trade(f"tid{time_slot}", time_slot, offer, "seller", "buyer",
+            trade = Trade(f"tid{time_slot}", time_slot, TraderDetails("seller", ""),
+                          TraderDetails("buyer", ""), offer=offer,
                           time_slot=time_slot, traded_energy=1, trade_price=1)
             forward_markets.trades.append(trade)
 
@@ -128,8 +131,8 @@ class TestForwardMarkets:
                              "delivery_duration, closing_delivery_timedelta, reference_time",
                              [[IntradayMarket, 24 * 4 - 1, duration(minutes=30),
                                duration(minutes=15), duration(minutes=15), CURRENT_MARKET_SLOT],
-                              [DayForwardMarket, 24 * 7 - 1, duration(hours=2),
-                               duration(hours=1), duration(hours=1), CURRENT_MARKET_SLOT],
+                              [DayForwardMarket, 24 * 7 - 1, duration(days=1, hours=1),
+                               duration(hours=1), duration(days=1), CURRENT_MARKET_SLOT],
                               [WeekForwardMarket, 51, duration(weeks=2),
                                duration(weeks=1), duration(weeks=1), CURRENT_MARKET_SLOT],
                               [MonthForwardMarket, 23, duration(months=2),

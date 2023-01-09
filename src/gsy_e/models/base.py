@@ -29,7 +29,7 @@ log = getLogger(__name__)
 
 if TYPE_CHECKING:
     from gsy_e.models.area import Area
-    from gsy_e.models.state import StateInterface
+    from gsy_e.models.strategy.state import StateInterface
 
 
 class AssetType(Enum):
@@ -110,3 +110,8 @@ class AreaBehaviorBase:
     def asset_type(self):
         """Return the asset type of the strategy. Should be implemented by all children."""
         raise NotImplementedError
+
+    @staticmethod
+    def deserialize_args(constructor_args: Dict) -> Dict:
+        """Deserialize the constructor arguments."""
+        return constructor_args

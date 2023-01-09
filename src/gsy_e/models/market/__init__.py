@@ -15,19 +15,19 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
 import uuid
 from collections import namedtuple
+from dataclasses import dataclass
 from functools import wraps
 from logging import getLogger
 from threading import RLock
-from typing import Dict, List, Union, Optional, Callable
+from typing import Dict, List, Union, Optional, Callable, TYPE_CHECKING
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.data_classes import Offer, Trade, Bid
 from gsy_framework.enums import SpotMarketTypeEnum
 from numpy.random import random
-from pendulum import DateTime
+from pendulum import DateTime, duration
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE, DATE_TIME_FORMAT
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
@@ -37,6 +37,9 @@ from gsy_e.models.market.grid_fees.constant_grid_fees import ConstantGridFees
 from gsy_e.models.market.market_redis_connection import (
     MarketRedisEventSubscriber, MarketRedisEventPublisher,
     TwoSidedMarketRedisEventSubscriber)
+
+if TYPE_CHECKING:
+    from gsy_e.models.config import SimulationConfig
 
 log = getLogger(__name__)
 
@@ -59,6 +62,20 @@ def lock_market_action(function):
         with lock_object:
             return function(self, *args, **kwargs)
     return wrapper
+
+
+@dataclass(frozen=True)
+class MarketSlotParams:
+    """Parameters that describe a market slot."""
+    opening_time: DateTime
+    closing_time: DateTime
+    delivery_start_time: DateTime
+    delivery_end_time: DateTime
+
+    def __post_init__(self):
+        assert self.delivery_end_time > self.delivery_start_time
+        assert self.closing_time <= self.delivery_start_time
+        assert self.closing_time > self.opening_time
 
 
 class MarketBase:  # pylint: disable=too-many-instance-attributes
@@ -110,6 +127,8 @@ class MarketBase:  # pylint: disable=too-many-instance-attributes
                 if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value
                 else TwoSidedMarketRedisEventSubscriber(self))
         setattr(self, RLOCK_MEMBER_NAME, RLock())
+
+        self._open_market_slot_parameters: Dict[DateTime, MarketSlotParams] = {}
 
     @property
     def time_slot_str(self):
@@ -197,17 +216,15 @@ class MarketBase:  # pylint: disable=too-many-instance-attributes
                 listener(event, market_id=self.id, **kwargs)
 
     def _update_stats_after_trade(
-            self, trade: Trade, order: Union[Offer, Bid], already_tracked: bool = False) -> None:
+            self, trade: Trade, order: Union[Offer, Bid]) -> None:
         """Update the instance state in response to an occurring trade."""
-
-        if not already_tracked:
-            self.trades.append(trade)
-            self.market_fee += trade.fee_price
+        self.trades.append(trade)
+        self.market_fee += trade.fee_price
         self._update_accumulated_trade_price_energy(trade)
         self.traded_energy = add_or_create_key(
-            self.traded_energy, trade.seller, order.energy)
+            self.traded_energy, trade.seller.name, order.energy)
         self.traded_energy = subtract_or_create_key(
-            self.traded_energy, trade.buyer, order.energy)
+            self.traded_energy, trade.buyer.name, order.energy)
         self._update_min_max_avg_trade_prices(order.energy_rate)
 
     def _update_accumulated_trade_price_energy(self, trade: Trade):
@@ -255,19 +272,56 @@ class MarketBase:  # pylint: disable=too-many-instance-attributes
     def bought_energy(self, buyer: str) -> float:
         """Return the aggregated bought energy value by the passed-in buyer."""
 
-        return sum(trade.traded_energy for trade in self.trades if trade.buyer == buyer)
+        return sum(trade.traded_energy for trade in self.trades if trade.buyer.name == buyer)
 
     def sold_energy(self, seller: str) -> float:
         """Return the aggregated sold energy value by the passed-in seller."""
 
-        return sum(trade.traded_energy for trade in self.trades if trade.seller == seller)
+        return sum(trade.traded_energy for trade in self.trades if trade.seller.name == seller)
 
     def total_spent(self, buyer: str) -> float:
         """Return the aggregated money spent by the passed-in buyer."""
 
-        return sum(trade.trade_price for trade in self.trades if trade.buyer == buyer)
+        return sum(trade.trade_price for trade in self.trades if trade.buyer.name == buyer)
 
     def total_earned(self, seller: str) -> float:
         """Return the aggregated money earned by the passed-in seller."""
+        return sum(trade.trade_price for trade in self.trades if trade.seller.name == seller)
 
-        return sum(trade.trade_price for trade in self.trades if trade.seller == seller)
+    @staticmethod
+    def _calculate_closing_time(delivery_time: DateTime) -> DateTime:
+        """
+        Closing time of the market. Uses as basis the delivery time in order to calculate it.
+        """
+        return delivery_time + GlobalConfig.slot_length
+
+    @staticmethod
+    def _get_market_slot_duration(config: Optional["SimulationConfig"]) -> duration:
+        if config:
+            return config.slot_length
+        return GlobalConfig.slot_length
+
+    def get_market_parameters_for_market_slot(
+            self, market_slot: DateTime) -> MarketSlotParams:
+        """Retrieve the parameters for the selected market slot."""
+        return self._open_market_slot_parameters.get(market_slot)
+
+    @property
+    def open_market_slot_info(self) -> Dict[DateTime, MarketSlotParams]:
+        """Retrieve market slot parameters"""
+        return self._open_market_slot_parameters
+
+    def set_open_market_slot_parameters(
+            self, current_market_slot: DateTime, created_market_slots: Optional[List[DateTime]]):
+        """Update the parameters of the newly opened market slots."""
+        for market_slot in created_market_slots:
+            if market_slot in self._open_market_slot_parameters:
+                continue
+
+            self._open_market_slot_parameters[market_slot] = MarketSlotParams(
+                delivery_start_time=self._calculate_closing_time(market_slot),
+                delivery_end_time=self._calculate_closing_time(market_slot) +
+                self._get_market_slot_duration(None),
+                opening_time=current_market_slot,
+                closing_time=self._calculate_closing_time(market_slot)
+            )

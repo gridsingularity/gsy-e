@@ -27,20 +27,26 @@ class EnergyProfile:
         self.profile = {}
 
         self.profile_type = profile_type
-        if self.profile_type is None:
-            if self.input_profile_uuid:
-                self.profile_type = global_objects.profiles_handler.get_profile_type(
-                    self.input_profile_uuid)
-            elif self.input_energy_rate is not None:
-                self.profile_type = InputProfileTypes.IDENTITY
-            else:
-                self.profile_type = InputProfileTypes.POWER
+
+    def _read_input_profile_type(self):
+        """Read input profile type. Has to be called after initialization."""
+        if self.input_profile_uuid:
+            self.profile_type = global_objects.profiles_handler.get_profile_type(
+                self.input_profile_uuid)
+        elif self.input_energy_rate is not None:
+            self.profile_type = InputProfileTypes.IDENTITY
+        else:
+            self.profile_type = InputProfileTypes.POWER
 
     def read_or_rotate_profiles(self, reconfigure=False):
         """Rotate current profile or read and preprocess profile from source."""
+        if self.profile_type is None:
+            self._read_input_profile_type()
+
         if not self.profile or reconfigure:
-            profile = self.input_energy_rate if self.input_energy_rate is not None else\
-                self.input_profile
+            profile = (self.input_energy_rate
+                       if self.input_energy_rate is not None
+                       else self.input_profile)
         else:
             profile = self.profile
 

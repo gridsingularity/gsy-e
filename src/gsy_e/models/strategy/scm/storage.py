@@ -5,7 +5,7 @@ from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.validators import StorageValidator
 from pendulum import DateTime
 
-from gsy_e.models.state import ESSEnergyOrigin, StorageState
+from gsy_e.models.strategy.state import ESSEnergyOrigin, StorageState
 from gsy_e.models.strategy.scm import SCMStrategy
 
 StorageSettings = ConstSettings.StorageSettings
@@ -49,18 +49,18 @@ class SCMStorageStrategy(SCMStrategy):
 
     def activate(self, area: "AreaBase") -> None:
         """Activate the strategy."""
-        self._state.add_default_values_to_state_profiles([area._current_market_time_slot])
+        self._state.add_default_values_to_state_profiles([area.current_market_time_slot])
         self._state.activate(
             area.config.slot_length,
-            area._current_market_time_slot
-            if area._current_market_time_slot else area.config.start_date)
+            area.current_market_time_slot
+            if area.current_market_time_slot else area.config.start_date)
 
     def market_cycle(self, area: "AreaBase") -> None:
         """Update the storage state for the next time slot."""
-        self._state.add_default_values_to_state_profiles([area._current_market_time_slot])
-        self._state.market_cycle(area.past_market_time_slot, area._current_market_time_slot, [])
+        self._state.add_default_values_to_state_profiles([area.current_market_time_slot])
+        self._state.market_cycle(area.past_market_time_slot, area.current_market_time_slot, [])
         self._state.delete_past_state_values(area.past_market_time_slot)
-        self._state.check_state(area._current_market_time_slot)
+        self._state.check_state(area.current_market_time_slot)
 
     def get_energy_to_sell_kWh(self, time_slot: DateTime) -> float:
         """Get the available energy for production for the specified time slot."""

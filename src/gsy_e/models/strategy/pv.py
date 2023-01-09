@@ -19,6 +19,7 @@ import traceback
 from logging import getLogger
 
 from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.data_classes import TraderDetails
 from gsy_framework.exceptions import GSyException
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from gsy_framework.utils import (
@@ -30,7 +31,7 @@ from gsy_e import constants
 from gsy_e.gsy_e_core.exceptions import MarketException
 from gsy_e.gsy_e_core.util import get_market_maker_rate_from_config
 from gsy_e.models.base import AssetType
-from gsy_e.models.state import PVState
+from gsy_e.models.strategy.state import PVState
 from gsy_e.models.strategy import BidEnabledStrategy
 from gsy_e.models.strategy.energy_parameters.pv import PVEnergyParameters
 from gsy_e.models.strategy.future.strategy import future_market_strategy_factory
@@ -273,11 +274,9 @@ class PVStrategy(BidEnabledStrategy):
                 offer = market.offer(
                     offer_price,
                     offer_energy_kWh,
-                    self.owner.name,
+                    TraderDetails(self.owner.name, self.owner.uuid, self.owner.name,
+                                  self.owner.uuid),
                     original_price=offer_price,
-                    seller_origin=self.owner.name,
-                    seller_origin_id=self.owner.uuid,
-                    seller_id=self.owner.uuid,
                     time_slot=market.time_slot
                 )
                 self.offers.post(offer, market.id)
@@ -293,7 +292,7 @@ class PVStrategy(BidEnabledStrategy):
 
         self._assert_if_trade_offer_price_is_too_low(market_id, trade)
 
-        if trade.seller == self.owner.name:
+        if trade.seller.name == self.owner.name:
             self.state.decrement_available_energy(
                 trade.traded_energy, trade.time_slot, self.owner.name)
 

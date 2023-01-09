@@ -4,7 +4,7 @@ from typing import Dict
 import pytest
 from pendulum import now, DateTime
 
-from gsy_e.models.state import ProsumptionInterface
+from gsy_e.models.strategy.state.base_states import ProsumptionInterface
 
 
 class ProsumptionInterfaceHelper(ProsumptionInterface):
@@ -97,7 +97,7 @@ class TestProsumptionInterface:
 
     def test_get_signed_unsettled_deviation_kWh_return_copysign(self):
         copysign_mock = MagicMock()
-        with patch("gsy_e.models.state.copysign", return_value=copysign_mock):
+        with patch("gsy_e.models.strategy.state.base_states.copysign", return_value=copysign_mock):
             prosumption_interface, time_slot = self._setup_configuration_for_settlement_posting(
                 energy_deviation=1, unsettled_deviation=1)
             assert prosumption_interface.get_signed_unsettled_deviation_kWh(

@@ -1,17 +1,18 @@
 import logging
 from calendar import monthrange
-from dataclasses import dataclass, asdict, field
+from dataclasses import asdict, dataclass, field
 from math import isclose
-from typing import Dict, TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Dict, List, Optional
 from uuid import uuid4
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
-from gsy_framework.data_classes import Trade
+from gsy_framework.data_classes import Trade, TraderDetails
+from gsy_framework.sim_results.kpi_calculation_helper import KPICalculationHelper
 from pendulum import DateTime, duration
 
 import gsy_e.constants
-from gsy_e.constants import (
-    DEFAULT_SCM_GRID_NAME, DEFAULT_SCM_COMMUNITY_NAME, FLOATING_POINT_TOLERANCE)
+from gsy_e.constants import (DEFAULT_SCM_COMMUNITY_NAME, DEFAULT_SCM_GRID_NAME,
+                             FLOATING_POINT_TOLERANCE)
 from gsy_e.models.strategy.scm import SCMStrategy
 
 if TYPE_CHECKING:
@@ -40,6 +41,7 @@ class HomeAfterMeterData:
     community_total_production_kWh: float = 0.
     _self_production_for_community_kWh: float = 0.
     trades: List[Trade] = None
+    asset_energy_requirements_kWh: Dict[str, float] = field(default_factory=dict)
 
     def to_dict(self) -> Dict:
         """Dict representation of the home after meter data."""
@@ -124,14 +126,11 @@ class HomeAfterMeterData:
             f"{self.energy_need_kWh}) of the home ({self.home_name})."
 
         trade = Trade(
-            str(uuid4()), current_time_slot, None,
-            seller_name, self.home_name,
+            str(uuid4()), current_time_slot,
+            TraderDetails(seller_name, None, seller_name, None),
+            TraderDetails(self.home_name, self.home_uuid, self.home_name, self.home_uuid),
             traded_energy=traded_energy_kWh, trade_price=trade_price_cents, residual=None,
-            offer_bid_trade_info=None,
-            seller_origin=seller_name,
-            buyer_origin=self.home_name, fee_price=0., buyer_origin_id=self.home_uuid,
-            seller_origin_id=None, seller_id=None, buyer_id=self.home_uuid,
-            time_slot=current_time_slot)
+            offer_bid_trade_info=None, fee_price=0., time_slot=current_time_slot)
         self.trades.append(trade)
         logging.info("[SCM][TRADE][BID] [%s] [%s] %s", self.home_name, trade.time_slot, trade)
 
@@ -142,14 +141,11 @@ class HomeAfterMeterData:
             f"Cannot sell more energy ({traded_energy_kWh}) than the energy surplus (" \
             f"{self.energy_surplus_kWh}) of the home ({self.home_name})."
         trade = Trade(
-            str(uuid4()), current_time_slot, None,
-            self.home_name, buyer_name,
+            str(uuid4()), current_time_slot,
+            TraderDetails(self.home_name, self.home_uuid, self.home_name, self.home_uuid),
+            TraderDetails(buyer_name, None, buyer_name, None),
             traded_energy=traded_energy_kWh, trade_price=trade_price_cents, residual=None,
-            offer_bid_trade_info=None,
-            seller_origin=self.home_name,
-            buyer_origin=buyer_name, fee_price=0., buyer_origin_id=None,
-            seller_origin_id=self.home_uuid, seller_id=self.home_uuid, buyer_id=None,
-            time_slot=current_time_slot)
+            offer_bid_trade_info=None, fee_price=0., time_slot=current_time_slot)
         self.trades.append(trade)
         logging.info("[SCM][TRADE][OFFER] [%s] [%s] %s", self.home_name, trade.time_slot, trade)
 
@@ -263,23 +259,19 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
         # will be negative, and the producer will not have "savings". For a more realistic case
         # the revenue should be omitted from the calculation of the savings, however this needs
         # to be discussed.
-        return self.base_energy_bill - self.gsy_energy_bill
+        return KPICalculationHelper().saving_absolute(self.base_energy_bill, self.gsy_energy_bill)
 
     @property
     def savings_percent(self):
         """Percentage of the price savings of the home, compared to the base energy bill."""
-        return (
-            (self.savings / self.base_energy_bill) * 100.0
-            if self.base_energy_bill > 0. else 0.)
+        return KPICalculationHelper().saving_percentage(self.savings, self.base_energy_bill)
 
     @property
     def energy_benchmark(self):
         """Savings ranking compared to the homes with the min and max savings."""
-        if (self._max_community_savings_percent -
-                self._min_community_savings_percent) <= FLOATING_POINT_TOLERANCE:
-            return 0.
-        return ((self.savings_percent - self._min_community_savings_percent) /
-                (self._max_community_savings_percent - self._min_community_savings_percent))
+        return KPICalculationHelper().energy_benchmark(
+            self.savings_percent, self._min_community_savings_percent,
+            self._max_community_savings_percent)
 
     @property
     def gsy_energy_bill_excl_revenue(self):
@@ -336,7 +328,8 @@ class SCMManager:
                       taxes_surcharges: float, fixed_monthly_fee: float,
                       marketplace_monthly_fee: float,
                       market_maker_rate: float, feed_in_tariff: float,
-                      production_kWh: float, consumption_kWh: float):
+                      production_kWh: float, consumption_kWh: float,
+                      asset_energy_requirements_kWh: Dict[str, float]):
         # pylint: disable=too-many-arguments
         """Import data for one individual home."""
         if grid_fees is None:
@@ -350,7 +343,9 @@ class SCMManager:
             taxes_surcharges=taxes_surcharges,
             market_maker_rate=market_maker_rate,
             feed_in_tariff=feed_in_tariff,
-            production_kWh=production_kWh, consumption_kWh=consumption_kWh)
+            production_kWh=production_kWh,
+            consumption_kWh=consumption_kWh,
+            asset_energy_requirements_kWh=asset_energy_requirements_kWh)
 
     def calculate_community_after_meter_data(self):
         """Calculate community data by aggregating all single home data."""

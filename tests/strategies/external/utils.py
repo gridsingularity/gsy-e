@@ -37,7 +37,7 @@ def create_areas_markets_for_strategy_fixture(strategy):
     config.start_date = GlobalConfig.start_date
     config.grid_fee_type = ConstSettings.MASettings.GRID_FEE_TYPE
     config.end_date = GlobalConfig.start_date + duration(days=1)
-    area = Area(name="forecast_pv", config=config, strategy=strategy,
+    area = Area(name="external_asset", config=config, strategy=strategy,
                 external_connection_available=True)
     parent = Area(name="parent_area", children=[area], config=config)
     parent.activate()
@@ -70,9 +70,8 @@ def assert_bid_offer_aggregator_commands_return_value(return_value, is_offer):
     assert return_value[command_name]["energy"] == 0.5
     assert return_value[command_name]["energy_rate"] == 400.0
     assert return_value[command_name][
-        "seller" if is_offer else "buyer"] == "forecast_pv"
+        "seller" if is_offer else "buyer"]["name"] == "external_asset"
     assert return_value[command_name]["original_price"] == 200.0
     assert return_value[command_name][
-        "seller_origin" if is_offer else "buyer_origin"] == "forecast_pv"
-    assert return_value[command_name]["replace_existing"] is True
+        "seller" if is_offer else "buyer"]["origin"] == "external_asset"
     assert return_value[command_name]["type"] == "Offer" if is_offer else "Bid"

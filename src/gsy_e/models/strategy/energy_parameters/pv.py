@@ -1,7 +1,3 @@
-
-import pathlib
-
-import math
 """
 Copyright 2018 Grid Singularity
 This file is part of Grid Singularity Exchange.
@@ -19,6 +15,10 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
+import math
+import pathlib
+
 import pendulum
 from gsy_framework.read_user_profile import InputProfileTypes, read_arbitrary_profile
 from gsy_framework.utils import (convert_kW_to_kWh, find_object_of_same_weekday_and_time,
@@ -28,7 +28,7 @@ from pendulum.datetime import DateTime
 
 from gsy_e.gsy_e_core.exceptions import GSyException
 from gsy_e.gsy_e_core.util import d3a_path
-from gsy_e.models.state import PVState
+from gsy_e.models.strategy.state import PVState
 from gsy_e.models.strategy import utils
 from gsy_e.models.strategy.profile import EnergyProfile
 
@@ -172,13 +172,13 @@ class PVUserProfileEnergyParameters(PVEnergyParameters):
     def __init__(self, panel_count: int = 1, power_profile: str = None,
                  power_profile_uuid: str = None):
         super().__init__(panel_count, None)
-        self._energy_profile = EnergyProfile(power_profile, power_profile_uuid)
+        self.energy_profile = EnergyProfile(power_profile, power_profile_uuid)
 
     def serialize(self):
         return {
             **super().serialize(),
-            "power_profile": self._energy_profile.input_profile,
-            "power_profile_uuid": self._energy_profile.input_profile_uuid
+            "power_profile": self.energy_profile.input_profile,
+            "power_profile_uuid": self.energy_profile.input_profile_uuid
         }
 
     def read_predefined_profile_for_pv(self):
@@ -186,22 +186,22 @@ class PVUserProfileEnergyParameters(PVEnergyParameters):
         Reads profile data from the power profile. Handles csv files and dicts.
         :return: key value pairs of time to energy in kWh
         """
-        self._energy_profile.read_or_rotate_profiles()
+        self.energy_profile.read_or_rotate_profiles()
 
     def reset(self, **kwargs):
         """Reset the energy parameters of the strategy."""
         if key_in_dict_and_not_none(kwargs, "power_profile"):
-            self._energy_profile.input_profile = kwargs["power_profile"]
-        self._energy_profile.read_or_rotate_profiles(reconfigure=True)
+            self.energy_profile.input_profile = kwargs["power_profile"]
+        self.energy_profile.read_or_rotate_profiles(reconfigure=True)
 
     def set_produced_energy_forecast_in_state(
             self, owner_name, time_slots, reconfigure=True):
         """Update the production energy forecast."""
-        if not self._energy_profile.profile:
+        if not self.energy_profile.profile:
             raise GSyException(
                 f"PV {owner_name} tries to set its available energy forecast without a "
                 "power profile.")
         for time_slot in time_slots:
             available_energy_kWh = find_object_of_same_weekday_and_time(
-                self._energy_profile.profile, time_slot) * self.panel_count
+                self.energy_profile.profile, time_slot) * self.panel_count
             self._state.set_available_energy(available_energy_kWh, time_slot, reconfigure)
