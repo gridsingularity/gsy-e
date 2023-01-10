@@ -310,7 +310,7 @@ class Area(AreaBase):
         update cached myco matcher markets and match trades recommendations.
         """
         if (ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value
-                and not self.strategy):
+                and not self.strategy and self._bc is None):
             if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
                 self.dispatcher.publish_market_clearing()
             elif is_external_matching_enabled():
