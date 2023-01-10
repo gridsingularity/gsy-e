@@ -285,6 +285,8 @@ class AreaDispatcher:
             return False
         if not self.area.children:
             return False
+        if self.area.bc:
+            return False
         return True
 
     def create_market_agents_for_forward_markets(
