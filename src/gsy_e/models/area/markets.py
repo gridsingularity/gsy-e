@@ -38,8 +38,10 @@ from gsy_e.models.market.forward import (
 )
 from gsy_e.models.market.future import FutureMarkets
 from gsy_e.models.market.one_sided import OneSidedMarket
+from gsy_e.models.market.one_sided_bc import OneSidedBcMarket
 from gsy_e.models.market.settlement import SettlementMarket
 from gsy_e.models.market.two_sided import TwoSidedMarket
+from gsy_e.models.market.two_sided_bc import TwoSidedBcMarket
 
 if TYPE_CHECKING:
     from gsy_e.models.area import Area
@@ -179,19 +181,28 @@ class AreaMarkets:
         self._update_indexed_future_markets()
 
     @staticmethod
-    def _select_market_class(market_type: AvailableMarketTypes) -> type(MarketBase):
+    def _select_market_class(market_type: AvailableMarketTypes, area: "Area") -> type(MarketBase):
         """Select market class dependent on the global config."""
-        if market_type == AvailableMarketTypes.SPOT:
-            if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
-                return OneSidedMarket
-            if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value:
-                return TwoSidedMarket
-        if market_type == AvailableMarketTypes.SETTLEMENT:
-            return SettlementMarket
-        if market_type == AvailableMarketTypes.BALANCING:
-            return BalancingMarket
-
-        assert False, f"Market type not supported {market_type}"
+        markets = {
+            AvailableMarketTypes.SPOT: {
+                None: {
+                    SpotMarketTypeEnum.ONE_SIDED: OneSidedMarket,
+                    SpotMarketTypeEnum.TWO_SIDED: TwoSidedMarket
+                },
+                area.bc: {
+                    SpotMarketTypeEnum.ONE_SIDED: OneSidedBcMarket,
+                    SpotMarketTypeEnum.TWO_SIDED: TwoSidedBcMarket
+                }
+            },
+            AvailableMarketTypes.SETTLEMENT: SettlementMarket,
+            AvailableMarketTypes.BALANCING: BalancingMarket
+        }
+        try:
+            return markets[market_type][
+                area.bc if market_type == AvailableMarketTypes.SPOT else None][
+                ConstSettings.MASettings.MARKET_TYPE]
+        except KeyError:
+            assert False, f"Market type not supported {market_type}"
 
     def get_market_instances_from_class_type(self, market_type: AvailableMarketTypes) -> Dict:
         """Select market dict based on the market class type."""
@@ -210,7 +221,7 @@ class AreaMarkets:
                                market_type: AvailableMarketTypes, area: "Area") -> bool:
         """Create spot markets according to the market count."""
         markets = self.get_market_instances_from_class_type(market_type)
-        market_class = self._select_market_class(market_type)
+        market_class = self._select_market_class(market_type, area)
 
         changed = False
         if not markets or current_time not in markets:
