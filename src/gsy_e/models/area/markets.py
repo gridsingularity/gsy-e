@@ -113,7 +113,7 @@ class AreaMarkets:
         Create FutureMarkets instance and create MAs that communicate to the parent FutureMarkets.
         """
         market = FutureMarkets(
-            bc=area._bc,
+            bc=area.bc,
             notification_listener=area.dispatcher.broadcast_notification,
             grid_fee_type=area.config.grid_fee_type,
             grid_fees=GridFee(grid_fee_percentage=area.grid_fee_percentage,
@@ -133,7 +133,7 @@ class AreaMarkets:
 
         for market_type, market_class in _FORWARD_MARKET_TYPE_MAPPING.items():
             market = market_class(
-                bc=area._bc,
+                bc=area.bc,
                 notification_listener=area.dispatcher.broadcast_notification,
                 grid_fee_type=area.config.grid_fee_type,
                 grid_fees=GridFee(grid_fee_percentage=area.grid_fee_percentage,
@@ -189,7 +189,7 @@ class AreaMarkets:
                     SpotMarketTypeEnum.ONE_SIDED: OneSidedMarket,
                     SpotMarketTypeEnum.TWO_SIDED: TwoSidedMarket
                 },
-                area._bc: {
+                area.bc: {
                     SpotMarketTypeEnum.ONE_SIDED: OneSidedBcMarket,
                     SpotMarketTypeEnum.TWO_SIDED: TwoSidedBcMarket
                 }
@@ -199,7 +199,7 @@ class AreaMarkets:
         }
         try:
             return markets[market_type][
-                area._bc if market_type == AvailableMarketTypes.SPOT else None][
+                area.bc if market_type == AvailableMarketTypes.SPOT else None][
                 ConstSettings.MASettings.MARKET_TYPE]
         except KeyError:
             assert False, f"Market type not supported {market_type}"
@@ -247,7 +247,7 @@ class AreaMarkets:
         """Create market for specific time_slot and market type."""
         market = market_class(
             time_slot=time_slot,
-            bc=area._bc,
+            bc=area.bc,
             notification_listener=area.dispatcher.broadcast_notification,
             grid_fee_type=area.config.grid_fee_type,
             grid_fees=GridFee(grid_fee_percentage=area.grid_fee_percentage,
