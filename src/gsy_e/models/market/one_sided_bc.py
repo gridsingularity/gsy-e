@@ -55,7 +55,6 @@ class OneSidedBcMarket(OneSidedMarket):
 
         # If True, the current market slot is included in the expected duration of the simulation
         self.in_sim_duration = in_sim_duration
-        self.bc_orderbook = GSyOrderbook(self.bc_interface.conn.substrate)
         self.nonce = 1
 
     def __repr__(self):
@@ -88,7 +87,7 @@ class OneSidedBcMarket(OneSidedMarket):
                         area_uuid=self.area.uuid, market_uuid=[1], time_slot=calendar.timegm(self.time_slot.timetuple()),
                         attributes=[[1]], energy=energy, price=price, priority=1, energy_type=[1])
         self.nonce += 1
-        insert_order_call = self.bc_orderbook.create_insert_orders_call([offer.serializable_order_dict()])
+        insert_order_call = self.bc_interface.gsy_orderbook.create_insert_orders_call([offer.serializable_order_dict()])
         signed_insert_order_call_extrinsic = self.bc_interface.conn.generate_signed_extrinsic(insert_order_call,
                                                                                               self.bc_interface.get_creds_from_area(self.area.uuid))
         try:
@@ -115,7 +114,7 @@ class OneSidedBcMarket(OneSidedMarket):
         offer = self.offers.pop(offer_or_id, None)
         if not offer:
             raise OfferNotFoundException()
-        remove_order_call = self.bc_orderbook.create_remove_orders_call([offer.serializable_order_dict()])
+        remove_order_call = self.bc_interface.gsy_orderbook.create_remove_orders_call([offer.serializable_order_dict()])
         signed_remove_order_call_extrinsic = self.bc_interface.conn.generate_signed_extrinsic(remove_order_call,
                                                                                               self.bc_interface.get_creds_from_area(self.area.uuid))
         try:

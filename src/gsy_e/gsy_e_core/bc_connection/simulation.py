@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
 from logging import getLogger
 
+from gsy_dex.gsy_orderbook import GSyOrderbook
 from gsy_dex.substrate_connection import SubstrateConnection
 from gsy_dex.key_manager import KeyManager
 
@@ -45,6 +46,7 @@ class BcSimulationCommunication:
             type_registry_preset="substrate-node-template"
         )
         self._mapping = AccountAreaMapping(bc_account_credentials)
+        self.gsy_orderbook = GSyOrderbook(self._conn.substrate)
 
     def add_creds_for_area(self, area_uuid, uri):
         self._mapping.add_area_creds(area_uuid, uri)

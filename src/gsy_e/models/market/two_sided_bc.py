@@ -52,8 +52,6 @@ class TwoSidedBcMarket(OneSidedBcMarket):
         # pylint: disable=too-many-arguments
         super().__init__(time_slot, bc, notification_listener, readonly, grid_fee_type,
                          grid_fees, name, in_sim_duration=in_sim_duration)
-
-        self.bc_orderbook = GSyOrderbook(self.bc_interface.conn.substrate)
         self.nonce = 1
 
     @property
@@ -100,7 +98,7 @@ class TwoSidedBcMarket(OneSidedBcMarket):
                     attributes=[[1]], energy=energy, price=price, priority=1, energy_type=[1])
 
         self.nonce += 1
-        insert_order_call = self.bc_orderbook.create_insert_orders_call([bid.serializable_order_dict()])
+        insert_order_call = self.bc_interface.gsy_orderbook.create_insert_orders_call([bid.serializable_order_dict()])
         signed_insert_order_call_extrinsic = self.bc_interface.conn.generate_signed_extrinsic(insert_order_call,
                                                                                               self.bc_interface.get_creds_from_area(self.area.uuid))
         try:
@@ -128,7 +126,7 @@ class TwoSidedBcMarket(OneSidedBcMarket):
         bid = self.bids.pop(bid_or_id, None)
         if not bid:
             raise BidNotFoundException(bid_or_id)
-        remove_order_call = self.bc_orderbook.create_remove_orders_call([bid.serializable_order_dict()])
+        remove_order_call = self.bc_interface.gsy_orderbook.create_remove_orders_call([bid.serializable_order_dict()])
         signed_remove_order_call_extrinsic = self.bc_interface.conn.generate_signed_extrinsic(remove_order_call,
                                                                                               self.bc_interface.get_creds_from_area(self.area.uuid))
         try:
