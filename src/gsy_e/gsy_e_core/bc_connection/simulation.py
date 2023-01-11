@@ -57,6 +57,7 @@ class BcSimulationCommunication:
         self.gsy_collateral = GSyCollateral(self._conn.substrate)
         self.gsy_orderbook = GSyOrderbook(self._conn.substrate)
         self.registered_address = []
+        self.deposited_collateral = {}
 
     def add_creds_for_area(self, area_uuid, uri):
         self._mapping.add_area_creds(area_uuid, uri)
@@ -64,6 +65,23 @@ class BcSimulationCommunication:
     @property
     def conn(self):
         return self._conn
+
+    def deposit_collateral(self, amount: int, area_uuid: str):
+        user_keypair = self.get_creds_from_area(area_uuid)
+        deposit_collateral_call = self.gsy_collateral.create_deposit_collateral_call(amount)
+        signed_deposit_collateral_call = self._conn.generate_signed_extrinisc(deposit_collateral_call, user_keypair)
+        try:
+            receipt = self._conn.submit_extrinsic(signed_deposit_collateral_call)
+            if receipt.is_success:
+                log.debug("[COLLATERAL_DEPOSITED][NEW][%s][%s][%s]", amount, area_uuid, user_keypair.ss58_address)
+                if area_uuid not in self.deposited_collateral:
+                    self.deposited_collateral[area_uuid] = amount
+                else:
+                    self.deposited_collateral[area_uuid] += amount
+            else:
+                raise AreaException
+        except SubstrateRequestException as e:
+            log.error("Failed to send the extrinsic to the node %s", e)
 
     def get_creds_from_area(self, area_uuid):
         return self._mapping.get_area_creds(area_uuid)

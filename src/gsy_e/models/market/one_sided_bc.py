@@ -86,7 +86,8 @@ class OneSidedBcMarket(OneSidedMarket):
         offer = BcOffer(seller=self.bc_interface.get_creds_from_area(self.area.uuid), nonce=self.nonce,
                         area_uuid=self.area.uuid, market_uuid=[1], time_slot=calendar.timegm(self.time_slot.timetuple()),
                         attributes=[[1]], energy=energy, price=price, priority=1, energy_type=[1])
-        self.nonce += 1
+        if self.bc_interface.deposited_collateral[self.area.uuid] < energy * price:
+            self.bc_interface.deposit_collateral(energy * price, self.area.uuid)
         insert_order_call = self.bc_interface.gsy_orderbook.create_insert_orders_call([offer.serializable_order_dict()])
         signed_insert_order_call_extrinsic = self.bc_interface.conn.generate_signed_extrinsic(insert_order_call,
                                                                                               self.bc_interface.get_creds_from_area(self.area.uuid))
@@ -98,6 +99,7 @@ class OneSidedBcMarket(OneSidedMarket):
                           self._debug_log_market_type_identifier, self.name,
                           self.time_slot_str or offer.time_slot, offer)
                 self.offers[str(offer.nonce)] = offer
+                self.nonce += 1
             else:
                 raise InvalidOffer
         except SubstrateRequestException as e:

@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import calendar
 from logging import getLogger
 from typing import Union, Optional, Callable
 from pendulum import DateTime
@@ -96,8 +97,8 @@ class TwoSidedBcMarket(OneSidedBcMarket):
         bid = BcBid(buyer=self.bc_interface.get_creds_from_area(self.area.uuid), nonce=self.nonce,
                     area_uuid=self.area.uuid, market_uuid=[1], time_slot=calendar.timegm(self.time_slot.timetuple()),
                     attributes=[[1]], energy=energy, price=price, priority=1, energy_type=[1])
-
-        self.nonce += 1
+        if self.bc_interface.deposited_collateral[self.area.uuid] < energy * price:
+            self.bc_interface.deposit_collateral(energy * price, self.area.uuid)
         insert_order_call = self.bc_interface.gsy_orderbook.create_insert_orders_call([bid.serializable_order_dict()])
         signed_insert_order_call_extrinsic = self.bc_interface.conn.generate_signed_extrinsic(insert_order_call,
                                                                                               self.bc_interface.get_creds_from_area(self.area.uuid))
@@ -109,6 +110,7 @@ class TwoSidedBcMarket(OneSidedBcMarket):
                           self._debug_log_market_type_identifier, self.name,
                           self.time_slot_str or bid.time_slot, bid)
                 self.bids[str(bid.nonce)] = bid
+                self.nonce += 1
             else:
                 raise InvalidBid
         except SubstrateRequestException as e:
