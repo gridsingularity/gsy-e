@@ -18,13 +18,20 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import os
 from logging import getLogger
 
+from gsy_dex.gsy_collateral import GSyCollateral
 from gsy_dex.gsy_orderbook import GSyOrderbook
 from gsy_dex.substrate_connection import SubstrateConnection
 from gsy_dex.key_manager import KeyManager
 
+from substrateinterface import Keypair
+from substrateinterface.exceptions import SubstrateRequestException
+
+from gsy_e.gsy_e_core.exceptions import AreaException
+
 log = getLogger(__name__)
 
 NODE_URL = os.environ.get("NODE_URL", "ws://127.0.0.1:9944")
+SUDO_URI = os.environ.get("SUDO_URI", "//Alice")
 
 
 class AccountAreaMapping:
@@ -46,25 +53,57 @@ class BcSimulationCommunication:
             type_registry_preset="substrate-node-template"
         )
         self._mapping = AccountAreaMapping(bc_account_credentials)
+        self._sudo_keypair = KeyManager.generate_keypair_from_uri(SUDO_URI)
+        self.gsy_collateral = GSyCollateral(self._conn.substrate)
         self.gsy_orderbook = GSyOrderbook(self._conn.substrate)
+        self.registered_address = []
 
     def add_creds_for_area(self, area_uuid, uri):
         self._mapping.add_area_creds(area_uuid, uri)
-
-    def get_creds_from_area(self, area_uuid):
-        return self._mapping.get_area_creds(area_uuid)
 
     @property
     def conn(self):
         return self._conn
 
+    def get_creds_from_area(self, area_uuid):
+        return self._mapping.get_area_creds(area_uuid)
+
     @property
     def mapping(self):
         return self._mapping
 
+    def register_user(self, area_uuid: str):
+        user_address = self.get_creds_from_area(area_uuid).ss58_address
+        if user_address not in self.registered_address:
+            if not self._conn.check_sudo_key(self._sudo_keypair):
+                log.error("Can't register user, the registered keypair: %s is not a super user", self._sudo_keypair)
+                return
+            register_user_call = self.gsy_collateral.create_register_user_call(user_address)
+            sudo_call = self._conn.create_sudo_call(register_user_call)
+            signed_sudo_call_extrinsic = self._conn.generate_signed_extrinisc(sudo_call, self._sudo_keypair)
+            try:
+                receipt = self._conn.submit_extrinsic(signed_sudo_call_extrinsic)
+                if receipt.is_success:
+                    log.debug("[USER_REGISTERED][NEW][%s][%s]", area_uuid, user_address)
+                    self.registered_address.append(user_address)
+                else:
+                    raise AreaException
+            except SubstrateRequestException as e:
+                log.error("Failed to send the extrinsic to the node %s", e)
+
+    def add_sudo_keypair(self, keypair: Keypair):
+        if not self._conn.check_sudo_key(keypair):
+            log.error("Can't add a not super user keypair: %s as sudo", keypair)
+            return
+        self._sudo_keypair = keypair
+
 
 class AreaWebsocketConnection:
     def __init__(self, bc: BcSimulationCommunication, area_uuid, uri):
-        self._conn = bc.conn
-        bc.add_creds_for_area(area_uuid, uri)
-        self._area_creds = bc.get_creds_from_area(area_uuid)
+        self._bc = bc
+        self._bc.add_creds_for_area(area_uuid, uri)
+        self._area_creds = self._bc.get_creds_from_area(area_uuid)
+
+    @property
+    def conn(self):
+        return self._bc
