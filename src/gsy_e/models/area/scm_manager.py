@@ -259,12 +259,16 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
         # will be negative, and the producer will not have "savings". For a more realistic case
         # the revenue should be omitted from the calculation of the savings, however this needs
         # to be discussed.
-        return KPICalculationHelper().saving_absolute(self.base_energy_bill, self.gsy_energy_bill)
+        savings_absolute = KPICalculationHelper().saving_absolute(
+            self.base_energy_bill_excl_revenue, self.gsy_energy_bill_excl_revenue)
+        assert savings_absolute > -FLOATING_POINT_TOLERANCE
+        return savings_absolute
 
     @property
     def savings_percent(self):
         """Percentage of the price savings of the home, compared to the base energy bill."""
-        return KPICalculationHelper().saving_percentage(self.savings, self.base_energy_bill)
+        return KPICalculationHelper().saving_percentage(
+            self.savings, self.base_energy_bill_excl_revenue)
 
     @property
     def energy_benchmark(self):
@@ -521,13 +525,20 @@ class SCMManager:
         community_bills = AreaEnergyBills()
         for data in self._bills.values():
             community_bills.base_energy_bill += data.base_energy_bill
+            community_bills.base_energy_bill_revenue += data.base_energy_bill_revenue
             community_bills.gsy_energy_bill += data.gsy_energy_bill
+            community_bills.base_energy_bill_excl_revenue += data.base_energy_bill_excl_revenue
+
             community_bills.bought_from_community += data.bought_from_community
             community_bills.spent_to_community += data.spent_to_community
+            community_bills.sold_to_community += data.sold_to_community
+            community_bills.earned_from_community += data.earned_from_community
+
             community_bills.bought_from_grid += data.bought_from_grid
             community_bills.spent_to_grid += data.spent_to_grid
             community_bills.sold_to_grid += data.sold_to_grid
             community_bills.earned_from_grid += data.earned_from_grid
+
             community_bills.tax_surcharges += data.tax_surcharges
             community_bills.grid_fees += data.grid_fees
             community_bills.marketplace_fee += data.marketplace_fee

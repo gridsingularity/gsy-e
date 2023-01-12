@@ -341,7 +341,7 @@ class ProfilesHandler:
         Returns: Profile chunk as dictionary
 
         """
-        if self.should_create_profile(profile):
+        if profile_uuid is None and self.should_create_profile(profile):
             return read_arbitrary_profile(profile_type,
                                           profile, current_timestamp=self.current_timestamp)
         if self.time_to_rotate_profile(profile):
