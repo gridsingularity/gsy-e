@@ -485,7 +485,7 @@ class CoefficientSimulation(Simulation):
 
             self._external_events.update(self.area)
 
-            self._compute_memory_info()
+            # self._compute_memory_info()
 
             self._time.handle_slowdown_and_realtime_scm(slot_no, slot_count, self.config)
 
