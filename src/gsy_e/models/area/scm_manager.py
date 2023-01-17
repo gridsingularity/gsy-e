@@ -376,6 +376,8 @@ class SCMManager:
             self.community_data.energy_bought_from_community_kWh += (
                 home_data.energy_bought_from_community_kWh)
             self.community_data.energy_sold_to_grid_kWh += home_data.energy_sold_to_grid_kWh
+            self.community_data.self_consumed_energy_kWh += (
+                home_data.self_production_for_community_kWh)
 
     def calculate_home_energy_bills(
             self, home_uuid: str) -> None:
