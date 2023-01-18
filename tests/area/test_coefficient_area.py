@@ -139,6 +139,15 @@ class TestCoefficientArea:
         assert isclose(scm._home_data[house2.uuid].energy_bought_from_community_kWh, 0.00)
         assert isclose(scm._home_data[house2.uuid].energy_sold_to_grid_kWh, 0.04)
 
+        assert scm.community_data.community_uuid == grid_area.uuid
+        assert isclose(scm.community_data.production_kWh, 0.7)
+        assert isclose(scm.community_data.consumption_kWh, 0.8)
+        assert isclose(scm.community_data.energy_need_kWh, 0.2)
+        assert isclose(scm.community_data.energy_surplus_kWh, 0.1)
+        assert isclose(scm.community_data.self_consumed_energy_kWh, 0.66)
+        assert isclose(scm.community_data.energy_bought_from_community_kWh, 0.06)
+        assert isclose(scm.community_data.energy_sold_to_grid_kWh, 0.04)
+
     @staticmethod
     def test_trigger_energy_trades(_create_2_house_grid):
         grid_area = _create_2_house_grid
