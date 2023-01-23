@@ -45,7 +45,7 @@ class OneSidedBcMarket(OneSidedMarket):
     """
     def __init__(  # pylint: disable=too-many-arguments
             self, time_slot: Optional[DateTime] = None,
-            bc=None, notification_listener: Optional[Callable] = None,
+            bc=None, area_uuid=None, notification_listener: Optional[Callable] = None,
             readonly: bool = False, grid_fee_type=ConstSettings.MASettings.GRID_FEE_TYPE,
             grid_fees: Optional[GridFee] = None, name: Optional[str] = None,
             in_sim_duration: bool = True):
@@ -56,6 +56,7 @@ class OneSidedBcMarket(OneSidedMarket):
         # If True, the current market slot is included in the expected duration of the simulation
         self.in_sim_duration = in_sim_duration
         self.nonce = 1
+        self.area_uuid = area_uuid
 
     def __repr__(self):
         return (
@@ -83,14 +84,14 @@ class OneSidedBcMarket(OneSidedMarket):
             add_to_history: bool = True,
             time_slot: Optional[DateTime] = None) -> BcOffer:
 
-        offer = BcOffer(seller=self.bc_interface.get_creds_from_area(self.area.uuid), nonce=self.nonce,
-                        area_uuid=self.area.uuid, market_uuid=[1], time_slot=calendar.timegm(self.time_slot.timetuple()),
+        offer = BcOffer(seller=self.bc_interface.get_creds_from_area(self.area_uuid), nonce=self.nonce,
+                        area_uuid=self.area_uuid, market_uuid=[1], time_slot=calendar.timegm(self.time_slot.timetuple()),
                         attributes=[[1]], energy=energy, price=price, priority=1, energy_type=[1])
-        if self.bc_interface.deposited_collateral[self.area.uuid] < energy * price:
-            self.bc_interface.deposit_collateral(energy * price, self.area.uuid)
+        if self.bc_interface.deposited_collateral[self.area_uuid] < energy * price:
+            self.bc_interface.deposit_collateral(energy * price, self.area_uuid)
         insert_order_call = self.bc_interface.gsy_orderbook.create_insert_orders_call([offer.serializable_order_dict()])
         signed_insert_order_call_extrinsic = self.bc_interface.conn.generate_signed_extrinsic(insert_order_call,
-                                                                                              self.bc_interface.get_creds_from_area(self.area.uuid))
+                                                                                              self.bc_interface.get_creds_from_area(self.area_uuid))
         try:
             receipt = self.bc_interface.conn.submit_extrinsic(signed_insert_order_call_extrinsic)
             if receipt.is_success:
@@ -118,7 +119,7 @@ class OneSidedBcMarket(OneSidedMarket):
             raise OfferNotFoundException()
         remove_order_call = self.bc_interface.gsy_orderbook.create_remove_orders_call([offer.serializable_order_dict()])
         signed_remove_order_call_extrinsic = self.bc_interface.conn.generate_signed_extrinsic(remove_order_call,
-                                                                                              self.bc_interface.get_creds_from_area(self.area.uuid))
+                                                                                              self.bc_interface.get_creds_from_area(self.area_uuid))
         try:
             receipt = self.bc_interface.conn.submit_extrinsic(signed_remove_order_call_extrinsic)
             if receipt.is_success:

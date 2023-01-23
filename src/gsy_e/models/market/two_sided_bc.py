@@ -47,11 +47,11 @@ class TwoSidedBcMarket(OneSidedBcMarket):
     the offers and bids are being matched via some matching algorithm.
     """
 
-    def __init__(self, time_slot=None, bc=None, notification_listener=None, readonly=False,
+    def __init__(self, time_slot=None, bc=None, area_uuid=None, notification_listener=None, readonly=False,
                  grid_fee_type=ConstSettings.MASettings.GRID_FEE_TYPE,
                  grid_fees=None, name=None, in_sim_duration=True):
         # pylint: disable=too-many-arguments
-        super().__init__(time_slot, bc, notification_listener, readonly, grid_fee_type,
+        super().__init__(time_slot, bc, area_uuid, notification_listener, readonly, grid_fee_type,
                          grid_fees, name, in_sim_duration=in_sim_duration)
         self.nonce = 1
 
@@ -94,14 +94,14 @@ class TwoSidedBcMarket(OneSidedBcMarket):
             raise NegativePriceOrdersException(
                 "Negative price after taxes, bid cannot be posted.")
 
-        bid = BcBid(buyer=self.bc_interface.get_creds_from_area(self.area.uuid), nonce=self.nonce,
-                    area_uuid=self.area.uuid, market_uuid=[1], time_slot=calendar.timegm(self.time_slot.timetuple()),
+        bid = BcBid(buyer=self.bc_interface.get_creds_from_area(self.area_uuid), nonce=self.nonce,
+                    area_uuid=self.area_uuid, market_uuid=[1], time_slot=calendar.timegm(self.time_slot.timetuple()),
                     attributes=[[1]], energy=energy, price=price, priority=1, energy_type=[1])
-        if self.bc_interface.deposited_collateral[self.area.uuid] < energy * price:
-            self.bc_interface.deposit_collateral(energy * price, self.area.uuid)
+        if self.bc_interface.deposited_collateral[self.area_uuid] < energy * price:
+            self.bc_interface.deposit_collateral(energy * price, self.area_uuid)
         insert_order_call = self.bc_interface.gsy_orderbook.create_insert_orders_call([bid.serializable_order_dict()])
         signed_insert_order_call_extrinsic = self.bc_interface.conn.generate_signed_extrinsic(insert_order_call,
-                                                                                              self.bc_interface.get_creds_from_area(self.area.uuid))
+                                                                                              self.bc_interface.get_creds_from_area(self.area_uuid))
         try:
             receipt = self.bc_interface.conn.submit_extrinsic(signed_insert_order_call_extrinsic)
             if receipt.is_success:
@@ -130,7 +130,7 @@ class TwoSidedBcMarket(OneSidedBcMarket):
             raise BidNotFoundException(bid_or_id)
         remove_order_call = self.bc_interface.gsy_orderbook.create_remove_orders_call([bid.serializable_order_dict()])
         signed_remove_order_call_extrinsic = self.bc_interface.conn.generate_signed_extrinsic(remove_order_call,
-                                                                                              self.bc_interface.get_creds_from_area(self.area.uuid))
+                                                                                              self.bc_interface.get_creds_from_area(self.area_uuid))
         try:
             receipt = self.bc_interface.conn.submit_extrinsic(signed_remove_order_call_extrinsic)
             if receipt.is_success:
