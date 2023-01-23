@@ -27,7 +27,9 @@ class ConstantGridFees(BaseClassGridFees):
     """
 
     def update_incoming_bid_with_fee(self, source_rate, original_rate):
-        return source_rate or original_rate
+        if source_rate is not None:
+            return source_rate
+        return original_rate
 
     def update_incoming_offer_with_fee(self, source_rate, original_rate):
         if source_rate is None:

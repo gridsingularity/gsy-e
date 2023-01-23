@@ -20,85 +20,96 @@ from gsy_e.events.event_structures import MarketEvent, AreaEvent
 
 
 class EventMixin:
-
+    """Mixin class that injects event handling behavior on the strategy classes."""
     def _event_mapping(self, event):
+        # pylint: disable=too-many-return-statements,too-many-branches
         if event == AreaEvent.TICK:
             return self.event_tick
-        elif event == AreaEvent.MARKET_CYCLE:
+        if event == AreaEvent.MARKET_CYCLE:
             return self.event_market_cycle
-        elif event == AreaEvent.BALANCING_MARKET_CYCLE:
+        if event == AreaEvent.BALANCING_MARKET_CYCLE:
             return self.event_balancing_market_cycle
-        elif event == AreaEvent.ACTIVATE:
+        if event == AreaEvent.ACTIVATE:
             return self.event_activate
-        elif event == MarketEvent.OFFER:
+        if event == MarketEvent.OFFER:
             return self.event_offer
-        elif event == MarketEvent.OFFER_SPLIT:
+        if event == MarketEvent.OFFER_SPLIT:
             return self.event_offer_split
-        elif event == MarketEvent.OFFER_DELETED:
+        if event == MarketEvent.OFFER_DELETED:
             return self.event_offer_deleted
-        elif event == MarketEvent.OFFER_TRADED:
+        if event == MarketEvent.OFFER_TRADED:
             return self.event_offer_traded
-        elif event == MarketEvent.BID_TRADED:
+        if event == MarketEvent.BID:
+            return self.event_bid
+        if event == MarketEvent.BID_TRADED:
             return self.event_bid_traded
-        elif event == MarketEvent.BID_DELETED:
+        if event == MarketEvent.BID_DELETED:
             return self.event_bid_deleted
-        elif event == MarketEvent.BID_SPLIT:
+        if event == MarketEvent.BID_SPLIT:
             return self.event_bid_split
-        elif event == MarketEvent.BALANCING_OFFER:
+        if event == MarketEvent.BALANCING_OFFER:
             return self.event_balancing_offer
-        elif event == MarketEvent.BALANCING_OFFER_SPLIT:
+        if event == MarketEvent.BALANCING_OFFER_SPLIT:
             return self.event_balancing_offer_split
-        elif event == MarketEvent.BALANCING_OFFER_DELETED:
+        if event == MarketEvent.BALANCING_OFFER_DELETED:
             return self.event_balancing_offer_deleted
-        elif event == MarketEvent.BALANCING_TRADE:
+        if event == MarketEvent.BALANCING_TRADE:
             return self.event_balancing_trade
+        assert False, f"No event {event}."
 
     def event_listener(self, event_type: Union[AreaEvent, MarketEvent], **kwargs):
+        """
+        Listen to emitted events and dispatch them to the appropriate method according to the
+        event type.
+        """
         self.log.trace("Dispatching event %s", event_type.name)
         self._event_mapping(event_type)(**kwargs)
 
     def event_tick(self):
-        pass
+        """Event emitted on every new tick on the simulation."""
 
     def event_market_cycle(self):
-        pass
+        """Event emitted on every new market cycle on the simulation."""
 
     def event_balancing_market_cycle(self):
-        pass
+        """Event emitted on every new balancing market cycle on the simulation."""
 
     def event_activate(self, **kwargs):
-        pass
+        """Event emitted during the simulation activation."""
 
     def event_offer(self, *, market_id, offer):
-        pass
+        """Event emitted when a new offer is posted."""
 
     def event_offer_split(self, *, market_id, original_offer, accepted_offer, residual_offer):
-        pass
+        """Event emitted if an offer is split to an accepted and a residual one."""
 
     def event_offer_deleted(self, *, market_id, offer):
-        pass
+        """Event emitted if an offer is deleted."""
 
     def event_offer_traded(self, *, market_id, trade):
         """Method triggered by the MarketEvent.OFFER_TRADED event."""
+
+    def event_bid(self, *, market_id, bid):
+        """Event emitted when a new bid is posted."""
 
     def event_bid_traded(self, *, market_id, bid_trade):
         """Method triggered by the MarketEvent.BID_TRADED event."""
 
     def event_bid_deleted(self, *, market_id, bid):
-        pass
+        """Event emitted when a bid is deleted."""
 
     def event_bid_split(self, *, market_id, original_bid, accepted_bid, residual_bid):
-        pass
+        """Event emitted when a bid is split into an accepted and a residual one."""
 
     def event_balancing_offer(self, *, market_id, offer):
-        pass
+        """Event emitted when a new balancing offer is posted."""
 
     def event_balancing_offer_split(self, *, market_id, original_offer, accepted_offer,
                                     residual_offer):
-        pass
+        """Event emitted when a balancing offer is split."""
 
     def event_balancing_offer_deleted(self, *, market_id, offer):
-        pass
+        """Event emitted when a balancing offer is deleted."""
 
     def event_balancing_trade(self, *, market_id, trade):
-        pass
+        """Event emitted when a balancing trade is created."""

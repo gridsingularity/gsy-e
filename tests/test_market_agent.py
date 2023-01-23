@@ -173,8 +173,11 @@ class FakeMarket:
     def dispatch_market_offer_event(self, offer):
         pass
 
+    def dispatch_market_bid_event(self, bid):
+        pass
+
     def bid(self, price: float, energy: float, buyer: TraderDetails,
-            bid_id: str = None, original_price=None,
+            bid_id: str = None, original_price=None, dispatch_event=True,
             adapt_price_with_fees=True, time_slot=None):
         self.bid_call_count += 1
 

@@ -108,7 +108,7 @@ class OneSidedMarket(MarketBase):
 
         if self.readonly:
             raise MarketReadOnlyException()
-        if energy <= FLOATING_POINT_TOLERANCE:
+        if energy < FLOATING_POINT_TOLERANCE:
             raise NegativeEnergyOrderException("Energy value for offer can not be negative.")
         if original_price is None:
             original_price = price
@@ -268,9 +268,9 @@ class OneSidedMarket(MarketBase):
         orig_offer_price = offer.original_price or offer.price
 
         try:
-            if energy == 0:
+            if abs(energy) < FLOATING_POINT_TOLERANCE:
                 raise InvalidTrade("Energy can not be zero.")
-            if energy < offer.energy:
+            if (offer.energy - energy) > FLOATING_POINT_TOLERANCE:
                 # partial energy is requested
 
                 accepted_offer, residual_offer = self.split_offer(offer, energy, orig_offer_price)
@@ -283,7 +283,7 @@ class OneSidedMarket(MarketBase):
                 offer = accepted_offer
                 offer.update_price(trade_price)
 
-            elif energy > offer.energy:
+            elif (offer.energy - energy) < -FLOATING_POINT_TOLERANCE:
                 raise InvalidTrade(f"Energy ({energy}) can't be greater than "
                                    f"offered energy ({offer.energy})")
             else:

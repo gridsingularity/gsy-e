@@ -15,13 +15,17 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from gsy_framework.constants_limits import ConstSettings
 from numpy.random import random
 
 from gsy_e.constants import TIME_FORMAT
 from gsy_e.models.strategy import BaseStrategy, _TradeLookerUpper
+
+if TYPE_CHECKING:
+    from gsy_e.models.area import Area
+    from gsy_e.models.market import MarketBase
 
 
 class MarketAgent(BaseStrategy):
@@ -33,8 +37,8 @@ class MarketAgent(BaseStrategy):
             "lower_market": self.lower_market, "min_offer_age": self.min_offer_age
         }
 
-    def __init__(self, *, owner, higher_market, lower_market,
-                 min_offer_age=ConstSettings.MASettings.MIN_OFFER_AGE):
+    def __init__(self, *, owner: "Area", higher_market: "MarketBase", lower_market: "MarketBase",
+                 min_offer_age: int = ConstSettings.MASettings.MIN_OFFER_AGE):
         """
         :param min_offer_age: Minimum age of offer before transferring
         """
@@ -61,7 +65,7 @@ class MarketAgent(BaseStrategy):
                 if self.higher_market.time_slot else None)
 
     @staticmethod
-    def _validate_constructor_arguments(min_offer_age):
+    def _validate_constructor_arguments(min_offer_age: int):
         assert 0 <= min_offer_age <= 360
 
     def area_reconfigure_event(self, *args, **kwargs):
@@ -74,8 +78,19 @@ class MarketAgent(BaseStrategy):
                 engine.min_offer_age = min_offer_age
 
     @property
-    def trades(self):
+    def trades(self) -> _TradeLookerUpper:
         return _TradeLookerUpper(self.name)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<MarketAgent {self.name} {self.time_slot_str}>"
+
+    def _read_or_rotate_profiles(self, reconfigure: bool = False):
+        raise NotImplementedError
+
+    @property
+    def state(self):
+        raise NotImplementedError
+
+    @property
+    def asset_type(self):
+        raise NotImplementedError
