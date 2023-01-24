@@ -23,6 +23,7 @@ from gsy_framework.constants_limits import (DATE_TIME_FORMAT, DATE_TIME_UI_FORMA
                                             GlobalConfig)
 from gsy_framework.enums import AvailableMarketTypes
 from gsy_framework.results_validator import results_validator
+from gsy_framework.schema.validators import get_schema_validator
 from gsy_framework.sim_results.all_results import ResultsHandler
 from gsy_framework.utils import get_json_dict_memory_allocation_size
 from pendulum import DateTime
@@ -44,6 +45,9 @@ _NO_VALUE = {
     "avg": None,
     "max": None
 }
+
+scm_simulation_raw_data_validator = get_schema_validator("scm_simulation_raw_data_v1")
+simulation_raw_data_validator = get_schema_validator("simulation_raw_data_v1")
 
 
 # pylint: disable=too-many-instance-attributes
@@ -79,7 +83,7 @@ class SimulationEndpointBuffer:
     def prepare_results_for_publish(self) -> Dict:
         """Validate, serialise and check size of the results before sending to gsy-web."""
         result_report = self._generate_result_report()
-        results_validator(result_report)
+        self.validate_results(result_report)
 
         message_size = get_json_dict_memory_allocation_size(result_report)
         if message_size > 64000:
@@ -129,6 +133,13 @@ class SimulationEndpointBuffer:
         self._update_results_area_uuids(area)
 
         self._update_offer_bid_trade()
+
+    @staticmethod
+    def validate_results(result_report: Dict):
+        """Validate generated results and raise exceptions if they are not valid."""
+        results_validator(result_report)  # TODO: replace this with AVRO validation
+        simulation_raw_data_validator.validate(
+            data=result_report["simulation_raw_data"], raise_exception=True)
 
     @staticmethod
     def _create_endpoint_buffer(should_export_plots):
@@ -421,3 +432,10 @@ class CoefficientEndpointBuffer(SimulationEndpointBuffer):
 
         for child in area.children:
             self._populate_core_stats_and_sim_state(child)
+
+    @staticmethod
+    def validate_results(result_report: Dict):
+        """Validate generated results and raise exceptions if they are not valid."""
+        results_validator(result_report)  # TODO: replace this with AVRO validation
+        scm_simulation_raw_data_validator.validate(
+            data=result_report["simulation_raw_data"], raise_exception=True)
