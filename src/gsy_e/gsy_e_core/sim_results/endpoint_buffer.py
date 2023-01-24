@@ -22,7 +22,6 @@ from typing import TYPE_CHECKING, Dict, Iterable, List
 from gsy_framework.constants_limits import (DATE_TIME_FORMAT, DATE_TIME_UI_FORMAT, ConstSettings,
                                             GlobalConfig)
 from gsy_framework.enums import AvailableMarketTypes
-from gsy_framework.results_validator import results_validator
 from gsy_framework.schema.validators import get_schema_validator
 from gsy_framework.sim_results.all_results import ResultsHandler
 from gsy_framework.utils import get_json_dict_memory_allocation_size
@@ -83,7 +82,6 @@ class SimulationEndpointBuffer:
     def prepare_results_for_publish(self) -> Dict:
         """Validate, serialise and check size of the results before sending to gsy-web."""
         result_report = self._generate_result_report()
-        self.validate_results(result_report)
 
         message_size = get_json_dict_memory_allocation_size(result_report)
         if message_size > 64000:
@@ -134,12 +132,12 @@ class SimulationEndpointBuffer:
 
         self._update_offer_bid_trade()
 
-    @staticmethod
-    def validate_results(result_report: Dict):
-        """Validate generated results and raise exceptions if they are not valid."""
-        results_validator(result_report)  # TODO: replace this with AVRO validation
+        self.validate_stats()
+
+    def validate_stats(self):
+        """Validate updated stats and raise exceptions if they are not valid."""
         simulation_raw_data_validator.validate(
-            data=result_report["simulation_raw_data"], raise_exception=True)
+            data=self.flattened_area_core_stats_dict, raise_exception=True)
 
     @staticmethod
     def _create_endpoint_buffer(should_export_plots):
@@ -433,9 +431,7 @@ class CoefficientEndpointBuffer(SimulationEndpointBuffer):
         for child in area.children:
             self._populate_core_stats_and_sim_state(child)
 
-    @staticmethod
-    def validate_results(result_report: Dict):
-        """Validate generated results and raise exceptions if they are not valid."""
-        results_validator(result_report)  # TODO: replace this with AVRO validation
+    def validate_stats(self):
+        """Validate updated stats and raise exceptions if they are not valid."""
         scm_simulation_raw_data_validator.validate(
-            data=result_report["simulation_raw_data"], raise_exception=True)
+            data=self.flattened_area_core_stats_dict, raise_exception=True)
