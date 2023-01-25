@@ -252,6 +252,7 @@ class AreaMarkets:
             grid_fee_type=area.config.grid_fee_type,
             grid_fees=GridFee(grid_fee_percentage=area.grid_fee_percentage,
                               grid_fee_const=area.grid_fee_constant),
+            area_uuid=area.uuid,
             name=area.name,
             in_sim_duration=is_time_slot_in_simulation_duration(time_slot, area.config)
         )
