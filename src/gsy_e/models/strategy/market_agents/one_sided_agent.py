@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from numpy.random import random
 
@@ -23,9 +23,12 @@ from gsy_e.models.market import MarketBase
 from gsy_e.models.strategy.market_agents.market_agent import MarketAgent
 from gsy_e.models.strategy.market_agents.one_sided_engine import MAEngine
 
+if TYPE_CHECKING:
+    from gsy_framework.data_classes import Offer, Trade
+
 
 class OneSidedAgent(MarketAgent):
-    """Inter area agent implementation for the one sided case."""
+    """Inter area agent implementation for the one-sided case."""
 
     def _create_engines(self):
         self.engines = [
@@ -35,7 +38,7 @@ class OneSidedAgent(MarketAgent):
                      self.min_offer_age, self),
         ]
 
-    def usable_offer(self, offer):
+    def usable_offer(self, offer: "Offer") -> bool:
         """Prevent MAEngines from trading their counterpart's offers"""
         return all(offer.id not in engine.forwarded_offers.keys() for engine in self.engines)
 
@@ -58,16 +61,22 @@ class OneSidedAgent(MarketAgent):
             engine.tick(area=area)
 
     # pylint: disable=unused-argument
-    def event_offer_traded(self, *, market_id, trade):
+    def event_offer(self, *, market_id: str, offer: "Offer"):
+        for engine in sorted(self.engines, key=lambda _: random()):
+            engine.event_offer(offer=offer)
+
+    # pylint: disable=unused-argument
+    def event_offer_traded(self, *, market_id: str, trade: "Trade"):
         for engine in sorted(self.engines, key=lambda _: random()):
             engine.event_offer_traded(trade=trade)
 
     # pylint: disable=unused-argument
-    def event_offer_deleted(self, *, market_id, offer):
+    def event_offer_deleted(self, *, market_id: str, offer: "Offer"):
         for engine in sorted(self.engines, key=lambda _: random()):
             engine.event_offer_deleted(offer=offer)
 
-    def event_offer_split(self, *, market_id,  original_offer, accepted_offer, residual_offer):
+    def event_offer_split(self, *, market_id: str,  original_offer: "Offer",
+                          accepted_offer: "Offer", residual_offer: "Offer"):
         for engine in sorted(self.engines, key=lambda _: random()):
             engine.event_offer_split(market_id=market_id,
                                      original_offer=original_offer,
@@ -82,5 +91,5 @@ class OneSidedAgent(MarketAgent):
             del engine.trade_residual
             del engine
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<OneSidedAgent {self.name} {self.time_slot_str}>"

@@ -88,6 +88,7 @@ class SimulationSetup:
             sys.path.append(ConstSettings.GeneralSettings.SETUP_FILE_PATH)
             return import_module(f"{setup_module_name}")
         except (ModuleNotFoundError, ImportError) as ex:
+            log.error("Loading the simulation setup module failed: %s", str(ex))
             raise SimulationException(
                 f"Invalid setup module '{setup_module_name}'") from ex
         finally:

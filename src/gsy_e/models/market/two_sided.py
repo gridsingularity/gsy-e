@@ -102,6 +102,7 @@ class TwoSidedMarket(OneSidedMarket):
             original_price: Optional[float] = None,
             adapt_price_with_fees: bool = True,
             add_to_history: bool = True,
+            dispatch_event: bool = True,
             time_slot: Optional[DateTime] = None) -> Bid:
         """Create bid object."""
         # pylint: disable=too-many-arguments
@@ -130,9 +131,15 @@ class TwoSidedMarket(OneSidedMarket):
         self.bids[bid.id] = bid
         if add_to_history is True:
             self.bid_history.append(bid)
+        if dispatch_event is True:
+            self.dispatch_market_bid_event(bid)
         log.debug("%s[BID][NEW][%s] %s", self._debug_log_market_type_identifier,
                   self.time_slot_str or bid.time_slot, bid)
         return bid
+
+    def dispatch_market_bid_event(self, bid: Bid) -> None:
+        """Dispatch the BID event to the listeners."""
+        self._notify_listeners(MarketEvent.BID, bid=bid)
 
     @lock_market_action
     def delete_bid(self, bid_or_id: Union[str, Bid]):
@@ -147,7 +154,7 @@ class TwoSidedMarket(OneSidedMarket):
         self._notify_listeners(MarketEvent.BID_DELETED, bid=bid)
 
     def split_bid(self, original_bid: Bid, energy: float, orig_bid_price: float):
-        """Split bit into two, one with provided energy, the other with the residual."""
+        """Split bid into two, one with provided energy, the other with the residual."""
 
         self.bids.pop(original_bid.id, None)
 
@@ -160,6 +167,7 @@ class TwoSidedMarket(OneSidedMarket):
                                 original_price=original_accepted_price,
                                 adapt_price_with_fees=False,
                                 add_to_history=False,
+                                dispatch_event=False,
                                 time_slot=original_bid.time_slot)
 
         residual_price = (1 - energy / original_bid.energy) * original_bid.price
@@ -174,6 +182,7 @@ class TwoSidedMarket(OneSidedMarket):
                                 original_price=original_residual_price,
                                 adapt_price_with_fees=False,
                                 add_to_history=True,
+                                dispatch_event=False,
                                 time_slot=original_bid.time_slot)
 
         log.debug("%s[BID][SPLIT][%s, %s] (%s into %s and %s",
@@ -218,10 +227,10 @@ class TwoSidedMarket(OneSidedMarket):
 
         if energy <= 0:
             raise NegativeEnergyTradeException("Energy cannot be negative or zero.")
-        if energy > market_bid.energy:
+        if market_bid.energy - energy < -FLOATING_POINT_TOLERANCE:
             raise InvalidTrade(f"Traded energy ({energy}) cannot be more than the "
                                f"bid energy ({market_bid.energy}).")
-        if energy < market_bid.energy:
+        if market_bid.energy - energy > FLOATING_POINT_TOLERANCE:
             # partial bid trade
             accepted_bid, residual_bid = self.split_bid(market_bid, energy, orig_price)
             bid = accepted_bid
@@ -262,6 +271,8 @@ class TwoSidedMarket(OneSidedMarket):
                      self._debug_log_market_type_identifier, self.name, trade.time_slot, trade)
 
         self._notify_listeners(MarketEvent.BID_TRADED, bid_trade=trade)
+        if residual_bid:
+            self.dispatch_market_bid_event(residual_bid)
         return trade
 
     def accept_bid_offer_pair(self, bid: Bid, offer: Offer, clearing_rate: float,
