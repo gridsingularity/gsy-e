@@ -93,8 +93,9 @@ class Simulation:
         self.progress_info = SimulationProgressInfo()
         self.simulation_id = redis_job_id
 
-        self._external_events = SimulationExternalEvents(self)
+        # order matters here: self.area has to be not-None before _external_events are initiated
         self._init()
+        self._external_events = SimulationExternalEvents(self)
 
         deserialize_events_to_areas(simulation_events, self.area)
 
