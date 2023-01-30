@@ -183,26 +183,23 @@ class AreaMarkets:
     @staticmethod
     def _select_market_class(market_type: AvailableMarketTypes, area: "Area") -> type(MarketBase):
         """Select market class dependent on the global config."""
-        markets = {
-            AvailableMarketTypes.SPOT: {
-                None: {
-                    SpotMarketTypeEnum.ONE_SIDED: OneSidedMarket,
-                    SpotMarketTypeEnum.TWO_SIDED: TwoSidedMarket
-                },
-                area.bc: {
-                    SpotMarketTypeEnum.ONE_SIDED: OneSidedBcMarket,
-                    SpotMarketTypeEnum.TWO_SIDED: TwoSidedBcMarket
-                }
-            },
-            AvailableMarketTypes.SETTLEMENT: SettlementMarket,
-            AvailableMarketTypes.BALANCING: BalancingMarket
-        }
-        try:
-            return markets[market_type][
-                area.bc if market_type == AvailableMarketTypes.SPOT else None][
-                ConstSettings.MASettings.MARKET_TYPE]
-        except KeyError:
-            assert False, f"Market type not supported {market_type}"
+        if market_type == AvailableMarketTypes.SPOT:
+            if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
+                if area.bc:
+                    return OneSidedBcMarket
+                else:
+                    return OneSidedMarket
+            if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value:
+                if area.bc:
+                    return TwoSidedBcMarket
+                else:
+                    return TwoSidedMarket
+        if market_type == AvailableMarketTypes.SETTLEMENT:
+            return SettlementMarket
+        if market_type == AvailableMarketTypes.BALANCING:
+            return BalancingMarket
+
+        assert False, f"Market type not supported {market_type}"
 
     def get_market_instances_from_class_type(self, market_type: AvailableMarketTypes) -> Dict:
         """Select market dict based on the market class type."""
