@@ -84,16 +84,17 @@ class OneSidedBcMarket(OneSidedMarket):
             add_to_history: bool = True,
             time_slot: Optional[DateTime] = None) -> BcOffer:
 
-        offer = BcOffer(seller=self.bc_interface.get_creds_from_area(self.area_uuid), nonce=self.nonce,
+        offer = BcOffer(seller=self.bc_interface.conn.get_creds_from_area(self.area_uuid), nonce=self.nonce,
                         area_uuid=self.area_uuid, market_uuid=[1], time_slot=calendar.timegm(self.time_slot.timetuple()),
                         attributes=[[1]], energy=energy, price=price, priority=1, energy_type=[1])
-        if self.bc_interface.deposited_collateral[self.area_uuid] < energy * price:
-            self.bc_interface.deposit_collateral(energy * price, self.area_uuid)
-        insert_order_call = self.bc_interface.gsy_orderbook.create_insert_orders_call([offer.serializable_order_dict()])
-        signed_insert_order_call_extrinsic = self.bc_interface.conn.generate_signed_extrinsic(insert_order_call,
-                                                                                              self.bc_interface.get_creds_from_area(self.area_uuid))
+        deposited_collateral = self.bc_interface.conn.deposited_collateral.get(self.area_uuid)
+        if deposited_collateral is None or deposited_collateral < energy * price:
+            self.bc_interface.conn.deposit_collateral(energy * price, self.area_uuid)
+        insert_order_call = self.bc_interface.conn.gsy_orderbook.create_insert_orders_call([offer.serializable_order_dict()])
+        signed_insert_order_call_extrinsic = self.bc_interface.conn.conn.substrate.create_signed_extrinsic(insert_order_call,
+                                                                                              self.bc_interface.conn.get_creds_from_area(self.area_uuid))
         try:
-            receipt = self.bc_interface.conn.submit_extrinsic(signed_insert_order_call_extrinsic)
+            receipt = self.bc_interface.conn.conn.submit_extrinsic(signed_insert_order_call_extrinsic)
             if receipt.is_success:
                 log.debug("post offer succeeded")
                 log.debug("%s[OFFER][NEW][%s][%s] %s",

@@ -68,7 +68,7 @@ class BcSimulationCommunication:
 
     def deposit_collateral(self, amount: int, area_uuid: str):
         user_keypair = self.get_creds_from_area(area_uuid)
-        deposit_collateral_call = self.gsy_collateral.create_deposit_collateral_call(amount)
+        deposit_collateral_call = self.gsy_collateral.create_deposit_collateral_call(amount * 1000000)
         signed_deposit_collateral_call = self._conn.generate_signed_extrinisc(deposit_collateral_call, user_keypair)
         try:
             receipt = self._conn.submit_extrinsic(signed_deposit_collateral_call)
