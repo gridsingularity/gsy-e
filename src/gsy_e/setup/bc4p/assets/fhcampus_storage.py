@@ -40,6 +40,7 @@ def get_setup(config):
                 [
                     Area("FH Load", strategy=InfluxLoadExternalStrategy(query = DataFHAachenAggregated(connection_fhaachen, power_column="P_ges", tablename="Strom"), initial_buying_rate=20, final_buying_rate=40)),
                     Area("FH PV", strategy=PVExternalStrategy(panel_count = 1, capacity_kW = 1200, initial_selling_rate=30, final_selling_rate=10)),
+                    Area("FH Storage", strategy=StorageExternalStrategy(battery_capacity_kWh=1000, max_abs_battery_power_kW=150, initial_soc=50, initial_buying_rate=15, final_buying_rate=15, initial_selling_rate=35, final_selling_rate=35)),
                 ], grid_fee_constant=0, external_connection_available=True),
             
             Area("Market Maker", strategy=InfiniteBusStrategy(energy_buy_rate=10, energy_sell_rate=40)),
@@ -52,4 +53,4 @@ def get_setup(config):
 
 
 # pip install -e .
-# gsy-e run --setup bc4p.assets.fhcampus --enable-external-connection --start-date 2022-11-09 --paused
+# gsy-e run --setup bc4p.assets.fhcampus_storage --enable-external-connection --start-date 2022-11-09 --paused

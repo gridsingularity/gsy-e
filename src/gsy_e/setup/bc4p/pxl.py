@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from gsy_e.models.area import Area
-from gsy_e.models.strategy.commercial_producer import CommercialStrategy
+from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.influx_connection.connection import InfluxConnection
 from gsy_framework.influx_connection.queries_pxl import DataQueryPXL
@@ -36,15 +36,13 @@ def get_setup(config):
                     Area("main_P_L1", strategy=InfluxLoadStrategy(query = DataQueryPXL(connection, power_column="main_P_L1", tablename=tablename))),
                     Area("main_P_L2", strategy=InfluxLoadStrategy(query = DataQueryPXL(connection, power_column="main_P_L2", tablename=tablename))),
                     Area("main_P_L3", strategy=InfluxLoadStrategy(query = DataQueryPXL(connection, power_column="main_P_L3", tablename=tablename))),
-                    Area("PV_LS_105A_power", strategy=InfluxPVStrategy(query = DataQueryPXL(connection, power_column="PV_LS_105A_power", tablename=tablename))),
-                    Area("PV_LS_105B_power", strategy=InfluxPVStrategy(query = DataQueryPXL(connection, power_column="PV_LS_105B_power", tablename=tablename))),
-                    Area("PV_LS_105E_power", strategy=InfluxPVStrategy(query = DataQueryPXL(connection, power_column="PV_LS_105E_power", tablename=tablename))),
+                    Area("PV_LS_105A_power", strategy=InfluxPVStrategy(query = DataQueryPXL(connection, power_column="PV_LS_105A_power", tablename=tablename, multiplier=100.0))),
+                    Area("PV_LS_105B_power", strategy=InfluxPVStrategy(query = DataQueryPXL(connection, power_column="PV_LS_105B_power", tablename=tablename, multiplier=100.0))),
+                    Area("PV_LS_105E_power", strategy=InfluxPVStrategy(query = DataQueryPXL(connection, power_column="PV_LS_105E_power", tablename=tablename, multiplier=100.0))),
                 ]
             ),
 
-            Area("Commercial Energy Producer",
-                 strategy=CommercialStrategy(energy_rate=30)
-                 ),
+            Area("Infinite Bus", strategy=InfiniteBusStrategy(energy_buy_rate=20, energy_sell_rate=30)),
         ],
         config=config
     )
@@ -52,4 +50,4 @@ def get_setup(config):
 
 
 # pip install -e .
-# gsy-e run --setup bc4p.pxl -s 15m --enable-external-connection --start-date 2022-09-08
+# gsy-e run --setup bc4p.pxl -s 15m --enable-external-connection --start-date 2022-11-09
