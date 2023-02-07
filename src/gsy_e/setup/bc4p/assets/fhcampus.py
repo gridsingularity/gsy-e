@@ -25,7 +25,6 @@ from gsy_e.models.strategy.external_strategies.storage import StorageExternalStr
 from gsy_e.models.strategy.external_strategies.influx import InfluxLoadExternalStrategy
 
 def get_setup(config):
-    ConstSettings.GeneralSettings.RUN_IN_REALTIME = True
     connection_fhaachen = InfluxConnection("influx_fhaachen.cfg")
 
     ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL = 1

@@ -66,7 +66,7 @@ rquery2 = RawQuery(connection2, qstring12, print)
 #pxlmakerquery2 = DataQueryMQTT(connection2, power_column="Power", device="PXL_makerspace_EmbroideryMachine", tablename="mqtt_consumer")
 #print(pxlmakerquery2.exec())
 
-bergquery = DataQueryMQTT(connection2, power_column="Ptot", device="berg-business_main-distribution", tablename="smartpi", start=start_date, duration=sim_duration, interval=sim_interval, invert = True)
+bergquery = DataQueryMQTT(connection2, power_column="Ptot", device="berg-business_main-distribution", tablename="smartpi", start=start_date, duration=sim_duration, interval=sim_interval, multiplier = -1)
 print(bergquery.exec())
 
 # squery = SmartmeterIDQuery(connection, keyname="id")

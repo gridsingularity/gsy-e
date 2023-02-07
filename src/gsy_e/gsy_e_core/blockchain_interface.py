@@ -1,5 +1,6 @@
 import uuid
 
+
 class NonBlockchainInterface:
     def __init__(self, market_id, simulation_id=None):
         self.market_id = market_id
@@ -22,15 +23,9 @@ class NonBlockchainInterface:
     def track_trade_event(self, time_slot, trade):
         pass
 
-    def bc_listener(self):
-        pass
-
-
 def blockchain_interface_factory(should_use_bc, market_id, simulation_id):
     if should_use_bc:
-        import b4p
-        if not b4p.started():
-            b4p.init()
-        return b4p.BC4PBlockchainInterface(market_id, simulation_id)
+        from gsy_e.gsy_e_core.blockchain_interface_geth import GethBlockchainInterface
+        return GethBlockchainInterface(market_id, simulation_id)
     else:
         return NonBlockchainInterface(market_id, simulation_id)

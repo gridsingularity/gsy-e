@@ -23,7 +23,6 @@ from gsy_framework.influx_connection.queries_pxl import DataQueryPXL
 from gsy_e.models.strategy.influx import InfluxLoadStrategy, InfluxPVStrategy
 
 def get_setup(config):
-    ConstSettings.GeneralSettings.RUN_IN_REALTIME = True
     connection = InfluxConnection("influx_pxl.cfg")
     tablename = "Total_Electricity"
 

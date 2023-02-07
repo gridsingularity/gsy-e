@@ -34,12 +34,12 @@ def get_setup(config):
 def create_area_json():
     from gsy_e.gsy_e_core.area_serializer import area_to_string
     # 
-    from gsy_e.setup.bc4p import get_setup as get_bc4p_setup
+    from gsy_e.setup.bc4p.demonstration import get_setup as get_demo_setup
     from gsy_e.models.config import create_simulation_config_from_global_config
     config = create_simulation_config_from_global_config()
     dir_path = osp.dirname(osp.realpath(__file__))
     json_area_location = osp.join(dir_path, '..', "resources", "area.json")
-    area = get_bc4p_setup(config)
+    area = get_demo_setup(config)
     with open(json_area_location, 'w') as f:
         j = json.loads(area_to_string(area))
         json.dump(j, f, indent=4)

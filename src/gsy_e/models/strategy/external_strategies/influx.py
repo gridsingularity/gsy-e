@@ -30,7 +30,7 @@ class InfluxCombinedExternalStrategy(SmartMeterExternalStrategy):
 
         combined_strategy = query.exec()
         if(combined_strategy == False):
-            print("Combined Profile for Query:\n" + query.getQueryString() + "\nnot valid. Using Zero Curve.")
+            print("Combined Profile for Query:\n" + query.qstring + "\nnot valid. Using Zero Curve.")
             combined_strategy = os.path.join(d3a_path, "resources", "Zero_Curve.csv")
 
         super().__init__(smart_meter_profile=combined_strategy,
@@ -63,7 +63,7 @@ class InfluxLoadExternalStrategy(LoadProfileExternalStrategy):
 
         load_profile = query.exec()
         if(load_profile == False):
-            print("Load Profile for Query:\n" + query.getQueryString() + "\nnot valid. Using Zero Curve.")
+            print("Load Profile for Query:\n" + query.qstring + "\nnot valid. Using Zero Curve.")
             load_profile = os.path.join(d3a_path, "resources", "Zero_Curve.csv")
 
         super().__init__(daily_load_profile=load_profile,
@@ -92,7 +92,7 @@ class InfluxPVExternalStrategy(PVUserProfileExternalStrategy):
 
         pv_profile = query.exec()
         if(pv_profile == False):
-            print("PV Profile for Query:\n" + query.getQueryString() + "\nnot valid. Using Zero Curve.")
+            print("PV Profile for Query:\n" + query.qstring + "\nnot valid. Using Zero Curve.")
             pv_profile = os.path.join(d3a_path, "resources", "Zero_Curve.csv")
 
         super().__init__(power_profile=pv_profile,

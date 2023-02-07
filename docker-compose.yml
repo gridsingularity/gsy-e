@@ -35,10 +35,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.bc
-    command: run --setup bc4p.demonstration -t 30s -s 15m --enable-external-connection --start-date 2022-07-01 #--enable-bc --slot-length-realtime 10s 
+    command: run --setup bc4p.demonstration -t 30s -s 15m --enable-external-connection --start-date 2022-11-04 #--enable-bc --slot-length-realtime 10s 
     volumes:
       - ./gsy_e-simulation/:/app/gsy_e-simulation # ~/gsy_e-simulation
       - ./src/gsy_e/setup:/app/src/gsy_e/setup
+      - ./gsy-framework/gsy_framework/influx_connection/resources:/app/gsy-framework/gsy_framework/influx_connection/resources
     environment:
       - KAFKA_URL=kafka:9092
       - KAFKA_USERNAME=user

@@ -104,15 +104,20 @@ _setup_modules = available_simulation_scenarios
               help=(
                 "Enable or disable Degrees of Freedom "
                 "(orders can't contain attributes/requirements)."))
+@click.option("--enable-realtime/--disable-realtime",
+              is_flag=True, default=gsy_e.constants.RUN_IN_REALTIME,
+              help=(
+                "Enable or disable running in realtime"))
 def run(setup_module_name, settings_file, duration, slot_length, tick_length,
         cloud_coverage, enable_external_connection, start_date,
-        pause_at, incremental, slot_length_realtime, enable_dof: bool, **kwargs):
+        pause_at, incremental, slot_length_realtime, enable_dof: bool, enable_realtime: bool, **kwargs):
     """Configure settings and run a simulation."""
     # Force the multiprocessing start method to be 'fork' on macOS.
     if platform.system() == "Darwin":
         multiprocessing.set_start_method("fork")
 
     try:
+        gsy_e.constants.RUN_IN_REALTIME = enable_realtime
         if settings_file is not None:
             simulation_settings, advanced_settings = read_settings_from_file(settings_file)
             update_advanced_settings(advanced_settings)
@@ -146,4 +151,4 @@ def run(setup_module_name, settings_file, duration, slot_length, tick_length,
 
 
 if __name__ == '__main__':
-    run(['--setup', 'bc4p.fhcampus', '--start-date', '2022-11-01'])
+    run(['--setup', 'bc4p.demonstration', '--start-date', '2022-11-01'])
