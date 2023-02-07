@@ -5,6 +5,7 @@ from gsy_framework.influx_connection.connection import InfluxConnection
 from gsy_framework.influx_connection.queries import RawQuery, InfluxQuery, DataQueryMQTT
 from gsy_framework.influx_connection.queries_fhac import SmartmeterIDQuery, SingleDataPointQuery, DataQueryFHAachen, DataFHAachenAggregated
 from gsy_framework.influx_connection.queries_pxl import DataQueryPXL
+from gsy_framework.influx_connection.queries_eupen import DataQueryEupen
 from gsy_e.utils.influx_area_factory import InfluxAreaFactory
 from gsy_e.models.strategy.influx import InfluxLoadStrategy, InfluxPVStrategy
 
@@ -19,7 +20,7 @@ connection2 = InfluxConnection(config_pxl);
 #rquery = RawQuery(connection1, qstring)
 #print(rquery.exec())
 
-start_date = instance((datetime.combine(date(2022,11,7), datetime.min.time())))
+start_date = instance((datetime.combine(date(2022,8,8), datetime.min.time())))
 sim_duration = duration(days=1)
 sim_interval = 15
 
@@ -43,10 +44,30 @@ qstring11 = 'SELECT mean("Power") FROM "mqtt_consumer" WHERE ("device" =~ /^PXL_
 qstring11 = 'SELECT mean("Power") FROM "mqtt_consumer" WHERE "device" =~ /^PXL_makerspace_MillingMachine$/ AND time >= now() - 7d and time <= now() GROUP BY time(15m) fill(null)'
 qstring12 = 'SELECT mean("Ptot") AS "Ptot" FROM "smartpi" WHERE ("device" =~ /^berg-business_main-distribution$/) AND time >= 1667522806364ms and time <= 1667609785798ms GROUP BY time(1m) fill(null)'
 
-rquery1 = RawQuery(connection1, qstring10, print)
 
 
-rquery2 = RawQuery(connection2, qstring12, print)
+eupenq = DataQueryEupen(connection2, location="Asten Johnson", power_column="W", key = "GridMs.TotW", tablename = "genossenschaft", start=start_date, duration=sim_duration, interval=sim_interval)
+print(eupenq.exec())
+
+#end = start_date + sim_duration
+#print(start_date.to_datetime_string())
+#print(end.to_datetime_string())
+#qstring13 = f'SELECT mean("W") FROM "genossenschaft" WHERE ("Location" = \'Asten Johnson\' AND "Key" = \'GridMs.TotW\') AND time >= \'{start_date.to_datetime_string()}\' AND time <= \'{end.to_datetime_string()}\' GROUP BY time(15m), "Meter" fill(null)'
+#eupenq2 = RawQuery(connection2, qstring13, print)
+#eupenq2.exec()
+
+
+
+
+
+
+
+
+
+#rquery1 = RawQuery(connection1, qstring10, print)
+
+
+#rquery2 = RawQuery(connection2, qstring12, print)
 
 #rquery1.exec()
 #print("------------------------------------------------")
@@ -66,8 +87,8 @@ rquery2 = RawQuery(connection2, qstring12, print)
 #pxlmakerquery2 = DataQueryMQTT(connection2, power_column="Power", device="PXL_makerspace_EmbroideryMachine", tablename="mqtt_consumer")
 #print(pxlmakerquery2.exec())
 
-bergquery = DataQueryMQTT(connection2, power_column="Ptot", device="berg-business_main-distribution", tablename="smartpi", start=start_date, duration=sim_duration, interval=sim_interval, multiplier = -1)
-print(bergquery.exec())
+#bergquery = DataQueryMQTT(connection2, power_column="Ptot", device="berg-business_main-distribution", tablename="smartpi", start=start_date, duration=sim_duration, interval=sim_interval, multiplier = -1)
+#print(bergquery.exec())
 
 # squery = SmartmeterIDQuery(connection, keyname="id")
 # qres = squery.exec()
