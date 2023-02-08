@@ -20,7 +20,7 @@ connection2 = InfluxConnection(config_pxl);
 #rquery = RawQuery(connection1, qstring)
 #print(rquery.exec())
 
-start_date = instance((datetime.combine(date(2022,8,8), datetime.min.time())))
+start_date = instance((datetime.combine(date(2022,7,27), datetime.min.time())))
 sim_duration = duration(days=1)
 sim_interval = 15
 
@@ -48,6 +48,7 @@ qstring12 = 'SELECT mean("Ptot") AS "Ptot" FROM "smartpi" WHERE ("device" =~ /^b
 
 eupenq = DataQueryEupen(connection2, location="Asten Johnson", power_column="W", key = "GridMs.TotW", tablename = "genossenschaft", start=start_date, duration=sim_duration, interval=sim_interval)
 print(eupenq.exec())
+
 
 #end = start_date + sim_duration
 #print(start_date.to_datetime_string())

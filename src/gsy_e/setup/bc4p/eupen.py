@@ -27,7 +27,6 @@ def get_setup(config):
     tablename = "genossenschaft"
     key = "GridMs.TotW"
     power_column = "W"
-    print("test")
     area = Area(
         "Grid",
         [
@@ -35,9 +34,9 @@ def get_setup(config):
                 "Eupen",
                 [
                     Area("Asten Johnson", strategy=InfluxPVStrategy(query = DataQueryEupen(connection, location="Asten Johnson", power_column=power_column, key = key, tablename=tablename))),
-                    Area("Welkenraed", strategy=InfluxPVStrategy(query = DataQueryEupen(connection, location="Welkenraed", power_column=power_column, key= key, tablename=tablename))),
-                    Area("Ferme Miessen", strategy=InfluxPVStrategy(query = DataQueryEupen(connection, location="Ferme Miessen", power_column=power_column, key= key, tablename=tablename))),
-                    Area("New Verlac", strategy=InfluxPVStrategy(query = DataQueryEupen(connection, location="New Verlac", power_column=power_column, key= key, tablename=tablename))),
+                    Area("Welkenraedt", strategy=InfluxPVStrategy(query = DataQueryEupen(connection, location="Welkenraedt", power_column=power_column, key= key, tablename=tablename))),
+                    Area("Ferme Miessen", strategy=InfluxPVStrategy(query = DataQueryEupen(connection, location="FermeMiessen", power_column=power_column, key= key, tablename=tablename))),
+                    Area("New Verlac", strategy=InfluxPVStrategy(query = DataQueryEupen(connection, location="NewVerlac", power_column=power_column, key= key, tablename=tablename))),
                 ]
             ),
 

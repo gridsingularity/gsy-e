@@ -1,6 +1,7 @@
 from typing import Dict, Union
 from pathlib import Path
 from pendulum import duration
+import os
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.influx_connection.connection import InfluxConnection
