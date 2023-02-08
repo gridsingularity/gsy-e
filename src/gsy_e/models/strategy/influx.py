@@ -6,7 +6,7 @@ import os
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.influx_connection.connection import InfluxConnection
-from gsy_framework.influx_connection.queries import InfluxQuery
+from gsy_framework.influx_connection.queries import Query
 
 from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy
 from gsy_e.models.strategy.predefined_pv import PVUserProfileStrategy
@@ -16,7 +16,7 @@ class InfluxCombinedStrategy(SmartMeterStrategy):
     """Class defining a strategy for Smart Meter devices."""
     # pylint: disable=too-many-arguments
     def __init__(
-            self, query: InfluxQuery,
+            self, query: Query,
             smart_meter_profile: Union[Path, str, Dict[int, float], Dict[str, float]] = None,
             initial_selling_rate: float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
             final_selling_rate: float = ConstSettings.SmartMeterSettings.SELLING_RATE_RANGE.final,
@@ -50,7 +50,7 @@ class InfluxLoadStrategy(DefinedLoadStrategy):
         dictionary that contains the load values for each time point
     """
     # pylint: disable=too-many-arguments
-    def __init__(self, query: InfluxQuery,
+    def __init__(self, query: Query,
                  fit_to_limit=True, energy_rate_increase_per_update=None,
                  update_interval=None,
                  initial_buying_rate: Union[float, dict, str] =
@@ -89,11 +89,12 @@ class InfluxLoadStrategy(DefinedLoadStrategy):
                          daily_load_profile_uuid=daily_load_profile_uuid)
 
     def event_market_cycle(self):
-        qstring = self.query.query_string(duration(days=1),
-                        self.area.spot_market.time_slot._start_of_day(),
-                        GlobalConfig().slot_length.in_minutes())
-        if self.query.qstring != qstring:
-            self.query.qstring = qstring
+        old_qstring = self.query.get_query_string()
+        self.query.update_query() 
+        self.query.query_string(start = self.area.spot_market.time_slot._start_of_day())
+
+        # if qstring changed, execute query again and reconfigure area
+        if self.query.get_query_string() != old_qstring:
             self._energy_params._load_profile_input = self.query.exec()
             super().area_reconfigure_event(daily_load_profile=self._energy_params._load_profile_input)
         super().event_market_cycle()
@@ -102,7 +103,7 @@ class InfluxLoadStrategy(DefinedLoadStrategy):
 class InfluxPVStrategy(PVUserProfileStrategy):  
     # pylint: disable=too-many-arguments
     def __init__(
-            self, query: InfluxQuery, panel_count: int = 1,
+            self, query: Query, panel_count: int = 1,
             initial_selling_rate: float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
             final_selling_rate: float = ConstSettings.PVSettings.SELLING_RATE_RANGE.final,
             fit_to_limit: bool = True,
@@ -127,61 +128,3 @@ class InfluxPVStrategy(PVUserProfileStrategy):
                          energy_rate_decrease_per_update=energy_rate_decrease_per_update,
                          use_market_maker_rate=use_market_maker_rate,
                          power_profile_uuid=power_profile_uuid)
-
-
-
-
-
-
-
-
-
-
-
-
-#from gsy_e.utils.influx_queries import DataAggregatedQuery
-
-# class InfluxLoadStrategyAggregated(DefinedLoadStrategy):
-#     """
-#         Strategy for creating a load profile. It accepts as an input a load csv file or a
-#         dictionary that contains the load values for each time point
-#     """
-#     # pylint: disable=too-many-arguments
-#     def __init__(self, path_influx_config, power_column, tablename, keyname,
-#                  fit_to_limit=True, energy_rate_increase_per_update=None,
-#                  update_interval=None,
-#                  initial_buying_rate: Union[float, dict, str] =
-#                  ConstSettings.LoadSettings.BUYING_RATE_RANGE.initial,
-#                  final_buying_rate: Union[float, dict, str] =
-#                  ConstSettings.LoadSettings.BUYING_RATE_RANGE.final,
-#                  balancing_energy_ratio: tuple =
-#                  (ConstSettings.BalancingSettings.OFFER_DEMAND_RATIO,
-#                   ConstSettings.BalancingSettings.OFFER_SUPPLY_RATIO),
-#                  use_market_maker_rate: bool = False,
-#                  daily_load_profile_uuid: str = None):
-#         """
-#         Constructor of DefinedLoadStrategy
-#         :param path_influx_config: path to config file with connection information of the Influx Database
-#         :param fit_to_limit: if set to True, it will make a linear curve
-#         following following initial_buying_rate & final_buying_rate
-#         :param energy_rate_increase_per_update: Slope of Load bids change per update
-#         :param update_interval: Interval after which Load will update its offer
-#         :param initial_buying_rate: Starting point of load's preferred buying rate
-#         :param final_buying_rate: Ending point of load's preferred buying rate
-#         :param balancing_energy_ratio: Portion of energy to be traded in balancing market
-#         :param use_market_maker_rate: If set to True, Load would track its final buying rate
-#         as per utility's trading rate
-#         """
-#         connection = InfluxConnection(influx_path);
-
-#         query = DataAggregatedQuery(connection, power_column=power_column, tablename=tablename, keyname=keyname)
-
-#         super().__init__(daily_load_profile=daquery.exec(),
-#                          fit_to_limit=fit_to_limit,
-#                          energy_rate_increase_per_update=energy_rate_increase_per_update,
-#                          update_interval=update_interval,
-#                          final_buying_rate=final_buying_rate,
-#                          initial_buying_rate=initial_buying_rate,
-#                          balancing_energy_ratio=balancing_energy_ratio,
-#                          use_market_maker_rate=use_market_maker_rate,
-#                          daily_load_profile_uuid=daily_load_profile_uuid)

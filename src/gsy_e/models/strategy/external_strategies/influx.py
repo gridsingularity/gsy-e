@@ -5,7 +5,7 @@ import os
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.influx_connection.connection import InfluxConnection
-from gsy_framework.influx_connection.queries import InfluxQuery
+from gsy_framework.influx_connection.queries import Query
 
 from gsy_e.models.strategy.external_strategies.pv import PVUserProfileExternalStrategy
 from gsy_e.models.strategy.external_strategies.load import LoadProfileExternalStrategy
@@ -15,7 +15,7 @@ from gsy_e.models.strategy.external_strategies.smart_meter import SmartMeterExte
 class InfluxCombinedExternalStrategy(SmartMeterExternalStrategy):
     # pylint: disable=too-many-arguments
     def __init__(
-            self, query: InfluxQuery,
+            self, query: Query,
             smart_meter_profile: Union[Path, str, Dict[int, float], Dict[str, float]] = None,
             initial_selling_rate: float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
             final_selling_rate: float = ConstSettings.SmartMeterSettings.SELLING_RATE_RANGE.final,
@@ -49,7 +49,7 @@ class InfluxCombinedExternalStrategy(SmartMeterExternalStrategy):
 
 class InfluxLoadExternalStrategy(LoadProfileExternalStrategy):
     # pylint: disable=too-many-arguments
-    def __init__(self, query: InfluxQuery,
+    def __init__(self, query: Query,
                  fit_to_limit=True, energy_rate_increase_per_update=None,
                  update_interval=None,
                  initial_buying_rate: Union[float, dict, str] =
@@ -81,7 +81,7 @@ class InfluxLoadExternalStrategy(LoadProfileExternalStrategy):
 class InfluxPVExternalStrategy(PVUserProfileExternalStrategy):
     # pylint: disable=too-many-arguments
     def __init__(
-            self, query: InfluxQuery, panel_count: int = 1,
+            self, query: Query, panel_count: int = 1,
             initial_selling_rate: float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
             final_selling_rate: float = ConstSettings.PVSettings.SELLING_RATE_RANGE.final,
             fit_to_limit: bool = True,
