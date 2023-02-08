@@ -34,6 +34,13 @@ NODE_URL = os.environ.get("NODE_URL", "ws://127.0.0.1:9944")
 SUDO_URI = os.environ.get("SUDO_URI", "//Alice")
 
 
+def order_executed_handler(event, update_nr, subscription_id):
+    for event in event.value:
+        print('Event: ', event['event'])
+        if event['event']['event_id'] == 'OrderExecuted':
+            return event['event']['attributes']
+
+
 class AccountAreaMapping:
     def __init__(self, bc_account_credentials):
         self.mapping = bc_account_credentials
@@ -108,6 +115,11 @@ class BcSimulationCommunication:
                     raise AreaException
             except SubstrateRequestException as e:
                 log.error("Failed to send the extrinsic to the node %s", e)
+
+    def subscribe_and_handle_order_executed_event(self) -> dict:
+        trade_dict = self._conn.subscribe_events(handler=order_executed_handler)
+        log.debug("[TRADE][NEW][%s]", trade_dict)
+        return trade_dict
 
     def add_sudo_keypair(self, keypair: Keypair):
         if not self._conn.check_sudo_key(keypair):
