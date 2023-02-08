@@ -44,6 +44,7 @@ class TwoSidedEngine(MAEngine):
         self.bid_trade_residual: Dict[str, Bid] = {}
         self.min_bid_age = min_bid_age
         self.bid_age: Dict[str, int] = {}
+        self.no_new_bid = True
 
     def __repr__(self):
         return "<TwoSidedPayAsBidEngine [{s.owner.name}] {s.name} " \
@@ -123,12 +124,15 @@ class TwoSidedEngine(MAEngine):
     def tick(self, *, area):
         super().tick(area=area)
 
+        if self.no_new_bid:
+            return
         for bid in self.markets.source.get_bids().values():
             if bid.id not in self.bid_age:
                 self.bid_age[bid.id] = self._current_tick
 
             if self._should_forward_bid(bid, self._current_tick):
                 self._forward_bid(bid)
+        self.no_new_bid = False
 
     def _delete_forwarded_bids(self, bid_info):
         try:
@@ -222,6 +226,7 @@ class TwoSidedEngine(MAEngine):
         if market is None:
             return
 
+        self.no_new_bid = False
         if market == self.markets.target and accepted_bid.id in self.forwarded_bids:
             # bid was split in target market, also split the corresponding forwarded bid
             # in the source market
@@ -274,6 +279,7 @@ class TwoSidedEngine(MAEngine):
 
     def event_bid(self, bid: Bid) -> None:
         """Perform actions on the event of the creation of a new bid."""
+        self.no_new_bid = False
         if (ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value and
                 self.min_bid_age == 0):
             # Propagate bid immediately if the MIN_BID_AGE is set to zero.

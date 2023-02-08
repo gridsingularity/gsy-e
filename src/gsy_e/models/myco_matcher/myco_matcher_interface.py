@@ -51,6 +51,8 @@ class MycoMatcherInterface(ABC):
         for market in markets:
             if not market:
                 continue
+            if market.no_new_order:
+                continue
             while True:
                 # Perform matching until all recommendations and their residuals are handled.
                 orders = market.orders_per_slot()
@@ -66,3 +68,4 @@ class MycoMatcherInterface(ABC):
                 trades_occurred = market.match_recommendations(bid_offer_pairs)
                 if not trades_occurred:
                     break
+            market.no_new_order = True

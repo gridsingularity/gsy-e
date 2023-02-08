@@ -138,6 +138,7 @@ class OneSidedMarket(MarketBase):
                   self.time_slot_str or offer.time_slot, offer)
         if dispatch_event is True:
             self.dispatch_market_offer_event(offer)
+        self.no_new_order = False
         return offer
 
     def dispatch_market_offer_event(self, offer: Offer) -> None:

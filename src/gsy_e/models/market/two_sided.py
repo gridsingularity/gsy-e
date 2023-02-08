@@ -135,6 +135,7 @@ class TwoSidedMarket(OneSidedMarket):
             self.dispatch_market_bid_event(bid)
         log.debug("%s[BID][NEW][%s] %s", self._debug_log_market_type_identifier,
                   self.time_slot_str or bid.time_slot, bid)
+        self.no_new_order = False
         return bid
 
     def dispatch_market_bid_event(self, bid: Bid) -> None:
