@@ -5,14 +5,14 @@ import os
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.database_connection.connection import InfluxConnection
-from gsy_framework.database_connection.queries import Query
+from gsy_framework.database_connection.queries_base import Query
 
 from gsy_e.models.strategy.external_strategies.pv import PVUserProfileExternalStrategy
 from gsy_e.models.strategy.external_strategies.load import LoadProfileExternalStrategy
 from gsy_e.models.strategy.external_strategies.smart_meter import SmartMeterExternalStrategy
 
 
-class InfluxCombinedExternalStrategy(SmartMeterExternalStrategy):
+class DatabaseCombinedExternalStrategy(SmartMeterExternalStrategy):
     # pylint: disable=too-many-arguments
     def __init__(
             self, query: Query,
@@ -47,7 +47,7 @@ class InfluxCombinedExternalStrategy(SmartMeterExternalStrategy):
                      smart_meter_profile_uuid=smart_meter_profile_uuid)
 
 
-class InfluxLoadExternalStrategy(LoadProfileExternalStrategy):
+class DatabaseLoadExternalStrategy(LoadProfileExternalStrategy):
     # pylint: disable=too-many-arguments
     def __init__(self, query: Query,
                  fit_to_limit=True, energy_rate_increase_per_update=None,
@@ -78,7 +78,7 @@ class InfluxLoadExternalStrategy(LoadProfileExternalStrategy):
                          daily_load_profile_uuid=daily_load_profile_uuid)
     
 
-class InfluxPVExternalStrategy(PVUserProfileExternalStrategy):
+class DatabasePVExternalStrategy(PVUserProfileExternalStrategy):
     # pylint: disable=too-many-arguments
     def __init__(
             self, query: Query, panel_count: int = 1,

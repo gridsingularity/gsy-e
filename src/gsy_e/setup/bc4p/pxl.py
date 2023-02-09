@@ -19,8 +19,8 @@ from gsy_e.models.area import Area
 from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.database_connection.connection import InfluxConnection
-from gsy_framework.database_connection.queries_pxl import DataQueryPXL
-from gsy_e.models.strategy.influx import InfluxLoadStrategy, InfluxPVStrategy
+from gsy_framework.database_connection.queries_pxl import QueryPXL
+from gsy_e.models.strategy.database import DatabaseLoadStrategy, DatabsePVStrategy
 
 def get_setup(config):
     connection = InfluxConnection("influx_pxl.cfg")
@@ -32,12 +32,12 @@ def get_setup(config):
             Area(
                 "PXL Campus",
                 [
-                    Area("main_P_L1", strategy=InfluxLoadStrategy(query = DataQueryPXL(connection, power_column="main_P_L1", tablename=tablename))),
-                    Area("main_P_L2", strategy=InfluxLoadStrategy(query = DataQueryPXL(connection, power_column="main_P_L2", tablename=tablename))),
-                    Area("main_P_L3", strategy=InfluxLoadStrategy(query = DataQueryPXL(connection, power_column="main_P_L3", tablename=tablename))),
-                    Area("PV_LS_105A_power", strategy=InfluxPVStrategy(query = DataQueryPXL(connection, power_column="PV_LS_105A_power", tablename=tablename, multiplier=100.0))),
-                    Area("PV_LS_105B_power", strategy=InfluxPVStrategy(query = DataQueryPXL(connection, power_column="PV_LS_105B_power", tablename=tablename, multiplier=100.0))),
-                    Area("PV_LS_105E_power", strategy=InfluxPVStrategy(query = DataQueryPXL(connection, power_column="PV_LS_105E_power", tablename=tablename, multiplier=100.0))),
+                    Area("main_P_L1", strategy=DatabaseLoadStrategy(query = QueryPXL(connection, power_column="main_P_L1", tablename=tablename))),
+                    Area("main_P_L2", strategy=DatabaseLoadStrategy(query = QueryPXL(connection, power_column="main_P_L2", tablename=tablename))),
+                    Area("main_P_L3", strategy=DatabaseLoadStrategy(query = QueryPXL(connection, power_column="main_P_L3", tablename=tablename))),
+                    Area("PV_LS_105A_power", strategy=DatabsePVStrategy(query = QueryPXL(connection, power_column="PV_LS_105A_power", tablename=tablename, multiplier=100.0))),
+                    Area("PV_LS_105B_power", strategy=DatabsePVStrategy(query = QueryPXL(connection, power_column="PV_LS_105B_power", tablename=tablename, multiplier=100.0))),
+                    Area("PV_LS_105E_power", strategy=DatabsePVStrategy(query = QueryPXL(connection, power_column="PV_LS_105E_power", tablename=tablename, multiplier=100.0))),
                 ]
             ),
 

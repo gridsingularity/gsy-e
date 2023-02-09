@@ -6,13 +6,13 @@ import os
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.database_connection.connection import InfluxConnection
-from gsy_framework.database_connection.queries import Query
+from gsy_framework.database_connection.queries_base import Query
 
 from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy
 from gsy_e.models.strategy.predefined_pv import PVUserProfileStrategy
 from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
 
-class InfluxCombinedStrategy(SmartMeterStrategy):
+class DatabaseCombinedStrategy(SmartMeterStrategy):
     """Class defining a strategy for Smart Meter devices."""
     # pylint: disable=too-many-arguments
     def __init__(
@@ -44,7 +44,7 @@ class InfluxCombinedStrategy(SmartMeterStrategy):
                      use_market_maker_rate=use_market_maker_rate,
                      smart_meter_profile_uuid=smart_meter_profile_uuid)
                      
-class InfluxLoadStrategy(DefinedLoadStrategy):
+class DatabaseLoadStrategy(DefinedLoadStrategy):
     """
         Strategy for creating a load profile. It accepts as an input a load csv file or a
         dictionary that contains the load values for each time point
@@ -99,7 +99,7 @@ class InfluxLoadStrategy(DefinedLoadStrategy):
         super().event_market_cycle()
 
 
-class InfluxPVStrategy(PVUserProfileStrategy):  
+class DatabasePVStrategy(PVUserProfileStrategy):  
     # pylint: disable=too-many-arguments
     def __init__(
             self, query: Query, panel_count: int = 1,

@@ -3,8 +3,8 @@ from gsy_e.gsy_e_core.util import d3a_path
 import os
 
 from gsy_framework.database_connection.connection import InfluxConnection
-from gsy_framework.database_connection.queries_fhac import DataQueryFHAachen, SmartmeterIDQuery
-from gsy_e.models.strategy.influx import InfluxLoadStrategy
+from gsy_framework.database_connection.queries_fhac import QueryFHAC, QuerySmartmeterID
+from gsy_e.models.strategy.database import DatabaseLoadStrategy
 
 class InfluxAreaFactory:
     def __init__(self, name_influx_config, power_column, tablename, keyname):
@@ -17,7 +17,7 @@ class InfluxAreaFactory:
     def _createSubArea(self, smartmeterID):
         query = 0;
         try:
-            strat = InfluxLoadStrategy(query = DataQueryFHAachen(self.ic, power_column=self.power_column, tablename=self.tablename, smartmeterID=smartmeterID))
+            strat = DatabaseLoadStrategy(query = QueryFHAC(self.ic, power_column=self.power_column, tablename=self.tablename, smartmeterID=smartmeterID))
 
             res = Area(
                 smartmeterID,

@@ -19,8 +19,8 @@ from gsy_e.models.area import Area
 from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.database_connection.connection import InfluxConnection
-from gsy_framework.database_connection.queries_pxl import DataQueryPXL
-from gsy_e.models.strategy.external_strategies.influx import InfluxLoadExternalStrategy, InfluxPVExternalStrategy
+from gsy_framework.database_connection.queries_pxl import QueryPXL
+from gsy_e.models.strategy.external_strategies.database import DatabaseLoadExternalStrategy, DatabasePVExternalStrategy
 
 # init with influx load profile
 
@@ -38,12 +38,12 @@ def get_setup(config):
             Area(
                 "PXL Campus",
                 [
-                    Area("main_P_L1", strategy=InfluxLoadExternalStrategy(query = DataQueryPXL(connection, power_column="main_P_L1", tablename=tablename), initial_buying_rate=11, use_market_maker_rate=True)),
-                    Area("main_P_L2", strategy=InfluxLoadExternalStrategy(query = DataQueryPXL(connection, power_column="main_P_L2", tablename=tablename), initial_buying_rate=11, use_market_maker_rate=True)),
-                    Area("main_P_L3", strategy=InfluxLoadExternalStrategy(query = DataQueryPXL(connection, power_column="main_P_L3", tablename=tablename), initial_buying_rate=11, use_market_maker_rate=True)),
-                    Area("PV_LS_105A_power", strategy=InfluxPVExternalStrategy(query = DataQueryPXL(connection, power_column="PV_LS_105A_power", tablename=tablename), initial_selling_rate=30, final_selling_rate=11)),
-                    Area("PV_LS_105B_power", strategy=InfluxPVExternalStrategy(query = DataQueryPXL(connection, power_column="PV_LS_105B_power", tablename=tablename), initial_selling_rate=30, final_selling_rate=11)),
-                    Area("PV_LS_105E_power", strategy=InfluxPVExternalStrategy(query = DataQueryPXL(connection, power_column="PV_LS_105E_power", tablename=tablename), initial_selling_rate=30, final_selling_rate=11)),
+                    Area("main_P_L1", strategy=DatabaseLoadExternalStrategy(query = QueryPXL(connection, power_column="main_P_L1", tablename=tablename), initial_buying_rate=11, use_market_maker_rate=True)),
+                    Area("main_P_L2", strategy=DatabaseLoadExternalStrategy(query = QueryPXL(connection, power_column="main_P_L2", tablename=tablename), initial_buying_rate=11, use_market_maker_rate=True)),
+                    Area("main_P_L3", strategy=DatabaseLoadExternalStrategy(query = QueryPXL(connection, power_column="main_P_L3", tablename=tablename), initial_buying_rate=11, use_market_maker_rate=True)),
+                    Area("PV_LS_105A_power", strategy=DatabasePVExternalStrategy(query = QueryPXL(connection, power_column="PV_LS_105A_power", tablename=tablename), initial_selling_rate=30, final_selling_rate=11)),
+                    Area("PV_LS_105B_power", strategy=DatabasePVExternalStrategy(query = QueryPXL(connection, power_column="PV_LS_105B_power", tablename=tablename), initial_selling_rate=30, final_selling_rate=11)),
+                    Area("PV_LS_105E_power", strategy=DatabasePVExternalStrategy(query = QueryPXL(connection, power_column="PV_LS_105E_power", tablename=tablename), initial_selling_rate=30, final_selling_rate=11)),
                 ], grid_fee_constant=0, external_connection_available=True),
 
             Area("Market Maker", strategy=InfiniteBusStrategy(energy_buy_rate=21, energy_sell_rate=22)),

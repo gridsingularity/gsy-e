@@ -19,10 +19,10 @@ from gsy_e.models.area import Area
 from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.database_connection.connection import InfluxConnection
-from gsy_framework.database_connection.queries_fhac import DataFHAachenAggregated
+from gsy_framework.database_connection.queries_fhac import QueryFHACAggregated
 from gsy_e.models.strategy.external_strategies.pv import PVExternalStrategy
 from gsy_e.models.strategy.external_strategies.storage import StorageExternalStrategy
-from gsy_e.models.strategy.external_strategies.influx import InfluxLoadExternalStrategy
+from gsy_e.models.strategy.external_strategies.database import DatabaseLoadExternalStrategy
 
 def get_setup(config):
     ConstSettings.GeneralSettings.RUN_IN_REALTIME = True
@@ -38,7 +38,7 @@ def get_setup(config):
             Area(
                 "FH Campus",
                 [
-                    Area("FH Load", strategy=InfluxLoadExternalStrategy(query = DataFHAachenAggregated(connection_fhaachen, power_column="P_ges", tablename="Strom"), initial_buying_rate=20, final_buying_rate=40)),
+                    Area("FH Load", strategy=DatabaseLoadExternalStrategy(query = QueryFHACAggregated(connection_fhaachen, power_column="P_ges", tablename="Strom"), initial_buying_rate=20, final_buying_rate=40)),
                     Area("FH PV", strategy=PVExternalStrategy(panel_count = 1, capacity_kW = 1200, initial_selling_rate=30, final_selling_rate=10)),
                     Area("FH Storage", strategy=StorageExternalStrategy(battery_capacity_kWh=1000, max_abs_battery_power_kW=150, initial_soc=50, initial_buying_rate=15, final_buying_rate=15, initial_selling_rate=35, final_selling_rate=35)),
                 ], grid_fee_constant=0, external_connection_available=True),

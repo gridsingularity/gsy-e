@@ -19,8 +19,8 @@ from gsy_e.models.area import Area
 from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.database_connection.connection import InfluxConnection
-from gsy_framework.database_connection.queries_eupen import DataQueryEupen
-from gsy_e.models.strategy.influx import InfluxPVStrategy
+from gsy_framework.database_connection.queries_eupen import QueryEupen
+from gsy_e.models.strategy.database import DatabasePVStrategy
 
 def get_setup(config):
     connection = InfluxConnection("influx_pxl.cfg")
@@ -33,10 +33,10 @@ def get_setup(config):
             Area(
                 "Eupen",
                 [
-                    Area("Asten Johnson", strategy=InfluxPVStrategy(query = DataQueryEupen(connection, location="Asten Johnson", power_column=power_column, key = key, tablename=tablename))),
-                    Area("Welkenraedt", strategy=InfluxPVStrategy(query = DataQueryEupen(connection, location="Welkenraedt", power_column=power_column, key= key, tablename=tablename))),
-                    Area("Ferme Miessen", strategy=InfluxPVStrategy(query = DataQueryEupen(connection, location="FermeMiessen", power_column=power_column, key= key, tablename=tablename))),
-                    Area("New Verlac", strategy=InfluxPVStrategy(query = DataQueryEupen(connection, location="NewVerlac", power_column=power_column, key= key, tablename=tablename))),
+                    Area("Asten Johnson", strategy=DatabasePVStrategy(query = QueryEupen(connection, location="Asten Johnson", power_column=power_column, key = key, tablename=tablename))),
+                    Area("Welkenraedt", strategy=DatabasePVStrategy(query = QueryEupen(connection, location="Welkenraedt", power_column=power_column, key= key, tablename=tablename))),
+                    Area("Ferme Miessen", strategy=DatabasePVStrategy(query = QueryEupen(connection, location="FermeMiessen", power_column=power_column, key= key, tablename=tablename))),
+                    Area("New Verlac", strategy=DatabasePVStrategy(query = QueryEupen(connection, location="NewVerlac", power_column=power_column, key= key, tablename=tablename))),
                 ]
             ),
 

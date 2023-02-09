@@ -2,22 +2,21 @@ from datetime import date, datetime
 from pendulum import duration, instance
 
 from gsy_framework.database_connection.connection import InfluxConnection
-from gsy_framework.database_connection.queries import RawQuery, Query, DataQueryMQTT
-from gsy_framework.database_connection.queries_fhac import DataQueryFHAachen, DataFHAachenAggregated
-from gsy_framework.database_connection.queries_pxl import DataQueryPXL
-from gsy_framework.database_connection.queries_eupen import DataQueryEupen
+from gsy_framework.database_connection.queries_base import QueryRaw, Query
+from gsy_framework.database_connection.queries_influx import QueryMQTT
+from gsy_framework.database_connection.queries_fhac import QueryFHAC, QueryFHACAggregated
+from gsy_framework.database_connection.queries_pxl import QueryPXL
+from gsy_framework.database_connection.queries_eupen import QueryEupen
 from gsy_e.utils.influx_area_factory import InfluxAreaFactory
-from gsy_e.models.strategy.influx import InfluxLoadStrategy, InfluxPVStrategy
 
 config_fhaachen = "influx_fhaachen.cfg"
 config_pxl = "influx_pxl.cfg"
-# strat = InfluxLoadStrategyAggregated(path_fhaachen, final_buying_rate=60, power_column="P_ges", tablename="Strom", keyname="id")
 
 connection1 = InfluxConnection(config_fhaachen);
 connection2 = InfluxConnection(config_pxl);
 
 #qstring = 'SHOW SERIES ON Energiedaten'
-#rquery = RawQuery(connection1, qstring)
+#rquery = QueryRaw(connection1, qstring)
 #print(rquery.exec())
 
 start_date = instance((datetime.combine(date(2022,7,27), datetime.min.time())))
@@ -46,16 +45,20 @@ qstring12 = 'SELECT mean("Ptot") AS "Ptot" FROM "smartpi" WHERE ("device" =~ /^b
 
 
 
-eupenq = DataQueryEupen(connection2, location="Asten Johnson", power_column="W", key = "GridMs.TotW", tablename = "genossenschaft", start=start_date, duration=sim_duration, interval=sim_interval)
-print(eupenq.exec())
+#eupenq = QueryEupen(connection2, location="Asten Johnson", power_column="W", key = "GridMs.TotW", tablename = "genossenschaft", start=start_date, duration=sim_duration, interval=sim_interval)
+#print(eupenq.exec())
 
 
-#end = start_date + sim_duration
+end = start_date + sim_duration
 #print(start_date.to_datetime_string())
 #print(end.to_datetime_string())
-#qstring13 = f'SELECT mean("W") FROM "genossenschaft" WHERE ("Location" = \'Asten Johnson\' AND "Key" = \'GridMs.TotW\') AND time >= \'{start_date.to_datetime_string()}\' AND time <= \'{end.to_datetime_string()}\' GROUP BY time(15m), "Meter" fill(null)'
-#eupenq2 = RawQuery(connection2, qstring13, print)
-#eupenq2.exec()
+qstring13 = f'SELECT mean("W") FROM "genossenschaft" WHERE ("Location" = \'Asten Johnson\' AND "Key" = \'GridMs.TotW\') AND time >= \'{start_date.to_datetime_string()}\' AND time <= \'{end.to_datetime_string()}\' GROUP BY time(15m), "Meter" fill(null)'
+
+def qrestype(qresults):
+    print(qresults.values())
+
+eupenq2 = QueryRaw(connection2, qstring13, qrestype)
+eupenq2.exec()
 
 
 
@@ -65,33 +68,33 @@ print(eupenq.exec())
 
 
 
-#rquery1 = RawQuery(connection1, qstring10, print)
+#rquery1 = QueryRaw(connection1, qstring10, print)
 
 
-#rquery2 = RawQuery(connection2, qstring12, print)
+#rquery2 = QueryRaw(connection2, qstring12, print)
 
 #rquery1.exec()
 #print("------------------------------------------------")
 #rquery2.exec()
 
 
-#fhquery = DataQueryFHAachen(connection1, power_column="P_ges", tablename="Strom", smartmeterID="10", start=start_date, duration=sim_duration, interval=sim_interval)
+#fhquery = QueryFHAC(connection1, power_column="P_ges", tablename="Strom", smartmeterID="10", start=start_date, duration=sim_duration, interval=sim_interval)
 #print(fhquery.exec())
 
-#pxlquery = DataQueryPXL(connection2, power_column="main_P_L1", tablename="Total_Electricity", start=start_date, duration=sim_duration, interval=sim_interval)
+#pxlquery = QueryPXL(connection2, power_column="main_P_L1", tablename="Total_Electricity", start=start_date, duration=sim_duration, interval=sim_interval)
 #print(pxlquery.exec())
 
 
-#pxlmakerquery = DataQueryMQTT(connection2, power_column="Power", device="PXL_makerspace_MillingMachine", tablename="mqtt_consumer", start=start_date, duration=sim_duration, interval=sim_interval)
+#pxlmakerquery = QueryMQTT(connection2, power_column="Power", device="PXL_makerspace_MillingMachine", tablename="mqtt_consumer", start=start_date, duration=sim_duration, interval=sim_interval)
 #print(pxlmakerquery.exec())
 
-#pxlmakerquery2 = DataQueryMQTT(connection2, power_column="Power", device="PXL_makerspace_EmbroideryMachine", tablename="mqtt_consumer")
+#pxlmakerquery2 = QueryMQTT(connection2, power_column="Power", device="PXL_makerspace_EmbroideryMachine", tablename="mqtt_consumer")
 #print(pxlmakerquery2.exec())
 
-#bergquery = DataQueryMQTT(connection2, power_column="Ptot", device="berg-business_main-distribution", tablename="smartpi", start=start_date, duration=sim_duration, interval=sim_interval, multiplier = -1)
+#bergquery = QueryMQTT(connection2, power_column="Ptot", device="berg-business_main-distribution", tablename="smartpi", start=start_date, duration=sim_duration, interval=sim_interval, multiplier = -1)
 #print(bergquery.exec())
 
-# squery = SmartmeterIDQuery(connection, keyname="id")
+# squery = QuerySmartmeterID(connection, keyname="id")
 # qres = squery.exec()
 #print(qres)
 
@@ -102,15 +105,15 @@ print(eupenq.exec())
 
 #factory.getArea("FH Campus")
 
-#dquery = DataQuery(connection1, power_column="P_ges", tablename="Strom", keyname="id")
+#dquery = QuerySingle(connection1, power_column="P_ges", tablename="Strom", keyname="id")
 #dres = dquery.exec()
 #print(dres)
 
-# daquery = DataAggregatedQuery(connection, power_column="P_ges", tablename="Strom", keyname="id")
+# daquery = QueryAggregated(connection, power_column="P_ges", tablename="Strom", keyname="id")
 # dares = daquery.exec()
 #print(dares)
 
 
-#agrquery = DataFHAachenAggregated(connection1, power_column="P_ges", tablename="Strom", start=start_date, duration=sim_duration, interval=sim_interval)
+#agrquery = QueryFHACAggregated(connection1, power_column="P_ges", tablename="Strom", start=start_date, duration=sim_duration, interval=sim_interval)
 #agrres = agrquery.exec()
 #print(agrres)

@@ -18,10 +18,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
 from gsy_framework.constants_limits import ConstSettings
-from gsy_e.models.strategy.influx import InfluxLoadStrategy
+from gsy_e.models.strategy.influx import DatabaseLoadStrategy
 from gsy_e.models.strategy.pv import PVStrategy
 from gsy_framework.database_connection.connection import InfluxConnection
-from gsy_framework.database_connection.queries_fhac import DataFHAachenAggregated
+from gsy_framework.database_connection.queries_fhac import QueryFHACAggregated
 from gsy_e.models.strategy.storage import StorageStrategy
 import gsy_e.constants
 
@@ -33,7 +33,7 @@ def get_setup(config):
     area = Area(
         "Grid",
         [
-            Area("FH Campus Load", strategy=InfluxLoadStrategy(query = DataFHAachenAggregated(connection_fhaachen, power_column="P_ges", tablename="Strom"), initial_buying_rate=20, final_buying_rate=40)),
+            Area("FH Campus Load", strategy=DatabaseLoadStrategy(query = QueryFHACAggregated(connection_fhaachen, power_column="P_ges", tablename="Strom"), initial_buying_rate=20, final_buying_rate=40)),
             Area("FH Campus PV", strategy=PVStrategy(panel_count = 1, capacity_kW = 1200, initial_selling_rate=30, final_selling_rate=10)),
             Area("Infinite Bus", strategy=InfiniteBusStrategy(energy_buy_rate=10, energy_sell_rate=40)),
         ],
