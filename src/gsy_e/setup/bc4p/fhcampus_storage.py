@@ -20,8 +20,8 @@ from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
 from gsy_framework.constants_limits import ConstSettings
 from gsy_e.models.strategy.influx import InfluxLoadStrategy
 from gsy_e.models.strategy.pv import PVStrategy
-from gsy_framework.influx_connection.connection import InfluxConnection
-from gsy_framework.influx_connection.queries_fhac import DataFHAachenAggregated
+from gsy_framework.database_connection.connection import InfluxConnection
+from gsy_framework.database_connection.queries_fhac import DataFHAachenAggregated
 from gsy_e.models.strategy.storage import StorageStrategy
 
 def get_setup(config):

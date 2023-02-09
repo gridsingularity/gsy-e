@@ -4,8 +4,8 @@ from pendulum import duration
 import os
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
-from gsy_framework.influx_connection.connection import InfluxConnection
-from gsy_framework.influx_connection.queries import Query
+from gsy_framework.database_connection.connection import InfluxConnection
+from gsy_framework.database_connection.queries import Query
 
 from gsy_e.models.strategy.external_strategies.pv import PVUserProfileExternalStrategy
 from gsy_e.models.strategy.external_strategies.load import LoadProfileExternalStrategy

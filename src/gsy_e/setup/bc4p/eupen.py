@@ -18,8 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.influx_connection.connection import InfluxConnection
-from gsy_framework.influx_connection.queries_eupen import DataQueryEupen
+from gsy_framework.database_connection.connection import InfluxConnection
+from gsy_framework.database_connection.queries_eupen import DataQueryEupen
 from gsy_e.models.strategy.influx import InfluxPVStrategy
 
 def get_setup(config):

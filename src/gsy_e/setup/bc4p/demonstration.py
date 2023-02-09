@@ -17,19 +17,26 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
+from gsy_e.models.strategy.infinite_bus import InfiniteBusStra·µtegy
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.influx_connection.connection import InfluxConnection
-from gsy_framework.influx_connection.queries_fhac import DataFHAachenAggregated
-from gsy_framework.influx_connection.queries_pxl import DataQueryPXL
-from gsy_framework.influx_connection.queries import DataQueryMQTT
+from gsy_framework.database_connection.connection import InfluxConnection
+from gsy_framework.database_connection.queries_fhac import DataFHAachenAggregated
+from gsy_framework.database_connection.queries_pxl import DataQueryPXL
+from gsy_framework.database_connection.queries import DataQueryMQTT
+from gsy_framework.database_connection.queries_eupen import DataQueryEupen
 from gsy_e.models.strategy.influx import InfluxLoadStrategy, InfluxPVStrategy, InfluxCombinedStrategy
 from gsy_framework.constants_limits import GlobalConfig
+
+from datetime import date, datetime
+from pendulum import duration, instance
 
 def get_setup(config):
     #ConstSettings.GeneralSettings.RUN_REAL_TIME = True
     #gsy_e.constants.RUN_IN_REALTIME = True
     connection_pxl = InfluxConnection("influx_pxl.cfg")
     connection_fhaachen = InfluxConnection("influx_fhaachen.cfg")
+
+    eupen_start_date = instance((datetime.combine(date(2022,7,27), datetime.min.time())))
 
     area = Area(
         "Grid",
@@ -82,9 +89,16 @@ def get_setup(config):
                     Area("Berg House 2", strategy=InfluxCombinedStrategy(query = DataQueryMQTT(connection_pxl, power_column="Ptot", device="berg-house2_main-distribution", tablename="smartpi"))),                                    
                 ]
             ),
-            Area("Commercial Energy Producer",
-                 strategy=CommercialStrategy(energy_rate=30)
-                 ),
+            Area(
+                "Eupen",
+                [
+                    Area("Asten Johnson", strategy=InfluxPVStrategy(query = DataQueryEupen(connection_pxl, location="Asten Johnson", power_column="W", key = "GridMs.TotW", tablename="genossenschaft", start=eupen_start_date))),
+                    Area("Welkenraedt", strategy=InfluxPVStrategy(query = DataQueryEupen(connection_pxl, location="Welkenraedt", power_column="W", key= "GridMs.TotW", tablename="genossenschaft", start=eupen_start_date))),
+                    Area("Ferme Miessen", strategy=InfluxPVStrategy(query = DataQueryEupen(connection_pxl, location="FermeMiessen", power_column="W", key= "GridMs.TotW", tablename="genossenschaft", start=eupen_start_date))),
+                    Area("New Verlac", strategy=InfluxPVStrategy(query = DataQueryEupen(connection_pxl, location="NewVerlac", power_column="W", key= "GridMs.TotW", tablename="genossenschaft", start=eupen_start_date))),
+                ]
+            ),
+            Area("Market Maker", strategy=InfiniteBusStrategy(energy_buy_rate=10, energy_sell_rate=30)),
         ],
         config=config
     )

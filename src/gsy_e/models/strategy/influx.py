@@ -5,8 +5,8 @@ from gsy_e.gsy_e_core.util import d3a_path
 import os
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
-from gsy_framework.influx_connection.connection import InfluxConnection
-from gsy_framework.influx_connection.queries import Query
+from gsy_framework.database_connection.connection import InfluxConnection
+from gsy_framework.database_connection.queries import Query
 
 from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy
 from gsy_e.models.strategy.predefined_pv import PVUserProfileStrategy
@@ -90,8 +90,7 @@ class InfluxLoadStrategy(DefinedLoadStrategy):
 
     def event_market_cycle(self):
         old_qstring = self.query.get_query_string()
-        self.query.update_query() 
-        self.query.query_string(start = self.area.spot_market.time_slot._start_of_day())
+        self.query.update_query(start = self.area.spot_market.time_slot._start_of_day()) 
 
         # if qstring changed, execute query again and reconfigure area
         if self.query.get_query_string() != old_qstring:
