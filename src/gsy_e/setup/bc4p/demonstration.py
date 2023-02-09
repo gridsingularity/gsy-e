@@ -18,8 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.database_connection.connection import InfluxConnection
-from gsy_framework.database_connection.queries_fhac import QueryFHACAggregated
+from gsy_framework.database_connection.connection import InfluxConnection, PostgreSQLConnection
+from gsy_framework.database_connection.queries_fhac import QueryFHACAggregated, QueryFHACPV
 from gsy_framework.database_connection.queries_pxl import QueryPXL
 from gsy_framework.database_connection.queries_influx import QueryMQTT
 from gsy_framework.database_connection.queries_eupen import QueryEupen
@@ -32,6 +32,7 @@ from pendulum import duration, instance
 def get_setup(config):
     connection_pxl = InfluxConnection("influx_pxl.cfg")
     connection_fhaachen = InfluxConnection("influx_fhaachen.cfg")
+    connection_psql = PostgreSQLConnection("postgresql_fhaachen.cfg")
 
     eupen_start_date = instance((datetime.combine(date(2022,7,27), datetime.min.time())))
 
@@ -76,6 +77,7 @@ def get_setup(config):
                 "FH Campus",
                 [
                     Area("FH General Load", strategy=DatabaseLoadStrategy(query = QueryFHACAggregated(connection_fhaachen, power_column="P_ges", tablename="Strom"))),
+                    Area("FH PV", strategy=DatabasePVStrategy(query = QueryFHACPV(postgresConnection=connection_psql, plant="FP-JUEL", tablename="eview"))),
                 ]
             ),
             Area(
