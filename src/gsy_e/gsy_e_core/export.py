@@ -134,27 +134,27 @@ class ExportAndPlot:
 
         self.export_json_data(self.directory)
 
-        PlotEnergyProfile(self.endpoint_buffer, self.plot_dir).plot(self.area)
-        PlotUnmatchedLoads(self.area, self.file_stats_endpoint, self.plot_dir).plot()
-        PlotAverageTradePrice(
-            self.file_stats_endpoint, self.plot_dir).plot(self.area, self.plot_dir)
-        PlotESSSOCHistory(
-            self.file_stats_endpoint, self.plot_dir).plot(self.area, self.plot_dir)
-        PlotESSEnergyTrace(self.plot_dir).plot(self.area, self.plot_dir)
-        if ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR:
-            PlotOrderInfo(self.endpoint_buffer).plot_per_area_per_market_slot(
-                self.area, self.plot_dir)
-        if ConstSettings.GeneralSettings.EXPORT_DEVICE_PLOTS:
-            PlotDeviceStats(self.endpoint_buffer, self.plot_dir).plot(self.area, [])
-        if ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR:
-            PlotEnergyTradeProfileHR(
-                self.endpoint_buffer, self.plot_dir).plot(self.area, self.plot_dir)
-        if (ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value and
-                ConstSettings.MASettings.BID_OFFER_MATCH_TYPE ==
-                BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value and
-                ConstSettings.GeneralSettings.EXPORT_SUPPLY_DEMAND_PLOTS is True):
-            PlotSupplyDemandCurve(
-                self.file_stats_endpoint, self.plot_dir).plot(self.area, self.plot_dir)
+        # PlotEnergyProfile(self.endpoint_buffer, self.plot_dir).plot(self.area)
+        # PlotUnmatchedLoads(self.area, self.file_stats_endpoint, self.plot_dir).plot()
+        # PlotAverageTradePrice(
+        #     self.file_stats_endpoint, self.plot_dir).plot(self.area, self.plot_dir)
+        # PlotESSSOCHistory(
+        #     self.file_stats_endpoint, self.plot_dir).plot(self.area, self.plot_dir)
+        # PlotESSEnergyTrace(self.plot_dir).plot(self.area, self.plot_dir)
+        # if ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR:
+        #     PlotOrderInfo(self.endpoint_buffer).plot_per_area_per_market_slot(
+        #         self.area, self.plot_dir)
+        # if ConstSettings.GeneralSettings.EXPORT_DEVICE_PLOTS:
+        #     PlotDeviceStats(self.endpoint_buffer, self.plot_dir).plot(self.area, [])
+        # if ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR:
+        #     PlotEnergyTradeProfileHR(
+        #         self.endpoint_buffer, self.plot_dir).plot(self.area, self.plot_dir)
+        # if (ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value and
+        #         ConstSettings.MASettings.BID_OFFER_MATCH_TYPE ==
+        #         BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value and
+        #         ConstSettings.GeneralSettings.EXPORT_SUPPLY_DEMAND_PLOTS is True):
+        #     PlotSupplyDemandCurve(
+        #         self.file_stats_endpoint, self.plot_dir).plot(self.area, self.plot_dir)
 
         self.move_root_plot_folder()
 
