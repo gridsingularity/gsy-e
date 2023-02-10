@@ -130,7 +130,7 @@ class BcSimulationCommunication:
                 log.error("Failed to send the extrinsic to the node %s", e)
 
     def subscribe_and_handle_order_executed_event(self):
-        trade_dict = self._conn.subscribe_events(handler=order_executed_handler)
+        trade_dict = self._conn.subscribe_events(handler=self.order_executed_handler)
         log.debug("[TRADE][NEW][%s]", trade_dict)
 
     def add_sudo_keypair(self, keypair: Keypair):
