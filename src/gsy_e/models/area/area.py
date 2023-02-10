@@ -26,6 +26,7 @@ from gsy_framework.utils import key_in_dict_and_not_none
 from pendulum import DateTime
 
 import gsy_e.constants
+from gsy_e.events import MarketEvent
 from gsy_e.gsy_e_core.bc_connection.simulation import AreaWebsocketConnection
 from gsy_e.gsy_e_core.blockchain_interface import blockchain_interface_factory
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
@@ -44,6 +45,8 @@ from gsy_e.models.market.forward import ForwardMarketBase
 from gsy_e.models.market.future import FutureMarkets
 
 from gsy_e.models.strategy.external_strategies import ExternalMixin
+
+from gsy_dex.data_classes import Trade
 
 log = getLogger(__name__)
 
@@ -323,6 +326,10 @@ class Area(AreaBase):
                 bid_offer_matcher.match_recommendations()
 
         self.events.update_events(self.now)
+        if self._bc:
+            trade = Trade.from_serializable_dict(self._bc.conn.trades_buffer[self.uuid][-1])
+            self.dispatcher.event_listener(event_type=MarketEvent.OFFER_TRADED, trade=trade)
+            self.dispatcher.event_listener(event_type=MarketEvent.BID_TRADED, trade=trade)
 
     def _update_myco_matcher(self) -> None:
         """Update the markets cache that the myco matcher will request"""
