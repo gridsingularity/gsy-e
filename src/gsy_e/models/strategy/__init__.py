@@ -768,7 +768,7 @@ class BidEnabledStrategy(BaseStrategy):
         for bid in self.get_posted_bids(market, time_slot):
             if abs(bid.energy_rate - updated_rate) <= FLOATING_POINT_TOLERANCE:
                 continue
-            assert bid.buyer.name == self.owner.name
+            assert bid.buyer.uuid == self.owner.uuid
 
             self.remove_bid_from_pending(market.id, bid.id)
             self.post_bid(market, bid.energy * updated_rate,

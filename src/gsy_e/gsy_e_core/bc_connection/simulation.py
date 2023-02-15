@@ -25,7 +25,7 @@ from gsy_dex.gsy_orderbook import GSyOrderbook
 from gsy_dex.substrate_connection import SubstrateConnection
 from gsy_dex.key_manager import KeyManager
 
-from substrateinterface import Keypair
+from substrateinterface.base import Keypair
 from substrateinterface.exceptions import SubstrateRequestException
 
 from gsy_e.gsy_e_core.exceptions import AreaException
