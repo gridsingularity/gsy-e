@@ -15,24 +15,20 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import calendar
 from logging import getLogger
-from typing import Union, Optional, Callable
-from pendulum import DateTime
-
-from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.data_classes import TraderDetails
-
-from substrateinterface.exceptions import SubstrateRequestException
+from typing import Union, Optional
 
 from gsy_dex.data_classes import Bid as BcBid
-from gsy_dex.gsy_orderbook import GSyOrderbook
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.data_classes import TraderDetails
+from pendulum import DateTime, now
+from substrateinterface.exceptions import SubstrateRequestException
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
-from gsy_e.gsy_e_core.exceptions import (BidNotFoundException,
-    NegativePriceOrdersException, NegativeEnergyOrderException, InvalidBid)
-from gsy_e.models.market.one_sided_bc import OneSidedBcMarket
+from gsy_e.gsy_e_core.exceptions import (
+    BidNotFoundException, NegativePriceOrdersException, NegativeEnergyOrderException, InvalidBid)
 from gsy_e.models.market import lock_market_action
+from gsy_e.models.market.one_sided_bc import OneSidedBcMarket
 
 log = getLogger(__name__)
 
@@ -94,17 +90,19 @@ class TwoSidedBcMarket(OneSidedBcMarket):
             raise NegativePriceOrdersException(
                 "Negative price after taxes, bid cannot be posted.")
 
-        bid = BcBid(buyer=self.bc_interface.conn.get_creds_from_area(self.area_uuid), nonce=self.nonce,
-                    area_uuid=self.area_uuid, market_uuid=[1], time_slot=calendar.timegm(self.time_slot.timetuple()),
-                    attributes=[[1]], energy=energy, price=price, priority=1, energy_type=[1])
+        bid = BcBid(buyer_keypair=self.bc_interface.conn.get_creds_from_area(self.area_uuid),
+                    buyer=buyer, nonce=self.nonce,
+                    area_uuid=self.area_uuid, market_uuid=self.id, time_slot=self.time_slot,
+                    attributes=[[1]], energy=energy, price=price, priority=1, energy_type=[1],
+                    creation_time=now())
         deposited_collateral = self.bc_interface.conn.deposited_collateral.get(self.area_uuid)
         if deposited_collateral is None or deposited_collateral < energy * price:
-            self.bc_interface.deposit_collateral(energy * price, self.area_uuid)
-        insert_order_call = self.bc_interface.conn.gsy_orderbook.create_insert_orders_call([bid.serializable_order_dict()])
+            self.bc_interface.conn.deposit_collateral(energy * price, self.area_uuid)
+        insert_order_call = self.bc_interface.conn.gsy_orderbook.create_insert_orders_call([bid.serializable_substrate_dict()])
         signed_insert_order_call_extrinsic = self.bc_interface.conn.conn.substrate.create_signed_extrinsic(insert_order_call,
-                                                                                              self.bc_interface.get_creds_from_area(self.area_uuid))
+                                                                                              self.bc_interface.conn.get_creds_from_area(self.area_uuid))
         try:
-            receipt = self.bc_interface.conn.submit_extrinsic(signed_insert_order_call_extrinsic)
+            receipt = self.bc_interface.conn.conn.submit_extrinsic(signed_insert_order_call_extrinsic)
             if receipt.is_success:
                 log.debug("post bid succeeded")
                 log.debug("%s[BID][NEW][%s][%s] %s",
@@ -129,11 +127,12 @@ class TwoSidedBcMarket(OneSidedBcMarket):
         bid = self.bids.pop(bid_or_id, None)
         if not bid:
             raise BidNotFoundException(bid_or_id)
-        remove_order_call = self.bc_interface.gsy_orderbook.create_remove_orders_call([bid.serializable_order_dict()])
-        signed_remove_order_call_extrinsic = self.bc_interface.conn.generate_signed_extrinsic(remove_order_call,
-                                                                                              self.bc_interface.get_creds_from_area(self.area_uuid))
+        remove_order_call = self.bc_interface.conn.gsy_orderbook.create_remove_orders_call(
+            [bid.serializable_substrate_dict()])
+        signed_remove_order_call_extrinsic = self.bc_interface.conn.conn.substrate.create_signed_extrinsic(
+            remove_order_call, self.bc_interface.conn.get_creds_from_area(self.area_uuid))
         try:
-            receipt = self.bc_interface.conn.submit_extrinsic(signed_remove_order_call_extrinsic)
+            receipt = self.bc_interface.conn.conn.submit_extrinsic(signed_remove_order_call_extrinsic)
             if receipt.is_success:
                 log.debug("%s[BID][DEL][%s] %s",
                           self._debug_log_market_type_identifier, self.time_slot_str or bid.time_slot, bid)

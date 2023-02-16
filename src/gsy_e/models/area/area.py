@@ -326,7 +326,7 @@ class Area(AreaBase):
                 bid_offer_matcher.match_recommendations()
 
         self.events.update_events(self.now)
-        if self._bc:
+        if self._bc and self._bc.conn.trades_buffer:
             trade = Trade.from_serializable_dict(self._bc.conn.trades_buffer[self.uuid][-1])
             self.dispatcher.event_listener(event_type=MarketEvent.OFFER_TRADED, trade=trade)
             self.dispatcher.event_listener(event_type=MarketEvent.BID_TRADED, trade=trade)
