@@ -130,13 +130,17 @@ class ProfileDBConnectionHandler:
             and datapoint.time <= first_datapoint_time + duration(days=7)
         )
 
-        datapoint_dict = {
-            self._strip_timezone_and_create_pendulum_instance_from_datetime(datapoint.time).set(
-                year=current_timestamp.year,
-                month=current_timestamp.month,
-                day=current_timestamp.day
-            ): datapoint.value for datapoint in datapoints
-        }
+        datapoint_dict = {}
+        diff_current_to_db_time = None
+        for datapoint in datapoints:
+            db_time = self._strip_timezone_and_create_pendulum_instance_from_datetime(
+                datapoint.time)
+            if diff_current_to_db_time is None:
+                # as datapoints are queried lazily from the DB, the calculation of the difference
+                # between current time and the start time of the profile in the DB
+                # has to be done like this in order to not query the whole profile twice
+                diff_current_to_db_time = current_timestamp - db_time
+            datapoint_dict[db_time + diff_current_to_db_time] = datapoint.value
 
         self._buffered_times = list(datapoint_dict.keys())
 
