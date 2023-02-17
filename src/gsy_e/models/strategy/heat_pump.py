@@ -84,6 +84,19 @@ class HeatPumpStrategy(TradingStrategyBase):
 
         self.preferred_buying_rate = preferred_buying_rate
 
+    @staticmethod
+    def deserialize_args(constructor_args: Dict) -> Dict:
+        """Deserialize the constructor arguments for the HeatPump strategy."""
+        if "order_updater_params" not in constructor_args:
+            constructor_args["order_updater_params"] = {
+                AvailableMarketTypes.SPOT:
+                    HeatPumpOrderUpdaterParameters(
+                        update_interval=duration(minutes=constructor_args.get("update_interval")),
+                        initial_rate=constructor_args.get("initial_buying_rate"),
+                        final_rate=constructor_args.get("final_buying_rate"))
+            }
+        return constructor_args
+
     def serialize(self):
         """Return serialised energy params."""
         return {**self._energy_params.serialize()}
