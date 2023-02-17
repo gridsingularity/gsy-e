@@ -87,8 +87,8 @@ class HeatPumpStrategy(TradingStrategyBase):
     @staticmethod
     def deserialize_args(constructor_args: Dict) -> Dict:
         """Deserialize the constructor arguments for the HeatPump strategy."""
-        if "order_updater_params" not in constructor_args:
-            constructor_args["order_updater_params"] = {
+        if "order_updater_parameters" not in constructor_args:
+            constructor_args["order_updater_parameters"] = {
                 AvailableMarketTypes.SPOT:
                     HeatPumpOrderUpdaterParameters(
                         update_interval=duration(minutes=constructor_args.get("update_interval")),
