@@ -84,7 +84,7 @@ class OneSidedBcMarket(TwoSidedMarket):
             seller_keypair=self.bc_interface.conn.get_creds_from_area(self.area_uuid),
             nonce=self.nonce, area_uuid=self.area_uuid, market_uuid=self.id,
             time_slot=self.time_slot, creation_time=now(), seller=seller,
-            attributes=[[1]], energy=energy, price=price, priority=1, energy_type=[1])
+            energy=energy, price=price)
         deposited_collateral = self.bc_interface.conn.deposited_collateral.get(self.area_uuid)
         if deposited_collateral is None or deposited_collateral < energy * price:
             self.bc_interface.conn.deposit_collateral(energy * price, self.area_uuid)
