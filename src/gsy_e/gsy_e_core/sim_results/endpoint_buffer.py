@@ -66,7 +66,7 @@ class SimulationResultValidator:
 
     def validate_configuration_tree(self, data: Dict):
         """Validate configuration_tree dict."""
-        self.simulation_configuration_tree_validator.validate(data=data, raise_exception=False)
+        self.simulation_configuration_tree_validator.validate(data=data, raise_exception=True)
 
 
 # pylint: disable=too-many-instance-attributes
