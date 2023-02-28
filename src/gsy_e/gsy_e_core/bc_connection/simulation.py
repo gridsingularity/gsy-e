@@ -15,9 +15,9 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import json
 import os
 from logging import getLogger
-from threading import Thread
 
 from gsy_dex.data_classes import Trade
 from gsy_dex.gsy_collateral import GSyCollateral
@@ -29,11 +29,13 @@ from substrateinterface.base import Keypair
 from substrateinterface.exceptions import SubstrateRequestException
 
 from gsy_e.gsy_e_core.exceptions import AreaException
+from gsy_e.gsy_e_core.redis_connections.area_market import RedisCommunicator
 
 log = getLogger(__name__)
 
 NODE_URL = os.environ.get("NODE_URL", "ws://127.0.0.1:9944")
 SUDO_URI = os.environ.get("SUDO_URI", "//Alice")
+DEX_TRADES_CHANNEL = os.environ.get("DEX_TRADES_CHANNEL", "dex-trades-events")
 
 
 class AccountAreaMapping:
@@ -61,9 +63,8 @@ class BcSimulationCommunication:
         self.registered_address = []
         self.deposited_collateral = {}
         self.trades_buffer = {}
-        self.t = Thread(target=self.subscribe_and_handle_order_executed_event)
-        self.t.daemon = True
-        self.t.start()
+        self.redis = RedisCommunicator()
+        self.redis.sub_to_channel(DEX_TRADES_CHANNEL, self.handle_dex_trades_event)
 
     def add_creds_for_area(self, area_uuid, uri):
         self._mapping.add_area_creds(area_uuid, uri)
@@ -96,19 +97,11 @@ class BcSimulationCommunication:
     def mapping(self):
         return self._mapping
 
-    def order_executed_handler(self, event, update_nr, subscription_id):
-        for event in event.value:
-            print('Event: ', event['event'])
-            if event['event']['event_id'] == 'OrderExecuted':
-                trade = Trade.from_serializable_dict(event['event']['attributes'])
-                if self.trades_buffer[trade.bid.area_uuid]:
-                    self.trades_buffer[trade.bid.area_uuid].append(trade.serializable_dict())
-                else:
-                    self.trades_buffer[trade.bid.area_uuid] = [trade.serializable_dict()]
-                if self.trades_buffer[trade.offer.area_uuid]:
-                    self.trades_buffer[trade.offer.area_uuid].append(trade.serializable_dict())
-                else:
-                    self.trades_buffer[trade.offer.area_uuid] = [trade.serializable_dict()]
+    def pop_trades_from_buffer(self, area_uuid):
+        try:
+            return self.trades_buffer.pop(area_uuid, [])
+        except KeyError as e:
+            log.error(f"The {area_uuid} doesn't have trades in the buffer", e)
 
     def register_user(self, area_uuid: str):
         user_address = self.get_creds_from_area(area_uuid).ss58_address
@@ -129,9 +122,19 @@ class BcSimulationCommunication:
             except SubstrateRequestException as e:
                 log.error("Failed to send the extrinsic to the node %s", e)
 
-    def subscribe_and_handle_order_executed_event(self):
-        trade_dict = self._conn.subscribe_events(handler=self.order_executed_handler)
-        log.debug("[TRADE][NEW][%s]", trade_dict)
+    def handle_dex_trades_event(self, payload):
+        message_json = json.loads(payload['data'])
+        trade_json = message_json['payload']
+        log.info("[TRADE][NEW][%s]", trade_json)
+        trade = Trade.from_serializable_dict(trade_json)
+        if self.trades_buffer.get(str(trade.bid.area_uuid)):
+            self.trades_buffer[str(trade.bid.area_uuid)].append(trade)
+        else:
+            self.trades_buffer[str(trade.bid.area_uuid)] = [trade]
+        if self.trades_buffer.get(str(trade.offer.area_uuid)):
+            self.trades_buffer[str(trade.offer.area_uuid)].append(trade)
+        else:
+            self.trades_buffer[str(trade.offer.area_uuid)] = [trade]
 
     def add_sudo_keypair(self, keypair: Keypair):
         if not self._conn.check_sudo_key(keypair):

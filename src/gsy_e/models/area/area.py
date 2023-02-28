@@ -326,10 +326,11 @@ class Area(AreaBase):
                 bid_offer_matcher.match_recommendations()
 
         self.events.update_events(self.now)
-        if self._bc and self._bc.conn.trades_buffer:
-            trade = Trade.from_serializable_dict(self._bc.conn.trades_buffer[self.uuid][-1])
-            self.dispatcher.event_listener(event_type=MarketEvent.OFFER_TRADED, trade=trade)
-            self.dispatcher.event_listener(event_type=MarketEvent.BID_TRADED, trade=trade)
+        if self._bc and self._bc.conn.trades_buffer.get(self.uuid):
+            trades = self._bc.conn.pop_trades_from_buffer(self.uuid)
+            for trade in trades:
+                self.dispatcher.event_listener(event_type=MarketEvent.OFFER_TRADED, trade=trade)
+                self.dispatcher.event_listener(event_type=MarketEvent.BID_TRADED, trade=trade)
 
     def _update_myco_matcher(self) -> None:
         """Update the markets cache that the myco matcher will request"""
