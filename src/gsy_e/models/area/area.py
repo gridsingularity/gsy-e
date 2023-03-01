@@ -28,7 +28,6 @@ from pendulum import DateTime
 import gsy_e.constants
 from gsy_e.events import MarketEvent
 from gsy_e.gsy_e_core.bc_connection.simulation import AreaWebsocketConnection
-from gsy_e.gsy_e_core.blockchain_interface import blockchain_interface_factory
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.exceptions import AreaException
 from gsy_e.gsy_e_core.myco_singleton import bid_offer_matcher
@@ -45,8 +44,6 @@ from gsy_e.models.market.forward import ForwardMarketBase
 from gsy_e.models.market.future import FutureMarkets
 
 from gsy_e.models.strategy.external_strategies import ExternalMixin
-
-from gsy_dex.data_classes import Trade
 
 log = getLogger(__name__)
 
@@ -258,8 +255,9 @@ class Area(AreaBase):
         if deactivate:
             return
 
-        # TODO: Refactor and port the future, spot, settlement and balancing market creation to
-        # AreaMarkets class, in order to create all necessary markets with one call.
+        # pylint: disable-next=fixme
+        # TODO: Refactor and port the future, spot, settlement and balancing market
+        #  creation to AreaMarkets class, in order to create all necessary markets with one call.
         changed = self._markets.create_new_spot_market(now_value, AvailableMarketTypes.SPOT, self)
 
         # create new settlement market

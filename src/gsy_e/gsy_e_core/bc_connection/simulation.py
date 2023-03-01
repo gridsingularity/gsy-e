@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+# pylint: skip-file
 import json
 import os
 from logging import getLogger
@@ -50,6 +51,7 @@ class AccountAreaMapping:
 
 
 class BcSimulationCommunication:
+    # pylint: disable=too-many-instance-attributes
     def __init__(self, bc_account_credentials):
         self._conn = SubstrateConnection(
             node_url=NODE_URL,
@@ -75,12 +77,15 @@ class BcSimulationCommunication:
 
     def deposit_collateral(self, amount: int, area_uuid: str):
         user_keypair = self.get_creds_from_area(area_uuid)
-        deposit_collateral_call = self.gsy_collateral.create_deposit_collateral_call(amount * 1000000)
-        signed_deposit_collateral_call = self._conn.generate_signed_extrinisc(deposit_collateral_call, user_keypair)
+        deposit_collateral_call = self.gsy_collateral.create_deposit_collateral_call(
+            amount * 1000000)
+        signed_deposit_collateral_call = self._conn.generate_signed_extrinsic(
+            deposit_collateral_call, user_keypair)
         try:
             receipt = self._conn.submit_extrinsic(signed_deposit_collateral_call)
             if receipt.is_success:
-                log.debug("[COLLATERAL_DEPOSITED][NEW][%s][%s][%s]", amount, area_uuid, user_keypair.ss58_address)
+                log.debug("[COLLATERAL_DEPOSITED][NEW][%s][%s][%s]",
+                          amount, area_uuid, user_keypair.ss58_address)
                 if area_uuid not in self.deposited_collateral:
                     self.deposited_collateral[area_uuid] = amount
                 else:
@@ -100,18 +105,22 @@ class BcSimulationCommunication:
     def pop_trades_from_buffer(self, area_uuid):
         try:
             return self.trades_buffer.pop(area_uuid, [])
-        except KeyError as e:
-            log.error(f"The {area_uuid} doesn't have trades in the buffer", e)
+        except KeyError:
+            log.error("The %s doesn't have trades in the buffer", area_uuid)
+            return None
 
     def register_user(self, area_uuid: str):
         user_address = self.get_creds_from_area(area_uuid).ss58_address
         if user_address not in self.registered_address:
             if not self._conn.check_sudo_key(self._sudo_keypair):
-                log.error("Can't register user, the registered keypair: %s is not a super user", self._sudo_keypair)
+                log.error(
+                    "Can't register user, the registered keypair: %s is not a super user",
+                    self._sudo_keypair)
                 return
             register_user_call = self.gsy_collateral.create_register_user_call(user_address)
             sudo_call = self._conn.create_sudo_call(register_user_call)
-            signed_sudo_call_extrinsic = self._conn.generate_signed_extrinisc(sudo_call, self._sudo_keypair)
+            signed_sudo_call_extrinsic = self._conn.generate_signed_extrinsic(
+                sudo_call, self._sudo_keypair)
             try:
                 receipt = self._conn.submit_extrinsic(signed_sudo_call_extrinsic)
                 if receipt.is_success:
@@ -123,8 +132,8 @@ class BcSimulationCommunication:
                 log.error("Failed to send the extrinsic to the node %s", e)
 
     def handle_dex_trades_event(self, payload):
-        message_json = json.loads(payload['data'])
-        trade_json = message_json['payload']
+        message_json = json.loads(payload["data"])
+        trade_json = message_json["payload"]
         log.info("[TRADE][NEW][%s]", trade_json)
         trade = Trade.from_serializable_dict(trade_json)
         if self.trades_buffer.get(str(trade.bid.area_uuid)):
