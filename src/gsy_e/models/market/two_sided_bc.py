@@ -34,28 +34,69 @@ log = getLogger(__name__)
 
 
 class TwoSidedBcMarket(OneSidedBcMarket):
-    """Extend One sided market class and add support for bidding functionality.
+    """
+    A class representing a two-sided blockchain market.
+
+    Extend One sided market class and add support for bidding functionality.
+
+    This class inherits from OneSidedBcMarket. It provides methods for posting, deleting and
+    querying bids and offers for a two-sided market.
 
     A market type that allows producers to place energy offers to the markets
     (exactly the same way as on the one-sided market case), but also allows the consumers
     to place energy bids on their respective markets.
     Contrary to the one sided market, where the offers are selected directly by the consumers,
     the offers and bids are being matched via some matching algorithm.
-    """
 
-    def __init__(self, time_slot=None, bc=None, area_uuid=None, notification_listener=None, readonly=False,
-                 grid_fee_type=ConstSettings.MASettings.GRID_FEE_TYPE,
+    Attributes:
+    - nonce (int): A counter used for generating unique nonces for bids and offers.
+    """
+    def __init__(self, time_slot=None, bc=None, area_uuid=None, notification_listener=None,
+                 readonly=False, grid_fee_type=ConstSettings.MASettings.GRID_FEE_TYPE,
                  grid_fees=None, name=None, in_sim_duration=True):
         # pylint: disable=too-many-arguments
+        """
+        Initialize the TwoSidedBcMarket object.
+
+        Args:
+        - time_slot (Optional[DateTime]): A datetime object representing the time
+            slot of the market. Defaults to None.
+        - bc: The blockchain interface used to interact with the blockchain.
+        - area_uuid: A string representing the area UUID of the market. Defaults to None.
+        - notification_listener (Optional[Callable], optional): A callable object that will be
+            notified when new trades occur. Defaults to None.
+        - readonly (bool): A flag that indicates whether the market is read-only or not.
+            Defaults to False.
+        - grid_fee_type: A parameter representing grid fee type.
+            Defaults to ConstSettings.MASettings.GRID_FEE_TYPE.
+        - grid_fees (Optional[GridFee], optional): A parameter representing grid fees.
+            Defaults to None.
+        - name (Optional[str], optional): A string representing the name of the market.
+            Defaults to None.
+        - in_sim_duration (bool): A boolean indicating whether the current market slot
+            is included in the expected duration of the simulation. Defaults to True.
+        """
         super().__init__(time_slot, bc, area_uuid, notification_listener, readonly, grid_fee_type,
                          grid_fees, name, in_sim_duration=in_sim_duration)
         self.nonce = 1
 
     @property
     def _debug_log_market_type_identifier(self):
+        """
+        Get the market type identifier used in debug log messages.
+
+        Returns:
+            str = The market type identifier.
+        """
         return "[TWO_SIDED_BC]"
 
     def __repr__(self):
+        """
+        Return a string representation of the TwoSidedBcMarket object.
+
+        Returns:
+            str: A string representation of the TwoSidedBcMarket object.
+        """
         return (f"<{self._class_name} {self.time_slot_str} bids: {len(self.bids)}"
                 f" (E: {sum(b.energy for b in self.bids.values())} kWh"
                 f" V:{sum(b.price for b in self.bids.values())}) "
@@ -66,13 +107,34 @@ class TwoSidedBcMarket(OneSidedBcMarket):
 
     @lock_market_action
     def bid(self, price: float, energy: float, buyer: TraderDetails,
-            bid_id: Optional[str] = None,
-            original_price: Optional[float] = None,
-            adapt_price_with_fees: bool = True,
-            add_to_history: bool = True,
-            dispatch_event: bool = True,
-            time_slot: Optional[DateTime] = None) -> BcBid:
+            bid_id: Optional[str] = None, original_price: Optional[float] = None,
+            adapt_price_with_fees: bool = True, add_to_history: bool = True,
+            dispatch_event: bool = True, time_slot: Optional[DateTime] = None) -> BcBid:
+        """
+        Post an offer to the DEX orderbook.
+
+        Args:
+        - price (float): The price of the offer.
+        - energy (float): The amount of energy for the offer.
+        - buyer (TraderDetails): The details of the buyer.
+        - bid_id (Optional[str], optional): The ID of the bid. Defaults to None.
+        - original_price (Optional[float], optional): The original price of the bid.
+            Defaults to None.
+        - adapt_price_with_fees (bool, optional): Whether to adapt the price with fees.
+            Defaults to True.
+        - add_to_history (bool, optional): Whether to add the bid to the history. Defaults to True.
+        - dispatch_event (bool, optional): Whether to dispatch an event. Defaults to True.
+        - time_slot (Optional[DateTime], optional): The time slot of the bid. Defaults to None.
+
+        Returns:
+        - BcBid: The created bid.
+
+        Raises:
+        - InvalidBid: If the bid is invalid.
+        - SubstrateRequestException: If there's an issue with the substrate request.
+        """
         # pylint: disable=too-many-arguments
+        # pylint: disable=too-many-locals
         if energy <= FLOATING_POINT_TOLERANCE:
             raise NegativeEnergyOrderException("Energy value for bid can not be negative.")
 
@@ -97,11 +159,15 @@ class TwoSidedBcMarket(OneSidedBcMarket):
         deposited_collateral = self.bc_interface.conn.deposited_collateral.get(self.area_uuid)
         if deposited_collateral is None or deposited_collateral < energy * price:
             self.bc_interface.conn.deposit_collateral(energy * price, self.area_uuid)
-        insert_order_call = self.bc_interface.conn.gsy_orderbook.create_insert_orders_call([bid.serializable_substrate_dict()])
-        signed_insert_order_call_extrinsic = self.bc_interface.conn.conn.substrate.create_signed_extrinsic(insert_order_call,
-                                                                                              self.bc_interface.conn.get_creds_from_area(self.area_uuid))
+        insert_order_call = \
+            self.bc_interface.conn.gsy_orderbook.create_insert_orders_call(
+                [bid.serializable_substrate_dict()])
+        signed_insert_order_call_extrinsic = \
+            self.bc_interface.conn.conn.substrate.create_signed_extrinsic(
+                insert_order_call, self.bc_interface.conn.get_creds_from_area(self.area_uuid))
         try:
-            receipt = self.bc_interface.conn.conn.submit_extrinsic(signed_insert_order_call_extrinsic)
+            receipt = self.bc_interface.conn.conn.submit_extrinsic(
+                signed_insert_order_call_extrinsic)
             if receipt.is_success:
                 log.debug("post bid succeeded")
                 log.debug("%s[BID][NEW][%s][%s] %s",
@@ -121,6 +187,19 @@ class TwoSidedBcMarket(OneSidedBcMarket):
 
     @lock_market_action
     def delete_bid(self, bid_or_id: Union[str, BcBid]):
+        """
+        Delete the bid identified by bid_or_id from the DEX orderbook.
+
+        Args:
+        - bid_or_id (Union[str, BcBid]): The bid ID to be deleted, or the bid itself.
+
+        Returns:
+        - None
+
+        Raises:
+        - BidNotFoundException: If the bid ID is not found in the market.
+        - InvalidBid: If the bid deletion transaction fails.
+        """
         if isinstance(bid_or_id, BcBid):
             bid_or_id = str(bid_or_id.nonce)
         bid = self.bids.pop(bid_or_id, None)
@@ -128,13 +207,15 @@ class TwoSidedBcMarket(OneSidedBcMarket):
             raise BidNotFoundException(bid_or_id)
         remove_order_call = self.bc_interface.conn.gsy_orderbook.create_remove_orders_call(
             [bid.serializable_substrate_dict()])
-        signed_remove_order_call_extrinsic = self.bc_interface.conn.conn.substrate.create_signed_extrinsic(
-            remove_order_call, self.bc_interface.conn.get_creds_from_area(self.area_uuid))
+        signed_remove_order_call_extrinsic = \
+            self.bc_interface.conn.conn.substrate.create_signed_extrinsic(
+                remove_order_call, self.bc_interface.conn.get_creds_from_area(self.area_uuid))
         try:
-            receipt = self.bc_interface.conn.conn.submit_extrinsic(signed_remove_order_call_extrinsic)
+            receipt = self.bc_interface.conn.conn.submit_extrinsic(
+                signed_remove_order_call_extrinsic)
             if receipt.is_success:
-                log.debug("%s[BID][DEL][%s] %s",
-                          self._debug_log_market_type_identifier, self.time_slot_str or bid.time_slot, bid)
+                log.debug("%s[BID][DEL][%s] %s", self._debug_log_market_type_identifier,
+                          self.time_slot_str or bid.time_slot, bid)
             else:
                 self.bid[bid_or_id] = bid
                 raise InvalidBid

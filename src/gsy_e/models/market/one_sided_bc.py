@@ -34,27 +34,66 @@ log = getLogger(__name__)
 
 
 class OneSidedBcMarket(TwoSidedMarket):
-    """Class responsible for dealing with one sided markets.
-
-    The default market type that D3A simulation uses.
-    Only devices that supply energy (producers) are able to place offers on the markets.
     """
-    def __init__(  # pylint: disable=too-many-arguments
-            self, time_slot: Optional[DateTime] = None,
-            bc=None, area_uuid=None, notification_listener: Optional[Callable] = None,
-            readonly: bool = False, grid_fee_type=ConstSettings.MASettings.GRID_FEE_TYPE,
-            grid_fees: Optional[GridFee] = None, name: Optional[str] = None,
-            in_sim_duration: bool = True):
+    A one-sided blockchain market.
+
+    This class implements a one-sided blockchain market, inheriting from TwoSidedMarket.
+
+    Only devices that supply energy (producers) are able to place offers on the markets.
+
+    Attributes:
+    - in_sim_duration (bool): A boolean indicating whether the current market slot is included in
+        the expected duration of the simulation.
+    - nonce (int): An integer used to generate unique offer IDs.
+    - area_uuid (str): A string representing the area UUID of the market.
+    """
+    def __init__(self, time_slot: Optional[DateTime] = None, bc=None, area_uuid=None,
+                 notification_listener: Optional[Callable] = None, readonly: bool = False,
+                 grid_fee_type=ConstSettings.MASettings.GRID_FEE_TYPE,
+                 grid_fees: Optional[GridFee] = None, name: Optional[str] = None,
+                 in_sim_duration: bool = True):
+        # pylint: disable=too-many-arguments
+        """
+        Initialize the OneSidedBcMarket object.
+
+        Args:
+        - time_slot (Optional[DateTime], optional): A datetime object representing the time
+            slot of the market. Defaults to None.
+        - bc (optional): The blockchain interface used to interact with the blockchain.
+            Defaults to None.
+        - area_uuid: A string representing the area UUID of the market. Defaults to None.
+        - notification_listener (Optional[Callable], optional): A callable object that will be
+            notified when new trades occur. Defaults to None.
+        - readonly (bool): A flag that indicates whether the market is read-only or not.
+            Defaults to False.
+        - grid_fee_type: A parameter representing grid fee type.
+            Defaults to ConstSettings.MASettings.GRID_FEE_TYPE.
+        - grid_fees (Optional[GridFee], optional): A parameter representing grid fees.
+            Defaults to None.
+        - name (Optional[str], optional): A string representing the name of the market.
+            Defaults to None.
+        - in_sim_duration (bool): A boolean indicating whether the current market slot
+            is included in the expected duration of the simulation. Defaults to True.
+
+        Raises:
+        - AssertionError: If ConstSettings.MASettings.MARKET_TYPE equals
+            SpotMarketTypeEnum.COEFFICIENTS.value.
+        """
         assert ConstSettings.MASettings.MARKET_TYPE != SpotMarketTypeEnum.COEFFICIENTS.value
         super().__init__(time_slot, bc, notification_listener, readonly, grid_fee_type,
                          grid_fees, name)
 
-        # If True, the current market slot is included in the expected duration of the simulation
         self.in_sim_duration = in_sim_duration
         self.nonce = 1
         self.area_uuid = area_uuid
 
     def __repr__(self):
+        """
+        Return a string representation of the OneSidedBcMarket object.
+
+        Returns:
+            str: A string representation of the OneSidedBcMarket object.
+        """
         return (
             f"<{self._class_name} {self.time_slot_str}"
             f" offers: {len(self.offers)} (E: {sum(o.energy for o in self.offers.values())} kWh"
@@ -64,22 +103,53 @@ class OneSidedBcMarket(TwoSidedMarket):
 
     @property
     def _class_name(self) -> str:
+        """Return the name of the class.
+
+        Returns:
+            str: The name of the class.
+        """
         return self.__class__.__name__
 
     @property
     def _debug_log_market_type_identifier(self) -> str:
+        """
+        Return a string identifying the market type for"""
+
         return "[ONE_SIDED_BC]"
 
     @lock_market_action
     def offer(  # pylint: disable=too-many-arguments, too-many-locals
             self, price: float, energy: float, seller: TraderDetails,
-            offer_id: Optional[str] = None,
-            original_price: Optional[float] = None,
-            dispatch_event: bool = True,
-            adapt_price_with_fees: bool = True,
-            add_to_history: bool = True,
-            time_slot: Optional[DateTime] = None) -> BcOffer:
+            offer_id: Optional[str] = None, original_price: Optional[float] = None,
+            dispatch_event: bool = True, adapt_price_with_fees: bool = True,
+            add_to_history: bool = True, time_slot: Optional[DateTime] = None) -> BcOffer:
+        """
+        Post an offer to the DEX orderbook.
 
+        Args:
+        - price (float): The price of the offer.
+        - energy (float): The amount of energy for the offer.
+        - seller (TraderDetails): The details of the seller.
+        - offer_id (Optional[str], optional): The ID of the offer.
+            Defaults to None.
+        - original_price (Optional[float], optional): The original price of the offer.
+            Defaults to None.
+        - dispatch_event (bool, optional): Whether to dispatch an event.
+            Defaults to True.
+        - adapt_price_with_fees (bool, optional): Whether to adapt the price with fees.
+            Defaults to True.
+        - add_to_history (bool, optional): Whether to add the offer to the history.
+            Defaults to True.
+        - time_slot (Optional[DateTime], optional): The time slot of the offer.
+            Defaults to None.
+
+        Returns:
+        - BcOffer: The created offer.
+
+        Raises:
+        - InvalidOffer: If the offer is invalid.
+        - SubstrateRequestException: If there's an issue with the substrate request.
+        """
         offer = BcOffer(
             seller_keypair=self.bc_interface.conn.get_creds_from_area(self.area_uuid),
             nonce=self.nonce, area_uuid=self.area_uuid, market_uuid=self.id,
@@ -90,8 +160,9 @@ class OneSidedBcMarket(TwoSidedMarket):
             self.bc_interface.conn.deposit_collateral(energy * price, self.area_uuid)
         insert_order_call = self.bc_interface.conn.gsy_orderbook.create_insert_orders_call(
             [offer.serializable_substrate_dict()])
-        signed_insert_order_call_extrinsic = self.bc_interface.conn.conn.substrate.create_signed_extrinsic(
-            insert_order_call, self.bc_interface.conn.get_creds_from_area(self.area_uuid))
+        signed_insert_order_call_extrinsic = \
+            self.bc_interface.conn.conn.substrate.create_signed_extrinsic(
+                insert_order_call, self.bc_interface.conn.get_creds_from_area(self.area_uuid))
         try:
             receipt = self.bc_interface.conn.conn.submit_extrinsic(
                 signed_insert_order_call_extrinsic)
@@ -111,6 +182,20 @@ class OneSidedBcMarket(TwoSidedMarket):
 
     @lock_market_action
     def delete_offer(self, offer_or_id: Union[str, BcOffer]) -> None:
+        """
+        Delete the offer identified by offer_or_id from the DEX orderbook.
+
+        Args:
+        - offer_or_id (Union[str, BcOffer]): The offer ID to be deleted, or the offer itself.
+
+        Returns:
+        - None
+
+        Raises:
+        - MarketReadOnlyException: If the market is read-only and cannot be modified.
+        - OfferNotFoundException: If the offer ID is not found in the market.
+        - InvalidOffer: If the offer deletion transaction fails.
+        """
         if self.readonly:
             raise MarketReadOnlyException()
         if isinstance(offer_or_id, BcOffer):
@@ -120,10 +205,12 @@ class OneSidedBcMarket(TwoSidedMarket):
             raise OfferNotFoundException()
         remove_order_call = self.bc_interface.conn.gsy_orderbook.create_remove_orders_call(
             [offer.serializable_substrate_dict()])
-        signed_remove_order_call_extrinsic = self.bc_interface.conn.conn.substrate.create_signed_extrinsic(
-            remove_order_call, self.bc_interface.conn.get_creds_from_area(self.area_uuid))
+        signed_remove_order_call_extrinsic = \
+            self.bc_interface.conn.conn.substrate.create_signed_extrinsic(
+                remove_order_call, self.bc_interface.conn.get_creds_from_area(self.area_uuid))
         try:
-            receipt = self.bc_interface.conn.conn.submit_extrinsic(signed_remove_order_call_extrinsic)
+            receipt = self.bc_interface.conn.conn.submit_extrinsic(
+                signed_remove_order_call_extrinsic)
             if receipt.is_success:
                 log.debug("%s[OFFER][NEW][%s][%s] %s",
                           self._debug_log_market_type_identifier, self.name,

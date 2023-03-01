@@ -15,7 +15,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-# pylint: skip-file
 import json
 import os
 from logging import getLogger
@@ -40,19 +39,77 @@ DEX_TRADES_CHANNEL = os.environ.get("DEX_TRADES_CHANNEL", "dex-trades-events")
 
 
 class AccountAreaMapping:
+    """
+    A class representing account area mapping.
+
+    Attributes:
+    - mapping (dict): A dictionary containing the account and its corresponding area.
+
+    Methods:
+    - add_area_creds(area_uuid, uri): Adds account credentials for a specific area.
+    - get_area_creds(area_uuid): Gets account credentials for a specific area.
+    """
     def __init__(self, bc_account_credentials):
+        """
+        Initializes the AccountAreaMapping class.
+
+        Args:
+        - bc_account_credentials (dict): A dictionary containing account credentials.
+        """
         self.mapping = bc_account_credentials
 
     def add_area_creds(self, area_uuid, uri):
+        """
+        Adds account credentials for a specific area.
+
+        Args:
+        - area_uuid (str): The UUID of the area to add credentials for.
+        - uri (str): The URI for the account.
+        """
         self.mapping[area_uuid] = KeyManager.generate_keypair_from_uri(uri)
 
     def get_area_creds(self, area_uuid):
+        """
+        Gets account credentials for a specific area.
+
+        Args:
+        - area_uuid (str): The UUID of the area to get credentials for.
+
+        Returns:
+        - Keypair: The account credentials for the specified area.
+        """
         return self.mapping[area_uuid]
 
 
 class BcSimulationCommunication:
+    """
+    A class to handle communication with a substrate-based blockchain node for a simulation.
+
+    Args:
+    - bc_account_credentials (dict): A dictionary containing the account credentials for the
+     blockchain node.
+
+    Attributes:
+    - _conn (SubstrateConnection): A connection to the substrate-based blockchain node.
+    - _mapping (AccountAreaMapping): An instance of the AccountAreaMapping class.
+    - _sudo_keypair (Keypair): A keypair for a superuser of the blockchain node.
+    - gsy_collateral (GSyCollateral): An instance of the GSyCollateral class.
+    - gsy_orderbook (GSyOrderbook): An instance of the GSyOrderbook class.
+    - registered_address (list): A list of registered user addresses.
+    - deposited_collateral (dict): A dictionary containing the amount of collateral deposited
+     by each user.
+    - trades_buffer (dict): A dictionary containing trade data.
+    - redis (RedisCommunicator): An instance of the RedisCommunicator class.
+    """
     # pylint: disable=too-many-instance-attributes
     def __init__(self, bc_account_credentials):
+        """
+        Initializes a BcSimulationCommunication instance.
+
+        Args:
+        - bc_account_credentials (dict): A dictionary containing the account credentials
+         for the blockchain node.
+        """
         self._conn = SubstrateConnection(
             node_url=NODE_URL,
             address_format=42,
@@ -69,16 +126,36 @@ class BcSimulationCommunication:
         self.redis.sub_to_channel(DEX_TRADES_CHANNEL, self.handle_dex_trades_event)
 
     def add_creds_for_area(self, area_uuid, uri):
+        """
+        Adds credentials for an area.
+
+        Args:
+        - area_uuid (str): The UUID of the area.
+        - uri (str): The URI of the user's account.
+        """
         self._mapping.add_area_creds(area_uuid, uri)
 
     @property
     def conn(self):
+        """
+        Returns the SubstrateConnection instance.
+
+        Returns:
+        - SubstrateConnection: The SubstrateConnection instance.
+        """
         return self._conn
 
     def deposit_collateral(self, amount: int, area_uuid: str):
+        """
+        Deposits collateral into the user's account.
+
+        Args:
+        - amount (int): The amount of collateral to deposit.
+        - area_uuid (str): The UUID of the area.
+        """
         user_keypair = self.get_creds_from_area(area_uuid)
         deposit_collateral_call = self.gsy_collateral.create_deposit_collateral_call(
-            amount * 1000000)
+            amount * 100000)
         signed_deposit_collateral_call = self._conn.generate_signed_extrinsic(
             deposit_collateral_call, user_keypair)
         try:
@@ -96,13 +173,36 @@ class BcSimulationCommunication:
             log.error("Failed to send the extrinsic to the node %s", e)
 
     def get_creds_from_area(self, area_uuid):
+        """
+        This method gets the credentials of an area.
+
+        Parameters:
+        - area_uuid (str): The UUID of the area.
+
+        Returns:
+        - The credentials of the area as returned by the get_area_creds method
+         of the Mapping class.
+        """
         return self._mapping.get_area_creds(area_uuid)
 
     @property
     def mapping(self):
+        """
+        This property returns the instance of the Mapping class.
+        """
         return self._mapping
 
     def pop_trades_from_buffer(self, area_uuid):
+        """
+        This method removes trades from the trades_buffer for a specific area.
+
+        Parameters:
+        - area_uuid (str): The UUID of the area.
+
+        Returns:
+        - The trades removed from the trades_buffer for the specified area or None
+         if there are no trades in the buffer.
+        """
         try:
             return self.trades_buffer.pop(area_uuid, [])
         except KeyError:
@@ -110,6 +210,15 @@ class BcSimulationCommunication:
             return None
 
     def register_user(self, area_uuid: str):
+        """
+        This method registers a user in an area.
+
+        Parameters:
+        - area_uuid (str): The UUID of the area.
+
+        Returns:
+        - None.
+        """
         user_address = self.get_creds_from_area(area_uuid).ss58_address
         if user_address not in self.registered_address:
             if not self._conn.check_sudo_key(self._sudo_keypair):
@@ -132,6 +241,15 @@ class BcSimulationCommunication:
                 log.error("Failed to send the extrinsic to the node %s", e)
 
     def handle_dex_trades_event(self, payload):
+        """
+        This method handles the event when a new trade is made.
+
+        Parameters:
+        - payload (dict): A dictionary that contains information about the new trade.
+
+        Returns:
+        - None.
+        """
         message_json = json.loads(payload["data"])
         trade_json = message_json["payload"]
         log.info("[TRADE][NEW][%s]", trade_json)
@@ -146,6 +264,15 @@ class BcSimulationCommunication:
             self.trades_buffer[str(trade.offer.area_uuid)] = [trade]
 
     def add_sudo_keypair(self, keypair: Keypair):
+        """
+        Sets the given keypair as sudo keypair for the simulation.
+
+        Args:
+        - keypair (Keypair): Keypair to set as sudo keypair.
+
+        Returns:
+        - None.
+        """
         if not self._conn.check_sudo_key(keypair):
             log.error("Can't add a not super user keypair: %s as sudo", keypair)
             return
@@ -153,6 +280,19 @@ class BcSimulationCommunication:
 
 
 class AreaWebsocketConnection:
+    """
+    Class for managing websocket connection to a particular area in a simulation.
+
+    Args:
+    - bc (BcSimulationCommunication): Instance of BcSimulationCommunication.
+    - area_uuid (str): Unique identifier for the area.
+    - uri (str): The URI of the user's account.
+
+    Attributes:
+    - _bc (BcSimulationCommunication): Instance of BcSimulationCommunication.
+    - _area_creds (Credentials): Credentials for the area.
+    """
+
     def __init__(self, bc: BcSimulationCommunication, area_uuid, uri):
         self._bc = bc
         self._bc.add_creds_for_area(area_uuid, uri)
@@ -160,4 +300,5 @@ class AreaWebsocketConnection:
 
     @property
     def conn(self):
+        """Returns the instance of BcSimulationCommunication used for the websocket connection."""
         return self._bc
