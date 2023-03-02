@@ -15,7 +15,7 @@ redis-server /usr/local/etc/redis.conf
 
 The path for the Redis server would be the location where the Redis is installed in your system.
 
-###Install the myco-api-client
+###Install the matching-engine-api-client
 
 1. Make a new virtual environment for the Matching API client:
 
