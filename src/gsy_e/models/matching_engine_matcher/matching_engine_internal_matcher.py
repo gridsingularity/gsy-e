@@ -23,10 +23,11 @@ from gsy_framework.matching_algorithms import (AttributedMatchingAlgorithm,
 
 from gsy_e.gsy_e_core.exceptions import WrongMarketTypeException
 from gsy_e.gsy_e_core.market_counters import FutureMarketCounter
-from gsy_e.models.myco_matcher.myco_matcher_interface import MycoMatcherInterface
+from gsy_e.models.matching_engine_matcher.matching_engine_matcher_interface import \
+    MatchingEngineMatcherInterface
 
 
-class MycoInternalMatcher(MycoMatcherInterface):
+class MatchingEngineInternalMatcher(MatchingEngineMatcherInterface):
     """Interface for market matching, set the matching algorithm and expose recommendations."""
 
     def __init__(self):
