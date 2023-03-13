@@ -170,8 +170,9 @@ class Area(AreaBase):
         """Activate the area and broadcast the activation event."""
         if current_tick is not None:
             self.current_tick = current_tick
-        self._bc = AreaWebsocketConnection(bc, self.uuid, "//Alice")
-        self._bc.conn.register_user(self.uuid)
+        if bc:
+            self._bc = AreaWebsocketConnection(bc, self.uuid, "//Alice")
+            self._bc.conn.register_user(self.uuid)
 
         if self.strategy:
             if self.parent:
