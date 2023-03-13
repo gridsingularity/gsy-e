@@ -58,13 +58,15 @@ class SimulationResetException(Exception):
 
 class Simulation:
     """Main class that starts and controls simulation."""
-    # pylint: disable=too-many-arguments,too-many-instance-attributes
+
+    # pylint: disable=too-many-arguments,too-many-instance-attributes,too-many-locals
     def __init__(self, setup_module_name: str, simulation_config: SimulationConfig,
                  simulation_events: str = None, seed=None,
                  paused: bool = False, pause_after: Duration = None, repl: bool = False,
                  no_export: bool = False, export_path: str = None,
                  export_subdir: str = None, redis_job_id=None, enable_bc=False,
-                 slot_length_realtime: Duration = None, incremental: bool = False, bc_account_credentials: dict={}):
+                 slot_length_realtime: Duration = None, incremental: bool = False,
+                 bc_account_credentials: dict = None):
         self.status = SimulationStatusManager(
             paused=paused,
             pause_after=pause_after,
@@ -76,6 +78,8 @@ class Simulation:
 
         if enable_bc:
             self._bc = BcSimulationCommunication(bc_account_credentials)
+        else:
+            self._bc = None
 
         self._setup = SimulationSetup(
             seed=seed,
@@ -228,7 +232,7 @@ class Simulation:
                     current_tick_in_slot=current_tick_in_slot,
                     slot_completion=f"{int((tick_no / self.config.ticks_per_slot) * 100)}%",
                     market_slot=self.progress_info.next_slot_str)
-                self.config.external_redis_communicator.\
+                self.config.external_redis_communicator. \
                     publish_aggregator_commands_responses_events()
 
                 self._time.handle_slowdown_and_realtime(tick_no, self.config)
