@@ -48,13 +48,14 @@ class OneSidedMarket(MarketBase):
             bc=None, notification_listener: Optional[Callable] = None,
             readonly: bool = False, grid_fee_type=ConstSettings.MASettings.GRID_FEE_TYPE,
             grid_fees: Optional[GridFee] = None, name: Optional[str] = None,
-            in_sim_duration: bool = True):
+            in_sim_duration: bool = True, area_uuid=None):
         assert ConstSettings.MASettings.MARKET_TYPE != SpotMarketTypeEnum.COEFFICIENTS.value
         super().__init__(time_slot, bc, notification_listener, readonly, grid_fee_type,
                          grid_fees, name)
 
         # If True, the current market slot is included in the expected duration of the simulation
         self.in_sim_duration = in_sim_duration
+        self.area_uuid = area_uuid
 
     def __repr__(self):
         return (
@@ -255,7 +256,6 @@ class OneSidedMarket(MarketBase):
         if energy is None or isclose(energy, offer.energy, abs_tol=1e-8):
             energy = offer.energy
 
-        original_offer = offer
         residual_offer = None
 
         if trade_bid_info is not None:
