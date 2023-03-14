@@ -44,7 +44,6 @@ class OneSidedBcMarket(TwoSidedMarket):
     Attributes:
     - in_sim_duration (bool): A boolean indicating whether the current market slot is included in
         the expected duration of the simulation.
-    - nonce (int): An integer used to generate unique offer IDs.
     - area_uuid (str): A string representing the area UUID of the market.
     """
 
@@ -85,7 +84,6 @@ class OneSidedBcMarket(TwoSidedMarket):
                          grid_fees, name)
 
         self.in_sim_duration = in_sim_duration
-        self.nonce = 1
         self.area_uuid = area_uuid
 
     def __repr__(self):
@@ -153,7 +151,7 @@ class OneSidedBcMarket(TwoSidedMarket):
         """
         offer = BcOffer(
             seller_keypair=self.bc_interface.conn.get_creds_from_area(self.area_uuid),
-            nonce=self.nonce, area_uuid=self.area_uuid, market_uuid=self.id,
+            nonce=self.bc_interface.conn.nonce, area_uuid=self.area_uuid, market_uuid=self.id,
             time_slot=self.time_slot, creation_time=now(), seller=seller,
             energy=energy, price=price)
         deposited_collateral = self.bc_interface.conn.deposited_collateral.get(self.area_uuid)
@@ -176,7 +174,7 @@ class OneSidedBcMarket(TwoSidedMarket):
                           self._debug_log_market_type_identifier, self.name,
                           self.time_slot_str or offer.time_slot, offer)
                 self.offers[str(offer.nonce)] = offer
-                self.nonce += 1
+                self.bc_interface.conn.increase_nonce()
             else:
                 raise InvalidOffer
         except SubstrateRequestException as e:

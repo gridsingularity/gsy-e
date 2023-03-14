@@ -47,9 +47,6 @@ class TwoSidedBcMarket(OneSidedBcMarket):
     to place energy bids on their respective markets.
     Contrary to the one sided market, where the offers are selected directly by the consumers,
     the offers and bids are being matched via some matching algorithm.
-
-    Attributes:
-    - nonce (int): A counter used for generating unique nonces for bids and offers.
     """
 
     def __init__(self, time_slot=None, bc=None, area_uuid=None, notification_listener=None,
@@ -79,7 +76,6 @@ class TwoSidedBcMarket(OneSidedBcMarket):
         """
         super().__init__(time_slot, bc, area_uuid, notification_listener, readonly, grid_fee_type,
                          grid_fees, name, in_sim_duration=in_sim_duration)
-        self.nonce = 1
 
     @property
     def _debug_log_market_type_identifier(self):
@@ -154,7 +150,7 @@ class TwoSidedBcMarket(OneSidedBcMarket):
                 "Negative price after taxes, bid cannot be posted.")
 
         bid = BcBid(buyer_keypair=self.bc_interface.conn.get_creds_from_area(self.area_uuid),
-                    buyer=buyer, nonce=self.nonce,
+                    buyer=buyer, nonce=self.bc_interface.conn.nonce,
                     area_uuid=self.area_uuid, market_uuid=self.id, time_slot=self.time_slot,
                     energy=energy, price=price, creation_time=now())
         deposited_collateral = self.bc_interface.conn.deposited_collateral.get(self.area_uuid)
@@ -178,7 +174,7 @@ class TwoSidedBcMarket(OneSidedBcMarket):
                           self._debug_log_market_type_identifier, self.name,
                           self.time_slot_str or bid.time_slot, bid)
                 self.bids[str(bid.nonce)] = bid
-                self.nonce += 1
+                self.bc_interface.conn.increase_nonce()
             else:
                 raise InvalidBid
         except SubstrateRequestException as e:
