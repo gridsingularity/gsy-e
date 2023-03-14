@@ -67,6 +67,8 @@ class AccountAreaMapping:
         - area_uuid (str): The UUID of the area to add credentials for.
         - uri (str): The URI for the account.
         """
+        if self.mapping is None:
+            self.mapping = {}
         self.mapping[area_uuid] = KeyManager.generate_keypair_from_uri(uri)
 
     def get_area_creds(self, area_uuid):
