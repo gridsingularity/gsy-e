@@ -28,7 +28,7 @@ from gsy_dex.key_manager import KeyManager
 from substrateinterface.base import Keypair
 from substrateinterface.exceptions import SubstrateRequestException
 
-from gsy_e.gsy_e_core.exceptions import AreaException
+from gsy_e.gsy_e_core.exceptions import AreaException, SimulationException
 from gsy_e.gsy_e_core.redis_connections.area_market import RedisCommunicator
 
 log = getLogger(__name__)
@@ -49,6 +49,7 @@ class AccountAreaMapping:
     - add_area_creds(area_uuid, uri): Adds account credentials for a specific area.
     - get_area_creds(area_uuid): Gets account credentials for a specific area.
     """
+
     def __init__(self, bc_account_credentials):
         """
         Initializes the AccountAreaMapping class.
@@ -101,6 +102,7 @@ class BcSimulationCommunication:
     - trades_buffer (dict): A dictionary containing trade data.
     - redis (RedisCommunicator): An instance of the RedisCommunicator class.
     """
+
     # pylint: disable=too-many-instance-attributes
     def __init__(self, bc_account_credentials):
         """
@@ -262,6 +264,13 @@ class BcSimulationCommunication:
             self.trades_buffer[str(trade.offer.area_uuid)].append(trade)
         else:
             self.trades_buffer[str(trade.offer.area_uuid)] = [trade]
+        try:
+            self.deposited_collateral[str(trade.bid.area_uuid)] -= \
+                trade.parameters["selected_energy"] * trade.parameters["energy_rate"]
+            self.deposited_collateral[str(trade.offer.area_uuid)] += \
+                trade.parameters["selected_energy"] * trade.parameters["energy_rate"]
+        except SimulationException as ex:
+            log.error(ex)
 
     def add_sudo_keypair(self, keypair: Keypair):
         """

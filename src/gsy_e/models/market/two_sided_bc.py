@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from logging import getLogger
 from typing import Union, Optional
 
-from gsy_dex.data_classes import Bid as BcBid
+from gsy_dex.data_classes import Bid as BcBid, float_to_uint
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import TraderDetails
 from pendulum import DateTime, now
@@ -51,6 +51,7 @@ class TwoSidedBcMarket(OneSidedBcMarket):
     Attributes:
     - nonce (int): A counter used for generating unique nonces for bids and offers.
     """
+
     def __init__(self, time_slot=None, bc=None, area_uuid=None, notification_listener=None,
                  readonly=False, grid_fee_type=ConstSettings.MASettings.GRID_FEE_TYPE,
                  grid_fees=None, name=None, in_sim_duration=True):
@@ -157,8 +158,11 @@ class TwoSidedBcMarket(OneSidedBcMarket):
                     area_uuid=self.area_uuid, market_uuid=self.id, time_slot=self.time_slot,
                     energy=energy, price=price, creation_time=now())
         deposited_collateral = self.bc_interface.conn.deposited_collateral.get(self.area_uuid)
-        if deposited_collateral is None or deposited_collateral < energy * price:
-            self.bc_interface.conn.deposit_collateral(energy * price, self.area_uuid)
+        if (deposited_collateral is None or
+            deposited_collateral < float_to_uint(energy) * float_to_uint(price)) \
+                and float_to_uint(energy) * float_to_uint(price) > 0:
+            self.bc_interface.conn.deposit_collateral(
+                float_to_uint(energy) * float_to_uint(price), self.area_uuid)
         insert_order_call = \
             self.bc_interface.conn.gsy_orderbook.create_insert_orders_call(
                 [bid.serializable_substrate_dict()])

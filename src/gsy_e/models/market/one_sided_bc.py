@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from logging import getLogger
 from typing import Union, Optional, Callable
 
-from gsy_dex.data_classes import Offer as BcOffer
+from gsy_dex.data_classes import Offer as BcOffer, float_to_uint
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import TraderDetails
 from gsy_framework.enums import SpotMarketTypeEnum
@@ -47,6 +47,7 @@ class OneSidedBcMarket(TwoSidedMarket):
     - nonce (int): An integer used to generate unique offer IDs.
     - area_uuid (str): A string representing the area UUID of the market.
     """
+
     def __init__(self, time_slot: Optional[DateTime] = None, bc=None, area_uuid=None,
                  notification_listener: Optional[Callable] = None, readonly: bool = False,
                  grid_fee_type=ConstSettings.MASettings.GRID_FEE_TYPE,
@@ -156,8 +157,11 @@ class OneSidedBcMarket(TwoSidedMarket):
             time_slot=self.time_slot, creation_time=now(), seller=seller,
             energy=energy, price=price)
         deposited_collateral = self.bc_interface.conn.deposited_collateral.get(self.area_uuid)
-        if deposited_collateral is None or deposited_collateral < energy * price:
-            self.bc_interface.conn.deposit_collateral(energy * price, self.area_uuid)
+        if (deposited_collateral is None or
+            deposited_collateral < float_to_uint(energy) * float_to_uint(price)) \
+                and float_to_uint(energy) * float_to_uint(price) > 0:
+            self.bc_interface.conn.deposit_collateral(
+                float_to_uint(energy) * float_to_uint(price), self.area_uuid)
         insert_order_call = self.bc_interface.conn.gsy_orderbook.create_insert_orders_call(
             [offer.serializable_substrate_dict()])
         signed_insert_order_call_extrinsic = \
