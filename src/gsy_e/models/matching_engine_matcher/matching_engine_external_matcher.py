@@ -29,11 +29,11 @@ import gsy_e.constants
 from gsy_e.gsy_e_core.exceptions import (InvalidBidOfferPairException,
                                          MatchingEngineValidationException)
 from gsy_e.gsy_e_core.market_counters import ExternalTickCounter
-from gsy_e.gsy_e_core.redis_connections.area_market import \
-    matching_engine_redis_communicator_factory
+from gsy_e.gsy_e_core.redis_connections.area_market import (
+    matching_engine_redis_communicator_factory)
 from gsy_e.models.market.two_sided import TwoSidedMarket
-from gsy_e.models.matching_engine_matcher.matching_engine_matcher_interface import \
-    MatchingEngineMatcherInterface
+from gsy_e.models.matching_engine_matcher.matching_engine_matcher_interface import (
+    MatchingEngineMatcherInterface)
 
 # pylint: disable=fixme
 
