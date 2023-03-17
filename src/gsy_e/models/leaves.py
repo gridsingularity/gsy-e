@@ -113,8 +113,6 @@ class LeafBase:
             logging.warning("Trying to construct area strategy %s with not allowed "
                             "arguments %s", name, not_accepted_args)
         try:
-            print("##########")
-            print(self.strategy_type, allowed_arguments, kwargs)
             super().__init__(
                 name=name,
                 strategy=self.strategy_type(**{
