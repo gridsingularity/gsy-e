@@ -22,7 +22,7 @@ from gsy_e.constants import DEFAULT_SCM_COMMUNITY_NAME
 from gsy_e.models.area import CoefficientArea
 from gsy_e.models.strategy.scm.load import SCMLoadHoursStrategy
 from gsy_e.models.strategy.scm.external.pv import ExternalSCMPVStrategy
-from gsy_e.models.strategy.scm.external.load import ExternalSCMLoadHoursStrategy
+from gsy_e.models.strategy.scm.external.load import ExternalSCMLoadStrategy
 from gsy_e.models.strategy.scm.pv import SCMPVStrategy
 from gsy_e.models.strategy.scm.smart_meter import SCMSmartMeterStrategy
 from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
@@ -51,10 +51,8 @@ def get_setup(config):
                 "House 2",
                 [
                     CoefficientArea("forecast-measurement-load",
-                                    strategy=ExternalSCMLoadHoursStrategy(
-                                        avg_power_W=200, hrs_of_day=list(range(12, 16)))),
-                    CoefficientArea("forecast-measurement-pv", strategy=ExternalSCMPVStrategy(
-                        capacity_kW=0.9)),
+                                    strategy=ExternalSCMLoadStrategy()),
+                    CoefficientArea("forecast-measurement-pv", strategy=ExternalSCMPVStrategy()),
                     CoefficientArea("H2 Smart Meter",
                                     strategy=SCMSmartMeterStrategy(smart_meter_profile={0: 100})),
                 ],
