@@ -25,4 +25,4 @@ The user is able to view results for each market or asset in the grid configurat
 
 The user can also download the results of the simulation for a deeper analysis of the community trading patterns by clicking on the download results icon under the settings tab, as shown in the picture below. For more information about this option, see [Results Download](results-download.md)
 
-![alt_text](img/results-dashboard-4.png#center){:style="height:550px;width:280px"}
+![alt_text](img/results-dashboard-4.png){:style="height:550px;width:280px"}
