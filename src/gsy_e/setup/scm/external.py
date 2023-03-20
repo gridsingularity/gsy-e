@@ -15,9 +15,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
-from gsy_framework.constants_limits import ConstSettings, SpotMarketTypeEnum
-
 from gsy_e.constants import DEFAULT_SCM_COMMUNITY_NAME
 from gsy_e.models.area import CoefficientArea
 from gsy_e.models.strategy.scm.load import SCMLoadHoursStrategy
@@ -26,8 +23,6 @@ from gsy_e.models.strategy.scm.external.load import ExternalSCMLoadStrategy
 from gsy_e.models.strategy.scm.pv import SCMPVStrategy
 from gsy_e.models.strategy.scm.smart_meter import SCMSmartMeterStrategy
 from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
-
-ConstSettings.MASettings.MARKET_TYPE = SpotMarketTypeEnum.COEFFICIENTS.value
 
 
 def get_setup(config):
