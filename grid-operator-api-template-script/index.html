@@ -13,7 +13,7 @@
         <meta name="description" content="Documentation for the Grid Singularity Exchange">
       
       
-        <link rel="canonical" href="https://gridsingularity.github.io/gsy-e/documentation/grid-operator-api-template-script/">
+        <link rel="canonical" href="http://localhost:8000/grid-operator-api-template-script/">
       
       
         <meta name="author" content="Grid Singularity">
@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../img/Profile.png">
-      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.0.2">
+      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-4.0.2">
     
     
       
@@ -119,7 +119,7 @@
   <nav class="md-header-nav md-grid">
     <div class="md-flex">
       <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="https://gridsingularity.github.io/gsy-e/documentation/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
+        <a href="http://localhost:8000/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
           
             <img src="../img/Profile.png" width="32" height="32">
           
@@ -176,7 +176,7 @@
 
   
 
-<a href="https://github.com/gridsingularity/gsy-e/wiki/" title="Go to repository" class="md-source" data-md-source="github">
+<a href="https://github.com/gridsingularity/gsy-e/wiki" title="Go to repository" class="md-source" data-md-source="github">
   
     <div class="md-source__icon">
       <svg viewBox="0 0 24 24" width="24" height="24">
@@ -209,7 +209,7 @@
                   <div class="md-sidebar__inner">
                     <nav class="md-nav md-nav--primary" data-md-level="0">
   <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="https://gridsingularity.github.io/gsy-e/documentation/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
+    <a href="http://localhost:8000/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
       
         <img src="../img/Profile.png" width="48" height="48">
       
@@ -223,7 +223,7 @@
 
   
 
-<a href="https://github.com/gridsingularity/gsy-e/wiki/" title="Go to repository" class="md-source" data-md-source="github">
+<a href="https://github.com/gridsingularity/gsy-e/wiki" title="Go to repository" class="md-source" data-md-source="github">
   
     <div class="md-source__icon">
       <svg viewBox="0 0 24 24" width="24" height="24">
@@ -2088,7 +2088,7 @@ while not aggregator.is_finished:
 <p>In Time of Use (ToU) strategy, grid fees are applied depending on the time of the day (hours and minutes) regardless of the market conditions. After analyzing import and export patterns of their client, grid operators can create a time-based curve, increasing fees at peak predicted times (e.g. morning and dinner time). Below is an example of a ToU strategy used by the grid operators in one of the experiments at <a href="https://gridsingularity.medium.com/energy-singularity-challenge-2020-testing-novel-grid-fee-models-and-intelligent-peer-to-peer-6a0d715a9063">Odyssey hackathon</a>.</p>
 <p><img alt="alt_text" src="../img/grid-operator-api-2.png" /></p>
 <p>A template script can be found <a href="https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/grid_operator_api_scripts/rest_tou_strategy.py">here</a>. The ToU strategy is uploaded to the Grid Operator API script as a CSV file (an example can be found <a href="https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/grid_operator_api_scripts/resources/ToU.csv">here</a>), with the following structure:</p>
-<p><img alt="alt_text" src="../img/grid-operator-api-7.png" style="height:221px;width:329px;text-align:center" /></p>
+<p><img alt="alt_text" src="img/grid-operator-api-7.png" style="height:221px;width:329px;text-align:center" /></p>
 <p>As shown in the table above, for each market (in this case, the Community market and the Grid market), a value in ct€/kWh is assigned with a granularity of 15 min. The file is loaded through the read_fee_strategy function:</p>
 <pre class="codehilite"><code class="language-python">def read_fee_strategy():
    &quot;Return a dictionary containing the Time of Use strategy loaded from the CSV input file.&quot;
@@ -2293,7 +2293,7 @@ LOOK_BACK_INDEX = 4
     
       <script src="../assets/javascripts/application.05d1c8d6.js"></script>
       
-      <script>app.initialize({version:"1.0.4",url:{base:".."}})</script>
+      <script>app.initialize({version:"1.3.0",url:{base:".."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
       
