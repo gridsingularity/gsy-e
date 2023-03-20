@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import uuid
 from logging import getLogger
 from typing import Union, Optional, Callable
 
@@ -149,11 +150,12 @@ class OneSidedBcMarket(TwoSidedMarket):
         - InvalidOffer: If the offer is invalid.
         - SubstrateRequestException: If there's an issue with the substrate request.
         """
+        if offer_id is None:
+            offer_id = str(uuid.uuid4())
         offer = BcOffer(
             seller_keypair=self.bc_interface.conn.get_creds_from_area(self.area_uuid),
-            nonce=self.bc_interface.conn.nonce, area_uuid=self.area_uuid, market_uuid=self.id,
-            time_slot=self.time_slot, creation_time=now(), seller=seller,
-            energy=energy, price=price)
+            seller=seller, id=offer_id, area_uuid=self.area_uuid, market_uuid=self.id,
+            time_slot=self.time_slot, creation_time=now(), energy=energy, price=price)
         deposited_collateral = self.bc_interface.conn.deposited_collateral.get(self.area_uuid)
         if (deposited_collateral is None or
             deposited_collateral < float_to_uint(energy) * float_to_uint(price)) \
@@ -173,8 +175,7 @@ class OneSidedBcMarket(TwoSidedMarket):
                 log.debug("%s[OFFER][NEW][%s][%s] %s",
                           self._debug_log_market_type_identifier, self.name,
                           self.time_slot_str or offer.time_slot, offer)
-                self.offers[str(offer.nonce)] = offer
-                self.bc_interface.conn.increase_nonce()
+                self.offers[str(offer.id)] = offer
             else:
                 raise InvalidOffer
         except SubstrateRequestException as e:
@@ -201,7 +202,7 @@ class OneSidedBcMarket(TwoSidedMarket):
         if self.readonly:
             raise MarketReadOnlyException()
         if isinstance(offer_or_id, BcOffer):
-            offer_or_id = str(offer_or_id.nonce)
+            offer_or_id = str(offer_or_id.id)
         offer = self.offers.pop(offer_or_id, None)
         if not offer:
             raise OfferNotFoundException()

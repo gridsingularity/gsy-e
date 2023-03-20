@@ -102,7 +102,6 @@ class BcSimulationCommunication:
     - deposited_collateral (dict): A dictionary containing the amount of collateral deposited
      by each user.
     - trades_buffer (dict): A dictionary containing trade data.
-    - nonce (int): A counter used for generating unique nonces for bids and offers.
     - redis (RedisCommunicator): An instance of the RedisCommunicator class.
     """
 
@@ -127,7 +126,6 @@ class BcSimulationCommunication:
         self.registered_address = []
         self.deposited_collateral = {}
         self.trades_buffer = {}
-        self.nonce = 1
         self.redis = RedisCommunicator()
         self.redis.sub_to_channel(DEX_TRADES_CHANNEL, self.handle_dex_trades_event)
 
@@ -190,13 +188,6 @@ class BcSimulationCommunication:
          of the Mapping class.
         """
         return self._mapping.get_area_creds(area_uuid)
-
-    def increase_nonce(self):
-        """
-        This method increase the nonce of one.
-        It should be called after successfully inserting a new order to the dex.
-        """
-        self.nonce += 1
 
     @property
     def mapping(self):

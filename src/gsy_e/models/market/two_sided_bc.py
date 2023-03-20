@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import uuid
 from logging import getLogger
 from typing import Union, Optional
 
@@ -148,11 +149,12 @@ class TwoSidedBcMarket(OneSidedBcMarket):
         if price < 0.0:
             raise NegativePriceOrdersException(
                 "Negative price after taxes, bid cannot be posted.")
+        if bid_id is None:
+            bid_id = str(uuid.uuid4())
 
         bid = BcBid(buyer_keypair=self.bc_interface.conn.get_creds_from_area(self.area_uuid),
-                    buyer=buyer, nonce=self.bc_interface.conn.nonce,
-                    area_uuid=self.area_uuid, market_uuid=self.id, time_slot=self.time_slot,
-                    energy=energy, price=price, creation_time=now())
+                    buyer=buyer, id=bid_id, area_uuid=self.area_uuid, market_uuid=self.id,
+                    time_slot=self.time_slot, creation_time=now(), energy=energy, price=price)
         deposited_collateral = self.bc_interface.conn.deposited_collateral.get(self.area_uuid)
         if (deposited_collateral is None or
             deposited_collateral < float_to_uint(energy) * float_to_uint(price)) \
@@ -173,8 +175,7 @@ class TwoSidedBcMarket(OneSidedBcMarket):
                 log.debug("%s[BID][NEW][%s][%s] %s",
                           self._debug_log_market_type_identifier, self.name,
                           self.time_slot_str or bid.time_slot, bid)
-                self.bids[str(bid.nonce)] = bid
-                self.bc_interface.conn.increase_nonce()
+                self.bids[str(bid.id)] = bid
             else:
                 raise InvalidBid
         except SubstrateRequestException as e:
@@ -201,7 +202,7 @@ class TwoSidedBcMarket(OneSidedBcMarket):
         - InvalidBid: If the bid deletion transaction fails.
         """
         if isinstance(bid_or_id, BcBid):
-            bid_or_id = str(bid_or_id.nonce)
+            bid_or_id = str(bid_or_id.id)
         bid = self.bids.pop(bid_or_id, None)
         if not bid:
             raise BidNotFoundException(bid_or_id)
