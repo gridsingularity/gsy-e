@@ -22,6 +22,9 @@ from gsy_e.models.strategy.scm.pv import SCMPVUserProfile
 class ForecastSCMPVStrategy(SCMForecastExternalMixin, SCMPVUserProfile):
     """External SCM PV strategy"""
 
+    def _update_forecast_in_state(self, _area):
+        """Overwrite method that sets the forecasted energy in the state."""
+
     def update_energy_forecast(self) -> None:
         """Set energy forecast for future markets."""
         for slot_time, energy_kWh in self.energy_forecast_buffer.items():
