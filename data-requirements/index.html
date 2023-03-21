@@ -2052,10 +2052,10 @@
 <p>To use a custom data profile into energy assets, users can upload their own file as long as they follow the requirements.</p>
 <p>Grid Singularity Exchange currently only supports Comma Separated Values files (.csv). The separation can be done by comma <code>,</code> or semicolon <code>;</code>. Two time formats are supported, see below. All entered csv data values need to be positive.</p>
 <h2 id="comma-separated-values-csv">Comma Separated Values (.csv)<a class="headerlink" href="#comma-separated-values-csv" title="Permanent link">&para;</a></h2>
-<p>The separation can be done by comma <code>,</code> or semicolon <code>;</code>. Two time formats are supported, see below. Power set-points are given in <strong>Watts</strong>. The software handles any conversions to energy (in kWh). All entered csv data values need to be positive</p>
+<p>The separation can be done by comma <code>,</code> or semicolon <code>;</code>. Two time formats are supported, see below. All entered csv data values need to be positive</p>
 <h3 id="hhmm">hh:mm<a class="headerlink" href="#hhmm" title="Permanent link">&para;</a></h3>
 <p><strong>Example:</strong></p>
-<pre class="codehilite"><code>INTERVAL;POWER(W):
+<pre class="codehilite"><code>INTERVAL;ENERGY(kWh):
 00:00;10
 00:15;10
 00:30;10
@@ -2065,7 +2065,7 @@
 
 <h3 id="yyyy-mm-ddthhmm">YYYY-MM-DDThh:mm<a class="headerlink" href="#yyyy-mm-ddthhmm" title="Permanent link">&para;</a></h3>
 <p><strong>Example:</strong></p>
-<pre class="codehilite"><code>INTERVAL,POWER(W)
+<pre class="codehilite"><code>INTERVAL,ENERGY(kWh)
 2019-01-01T00:00,10.0
 2019-01-01T00:15,10.0
 2019-01-01T00:30,10.0
