@@ -19,7 +19,7 @@ from gsy_e.models.strategy.scm.external.forecast_mixin import SCMForecastExterna
 from gsy_e.models.strategy.scm.pv import SCMPVUserProfile
 
 
-class ExternalSCMPVStrategy(SCMForecastExternalMixin, SCMPVUserProfile):
+class ForecastSCMPVStrategy(SCMForecastExternalMixin, SCMPVUserProfile):
     """External SCM PV strategy"""
 
     def update_energy_forecast(self) -> None:

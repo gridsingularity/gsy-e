@@ -19,7 +19,7 @@ from gsy_e.models.strategy.scm.external.forecast_mixin import SCMForecastExterna
 from gsy_e.models.strategy.scm.load import SCMLoadProfileStrategy
 
 
-class ExternalSCMLoadStrategy(SCMForecastExternalMixin, SCMLoadProfileStrategy):
+class ForecastSCMLoadStrategy(SCMForecastExternalMixin, SCMLoadProfileStrategy):
     """External SCM Load strategy"""
 
     def update_energy_forecast(self) -> None:
