@@ -16,14 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from gsy_e.models.strategy.scm.external.forecast_mixin import SCMForecastExternalMixin
-from gsy_e.models.strategy.scm.load import SCMLoadHoursStrategy
+from gsy_e.models.strategy.scm.load import SCMLoadProfileStrategy
 
 
-class ExternalSCMLoadStrategy(SCMForecastExternalMixin, SCMLoadHoursStrategy):
+class ExternalSCMLoadStrategy(SCMForecastExternalMixin, SCMLoadProfileStrategy):
     """External SCM Load strategy"""
-
-    def __init__(self):
-        super().__init__(avg_power_W=0)
 
     def update_energy_forecast(self) -> None:
         """Set energy forecast for future markets."""

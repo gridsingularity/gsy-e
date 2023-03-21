@@ -1,3 +1,4 @@
+from gsy_framework.exceptions import GSyException
 from gsy_framework.read_user_profile import InputProfileTypes, convert_identity_profile_to_float
 
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
@@ -9,6 +10,10 @@ class EnergyProfile:
     def __init__(
             self, input_profile=None, input_profile_uuid=None,
             input_energy_rate=None, profile_type: InputProfileTypes = None):
+
+        if input_profile is None and input_profile_uuid is None and input_energy_rate is None:
+            raise GSyException(
+                "EnergyProfile: All input parameters are None, one of them has to be set.")
 
         self.input_profile = input_profile
         self.input_profile_uuid = input_profile_uuid

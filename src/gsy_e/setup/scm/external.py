@@ -46,8 +46,9 @@ def get_setup(config):
                 "House 2",
                 [
                     CoefficientArea("forecast-measurement-load",
-                                    strategy=ExternalSCMLoadStrategy()),
-                    CoefficientArea("forecast-measurement-pv", strategy=ExternalSCMPVStrategy()),
+                                    strategy=ExternalSCMLoadStrategy(daily_load_profile={0: 100})),
+                    CoefficientArea("forecast-measurement-pv",
+                                    strategy=ExternalSCMPVStrategy(power_profile={0: 100})),
                     CoefficientArea("H2 Smart Meter",
                                     strategy=SCMSmartMeterStrategy(smart_meter_profile={0: 100})),
                 ],
