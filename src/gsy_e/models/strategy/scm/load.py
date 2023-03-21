@@ -81,11 +81,13 @@ class SCMLoadProfileStrategy(SCMStrategy):
         """Activate the strategy."""
         self._energy_params.event_activate_energy(area)
 
+    def _update_energy_requirement(self, area: "AreaBase") -> None:
+        self._energy_params.energy_profile.read_or_rotate_profiles()
+        self._energy_params.update_energy_requirement(area.current_market_time_slot, area.name)
+
     def market_cycle(self, area: "AreaBase") -> None:
         """Update the load forecast and measurements for the next/previous market slot."""
-        self._energy_params.energy_profile.read_or_rotate_profiles()
-        slot_time = area.current_market_time_slot
-        self._energy_params.update_energy_requirement(slot_time, area.name)
+        self._update_energy_requirement(area)
 
     def get_available_energy_kWh(self, time_slot: DateTime) -> float:
         """Get the available energy for consumption for the specified time slot."""
