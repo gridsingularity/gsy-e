@@ -2013,38 +2013,49 @@
 <li>
 <p><strong>Energy assets specifications</strong>: Disaggregated data (not net meter) is recommended to efficiently connect and measure performance, provided as csv files in the following upload format for each of the assets:</p>
 <ul>
-<li><strong>Consumption (Load Profile)</strong>
-         Name (can be anonymous) and location,
-         energy consumed over the last 15 minutes by each house in kWh,
-         and/or if houses have more granularity and have data for specific loads within a house, it is possible to either aggregate them or simulate different assets inside the house using their average power (kW) and the number of hours of use per day.</li>
-<li><strong>PV (Solar panel)</strong>
-           Name (can be anonymous) and location,
-           energy produced over the last 15 minutes by each PV plant and/or
-           peak production of PV panels in kW in order for the software to generate the Gaussian profile automatically and/or
-           capacity in kW, including tilt and azimuth of the PV.</li>
-<li><strong>Storage (Battery)</strong>
-           Name (can be anonymous) and location,
-           capacity in kWh,
-           power delivery in kW
-           Minimum SOC in % and/or
-           actual SOC (sent each 15 minutes) (optional) and
-           actual charge/discharge rate (sent each 15 minutes) (optional).</li>
+<li><strong>Consumption (Load Profile)</strong><ul>
+<li>Name (can be anonymous) and location</li>
+<li>energy consumed over the last 15 minutes by each house in kWh</li>
+<li>and/or if houses have more granularity and have data for specific loads within a house, it is possible to either aggregate them or simulate different assets inside the house using their average power (kW) and the number of hours of use per day.</li>
+</ul>
+</li>
+<li><strong>PV (Solar panel)</strong><ul>
+<li>Name (can be anonymous) and location</li>
+<li>energy produced over the last 15 minutes by each PV plant in kWh and/or</li>
+<li>peak production of PV panels in Wh in order for the software to generate the Gaussian profile automatically and/or</li>
+<li>capacity in kW, including tilt and azimuth of the PV</li>
+</ul>
+</li>
+<li><strong>Wind</strong><ul>
+<li>Name (can be anonymous) and location</li>
+<li>Energy produced over the last 15 minutes by each wind turbine in kWh</li>
+</ul>
+</li>
+<li><strong>Storage (Battery)</strong><ul>
+<li>Name (can be anonymous) and location</li>
+<li>capacity in kWh</li>
+<li>power delivery in kW</li>
+<li>Minimum SOC in % and/or</li>
+<li>actual SOC (sent each 15 minutes) (optional) and</li>
+<li>actual charge/discharge rate (sent each 15 minutes) (optional)</li>
+</ul>
+</li>
 </ul>
 </li>
 <li><strong>Grid pricing information</strong><ul>
 <li>Feed-in structures</li>
 <li>Conventional (utility) energy price (profile)</li>
-<li>Grid tariffs (fixed value or profile).</li>
+<li>Grid tariffs (fixed value or profile)</li>
 </ul>
 </li>
 </ol>
 <p>To use a custom data profile into energy assets, users can upload their own file as long as they follow the requirements.</p>
-<p>Grid Singularity Exchange currently only supports Comma Separated Values files (.csv). The separation can be done by comma , or semicolon ;. Two time formats are supported, see below. Power set-points are given in <strong>Watts</strong>. The software handles any conversions to energy (in kWh). All entered csv data values need to be positive</p>
+<p>Grid Singularity Exchange currently only supports Comma Separated Values files (.csv). The separation can be done by comma <code>,</code> or semicolon <code>;</code>. Two time formats are supported, see below. All entered csv data values need to be positive.</p>
 <h2 id="comma-separated-values-csv">Comma Separated Values (.csv)<a class="headerlink" href="#comma-separated-values-csv" title="Permanent link">&para;</a></h2>
-<p>The separation can be done by comma <code>,</code> or semicolon <code>;</code>. Two time formats are supported, see below. Power set-points are given in <strong>Watts</strong>. The software handles any conversions to energy (in kWh). All entered csv data values need to be positive</p>
+<p>The separation can be done by comma <code>,</code> or semicolon <code>;</code>. Two time formats are supported, see below. All entered csv data values need to be positive</p>
 <h3 id="hhmm">hh:mm<a class="headerlink" href="#hhmm" title="Permanent link">&para;</a></h3>
 <p><strong>Example:</strong></p>
-<pre class="codehilite"><code>INTERVAL;POWER(W):
+<pre class="codehilite"><code>INTERVAL;ENERGY(kWh):
 00:00;10
 00:15;10
 00:30;10
@@ -2054,7 +2065,7 @@
 
 <h3 id="yyyy-mm-ddthhmm">YYYY-MM-DDThh:mm<a class="headerlink" href="#yyyy-mm-ddthhmm" title="Permanent link">&para;</a></h3>
 <p><strong>Example:</strong></p>
-<pre class="codehilite"><code>INTERVAL,POWER(W)
+<pre class="codehilite"><code>INTERVAL,ENERGY(kWh)
 2019-01-01T00:00,10.0
 2019-01-01T00:15,10.0
 2019-01-01T00:30,10.0
