@@ -16,21 +16,17 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from typing import Dict, TYPE_CHECKING
+from typing import Dict
 
-from gsy_e.models.strategy.external_strategies.forecast_mixin import ForecastExternalMixin
 from gsy_e.constants import DATE_TIME_FORMAT
-
-if TYPE_CHECKING:
-    from gsy_e.models.area.coefficient_area import CoefficientArea
+from gsy_e.models.strategy.external_strategies.forecast_mixin import ForecastExternalMixin
 
 
 class SCMForecastExternalMixin(ForecastExternalMixin):
     """External mixin for forecast strategies in SCM simulations."""
 
-    def activate(self, area: "CoefficientArea") -> None:
-        """Activate the device."""
-        super().activate(area)
+    def sub_to_redis_channels(self):
+        """Subscribe to redis channels for (un-)registering."""
         self.redis.sub_to_multiple_channels(self.channel_dict)
 
     @property
