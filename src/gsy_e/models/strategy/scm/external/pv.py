@@ -22,6 +22,10 @@ from gsy_e.models.strategy.scm.pv import SCMPVUserProfile
 class ForecastSCMPVStrategy(SCMForecastExternalMixin, SCMPVUserProfile):
     """External SCM PV strategy"""
 
+    def activate(self, area) -> None:
+        """Overwrite in order to not trigger the profile rotation."""
+        self.sub_to_redis_channels()
+
     def _update_forecast_in_state(self, _area):
         """Overwrite method that sets the forecasted energy in the state."""
 
