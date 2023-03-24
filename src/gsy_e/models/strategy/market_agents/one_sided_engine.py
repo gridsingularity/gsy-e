@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from collections import namedtuple
 from typing import Dict, Optional  # noqa
+from math import isclose
 
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Offer, TraderDetails, TradeBidOfferInfo
@@ -173,7 +174,7 @@ class MAEngine:
             # Offer was accepted in target market - buy in source
             source_rate = offer_info.source_offer.energy_rate
             target_rate = offer_info.target_offer.energy_rate
-            assert abs(source_rate) <= abs(target_rate) + FLOATING_POINT_TOLERANCE, \
+            assert isclose(source_rate, target_rate, abs_tol=FLOATING_POINT_TOLERANCE), \
                 f"offer: source_rate ({source_rate}) is not lower than target_rate ({target_rate})"
 
             updated_trade_bid_info = \
