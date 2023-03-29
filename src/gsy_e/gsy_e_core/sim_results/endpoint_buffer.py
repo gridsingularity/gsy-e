@@ -57,10 +57,16 @@ class SimulationResultValidator:
         else:
             self.simulation_raw_data_validator = get_schema_validator(
                 "simulation_raw_data")
+        self.simulation_configuration_tree_validator = get_schema_validator(
+            "results_configuration_tree")
 
     def validate_simulation_raw_data(self, data: Dict):
         """Validate flattened_area_core_stats_dict."""
         self.simulation_raw_data_validator.validate(data=data, raise_exception=True)
+
+    def validate_configuration_tree(self, data: Dict):
+        """Validate configuration_tree dict."""
+        self.simulation_configuration_tree_validator.validate(data=data, raise_exception=True)
 
 
 # pylint: disable=too-many-instance-attributes
@@ -154,6 +160,7 @@ class SimulationEndpointBuffer:
     def validate_results(self):
         """Validate updated stats and raise exceptions if they are not valid."""
         self.results_validator.validate_simulation_raw_data(self.flattened_area_core_stats_dict)
+        self.results_validator.validate_configuration_tree(self.area_result_dict)
 
     def _create_results_validator(self):
         self.results_validator = SimulationResultValidator(is_scm=False)
@@ -192,6 +199,7 @@ class SimulationEndpointBuffer:
 
         if (ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS and
                 target_area.strategy is not None):
+            # pylint: disable=protected-access
             area_dict["capacity_kW"] = target_area.strategy._energy_params.capacity_kW
 
         return area_dict

@@ -31,6 +31,7 @@ from gsy_e.gsy_e_core.util import change_global_config, format_interval
 
 class SimulationConfig:
     """Class defining parameters that describe the behavior of a simulation."""
+    # pylint: disable=too-many-instance-attributes, too-many-arguments
     def __init__(self, sim_duration: duration, slot_length: duration, tick_length: duration,
                  cloud_coverage: int,
                  market_maker_rate=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
@@ -86,7 +87,7 @@ class SimulationConfig:
         self.external_connection_enabled = external_connection_enabled
         self.external_redis_communicator = external_redis_communicator_factory(
             external_connection_enabled)
-        if aggregator_device_mapping is not None:
+        if aggregator_device_mapping:
             self.external_redis_communicator.aggregator.set_aggregator_device_mapping(
                 aggregator_device_mapping
             )

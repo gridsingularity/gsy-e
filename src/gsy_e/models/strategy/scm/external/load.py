@@ -16,14 +16,18 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from gsy_e.models.strategy.scm.external.forecast_mixin import SCMForecastExternalMixin
-from gsy_e.models.strategy.scm.load import SCMLoadHoursStrategy
+from gsy_e.models.strategy.scm.load import SCMLoadProfileStrategy
 
 
-class ExternalSCMLoadHoursStrategy(SCMForecastExternalMixin, SCMLoadHoursStrategy):
+class ForecastSCMLoadStrategy(SCMForecastExternalMixin, SCMLoadProfileStrategy):
     """External SCM Load strategy"""
 
-    def __init__(self, avg_power_W, hrs_of_day=None):
-        super().__init__(avg_power_W=avg_power_W, hrs_of_day=hrs_of_day)
+    def activate(self, area) -> None:
+        """Overwrite in order to not trigger the profile rotation."""
+        self.sub_to_redis_channels()
+
+    def _update_energy_requirement(self, _area):
+        """Overwrite method that sets the energy requirement in the state."""
 
     def update_energy_forecast(self) -> None:
         """Set energy forecast for future markets."""
