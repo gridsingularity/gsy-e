@@ -40,8 +40,8 @@ from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy
 from gsy_e.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
 from gsy_e.models.strategy.predefined_wind import WindUserProfileStrategy
 from gsy_e.models.strategy.pv import PVStrategy
-from gsy_e.models.strategy.scm.external.load import ExternalSCMLoadHoursStrategy
-from gsy_e.models.strategy.scm.external.pv import ExternalSCMPVStrategy
+from gsy_e.models.strategy.scm.external.load import ForecastSCMLoadStrategy
+from gsy_e.models.strategy.scm.external.pv import ForecastSCMPVStrategy
 from gsy_e.models.strategy.scm.load import SCMLoadHoursStrategy, SCMLoadProfileStrategy
 from gsy_e.models.strategy.scm.pv import SCMPVPredefinedStrategy, SCMPVStrategy, SCMPVUserProfile
 from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
@@ -228,6 +228,14 @@ class SCMStorage(CoefficientLeaf):
     strategy_type = SCMStorageStrategy
 
 
+class ForecastSCMLoad(CoefficientLeaf):
+    strategy_type = ForecastSCMLoadStrategy
+
+
+class ForecastSCMPV(CoefficientLeaf):
+    strategy_type = ForecastSCMPVStrategy
+
+
 scm_leaf_mapping = {
     "LoadHours": SCMLoadHours,
     "LoadProfile": SCMLoadProfile,
@@ -237,12 +245,12 @@ scm_leaf_mapping = {
     "PVProfile": SCMPVProfile
 }
 
-external_scm_leaf_mapping = {
-    "LoadHours": ExternalSCMLoadHoursStrategy,
-    "LoadProfile": ExternalSCMLoadHoursStrategy,
-    "PV": ExternalSCMPVStrategy,
-    "PredefinedPV": ExternalSCMPVStrategy,
-    "PVProfile": ExternalSCMPVStrategy
+forecast_scm_leaf_mapping = {
+    "LoadHours": ForecastSCMLoad,
+    "LoadProfile": ForecastSCMLoad,
+    "PV": ForecastSCMPV,
+    "PredefinedPV": ForecastSCMPV,
+    "PVProfile": ForecastSCMPV
 }
 
 forward_leaf_mapping = {

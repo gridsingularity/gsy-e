@@ -1,6 +1,4 @@
-# D3A User Wiki
-
-This repository contains the source files for the [D3A](d3a.io).
+# GSY User Wiki
 
 ## Running locally
 
@@ -23,12 +21,13 @@ Now install all necessary dependencies, once again by using `pip`.
 ```bash
 pip install -r requirements.txt
 ```
+In `mkdocs.yml` change `site_url` to : `site_url: 'http://localhost:8000'` and comment out the whole `- redirects:` section.
 
-Run `mkdocs serve` from the repository root to spawn a hot reloading development server and navigate to `localhost:8000/d3a-documentation` in a web browser.
+Run `mkdocs serve` from the repository root to spawn a hot reloading development server and navigate to `localhost:8000/documentation` in a web browser.
 
 ## Publishing
 
-The wiki is hosted on github and is built based on the active `master` branch on the GitHub repository. 
+The wiki is hosted on github and is built based on the active `master` branch on the GitHub repository.
 
 To publish any changes to the wiki, navigate to your local instance of the `wiki` folder in the d3a git repository, and make sure it is up to date with your requested changes. Then run:
 
