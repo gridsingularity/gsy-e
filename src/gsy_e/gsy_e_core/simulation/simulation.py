@@ -31,7 +31,7 @@ from pendulum import DateTime, Duration, duration
 import gsy_e.constants
 from gsy_e.gsy_e_core.exceptions import SimulationException
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
-from gsy_e.gsy_e_core.myco_singleton import bid_offer_matcher
+from gsy_e.gsy_e_core.matching_engine_singleton import bid_offer_matcher
 from gsy_e.gsy_e_core.simulation.external_events import SimulationExternalEvents
 from gsy_e.gsy_e_core.simulation.progress_info import SimulationProgressInfo
 from gsy_e.gsy_e_core.simulation.results_manager import (

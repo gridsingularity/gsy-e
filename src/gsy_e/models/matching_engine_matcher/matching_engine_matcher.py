@@ -20,23 +20,27 @@ from typing import Optional, Dict
 from gsy_framework.constants_limits import ConstSettings
 
 from gsy_e.gsy_e_core.util import is_external_matching_enabled
-from gsy_e.models.myco_matcher import MycoExternalMatcher, MycoInternalMatcher
-from gsy_e.models.myco_matcher.myco_matcher_forward import MycoInternalForwardMarketMatcher
-from gsy_e.models.myco_matcher.myco_matcher_interface import MycoMatcherInterface
+from gsy_e.models.matching_engine_matcher import (MatchingEngineExternalMatcher,
+                                                  MatchingEngineInternalMatcher)
+from gsy_e.models.matching_engine_matcher.matching_engine_matcher_forward import \
+    MatchingEngineInternalForwardMarketMatcher
+from gsy_e.models.matching_engine_matcher.matching_engine_matcher_interface import \
+    MatchingEngineMatcherInterface
 
 
-class MycoMatcher:
+class MatchingEngineMatcher:
     """
-    Myco markets matcher, set the global matcher (Internal/External) and serve as a bridge to it.
+    Matching Engine markets matcher, set the global matcher (Internal/External) and
+    serve as a bridge to it.
     """
 
     def __init__(self):
         super().__init__()
-        self.matcher: Optional[MycoMatcherInterface] = None
-        self.forward_market_matcher: Optional[MycoMatcherInterface] = None
+        self.matcher: Optional[MatchingEngineMatcherInterface] = None
+        self.forward_market_matcher: Optional[MatchingEngineMatcherInterface] = None
 
     def activate(self):
-        """Method to be called upon the activation of MycoMatcher."""
+        """Method to be called upon the activation of MatchingEngineMatcher."""
         self.matcher = self._get_matcher()
         self.matcher.activate()
 
@@ -45,20 +49,20 @@ class MycoMatcher:
 
     @staticmethod
     def _get_matcher():
-        """Return a myco matcher instance based on the global BidOffer match type."""
+        """Return a matching engine matcher instance based on the global BidOffer match type."""
         if is_external_matching_enabled():
-            return MycoExternalMatcher()
-        return MycoInternalMatcher()
+            return MatchingEngineExternalMatcher()
+        return MatchingEngineInternalMatcher()
 
     @staticmethod
     def _get_forward_market_matcher():
-        """Return a myco matcher instance for forward markets
+        """Return a matching engine matcher instance for forward markets
         (only available for internal matching for now)."""
-        return MycoInternalForwardMarketMatcher()
+        return MatchingEngineInternalForwardMarketMatcher()
 
     def update_area_uuid_spot_markets_mapping(
             self, area_uuid_markets_mapping: Dict[str, Dict]) -> None:
-        """Interface for updating the area_uuid_markets_mapping of Myco matchers."""
+        """Interface for updating the area_uuid_markets_mapping of Matching Engine matchers."""
         self.matcher.area_uuid_markets_mapping.update(area_uuid_markets_mapping)
 
     def update_area_uuid_forward_markets_mapping(

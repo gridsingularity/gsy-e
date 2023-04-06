@@ -3,33 +3,34 @@ import json
 from unittest.mock import MagicMock, patch
 
 import pytest
-from gsy_framework.enums import AvailableMarketTypes
 from pendulum import now
-
+from gsy_framework.enums import AvailableMarketTypes
 from gsy_framework.data_classes import Offer, Bid, TraderDetails
 import gsy_e.constants
 import gsy_e.gsy_e_core.redis_connections.area_market
 import gsy_e.models.market.market_redis_connection
-from gsy_e.gsy_e_core.exceptions import InvalidBidOfferPairException, MycoValidationException
+from gsy_e.gsy_e_core.exceptions import (InvalidBidOfferPairException,
+                                         MatchingEngineValidationException)
 from gsy_e.models.market.two_sided import TwoSidedMarket
-from gsy_e.models.myco_matcher import MycoExternalMatcher
-from gsy_e.models.myco_matcher.myco_external_matcher import MycoExternalMatcherValidator
+from gsy_e.models.matching_engine_matcher import MatchingEngineExternalMatcher
+from gsy_e.models.matching_engine_matcher.matching_engine_external_matcher import \
+    MatchingEngineExternalMatcherValidator
 
 gsy_e.gsy_e_core.redis_connections.area_market.ResettableCommunicator = MagicMock
 
 
-class TestMycoExternalMatcher:
+class TestMatchingEngineExternalMatcher:
 
     @classmethod
     def setup_method(cls):
-        cls.matcher = MycoExternalMatcher()
+        cls.matcher = MatchingEngineExternalMatcher()
         cls.market_id = "Area1"
         cls.market = TwoSidedMarket(time_slot=now())
         cls.matcher.area_markets_mapping = {
             f"{cls.market_id}-{cls.market.time_slot_str}": cls.market}
 
         assert cls.matcher.simulation_id == gsy_e.constants.CONFIGURATION_ID
-        cls.channel_prefix = f"external-myco/{gsy_e.constants.CONFIGURATION_ID}/"
+        cls.channel_prefix = f"external-matching-engine/{gsy_e.constants.CONFIGURATION_ID}/"
         cls.events_channel = f"{cls.channel_prefix}events/"
 
     def _populate_market_bids_offers(self):
@@ -40,9 +41,9 @@ class TestMycoExternalMatcher:
                             "id4": Bid("id4", now(), 0.5, 1, TraderDetails("buyer", ""), 1)}
 
     def test_subscribes_to_redis_channels(self):
-        self.matcher.myco_ext_conn.sub_to_multiple_channels.assert_called_once_with(
+        self.matcher.matching_engine_ext_conn.sub_to_multiple_channels.assert_called_once_with(
             {
-                "external-myco/simulation-id/": self.matcher.publish_simulation_id,
+                "external-matching-engine/simulation-id/": self.matcher.publish_simulation_id,
                 f"{self.channel_prefix}offers-bids/":
                     self.matcher._publish_orders_message_buffer.append,
                 f"{self.channel_prefix}recommendations/":
@@ -51,9 +52,9 @@ class TestMycoExternalMatcher:
         )
 
     def test_publish_simulation_id(self):
-        channel = "external-myco/simulation-id/response/"
+        channel = "external-matching-engine/simulation-id/response/"
         self.matcher.publish_simulation_id({})
-        self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
+        self.matcher.matching_engine_ext_conn.publish_json.assert_called_once_with(
             channel, {"simulation_id": self.matcher.simulation_id})
 
     def test_event_tick(self):
@@ -62,14 +63,14 @@ class TestMycoExternalMatcher:
         self.matcher.event_tick(current_tick_in_slot=6)
 
         self.matcher._tick_counter.is_it_time_for_external_tick.assert_called_once_with(6)
-        self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
+        self.matcher.matching_engine_ext_conn.publish_json.assert_called_once_with(
             self.events_channel, data)
 
         self.matcher._tick_counter.is_it_time_for_external_tick = MagicMock(return_value=False)
         self.matcher.event_tick(current_tick_in_slot=7)
         self.matcher._tick_counter.is_it_time_for_external_tick.assert_called_once_with(7)
         # should still be == 1 as the above won't trigger the publish_json method
-        assert self.matcher.myco_ext_conn.publish_json.call_count == 1
+        assert self.matcher.matching_engine_ext_conn.publish_json.call_count == 1
 
     def test_event_market_cycle(self):
         assert self.matcher.area_markets_mapping
@@ -77,13 +78,13 @@ class TestMycoExternalMatcher:
         self.matcher.event_market_cycle()
         # Market cycle event should clear the markets cache
         assert not self.matcher.area_markets_mapping
-        self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
+        self.matcher.matching_engine_ext_conn.publish_json.assert_called_once_with(
             self.events_channel, data)
 
     def test_event_finish(self):
         data = {"event": "finish"}
         self.matcher.event_finish()
-        self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
+        self.matcher.matching_engine_ext_conn.publish_json.assert_called_once_with(
             self.events_channel, data)
 
     def test_update_area_uuid_markets_mapping(self):
@@ -112,8 +113,8 @@ class TestMycoExternalMatcher:
         actual_orders = self.matcher._get_orders(self.market, filters)
         assert actual_orders == expected_orders
 
-    @patch("gsy_e.models.myco_matcher.myco_external_matcher.MycoExternalMatcher."
-           "_get_orders", MagicMock(return_value=({})))
+    @patch("gsy_e.models.matching_engine_matcher.matching_engine_external_matcher."
+           "MatchingEngineExternalMatcher._get_orders", MagicMock(return_value=({})))
     def test_publish_offers_bids(self):
         channel = f"{self.channel_prefix}offers-bids/response/"
         payload = {
@@ -129,9 +130,9 @@ class TestMycoExternalMatcher:
             {"area1": {AvailableMarketTypes.SPOT: [self.market]}})
         self.matcher._publish_orders_message_buffer = [payload]
         self.matcher._publish_orders()
-        self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
+        self.matcher.matching_engine_ext_conn.publish_json.assert_called_once_with(
             channel, expected_data)
-        self.matcher.myco_ext_conn.publish_json.reset_mock()
+        self.matcher.matching_engine_ext_conn.publish_json.reset_mock()
 
         # Apply market filter
         payload = {
@@ -145,13 +146,13 @@ class TestMycoExternalMatcher:
         }
         self.matcher._publish_orders_message_buffer = [payload]
         self.matcher._publish_orders()
-        self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
+        self.matcher.matching_engine_ext_conn.publish_json.assert_called_once_with(
             channel, expected_data)
 
-    @patch("gsy_e.models.myco_matcher.myco_external_matcher.MycoExternalMatcherValidator."
-           "validate_and_report")
-    @patch("gsy_e.models.myco_matcher.myco_external_matcher.TwoSidedMarket."
-           "match_recommendations", return_value=True)
+    @patch("gsy_e.models.matching_engine_matcher.matching_engine_external_matcher."
+           "MatchingEngineExternalMatcherValidator.validate_and_report")
+    @patch("gsy_e.models.matching_engine_matcher.matching_engine_external_matcher."
+           "TwoSidedMarket.match_recommendations", return_value=True)
     def test_match_recommendations(
             self, mock_market_match_recommendations, mock_validate_and_report):
         channel = f"{self.channel_prefix}recommendations/response/"
@@ -163,9 +164,9 @@ class TestMycoExternalMatcher:
         self.matcher.match_recommendations()
         assert not self.matcher._recommendations
         mock_market_match_recommendations.assert_not_called()
-        self.matcher.myco_ext_conn.publish_json.assert_not_called()
+        self.matcher.matching_engine_ext_conn.publish_json.assert_not_called()
 
-        self.matcher.myco_ext_conn.publish_json.reset_mock()
+        self.matcher.matching_engine_ext_conn.publish_json.reset_mock()
         mock_validate_and_report.return_value = {
             "status": "fail",
             "message": "Validation Error, matching will be skipped: Invalid Bid Offer Pair",
@@ -179,10 +180,10 @@ class TestMycoExternalMatcher:
             "recommendations": [],
             "message": "Validation Error, matching will be skipped: Invalid Bid Offer Pair"}
         mock_market_match_recommendations.assert_not_called()
-        self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
+        self.matcher.matching_engine_ext_conn.publish_json.assert_called_once_with(
             channel, expected_data)
 
-        self.matcher.myco_ext_conn.publish_json.reset_mock()
+        self.matcher.matching_engine_ext_conn.publish_json.reset_mock()
         mock_validate_and_report.return_value = {
             "status": "success",
             "recommendations": [{"status": "success",
@@ -197,18 +198,18 @@ class TestMycoExternalMatcher:
                                  "status": "success",
                                  "time_slot": self.market.time_slot_str}]}
         assert mock_market_match_recommendations.call_count == 1
-        self.matcher.myco_ext_conn.publish_json.assert_called_once_with(
+        self.matcher.matching_engine_ext_conn.publish_json.assert_called_once_with(
             channel, expected_data)
 
 
-class TestMycoExternalMatcherValidator:
+class TestMatchingEngineExternalMatcherValidator:
     @staticmethod
-    @patch("gsy_e.models.myco_matcher.myco_external_matcher.MycoExternalMatcherValidator."
-           "_validate")
+    @patch("gsy_e.models.matching_engine_matcher.matching_engine_external_matcher."
+           "MatchingEngineExternalMatcherValidator._validate")
     def test_validate_and_report(mock_validate):
         recommendations = []
         expected_data = {"status": "success", "recommendations": []}
-        assert MycoExternalMatcherValidator.validate_and_report(
+        assert MatchingEngineExternalMatcherValidator.validate_and_report(
             None, recommendations) == expected_data
 
         recommendations = [{
@@ -218,11 +219,11 @@ class TestMycoExternalMatcherValidator:
                 "offers": [],
                 "trade_rate": 1,
                 "selected_energy": 1}]
-        mock_validate.side_effect = MycoExternalMatcherValidator.BLOCKING_EXCEPTIONS[0]
+        mock_validate.side_effect = MatchingEngineExternalMatcherValidator.BLOCKING_EXCEPTIONS[0]
         expected_data = {"status": "fail",
                          "message": "Validation Error, matching will be skipped: ",
                          "recommendations": []}
-        assert MycoExternalMatcherValidator.validate_and_report(
+        assert MatchingEngineExternalMatcherValidator.validate_and_report(
             None, recommendations) == expected_data
 
         mock_validate.side_effect = InvalidBidOfferPairException
@@ -237,51 +238,59 @@ class TestMycoExternalMatcherValidator:
                              "status": "fail",
                              "message": ""
                             }]}
-        assert MycoExternalMatcherValidator.validate_and_report(
+        assert MatchingEngineExternalMatcherValidator.validate_and_report(
             None, recommendations) == expected_data
 
+    # pylint: disable=line-too-long
     @staticmethod
-    @patch("gsy_e.models.myco_matcher.myco_external_matcher.BidOfferMatch.is_valid_dict")
+    @patch("gsy_e.models.matching_engine_matcher.matching_engine_external_matcher."
+           "BidOfferMatch.is_valid_dict")
     def test_validate_valid_dict(mock_is_valid_dict):
         mock_is_valid_dict.return_value = True
-        assert MycoExternalMatcherValidator._validate_valid_dict(None, {}) is None
+        assert MatchingEngineExternalMatcherValidator._validate_valid_dict(None, {}) is None
 
         mock_is_valid_dict.return_value = False
-        with pytest.raises(MycoValidationException):
-            MycoExternalMatcherValidator._validate_valid_dict(None, {})
+        with pytest.raises(MatchingEngineValidationException):
+            MatchingEngineExternalMatcherValidator._validate_valid_dict(None, {})
 
+    # pylint: disable=line-too-long
     @staticmethod
-    @patch("gsy_e.models.myco_matcher.myco_external_matcher.MycoExternalMatcher")
-    def test_validate_market_exists(mock_myco_external_matcher):
+    @patch("gsy_e.models.matching_engine_matcher.matching_engine_external_matcher."
+           "MatchingEngineExternalMatcher")
+    def test_validate_market_exists(mock_matching_engine_external_matcher):
         market = MagicMock()
         market.time_slot_str = "2021-10-06T12:00"
-        mock_myco_external_matcher.area_markets_mapping = {"market-2021-10-06T12:00": market}
+        mock_matching_engine_external_matcher.area_markets_mapping = \
+            {"market-2021-10-06T12:00": market}
         recommendation = {"market_id": "market", "time_slot": "2021-10-06T12:00"}
-        assert MycoExternalMatcherValidator._validate_market_exists(
-            mock_myco_external_matcher, recommendation) is None
+        assert MatchingEngineExternalMatcherValidator._validate_market_exists(
+            mock_matching_engine_external_matcher, recommendation) is None
 
-        mock_myco_external_matcher.area_markets_mapping = {}
-        with pytest.raises(MycoValidationException):
-            MycoExternalMatcherValidator._validate_market_exists(
-                mock_myco_external_matcher, recommendation)
+        mock_matching_engine_external_matcher.area_markets_mapping = {}
+        with pytest.raises(MatchingEngineValidationException):
+            MatchingEngineExternalMatcherValidator._validate_market_exists(
+                mock_matching_engine_external_matcher, recommendation)
 
+    # pylint: disable=line-too-long
     @staticmethod
-    @patch("gsy_e.models.myco_matcher.myco_external_matcher.MycoExternalMatcher")
-    def test_validate_orders_exist_in_market(mock_myco_external_matcher):
+    @patch("gsy_e.models.matching_engine_matcher.matching_engine_external_matcher."
+           "MatchingEngineExternalMatcher")
+    def test_validate_orders_exist_in_market(mock_matching_engine_external_matcher):
         market = MagicMock()
         market.time_slot_str = "2021-10-06T12:00"
         market.offers = {"offer1": MagicMock()}
         market.bids = {"bid1": MagicMock()}
-        mock_myco_external_matcher.area_markets_mapping = {"market-2021-10-06T12:00": market}
+        mock_matching_engine_external_matcher.area_markets_mapping = \
+            {"market-2021-10-06T12:00": market}
         recommendation = {
             "market_id": "market",
             "time_slot": "2021-10-06T12:00",
             "offer": {"id": "offer1"}, "bid": {"id": "bid1"}}
-        assert MycoExternalMatcherValidator._validate_orders_exist_in_market(
-            mock_myco_external_matcher, recommendation) is None
+        assert MatchingEngineExternalMatcherValidator._validate_orders_exist_in_market(
+            mock_matching_engine_external_matcher, recommendation) is None
 
         recommendation["offer"] = {"id": "offer2"}
         with pytest.raises(InvalidBidOfferPairException):
-            MycoExternalMatcherValidator._validate_orders_exist_in_market(
-                mock_myco_external_matcher, recommendation
+            MatchingEngineExternalMatcherValidator._validate_orders_exist_in_market(
+                mock_matching_engine_external_matcher, recommendation
             )

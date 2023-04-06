@@ -108,7 +108,7 @@ class RedisSimulationCommunication:
         """Trigger the calculation of area uuid and name mapping and publish it
         back to a redis response channel"""
         area_mapping = self._area_uuid_name_map_wrapper(self._area)
-        response_channel = f"external-myco/{self._simulation_id}/area-map/response/"
+        response_channel = f"external-matching-engine/{self._simulation_id}/area-map/response/"
         response_dict = {"area_mapping": area_mapping, "event": "area_map_response"}
         self._publish_json(response_channel, response_dict)
 

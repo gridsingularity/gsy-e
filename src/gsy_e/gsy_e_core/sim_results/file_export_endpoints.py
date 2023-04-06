@@ -22,7 +22,7 @@ from typing import TYPE_CHECKING, Dict, List
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.enums import AvailableMarketTypes, BidOfferMatchAlgoEnum, SpotMarketTypeEnum
 
-from gsy_e.gsy_e_core.myco_singleton import bid_offer_matcher
+from gsy_e.gsy_e_core.matching_engine_singleton import bid_offer_matcher
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_e.models.strategy.pv import PVStrategy
