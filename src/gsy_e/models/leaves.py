@@ -18,6 +18,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import inspect
 import logging
 
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.enums import SpotMarketTypeEnum
+
 from gsy_e.models.area import Area, CoefficientArea
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
 from gsy_e.models.strategy.external_strategies.load import (
@@ -76,7 +79,8 @@ class LeafBase:
     strategy = None
 
     def __init__(self, name, config, uuid=None, **kwargs):
-        if config.external_connection_enabled:
+        if (config.external_connection_enabled and
+                ConstSettings.MASettings.MARKET_TYPE != SpotMarketTypeEnum.COEFFICIENTS.value):
             if kwargs.get("forecast_stream_enabled", False) is True:
                 try:
                     self.strategy_type = forecast_strategy_mapping[self.strategy_type]
