@@ -19,10 +19,10 @@ from gsy_e.models.area import Area
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
 from gsy_e.models.strategy.predefined_pv import PVPredefinedStrategy
 from gsy_e.models.strategy.electrolyzer import ElectrolyzerStrategy
-from gsy_e.gsy_e_core.util import d3a_path
+from gsy_e.gsy_e_core.util import gsye_root_path
 import os
 
-electrolizer_profile_file = os.path.join(d3a_path, "resources",
+electrolizer_profile_file = os.path.join(gsye_root_path, "resources",
                                          "Electrolyzer_Discharge_Profile_kg.csv")
 
 

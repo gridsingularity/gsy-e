@@ -21,7 +21,7 @@ import os
 from gsy_framework.constants_limits import ConstSettings, SpotMarketTypeEnum
 
 from gsy_e.constants import DEFAULT_SCM_COMMUNITY_NAME
-from gsy_e.gsy_e_core.util import d3a_path
+from gsy_e.gsy_e_core.util import gsye_root_path
 from gsy_e.models.area import CoefficientArea
 from gsy_e.models.strategy.scm.load import SCMLoadHoursStrategy
 from gsy_e.models.strategy.scm.pv import SCMPVUserProfile
@@ -31,7 +31,7 @@ from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
 ConstSettings.MASettings.MARKET_TYPE = SpotMarketTypeEnum.COEFFICIENTS.value
 
 
-pv_profile = os.path.join(d3a_path, "resources", "Solar_Curve_W_sunny.csv")
+pv_profile = os.path.join(gsye_root_path, "resources", "Solar_Curve_W_sunny.csv")
 
 
 def get_setup(config):

@@ -27,7 +27,7 @@ from gsy_framework.validators import PVValidator
 from pendulum.datetime import DateTime
 
 from gsy_e.gsy_e_core.exceptions import GSyException
-from gsy_e.gsy_e_core.util import d3a_path
+from gsy_e.gsy_e_core.util import gsye_root_path
 from gsy_e.models.strategy.state import PVState
 from gsy_e.models.strategy import utils
 from gsy_e.models.strategy.profile import EnergyProfile
@@ -126,13 +126,13 @@ class PVPredefinedEnergyParameters(PVEnergyParameters):
             self._power_profile_index = simulation_config.cloud_coverage
         if self._power_profile_index == 0:  # 0:sunny
             profile_path = (
-                pathlib.Path(d3a_path + "/resources/Solar_Curve_sunny_normalized.csv"))
+                pathlib.Path(gsye_root_path + "/resources/Solar_Curve_sunny_normalized.csv"))
         elif self._power_profile_index == 1:  # 1:partial
             profile_path = (
-                pathlib.Path(d3a_path + "/resources/Solar_Curve_partial_normalized.csv"))
+                pathlib.Path(gsye_root_path + "/resources/Solar_Curve_partial_normalized.csv"))
         elif self._power_profile_index == 2:  # 2:cloudy
             profile_path = (
-                pathlib.Path(d3a_path + "/resources/Solar_Curve_cloudy_normalized.csv"))
+                pathlib.Path(gsye_root_path + "/resources/Solar_Curve_cloudy_normalized.csv"))
         else:
             raise ValueError("Energy_profile has to be in [0,1,2,4]")
 
