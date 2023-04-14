@@ -16,16 +16,22 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import os
+
 from gsy_framework.constants_limits import ConstSettings, SpotMarketTypeEnum
 
 from gsy_e.constants import DEFAULT_SCM_COMMUNITY_NAME
+from gsy_e.gsy_e_core.util import d3a_path
 from gsy_e.models.area import CoefficientArea
 from gsy_e.models.strategy.scm.load import SCMLoadHoursStrategy
-from gsy_e.models.strategy.scm.pv import SCMPVStrategy
+from gsy_e.models.strategy.scm.pv import SCMPVUserProfile
 from gsy_e.models.strategy.scm.smart_meter import SCMSmartMeterStrategy
 from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
 
 ConstSettings.MASettings.MARKET_TYPE = SpotMarketTypeEnum.COEFFICIENTS.value
+
+
+pv_profile = os.path.join(d3a_path, "resources", "Solar_Curve_W_sunny.csv")
 
 
 def get_setup(config):
@@ -39,7 +45,7 @@ def get_setup(config):
                                     strategy=SCMLoadHoursStrategy(avg_power_W=200,
                                                                   hrs_of_day=list(
                                                                     range(12, 18)))),
-                    CoefficientArea("H1 PV", strategy=SCMPVStrategy(capacity_kW=1000)),
+                    CoefficientArea("H1 PV", strategy=SCMPVUserProfile(power_profile=pv_profile)),
                     CoefficientArea("H1 Storage1", strategy=SCMStorageStrategy(initial_soc=50)),
                     CoefficientArea("H1 Storage2", strategy=SCMStorageStrategy(initial_soc=50)),
                 ],
@@ -52,7 +58,7 @@ def get_setup(config):
                                     strategy=SCMLoadHoursStrategy(avg_power_W=200,
                                                                   hrs_of_day=list(
                                                                       range(12, 16)))),
-                    CoefficientArea("H2 PV", strategy=SCMPVStrategy(capacity_kW=0.9)),
+                    CoefficientArea("H2 PV", strategy=SCMPVUserProfile(power_profile=pv_profile)),
                     CoefficientArea("H2 Smart Meter",
                                     strategy=SCMSmartMeterStrategy(smart_meter_profile={0: 100})),
                 ],
