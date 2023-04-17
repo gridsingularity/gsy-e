@@ -33,7 +33,7 @@ Market ('H2 PV', strategy=PVStrategy(panel_count=4, initial_selling_rate=30, fin
 
 
 ```python
-user_profile_path = os.path.join(d3a_path, "assets/Solar_Curve_W_sunny.csv")
+user_profile_path = os.path.join(gsye_root_path, "assets/Solar_Curve_W_sunny.csv")
 Market ('H1 PV', strategy=PVUserProfileStrategy(power_profile=user_profile_path,
                                              panel_count=))
 ```
