@@ -34,7 +34,7 @@ Market('Load', strategy=LoadHoursStrategy(avg_power_W=200, hrs_per_day=6,hrs_of_
 [User upload Profile](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/predefined_load.py)
 
 ```python
-user_profile_path = os.path.join(d3a_path,"assets/load.csv")
+user_profile_path = os.path.join(gsye_root_path,"assets/load.csv")
 Market('Load', strategy=LoadProfileStrategy(daily_load_profile=user_profile_path, initial_buying_rate=0, final_buying_rate=35))
 ```
 

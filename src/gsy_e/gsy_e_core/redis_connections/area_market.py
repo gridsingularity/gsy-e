@@ -219,7 +219,7 @@ def external_redis_communicator_factory(is_enabled: bool) -> ExternalConnectionC
             else ExternalConnectionCommunicator(is_enabled))
 
 
-def myco_redis_communicator_factory() -> ResettableCommunicator:
+def matching_engine_redis_communicator_factory() -> ResettableCommunicator:
     """Return either a rq or pubsub based external communicator."""
     return (RQResettableCommunicator()
             if gsy_e.constants.SEND_EVENTS_RESPONSES_TO_SDK_VIA_RQ else ResettableCommunicator())

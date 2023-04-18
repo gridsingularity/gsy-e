@@ -22,10 +22,10 @@ from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy
 from gsy_e.models.strategy.storage import StorageStrategy
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_e.models.strategy.pv import PVStrategy
-from gsy_e.gsy_e_core.util import d3a_path
+from gsy_e.gsy_e_core.util import gsye_root_path
 import os
 
-profile_path = os.path.join(d3a_path, "resources/LOAD_DATA_1_5d.csv")
+profile_path = os.path.join(gsye_root_path, "resources/LOAD_DATA_1_5d.csv")
 
 
 def get_setup(config):

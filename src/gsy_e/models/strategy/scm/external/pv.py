@@ -15,12 +15,19 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from typing import Union, Dict
+
 from gsy_e.models.strategy.scm.external.forecast_mixin import SCMForecastExternalMixin
 from gsy_e.models.strategy.scm.pv import SCMPVUserProfile
 
 
 class ForecastSCMPVStrategy(SCMForecastExternalMixin, SCMPVUserProfile):
     """External SCM PV strategy"""
+    # pylint: disable=unused-argument
+    def __init__(self, power_profile: Union[str, Dict] = None,
+                 power_profile_uuid: str = None):
+        """TODO: Remove quickfix of GSYE-581 and remove the unused capacity_kW"""
+        super().__init__(power_profile=power_profile, power_profile_uuid=power_profile_uuid)
 
     def activate(self, area) -> None:
         """Overwrite in order to not trigger the profile rotation."""

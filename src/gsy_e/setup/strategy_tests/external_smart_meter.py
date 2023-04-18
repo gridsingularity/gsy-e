@@ -19,7 +19,7 @@ from pathlib import Path
 
 from gsy_framework.constants_limits import ConstSettings
 
-from gsy_e.gsy_e_core.util import d3a_path
+from gsy_e.gsy_e_core.util import gsye_root_path
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
 from gsy_e.models.strategy.external_strategies.smart_meter import SmartMeterExternalStrategy
@@ -43,8 +43,8 @@ def get_setup(config):
                     ),
                     Area("storage", strategy=StorageStrategy(initial_soc=50)),
                     Area("smart_meter", strategy=SmartMeterExternalStrategy(
-                        smart_meter_profile=Path(d3a_path) / "resources/smart_meter_profile.csv")
-                    ),
+                        smart_meter_profile=(
+                                Path(gsye_root_path) / "resources/smart_meter_profile.csv"))),
                     Area("commercial_producer", strategy=CommercialStrategy(energy_rate=30)),
                 ],
             ),

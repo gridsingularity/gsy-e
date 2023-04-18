@@ -75,8 +75,8 @@ class InvalidBidOfferPairException(GSyException):
     """Invalid match of bid and offer."""
 
 
-class MycoValidationException(GSyException):
-    """Myco recommendations did not pass the validation check."""
+class MatchingEngineValidationException(GSyException):
+    """Matching Engine recommendations did not pass the validation check."""
 
 
 class LiveEventException(GSyException):

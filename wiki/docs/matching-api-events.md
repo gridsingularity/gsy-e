@@ -58,7 +58,7 @@ where '8f7b7e7b-0f4a-490b-853f-6017af84ef60' refers to a unique identifier of bo
 ```
 def on_matched_recommendations_response(self, data):
 ```
-When the myco client sends trades recommendations, this function is triggered and a response is passed through the **data** dictionary.
+When the matching engine client sends trades recommendations, this function is triggered and a response is passed through the **data** dictionary.
 
 ###On area map response
 

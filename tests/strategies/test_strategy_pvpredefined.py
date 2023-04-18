@@ -31,7 +31,7 @@ from gsy_framework.utils import generate_market_slot_list
 from pendulum import DateTime, duration, today, datetime
 
 from gsy_e.constants import TIME_ZONE, TIME_FORMAT
-from gsy_e.gsy_e_core.util import (d3a_path, change_global_config)
+from gsy_e.gsy_e_core.util import gsye_root_path, change_global_config
 from gsy_e.models.config import create_simulation_config_from_global_config
 from gsy_e.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
 
@@ -386,7 +386,7 @@ def pv_test_cloudy(area_test7):
 def test_correct_interpolation_power_profile():
     slot_length = 20
     GlobalConfig.slot_length = duration(minutes=slot_length)
-    profile_path = pathlib.Path(d3a_path + "/resources/Solar_Curve_W_sunny.csv")
+    profile_path = pathlib.Path(gsye_root_path + "/resources/Solar_Curve_W_sunny.csv")
     profile = read_arbitrary_profile(InputProfileTypes.POWER, str(profile_path))
     times = list(profile)
     for ii in range(len(times)-1):
@@ -406,7 +406,7 @@ def test_predefined_pv_constructor_rejects_incorrect_parameters():
 
 
 def test_pv_user_profile_constructor_rejects_incorrect_parameters():
-    user_profile_path = os.path.join(d3a_path, "resources/Solar_Curve_W_sunny.csv")
+    user_profile_path = os.path.join(gsye_root_path, "resources/Solar_Curve_W_sunny.csv")
     with pytest.raises(GSyDeviceException):
         PVUserProfileStrategy(power_profile=user_profile_path, panel_count=-1)
     with pytest.raises(GSyDeviceException):
@@ -425,7 +425,7 @@ def test_profile_with_date_and_seconds_can_be_parsed():
     GlobalConfig.slot_length = duration(minutes=15)
     profile_date = datetime(year=2019, month=3, day=2)
     GlobalConfig.start_date = profile_date
-    profile_path = pathlib.Path(d3a_path + "/resources/datetime_seconds_profile.csv")
+    profile_path = pathlib.Path(gsye_root_path + "/resources/datetime_seconds_profile.csv")
     profile = read_arbitrary_profile(InputProfileTypes.POWER, str(profile_path))
     # After the 6th element the rest of the entries are populated with the last value
     expected_energy_values = [1.5, 1.25, 1.0, 0.75, 0.5, 0.25]

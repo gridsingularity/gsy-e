@@ -29,7 +29,7 @@ import gsy_e.constants
 from gsy_e.gsy_e_core.blockchain_interface import blockchain_interface_factory
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.exceptions import AreaException
-from gsy_e.gsy_e_core.myco_singleton import bid_offer_matcher
+from gsy_e.gsy_e_core.matching_engine_singleton import bid_offer_matcher
 from gsy_e.gsy_e_core.util import is_external_matching_enabled
 from gsy_e.models.area.area_base import AreaBase
 from gsy_e.models.area.event_dispatcher import DispatcherFactory
@@ -254,6 +254,7 @@ class Area(AreaBase):
         if deactivate:
             return
 
+        # pylint: disable=fixme
         # TODO: Refactor and port the future, spot, settlement and balancing market creation to
         # AreaMarkets class, in order to create all necessary markets with one call.
         changed = self._markets.create_new_spot_market(now_value, AvailableMarketTypes.SPOT, self)
@@ -306,7 +307,7 @@ class Area(AreaBase):
         """Tick event handler.
 
         Invoke aggregator commands consumer, publish market clearing, update events,
-        update cached myco matcher markets and match trades recommendations.
+        update cached matching engine matcher markets and match trades recommendations.
         """
         if (ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value
                 and not self.strategy):
@@ -315,16 +316,16 @@ class Area(AreaBase):
             elif is_external_matching_enabled():
                 # If external matching is enabled, clear before placing orders
                 bid_offer_matcher.match_recommendations()
-                self._update_myco_matcher()
+                self._update_matching_engine_matcher()
             else:
                 # If internal matching is enabled, place orders before clearing
-                self._update_myco_matcher()
+                self._update_matching_engine_matcher()
                 bid_offer_matcher.match_recommendations()
 
         self.events.update_events(self.now)
 
-    def _update_myco_matcher(self) -> None:
-        """Update the markets cache that the myco matcher will request"""
+    def _update_matching_engine_matcher(self) -> None:
+        """Update the markets cache that the matching engine matcher will request"""
         markets_mapping = {
             "current_time": self.now,
             AvailableMarketTypes.SPOT: [self.spot_market],

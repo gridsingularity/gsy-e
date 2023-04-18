@@ -106,7 +106,7 @@ class BaseClassGridFees(ABC):
     def calculate_original_trade_rate_from_clearing_rate(
             self, original_bid_rate, propagated_bid_rate, clearing_rate):
         """
-        Used for 2-sided pay as clear and myco matcher.
+        Used for 2-sided pay as clear and matching engine matcher.
         The purpose of this function is to adapt the
         clearing rate calculated via the clearing algorithm to match the expected price the
         original device has to pay once the trade chain settles. The clearing rate is scaled

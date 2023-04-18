@@ -32,7 +32,7 @@ from pendulum import DateTime
 
 import gsy_e.constants
 from gsy_e.gsy_e_core.enums import PAST_MARKET_TYPE_FILE_SUFFIX_MAPPING
-from gsy_e.gsy_e_core.myco_singleton import bid_offer_matcher
+from gsy_e.gsy_e_core.matching_engine_singleton import bid_offer_matcher
 from gsy_e.gsy_e_core.sim_results.file_export_endpoints import file_export_endpoints_factory
 from gsy_e.gsy_e_core.sim_results.results_plots import (PlotAverageTradePrice, PlotDeviceStats,
                                                         PlotEnergyProfile,
@@ -400,6 +400,8 @@ class ExportAndPlot:
         except OSError:
             _log.exception("Could not export area data.")
 
+
+# pylint: disable=missing-class-docstring,arguments-differ,attribute-defined-outside-init
 
 class CoefficientExportAndPlot(ExportAndPlot):
 
