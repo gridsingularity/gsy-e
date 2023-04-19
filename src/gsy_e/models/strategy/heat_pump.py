@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Dict, TYPE_CHECKING, Optional
+from typing import Dict, TYPE_CHECKING, Optional, Union
 
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Trade, TraderDetails
@@ -49,7 +49,7 @@ class HeatPumpStrategy(TradingStrategyBase):
                  external_temp_C: Optional[float] = None,
                  external_temp_profile_uuid: Optional[str] = None,
                  tank_volume_l: float = ConstSettings.HeatPumpSettings.TANK_VOL_L,
-                 consumption_kW: Optional[float] = None,
+                 consumption_kW: Optional[Union[float, Dict[str, float]]] = None,
                  consumption_profile_uuid: Optional[str] = None,
                  source_type: int = ConstSettings.HeatPumpSettings.SOURCE_TYPE,
                  order_updater_parameters: Dict[
