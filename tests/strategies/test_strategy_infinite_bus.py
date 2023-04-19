@@ -28,7 +28,7 @@ from gsy_framework.data_classes import Offer, Trade, BalancingOffer, Bid, Trader
 from gsy_e import constants
 from gsy_e.constants import TIME_ZONE
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
-from gsy_e.gsy_e_core.util import d3a_path
+from gsy_e.gsy_e_core.util import gsye_root_path
 from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
 
 TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
@@ -353,7 +353,7 @@ def test_global_market_maker_rate_single_value(bus_test4):
 @pytest.fixture()
 def bus_test5(area_test1):
     c = InfiniteBusStrategy(
-        energy_rate_profile=os.path.join(d3a_path, "resources", "SAM_SF_Summer.csv"))
+        energy_rate_profile=os.path.join(gsye_root_path, "resources", "SAM_SF_Summer.csv"))
     c.area = area_test1
     c.owner = area_test1
     yield c
@@ -372,7 +372,7 @@ def test_global_market_maker_rate_profile_and_infinite_bus_selling_rate_profile(
 @pytest.fixture()
 def bus_test6(area_test1):
     c = InfiniteBusStrategy(
-        buying_rate_profile=os.path.join(d3a_path, "resources", "LOAD_DATA_1.csv"))
+        buying_rate_profile=os.path.join(gsye_root_path, "resources", "LOAD_DATA_1.csv"))
     c.area = area_test1
     c.owner = area_test1
     yield c

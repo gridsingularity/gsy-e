@@ -29,7 +29,7 @@ from gsy_e.models.area import CoefficientArea, CoefficientAreaException
 from gsy_e.models.area.scm_manager import SCMManager, HomeAfterMeterData, AreaEnergyBills
 from gsy_e.models.config import SimulationConfig
 from gsy_e.models.strategy.scm.load import SCMLoadHoursStrategy
-from gsy_e.models.strategy.scm.pv import SCMPVStrategy
+from gsy_e.models.strategy.scm.pv import SCMPVUserProfile
 
 
 class TestCoefficientArea:
@@ -60,12 +60,12 @@ class TestCoefficientArea:
     @staticmethod
     @pytest.fixture()
     def _create_2_house_grid():
-        strategy = MagicMock(spec=SCMPVStrategy)
+        strategy = MagicMock(spec=SCMPVUserProfile)
         strategy.get_energy_to_sell_kWh = MagicMock(return_value=0.5)
         strategy.get_energy_to_buy_kWh = MagicMock(return_value=0.0)
         pv = CoefficientArea(name="pv", strategy=strategy)
 
-        strategy = MagicMock(spec=SCMPVStrategy)
+        strategy = MagicMock(spec=SCMPVUserProfile)
         strategy.get_energy_to_sell_kWh = MagicMock(return_value=0.2)
         strategy.get_energy_to_buy_kWh = MagicMock(return_value=0.0)
         pv2 = CoefficientArea(name="pv 2", strategy=strategy)

@@ -20,7 +20,7 @@ from gsy_e.models.strategy.commercial_producer import CommercialStrategy
 from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_e.models.strategy.storage import StorageStrategy
-from gsy_e.gsy_e_core.util import d3a_path
+from gsy_e.gsy_e_core.util import gsye_root_path
 
 
 def get_setup(config):
@@ -38,7 +38,7 @@ def get_setup(config):
             ),
             Area("House 2 Smart Meter", strategy=SmartMeterStrategy(
                 initial_selling_rate=30, final_selling_rate=5,
-                smart_meter_profile=Path(d3a_path) / "resources/smart_meter_profile.csv")),
+                smart_meter_profile=Path(gsye_root_path) / "resources/smart_meter_profile.csv")),
             Area("Commercial Energy Producer", strategy=CommercialStrategy(energy_rate=30)),
         ],
         config=config

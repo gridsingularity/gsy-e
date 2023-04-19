@@ -7,7 +7,7 @@ from pendulum import duration
 
 from gsy_e.gsy_e_core.live_events import CreateAreaEvent, UpdateAreaEvent
 from gsy_e.gsy_e_core.live_events import LiveEvents
-from gsy_e.gsy_e_core.util import d3a_path
+from gsy_e.gsy_e_core.util import gsye_root_path
 from gsy_e.models.area import Area
 from gsy_e.models.config import SimulationConfig
 from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
@@ -46,7 +46,7 @@ class TestLiveEvents(unittest.TestCase):
             fit_to_limit=False, energy_rate_increase_per_update=5,
             energy_rate_decrease_per_update=8, update_interval=9
         )
-        self.smart_meter_profile = Path(d3a_path) / "resources/smart_meter_profile.csv"
+        self.smart_meter_profile = Path(gsye_root_path) / "resources/smart_meter_profile.csv"
         self.strategy_smart_meter = SmartMeterStrategy(
             initial_selling_rate=30, final_selling_rate=5,
             smart_meter_profile=self.smart_meter_profile)

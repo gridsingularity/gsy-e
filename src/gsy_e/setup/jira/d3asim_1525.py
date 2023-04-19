@@ -21,7 +21,7 @@ from gsy_e.models.area import Area
 from gsy_e.models.strategy.pv import PVStrategy
 from gsy_e.models.strategy.predefined_pv import PVUserProfileStrategy
 from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy
-from gsy_e.gsy_e_core.util import d3a_path
+from gsy_e.gsy_e_core.util import gsye_root_path
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.enums import BidOfferMatchAlgoEnum
@@ -33,7 +33,7 @@ in TwoSidedPayAsClearEngine._exhaust_offer_for_selected_bids is called before fi
 as part of D3ASIM-1525.
 """
 
-load_profile_path = os.path.join(d3a_path, "resources", "SAM_MF2_Summer.csv")
+load_profile_path = os.path.join(gsye_root_path, "resources", "SAM_MF2_Summer.csv")
 
 house1_pv_production = {
     0: 0,

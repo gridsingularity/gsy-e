@@ -16,13 +16,13 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import os
-from gsy_e.gsy_e_core.util import d3a_path
+from gsy_e.gsy_e_core.util import gsye_root_path
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
 from gsy_e.models.strategy.electrolyzer import ElectrolyzerStrategy
 
 
-discharge_path = os.path.join(d3a_path, "resources/Electrolyzer_Discharge_Profile_kg.csv")
+discharge_path = os.path.join(gsye_root_path, "resources/Electrolyzer_Discharge_Profile_kg.csv")
 
 
 def get_setup(config):

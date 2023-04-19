@@ -25,7 +25,7 @@ class ForecastSCMPVStrategy(SCMForecastExternalMixin, SCMPVUserProfile):
     """External SCM PV strategy"""
     # pylint: disable=unused-argument
     def __init__(self, power_profile: Union[str, Dict] = None,
-                 power_profile_uuid: str = None, capacity_kW: float = None):
+                 power_profile_uuid: str = None):
         """TODO: Remove quickfix of GSYE-581 and remove the unused capacity_kW"""
         super().__init__(power_profile=power_profile, power_profile_uuid=power_profile_uuid)
 

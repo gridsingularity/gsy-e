@@ -37,10 +37,10 @@ from gsy_e.gsy_e_core.market_counters import FutureMarketCounter
 class TestD3ACoreUtil:
 
     def setup_method(self):
-        self.original_d3a_path = util.d3a_path
+        self.original_gsye_root_path = util.gsye_root_path
 
     def teardown_method(self):
-        util.d3a_path = self.original_d3a_path
+        util.gsye_root_path = self.original_gsye_root_path
         GlobalConfig.market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
         os.environ.pop("LISTEN_TO_CANARY_NETWORK_REDIS_QUEUE", None)
 
@@ -96,7 +96,7 @@ class TestD3ACoreUtil:
     @staticmethod
     def test_export_default_settings_to_json_file():
         temp_dir = tempfile.TemporaryDirectory()
-        util.d3a_path = temp_dir.name
+        util.gsye_root_path = temp_dir.name
         os.mkdir(os.path.join(temp_dir.name, "setup"))
         export_default_settings_to_json_file()
         setup_dir = os.path.join(temp_dir.name, "setup")
