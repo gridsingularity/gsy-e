@@ -19,7 +19,7 @@ import json
 import os
 from logging import getLogger
 
-from gsy_dex.data_classes import Trade
+from gsy_dex.data_classes import Bid, Offer, Trade
 from gsy_dex.gsy_collateral import GSyCollateral
 from gsy_dex.gsy_orderbook import GSyOrderbook
 from gsy_dex.substrate_connection import SubstrateConnection
@@ -36,6 +36,7 @@ log = getLogger(__name__)
 NODE_URL = os.environ.get("NODE_URL", "ws://127.0.0.1:9944")
 SUDO_URI = os.environ.get("SUDO_URI", "//Alice")
 DEX_TRADES_CHANNEL = os.environ.get("DEX_TRADES_CHANNEL", "dex-trades-events")
+DEX_NEW_ORDERS_CHANNEL = os.environ.get("DEX_NEW_ORDERS_CHANNEL", "dex-new-orders-events")
 
 
 class AccountAreaMapping:
@@ -126,8 +127,10 @@ class BcSimulationCommunication:
         self.registered_address = []
         self.deposited_collateral = {}
         self.trades_buffer = {}
+        self.new_orders_buffer = {}
         self.redis = RedisCommunicator()
         self.redis.sub_to_channel(DEX_TRADES_CHANNEL, self.handle_dex_trades_event)
+        self.redis.sub_to_channel(DEX_NEW_ORDERS_CHANNEL, self.handle_dex_new_orders_event)
 
     def add_creds_for_area(self, area_uuid, uri):
         """
@@ -244,6 +247,31 @@ class BcSimulationCommunication:
             except SubstrateRequestException as e:
                 log.error("Failed to send the extrinsic to the node %s", e)
 
+    def handle_dex_new_orders_event(self, payload):
+        """
+        This method handles the event when a new trade is made.
+
+        Parameters:
+        - payload (dict): A dictionary that contains information about the new trade.
+
+        Returns:
+        - None.
+        """
+        message_json = json.loads(payload["data"])
+        new_order_event_json = message_json["payload"]
+        log.debug("[NEW ORDER][NEW][%s]", new_order_event_json)
+        new_order = new_order_event_json[0]
+        if new_order.get("buyer"):
+            new_order = Bid.from_serializable_substrate_dict(new_order)
+        else:
+            new_order = Offer.from_serializable_substrate_dict(new_order)
+        new_order.id = new_order_event_json[1]
+        if self.new_orders_buffer.get(str(new_order.area_uuid)):
+            self.new_orders_buffer[str(new_order.area_uuid)].append(new_order)
+        else:
+            self.new_orders_buffer[str(new_order.area_uuid)] = [new_order]
+        log.debug("[NEW_ORDERS_BUFFER][NEW][%s]", self.new_orders_buffer)
+
     def handle_dex_trades_event(self, payload):
         """
         This method handles the event when a new trade is made.
@@ -256,7 +284,7 @@ class BcSimulationCommunication:
         """
         message_json = json.loads(payload["data"])
         trade_json = message_json["payload"]
-        log.info("[TRADE][NEW][%s]", trade_json)
+        log.debug("[TRADE][NEW][%s]", trade_json)
         trade = Trade.from_serializable_dict(trade_json)
         if self.trades_buffer.get(str(trade.bid.area_uuid)):
             self.trades_buffer[str(trade.bid.area_uuid)].append(trade)
