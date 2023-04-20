@@ -1,6 +1,7 @@
 attrs
 awesome-slugify
 cached_property
+cffi==1.15.1
 click
 click-default-group
 colorlog==4.7.2

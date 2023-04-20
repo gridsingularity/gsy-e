@@ -124,11 +124,8 @@ class ExportAndPlot:
         file_name = f"{area_slug}.csv".replace(" ", "_")
         return directory.joinpath(file_name).as_posix()
 
-    def export(self, power_flow=None) -> None:
+    def export(self) -> None:
         """Main caller for local export of plots and csv-files."""
-        if power_flow:
-            power_flow.export_power_flow_results(self.plot_dir)
-
         if not os.path.exists(self.plot_dir):
             os.makedirs(self.plot_dir)
 
