@@ -16,10 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import uuid
+from ctypes import c_uint32
 from logging import getLogger
 from typing import Union, Optional
+from uuid import UUID
 
-from gsy_dex.data_classes import Bid as BcBid, float_to_uint
+from gsy_dex.data_classes import Bid as BcBid, convert_time_slot_to_unix_timestamp, float_to_uint
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import TraderDetails
 from pendulum import DateTime, now
@@ -152,9 +154,10 @@ class TwoSidedBcMarket(OneSidedBcMarket):
         if bid_id is None:
             bid_id = str(uuid.uuid4())
 
-        bid = BcBid(buyer_keypair=self.bc_interface.conn.get_creds_from_area(self.area_uuid),
-                    buyer=buyer, id=bid_id, area_uuid=self.area_uuid, market_uuid=self.id,
-                    time_slot=self.time_slot, creation_time=now(), energy=energy, price=price)
+        bid = BcBid(  # pylint: disable=unexpected-keyword-arg
+            buyer_keypair=self.bc_interface.conn.get_creds_from_area(self.area_uuid),
+            buyer=buyer, id=bid_id, area_uuid=self.area_uuid, market_uuid=self.id,
+            time_slot=self.time_slot, creation_time=now(), energy=energy, price=price)
         deposited_collateral = self.bc_interface.conn.deposited_collateral.get(self.area_uuid)
         if (deposited_collateral is None or
             deposited_collateral < float_to_uint(energy) * float_to_uint(price)) \
@@ -204,10 +207,21 @@ class TwoSidedBcMarket(OneSidedBcMarket):
         if isinstance(bid_or_id, BcBid):
             bid_or_id = str(bid_or_id.id)
         bid = self.bids.pop(bid_or_id, None)
-        if not bid:
+        bc_bids = self.bc_interface.conn.new_bids_buffer.get(
+            str(c_uint32(UUID(self.area_uuid).int).value))
+        log.debug("[BC BIDS]%s", bc_bids)
+        for bc_bid in bc_bids:
+            if convert_time_slot_to_unix_timestamp(bid.creation_time) == bc_bid.creation_time and \
+                    bid.energy == bc_bid.energy and \
+                    convert_time_slot_to_unix_timestamp(bid.time_slot) == bc_bid.time_slot:
+                log.debug("BID: %s equal to BC_BID: %s", bid, bc_bid)
+                bid.nonce = bc_bid.nonce
+                self.bc_interface.conn.remove_bid_from_buffer(
+                    str(c_uint32(UUID(self.area_uuid).int).value), bc_bid)
+        if not bid or not bid.nonce:
             raise BidNotFoundException(bid_or_id)
         remove_order_call = self.bc_interface.conn.gsy_orderbook.create_remove_orders_call(
-            [bid.serializable_substrate_dict()])
+            [bid.nonce])
         signed_remove_order_call_extrinsic = \
             self.bc_interface.conn.conn.substrate.create_signed_extrinsic(
                 remove_order_call, self.bc_interface.conn.get_creds_from_area(self.area_uuid))

@@ -16,10 +16,13 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import uuid
+from ctypes import c_uint32
 from logging import getLogger
 from typing import Union, Optional, Callable
+from uuid import UUID
 
-from gsy_dex.data_classes import Offer as BcOffer, float_to_uint
+from gsy_dex.data_classes import Offer as BcOffer, \
+    convert_time_slot_to_unix_timestamp, float_to_uint
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import TraderDetails
 from gsy_framework.enums import SpotMarketTypeEnum
@@ -152,7 +155,7 @@ class OneSidedBcMarket(TwoSidedMarket):
         """
         if offer_id is None:
             offer_id = str(uuid.uuid4())
-        offer = BcOffer(
+        offer = BcOffer(  # pylint: disable=unexpected-keyword-arg
             seller_keypair=self.bc_interface.conn.get_creds_from_area(self.area_uuid),
             seller=seller, id=offer_id, area_uuid=self.area_uuid, market_uuid=self.id,
             time_slot=self.time_slot, creation_time=now(), energy=energy, price=price)
@@ -204,10 +207,22 @@ class OneSidedBcMarket(TwoSidedMarket):
         if isinstance(offer_or_id, BcOffer):
             offer_or_id = str(offer_or_id.id)
         offer = self.offers.pop(offer_or_id, None)
-        if not offer:
+        bc_offers = self.bc_interface.conn.new_offers_buffer.get(
+            str(c_uint32(UUID(self.area_uuid).int).value))
+        log.debug("[BC OFFERS]%s", bc_offers)
+        for bc_offer in bc_offers:
+            if convert_time_slot_to_unix_timestamp(offer.creation_time) == \
+                    bc_offer.creation_time and \
+                    offer.energy == bc_offer.energy and \
+                    convert_time_slot_to_unix_timestamp(offer.time_slot) == bc_offer.time_slot:
+                log.debug("OFFER: %s equal to BC_OFFER: %s", offer, bc_offer)
+                offer.nonce = bc_offer.nonce
+                self.bc_interface.conn.remove_offer_from_buffer(
+                    str(c_uint32(UUID(self.area_uuid).int).value), bc_offer)
+        if not offer or not offer.nonce:
             raise OfferNotFoundException()
         remove_order_call = self.bc_interface.conn.gsy_orderbook.create_remove_orders_call(
-            [offer.serializable_substrate_dict()])
+            [offer.nonce])
         signed_remove_order_call_extrinsic = \
             self.bc_interface.conn.conn.substrate.create_signed_extrinsic(
                 remove_order_call, self.bc_interface.conn.get_creds_from_area(self.area_uuid))
