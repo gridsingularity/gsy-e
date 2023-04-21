@@ -127,7 +127,8 @@ class BcSimulationCommunication:
         self.registered_address = []
         self.deposited_collateral = {}
         self.trades_buffer = {}
-        self.new_orders_buffer = {}
+        self.new_bids_buffer = {}
+        self.new_offers_buffer = {}
         self.redis = RedisCommunicator()
         self.redis.sub_to_channel(DEX_TRADES_CHANNEL, self.handle_dex_trades_event)
         self.redis.sub_to_channel(DEX_NEW_ORDERS_CHANNEL, self.handle_dex_new_orders_event)
@@ -216,6 +217,34 @@ class BcSimulationCommunication:
             log.error("The %s doesn't have trades in the buffer", area_uuid)
             return None
 
+    def remove_bid_from_buffer(self, area_uuid, order):
+        """
+        This method removes bid from the new_bids_buffer for a specific area.
+
+        Parameters:
+        - area_uuid (str): The UUID of the area.
+        - order (Bid): The bid to remove from the buffer.
+        """
+        try:
+            self.new_bids_buffer[area_uuid] = \
+                [item for item in self.new_bids_buffer[area_uuid] if item != order]
+        except KeyError:
+            log.error("The %s doesn't have bids in the buffer", area_uuid)
+
+    def remove_offer_from_buffer(self, area_uuid, order):
+        """
+        This method removes offer from the new_offers_buffer for a specific area.
+
+        Parameters:
+        - area_uuid (str): The UUID of the area.
+        - order (Offer): The offer to remove from the buffer.
+        """
+        try:
+            self.new_offers_buffer[area_uuid] = \
+                [item for item in self.new_offers_buffer[area_uuid] if item != order]
+        except KeyError:
+            log.error("The %s doesn't have offers in the buffer", area_uuid)
+
     def register_user(self, area_uuid: str):
         """
         This method registers a user in an area.
@@ -249,10 +278,10 @@ class BcSimulationCommunication:
 
     def handle_dex_new_orders_event(self, payload):
         """
-        This method handles the event when a new trade is made.
+        This method handles the event when a new orders is made.
 
         Parameters:
-        - payload (dict): A dictionary that contains information about the new trade.
+        - payload (dict): A dictionary that contains information about the new orders.
 
         Returns:
         - None.
@@ -263,14 +292,20 @@ class BcSimulationCommunication:
         new_order = new_order_event_json[0]
         if new_order.get("buyer"):
             new_order = Bid.from_serializable_substrate_dict(new_order)
+            new_order.nonce = new_order_event_json[1]
+            if self.new_bids_buffer.get(str(new_order.area_uuid)):
+                self.new_bids_buffer[str(new_order.area_uuid)].append(new_order)
+            else:
+                self.new_bids_buffer[str(new_order.area_uuid)] = [new_order]
+            log.debug("[NEW_BIDS_BUFFER][NEW][%s]", self.new_offers_buffer)
         else:
             new_order = Offer.from_serializable_substrate_dict(new_order)
-        new_order.id = new_order_event_json[1]
-        if self.new_orders_buffer.get(str(new_order.area_uuid)):
-            self.new_orders_buffer[str(new_order.area_uuid)].append(new_order)
-        else:
-            self.new_orders_buffer[str(new_order.area_uuid)] = [new_order]
-        log.debug("[NEW_ORDERS_BUFFER][NEW][%s]", self.new_orders_buffer)
+            new_order.nonce = new_order_event_json[1]
+            if self.new_offers_buffer.get(str(new_order.area_uuid)):
+                self.new_offers_buffer[str(new_order.area_uuid)].append(new_order)
+            else:
+                self.new_offers_buffer[str(new_order.area_uuid)] = [new_order]
+            log.debug("[NEW_OFFERS_BUFFER][NEW][%s]", self.new_offers_buffer)
 
     def handle_dex_trades_event(self, payload):
         """
