@@ -194,6 +194,7 @@ markdown_extensions:
         permalink: true
     - mdtooltips
     - attr_list
+    - md_in_html
 
 plugins:
     - search:
