@@ -13,7 +13,7 @@
         <meta name="description" content="Documentation for the Grid Singularity Exchange">
       
       
-        <link rel="canonical" href="https://gridsingularity.github.io/gsy-e/documentation/development-path/">
+        <link rel="canonical" href="http://localhost:8000/development-path/">
       
       
         <meta name="author" content="Grid Singularity">
@@ -115,7 +115,7 @@
   <nav class="md-header-nav md-grid">
     <div class="md-flex">
       <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="https://gridsingularity.github.io/gsy-e/documentation/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
+        <a href="http://localhost:8000/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
           
             <img src="../img/Profile.png" width="32" height="32">
           
@@ -205,7 +205,7 @@
                   <div class="md-sidebar__inner">
                     <nav class="md-nav md-nav--primary" data-md-level="0">
   <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="https://gridsingularity.github.io/gsy-e/documentation/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
+    <a href="http://localhost:8000/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
       
         <img src="../img/Profile.png" width="48" height="48">
       
@@ -1905,7 +1905,7 @@
                 
                   <h1>Grid Singularity Development Path</h1>
                 
-                <p>Grid Singularity Exchange is built as an <a href="https://github.com/gridsingularity/gsy-e">open source GPL v.3 codebase</a> with <a href="https://map.gridsingularity.com/singularity-map">an interactive interface</a> to simulate and operate interconnected, grid-aware energy marketplaces. The future market design implementation, termed Symbiotic Energy Markets, combines multi-attribute double-sided auctions, graph representations of the energy grid and the decentralised computation and verification enabled by blockchain. In the envisaged consumer-centric market design, spot, futures, settlement, and balancing markets are intertwined through the use of time slots, allowing market-driven pricing and accurate accounting of delivered energy. Individuals can optimise for their own multi-attribute objectives (e.g. green energy source, reduced energy bill, preferred trading partner) through degrees of freedom in the multi-attribute double auction with dynamic pricing. The grid is represented as a weighted graph, offering grid operators efficient management tools and allowing energy communities to interconnect and trade. The complexity of the matching algorithm is decoupled from the verification of transactions, with matching facilitated by third party matching algorithm providers, termed “mycos”, enabling the exchange itself to operate on a blockchain. New energy market participants are rewarded for providing valuable services such as data and algorithms, while the roles of established market participants (aggregators, grid operators, utilities, and regulators) converge towards the individual and the community.</p>
+                <p>Grid Singularity Exchange is built as an <a href="https://github.com/gridsingularity/gsy-e">open source GPL v.3 codebase</a> with <a href="https://map.gridsingularity.com/singularity-map">an interactive interface</a> to simulate and operate interconnected, grid-aware energy marketplaces. The future market design implementation, termed Symbiotic Energy Markets, combines multi-attribute double-sided auctions, graph representations of the energy grid and the decentralised computation and verification enabled by blockchain. In the envisaged consumer-centric market design, spot, futures, settlement, and balancing markets are intertwined through the use of time slots, allowing market-driven pricing and accurate accounting of delivered energy. Individuals can optimise for their own multi-attribute objectives (e.g. green energy source, reduced energy bill, preferred trading partner) through degrees of freedom in the multi-attribute double auction with dynamic pricing. The grid is represented as a weighted graph, offering grid operators efficient management tools and allowing energy communities to interconnect and trade. The complexity of the matching algorithm is decoupled from the verification of transactions, with matching facilitated by third party matching algorithm providers, termed “matching engines”, enabling the exchange itself to operate on a blockchain. New energy market participants are rewarded for providing valuable services such as data and algorithms, while the roles of established market participants (aggregators, grid operators, utilities, and regulators) converge towards the individual and the community.</p>
 <p><img alt="alt_text" src="../img/development-path.png" /></p>
 <p><strong><em>Figure 1.1</em></strong>: <em>Information flow between aggregator, Grid Singularity exchange and matching algorithm provider (to be sourced through Data and Algorithm Marketplace). IPFS or RDBMS will likely be used for off-chain storage of the order book. The matching algorithms will be run off-chain or in an instance of SubstraTEE. The Grid Singularity Exchange will operate as a pallet on a Substrate-based parachain or another network that provides the best security and privacy combined with execution efficiency.</em></p>
 <p>Grid Singularity is implementing Symbiotic Energy Markets in stages, adding or adapting modules to its codebase to take advantage of advancements in blockchain technology, <a href="https://gridsingularity.medium.com/energy-communities-a-game-changer-for-the-european-electricity-grid-fd588a3063b0">increasing regulatory interest to enable bottom-up markets</a> and the proliferation of connected energy resources. We rely on open source innovation and ecosystem collaboration to develop an inclusive, efficient, accountable and secure energy exchange:</p>

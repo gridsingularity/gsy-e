@@ -13,7 +13,7 @@
         <meta name="description" content="Documentation for the Grid Singularity Exchange">
       
       
-        <link rel="canonical" href="https://gridsingularity.github.io/gsy-e/documentation/matching-api-template-script/">
+        <link rel="canonical" href="http://localhost:8000/matching-api-template-script/">
       
       
         <meta name="author" content="Grid Singularity">
@@ -115,7 +115,7 @@
   <nav class="md-header-nav md-grid">
     <div class="md-flex">
       <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="https://gridsingularity.github.io/gsy-e/documentation/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
+        <a href="http://localhost:8000/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
           
             <img src="../img/Profile.png" width="32" height="32">
           
@@ -205,7 +205,7 @@
                   <div class="md-sidebar__inner">
                     <nav class="md-nav md-nav--primary" data-md-level="0">
   <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="https://gridsingularity.github.io/gsy-e/documentation/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
+    <a href="http://localhost:8000/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
       
         <img src="../img/Profile.png" width="48" height="48">
       
@@ -1911,9 +1911,9 @@
                 
                   <h1>Matching API Template Script</h1>
                 
-                <p>A Matching API template script is available <a href="https://github.com/gridsingularity/gsy-myco-sdk/blob/master/gsy_myco_sdk/setups/myco_matcher.py">here</a>. See the TODO flags there connect to your preferred customized clearing algorithm and to request, if desired, bids and offers from specific markets.</p>
-<p>At the beginning of the Matching API script, the MycoMatcher class is defined as well as the on_area_map_response method, which allows the users to define the list of markets from which they want to request bids and offers from.</p>
-<pre class="codehilite"><code class="language-python">class MycoMatcher(base_matcher):
+                <p>A Matching API template script is available <a href="https://github.com/gridsingularity/gsy-matching-engine-sdk/blob/master/gsy_matching_engine_sdk/setups/matching_engine_matcher.py">here</a>. See the TODO flags there connect to your preferred customized clearing algorithm and to request, if desired, bids and offers from specific markets.</p>
+<p>At the beginning of the Matching API script, the MatchingEngineMatcher class is defined as well as the on_area_map_response method, which allows the users to define the list of markets from which they want to request bids and offers from.</p>
+<pre class="codehilite"><code class="language-python">class MatchingEngineMatcher(base_matcher):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.is_finished = False
@@ -1936,7 +1936,7 @@
         self.request_offers_bids(filters={})
 </code></pre>
 
-<p>In the next section, the bids/offers that had been previously requested from the market are stored in the matching_data variable. The matching algorithm (<a href="https://github.com/gridsingularity/gsy-myco-sdk/blob/master/gsy_myco_sdk/matching_algorithms/attributed_matching_algorithm.py">AttributedMatchingAlgorithm</a> in the example here) takes those data as input and outputs a list of recommendations. Each recommendation is a nested dictionary with the following structure:</p>
+<p>In the next section, the bids/offers that had been previously requested from the market are stored in the matching_data variable. The matching algorithm (<a href="https://github.com/gridsingularity/gsy-matching-engine-sdk/blob/master/gsy_matching_engine_sdk/matching_algorithms/attributed_matching_algorithm.py">AttributedMatchingAlgorithm</a> in the example here) takes those data as input and outputs a list of recommendations. Each recommendation is a nested dictionary with the following structure:</p>
 <pre class="codehilite"><code class="language-json">[{'market_id': '0fd481d9-98af-43cd-9e98-196c1fe9877f',
   'time_slot': '2021-12-20T00:15',
   'bids': [{'type': 'Bid',
@@ -1979,7 +1979,7 @@
 <ol>
 <li><a href="https://github.com/gridsingularity/gsy-framework/blob/master/gsy_framework/matching_algorithms/pay_as_bid_matching_algorithm.py">Pay as Bid algorithm</a> - this clears markets continuously during the market slot following this <a href="../two-sided-pay-as-bid/">strategy</a>;</li>
 <li><a href="https://github.com/gridsingularity/gsy-framework/blob/master/gsy_framework/matching_algorithms/pay_as_clear_matching_algorithm.py">Pay as Clear algorithm</a> - this clears markets by ordering bids and offers and defining a single clearing price, following this <a href="../two-sided-pay-as-clear/">strategy</a>;</li>
-<li><a href="https://github.com/gridsingularity/gsy-myco-sdk/blob/master/gsy_myco_sdk/matching_algorithms/attributed_matching_algorithm.py">Attributed matching algorithm</a> - this follows the same logic as the <a href="https://github.com/gridsingularity/gsy-framework/blob/master/gsy_framework/matching_algorithms/pay_as_bid_matching_algorithm.py">Pay-as-Bid clearing</a> but takes into account <a href="../degrees-of-freedom/">degrees of freedom</a> such as attributes and requirements (listed as dictionaries for bids and offers):<ul>
+<li><a href="https://github.com/gridsingularity/gsy-matching-engine-sdk/blob/master/gsy_matching_engine_sdk/matching_algorithms/attributed_matching_algorithm.py">Attributed matching algorithm</a> - this follows the same logic as the <a href="https://github.com/gridsingularity/gsy-framework/blob/master/gsy_framework/matching_algorithms/pay_as_bid_matching_algorithm.py">Pay-as-Bid clearing</a> but takes into account <a href="../degrees-of-freedom/">degrees of freedom</a> such as attributes and requirements (listed as dictionaries for bids and offers):<ul>
 <li><a href="https://github.com/gridsingularity/d3a-api-client/blob/master/README.md#attributes">Attributes</a> - “energy type”, currently implemented only for offers (e.g. “green” energy)</li>
 <li><a href="https://github.com/gridsingularity/d3a-api-client/blob/master/README.md#requirements">Requirements</a> - “trading partners” implemented for offers and “energy type”, “trading partners”, “energy”, and “price” implemented for bids.</li>
 </ul>
@@ -2004,7 +2004,7 @@ def on_event_or_response(self, data):
         logging.debug(&quot;Event arrived %s&quot;, data)
 </code></pre>
 
-<p>Lastly, the Matching API Script overwrites the on_finish event so that whenever the function is triggered the script stops. If the user wishes to save some information recorded within the Myco SDK this would be the opportunity to export them to external files.</p>
+<p>Lastly, the Matching API Script overwrites the on_finish event so that whenever the function is triggered the script stops. If the user wishes to save some information recorded within the Matching Engine SDK this would be the opportunity to export them to external files.</p>
 <pre class="codehilite"><code class="language-python">def on_finish(self, data):
         self.is_finished = True
 </code></pre>

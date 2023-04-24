@@ -13,7 +13,7 @@
         <meta name="description" content="Documentation for the Grid Singularity Exchange">
       
       
-        <link rel="canonical" href="https://gridsingularity.github.io/gsy-e/documentation/matching-api-walkthrough/">
+        <link rel="canonical" href="http://localhost:8000/matching-api-walkthrough/">
       
       
         <meta name="author" content="Grid Singularity">
@@ -115,7 +115,7 @@
   <nav class="md-header-nav md-grid">
     <div class="md-flex">
       <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="https://gridsingularity.github.io/gsy-e/documentation/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
+        <a href="http://localhost:8000/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
           
             <img src="../img/Profile.png" width="32" height="32">
           
@@ -205,7 +205,7 @@
                   <div class="md-sidebar__inner">
                     <nav class="md-nav md-nav--primary" data-md-level="0">
   <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="https://gridsingularity.github.io/gsy-e/documentation/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
+    <a href="http://localhost:8000/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
       
         <img src="../img/Profile.png" width="48" height="48">
       
@@ -1909,9 +1909,9 @@
                 
                   <h1>Walkthrough</h1>
                 
-                <p>The Grid Singularity Matching Application Programming Interface (or Matching API) allows custom matching algorithms to be used to clear orders in local energy exchanges. The Matching API decouples the matching process from the exchange, allowing external algorithm providers (also termed mycos here) to read the exchange’s order book, run custom matching algorithms and send the resulting energy transactions to be verified and executed by the exchange, as shown in Figure 4 and explained below.</p>
+                <p>The Grid Singularity Matching Application Programming Interface (or Matching API) allows custom matching algorithms to be used to clear orders in local energy exchanges. The Matching API decouples the matching process from the exchange, allowing external algorithm providers (also termed matching engines here) to read the exchange’s order book, run custom matching algorithms and send the resulting energy transactions to be verified and executed by the exchange, as shown in Figure 4 and explained below.</p>
 <p><img alt="alt_text" src="../img/matching_api.png" /></p>
-<p><strong>Figure 4</strong>. <em>Flow diagram of the role of mycos (third party matching algorithm providers) in the Grid Singularity Exchange.</em></p>
+<p><strong>Figure 4</strong>. <em>Flow diagram of the role of matching engines (third party matching algorithm providers) in the Grid Singularity Exchange.</em></p>
 <p>Trading process through the Matching API:</p>
 <ol>
 <li>
@@ -1936,16 +1936,16 @@
 <p>It is important to note that the Matching API is <strong>asynchronous</strong> towards the exchange, meaning  that <a href="../matching-api-commands/">it can request bids and offers</a> and send recommendations at any time during the <a href="" title="market-types.md">market slots</a>.</p>
 <p>To decouple the bids / offers matching mechanism from the exchange and to develop your customised clearing algorithm, please follow the following steps:</p>
 <ul>
-<li>Install the <a href="https://github.com/gridsingularity/gsy-myco-sdk">Grid Singularity Myco SDK</a> on your computer by launching the following commands on your terminal window:</li>
+<li>Install the <a href="https://github.com/gridsingularity/gsy-matching-engine-sdk">Grid Singularity Matching Engine SDK</a> on your computer by launching the following commands on your terminal window:</li>
 </ul>
 <p><strong>Install gsy-e-sdk</strong></p>
-<pre class="codehilite"><code>mkvirtualenv gsy-myco-sdk
-pip install https://github.com/gridsingularity/gsy-myco-sdk.git
+<pre class="codehilite"><code>mkvirtualenv gsy-matching-engine-sdk
+pip install https://github.com/gridsingularity/gsy-matching-engine-sdk.git
 </code></pre>
 
-<p><strong>Update gsy-myco-sdk (needed when an update is deployed)</strong></p>
-<pre class="codehilite"><code>pip uninstall -y gsy-myco-sdk
-pip install git+https://github.com/gridsingularity/gsy-myco-sdk.git
+<p><strong>Update gsy-matching-engine-sdk (needed when an update is deployed)</strong></p>
+<pre class="codehilite"><code>pip uninstall -y gsy-matching-engine-sdk
+pip install git+https://github.com/gridsingularity/gsy-matching-engine-sdk.git
 </code></pre>
 
 <ul>
