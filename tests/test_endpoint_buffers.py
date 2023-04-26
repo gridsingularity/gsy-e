@@ -1,16 +1,17 @@
+# pylint: disable=protected-access
 import logging
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
+import pendulum
 import pytest
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
-from pendulum import datetime
-import pendulum
-
 from gsy_framework.enums import AvailableMarketTypes, SpotMarketTypeEnum
+from pendulum import datetime
+
 from gsy_e.gsy_e_core.enums import FORWARD_MARKET_TYPES
-from gsy_e.gsy_e_core.sim_results.endpoint_buffer import \
-    SimulationEndpointBuffer, CoefficientEndpointBuffer
+from gsy_e.gsy_e_core.sim_results.endpoint_buffer import (
+    SimulationEndpointBuffer, CoefficientEndpointBuffer)
 from gsy_e.models.area.scm_manager import SCMManager
 
 logger = logging.getLogger(__name__)
@@ -93,8 +94,9 @@ class TestSimulationEndpointBuffer:
             serializable_dict=lambda: {
                 "creation_time": creation_time, "time_slot": time_slot})
 
-    def test_prepare_results_for_publish_creates_dict_successfully(self, general_setup):
-        area, slot_length = general_setup
+    @staticmethod
+    def test_prepare_results_for_publish_creates_dict_successfully(general_setup):
+        area, _ = general_setup
         endpoint_buffer = SimulationEndpointBuffer(
             job_id="JOB_1",
             random_seed=41,
@@ -114,7 +116,6 @@ class TestSimulationEndpointBuffer:
                 "elapsed_time_seconds": 0,
                 "percentage_completed": 0,
             },
-            "bids_offers_trades": {},
             "results_area_uuids": [],
             "simulation_state": {"general": {}, "areas": {}},
             "simulation_raw_data": {},
@@ -127,9 +128,10 @@ class TestSimulationEndpointBuffer:
             }
         }
 
+    @staticmethod
     @patch("gsy_e.gsy_e_core.sim_results.endpoint_buffer.get_json_dict_memory_allocation_size")
     def test_prepare_results_for_publish_output_too_big(
-            self, get_json_dict_memory_allocation_size_mock, general_setup, caplog):
+            get_json_dict_memory_allocation_size_mock, general_setup, caplog):
         """The preparation of results fails if the output is too big."""
         area, _ = general_setup
         endpoint_buffer = SimulationEndpointBuffer(
@@ -146,7 +148,8 @@ class TestSimulationEndpointBuffer:
 
         assert output == {}
 
-    def test_generate_json_report_returns_successfully(self, general_setup):
+    @staticmethod
+    def test_generate_json_report_returns_successfully(general_setup):
         area, _ = general_setup
         endpoint_buffer = SimulationEndpointBuffer(
             job_id="JOB_1",
@@ -171,7 +174,8 @@ class TestSimulationEndpointBuffer:
             "mocked-results": "some-results"
         }
 
-    def test_update_stats_spot_markets_updates_successfully(self, general_setup):
+    @staticmethod
+    def test_update_stats_spot_markets_updates_successfully(general_setup):
         # pylint: disable=protected-access
         area, _ = general_setup
         area.current_market = MagicMock(
@@ -345,7 +349,6 @@ class TestSimulationEndpointBufferForward:
                 "elapsed_time_seconds": 0,
                 "percentage_completed": 0,
             },
-            "bids_offers_trades": {},
             "results_area_uuids": [],
             "simulation_state": {"general": {}, "areas": {}},
             "simulation_raw_data": {},
@@ -490,7 +493,9 @@ class TestSimulationEndpointBufferForward:
 
 class TestCoefficientEndpointBuffer(TestSimulationEndpointBuffer):
     """Tests for the CoefficientEndpointBuffer class."""
-    def test_update_stats_scm_updated_successfully(self, scm_setup):
+
+    @staticmethod
+    def test_update_stats_scm_updated_successfully(scm_setup):
         coefficient_area, _ = scm_setup
 
         endpoint_buffer = CoefficientEndpointBuffer(
