@@ -1,4 +1,4 @@
-# pylint: disable=protected-access
+# pylint: disable=protected-access, no-self-use
 import logging
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
@@ -94,8 +94,7 @@ class TestSimulationEndpointBuffer:
             serializable_dict=lambda: {
                 "creation_time": creation_time, "time_slot": time_slot})
 
-    @staticmethod
-    def test_prepare_results_for_publish_creates_dict_successfully(general_setup):
+    def test_prepare_results_for_publish_creates_dict_successfully(self, general_setup):
         area, _ = general_setup
         endpoint_buffer = SimulationEndpointBuffer(
             job_id="JOB_1",
@@ -128,10 +127,9 @@ class TestSimulationEndpointBuffer:
             }
         }
 
-    @staticmethod
     @patch("gsy_e.gsy_e_core.sim_results.endpoint_buffer.get_json_dict_memory_allocation_size")
     def test_prepare_results_for_publish_output_too_big(
-            get_json_dict_memory_allocation_size_mock, general_setup, caplog):
+            self, get_json_dict_memory_allocation_size_mock, general_setup, caplog):
         """The preparation of results fails if the output is too big."""
         area, _ = general_setup
         endpoint_buffer = SimulationEndpointBuffer(
@@ -148,8 +146,7 @@ class TestSimulationEndpointBuffer:
 
         assert output == {}
 
-    @staticmethod
-    def test_generate_json_report_returns_successfully(general_setup):
+    def test_generate_json_report_returns_successfully(self, general_setup):
         area, _ = general_setup
         endpoint_buffer = SimulationEndpointBuffer(
             job_id="JOB_1",
@@ -174,8 +171,8 @@ class TestSimulationEndpointBuffer:
             "mocked-results": "some-results"
         }
 
-    @staticmethod
-    def test_update_stats_spot_markets_updates_successfully(general_setup):
+    # @staticmethod
+    def test_update_stats_spot_markets_updates_successfully(self, general_setup):
         # pylint: disable=protected-access
         area, _ = general_setup
         area.current_market = MagicMock(
