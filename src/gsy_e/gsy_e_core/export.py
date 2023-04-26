@@ -167,7 +167,7 @@ class ExportAndPlot:
         subdirectory = pathlib.Path(self.directory, "raw_data")
         if not subdirectory.exists():
             subdirectory.mkdir(exist_ok=True, parents=True)
-        json_file = os.path.join(self.directory, "area_tree_summary.json")
+        json_file = os.path.join(subdirectory, "area_tree_summary.json")
         with open(json_file, "w", encoding="utf-8") as outfile:
             json.dump(data, outfile, indent=2)
 
