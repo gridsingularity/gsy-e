@@ -122,7 +122,7 @@ class SimulationConfig:
         """Read global pv user profile."""
         self.pv_user_profile = None \
             if pv_user_profile is None \
-            else read_arbitrary_profile(InputProfileTypes.POWER,
+            else read_arbitrary_profile(InputProfileTypes.POWER_W,
                                         ast.literal_eval(pv_user_profile))
 
     def read_market_maker_rate(self, market_maker_rate):

@@ -58,7 +58,7 @@ class HeatPumpEnergyParameters:
         if isinstance(consumption_kW, float):
             consumption_W = consumption_kW * 1000
         self._consumption_kWh: [DateTime, float] = EnergyProfile(
-            consumption_W, consumption_profile_uuid, profile_type=InputProfileTypes.POWER)
+            consumption_W, consumption_profile_uuid, profile_type=InputProfileTypes.POWER_W)
 
         if not external_temp_profile_uuid and not external_temp_C:
             external_temp_C = ConstSettings.HeatPumpSettings.EXT_TEMP_C

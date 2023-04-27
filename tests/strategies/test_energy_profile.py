@@ -84,12 +84,12 @@ class TestEnergyProfile:
 
     @staticmethod
     def test_energy_profile_with_power_input_profile():
-        """Check input_profile when profile_type is set to InputProfileTypes.POWER."""
+        """Check input_profile when profile_type is set to InputProfileTypes.POWER_W."""
         ep = EnergyProfile(
             input_profile={i: randint(1000, 2000) for i in range(24)},
             input_profile_uuid="UUID",
             input_energy_rate=None,
-            profile_type=InputProfileTypes.POWER
+            profile_type=InputProfileTypes.POWER_W
         )
 
         assert ep.input_profile_uuid is None
@@ -105,12 +105,12 @@ class TestEnergyProfile:
 
     @staticmethod
     def test_energy_profile_with_power_input_profile_rate():
-        """Check input_profile_rate when profile_type is set to InputProfileTypes.POWER."""
+        """Check input_profile_rate when profile_type is set to InputProfileTypes.POWER_W."""
         ep = EnergyProfile(
             input_profile={i: randint(15, 30) for i in range(24)},
             input_profile_uuid="UUID",
             input_energy_rate=3000,
-            profile_type=InputProfileTypes.POWER
+            profile_type=InputProfileTypes.POWER_W
         )
 
         ep.read_or_rotate_profiles()
@@ -124,7 +124,7 @@ class TestEnergyProfile:
             input_profile={i: randint(15, 30) for i in range(24)},
             input_profile_uuid="UUID",
             input_energy_rate=3000,
-            profile_type=InputProfileTypes.POWER
+            profile_type=InputProfileTypes.POWER_W
         )
 
         ep.read_or_rotate_profiles()

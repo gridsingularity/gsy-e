@@ -36,7 +36,7 @@ class EnergyProfile:
         elif self.input_energy_rate is not None:
             self.profile_type = InputProfileTypes.IDENTITY
         else:
-            self.profile_type = InputProfileTypes.POWER
+            self.profile_type = InputProfileTypes.POWER_W
 
     def read_or_rotate_profiles(self, reconfigure=False):
         """Rotate current profile or read and preprocess profile from source."""
