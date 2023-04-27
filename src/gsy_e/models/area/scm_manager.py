@@ -291,12 +291,14 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
     @property
     def home_balance_kWh(self):
         """Energy balance of the home. Equals to energy bought minus energy sold."""
-        return self.bought_from_grid + self.bought_from_community - self.sold_to_grid
+        return (self.bought_from_grid + self.bought_from_community
+                - self.sold_to_grid - self.sold_to_community)
 
     @property
     def home_balance(self):
         """Price balance of the home. Equals to currency spent minus currency earned."""
-        return self.spent_to_grid + self.spent_to_community - self.earned_from_grid
+        return (self.spent_to_grid + self.spent_to_community
+                - self.earned_from_grid - self.earned_from_community)
 
 
 class SCMManager:
