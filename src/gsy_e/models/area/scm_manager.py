@@ -414,26 +414,29 @@ class SCMManager:
                 home_data.energy_need_kWh * market_maker_rate_normal_fees + marketplace_fee
                 + fixed_fee)
 
+        # First handle the sold energy case. This case occurs in case of energy surplus of a home.
+        if home_data.energy_surplus_kWh > 0.0:
+            home_bill.set_sold_to_community(
+                home_data.self_production_for_community_kWh, market_maker_rate_decreased_fees)
+            if home_data.self_production_for_community_kWh > FLOATING_POINT_TOLERANCE:
+                home_data.create_sell_trade(
+                    self._time_slot, DEFAULT_SCM_COMMUNITY_NAME,
+                    home_data.self_production_for_community_kWh,
+                    home_data.self_production_for_community_kWh *
+                    market_maker_rate_decreased_fees)
+
+            home_bill.set_sold_to_grid(
+                home_data.self_production_for_grid_kWh, feed_in_tariff)
+            if home_data.self_production_for_grid_kWh > FLOATING_POINT_TOLERANCE:
+                home_data.create_sell_trade(
+                    self._time_slot, DEFAULT_SCM_GRID_NAME,
+                    home_data.self_production_for_grid_kWh,
+                    home_data.self_production_for_grid_kWh * feed_in_tariff)
+
+        # Next case is the consumption. In this case the energy allocated from the community
+        # is sufficient to cover the energy needs of the home.
         if home_data.allocated_community_energy_kWh > home_data.energy_need_kWh:
-            if home_data.energy_surplus_kWh > 0.0:
-                home_bill.set_sold_to_community(
-                    home_data.self_production_for_community_kWh, market_maker_rate_decreased_fees)
-                if home_data.self_production_for_community_kWh > FLOATING_POINT_TOLERANCE:
-                    home_data.create_sell_trade(
-                        self._time_slot, DEFAULT_SCM_COMMUNITY_NAME,
-                        home_data.self_production_for_community_kWh,
-                        home_data.self_production_for_community_kWh *
-                        market_maker_rate_decreased_fees)
-
-                home_bill.set_sold_to_grid(
-                    home_data.self_production_for_grid_kWh, feed_in_tariff)
-                if home_data.self_production_for_grid_kWh > FLOATING_POINT_TOLERANCE:
-                    home_data.create_sell_trade(
-                        self._time_slot, DEFAULT_SCM_GRID_NAME,
-                        home_data.self_production_for_grid_kWh,
-                        home_data.self_production_for_grid_kWh * feed_in_tariff)
-
-            elif home_data.energy_need_kWh > FLOATING_POINT_TOLERANCE:
+            if home_data.energy_need_kWh > FLOATING_POINT_TOLERANCE:
                 home_bill.set_bought_from_community(
                     home_data.energy_need_kWh, market_maker_rate_decreased_fees,
                     grid_fees * (1.0 - self._grid_fees_reduction), taxes_surcharges
@@ -442,6 +445,8 @@ class SCMManager:
                     self._time_slot, DEFAULT_SCM_COMMUNITY_NAME, home_data.energy_need_kWh,
                     home_data.energy_need_kWh * market_maker_rate_decreased_fees
                 )
+        # Next case is in case the allocated energy from the community is not sufficient for the
+        # home energy needs. In this case the energy deficit is bought from the grid.
         else:
             home_bill.set_bought_from_community(
                 home_data.allocated_community_energy_kWh, market_maker_rate_decreased_fees,
