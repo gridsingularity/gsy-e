@@ -37,6 +37,7 @@ def forward_market_strategy_fixture(request) -> Tuple["ForwardStrategyBase", "Ar
     GlobalConfig.start_date = orig_start_date
 
 
+@pytest.mark.slow
 class TestForwardLiveEvents:
     # pylint: disable=protected-access
 
