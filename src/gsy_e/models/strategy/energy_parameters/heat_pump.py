@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Dict, Union
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.enums import HeatPumpSourceType
@@ -36,7 +36,7 @@ class HeatPumpEnergyParameters:
                  external_temp_C: Optional[float] = None,
                  external_temp_profile_uuid: Optional[str] = None,
                  tank_volume_l: float = ConstSettings.HeatPumpSettings.TANK_VOL_L,
-                 consumption_kW: Optional[float] = None,
+                 consumption_kW: Optional[Union[float, Dict[str, float]]] = None,
                  consumption_profile_uuid: Optional[str] = None,
                  source_type: int = ConstSettings.HeatPumpSettings.SOURCE_TYPE):
 
@@ -52,9 +52,13 @@ class HeatPumpEnergyParameters:
         self.state = HeatPumpState(initial_temp_C, self._slot_length)
 
         if not consumption_profile_uuid and not consumption_kW:
-            consumption_kW = ConstSettings.HeatPumpSettings.CONSUMPTION_KW
+            consumption_W = ConstSettings.HeatPumpSettings.CONSUMPTION_KW * 1000
+        if isinstance(consumption_kW, Dict):
+            consumption_W = {k: v * 1000 for k, v in consumption_kW.items()}
+        if isinstance(consumption_kW, float):
+            consumption_W = consumption_kW * 1000
         self._consumption_kWh: [DateTime, float] = EnergyProfile(
-            consumption_kW * 1000, consumption_profile_uuid)  # EnergyProfile requires values in W
+            consumption_W, consumption_profile_uuid, profile_type=InputProfileTypes.POWER)
 
         if not external_temp_profile_uuid and not external_temp_C:
             external_temp_C = ConstSettings.HeatPumpSettings.EXT_TEMP_C

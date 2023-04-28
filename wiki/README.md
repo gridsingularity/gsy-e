@@ -7,7 +7,7 @@ Note that you will need the `pip` package manager, which is generally installed 
 Clone the repository to your local file system.
 
 ```bash
-git clone https://github.com/gridsingularity/d3a.git
+git clone https://github.com/gridsingularity/gsy-e.git
 ```
 
 Install `mkdocs` by using the `pip` package manager.
@@ -29,7 +29,7 @@ Run `mkdocs serve` from the repository root to spawn a hot reloading development
 
 The wiki is hosted on github and is built based on the active `master` branch on the GitHub repository.
 
-To publish any changes to the wiki, navigate to your local instance of the `wiki` folder in the d3a git repository, and make sure it is up to date with your requested changes. Then run:
+To publish any changes to the wiki, navigate to your local instance of the `wiki` folder in the gsy-e git repository, and make sure it is up to date with your requested changes. Then run:
 
 ```bash
 mkdocs gh-deploy

@@ -25,6 +25,7 @@ def load_fixture():
     )
 
 
+@pytest.mark.slow
 class TestConsumptionStandardProfileEnergyParameters:
     """Tests for the ConsumptionStandardProfileEnergyParameters class."""
 
@@ -69,6 +70,7 @@ def pv_fixture():
     )
 
 
+@pytest.mark.slow
 class TestProductionStandardProfileEnergyParameters:
     """Tests for the ConsumptionStandardProfileEnergyParameters class."""
 

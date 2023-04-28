@@ -1,6 +1,14 @@
-After successfully running a simulation in Grid Singularity’s User Interface, the user can download the results file for a deeper analysis. The downloaded folder is organised into two subfolders with relevant files, as follows:
+After successfully running a simulation in Grid Singularity’s User Interface, the user can download the results file for a deeper analysis by clicking on “Download” button on the bottom-right corner of the settings tab as shown below:
 
-*   **Aggregated_results** :
+<figure markdown>
+  ![alt_text](img/settings_tab.png){:style="height:390px;width:500px;text-align:center"}
+  <figcaption>Fig1: Settings tab for Grid singularity Maps interface</figcaption>
+</figure>
+
+An email with a download link is sent to the user's inbox once the results have been compiled in the backend. When the user clicks on the link, they are redirected to the simulation where they click on the “Download” button again to download the results, which are then saved locally on the user's computer. The downloaded folder is organised into two subfolders with relevant files, as follows:
+
+
+*   **aggregated_results** :
     *   **area_throughput.json** : Imported/exported energy for each market slot :
     *   **Bills.json** : Energy bills of all markets and energy assets (more details [here](bills-traded-energy.md))
     *   **Cumulative_bills.json** : Total energy bills (spent & earned)
