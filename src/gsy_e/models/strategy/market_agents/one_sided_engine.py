@@ -46,7 +46,6 @@ class MAEngine:
         self.forwarded_offers: Dict[str, OfferInfo] = {}
         self.trade_residual: Dict[str, Offer] = {}
         self._current_tick = 0
-        self.no_new_offer = False
 
     def __repr__(self):
         return "<MAEngine [{s.owner.name}] {s.name} {s.markets.source.time_slot:%H:%M}>".format(
@@ -127,8 +126,6 @@ class MAEngine:
             if offer.id not in self.offer_age:
                 self.offer_age[offer.id] = current_tick
 
-        if self.no_new_offer:
-            return
         # Use `list()` to avoid in place modification errors
         for offer_id, age in list(self.offer_age.items()):
             if offer_id in self.forwarded_offers:
@@ -160,7 +157,6 @@ class MAEngine:
             if forwarded_offer:
                 self.owner.log.debug(f"Forwarded offer to {self.markets.source.name} "
                                      f"{self.owner.name}, {self.name} {forwarded_offer}")
-        self.no_new_offer = True
 
     def event_offer_traded(self, *, trade):
         """Perform actions that need to be done when OFFER_TRADED event is triggered."""
@@ -256,7 +252,6 @@ class MAEngine:
         if market is None:
             return
 
-        self.no_new_offer = False
         if market == self.markets.target and accepted_offer.id in self.forwarded_offers:
             # offer was split in target market, also split in source market
 
@@ -308,7 +303,6 @@ class MAEngine:
 
     def event_offer(self, offer: Offer) -> None:
         """Perform actions on the event of the creation of a new offer."""
-        self.no_new_offer = False
         if (ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value and
                 self.min_offer_age == 0):
             # Propagate offer immediately if the MIN_OFFER_AGE is set to zero.
