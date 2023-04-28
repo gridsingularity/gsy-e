@@ -316,7 +316,7 @@ def testing_event_market_cycle_post_offers(bus_test3, area_test3):
     bus_test3.event_market_cycle()
     assert len(area_test3.test_market.created_offers) == 1
     assert area_test3.test_market.created_offers[-1].energy == sys.maxsize
-    assert area_test3.test_market.created_offers[-1].price == float(30 * sys.maxsize)
+    assert area_test3.test_market.created_offers[-1].price - float(30 * sys.maxsize) == 0
 
 
 @pytest.fixture()

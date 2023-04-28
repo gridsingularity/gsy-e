@@ -1,4 +1,4 @@
-from gsy_framework.read_user_profile import InputProfileTypes, convert_identity_profile_to_float
+from gsy_framework.read_user_profile import InputProfileTypes
 
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.gsy_e_core.util import should_read_profile_from_db
@@ -50,12 +50,7 @@ class EnergyProfile:
         else:
             profile = self.profile
 
-        profile = global_objects.profiles_handler.rotate_profile(
+        self.profile = global_objects.profiles_handler.rotate_profile(
             profile_type=self.profile_type,
             profile=profile,
             profile_uuid=self.input_profile_uuid)
-
-        if self.profile_type == InputProfileTypes.IDENTITY:
-            self.profile = convert_identity_profile_to_float(profile)
-        else:
-            self.profile = profile
