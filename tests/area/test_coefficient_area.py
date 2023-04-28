@@ -201,6 +201,8 @@ class TestCoefficientArea:
         assert isclose(scm._bills[house1.uuid].gsy_energy_bill, 0.21)
         assert isclose(scm._bills[house1.uuid].savings, 0.0)
         assert isclose(scm._bills[house1.uuid].savings_percent, 0.0)
+        assert isclose(scm._bills[house1.uuid].home_balance, 0.21)
+        assert isclose(scm._bills[house1.uuid].home_balance_kWh, 0.7)
 
         # Validate that the home with the PV populates the energy bills correctly.
         assert isclose(scm._bills[house2.uuid].base_energy_bill, 0.0)
@@ -211,6 +213,8 @@ class TestCoefficientArea:
         assert isclose(scm._bills[house2.uuid].sold_to_community, 0.7)
         assert isclose(scm._bills[house2.uuid].earned_from_grid, 0.0)
         assert isclose(scm._bills[house2.uuid].sold_to_grid, 19.3)
+        assert isclose(scm._bills[house2.uuid].home_balance, -0.21)
+        assert isclose(scm._bills[house2.uuid].home_balance_kWh, -20.0)
 
     @staticmethod
     def test_trigger_energy_trades(_create_2_house_grid):
