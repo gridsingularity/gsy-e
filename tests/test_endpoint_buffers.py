@@ -171,7 +171,6 @@ class TestSimulationEndpointBuffer:
             "mocked-results": "some-results"
         }
 
-    # @staticmethod
     def test_update_stats_spot_markets_updates_successfully(self, general_setup):
         # pylint: disable=protected-access
         area, _ = general_setup
