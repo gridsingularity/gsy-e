@@ -266,6 +266,8 @@ class TestSimulationEndpointBufferForward:
             serializable_dict=lambda: {
                 "creation_time": creation_time, "time_slot": time_slot})
 
+    @patch("gsy_e.gsy_e_core.sim_results.endpoint_buffer.SimulationResultValidator."
+           "validate_simulation_raw_data", lambda self, data: True)
     def test_forward_results_are_generated(   # pylint: disable-msg=too-many-locals
             self, forward_setup):
         """Test results are being correctly generated with respect to

@@ -31,7 +31,7 @@ from pendulum import DateTime, Duration, duration
 import gsy_e.constants
 from gsy_e.gsy_e_core.exceptions import SimulationException
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
-from gsy_e.gsy_e_core.myco_singleton import bid_offer_matcher
+from gsy_e.gsy_e_core.matching_engine_singleton import bid_offer_matcher
 from gsy_e.gsy_e_core.simulation.external_events import SimulationExternalEvents
 from gsy_e.gsy_e_core.simulation.progress_info import SimulationProgressInfo
 from gsy_e.gsy_e_core.simulation.results_manager import (
@@ -93,8 +93,9 @@ class Simulation:
         self.progress_info = SimulationProgressInfo()
         self.simulation_id = redis_job_id
 
-        self._external_events = SimulationExternalEvents(self)
+        # order matters here: self.area has to be not-None before _external_events are initiated
         self._init()
+        self._external_events = SimulationExternalEvents(self)
 
         deserialize_events_to_areas(simulation_events, self.area)
 

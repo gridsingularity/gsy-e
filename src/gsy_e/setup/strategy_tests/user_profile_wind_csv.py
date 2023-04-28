@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.predefined_wind import WindUserProfileStrategy
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
-from gsy_e.gsy_e_core.util import d3a_path
+from gsy_e.gsy_e_core.util import gsye_root_path
 import os
 
 
@@ -26,7 +26,7 @@ import os
 Setup file for displaying WindUserProfileStrategy.
 """
 
-user_profile_path = os.path.join(d3a_path, "resources/Solar_Curve_W_sunny.csv")
+user_profile_path = os.path.join(gsye_root_path, "resources/Solar_Curve_W_sunny.csv")
 
 
 def get_setup(config):

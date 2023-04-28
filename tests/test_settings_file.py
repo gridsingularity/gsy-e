@@ -19,7 +19,7 @@ import os
 import unittest
 
 from gsy_e.gsy_e_core.util import IntervalType
-from gsy_e.gsy_e_core.util import d3a_path
+from gsy_e.gsy_e_core.util import gsye_root_path
 from gsy_framework.constants_limits import ConstSettings
 from gsy_e.gsy_e_core.util import read_settings_from_file
 from gsy_e.gsy_e_core.util import update_advanced_settings
@@ -29,7 +29,7 @@ from gsy_e.models.config import SimulationConfig
 class SampleTest(unittest.TestCase):
     def test_parse_settings_file(self):
         simulation_settings, advanced_settings = read_settings_from_file(
-            os.path.join(d3a_path, "setup", "gsy_e_settings.json"))
+            os.path.join(gsye_root_path, "setup", "gsy_e_settings.json"))
         update_advanced_settings(advanced_settings)
         simulation_config = SimulationConfig(**simulation_settings)
 

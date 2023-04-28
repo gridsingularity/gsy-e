@@ -15,16 +15,26 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from typing import Union, Dict
+
 from gsy_e.models.strategy.scm.external.forecast_mixin import SCMForecastExternalMixin
-from gsy_e.models.strategy.scm.pv import (
-    SCMPVStrategy)
+from gsy_e.models.strategy.scm.pv import SCMPVUserProfile
 
 
-class ExternalSCMPVStrategy(SCMForecastExternalMixin, SCMPVStrategy):
+class ForecastSCMPVStrategy(SCMForecastExternalMixin, SCMPVUserProfile):
     """External SCM PV strategy"""
+    # pylint: disable=unused-argument
+    def __init__(self, power_profile: Union[str, Dict] = None,
+                 power_profile_uuid: str = None):
+        """TODO: Remove quickfix of GSYE-581 and remove the unused capacity_kW"""
+        super().__init__(power_profile=power_profile, power_profile_uuid=power_profile_uuid)
 
-    def __init__(self, capacity_kW: float = None):
-        super().__init__(capacity_kW=capacity_kW)
+    def activate(self, area) -> None:
+        """Overwrite in order to not trigger the profile rotation."""
+        self.sub_to_redis_channels()
+
+    def _update_forecast_in_state(self, _area):
+        """Overwrite method that sets the forecasted energy in the state."""
 
     def update_energy_forecast(self) -> None:
         """Set energy forecast for future markets."""

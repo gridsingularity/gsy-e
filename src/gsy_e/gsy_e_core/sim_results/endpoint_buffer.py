@@ -22,7 +22,7 @@ from typing import TYPE_CHECKING, Dict, Iterable, List
 from gsy_framework.constants_limits import (DATE_TIME_FORMAT, DATE_TIME_UI_FORMAT, ConstSettings,
                                             GlobalConfig)
 from gsy_framework.enums import AvailableMarketTypes
-from gsy_framework.results_validator import results_validator
+from gsy_framework.schema.validators import get_schema_validator
 from gsy_framework.sim_results.all_results import ResultsHandler
 from gsy_framework.utils import get_json_dict_memory_allocation_size
 from pendulum import DateTime
@@ -44,6 +44,29 @@ _NO_VALUE = {
     "avg": None,
     "max": None
 }
+
+
+class SimulationResultValidator:
+    """Validator class to be used by SimulationEndpointBuffer and CoefficientEndpointBuffer."""
+    def __init__(self, is_scm: bool):
+        self.is_scm = is_scm
+
+        if self.is_scm:
+            self.simulation_raw_data_validator = get_schema_validator(
+                "scm_simulation_raw_data")
+        else:
+            self.simulation_raw_data_validator = get_schema_validator(
+                "simulation_raw_data")
+        self.simulation_configuration_tree_validator = get_schema_validator(
+            "results_configuration_tree")
+
+    def validate_simulation_raw_data(self, data: Dict):
+        """Validate flattened_area_core_stats_dict."""
+        self.simulation_raw_data_validator.validate(data=data, raise_exception=True)
+
+    def validate_configuration_tree(self, data: Dict):
+        """Validate configuration_tree dict."""
+        self.simulation_configuration_tree_validator.validate(data=data, raise_exception=True)
 
 
 # pylint: disable=too-many-instance-attributes
@@ -76,10 +99,12 @@ class SimulationEndpointBuffer:
                 ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR):
             self.offer_bid_trade_hr = OfferBidTradeGraphStats()
 
+        self.results_validator = None
+        self._create_results_validator()
+
     def prepare_results_for_publish(self) -> Dict:
         """Validate, serialise and check size of the results before sending to gsy-web."""
         result_report = self._generate_result_report()
-        results_validator(result_report)
 
         message_size = get_json_dict_memory_allocation_size(result_report)
         if message_size > 64000:
@@ -130,6 +155,16 @@ class SimulationEndpointBuffer:
 
         self._update_offer_bid_trade()
 
+        self.validate_results()
+
+    def validate_results(self):
+        """Validate updated stats and raise exceptions if they are not valid."""
+        self.results_validator.validate_simulation_raw_data(self.flattened_area_core_stats_dict)
+        self.results_validator.validate_configuration_tree(self.area_result_dict)
+
+    def _create_results_validator(self):
+        self.results_validator = SimulationResultValidator(is_scm=False)
+
     @staticmethod
     def _create_endpoint_buffer(should_export_plots):
         return ResultsHandler(should_export_plots)
@@ -164,6 +199,7 @@ class SimulationEndpointBuffer:
 
         if (ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS and
                 target_area.strategy is not None):
+            # pylint: disable=protected-access
             area_dict["capacity_kW"] = target_area.strategy._energy_params.capacity_kW
 
         return area_dict
@@ -373,9 +409,6 @@ class CoefficientEndpointBuffer(SimulationEndpointBuffer):
         super().__init__(*args, **kwargs)
         self._scm_manager = None
 
-    def _create_endpoint_buffer(self, should_export_plots):
-        return ResultsHandler(should_export_plots, is_scm=True)
-
     def update_coefficient_stats(  # pylint: disable=too-many-arguments
             self, area: "AreaBase", simulation_status: str,
             progress_info: "SimulationProgressInfo", sim_state: Dict,
@@ -390,6 +423,12 @@ class CoefficientEndpointBuffer(SimulationEndpointBuffer):
 
         super().update_stats(
             area, simulation_status, progress_info, sim_state, calculate_results)
+
+    def _create_results_validator(self):
+        self.results_validator = SimulationResultValidator(is_scm=True)
+
+    def _create_endpoint_buffer(self, should_export_plots):
+        return ResultsHandler(should_export_plots, is_scm=True)
 
     def _calculate_and_update_last_market_time_slot(self, area):
         pass

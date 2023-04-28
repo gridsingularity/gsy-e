@@ -1,4 +1,4 @@
-This category shows the self-sufficiency and self-consumption percentage of the community.
+This indicator shows the self-sufficiency and self-consumption percentage of the community.
 Self-Sufficiency refers to the amount of a community’s energy demand that is produced locally. It is calculated as follow:
 
 `self_sufficiency(market) = self_consumed_energy / total_energy_demanded`

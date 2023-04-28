@@ -20,7 +20,7 @@ from gsy_e.models.area import Area
 from gsy_e.models.strategy.predefined_pv import PVUserProfileStrategy
 # from gsy_e.models.strategy.storage import StorageStrategy
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
-from gsy_e.gsy_e_core.util import d3a_path
+from gsy_e.gsy_e_core.util import gsye_root_path
 import os
 
 
@@ -29,7 +29,7 @@ Setup file for displaying PVPredefinedStrategy.
 PVUserProfileStrategy Strategy requires power_profile, panel count
 """
 
-user_profile_path = os.path.join(d3a_path, "resources/Solar_Curve_W_sunny.csv")
+user_profile_path = os.path.join(gsye_root_path, "resources/Solar_Curve_W_sunny.csv")
 
 
 def get_setup(config):

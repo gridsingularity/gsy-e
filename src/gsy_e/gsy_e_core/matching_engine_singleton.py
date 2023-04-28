@@ -15,6 +15,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from gsy_e.models.myco_matcher.myco_matcher import MycoMatcher
+from gsy_e.models.matching_engine_matcher.matching_engine_matcher import MatchingEngineMatcher
 
-bid_offer_matcher = MycoMatcher()
+bid_offer_matcher = MatchingEngineMatcher()

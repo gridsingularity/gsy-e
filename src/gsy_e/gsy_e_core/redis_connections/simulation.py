@@ -30,7 +30,6 @@ from redis.exceptions import ConnectionError as RedisConnectionError
 from rq import get_current_job
 from rq.exceptions import NoSuchJobError
 
-import gsy_e.constants
 from gsy_e.gsy_e_core.exceptions import LiveEventException
 
 log = getLogger(__name__)
@@ -56,7 +55,7 @@ class RedisSimulationCommunication:
         self._area = area
         self._progress_info = progress_info
         self._sub_callback_dict = {
-            f"{gsy_e.constants.CONFIGURATION_ID}/area-map/": self._calculate_area_map_callback,
+            f"{self._simulation_id}/area-map/": self._calculate_area_map_callback,
             f"{self._simulation_id}/stop": self._stop_callback,
             f"{self._simulation_id}/pause": self._pause_callback,
             f"{self._simulation_id}/resume": self._resume_callback,
@@ -109,7 +108,7 @@ class RedisSimulationCommunication:
         """Trigger the calculation of area uuid and name mapping and publish it
         back to a redis response channel"""
         area_mapping = self._area_uuid_name_map_wrapper(self._area)
-        response_channel = f"external-myco/{self._simulation_id}/area-map/response/"
+        response_channel = f"external-matching-engine/{self._simulation_id}/area-map/response/"
         response_dict = {"area_mapping": area_mapping, "event": "area_map_response"}
         self._publish_json(response_channel, response_dict)
 

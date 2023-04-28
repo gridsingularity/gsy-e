@@ -29,7 +29,7 @@ from gsy_e.models.area import CoefficientArea, CoefficientAreaException
 from gsy_e.models.area.scm_manager import SCMManager, HomeAfterMeterData, AreaEnergyBills
 from gsy_e.models.config import SimulationConfig
 from gsy_e.models.strategy.scm.load import SCMLoadHoursStrategy
-from gsy_e.models.strategy.scm.pv import SCMPVStrategy
+from gsy_e.models.strategy.scm.pv import SCMPVUserProfile
 
 
 class TestCoefficientArea:
@@ -60,12 +60,12 @@ class TestCoefficientArea:
     @staticmethod
     @pytest.fixture()
     def _create_2_house_grid():
-        strategy = MagicMock(spec=SCMPVStrategy)
+        strategy = MagicMock(spec=SCMPVUserProfile)
         strategy.get_energy_to_sell_kWh = MagicMock(return_value=0.5)
         strategy.get_energy_to_buy_kWh = MagicMock(return_value=0.0)
         pv = CoefficientArea(name="pv", strategy=strategy)
 
-        strategy = MagicMock(spec=SCMPVStrategy)
+        strategy = MagicMock(spec=SCMPVUserProfile)
         strategy.get_energy_to_sell_kWh = MagicMock(return_value=0.2)
         strategy.get_energy_to_buy_kWh = MagicMock(return_value=0.0)
         pv2 = CoefficientArea(name="pv 2", strategy=strategy)
@@ -147,6 +147,70 @@ class TestCoefficientArea:
         assert isclose(scm.community_data.self_consumed_energy_kWh, 0.66)
         assert isclose(scm.community_data.energy_bought_from_community_kWh, 0.06)
         assert isclose(scm.community_data.energy_sold_to_grid_kWh, 0.04)
+
+    @staticmethod
+    def test_calculate_after_meter_data_including_home_with_single_pv():
+        strategy = MagicMock(spec=SCMLoadHoursStrategy)
+        strategy.get_energy_to_sell_kWh = MagicMock(return_value=0.0)
+        strategy.get_energy_to_buy_kWh = MagicMock(return_value=0.7)
+        load = CoefficientArea(name="load", strategy=strategy)
+        house1 = CoefficientArea(name="House 1", children=[load],
+                                 coefficient_percentage=1.0,
+                                 feed_in_tariff=0.1,
+                                 market_maker_rate=0.3,
+                                 grid_fee_constant=0.0)
+        strategy = MagicMock(spec=SCMPVUserProfile)
+        strategy.get_energy_to_sell_kWh = MagicMock(return_value=20.0)
+        strategy.get_energy_to_buy_kWh = MagicMock(return_value=0.0)
+        pv2 = CoefficientArea(name="pv 2", strategy=strategy)
+        house2 = CoefficientArea(name="House 2", children=[pv2],
+                                 coefficient_percentage=0.0,
+                                 feed_in_tariff=0.0,
+                                 market_maker_rate=0.3,
+                                 grid_fee_constant=0.0)
+        grid_area = CoefficientArea(name="Community", children=[house1, house2],
+                                    grid_fee_constant=0.0)
+
+        time_slot = now()
+        scm = SCMManager(grid_area, time_slot)
+        grid_area.calculate_home_after_meter_data(time_slot, scm)
+        scm.calculate_community_after_meter_data()
+        grid_area.trigger_energy_trades(scm)
+        assert scm._home_data[house1.uuid].sharing_coefficient_percent == 1.0
+        assert scm._home_data[house1.uuid].feed_in_tariff == 0.1
+        assert scm._home_data[house1.uuid].market_maker_rate == 0.3
+        assert isclose(scm._home_data[house1.uuid].consumption_kWh, 0.7)
+        assert isclose(scm._home_data[house1.uuid].production_kWh, 0.0)
+        assert isclose(scm._home_data[house1.uuid].self_consumed_energy_kWh, 0.0)
+        assert isclose(scm._home_data[house1.uuid].energy_surplus_kWh, 0.0)
+        assert isclose(scm._home_data[house1.uuid].energy_need_kWh, 0.7)
+
+        assert scm._home_data[house2.uuid].sharing_coefficient_percent == 0.0
+        assert scm._home_data[house2.uuid].feed_in_tariff == 0.0
+        assert scm._home_data[house2.uuid].market_maker_rate == 0.3
+        assert isclose(scm._home_data[house2.uuid].consumption_kWh, 0.0)
+        assert isclose(scm._home_data[house2.uuid].production_kWh, 20.0)
+        assert isclose(scm._home_data[house2.uuid].self_consumed_energy_kWh, 0.0)
+        assert isclose(scm._home_data[house2.uuid].energy_surplus_kWh, 20.0)
+        assert isclose(scm._home_data[house2.uuid].energy_need_kWh, 0.0)
+        assert isclose(scm._home_data[house2.uuid].self_production_for_community_kWh, 0.7)
+
+        assert isclose(scm._bills[house1.uuid].base_energy_bill, 0.21)
+        assert isclose(scm._bills[house1.uuid].base_energy_bill_excl_revenue, 0.21)
+        assert isclose(scm._bills[house1.uuid].base_energy_bill_revenue, 0.0)
+        assert isclose(scm._bills[house1.uuid].gsy_energy_bill, 0.21)
+        assert isclose(scm._bills[house1.uuid].savings, 0.0)
+        assert isclose(scm._bills[house1.uuid].savings_percent, 0.0)
+
+        # Validate that the home with the PV populates the energy bills correctly.
+        assert isclose(scm._bills[house2.uuid].base_energy_bill, 0.0)
+        assert isclose(scm._bills[house2.uuid].base_energy_bill_excl_revenue, 0.0)
+        assert isclose(scm._bills[house2.uuid].base_energy_bill_revenue, 0.0)
+        assert isclose(scm._bills[house2.uuid].gsy_energy_bill, -0.21)
+        assert isclose(scm._bills[house2.uuid].earned_from_community, 0.21)
+        assert isclose(scm._bills[house2.uuid].sold_to_community, 0.7)
+        assert isclose(scm._bills[house2.uuid].earned_from_grid, 0.0)
+        assert isclose(scm._bills[house2.uuid].sold_to_grid, 19.3)
 
     @staticmethod
     def test_trigger_energy_trades(_create_2_house_grid):

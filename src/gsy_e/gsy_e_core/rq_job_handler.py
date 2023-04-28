@@ -1,5 +1,4 @@
 import ast
-import json
 import logging
 import traceback
 from datetime import datetime, date
@@ -24,7 +23,7 @@ logger.setLevel(logging.INFO)
 def launch_simulation_from_rq_job(scenario: Dict,
                                   settings: Optional[Dict],
                                   events: Optional[str],
-                                  aggregator_device_mapping: str,
+                                  aggregator_device_mapping: Dict,
                                   saved_state: Dict,
                                   job_id: str,
                                   connect_to_profiles_db: bool = True):
@@ -47,7 +46,6 @@ def launch_simulation_from_rq_job(scenario: Dict,
         advanced_settings = settings.get("advanced_settings", None)
         if advanced_settings is not None:
             update_advanced_settings(ast.literal_eval(advanced_settings))
-        aggregator_device_mapping = json.loads(aggregator_device_mapping)
 
         if events is not None:
             events = ast.literal_eval(events)

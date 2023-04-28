@@ -46,7 +46,7 @@ class TestRQJobUtils:
                "tick_length": duration(minutes=6)
             },
             "events": None,
-            "aggregator_device_mapping": "null",
+            "aggregator_device_mapping": {},
             "saved_state": None,
             "job_id": "TEST_SIM_RUNS",
             "connect_to_profiles_db": False
