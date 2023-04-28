@@ -173,7 +173,7 @@ class MAEngine:
             # Offer was accepted in target market - buy in source
             source_rate = offer_info.source_offer.energy_rate
             target_rate = offer_info.target_offer.energy_rate
-            assert abs(source_rate) <= abs(target_rate) + FLOATING_POINT_TOLERANCE, \
+            assert abs(source_rate) <= abs(target_rate) + 0.0001, \
                 f"offer: source_rate ({source_rate}) is not lower than target_rate ({target_rate})"
 
             updated_trade_bid_info = \

@@ -33,6 +33,7 @@ from pendulum import duration
 from gsy_e import constants
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.exceptions import MarketException
+from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.models.base import AssetType
 from gsy_e.models.strategy.state import ESSEnergyOrigin, StorageState
 from gsy_e.models.strategy import BidEnabledStrategy
@@ -442,7 +443,7 @@ class StorageStrategy(BidEnabledStrategy):
         try:
             max_energy = self.state.get_available_energy_to_buy_kWh(market.time_slot)
             max_energy = min(offer.energy, max_energy)
-            if max_energy > 0.0:
+            if max_energy > FLOATING_POINT_TOLERANCE:
                 self.state.register_energy_from_one_sided_market_accept_offer(
                     max_energy, market.time_slot,
                     self._track_bought_energy_origin(offer.seller.name))
@@ -473,7 +474,7 @@ class StorageStrategy(BidEnabledStrategy):
         time_slot = self.area.spot_market.time_slot
         selling_rate = self.calculate_selling_rate(self.area.spot_market)
         energy_kWh = self.state.get_available_energy_to_sell_kWh(time_slot)
-        if energy_kWh > 0.0:
+        if energy_kWh > FLOATING_POINT_TOLERANCE:
             offer = self.post_first_offer(
                 self.area.spot_market, energy_kWh, selling_rate
             )
@@ -492,7 +493,7 @@ class StorageStrategy(BidEnabledStrategy):
 
         energy_kWh = self.state.get_available_energy_to_buy_kWh(time_slot)
         energy_rate = self.bid_update.initial_rate[time_slot]
-        if energy_kWh > 0:
+        if energy_kWh > FLOATING_POINT_TOLERANCE:
             try:
                 first_bid = self.post_first_bid(market, energy_kWh * 1000.0, energy_rate)
                 if first_bid is not None:

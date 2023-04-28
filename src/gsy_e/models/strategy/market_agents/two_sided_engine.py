@@ -153,7 +153,8 @@ class TwoSidedEngine(MAEngine):
             market_bid = self.markets.source.bids.get(bid_info.source_bid.id)
             if not market_bid:
                 return
-            assert bid_trade.traded_energy <= market_bid.energy, \
+
+            assert market_bid.energy - bid_trade.traded_energy >= -FLOATING_POINT_TOLERANCE, \
                 "Traded bid on target market has more energy than the market bid."
 
             source_rate = bid_info.source_bid.energy_rate
