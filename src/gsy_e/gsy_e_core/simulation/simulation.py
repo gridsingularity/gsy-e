@@ -234,17 +234,17 @@ class Simulation:
                     log.error("Received stop command for configuration id %s and job id %s.",
                               gsy_e.constants.CONFIGURATION_ID, self.simulation_id)
                     sleep(5)
-                    self._simulation_finish_actions(slot_count)
+                    self._simulation_stopped_finish_actions(slot_count, status="stopped")
                     return
 
                 self._external_events.tick_update(self.area)
 
             self._results.update_csv_on_market_cycle(slot_no, self.area)
             self.status.handle_incremental_mode()
-        self._simulation_finish_actions(slot_count)
+        self._simulation_stopped_finish_actions(slot_count)
 
-    def _simulation_finish_actions(self, slot_count: int) -> None:
-        self.status.sim_status = "finished"
+    def _simulation_stopped_finish_actions(self, slot_count: int, status="finished") -> None:
+        self.status.sim_status = status
         self._deactivate_areas(self.area)
         self.config.external_redis_communicator.publish_aggregator_commands_responses_events()
         bid_offer_matcher.event_finish()
@@ -494,17 +494,17 @@ class CoefficientSimulation(Simulation):
                 log.error("Received stop command for configuration id %s and job id %s.",
                           gsy_e.constants.CONFIGURATION_ID, self.simulation_id)
                 sleep(5)
-                self._simulation_finish_actions(slot_count)
+                self._simulation_stopped_finish_actions(slot_count, status="stopped")
                 return
 
             self._results.update_csv_files(slot_no, self.progress_info.current_slot_time,
                                            self.area, scm_manager)
             self.status.handle_incremental_mode()
 
-        self._simulation_finish_actions(slot_count)
+        self._simulation_stopped_finish_actions(slot_count)
 
-    def _simulation_finish_actions(self, slot_count: int) -> None:
-        self.status.sim_status = "finished"
+    def _simulation_stopped_finish_actions(self, slot_count: int, status="finished") -> None:
+        self.status.sim_status = status
         self._deactivate_areas(self.area)
         self.config.external_redis_communicator.publish_aggregator_commands_responses_events()
         if not self.status.stopped:
