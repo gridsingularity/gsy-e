@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import logging
 from typing import Dict, List, Optional
 
 from gsy_framework.utils import (
@@ -25,9 +26,11 @@ from pendulum import DateTime, duration
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.exceptions import GSyException
-from gsy_e.models.strategy.state import LoadState
 from gsy_e.models.strategy import utils
 from gsy_e.models.strategy.profile import EnergyProfile
+from gsy_e.models.strategy.state import LoadState
+
+logger = logging.getLogger(__name__)
 
 
 class LoadHoursEnergyParameters:
@@ -205,6 +208,11 @@ class DefinedLoadEnergyParameters(LoadHoursPerDayEnergyParameters):
                 "without a profile.")
         load_energy_kwh = find_object_of_same_weekday_and_time(
             self.energy_profile.profile, time_slot)
+        if load_energy_kwh is None:
+            logging.error("Time slot %s not part of the load profile %s.",
+                          time_slot, self.energy_profile.input_profile_uuid)
+            load_energy_kwh = 0.0
+
         self.state.set_desired_energy(load_energy_kwh * 1000, time_slot, overwrite=False)
         self.state.update_total_demanded_energy(time_slot)
 
