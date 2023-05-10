@@ -132,6 +132,7 @@ class BcSimulationCommunication:
         self.redis = RedisCommunicator()
         self.redis.sub_to_channel(DEX_TRADES_CHANNEL, self.handle_dex_trades_event)
         self.redis.sub_to_channel(DEX_NEW_ORDERS_CHANNEL, self.handle_dex_new_orders_event)
+        self.register_matching_engine_operator()
 
     def add_creds_for_area(self, area_uuid, uri):
         """
@@ -244,6 +245,35 @@ class BcSimulationCommunication:
                 [item for item in self.new_offers_buffer[area_uuid] if item != order]
         except KeyError:
             log.error("The %s doesn't have offers in the buffer", area_uuid)
+
+    def register_matching_engine_operator(self):
+        """
+        This method registers the sudo as matching engine operator.
+
+        Returns:
+        - None.
+        """
+        if not self._conn.check_sudo_key(self._sudo_keypair):
+            log.error(
+                "Can't register matching engine operator, the registered keypair: "
+                "%s is not a super user",
+                self._sudo_keypair.ss58_address)
+            return
+        register_matching_engine_operator_call = \
+            self.gsy_collateral.create_register_matching_engine_operator_call(
+                self._sudo_keypair.ss58_address)
+        sudo_call = self._conn.create_sudo_call(register_matching_engine_operator_call)
+        signed_sudo_call_extrinsic = self._conn.generate_signed_extrinsic(
+            sudo_call, self._sudo_keypair)
+        try:
+            receipt = self._conn.submit_extrinsic(signed_sudo_call_extrinsic)
+            if receipt.is_success:
+                log.debug("[MATCHING_ENGINE_OPERATOR_REGISTERED][NEW][%s]",
+                          self._sudo_keypair.ss58_address)
+            else:
+                raise AreaException
+        except SubstrateRequestException as e:
+            log.error("Failed to send the extrinsic to the node %s", e)
 
     def register_user(self, area_uuid: str):
         """
