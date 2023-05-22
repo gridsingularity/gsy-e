@@ -29,7 +29,7 @@ fully charged in one slot bypassing the max abs battery power
 
 
 def get_setup(config):
-    config.read_market_maker_rate(30)
+    config.set_market_maker_rate(30)
     area = Area(
         "Grid",
         [

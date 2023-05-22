@@ -15,13 +15,11 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import ast
 import json
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.exceptions import GSyException
-from gsy_framework.read_user_profile import (
-    InputProfileTypes, read_and_convert_identity_profile_to_float, read_arbitrary_profile)
+from gsy_framework.read_user_profile import InputProfileTypes, read_arbitrary_profile
 from pendulum import DateTime, Duration, duration, today
 
 from gsy_e.constants import TIME_ZONE
@@ -63,6 +61,8 @@ class SimulationConfig:
         self.tick_length = tick_length
         self.grid_fee_type = grid_fee_type
         self.enable_degrees_of_freedom = enable_degrees_of_freedom
+        self.market_maker_rate = market_maker_rate
+        self.pv_user_profile = pv_user_profile
 
         self.ticks_per_slot = self.slot_length / self.tick_length
         if self.ticks_per_slot != int(self.ticks_per_slot):
@@ -76,12 +76,11 @@ class SimulationConfig:
         self.total_ticks = self.sim_duration // self.slot_length * self.ticks_per_slot
 
         self.cloud_coverage = cloud_coverage
-
         self.market_slot_list = []
 
         change_global_config(**self.__dict__)
         self.read_pv_user_profile(pv_user_profile)
-        self.read_market_maker_rate(market_maker_rate)
+        self.set_market_maker_rate(market_maker_rate)
 
         self.capacity_kW = capacity_kW or ConstSettings.PVSettings.DEFAULT_CAPACITY_KW
         self.external_connection_enabled = external_connection_enabled
@@ -114,22 +113,22 @@ class SimulationConfig:
         if pv_user_profile is not None:
             self.read_pv_user_profile(pv_user_profile)
         if market_maker_rate is not None:
-            self.read_market_maker_rate(market_maker_rate)
+            self.set_market_maker_rate(market_maker_rate)
         if capacity_kW is not None:
             self.capacity_kW = capacity_kW
 
     def read_pv_user_profile(self, pv_user_profile=None):
         """Read global pv user profile."""
-        self.pv_user_profile = None \
-            if pv_user_profile is None \
-            else read_arbitrary_profile(InputProfileTypes.POWER,
-                                        ast.literal_eval(pv_user_profile))
+        self.pv_user_profile = (
+            None if pv_user_profile is None
+            else read_arbitrary_profile(InputProfileTypes.POWER_W, pv_user_profile))
 
-    def read_market_maker_rate(self, market_maker_rate):
+    def set_market_maker_rate(self, market_maker_rate):
         """
         Reads market_maker_rate from arbitrary input types
         """
-        self.market_maker_rate = read_and_convert_identity_profile_to_float(market_maker_rate)
+        self.market_maker_rate = read_arbitrary_profile(
+            InputProfileTypes.IDENTITY, market_maker_rate)
 
 
 def create_simulation_config_from_global_config():
