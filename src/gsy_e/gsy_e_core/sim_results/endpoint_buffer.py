@@ -91,7 +91,6 @@ class SimulationEndpointBuffer:
             "percentage_completed": 0
         }
 
-        self.bids_offers_trades = {}
         self.results_handler = self._create_endpoint_buffer(should_export_plots)
         self.simulation_state = {"general": {}, "areas": {}}
 
@@ -153,8 +152,6 @@ class SimulationEndpointBuffer:
         self.result_area_uuids = set()
         self._update_results_area_uuids(area)
 
-        self._update_offer_bid_trade()
-
         self.validate_results()
 
     def validate_results(self):
@@ -178,7 +175,6 @@ class SimulationEndpointBuffer:
             "random_seed": self.random_seed,
             "status": self.status,
             "progress_info": self.simulation_progress,
-            "bids_offers_trades": self.bids_offers_trades,
             "results_area_uuids": list(self.result_area_uuids),
             "simulation_state": self.simulation_state,
             "simulation_raw_data": self.flattened_area_core_stats_dict,
@@ -390,16 +386,6 @@ class SimulationEndpointBuffer:
             self.result_area_uuids.update({area.uuid})
         for child in area.children:
             self._update_results_area_uuids(child)
-
-    def _update_offer_bid_trade(self) -> None:
-        """Populate self.bids_offers_trades with results from flattened_area_core_stats_dict
-        (for local export of statistics)."""
-        self.bids_offers_trades.clear()
-        if self.current_market_time_slot_str == "":
-            return
-        for area_uuid, area_result in self.flattened_area_core_stats_dict.items():
-            self.bids_offers_trades[area_uuid] = {
-                k: area_result.get(k, []) for k in ("offers", "bids", "trades")}
 
 
 class CoefficientEndpointBuffer(SimulationEndpointBuffer):
