@@ -15,6 +15,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+# pylint: disable=no-member, redefined-outer-name, missing-function-docstring, protected-access
+# pylint: disable=too-many-instance-attributes, missing-class-docstring, unused-argument
 import os
 import sys
 from math import isclose
@@ -59,7 +61,7 @@ class FakeArea:
         self._past_markets = {}
         self._bids = {}
 
-    def get_future_market_from_id(self, id):
+    def get_future_market_from_id(self, _id):
         return self.test_market
 
     @property
@@ -105,6 +107,7 @@ class FakeMarket:
     def time_slot(self):
         return TIME
 
+    # pylint: disable=too-many-arguments
     def offer(self, price, energy, seller, original_price=None, time_slot=None):
         offer = Offer("id", pendulum.now(), price, energy, seller, time_slot=time_slot)
         self.created_offers.append(offer)
@@ -125,7 +128,8 @@ class FakeMarket:
         self.traded_offers.append(trade)
         return trade
 
-    def bid(self, price, energy, buyer, original_price=None, time_slot=None):
+    @staticmethod
+    def bid(price, energy, buyer, original_price=None, time_slot=None):
         bid = Bid("bid_id", pendulum.now(), price, energy, buyer,
                   time_slot=time_slot)
         return bid
@@ -145,6 +149,7 @@ def bus_test1(area_test1):
 
 
 def test_global_market_maker_rate_set_at_instantiation(area_test1):
+    # pylint: disable=unsubscriptable-object
     strategy = InfiniteBusStrategy(energy_sell_rate=35)
     strategy.area = area_test1
     strategy.event_activate()
@@ -316,7 +321,7 @@ def testing_event_market_cycle_post_offers(bus_test3, area_test3):
     bus_test3.event_market_cycle()
     assert len(area_test3.test_market.created_offers) == 1
     assert area_test3.test_market.created_offers[-1].energy == sys.maxsize
-    assert area_test3.test_market.created_offers[-1].price - float(30 * sys.maxsize) == 0
+    assert isclose(area_test3.test_market.created_offers[-1].price, float(30 * sys.maxsize))
 
 
 @pytest.fixture()
