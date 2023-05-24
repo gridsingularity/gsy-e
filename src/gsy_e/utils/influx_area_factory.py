@@ -13,7 +13,6 @@ class InfluxAreaFactory:
         self.tablename = tablename
         self.keyname = keyname
 
-
     def _createSubArea(self, smartmeterID):
         query = 0;
         try:
@@ -32,8 +31,8 @@ class InfluxAreaFactory:
 
 
 
-    def getArea(self, areaname):
-        smquery = SmartmeterIDQuery(self.ic, self.keyname)
+    def getArea(self, areaname, maxsubareas = -1):
+        smquery = QuerySmartmeterID(self.ic, self.keyname)
         idlist = smquery.exec()
 
         subarea_list = []
@@ -42,6 +41,8 @@ class InfluxAreaFactory:
             subarea = self._createSubArea(str(sm_id))
             if(subarea != False):
                 subarea_list.append(subarea)
+            if(len(subarea_list) == maxsubareas):
+                break
 
         print(len(subarea_list))
         res = Area(

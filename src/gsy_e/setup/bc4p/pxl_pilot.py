@@ -45,9 +45,9 @@ def get_setup(config):
                     Area("main_P_L1", strategy=DatabaseLoadStrategy(query = QueryPXL(connection_pxl, power_column="main_P_L1", tablename="Total_Electricity"))),
                     Area("main_P_L2", strategy=DatabaseLoadStrategy(query = QueryPXL(connection_pxl, power_column="main_P_L2", tablename="Total_Electricity"))),
                     Area("main_P_L3", strategy=DatabaseLoadStrategy(query = QueryPXL(connection_pxl, power_column="main_P_L3", tablename="Total_Electricity"))),
-                    Area("PV_LS_105A_power", strategy=DatabasePVStrategy(query = QueryPXL(connection_pxl, power_column="PV_LS_105A_power", tablename="Total_Electricity"))),
-                    Area("PV_LS_105B_power", strategy=DatabasePVStrategy(query = QueryPXL(connection_pxl, power_column="PV_LS_105B_power", tablename="Total_Electricity"))),
-                    Area("PV_LS_105E_power", strategy=DatabasePVStrategy(query = QueryPXL(connection_pxl, power_column="PV_LS_105E_power", tablename="Total_Electricity"))),
+                    Area("PV_LS_105A_power", strategy=DatabasePVStrategy(query = QueryPXL(connection_pxl, power_column="PV_LS_105A_power", tablename="Total_Electricity", multiplier = 10.0))),
+                    Area("PV_LS_105B_power", strategy=DatabasePVStrategy(query = QueryPXL(connection_pxl, power_column="PV_LS_105B_power", tablename="Total_Electricity", multiplier = 10.0))),
+                    Area("PV_LS_105E_power", strategy=DatabasePVStrategy(query = QueryPXL(connection_pxl, power_column="PV_LS_105E_power", tablename="Total_Electricity", multiplier = 10.0))),
                     Area(
                         "PXL Makerspace",
                         [
@@ -74,21 +74,6 @@ def get_setup(config):
                 ]
             ),
             Area(
-                "FH Campus",
-                [
-                    Area("FH General Load", strategy=DatabaseLoadStrategy(query = QueryFHACAggregated(connection_fhaachen, power_column="P_ges", tablename="Strom"))),
-                    Area("FH PV", strategy=DatabasePVStrategy(query = QueryFHACPV(postgresConnection=connection_psql, plant="FP-JUEL", tablename="eview"))),
-                ]
-            ),
-            Area(
-                "Berg",
-                [
-                    Area("Berg Business", strategy=DatabaseCombinedStrategy(query = QueryMQTT(connection_pxl, power_column="Ptot", device="berg-business_main-distribution", tablename="smartpi", multiplier = -1.0))),
-                    Area("Berg House 1", strategy=DatabaseCombinedStrategy(query = QueryMQTT(connection_pxl, power_column="Ptot", device="berg-house1_main-distribution", tablename="smartpi"))),
-                    Area("Berg House 2", strategy=DatabaseCombinedStrategy(query = QueryMQTT(connection_pxl, power_column="Ptot", device="berg-house2_main-distribution", tablename="smartpi"))),                                    
-                ]
-            ),
-            Area(
                 "Eupen",
                 [
                     Area("Asten Johnson", strategy=DatabasePVStrategy(query = QueryEupen(connection_pxl, location="Asten Johnson", power_column="W", key = "GridMs.TotW", tablename="genossenschaft", start=eupen_start_date))),
@@ -99,7 +84,8 @@ def get_setup(config):
             ),
             Area("Market Maker", strategy=InfiniteBusStrategy(energy_buy_rate=10, energy_sell_rate=30)),
         ],
-        config=config
+        config=config,
+        grid_fee_constant=3, 
     )
     return area
 
@@ -107,4 +93,4 @@ def get_setup(config):
 
 
 # pip install -e .
-# gsy-e run --setup bc4p.demonstration -s 15m --enable-external-connection --start-date 2023-05-05
+# gsy-e run --setup bc4p.pxl_pilot -s 15m --start-date 2023-05-05

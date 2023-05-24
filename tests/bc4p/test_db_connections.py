@@ -9,3 +9,6 @@ connection_fh.check()
 
 connection_pxl = InfluxConnection("influx_pxl.cfg")
 connection_pxl.check()
+
+connection_psql = PostgreSQLConnection("postgresql_city_aachen.cfg")
+connection_psql.check()

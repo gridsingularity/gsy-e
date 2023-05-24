@@ -18,8 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
 from gsy_framework.constants_limits import ConstSettings
-from gsy_e.models.strategy.influx import InfluxLoadStrategy
-from gsy_e.models.strategy.pv import PVStrategy
 from gsy_e.utils.influx_area_factory import InfluxAreaFactory
 
 def get_setup(config):
@@ -29,11 +27,11 @@ def get_setup(config):
         "Grid",
         [
             factory.getArea("FH Campus"),
-            Area("Infinite Bus", strategy=InfiniteBusStrategy(energy_buy_rate=10, energy_sell_rate=40)),
+            Area("Infinite Bus", strategy=InfiniteBusStrategy(energy_buy_rate=10, energy_sell_rate=30)),
         ],
         config=config
     )
     return area
 
 # pip install -e .
-# gsy-e run --setup bc4p.fhcampus_disaggregated -s 15m --enable-external-connection --start-date 2022-11-07
+# gsy-e run --setup bc4p.fhcampus_disaggregated -s 15m --enable-external-connection --start-date 2022-05-18
