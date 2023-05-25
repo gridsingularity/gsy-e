@@ -334,30 +334,31 @@ class TestExternalMixin:
         strategy.state.offered_sell_kWh = {market.time_slot: 0.0}
         current_time = now()
         if isinstance(strategy, BidEnabledStrategy):
-            bid = Bid("offer_id", now(), 20, 1.0, TraderDetails("test_area", ""))
+            bid = Bid("offer_id", now(), 20, 1.0, TraderDetails("test_area", strategy.owner.uuid))
             strategy.add_bid_to_posted(market.id, bid)
             skipped_trade = (
-                Trade("id", current_time, TraderDetails("test_area", ""),
-                      TraderDetails("parent_area", ""), bid=bid,
+                Trade("id", current_time, TraderDetails("test_area", strategy.owner.uuid),
+                      TraderDetails("parent_area", "parent_area_uuid"), bid=bid,
                       fee_price=0.23, traded_energy=1, trade_price=1))
 
-            strategy.event_offer_traded(market_id=market.id, trade=skipped_trade)
+            strategy.event_bid_traded(market_id=market.id, bid_trade=skipped_trade)
             call_args = strategy.redis.aggregator.add_batch_trade_event.call_args_list
             assert call_args == []
 
             published_trade = (
-                Trade("id", current_time, TraderDetails("parent_area", ""),
-                      TraderDetails("test_area", ""), fee_price=0.23, bid=bid,
+                Trade("id", current_time, TraderDetails("parent_area", "parent_area_uuid"),
+                      TraderDetails("test_area", strategy.owner.uuid), fee_price=0.23, bid=bid,
                       traded_energy=1, trade_price=1))
-            strategy.event_offer_traded(market_id=market.id, trade=published_trade)
-            assert strategy.redis.aggregator.add_batch_trade_event.call_args_list[0][0][0] == \
-                self.area.uuid
+            strategy.event_bid_traded(market_id=market.id, bid_trade=published_trade)
+            assert (strategy.redis.aggregator.add_batch_trade_event.call_args_list[0][0][0] ==
+                    self.area.uuid)
         else:
-            offer = Offer("offer_id", now(), 20, 1.0, TraderDetails("test_area", ""))
+            offer = Offer("offer_id", now(), 20, 1.0,
+                          TraderDetails("test_area", strategy.owner.uuid))
             strategy.offers.post(offer, market.id)
             skipped_trade = (
-                Trade("id", current_time, TraderDetails("parent_area", ""),
-                      TraderDetails("test_area", ""), offer=offer,
+                Trade("id", current_time, TraderDetails("parent_area", "parent_area_uuid"),
+                      TraderDetails("test_area", strategy.owner.uuid), offer=offer,
                       fee_price=0.23, traded_energy=1, trade_price=1))
             strategy.offers.sold_offer(offer, market.id)
 
@@ -366,12 +367,12 @@ class TestExternalMixin:
             assert call_args == []
 
             published_trade = (
-                Trade("id", current_time, TraderDetails("test_area", ""),
-                      TraderDetails("parent_area", ""), offer=offer,
+                Trade("id", current_time, TraderDetails("test_area", strategy.owner.uuid),
+                      TraderDetails("parent_area", "parent_area_uuid"), offer=offer,
                       fee_price=0.23, traded_energy=1, trade_price=1))
             strategy.event_offer_traded(market_id=market.id, trade=published_trade)
-            assert strategy.redis.aggregator.add_batch_trade_event.call_args_list[0][0][0] == \
-                self.area.uuid
+            assert (strategy.redis.aggregator.add_batch_trade_event.call_args_list[0][0][0] ==
+                    self.area.uuid)
 
     def test_device_info_dict_for_load_strategy_reports_required_energy(self):
         strategy = LoadHoursExternalStrategy(100)

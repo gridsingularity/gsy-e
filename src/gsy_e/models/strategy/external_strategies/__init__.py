@@ -496,8 +496,8 @@ class ExternalMixin:
             return
 
         if (ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value and
-                ((trade.buyer.name == self.device.name and trade.is_offer_trade) or
-                 (trade.seller.name == self.device.name and trade.is_bid_trade))):
+                ((trade.buyer.uuid == self.device.uuid and not is_bid_trade) or
+                 (trade.seller.uuid == self.device.uuid and is_bid_trade))):
             # Do not track a 2-sided market trade that is originating from an Offer to a
             # consumer (which should have posted a bid). This occurs when the clearing
             # took place on the area market of the device, thus causing 2 trades, one for
