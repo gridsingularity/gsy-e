@@ -16,12 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import uuid
-from ctypes import c_uint32
 from logging import getLogger
 from typing import Union, Optional
-from uuid import UUID
 
-from gsy_dex.data_classes import Bid as BcBid, convert_time_slot_to_unix_timestamp, float_to_uint
+from gsy_dex.data_classes import Bid as BcBid, float_to_uint
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import TraderDetails
 from pendulum import DateTime, now
@@ -204,20 +202,10 @@ class TwoSidedBcMarket(OneSidedBcMarket):
         - BidNotFoundException: If the bid ID is not found in the market.
         - InvalidBid: If the bid deletion transaction fails.
         """
+        self.bids = self.bc_interface.conn.update_bids(self.bids, self.area_uuid)
         if isinstance(bid_or_id, BcBid):
             bid_or_id = str(bid_or_id.id)
         bid = self.bids.pop(bid_or_id, None)
-        bc_bids = self.bc_interface.conn.new_bids_buffer.get(
-            str(c_uint32(UUID(self.area_uuid).int).value))
-        log.debug("[BC BIDS]%s", bc_bids)
-        for bc_bid in bc_bids:
-            if convert_time_slot_to_unix_timestamp(bid.creation_time) == bc_bid.creation_time and \
-                    bid.energy == bc_bid.energy and \
-                    convert_time_slot_to_unix_timestamp(bid.time_slot) == bc_bid.time_slot:
-                log.debug("BID: %s equal to BC_BID: %s", bid, bc_bid)
-                bid.nonce = bc_bid.nonce
-                self.bc_interface.conn.remove_bid_from_buffer(
-                    str(c_uint32(UUID(self.area_uuid).int).value), bc_bid)
         if not bid or not bid.nonce:
             raise BidNotFoundException(bid_or_id)
         remove_order_call = self.bc_interface.conn.gsy_orderbook.create_remove_orders_call(
@@ -232,7 +220,6 @@ class TwoSidedBcMarket(OneSidedBcMarket):
                 log.debug("%s[BID][DEL][%s] %s", self._debug_log_market_type_identifier,
                           self.time_slot_str or bid.time_slot, bid)
             else:
-                self.bid[bid_or_id] = bid
                 raise InvalidBid
         except SubstrateRequestException as e:
             log.error("Failed to send the extrinsic to the node %s", e)

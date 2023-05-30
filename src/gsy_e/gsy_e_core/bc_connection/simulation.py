@@ -17,6 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import json
 import os
+import uuid
+from ctypes import c_uint32
 from logging import getLogger
 
 from gsy_dex.data_classes import Bid, Offer, Trade
@@ -381,6 +383,62 @@ class BcSimulationCommunication:
             log.error("Can't add a not super user keypair: %s as sudo", keypair)
             return
         self._sudo_keypair = keypair
+
+    def update_bids(self, bids, area_uuid):
+        """
+        Update the bids market dict with the bids added to the dex orderbook.
+
+        Args:
+        - bids: The bids dict to update
+        - area_uuid: The area_uuid to update
+
+        Returns:
+        - bids: The updated bids dict
+        """
+        log.debug("[bids]%s\n[new_bids]%s", bids, self.new_bids_buffer)
+        residual_bids = {}
+        bc_bids = self.new_bids_buffer.get(str(c_uint32(uuid.UUID(area_uuid).int).value))
+        for bc_bid in bc_bids:
+            for bid in bids.values():
+                if bid.creation_time == \
+                        bc_bid.creation_time and \
+                        bid.energy == bc_bid.energy and \
+                        bid.time_slot == bc_bid.time_slot:
+                    log.debug("BID: %s equal to BC_BID: %s", bid, bc_bid)
+                    bid.nonce = bc_bid.nonce
+                    self.remove_bid_from_buffer(
+                        str(c_uint32(uuid.UUID(area_uuid).int).value), bc_bid)
+                else:
+                    residual_bids[str(uuid.uuid4())] = bc_bid
+        return {**bids, **residual_bids}
+
+    def update_offers(self, offers, area_uuid):
+        """
+        Update the offers market dict with the offers added to the dex orderbook.
+
+        Args:
+        - offers: The offers dict to update
+        - area_uuid: The area_uuid to update
+
+        Returns:
+        - offers: The updated offers dict
+        """
+        log.debug("[offers]%s\n[new_offers]%s", offers, self.new_offers_buffer)
+        residual_offers = {}
+        bc_offers = self.new_offers_buffer.get(str(c_uint32(uuid.UUID(area_uuid).int).value))
+        for bc_offer in bc_offers:
+            for offer in offers.values():
+                if offer.creation_time == \
+                        bc_offer.creation_time and \
+                        offer.energy == bc_offer.energy and \
+                        offer.time_slot == bc_offer.time_slot:
+                    log.debug("OFFER: %s equal to BC_OFFER: %s", offer, bc_offer)
+                    offer.nonce = bc_offer.nonce
+                    self.remove_offer_from_buffer(
+                        str(c_uint32(uuid.UUID(area_uuid).int).value), bc_offer)
+                else:
+                    residual_offers[str(uuid.uuid4())] = bc_offer
+        return {**offers, **residual_offers}
 
 
 class AreaWebsocketConnection:
