@@ -24,6 +24,7 @@ from typing import Dict, List
 from gsy_framework.constants_limits import GlobalConfig
 from gsy_framework.data_classes import BidOfferMatch
 from gsy_framework.enums import AvailableMarketTypes
+from gsy_framework.redis_channels import MatchingEngineChannels
 
 import gsy_e.constants
 from gsy_e.gsy_e_core.exceptions import (InvalidBidOfferPairException,
@@ -34,6 +35,7 @@ from gsy_e.gsy_e_core.redis_connections.area_market import (
 from gsy_e.models.market.two_sided import TwoSidedMarket
 from gsy_e.models.matching_engine_matcher.matching_engine_matcher_interface import (
     MatchingEngineMatcherInterface)
+
 
 # pylint: disable=fixme
 
@@ -65,16 +67,17 @@ class MatchingEngineExternalMatcher(MatchingEngineMatcherInterface):
         )
 
         self.matching_engine_ext_conn = None
-        self._channel_prefix = f"external-matching-engine/{self.simulation_id}"
-        self._events_channel = f"{self._channel_prefix}/events/"
+        self._events_channel = MatchingEngineChannels(self.simulation_id).events
         self._setup_redis_connection()
 
     def _setup_redis_connection(self):
         self.matching_engine_ext_conn = matching_engine_redis_communicator_factory()
+        channel_names = MatchingEngineChannels(self.simulation_id)
         self.matching_engine_ext_conn.sub_to_multiple_channels(
-            {"external-matching-engine/simulation-id/": self.publish_simulation_id,
-             f"{self._channel_prefix}/offers-bids/": self._publish_orders_message_buffer.append,
-             f"{self._channel_prefix}/recommendations/": self._populate_recommendations})
+            {channel_names.simulation_id: self.publish_simulation_id,
+             channel_names.offers_bids: self._publish_orders_message_buffer.append,
+             channel_names.recommendations: self._populate_recommendations
+             })
 
     def _publish_orders(self):
         """Publish open offers and bids.
@@ -126,8 +129,8 @@ class MatchingEngineExternalMatcher(MatchingEngineMatcherInterface):
                 "bids_offers": market_orders_list_mapping,
             })
 
-            channel = f"{self._channel_prefix}/offers-bids/response/"
-            self.matching_engine_ext_conn.publish_json(channel, response_data)
+            self.matching_engine_ext_conn.publish_json(
+                MatchingEngineChannels(self.simulation_id).response, response_data)
 
     def _populate_recommendations(self, message):
         """Receive trade recommendations and store them to be consumed in a later stage."""
@@ -141,7 +144,7 @@ class MatchingEngineExternalMatcher(MatchingEngineMatcherInterface):
         Validate recommendations and if any pair raised a blocking exception
          ie. InvalidBidOfferPairException the matching will be cancelled.
         """
-        channel = f"{self._channel_prefix}/recommendations/response/"
+        channel = MatchingEngineChannels(self.simulation_id).response
         response_data = {
             "event": ExternalMatcherEventsEnum.MATCH.value,
             "status": "success"}
@@ -187,8 +190,9 @@ class MatchingEngineExternalMatcher(MatchingEngineMatcherInterface):
         running collaboration id regardless of the value set in gsy_e.
         """
 
-        channel = "external-matching-engine/simulation-id/response/"
-        self.matching_engine_ext_conn.publish_json(channel, {"simulation_id": self.simulation_id})
+        self.matching_engine_ext_conn.publish_json(
+            MatchingEngineChannels(self.simulation_id).simulation_id_response,
+            {"simulation_id": self.simulation_id})
 
     def _get_markets_ids_to_markets_info_mapping(self) -> Dict[str, Dict]:
         """Map each market ID to the information of its market object.

@@ -34,6 +34,7 @@ from gsy_framework.exceptions import GSyException
 from gsy_framework.utils import (
     area_name_from_area_or_ma_name, iterate_over_all_modules, str_to_pendulum_datetime,
     find_object_of_same_weekday_and_time)
+from gsy_framework.redis_channels import QueueNames
 from pendulum import duration, from_format, instance, DateTime
 from rex import rex
 
@@ -466,8 +467,7 @@ def convert_area_throughput_kVA_to_kWh(transfer_capacity_kWA, slot_length):
 def get_simulation_queue_name():
     """Get simulation queue name."""
     listen_to_cn = os.environ.get("LISTEN_TO_CANARY_NETWORK_REDIS_QUEUE", "no") == "yes"
-    return (ConstSettings.GeneralSettings.CN_JOB_QUEUE_NAME
-            if listen_to_cn else ConstSettings.GeneralSettings.SIM_JOB_QUEUE_NAME)
+    return QueueNames.canary_job if listen_to_cn else QueueNames.simulation_job
 
 
 def should_read_profile_from_db(profile_uuid):
