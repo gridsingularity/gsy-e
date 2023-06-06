@@ -481,7 +481,8 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self._update_energy_requirement_future_markets()
 
     def _update_energy_requirement_spot_market(self):
-        self._energy_params.update_energy_requirement(self.area.spot_market.time_slot)
+        if self.area and self.area.spot_market:
+            self._energy_params.update_energy_requirement(self.area.spot_market.time_slot)
 
         for market in self.active_markets:
             if not self._energy_params.allowed_operating_hours(market.time_slot):

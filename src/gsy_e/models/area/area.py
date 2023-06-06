@@ -497,6 +497,8 @@ class Area(AreaBase):
     @property
     def future_market_time_slots(self) -> List[DateTime]:
         """Return the future markets time slots of the area."""
+        if not self._markets.future_markets:
+            return []
         return self._markets.future_markets.market_time_slots
 
     @property
