@@ -15,8 +15,10 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from ctypes import c_uint32
 from logging import getLogger
 from typing import TYPE_CHECKING, Dict, List, Optional, Union
+from uuid import UUID
 
 from gsy_framework.area_validator import validate_area
 from gsy_framework.constants_limits import ConstSettings
@@ -61,8 +63,7 @@ class Area(AreaBase):
     """
 
     # pylint: disable=too-many-arguments,too-many-instance-attributes
-    def __init__(self, name: str = None, children: List["Area"] = None,
-                 uuid: str = None,
+    def __init__(self, name: str = None, children: List["Area"] = None, uuid: str = None,
                  strategy: Optional[Union["BaseStrategy", "TradingStrategyBase"]] = None,
                  config: SimulationConfig = None,
                  balancing_spot_trade_ratio=ConstSettings.BalancingSettings.SPOT_TRADE_RATIO,
@@ -326,6 +327,11 @@ class Area(AreaBase):
 
         self.events.update_events(self.now)
         if self._bc:
+            log.debug("[AREA TRADES_BUFFER]: %s [AREA_UUID]: %s [AREA_NAME]: %s",
+                      self._bc.conn.trades_buffer.get(c_uint32(UUID(self.uuid).int).value),
+                      c_uint32(UUID(self.uuid).int).value, self.name)
+            log.debug("[SIMULATION TRADES_BUFFER]: %s",
+                      self._bc.conn.trades_buffer)
             if self.spot_market:
                 if self.spot_market.offers and self._bc.conn.new_offers_buffer:
                     self.spot_market.offers = \
@@ -333,8 +339,10 @@ class Area(AreaBase):
                 if self.spot_market.bids and self._bc.conn.new_bids_buffer:
                     self.spot_market.bids = \
                         self._bc.conn.update_bids(self.spot_market.bids, self.uuid)
-            if self._bc.conn.trades_buffer.get(self.uuid):
-                trades = self._bc.conn.pop_trades_from_buffer(self.uuid)
+            if self._bc.conn.trades_buffer.get(c_uint32(UUID(self.uuid).int).value):
+                trades = \
+                    self._bc.conn.pop_trades_from_buffer(c_uint32(UUID(self.uuid).int).value)
+                log.debug("[AREA TRADES][UPDATE]: %s", trades)
                 for trade in trades:
                     self.dispatcher.event_listener(
                         event_type=MarketEvent.OFFER_TRADED, trade=trade)
