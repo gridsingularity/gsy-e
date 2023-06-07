@@ -202,12 +202,14 @@ class TwoSidedBcMarket(OneSidedBcMarket):
         - BidNotFoundException: If the bid ID is not found in the market.
         - InvalidBid: If the bid deletion transaction fails.
         """
-        self.bids = self.bc_interface.conn.update_bids(self.bids, self.area_uuid)
         if isinstance(bid_or_id, BcBid):
             bid_or_id = str(bid_or_id.id)
         bid = self.bids.pop(bid_or_id, None)
-        if not bid or not bid.nonce:
+        if not bid:
             raise BidNotFoundException(bid_or_id)
+        bid = self.bc_interface.conn.update_bid_nonce(bid, self.area_uuid)
+        if not bid.nonce:
+            raise InvalidBid
         remove_order_call = self.bc_interface.conn.gsy_orderbook.create_remove_orders_call(
             [bid.nonce])
         signed_remove_order_call_extrinsic = \

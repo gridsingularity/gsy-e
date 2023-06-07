@@ -21,7 +21,7 @@ import uuid
 from ctypes import c_uint32
 from logging import getLogger
 
-from gsy_dex.data_classes import Bid, Offer, Trade
+from gsy_dex.data_classes import Bid, Offer, Trade, convert_time_slot_to_unix_timestamp
 from gsy_dex.gsy_collateral import GSyCollateral
 from gsy_dex.gsy_orderbook import GSyOrderbook
 from gsy_dex.substrate_connection import SubstrateConnection
@@ -30,7 +30,7 @@ from gsy_dex.key_manager import KeyManager
 from substrateinterface.base import Keypair
 from substrateinterface.exceptions import SubstrateRequestException
 
-from gsy_e.gsy_e_core.exceptions import AreaException, SimulationException
+from gsy_e.gsy_e_core.exceptions import AreaException
 from gsy_e.gsy_e_core.redis_connections.area_market import RedisCommunicator
 
 log = getLogger(__name__)
@@ -329,7 +329,7 @@ class BcSimulationCommunication:
                 self.new_bids_buffer[str(new_order.area_uuid)].append(new_order)
             else:
                 self.new_bids_buffer[str(new_order.area_uuid)] = [new_order]
-            log.debug("[NEW_BIDS_BUFFER][NEW][%s]", self.new_offers_buffer)
+            log.debug("[NEW_BIDS_BUFFER][NEW][%s]", self.new_bids_buffer)
         else:
             new_order = Offer.from_serializable_substrate_dict(new_order)
             new_order.nonce = new_order_event_json[1]
@@ -361,13 +361,6 @@ class BcSimulationCommunication:
             self.trades_buffer[str(trade.offer.area_uuid)].append(trade)
         else:
             self.trades_buffer[str(trade.offer.area_uuid)] = [trade]
-        try:
-            self.deposited_collateral[str(trade.bid.area_uuid)] -= \
-                trade.parameters["selected_energy"] * trade.parameters["energy_rate"]
-            self.deposited_collateral[str(trade.offer.area_uuid)] += \
-                trade.parameters["selected_energy"] * trade.parameters["energy_rate"]
-        except SimulationException as ex:
-            log.error(ex)
 
     def add_sudo_keypair(self, keypair: Keypair):
         """
@@ -398,19 +391,43 @@ class BcSimulationCommunication:
         log.debug("[bids]%s\n[new_bids]%s", bids, self.new_bids_buffer)
         residual_bids = {}
         bc_bids = self.new_bids_buffer.get(str(c_uint32(uuid.UUID(area_uuid).int).value))
-        for bc_bid in bc_bids:
-            for bid in bids.values():
-                if bid.creation_time == \
-                        bc_bid.creation_time and \
-                        bid.energy == bc_bid.energy and \
-                        bid.time_slot == bc_bid.time_slot:
-                    log.debug("BID: %s equal to BC_BID: %s", bid, bc_bid)
-                    bid.nonce = bc_bid.nonce
-                    self.remove_bid_from_buffer(
-                        str(c_uint32(uuid.UUID(area_uuid).int).value), bc_bid)
-                else:
-                    residual_bids[str(uuid.uuid4())] = bc_bid
+        if bc_bids:
+            for bc_bid in bc_bids:
+                for bid in bids.values():
+                    log.debug("BID CREATION TIME: %s - BC BID CREATION TIME: %s",
+                              convert_time_slot_to_unix_timestamp(bid.creation_time),
+                              convert_time_slot_to_unix_timestamp(bc_bid.creation_time))
+                    if convert_time_slot_to_unix_timestamp(bid.creation_time) != \
+                            convert_time_slot_to_unix_timestamp(bc_bid.creation_time) and \
+                            bid.energy != bc_bid.energy and \
+                            convert_time_slot_to_unix_timestamp(bid.time_slot) != \
+                            convert_time_slot_to_unix_timestamp(bc_bid.time_slot):
+                        residual_bids[str(uuid.uuid4())] = bc_bid
         return {**bids, **residual_bids}
+
+    def update_bid_nonce(self, bid, area_uuid):
+        """
+        Update the bid nonce with the one from the bid added to the dex orderbook.
+
+        Args:
+        - bid: The bid object to update
+        - area_uuid: The area_uuid to update
+
+        Returns:
+        - bid: The updated bid
+        """
+        bc_bids = self.new_bids_buffer.get(
+            str(c_uint32(uuid.UUID(area_uuid).int).value))
+        for bc_bid in bc_bids:
+            if convert_time_slot_to_unix_timestamp(bid.creation_time) == \
+                    convert_time_slot_to_unix_timestamp(bc_bid.creation_time) and \
+                    bid.energy == bc_bid.energy and \
+                    convert_time_slot_to_unix_timestamp(bid.time_slot) == \
+                    convert_time_slot_to_unix_timestamp(bc_bid.time_slot):
+                bid.nonce = bc_bid.nonce
+                self.remove_bid_from_buffer(
+                    str(c_uint32(uuid.UUID(area_uuid).int).value), bc_bid)
+        return bid
 
     def update_offers(self, offers, area_uuid):
         """
@@ -423,22 +440,42 @@ class BcSimulationCommunication:
         Returns:
         - offers: The updated offers dict
         """
-        log.debug("[offers]%s\n[new_offers]%s", offers, self.new_offers_buffer)
         residual_offers = {}
         bc_offers = self.new_offers_buffer.get(str(c_uint32(uuid.UUID(area_uuid).int).value))
-        for bc_offer in bc_offers:
-            for offer in offers.values():
-                if offer.creation_time == \
-                        bc_offer.creation_time and \
-                        offer.energy == bc_offer.energy and \
-                        offer.time_slot == bc_offer.time_slot:
-                    log.debug("OFFER: %s equal to BC_OFFER: %s", offer, bc_offer)
-                    offer.nonce = bc_offer.nonce
-                    self.remove_offer_from_buffer(
-                        str(c_uint32(uuid.UUID(area_uuid).int).value), bc_offer)
-                else:
-                    residual_offers[str(uuid.uuid4())] = bc_offer
+        if bc_offers:
+            for bc_offer in bc_offers:
+                for offer in offers.values():
+                    if convert_time_slot_to_unix_timestamp(offer.creation_time) != \
+                            convert_time_slot_to_unix_timestamp(bc_offer.creation_time) and \
+                            offer.energy != bc_offer.energy and \
+                            convert_time_slot_to_unix_timestamp(offer.time_slot) != \
+                            convert_time_slot_to_unix_timestamp(bc_offer.time_slot):
+                        residual_offers[str(uuid.uuid4())] = bc_offer
         return {**offers, **residual_offers}
+
+    def update_offer_nonce(self, offer, area_uuid):
+        """
+        Update the offer nonce with the one from the offer added to the dex orderbook.
+
+        Args:
+        - offer: The offer object to update
+        - area_uuid: The area_uuid to update
+
+        Returns:
+        - offer: The updated offer
+        """
+        bc_offers = self.new_offers_buffer.get(
+            str(c_uint32(uuid.UUID(area_uuid).int).value))
+        for bc_offer in bc_offers:
+            if convert_time_slot_to_unix_timestamp(offer.creation_time) == \
+                    convert_time_slot_to_unix_timestamp(bc_offer.creation_time) and \
+                    offer.energy == bc_offer.energy and \
+                    convert_time_slot_to_unix_timestamp(offer.time_slot) == \
+                    convert_time_slot_to_unix_timestamp(bc_offer.time_slot):
+                offer.nonce = bc_offer.nonce
+                self.remove_offer_from_buffer(
+                    str(c_uint32(uuid.UUID(area_uuid).int).value), bc_offer)
+        return offer
 
 
 class AreaWebsocketConnection:

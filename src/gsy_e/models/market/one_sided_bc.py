@@ -19,8 +19,7 @@ import uuid
 from logging import getLogger
 from typing import Union, Optional, Callable
 
-from gsy_dex.data_classes import Offer as BcOffer, \
-    float_to_uint
+from gsy_dex.data_classes import Offer as BcOffer, float_to_uint
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import TraderDetails
 from gsy_framework.enums import SpotMarketTypeEnum
@@ -200,14 +199,16 @@ class OneSidedBcMarket(TwoSidedMarket):
         - OfferNotFoundException: If the offer ID is not found in the market.
         - InvalidOffer: If the offer deletion transaction fails.
         """
-        self.offers = self.bc_interface.conn.update_offers(self.offers, self.area_uuid)
         if self.readonly:
             raise MarketReadOnlyException()
         if isinstance(offer_or_id, BcOffer):
             offer_or_id = str(offer_or_id.id)
         offer = self.offers.pop(offer_or_id, None)
-        if not offer or not offer.nonce:
+        if not offer:
             raise OfferNotFoundException()
+        offer = self.bc_interface.conn.update_offer_nonce(offer, self.area_uuid)
+        if not offer.nonce:
+            raise InvalidOffer
         remove_order_call = self.bc_interface.conn.gsy_orderbook.create_remove_orders_call(
             [offer.nonce])
         signed_remove_order_call_extrinsic = \
