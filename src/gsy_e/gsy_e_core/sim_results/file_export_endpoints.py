@@ -185,9 +185,9 @@ class LeafDataExporter(BaseDataExporter):
             produced = self.area.strategy.state.get_energy_production_forecast_kWh(slot, 0.0)
             return [produced, not_sold]
         if isinstance(self.area.strategy, HeatPumpStrategy):
-            return [self.area.strategy.state.get_storage_temp_C(slot),
-                    self.area.strategy.state.get_temp_decrease_K(slot),
-                    self.area.strategy.state.get_temp_increase_K(slot)
+            return [round(self.area.strategy.state.get_storage_temp_C(slot), 5),
+                    round(self.area.strategy.state.get_temp_decrease_K(slot), 5),
+                    round(self.area.strategy.state.get_temp_increase_K(slot), 5)
                     ]
         return []
 
