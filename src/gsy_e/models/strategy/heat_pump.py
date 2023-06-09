@@ -70,7 +70,7 @@ class HeatPumpStrategy(TradingStrategyBase):
             for market_type in AvailableMarketTypes:
                 if not order_updater_parameters.get(market_type):
                     continue
-                HeatPumpValidator.validate(
+                HeatPumpValidator.validate_rate(
                     initial_buying_rate=order_updater_parameters[market_type].initial_rate,
                     final_buying_rate=order_updater_parameters[market_type].final_rate,
                     update_interval=order_updater_parameters[market_type].update_interval,
