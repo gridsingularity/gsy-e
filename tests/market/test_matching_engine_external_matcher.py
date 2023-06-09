@@ -43,15 +43,11 @@ class TestMatchingEngineExternalMatcher:
                             "id4": Bid("id4", now(), 0.5, 1, TraderDetails("buyer", ""), 1)}
 
     def test_subscribes_to_redis_channels(self):
+        channel_names = MatchingEngineChannels(gsy_e.constants.CONFIGURATION_ID)
         self.matcher.matching_engine_ext_conn.sub_to_multiple_channels.assert_called_once_with(
-            {
-                MatchingEngineChannels(gsy_e.constants.CONFIGURATION_ID).simulation_id:
-                    self.matcher.publish_simulation_id,
-                MatchingEngineChannels(gsy_e.constants.CONFIGURATION_ID).offers_bids:
-                    self.matcher._publish_orders_message_buffer.append,
-                MatchingEngineChannels(gsy_e.constants.CONFIGURATION_ID).recommendations:
-                    self.matcher._populate_recommendations
-            }
+            {channel_names.simulation_id: self.matcher.publish_simulation_id,
+             channel_names.offers_bids: self.matcher._publish_orders_message_buffer.append,
+             channel_names.recommendations: self.matcher._populate_recommendations}
         )
 
     def test_publish_simulation_id(self):

@@ -10,7 +10,7 @@ from gsy_e.gsy_e_core.redis_connections.aggregator import AggregatorHandler
 from gsy_e.gsy_e_core.redis_connections.area_market import ExternalConnectionCommunicator
 
 
-@pytest.fixture(scope="function", autouse=True, name="strict_redis")
+@pytest.fixture(scope="function", autouse=True)
 def fixture_strict_redis():
     with patch("gsy_e.gsy_e_core.redis_connections.area_market.Redis",
                spec=Redis):
@@ -18,7 +18,7 @@ def fixture_strict_redis():
         yield
 
 
-@pytest.fixture(scope="function", autouse=True, name="aggregator_handler")
+@pytest.fixture(scope="function", autouse=True)
 def fixture_aggregator_handler():
     with patch(
             "gsy_e.gsy_e_core.redis_connections.area_market.AggregatorHandler",
