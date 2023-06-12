@@ -24,6 +24,7 @@ from gsy_framework.constants_limits import DATE_TIME_FORMAT, DATE_TIME_UI_FORMAT
 from gsy_framework.constants_limits import TIME_FORMAT, DATE_FORMAT, GlobalConfig  # NOQA
 
 FLOATING_POINT_TOLERANCE = 0.00001
+ROUND_TOLERANCE = 5
 
 # Percentual standard deviation relative to the forecast energy, used to compute the (simulated)
 # real energy produced/consumed by a device.

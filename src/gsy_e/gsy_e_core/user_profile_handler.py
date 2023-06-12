@@ -44,7 +44,9 @@ PROFILE_UUID_NAMES = [
     "power_profile_uuid",
     "energy_rate_profile_uuid",
     "smart_meter_profile_uuid",
-    "buying_rate_profile_uuid"
+    "buying_rate_profile_uuid",
+    "consumption_kWh_profile_uuid",
+    "external_temp_C_profile_uuid"
 ]
 
 
@@ -368,7 +370,6 @@ class ProfilesHandler:
             profile_uuid = getattr(area.strategy, profile_uuid_name, None)
             if profile_uuid:
                 profile_uuids.append(uuid.UUID(profile_uuid))
-                break
 
         if area.children:
             for child in area.children:
