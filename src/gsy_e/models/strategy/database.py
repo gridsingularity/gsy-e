@@ -77,7 +77,6 @@ class DatabaseLoadStrategy(DefinedLoadStrategy):
         """
         self.query = query
         load_profile = query.exec()
-        print(load_profile)
 
         super().__init__(daily_load_profile=load_profile,
                          fit_to_limit=fit_to_limit,

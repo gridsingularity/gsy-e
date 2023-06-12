@@ -27,11 +27,11 @@ def get_setup(config):
         "Grid",
         [
             factory.getArea("FH Campus"),
-            Area("Infinite Bus", strategy=InfiniteBusStrategy(energy_buy_rate=10, energy_sell_rate=30)),
+            Area("Market Maker", strategy=InfiniteBusStrategy(energy_buy_rate=10, energy_sell_rate=30)),
         ],
         config=config
     )
     return area
 
 # pip install -e .
-# gsy-e run --setup bc4p.fhcampus_disaggregated -s 15m --enable-external-connection --start-date 2022-05-18
+# gsy-e run --setup bc4p.fhcampus_disaggregated -s 15m --enable-external-connection --start-date 2023-05-05

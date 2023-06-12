@@ -40,7 +40,7 @@ def get_setup(config):
                 ]
             ),
 
-            Area("Infinite Bus", strategy=InfiniteBusStrategy(energy_buy_rate=20, energy_sell_rate=30)),
+            Area("Market Maker", strategy=InfiniteBusStrategy(energy_buy_rate=20, energy_sell_rate=30)),
         ],
         config=config
     )

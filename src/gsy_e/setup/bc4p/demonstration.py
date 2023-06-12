@@ -23,18 +23,25 @@ from gsy_framework.database_connection.queries_fhac import QueryFHACAggregated, 
 from gsy_framework.database_connection.queries_pxl import QueryPXL
 from gsy_framework.database_connection.queries_influx import QueryMQTT
 from gsy_framework.database_connection.queries_eupen import QueryEupen
+from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
 from gsy_e.models.strategy.database import DatabaseLoadStrategy, DatabasePVStrategy, DatabaseCombinedStrategy
 from gsy_framework.constants_limits import GlobalConfig
+from gsy_e.utils.csv_to_dict import CsvToDict
+from gsy_e.gsy_e_core.util import d3a_path
 
 from datetime import date, datetime
 from pendulum import duration, instance
+import os
 
 def get_setup(config):
     connection_pxl = InfluxConnection("influx_pxl.cfg")
     connection_fhaachen = InfluxConnection("influx_fhaachen.cfg")
     connection_psql = PostgreSQLConnection("postgresql_fhaachen.cfg")
 
-    eupen_start_date = instance((datetime.combine(date(2022,7,27), datetime.min.time())))
+    eupen_start_date = instance((datetime.combine(date(2022,7,27), datetime.min.time()))) 
+    # liege_start_date = "2022-04-09"  
+    liege_start_date = "2022-06-21"
+    # liege_start_date = "2022-09-15"  
 
     area = Area(
         "Grid",
@@ -97,6 +104,32 @@ def get_setup(config):
                     Area("New Verlac", strategy=DatabasePVStrategy(query = QueryEupen(connection_pxl, location="NewVerlac", power_column="W", key= "GridMs.TotW", tablename="genossenschaft", start=eupen_start_date))),
                 ]
             ),
+            Area(
+                "Liege",
+                [
+                    Area("B04", strategy=SmartMeterStrategy(smart_meter_profile=CsvToDict.convert(path=os.path.join(d3a_path,"resources","liege",liege_start_date,"b04.csv"), multiplier=-1000.0))),
+                    Area("B05a", strategy=SmartMeterStrategy(smart_meter_profile=CsvToDict.convert(path=os.path.join(d3a_path,"resources","liege",liege_start_date,"b05a.csv"), multiplier=-1000.0))),
+                    Area("B06", strategy=SmartMeterStrategy(smart_meter_profile=CsvToDict.convert(path=os.path.join(d3a_path,"resources","liege",liege_start_date,"b06.csv"), multiplier=-1000.0))),
+                    Area("B08", strategy=SmartMeterStrategy(smart_meter_profile=CsvToDict.convert(path=os.path.join(d3a_path,"resources","liege",liege_start_date,"b08.csv"), multiplier=-1000.0))),
+                    Area("B09", strategy=SmartMeterStrategy(smart_meter_profile=CsvToDict.convert(path=os.path.join(d3a_path,"resources","liege",liege_start_date,"b09.csv"), multiplier=-1000.0))),
+                    Area("B10", strategy=SmartMeterStrategy(smart_meter_profile=CsvToDict.convert(path=os.path.join(d3a_path,"resources","liege",liege_start_date,"b10.csv"), multiplier=-1000.0))),
+                    Area("B11", strategy=SmartMeterStrategy(smart_meter_profile=CsvToDict.convert(path=os.path.join(d3a_path,"resources","liege",liege_start_date,"b11.csv"), multiplier=-1000.0))),
+                    Area("B13", strategy=SmartMeterStrategy(smart_meter_profile=CsvToDict.convert(path=os.path.join(d3a_path,"resources","liege",liege_start_date,"b13.csv"), multiplier=-1000.0))),
+                    Area("B15", strategy=SmartMeterStrategy(smart_meter_profile=CsvToDict.convert(path=os.path.join(d3a_path,"resources","liege",liege_start_date,"b15.csv"), multiplier=-1000.0))),
+                    Area("B17", strategy=SmartMeterStrategy(smart_meter_profile=CsvToDict.convert(path=os.path.join(d3a_path,"resources","liege",liege_start_date,"b17.csv"), multiplier=-1000.0))),
+                    Area("B21", strategy=SmartMeterStrategy(smart_meter_profile=CsvToDict.convert(path=os.path.join(d3a_path,"resources","liege",liege_start_date,"b21.csv"), multiplier=-1000.0))),
+                    Area("B22", strategy=SmartMeterStrategy(smart_meter_profile=CsvToDict.convert(path=os.path.join(d3a_path,"resources","liege",liege_start_date,"b22.csv"), multiplier=-1000.0))),
+                    Area("B23", strategy=SmartMeterStrategy(smart_meter_profile=CsvToDict.convert(path=os.path.join(d3a_path,"resources","liege",liege_start_date,"b23.csv"), multiplier=-1000.0))),
+                    Area("B28", strategy=SmartMeterStrategy(smart_meter_profile=CsvToDict.convert(path=os.path.join(d3a_path,"resources","liege",liege_start_date,"b28.csv"), multiplier=-1000.0))),
+                    Area("B31", strategy=SmartMeterStrategy(smart_meter_profile=CsvToDict.convert(path=os.path.join(d3a_path,"resources","liege",liege_start_date,"b31.csv"), multiplier=-1000.0))),
+                    Area("B34", strategy=SmartMeterStrategy(smart_meter_profile=CsvToDict.convert(path=os.path.join(d3a_path,"resources","liege",liege_start_date,"b34.csv"), multiplier=-1000.0))),
+                    Area("B36", strategy=SmartMeterStrategy(smart_meter_profile=CsvToDict.convert(path=os.path.join(d3a_path,"resources","liege",liege_start_date,"b36.csv"), multiplier=-1000.0))),
+                    Area("B41", strategy=SmartMeterStrategy(smart_meter_profile=CsvToDict.convert(path=os.path.join(d3a_path,"resources","liege",liege_start_date,"b41.csv"), multiplier=-1000.0))),
+                    Area("B42", strategy=SmartMeterStrategy(smart_meter_profile=CsvToDict.convert(path=os.path.join(d3a_path,"resources","liege",liege_start_date,"b42.csv"), multiplier=-1000.0))),
+                    Area("B52", strategy=SmartMeterStrategy(smart_meter_profile=CsvToDict.convert(path=os.path.join(d3a_path,"resources","liege",liege_start_date,"b52.csv"), multiplier=-1000.0))),
+                    Area("B529", strategy=SmartMeterStrategy(smart_meter_profile=CsvToDict.convert(path=os.path.join(d3a_path,"resources","liege",liege_start_date,"b529.csv"), multiplier=-1000.0))),
+                ]
+            ),
             Area("Market Maker", strategy=InfiniteBusStrategy(energy_buy_rate=10, energy_sell_rate=30)),
         ],
         config=config
@@ -107,4 +140,4 @@ def get_setup(config):
 
 
 # pip install -e .
-# gsy-e run --setup bc4p.demonstration -s 15m --enable-external-connection --start-date 2023-05-05
+# gsy-e run --setup bc4p.demonstration -s 15m --start-date 2023-05-30

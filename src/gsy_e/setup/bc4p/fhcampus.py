@@ -18,24 +18,28 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
 from gsy_framework.constants_limits import ConstSettings
-from gsy_e.models.strategy.influx import DatabaseLoadStrategy
-from gsy_e.models.strategy.pv import PVStrategy
-from gsy_framework.database_connection.connection import InfluxConnection
-from gsy_framework.database_connection.queries_fhac import QueryFHACAggregated
-from gsy_e.models.strategy.storage import StorageStrategy
+from gsy_e.models.strategy.database import DatabaseLoadStrategy, DatabasePVStrategy
+from gsy_framework.database_connection.connection import InfluxConnection, PostgreSQLConnection
+from gsy_framework.database_connection.queries_fhac import QueryFHACAggregated, QueryFHACPV
 import gsy_e.constants
 
 def get_setup(config):
     #gsy_e.constants.RUN_IN_REALTIME = True
+    connection_psql = PostgreSQLConnection("postgresql_fhaachen.cfg")
     connection_fhaachen = InfluxConnection("influx_fhaachen.cfg")
-    ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
+    # ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
 
     area = Area(
         "Grid",
         [
-            Area("FH Campus Load", strategy=DatabaseLoadStrategy(query = QueryFHACAggregated(connection_fhaachen, power_column="P_ges", tablename="Strom"), initial_buying_rate=20, final_buying_rate=40)),
-            Area("FH Campus PV", strategy=PVStrategy(panel_count = 1, capacity_kW = 1200, initial_selling_rate=30, final_selling_rate=10)),
-            Area("Infinite Bus", strategy=InfiniteBusStrategy(energy_buy_rate=10, energy_sell_rate=40)),
+            Area(
+                "FH Campus",
+                [
+                    Area("FH General Load", strategy=DatabaseLoadStrategy(query = QueryFHACAggregated(connection_fhaachen, power_column="P_ges", tablename="Strom"))),
+                    Area("FH PV", strategy=DatabasePVStrategy(query = QueryFHACPV(postgresConnection=connection_psql, plant="FP-JUEL", tablename="eview"))),
+                ]
+            ),
+            Area("Market Maker", strategy=InfiniteBusStrategy(energy_buy_rate=10, energy_sell_rate=30)),
         ],
         config=config
     )
@@ -43,4 +47,4 @@ def get_setup(config):
 
 
 # pip install -e .
-# gsy-e run --setup bc4p.fhcampus -s 15m --enable-external-connection --start-date 2022-11-09
+# gsy-e run --setup bc4p.fhcampus -s 15m --start-date 2023-05-30
