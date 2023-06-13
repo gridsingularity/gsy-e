@@ -15,24 +15,17 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import os
+
 from gsy_framework.constants_limits import ConstSettings
 
+from gsy_e.gsy_e_core.util import gsye_root_path
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.heat_pump import HeatPumpStrategy
 from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
 from gsy_e.models.strategy.pv import PVStrategy
 
 ConstSettings.MASettings.MARKET_TYPE = 2
-
-
-selling_rate_profile = {
-    "01:00": 1,
-    "04:00": 4,
-    "05:00": 8,
-    "08:00": 20,
-    "09:00": 30,
-    "20:00": 2
-}
 
 
 def get_setup(config):
@@ -44,7 +37,12 @@ def get_setup(config):
                 [
                     Area(
                         "H1 Heat Pump",
-                        strategy=HeatPumpStrategy(),
+                        strategy=HeatPumpStrategy(
+                            consumption_kWh_profile=os.path.join(
+                                gsye_root_path, "resources", "hp_consumption_kWh.csv"),
+                            external_temp_C_profile=os.path.join(
+                                gsye_root_path, "resources", "hp_external_temp_C.csv")
+                        ),
                     ),
                 ],
                 grid_fee_percentage=0,
@@ -67,7 +65,7 @@ def get_setup(config):
                 grid_fee_constant=0,
             ),
             Area("Infinite Bus",
-                 strategy=InfiniteBusStrategy(energy_sell_rate=selling_rate_profile,
+                 strategy=InfiniteBusStrategy(energy_sell_rate=25,
                                               energy_buy_rate=0),
 
                  ),

@@ -1,4 +1,5 @@
 # pylint: disable=protected-access
+import os
 from math import isclose
 from typing import TYPE_CHECKING, Tuple
 from unittest.mock import patch, PropertyMock, MagicMock, Mock
@@ -9,6 +10,7 @@ from gsy_framework.data_classes import Trade, TraderDetails
 from gsy_framework.enums import AvailableMarketTypes
 from pendulum import today
 
+from gsy_e.gsy_e_core.util import gsye_root_path
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.heat_pump import HeatPumpStrategy, HeatPumpOrderUpdaterParameters
 
@@ -25,7 +27,12 @@ def fixture_heatpump_strategy(request) -> Tuple["TradingStrategyBase", "Area"]:
     ConstSettings.MASettings.MARKET_TYPE = 2
     orig_start_date = GlobalConfig.start_date
     strategy_params = request.param if hasattr(request, "param") else {}
-    strategy = HeatPumpStrategy(**strategy_params)
+    strategy = HeatPumpStrategy(
+        consumption_kWh_profile=os.path.join(
+            gsye_root_path, "resources", "hp_consumption_kWh.csv"),
+        external_temp_C_profile=os.path.join(
+            gsye_root_path, "resources", "hp_external_temp_C.csv"),
+        **strategy_params)
     strategy._energy_params = Mock()
     strategy_area = Area("asset", strategy=strategy)
     area = Area("grid", children=[strategy_area])
