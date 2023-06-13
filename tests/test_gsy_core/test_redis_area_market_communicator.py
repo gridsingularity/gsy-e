@@ -82,7 +82,7 @@ class TestExternalConnectionCommunicator:
     def test_sub_to_aggregator(enabled_communicator, disabled_communicator):
         disabled_communicator.sub_to_aggregator()
         assert not hasattr(disabled_communicator, "pubsub")
-        channel_names = AggregatorChannels("", "")
+        channel_names = AggregatorChannels()
         channel_callback_dict = {
             channel_names.batch_commands:
                 enabled_communicator.aggregator.receive_batch_commands_callback,
