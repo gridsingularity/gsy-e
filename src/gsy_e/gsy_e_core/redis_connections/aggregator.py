@@ -151,7 +151,7 @@ class AggregatorHandler:
                 "device_uuid": message["device_uuid"],
                 "transaction_id": message["transaction_id"]}
         self.redis_db.publish(
-            AggregatorChannels.response(), json.dumps(response_message)
+            AggregatorChannels("", "").response, json.dumps(response_message)
         )
 
     def _unselect_aggregator(self, message):
@@ -167,7 +167,7 @@ class AggregatorHandler:
                     "device_uuid": message["device_uuid"],
                     "transaction_id": message["transaction_id"]}
                 self.redis_db.publish(
-                    AggregatorChannels.response(), json.dumps(response_message)
+                    AggregatorChannels("", "").response, json.dumps(response_message)
                 )
             except Exception as e:  # pylint: disable=broad-except
                 response_message = {
@@ -177,7 +177,7 @@ class AggregatorHandler:
                     "msg": f"Error unselecting aggregator : {e}"
                 }
             self.redis_db.publish(
-                AggregatorChannels.response(), json.dumps(response_message)
+                AggregatorChannels("", "").response, json.dumps(response_message)
             )
 
     def _create_aggregator(self, message):
@@ -188,7 +188,7 @@ class AggregatorHandler:
                 "status": "ready", "name": message["name"],
                 "transaction_id": message["transaction_id"]}
             self.redis_db.publish(
-                AggregatorChannels.response(), json.dumps(success_response_message)
+                AggregatorChannels("", "").response, json.dumps(success_response_message)
             )
 
         else:
@@ -196,7 +196,7 @@ class AggregatorHandler:
                 "status": "error", "aggregator_uuid": message["transaction_id"],
                 "transaction_id": message["transaction_id"]}
             self.redis_db.publish(
-                AggregatorChannels.response(), json.dumps(error_response_message)
+                AggregatorChannels("", "").response, json.dumps(error_response_message)
             )
 
     def _delete_aggregator(self, message):
@@ -206,14 +206,14 @@ class AggregatorHandler:
                 "status": "deleted", "aggregator_uuid": message["aggregator_uuid"],
                 "transaction_id": message["transaction_id"]}
             self.redis_db.publish(
-                AggregatorChannels.response(), json.dumps(success_response_message)
+                AggregatorChannels("", "").response, json.dumps(success_response_message)
             )
         else:
             error_response_message = {
                 "status": "error", "aggregator_uuid": message["aggregator_uuid"],
                 "transaction_id": message["transaction_id"]}
             self.redis_db.publish(
-                AggregatorChannels.response(), json.dumps(error_response_message)
+                AggregatorChannels("", "").response, json.dumps(error_response_message)
             )
 
     def receive_batch_commands_callback(self, payload):
