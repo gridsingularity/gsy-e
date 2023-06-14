@@ -29,10 +29,6 @@ class ForecastSCMPVStrategy(SCMForecastExternalMixin, SCMPVUserProfile):
         """TODO: Remove quickfix of GSYE-581 and remove the unused capacity_kW"""
         super().__init__(power_profile=power_profile, power_profile_uuid=power_profile_uuid)
 
-    def activate(self, area) -> None:
-        """Overwrite in order to not trigger the profile rotation."""
-        self.sub_to_redis_channels()
-
     def _update_forecast_in_state(self, _area):
         """Overwrite method that sets the forecasted energy in the state."""
 

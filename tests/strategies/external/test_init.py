@@ -32,7 +32,7 @@ from redis.exceptions import RedisError
 import gsy_e.constants
 import gsy_e.gsy_e_core.util
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
-from gsy_e.models.area import Area
+from gsy_e.models.area import Area, CoefficientArea
 from gsy_e.models.strategy import BidEnabledStrategy
 from gsy_e.models.strategy.external_strategies import (
     IncomingRequest, ExternalStrategyConnectionManager)
@@ -43,6 +43,9 @@ from gsy_e.models.strategy.external_strategies.pv import (
     PVExternalStrategy, PVForecastExternalStrategy, PVPredefinedExternalStrategy,
     PVUserProfileExternalStrategy)
 from gsy_e.models.strategy.external_strategies.storage import StorageExternalStrategy
+from gsy_e.models.strategy.scm import SCMStrategy
+from gsy_e.models.strategy.scm.external.load import ForecastSCMLoadStrategy
+from gsy_e.models.strategy.scm.external.pv import ForecastSCMPVStrategy
 
 transaction_id = str(uuid.uuid4())
 
@@ -57,10 +60,18 @@ def fixture_ext_strategy(request):
     config.start_date = GlobalConfig.start_date
     config.grid_fee_type = ConstSettings.MASettings.GRID_FEE_TYPE
     config.end_date = GlobalConfig.start_date + duration(days=1)
-    area = Area(name="forecast_pv", config=config, strategy=strategy,
-                external_connection_available=True)
-    parent = Area(name="parent_area", children=[area], config=config)
-    parent.activate()
+    if isinstance(strategy, SCMStrategy):
+        area = CoefficientArea(
+            name="forecast_pv", config=config, strategy=strategy, grid_fee_constant=0.0)
+        parent = CoefficientArea(
+            name="parent_area", children=[area], config=config, grid_fee_constant=0.0)
+        parent.activate_energy_parameters(GlobalConfig.start_date)
+        area.activate_energy_parameters(GlobalConfig.start_date)
+    else:
+        area = Area(name="forecast_pv", config=config, strategy=strategy,
+                    external_connection_available=True)
+        parent = Area(name="parent_area", children=[area], config=config)
+        parent.activate()
     strategy.connected = True
     market = MagicMock()
     market.time_slot = GlobalConfig.start_date
@@ -542,6 +553,8 @@ class TestForecastRelatedFeatures:
 
     @staticmethod
     @pytest.mark.parametrize("ext_strategy_fixture", [
+        ForecastSCMPVStrategy(),
+        ForecastSCMLoadStrategy(),
         LoadHoursForecastExternalStrategy(),
         LoadProfileForecastExternalStrategy(),
         PVForecastExternalStrategy()], indirect=True)
@@ -557,9 +570,12 @@ class TestForecastRelatedFeatures:
                                        ext_strategy_fixture.channel_names.energy_forecast)]))
 
     @staticmethod
-    @pytest.mark.parametrize("ext_strategy_fixture", [LoadHoursForecastExternalStrategy(),
-                                                      LoadProfileForecastExternalStrategy(),
-                                                      PVForecastExternalStrategy()], indirect=True)
+    @pytest.mark.parametrize("ext_strategy_fixture", [
+        ForecastSCMPVStrategy(),
+        ForecastSCMLoadStrategy(),
+        LoadHoursForecastExternalStrategy(),
+        LoadProfileForecastExternalStrategy(),
+        PVForecastExternalStrategy()], indirect=True)
     def test_set_energy_forecast_fails_for_wrong_payload(ext_strategy_fixture):
         ext_strategy_fixture.redis.publish_json = Mock()
         ext_strategy_fixture.pending_requests = deque([])
@@ -574,9 +590,12 @@ class TestForecastRelatedFeatures:
         assert len(ext_strategy_fixture.pending_requests) == 0
 
     @staticmethod
-    @pytest.mark.parametrize("ext_strategy_fixture", [LoadHoursForecastExternalStrategy(),
-                                                      LoadProfileForecastExternalStrategy(),
-                                                      PVForecastExternalStrategy()], indirect=True)
+    @pytest.mark.parametrize("ext_strategy_fixture", [
+        ForecastSCMPVStrategy(),
+        ForecastSCMLoadStrategy(),
+        LoadHoursForecastExternalStrategy(),
+        LoadProfileForecastExternalStrategy(),
+        PVForecastExternalStrategy()], indirect=True)
     def test_set_energy_measurement_succeeds(ext_strategy_fixture):
         arguments = {"transaction_id": transaction_id,
                      "energy_measurement": {now().format(gsy_e.constants.DATE_TIME_FORMAT): 1}}
@@ -588,10 +607,12 @@ class TestForecastRelatedFeatures:
                 deque([IncomingRequest("set_energy_measurement", arguments,
                                        ext_strategy_fixture.channel_names.energy_measurement)]))
 
-    @pytest.mark.parametrize("ext_strategy_fixture", [LoadHoursForecastExternalStrategy(),
-                                                      LoadProfileForecastExternalStrategy(),
-                                                      PVForecastExternalStrategy()],
-                             indirect=True)
+    @pytest.mark.parametrize("ext_strategy_fixture", [
+        ForecastSCMPVStrategy(),
+        ForecastSCMLoadStrategy(),
+        LoadHoursForecastExternalStrategy(),
+        LoadProfileForecastExternalStrategy(),
+        PVForecastExternalStrategy()], indirect=True)
     def test_set_energy_measurement_fails_for_wrong_payload(self, ext_strategy_fixture):
         ext_strategy_fixture.redis.publish_json = Mock()
         ext_strategy_fixture.pending_requests = deque([])
@@ -605,9 +626,12 @@ class TestForecastRelatedFeatures:
              "transaction_id": transaction_id})
         assert len(ext_strategy_fixture.pending_requests) == 0
 
-    @pytest.mark.parametrize("ext_strategy_fixture", [LoadHoursForecastExternalStrategy(),
-                                                      LoadProfileForecastExternalStrategy(),
-                                                      PVForecastExternalStrategy()], indirect=True)
+    @pytest.mark.parametrize("ext_strategy_fixture", [
+        ForecastSCMPVStrategy(),
+        ForecastSCMLoadStrategy(),
+        LoadHoursForecastExternalStrategy(),
+        LoadProfileForecastExternalStrategy(),
+        PVForecastExternalStrategy()], indirect=True)
     def test_set_energy_forecast_impl_succeeds(self, ext_strategy_fixture):
         ext_strategy_fixture.redis.publish_json = Mock()
         arguments = {"transaction_id": transaction_id,
@@ -619,10 +643,12 @@ class TestForecastRelatedFeatures:
                                "status": "ready",
                                "transaction_id": arguments["transaction_id"]})
 
-    @pytest.mark.parametrize("ext_strategy_fixture", [LoadHoursForecastExternalStrategy(),
-                                                      LoadProfileForecastExternalStrategy(),
-                                                      PVForecastExternalStrategy()],
-                             indirect=True)
+    @pytest.mark.parametrize("ext_strategy_fixture", [
+        ForecastSCMPVStrategy(),
+        ForecastSCMLoadStrategy(),
+        LoadHoursForecastExternalStrategy(),
+        LoadProfileForecastExternalStrategy(),
+        PVForecastExternalStrategy()], indirect=True)
     def test_set_energy_forecast_impl_fails_for_wrong_time_format(self, ext_strategy_fixture):
         ext_strategy_fixture.redis.publish_json.reset_mock()
         response_channel = "response_channel"
@@ -637,10 +663,12 @@ class TestForecastRelatedFeatures:
                                "transaction_id": arguments["transaction_id"],
                                "error_message": error_message})
 
-    @pytest.mark.parametrize("ext_strategy_fixture", [LoadHoursForecastExternalStrategy(),
-                                                      LoadProfileForecastExternalStrategy(),
-                                                      PVForecastExternalStrategy()],
-                             indirect=True)
+    @pytest.mark.parametrize("ext_strategy_fixture", [
+        ForecastSCMPVStrategy(),
+        ForecastSCMLoadStrategy(),
+        LoadHoursForecastExternalStrategy(),
+        LoadProfileForecastExternalStrategy(),
+        PVForecastExternalStrategy()], indirect=True)
     def test_set_energy_forecast_impl_fails_for_negative_energy(self, ext_strategy_fixture):
         ext_strategy_fixture.redis.publish_json.reset_mock()
         response_channel = "response_channel"
@@ -655,9 +683,12 @@ class TestForecastRelatedFeatures:
                                "transaction_id": arguments["transaction_id"],
                                "error_message": error_message})
 
-    @pytest.mark.parametrize("ext_strategy_fixture", [LoadHoursForecastExternalStrategy(),
-                                                      LoadProfileForecastExternalStrategy(),
-                                                      PVForecastExternalStrategy()], indirect=True)
+    @pytest.mark.parametrize("ext_strategy_fixture", [
+        ForecastSCMPVStrategy(),
+        ForecastSCMLoadStrategy(),
+        LoadHoursForecastExternalStrategy(),
+        LoadProfileForecastExternalStrategy(),
+        PVForecastExternalStrategy()], indirect=True)
     def test_set_energy_measurement_impl_succeeds(self, ext_strategy_fixture):
         # test successful call of set_energy_measurement_impl:
         ext_strategy_fixture.redis.publish_json = Mock()
@@ -670,10 +701,12 @@ class TestForecastRelatedFeatures:
                                "status": "ready",
                                "transaction_id": arguments["transaction_id"]})
 
-    @pytest.mark.parametrize("ext_strategy_fixture", [LoadHoursForecastExternalStrategy(),
-                                                      LoadProfileForecastExternalStrategy(),
-                                                      PVForecastExternalStrategy()],
-                             indirect=True)
+    @pytest.mark.parametrize("ext_strategy_fixture", [
+        ForecastSCMPVStrategy(),
+        ForecastSCMLoadStrategy(),
+        LoadHoursForecastExternalStrategy(),
+        LoadProfileForecastExternalStrategy(),
+        PVForecastExternalStrategy()], indirect=True)
     def test_set_energy_measurement_impl_fails_for_wrong_time_format(self, ext_strategy_fixture):
         response_channel = "response_channel"
         ext_strategy_fixture.redis.publish_json.reset_mock()
@@ -688,10 +721,12 @@ class TestForecastRelatedFeatures:
                                "transaction_id": arguments["transaction_id"],
                                "error_message": error_message})
 
-    @pytest.mark.parametrize("ext_strategy_fixture", [LoadHoursForecastExternalStrategy(),
-                                                      LoadProfileForecastExternalStrategy(),
-                                                      PVForecastExternalStrategy()],
-                             indirect=True)
+    @pytest.mark.parametrize("ext_strategy_fixture", [
+        ForecastSCMPVStrategy(),
+        ForecastSCMLoadStrategy(),
+        LoadHoursForecastExternalStrategy(),
+        LoadProfileForecastExternalStrategy(),
+        PVForecastExternalStrategy()], indirect=True)
     def test_set_energy_measurement_impl_fails_for_negative_energy(self, ext_strategy_fixture):
         response_channel = "response_channel"
         ext_strategy_fixture.redis.publish_json.reset_mock()
@@ -706,9 +741,12 @@ class TestForecastRelatedFeatures:
                                "transaction_id": arguments["transaction_id"],
                                "error_message": error_message})
 
-    @pytest.mark.parametrize("ext_strategy", [LoadHoursForecastExternalStrategy(),
-                                              LoadProfileForecastExternalStrategy(),
-                                              PVForecastExternalStrategy()])
+    @pytest.mark.parametrize("ext_strategy", [
+        ForecastSCMPVStrategy(),
+        ForecastSCMLoadStrategy(),
+        LoadHoursForecastExternalStrategy(),
+        LoadProfileForecastExternalStrategy(),
+        PVForecastExternalStrategy()])
     @pytest.mark.parametrize("command_name", ["set_energy_forecast", "set_energy_measurement"])
     def test_set_device_energy_data_aggregator_succeeds(self, ext_strategy, command_name):
         ext_strategy.owner = Mock()

@@ -16,14 +16,30 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from typing import Dict
+from typing import Dict, TYPE_CHECKING
 
+from gsy_framework.redis_channels import ExternalStrategyChannels
+
+import gsy_e
 from gsy_e.constants import DATE_TIME_FORMAT
 from gsy_e.models.strategy.external_strategies.forecast_mixin import ForecastExternalMixin
+
+if TYPE_CHECKING:
+    from gsy_e.models.area import CoefficientArea
 
 
 class SCMForecastExternalMixin(ForecastExternalMixin):
     """External mixin for forecast strategies in SCM simulations."""
+
+    def activate(self, _area: "CoefficientArea") -> None:
+        """Overwrite in order to not trigger the profile rotation."""
+        self.channel_names = ExternalStrategyChannels(
+            gsy_e.constants.EXTERNAL_CONNECTION_WEB,
+            gsy_e.constants.CONFIGURATION_ID,
+            asset_uuid=self.device.uuid,
+            asset_name=self.device.name
+        )
+        self.sub_to_redis_channels()
 
     def sub_to_redis_channels(self):
         """Subscribe to redis channels for (un-)registering."""
