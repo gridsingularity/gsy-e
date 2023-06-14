@@ -18,8 +18,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from typing import Dict
 
-from gsy_framework.redis_channels import ExternalStrategyChannels
-
 from gsy_e.constants import DATE_TIME_FORMAT
 from gsy_e.models.strategy.external_strategies.forecast_mixin import ForecastExternalMixin
 
@@ -35,8 +33,8 @@ class SCMForecastExternalMixin(ForecastExternalMixin):
     def channel_dict(self) -> Dict:
         """Common API interfaces for all external assets/markets."""
         return {
-            ExternalStrategyChannels.register: self._register,
-            ExternalStrategyChannels.unregister: self._unregister,
+            self.channel_names.register: self._register,
+            self.channel_names.unregister: self._unregister,
         }
 
     @property
