@@ -144,6 +144,8 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
     @staticmethod
     def _get_all_time_slots(area: "Area") -> List[DateTime]:
         """Get list of available time slots. Defaults to only the spot market time slot."""
+        if not area or not area.spot_market:
+            return []
         return [area.spot_market.time_slot]
 
     def _populate_profiles(self, area: "Area") -> None:

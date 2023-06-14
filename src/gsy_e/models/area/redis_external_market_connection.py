@@ -20,6 +20,7 @@ from logging import getLogger
 from typing import Dict, Optional, TYPE_CHECKING
 
 from gsy_framework.exceptions import GSyAreaException
+from gsy_framework.redis_channels import ExternalStrategyChannels
 
 import gsy_e
 from gsy_e.models.strategy.external_strategies import (
@@ -45,6 +46,12 @@ class RedisMarketExternalConnection:
         self._redis_communicator: Optional["ExternalConnectionCommunicator"] = None
         self.aggregator: Optional["AggregatorHandler"] = None
         self._connected: bool = False
+        self.channel_names = ExternalStrategyChannels(
+            gsy_e.constants.EXTERNAL_CONNECTION_WEB,
+            gsy_e.constants.CONFIGURATION_ID,
+            asset_uuid=self.area.uuid,
+            asset_name=self.area.slug
+        )
 
     @property
     def spot_market(self) -> "Market":
@@ -55,13 +62,6 @@ class RedisMarketExternalConnection:
     def is_aggregator_controlled(self) -> bool:
         """Return a boolean flag whether this market is controlled by an aggregator."""
         return self.aggregator and self.aggregator.is_controlling_device(self.area.uuid)
-
-    @property
-    def channel_prefix(self) -> str:
-        """Return the redis channel prefix depending on whether d3a-web is engaged or not."""
-        if gsy_e.constants.EXTERNAL_CONNECTION_WEB:
-            return f"external/{gsy_e.constants.CONFIGURATION_ID}/{self.area.uuid}"
-        return f"{self.area.slug}"
 
     @staticmethod
     def _get_transaction_id(payload: Dict) -> Optional[str]:
@@ -78,24 +78,24 @@ class RedisMarketExternalConnection:
     def _register(self, payload: Dict) -> None:
         """Callback for the register redis command."""
         self._connected = ExternalStrategyConnectionManager.register(
-            self._redis_communicator, self.channel_prefix,
+            self._redis_communicator, self.channel_names.register_response,
             self._connected, self._get_transaction_id(payload),
             area_uuid=self.area.uuid)
 
     def _unregister(self, payload: Dict) -> None:
         """Callback for the unregister redis command."""
         self._connected = ExternalStrategyConnectionManager.unregister(
-            self._redis_communicator, self.channel_prefix,
+            self._redis_communicator, self.channel_names.unregister_response,
             self._connected, self._get_transaction_id(payload))
 
     def sub_to_external_channels(self) -> None:
         """Subscribe to the redis channels and map callbacks (not used at the moment)."""
         self._redis_communicator = self.area.config.external_redis_communicator
         sub_channel_dict = {
-            f"{self.channel_prefix}/dso_market_stats": self.dso_market_stats_callback,
-            f"{self.channel_prefix}/grid_fees": self.set_grid_fees_callback,
-            f"{self.channel_prefix}/register_participant": self._register,
-            f"{self.channel_prefix}/unregister_participant": self._unregister}
+            self.channel_names.dso_market_stats: self.dso_market_stats_callback,
+            self.channel_names.grid_fees: self.set_grid_fees_callback,
+            self.channel_names.register: self._register,
+            self.channel_names.unregister: self._unregister}
         if self._redis_communicator.is_enabled:
             self.aggregator = self._redis_communicator.aggregator
         self._redis_communicator.sub_to_multiple_channels(sub_channel_dict)
@@ -104,7 +104,6 @@ class RedisMarketExternalConnection:
         """Update the grid fees of the market."""
         if not (self._connected or self.is_aggregator_controlled):
             return None
-        grid_fees_response_channel = f"{self.channel_prefix}/response/grid_fees"
         payload_data = (
             payload["data"] if isinstance(payload["data"], dict)
             else json.loads(payload["data"]))
@@ -133,14 +132,13 @@ class RedisMarketExternalConnection:
         if self.is_aggregator_controlled:
             return response
         response["transaction_id"] = payload_data.get("transaction_id", None)
-        self._redis_communicator.publish_json(grid_fees_response_channel, response)
+        self._redis_communicator.publish_json(self.channel_names.grid_fees_response, response)
         return None
 
     def dso_market_stats_callback(self, payload: Dict) -> Optional[Dict]:
         """Return or publish the market stats."""
         if not (self._connected or self.is_aggregator_controlled):
             return None
-        dso_market_stats_response_channel = f"{self.channel_prefix}/response/dso_market_stats"
         payload_data = (
             payload["data"] if isinstance(payload["data"], dict)
             else json.loads(payload["data"]))
@@ -152,7 +150,8 @@ class RedisMarketExternalConnection:
         if self.is_aggregator_controlled:
             return ret_val
         ret_val["transaction_id"] = payload_data.get("transaction_id", None)
-        self._redis_communicator.publish_json(dso_market_stats_response_channel, ret_val)
+        self._redis_communicator.publish_json(
+            self.channel_names.dso_market_stats_response, ret_val)
         return None
 
     @property
@@ -177,11 +176,10 @@ class RedisMarketExternalConnection:
             deactivate_msg = {"event": "finish"}
             self.aggregator.add_batch_finished_event(self.area.uuid, deactivate_msg)
         elif self._redis_communicator.is_enabled:
-            deactivate_event_channel = f"{self.channel_prefix}/events/finish"
             deactivate_msg = {
                 "event": "finish"
             }
-            self._redis_communicator.publish_json(deactivate_event_channel, deactivate_msg)
+            self._redis_communicator.publish_json(self.channel_names.finish, deactivate_msg)
 
     @property
     def _aggregator_command_callback_mapping(self) -> Dict:

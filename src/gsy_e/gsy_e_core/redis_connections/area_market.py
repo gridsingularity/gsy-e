@@ -17,12 +17,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import json
 import logging
+from collections.abc import Callable
 from threading import Event, Lock, Thread
 from time import time
 from typing import Dict
-from collections.abc import Callable
 
-from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.redis_channels import QueueNames, AggregatorChannels
 from redis import Redis
 from rq import Queue
 
@@ -141,7 +141,7 @@ class RQResettableCommunicator(ResettableCommunicator):
 
     def publish_json(self, channel: str, data: Dict) -> None:
         """Publish json serializable dict to redis queue."""
-        queue = Queue(ConstSettings.GeneralSettings.SDK_COM_QUEUE_NAME, connection=self.redis_db)
+        queue = Queue(QueueNames.sdk_communication, connection=self.redis_db)
         queue.enqueue(channel, json.dumps(data))
 
 
@@ -187,10 +187,10 @@ class ExternalConnectionCommunicator(ResettableCommunicator):
         """Subscribe to aggregator channels."""
         if not self.is_enabled:
             return
+        channel_names = AggregatorChannels(gsy_e.constants.CONFIGURATION_ID, "")
         channel_callback_dict = {
-            f"external/{gsy_e.constants.CONFIGURATION_ID}/aggregator/*/batch_commands":
-                self.aggregator.receive_batch_commands_callback,
-            "aggregator": self.aggregator.aggregator_callback
+            channel_names.batch_commands: self.aggregator.receive_batch_commands_callback,
+            channel_names.commands: self.aggregator.aggregator_callback
         }
         self.pubsub.psubscribe(**channel_callback_dict)
 

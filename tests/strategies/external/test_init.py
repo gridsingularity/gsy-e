@@ -405,23 +405,28 @@ class TestExternalMixin:
         [StorageExternalStrategy()]
     ])
     def test_register_device(self, strategy):
-        self.config = MagicMock()
-        self.device = Area(name="test_area", config=self.config, strategy=strategy)
+        config = GlobalConfig
+        config.external_redis_communicator = Mock()
+        device = Area(name="area", config=config, strategy=strategy)
+        area = Area(name="test_area", config=config, children=[device])
+        device.strategy.owner = device
+        device.strategy.area = area
+        device.strategy.event_activate()
+
         payload = {"data": json.dumps({"transaction_id": transaction_id})}
-        self.device.strategy.owner = self.device
-        assert self.device.strategy.connected is False
-        self.device.strategy._register(payload)
-        self.device.strategy._update_connection_status()
-        assert self.device.strategy.connected is True
-        self.device.strategy._unregister(payload)
-        self.device.strategy._update_connection_status()
-        assert self.device.strategy.connected is False
+        assert device.strategy.connected is False
+        device.strategy._register(payload)
+        device.strategy._update_connection_status()
+        assert device.strategy.connected is True
+        device.strategy._unregister(payload)
+        device.strategy._update_connection_status()
+        assert device.strategy.connected is False
 
         payload = {"data": json.dumps({"transaction_id": None})}
         with pytest.raises(ValueError):
-            self.device.strategy._register(payload)
+            device.strategy._register(payload)
         with pytest.raises(ValueError):
-            self.device.strategy._unregister(payload)
+            device.strategy._unregister(payload)
 
     @parameterized.expand([
         [LoadHoursExternalStrategy(100)],
@@ -547,11 +552,9 @@ class TestForecastRelatedFeatures:
         assert ext_strategy_fixture.pending_requests == deque([])
         ext_strategy_fixture._set_energy_forecast(payload)
         assert len(ext_strategy_fixture.pending_requests) > 0
-        energy_forecast_response_channel = f"{ext_strategy_fixture.channel_prefix}/" \
-                                           "response/set_energy_forecast"
         assert (ext_strategy_fixture.pending_requests ==
                 deque([IncomingRequest("set_energy_forecast", arguments,
-                                       energy_forecast_response_channel)]))
+                                       ext_strategy_fixture.channel_names.energy_forecast)]))
 
     @staticmethod
     @pytest.mark.parametrize("ext_strategy_fixture", [LoadHoursForecastExternalStrategy(),
@@ -562,13 +565,12 @@ class TestForecastRelatedFeatures:
         ext_strategy_fixture.pending_requests = deque([])
         payload = {"data": json.dumps({"transaction_id": transaction_id})}
         ext_strategy_fixture._set_energy_forecast(payload)
-        energy_forecast_response_channel = f"{ext_strategy_fixture.channel_prefix}/" \
-                                           "response/set_energy_forecast"
         ext_strategy_fixture.redis.publish_json.assert_called_with(
-            energy_forecast_response_channel, {"command": "set_energy_forecast",
-                                               "error": "Incorrect set_energy_forecast request. "
-                                                        "Available parameters: (energy_forecast).",
-                                               "transaction_id": transaction_id})
+            ext_strategy_fixture.channel_names.energy_forecast,
+            {"command": "set_energy_forecast",
+             "error": "Incorrect set_energy_forecast request. "
+                      "Available parameters: (energy_forecast).",
+             "transaction_id": transaction_id})
         assert len(ext_strategy_fixture.pending_requests) == 0
 
     @staticmethod
@@ -582,11 +584,9 @@ class TestForecastRelatedFeatures:
         assert ext_strategy_fixture.pending_requests == deque([])
         ext_strategy_fixture._set_energy_measurement(payload)
         assert len(ext_strategy_fixture.pending_requests) > 0
-        energy_measurement_response_channel = f"{ext_strategy_fixture.channel_prefix}/" \
-                                              "response/set_energy_measurement"
         assert (ext_strategy_fixture.pending_requests ==
                 deque([IncomingRequest("set_energy_measurement", arguments,
-                                       energy_measurement_response_channel)]))
+                                       ext_strategy_fixture.channel_names.energy_measurement)]))
 
     @pytest.mark.parametrize("ext_strategy_fixture", [LoadHoursForecastExternalStrategy(),
                                                       LoadProfileForecastExternalStrategy(),
@@ -597,14 +597,12 @@ class TestForecastRelatedFeatures:
         ext_strategy_fixture.pending_requests = deque([])
         payload = {"data": json.dumps({"transaction_id": transaction_id})}
         ext_strategy_fixture._set_energy_measurement(payload)
-        energy_measurement_response_channel = f"{ext_strategy_fixture.channel_prefix}/" \
-                                              "response/set_energy_measurement"
         ext_strategy_fixture.redis.publish_json.assert_called_with(
-            energy_measurement_response_channel, {"command": "set_energy_measurement",
-                                                  "error": "Incorrect set_energy_measurement"
-                                                           " request. "
-                                                  "Available parameters: (energy_measurement).",
-                                                  "transaction_id": transaction_id})
+            ext_strategy_fixture.channel_names.energy_measurement,
+            {"command": "set_energy_measurement",
+             "error": "Incorrect set_energy_measurement request. "
+                      "Available parameters: (energy_measurement).",
+             "transaction_id": transaction_id})
         assert len(ext_strategy_fixture.pending_requests) == 0
 
     @pytest.mark.parametrize("ext_strategy_fixture", [LoadHoursForecastExternalStrategy(),
@@ -754,11 +752,12 @@ class TestAreaExternalConnectionManager:
         redis_communicator.publish_json.assert_not_called()
 
         # is_connected=False
+        response_channel = "channel1"
         assert ExternalStrategyConnectionManager.register(
-            redis_communicator, "channel1", is_connected=False,
+            redis_communicator, response_channel, is_connected=False,
             transaction_id="transaction1", area_uuid="area1") is True
         redis_communicator.publish_json.assert_called_once_with(
-            "channel1/response/register_participant",
+            response_channel,
             {"command": "register", "status": "ready", "registered": True,
              "transaction_id": "transaction1", "device_uuid": "area1"}
         )
@@ -785,11 +784,12 @@ class TestAreaExternalConnectionManager:
 
         # is_connected=True
         check_for_connected_mock.return_value = True
+        response_channel = "channel1"
         assert ExternalStrategyConnectionManager.unregister(
-            redis_communicator, "channel1", is_connected=True,
+            redis_communicator, response_channel, is_connected=True,
             transaction_id="transaction1") is False
         redis_communicator.publish_json.assert_called_once_with(
-            "channel1/response/unregister_participant",
+            response_channel,
             {"command": "unregister", "status": "ready", "unregistered": True,
              "transaction_id": "transaction1"}
         )

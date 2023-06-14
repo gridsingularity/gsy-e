@@ -3,9 +3,11 @@ import json
 from unittest.mock import MagicMock, patch
 
 import pytest
-from pendulum import now
-from gsy_framework.enums import AvailableMarketTypes
 from gsy_framework.data_classes import Offer, Bid, TraderDetails
+from gsy_framework.enums import AvailableMarketTypes
+from gsy_framework.redis_channels import MatchingEngineChannels
+from pendulum import now
+
 import gsy_e.constants
 import gsy_e.gsy_e_core.redis_connections.area_market
 import gsy_e.models.market.market_redis_connection
@@ -41,21 +43,18 @@ class TestMatchingEngineExternalMatcher:
                             "id4": Bid("id4", now(), 0.5, 1, TraderDetails("buyer", ""), 1)}
 
     def test_subscribes_to_redis_channels(self):
+        channel_names = MatchingEngineChannels(gsy_e.constants.CONFIGURATION_ID)
         self.matcher.matching_engine_ext_conn.sub_to_multiple_channels.assert_called_once_with(
-            {
-                "external-matching-engine/simulation-id/": self.matcher.publish_simulation_id,
-                f"{self.channel_prefix}offers-bids/":
-                    self.matcher._publish_orders_message_buffer.append,
-                f"{self.channel_prefix}recommendations/":
-                    self.matcher._populate_recommendations
-            }
+            {channel_names.simulation_id: self.matcher.publish_simulation_id,
+             channel_names.offers_bids: self.matcher._publish_orders_message_buffer.append,
+             channel_names.recommendations: self.matcher._populate_recommendations}
         )
 
     def test_publish_simulation_id(self):
-        channel = "external-matching-engine/simulation-id/response/"
         self.matcher.publish_simulation_id({})
         self.matcher.matching_engine_ext_conn.publish_json.assert_called_once_with(
-            channel, {"simulation_id": self.matcher.simulation_id})
+            MatchingEngineChannels(gsy_e.constants.CONFIGURATION_ID).simulation_id_response,
+            {"simulation_id": self.matcher.simulation_id})
 
     def test_event_tick(self):
         data = {"event": "tick", "markets_info": {self.market.id: self.market.info}}
@@ -116,7 +115,6 @@ class TestMatchingEngineExternalMatcher:
     @patch("gsy_e.models.matching_engine_matcher.matching_engine_external_matcher."
            "MatchingEngineExternalMatcher._get_orders", MagicMock(return_value=({})))
     def test_publish_offers_bids(self):
-        channel = f"{self.channel_prefix}offers-bids/response/"
         payload = {
             "data": json.dumps({
                 "filters": {}
@@ -131,7 +129,7 @@ class TestMatchingEngineExternalMatcher:
         self.matcher._publish_orders_message_buffer = [payload]
         self.matcher._publish_orders()
         self.matcher.matching_engine_ext_conn.publish_json.assert_called_once_with(
-            channel, expected_data)
+            MatchingEngineChannels(gsy_e.constants.CONFIGURATION_ID).response, expected_data)
         self.matcher.matching_engine_ext_conn.publish_json.reset_mock()
 
         # Apply market filter
@@ -147,7 +145,7 @@ class TestMatchingEngineExternalMatcher:
         self.matcher._publish_orders_message_buffer = [payload]
         self.matcher._publish_orders()
         self.matcher.matching_engine_ext_conn.publish_json.assert_called_once_with(
-            channel, expected_data)
+            MatchingEngineChannels(gsy_e.constants.CONFIGURATION_ID).response, expected_data)
 
     @patch("gsy_e.models.matching_engine_matcher.matching_engine_external_matcher."
            "MatchingEngineExternalMatcherValidator.validate_and_report")
@@ -155,7 +153,6 @@ class TestMatchingEngineExternalMatcher:
            "TwoSidedMarket.match_recommendations", return_value=True)
     def test_match_recommendations(
             self, mock_market_match_recommendations, mock_validate_and_report):
-        channel = f"{self.channel_prefix}recommendations/response/"
         payload = {"data": json.dumps({})}
         # Empty recommendations list should pass
         mock_validate_and_report.return_value = {
@@ -181,7 +178,7 @@ class TestMatchingEngineExternalMatcher:
             "message": "Validation Error, matching will be skipped: Invalid Bid Offer Pair"}
         mock_market_match_recommendations.assert_not_called()
         self.matcher.matching_engine_ext_conn.publish_json.assert_called_once_with(
-            channel, expected_data)
+            MatchingEngineChannels(gsy_e.constants.CONFIGURATION_ID).response, expected_data)
 
         self.matcher.matching_engine_ext_conn.publish_json.reset_mock()
         mock_validate_and_report.return_value = {
@@ -199,7 +196,7 @@ class TestMatchingEngineExternalMatcher:
                                  "time_slot": self.market.time_slot_str}]}
         assert mock_market_match_recommendations.call_count == 1
         self.matcher.matching_engine_ext_conn.publish_json.assert_called_once_with(
-            channel, expected_data)
+            MatchingEngineChannels(gsy_e.constants.CONFIGURATION_ID).response, expected_data)
 
 
 class TestMatchingEngineExternalMatcherValidator:
