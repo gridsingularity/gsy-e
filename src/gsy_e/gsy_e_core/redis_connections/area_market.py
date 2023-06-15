@@ -141,7 +141,7 @@ class RQResettableCommunicator(ResettableCommunicator):
 
     def publish_json(self, channel: str, data: Dict) -> None:
         """Publish json serializable dict to redis queue."""
-        queue = Queue(QueueNames.sdk_communication, connection=self.redis_db)
+        queue = Queue(QueueNames().sdk_communication, connection=self.redis_db)
         queue.enqueue(channel, json.dumps(data))
 
 
