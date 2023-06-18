@@ -1,6 +1,7 @@
 -r base.txt
 
-fabric3
+fabric
 psutil
 pylint
+pynacl==1.5.0
 pyyaml>=4.2b1

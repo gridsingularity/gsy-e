@@ -32,7 +32,6 @@ Vagrant.configure("2") do |config|
     git clone https://github.com/gridsingularity/d3a.git
     cd d3a
     pip install --upgrade setuptools pendulum pip
-    pip install -r requirements/pandapower.txt
     pip install -e .
     cd /home/vagrant/
     deactivate
