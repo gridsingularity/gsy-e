@@ -22,10 +22,6 @@ from gsy_e.models.strategy.scm.load import SCMLoadProfileStrategy
 class ForecastSCMLoadStrategy(SCMForecastExternalMixin, SCMLoadProfileStrategy):
     """External SCM Load strategy"""
 
-    def activate(self, area) -> None:
-        """Overwrite in order to not trigger the profile rotation."""
-        self.sub_to_redis_channels()
-
     def _update_energy_requirement(self, _area):
         """Overwrite method that sets the energy requirement in the state."""
 

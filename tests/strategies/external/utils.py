@@ -55,7 +55,7 @@ def check_external_command_endpoint_with_correct_payload_succeeds(ext_strategy_f
     assert ext_strategy_fixture.pending_requests == deque([])
     getattr(ext_strategy_fixture, command)(payload)
     assert len(ext_strategy_fixture.pending_requests) > 0
-    response_channel = f"{ext_strategy_fixture.channel_prefix}/response/{command}"
+    response_channel = getattr(ext_strategy_fixture.channel_names, f"{command}_response")
     assert (ext_strategy_fixture.pending_requests ==
             deque([IncomingRequest(command, arguments, response_channel)]))
 

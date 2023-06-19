@@ -67,7 +67,7 @@ def _create_config(settings=None):
             if "tick_length" in settings else GlobalConfig.tick_length,
         "market_maker_rate":
             settings.get("market_maker_rate",
-                         str(ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE)),
+                         ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE),
         "cloud_coverage": settings.get("cloud_coverage", GlobalConfig.cloud_coverage),
         "pv_user_profile": settings.get("pv_user_profile", None),
         "capacity_kW": settings.get("capacity_kW",

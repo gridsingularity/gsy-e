@@ -56,9 +56,9 @@ class PVExternalMixin(ExternalMixin):
     def channel_dict(self) -> Dict:
         """Offer-related Redis API channels."""
         return {**super().channel_dict,
-                f"{self.channel_prefix}/offer": self.offer,
-                f"{self.channel_prefix}/delete_offer": self.delete_offer,
-                f"{self.channel_prefix}/list_offers": self.list_offers,
+                self.channel_names.offer: self.offer,
+                self.channel_names.delete_offer: self.delete_offer,
+                self.channel_names.list_offers: self.list_offers,
                 }
 
     def event_activate(self, **kwargs) -> None:
@@ -69,13 +69,13 @@ class PVExternalMixin(ExternalMixin):
     def list_offers(self, payload: Dict) -> None:
         """Callback for list offers Redis endpoint."""
         self._get_transaction_id(payload)
-        list_offers_response_channel = f"{self.channel_prefix}/response/list_offers"
+        response_channel = self.channel_names.list_offers_response
         if not ExternalStrategyConnectionManager.check_for_connected_and_reply(
-                self.redis, list_offers_response_channel, self.connected):
+                self.redis, response_channel, self.connected):
             return
         arguments = json.loads(payload["data"])
         self.pending_requests.append(
-            IncomingRequest("list_offers", arguments, list_offers_response_channel))
+            IncomingRequest("list_offers", arguments, response_channel))
 
     def _list_offers_impl(self, arguments: Dict, response_channel: str) -> None:
         """Implementation for the list_offers callback, publish this device offers."""
@@ -98,9 +98,9 @@ class PVExternalMixin(ExternalMixin):
     def delete_offer(self, payload: Dict) -> None:
         """Callback for delete offer Redis endpoint."""
         transaction_id = self._get_transaction_id(payload)
-        delete_offer_response_channel = f"{self.channel_prefix}/response/delete_offer"
+        response_channel = self.channel_names.delete_offer_response
         if not ExternalStrategyConnectionManager.check_for_connected_and_reply(
-                self.redis, delete_offer_response_channel, self.connected):
+                self.redis, response_channel, self.connected):
             return
         try:
             arguments = json.loads(payload["data"])
@@ -111,13 +111,13 @@ class PVExternalMixin(ExternalMixin):
         except (GSyException, json.JSONDecodeError):
             logger.exception("Error when handling delete offer request. Payload %s", payload)
             self.redis.publish_json(
-                delete_offer_response_channel,
+                response_channel,
                 {"command": "offer_delete",
                  "error": "Incorrect delete offer request. Available parameters: (offer).",
                  "transaction_id": transaction_id})
         else:
             self.pending_requests.append(
-                IncomingRequest("delete_offer", arguments, delete_offer_response_channel))
+                IncomingRequest("delete_offer", arguments, response_channel))
 
     def _delete_offer_impl(self, arguments: Dict, response_channel: str) -> None:
         """Implementation for the delete_offer callback, delete the received offer from market."""
@@ -145,9 +145,9 @@ class PVExternalMixin(ExternalMixin):
         allowed_args = required_args.union({"replace_existing",
                                             "time_slot"})
 
-        offer_response_channel = f"{self.channel_prefix}/response/offer"
+        response_channel = self.channel_names.offer_response
         if not ExternalStrategyConnectionManager.check_for_connected_and_reply(
-                self.redis, offer_response_channel, self.connected):
+                self.redis, response_channel, self.connected):
             return
         try:
             arguments = json.loads(payload["data"])
@@ -160,7 +160,7 @@ class PVExternalMixin(ExternalMixin):
         except (json.JSONDecodeError, AssertionError):
             logger.exception("Incorrect offer request. Payload %s.", payload)
             self.redis.publish_json(
-                offer_response_channel,
+                response_channel,
                 {"command": "offer",
                  "error": (
                      "Incorrect bid request. ",
@@ -169,7 +169,7 @@ class PVExternalMixin(ExternalMixin):
                  "transaction_id": transaction_id})
         else:
             self.pending_requests.append(
-                IncomingRequest("offer", arguments, offer_response_channel))
+                IncomingRequest("offer", arguments, response_channel))
 
     def _offer_impl(self, arguments: Dict, response_channel: str) -> None:
         try:

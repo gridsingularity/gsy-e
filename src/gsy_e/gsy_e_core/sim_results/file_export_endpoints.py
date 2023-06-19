@@ -22,6 +22,7 @@ from typing import TYPE_CHECKING, Dict, List
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.enums import AvailableMarketTypes, BidOfferMatchAlgoEnum, SpotMarketTypeEnum
 
+from gsy_e.constants import ROUND_TOLERANCE
 from gsy_e.gsy_e_core.matching_engine_singleton import bid_offer_matcher
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
@@ -185,9 +186,9 @@ class LeafDataExporter(BaseDataExporter):
             produced = self.area.strategy.state.get_energy_production_forecast_kWh(slot, 0.0)
             return [produced, not_sold]
         if isinstance(self.area.strategy, HeatPumpStrategy):
-            return [self.area.strategy.state.get_storage_temp_C(slot),
-                    self.area.strategy.state.get_temp_decrease_K(slot),
-                    self.area.strategy.state.get_temp_increase_K(slot)
+            return [round(self.area.strategy.state.get_storage_temp_C(slot), ROUND_TOLERANCE),
+                    round(self.area.strategy.state.get_temp_decrease_K(slot), ROUND_TOLERANCE),
+                    round(self.area.strategy.state.get_temp_increase_K(slot), ROUND_TOLERANCE)
                     ]
         return []
 
