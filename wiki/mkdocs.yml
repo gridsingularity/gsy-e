@@ -109,7 +109,10 @@ nav:
         - 'Establish a connection with your energy assets': 'connection-energy-assets.md'
         - 'Send live data streams via the Exchange SDK': 'send-data-exchange-sdk.md'
         - 'Send live data streams via the REST API': 'send-data-rest-api.md'
-- 'Blockchain Integration': 'blockchain.md'
+- 'Blockchain Integration':
+  - 'GSY DEX Added Value': 'blockchain-added-value.md'
+  - 'GSy DEX System Components Overview': 'blockchain-system-components-overview.md'
+  - 'GSy DEX Node Installation, Operation and Development': 'blockchain-installation.md'
 - 'References': 'references.md'
 - 'Releases Archive': 'releases.md'
 ## - 'Not included':
