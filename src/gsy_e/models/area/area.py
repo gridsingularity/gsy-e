@@ -328,7 +328,7 @@ class Area(AreaBase):
         self.events.update_events(self.now)
         if self._bc:
             log.debug("[AREA TRADES_BUFFER]: %s [AREA_UUID]: %s [AREA_NAME]: %s",
-                      self._bc.conn.trades_buffer.get(c_uint32(UUID(self.uuid).int).value),
+                      self._bc.conn.trades_buffer.get(str(c_uint32(UUID(self.uuid).int).value)),
                       c_uint32(UUID(self.uuid).int).value, self.name)
             log.debug("[SIMULATION TRADES_BUFFER]: %s",
                       self._bc.conn.trades_buffer)
@@ -339,9 +339,9 @@ class Area(AreaBase):
                 if self.spot_market.bids and self._bc.conn.new_bids_buffer:
                     self.spot_market.bids = \
                         self._bc.conn.update_bids(self.spot_market.bids, self.uuid)
-            if self._bc.conn.trades_buffer.get(c_uint32(UUID(self.uuid).int).value):
+            if self._bc.conn.trades_buffer.get(str(c_uint32(UUID(self.uuid).int).value)):
                 trades = \
-                    self._bc.conn.pop_trades_from_buffer(c_uint32(UUID(self.uuid).int).value)
+                    self._bc.conn.pop_trades_from_buffer(str(c_uint32(UUID(self.uuid).int).value))
                 log.debug("[AREA TRADES][UPDATE]: %s", trades)
                 for trade in trades:
                     self.dispatcher.event_listener(
