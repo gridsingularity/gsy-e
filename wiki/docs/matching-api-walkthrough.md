@@ -1,8 +1,8 @@
-The Grid Singularity Matching Application Programming Interface (or Matching API) allows custom matching algorithms to be used to clear orders in local energy exchanges. The Matching API decouples the matching process from the exchange, allowing external algorithm providers (also termed matching engines here) to read the exchange’s order book, run custom matching algorithms and send the resulting energy transactions to be verified and executed by the exchange, as shown in Figure 4 and explained below.
+The Grid Singularity Matching Application Programming Interface (or Matching API) allows custom matching algorithms to be used to clear orders in local or other energy markets. The Matching API decouples the matching process from the exchange, allowing algorithm providers (also termed matching engines here) to read the exchange’s order book, run custom matching algorithms and send the resulting energy transactions to be verified and executed by the exchange, as shown in Figure and explained below.
 
 ![alt_text](img/matching_api.png)
 
-**Figure 4**. *Flow diagram of the role of matching engines (third party matching algorithm providers) in the Grid Singularity Exchange.*
+**Figure**. *Flow diagram of the role of matching engines (third party matching algorithm providers) in the Grid Singularity Exchange.*
 
 Trading process through the Matching API:
 
@@ -20,22 +20,4 @@ Trading process through the Matching API:
 
 It is important to note that the Matching API is **asynchronous** towards the exchange, meaning  that [it can request bids and offers](matching-api-commands.md) and send recommendations at any time during the [market slots]('market-types.md').
 
-To decouple the bids / offers matching mechanism from the exchange and to develop your customised clearing algorithm, please follow the following steps:
-
-- Install the [Grid Singularity Matching Engine SDK](https://github.com/gridsingularity/gsy-matching-engine-sdk) on your computer by launching the following commands on your terminal window:
-
-**Install gsy-e-sdk**
-
-```
-mkvirtualenv gsy-matching-engine-sdk
-pip install https://github.com/gridsingularity/gsy-matching-engine-sdk.git
-```
-**Update gsy-matching-engine-sdk (needed when an update is deployed)**
-```
-pip uninstall -y gsy-matching-engine-sdk
-pip install git+https://github.com/gridsingularity/gsy-matching-engine-sdk.git
-```
-- Edit the [Matching API template script](matching-api-template-script.md) to connect with your customised matching algorithm.
-- [Launch the Matching API script](registration-matching-api-user-interface.md) in a local (backend) simulation.
-
-*Currently, it is not possible to connect the Matching API through a Collaboration / Canary Network.*
+_The GSy Matching API code is currently available in Python, with Rust implementation in development._
