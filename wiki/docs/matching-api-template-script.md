@@ -1,6 +1,6 @@
 A Matching API template script is available [here](https://github.com/gridsingularity/gsy-matching-engine-sdk/blob/master/gsy_matching_engine_sdk/setups/matching_engine_matcher.py){target=_blank}. See the TODO flags there connect to your preferred customized clearing algorithm and to request, if desired, bids and offers from specific markets.
 
-At the beginning of the Matching API script, the MatchingEngineMatcher class is defined as well as the on_area_map_response method, which allows the users to define the list of markets from which they want to request bids and offers from.
+At the beginning of the Matching API script, the `MatchingEngineMatcher` class is defined as well as the `on_area_map_response` method, which allows the users to define the list of markets from which they want to request bids and offers from.
 
 ```python
 class MatchingEngineMatcher(base_matcher):
@@ -17,7 +17,7 @@ class MatchingEngineMatcher(base_matcher):
                 if name == market:
                     self.id_list.append(market_id)
 ```
-Right after, the on_market_cyce and the on_tick methods are triggered. In the latter, the user requests bids / offers from the market.
+Right after, the [on_market_cycle](matching-api-events.md#each-new-market-slot) and the [on_tick](matching-api-events.md#on--of-market-completion) methods are triggered. In the latter, the user requests bids / offers from the market.
 
 ```python
     def on_market_cycle(self, data):
@@ -26,7 +26,7 @@ Right after, the on_market_cyce and the on_tick methods are triggered. In the la
     def on_tick(self, data):
         self.request_offers_bids(filters={})
 ```
-In the next section, the bids/offers that had been previously requested from the market are stored in the matching_data variable. The matching algorithm ([AttributedMatchingAlgorithm](https://github.com/gridsingularity/gsy-matching-engine-sdk/blob/master/gsy_matching_engine_sdk/matching_algorithms/attributed_matching_algorithm.py){target=_blank} in the example here) takes those data as input and outputs a list of recommendations. Each recommendation is a nested dictionary with the following structure:
+In the next section, the bids/offers that had been previously requested from the market are stored in the `matching_data` variable. The matching algorithm ([AttributedMatchingAlgorithm](https://github.com/gridsingularity/gsy-matching-engine-sdk/blob/master/gsy_matching_engine_sdk/matching_algorithms/attributed_matching_algorithm.py){target=_blank} in the example here) takes those data as input and outputs a list of recommendations. Each recommendation is a nested dictionary with the following structure:
 
 ```json
 [{'market_id': '0fd481d9-98af-43cd-9e98-196c1fe9877f',
@@ -62,7 +62,7 @@ In the next section, the bids/offers that had been previously requested from the
   'matching_requirements': None}]
 ```
 
-The matching algorithm can be written as a separate class file and can be referenced in the on_offers_bids_response function as:
+The matching algorithm can be written as a separate class file and can be referenced in the [on_offers_bids_response](matching-api-events.md#on-offers-bids-response) function as:
 ```python
 	recommendations = YourMatchingAlgorithm.get_matches_recommendations(
             matching_data)
@@ -87,7 +87,7 @@ def on_offers_bids_response(self, data):
             self.submit_matches(recommendations)
 ```
 
-Later in the script, the on_matched_recommendations_response is triggered and useful information about the recommendation posted, such as seller, buyer, trading price and energy as well as the status, if successful or not, are printed in the terminal window of the user. Later, the on_event_or_response is overwritten. By default we do not perform any operation in this event but the user could add some if needed.
+Later in the script, the [on_matched_recommendations_response](matching-api-events.md#on-matched-recommendations-response) is triggered and useful information about the recommendation posted, such as seller, buyer, trading price and energy as well as the status, if successful or not, are printed in the terminal window of the user. Later, the [on_event_or_response](matching-api-events.md#on-event-or-response) is overwritten. By default we do not perform any operation in this event but the user could add some if needed.
 
 ```python
 def on_matched_recommendations_response(self, data):
@@ -97,7 +97,7 @@ def on_event_or_response(self, data):
         logging.debug("Event arrived %s", data)
 ```
 
-Lastly, the Matching API Script overwrites the on_finish event so that whenever the function is triggered the script stops. If the user wishes to save some information recorded within the Matching Engine SDK this would be the opportunity to export them to external files.
+Lastly, the Matching API Script overwrites the [on_finish](matching-api-events.md#on-finish) event so that whenever the function is triggered the script stops. If the user wishes to save some information recorded within the Matching Engine SDK this would be the opportunity to export them to external files.
 ```python
 def on_finish(self, data):
         self.is_finished = True
