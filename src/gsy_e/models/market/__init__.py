@@ -131,6 +131,7 @@ class MarketBase:  # pylint: disable=too-many-instance-attributes
         setattr(self, RLOCK_MEMBER_NAME, RLock())
 
         self._open_market_slot_parameters: Dict[DateTime, MarketSlotParams] = {}
+        self.no_new_order = True
 
     @property
     def time_slot_str(self):

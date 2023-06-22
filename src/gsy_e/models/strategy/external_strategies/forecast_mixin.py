@@ -10,6 +10,7 @@ from gsy_e.models.strategy.external_strategies import IncomingRequest, ExternalM
 
 
 class ForecastExternalMixin(ExternalMixin):
+    """Handle external connection WRT to forecasts and measurements."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -50,8 +51,8 @@ class ForecastExternalMixin(ExternalMixin):
     def channel_dict(self) -> Dict:
         """Extend channel_dict property with forecast related channels."""
         return {**super().channel_dict,
-                f"{self.channel_prefix}/set_energy_forecast": self._set_energy_forecast,
-                f"{self.channel_prefix}/set_energy_measurement": self._set_energy_measurement}
+                self.channel_names.energy_forecast: self._set_energy_forecast,
+                self.channel_names.energy_measurement: self._set_energy_measurement}
 
     def event_market_cycle(self) -> None:
         """Update forecast and measurement in state by reading from buffers."""
@@ -89,16 +90,20 @@ class ForecastExternalMixin(ExternalMixin):
     def _set_device_energy_data(self, payload: Dict, command_type: str,
                                 energy_data_arg_name: str) -> None:
         transaction_id = self._get_transaction_id(payload)
-        energy_data_response_channel = f"{self.channel_prefix}/response/{command_type}"
+        response_channel = (
+            self.channel_names.energy_forecast
+            if command_type == "set_energy_forecast"
+            else self.channel_names.energy_measurement)
+
         arguments = json.loads(payload["data"])
         if set(arguments.keys()) == {energy_data_arg_name, "transaction_id"}:
             self.pending_requests.append(
                 IncomingRequest(command_type, arguments,
-                                energy_data_response_channel))
+                                response_channel))
         else:
             logging.exception("Incorrect %s request: Payload %s", command_type, payload)
             self.redis.publish_json(
-                energy_data_response_channel,
+                response_channel,
                 {"command": command_type,
                  "error": f"Incorrect {command_type} request. "
                           f"Available parameters: ({energy_data_arg_name}).",
@@ -120,6 +125,7 @@ class ForecastExternalMixin(ExternalMixin):
                 key: time string, value: energy in kWh
             response_channel: redis channel string where the response should be sent to
         """
+        # pylint: disable=broad-except
         try:
             self._set_device_energy_data_state(command_type, arguments)
             response = {"command": command_type, "status": "ready",
@@ -142,6 +148,7 @@ class ForecastExternalMixin(ExternalMixin):
         return self._set_device_energy_data_aggregator(arguments, "set_energy_measurement")
 
     def _set_device_energy_data_aggregator(self, arguments: Dict, command_name: str) -> Dict:
+        # pylint: disable=broad-except
         try:
             self._set_device_energy_data_state(command_name, arguments)
             response = {

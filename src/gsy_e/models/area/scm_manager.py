@@ -7,6 +7,7 @@ from uuid import uuid4
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.data_classes import Trade, TraderDetails
+from gsy_framework.sim_results.kpi_calculation_helper import KPICalculationHelper
 from pendulum import DateTime, duration
 
 import gsy_e.constants
@@ -258,23 +259,23 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
         # will be negative, and the producer will not have "savings". For a more realistic case
         # the revenue should be omitted from the calculation of the savings, however this needs
         # to be discussed.
-        return self.base_energy_bill - self.gsy_energy_bill
+        savings_absolute = KPICalculationHelper().saving_absolute(
+            self.base_energy_bill_excl_revenue, self.gsy_energy_bill_excl_revenue)
+        assert savings_absolute > -FLOATING_POINT_TOLERANCE
+        return savings_absolute
 
     @property
     def savings_percent(self):
         """Percentage of the price savings of the home, compared to the base energy bill."""
-        return (
-            (self.savings / self.base_energy_bill) * 100.0
-            if self.base_energy_bill > 0. else 0.)
+        return KPICalculationHelper().saving_percentage(
+            self.savings, self.base_energy_bill_excl_revenue)
 
     @property
     def energy_benchmark(self):
         """Savings ranking compared to the homes with the min and max savings."""
-        if (self._max_community_savings_percent -
-                self._min_community_savings_percent) <= FLOATING_POINT_TOLERANCE:
-            return 0.
-        return ((self.savings_percent - self._min_community_savings_percent) /
-                (self._max_community_savings_percent - self._min_community_savings_percent))
+        return KPICalculationHelper().energy_benchmark(
+            self.savings_percent, self._min_community_savings_percent,
+            self._max_community_savings_percent)
 
     @property
     def gsy_energy_bill_excl_revenue(self):
@@ -290,12 +291,14 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
     @property
     def home_balance_kWh(self):
         """Energy balance of the home. Equals to energy bought minus energy sold."""
-        return self.bought_from_grid + self.bought_from_community - self.sold_to_grid
+        return (self.bought_from_grid + self.bought_from_community
+                - self.sold_to_grid - self.sold_to_community)
 
     @property
     def home_balance(self):
         """Price balance of the home. Equals to currency spent minus currency earned."""
-        return self.spent_to_grid + self.spent_to_community - self.earned_from_grid
+        return (self.spent_to_grid + self.spent_to_community
+                - self.earned_from_grid - self.earned_from_community)
 
 
 class SCMManager:
@@ -375,6 +378,8 @@ class SCMManager:
             self.community_data.energy_bought_from_community_kWh += (
                 home_data.energy_bought_from_community_kWh)
             self.community_data.energy_sold_to_grid_kWh += home_data.energy_sold_to_grid_kWh
+            self.community_data.self_consumed_energy_kWh += (
+                home_data.self_production_for_community_kWh)
 
     def calculate_home_energy_bills(
             self, home_uuid: str) -> None:
@@ -411,26 +416,29 @@ class SCMManager:
                 home_data.energy_need_kWh * market_maker_rate_normal_fees + marketplace_fee
                 + fixed_fee)
 
+        # First handle the sold energy case. This case occurs in case of energy surplus of a home.
+        if home_data.energy_surplus_kWh > 0.0:
+            home_bill.set_sold_to_community(
+                home_data.self_production_for_community_kWh, market_maker_rate_decreased_fees)
+            if home_data.self_production_for_community_kWh > FLOATING_POINT_TOLERANCE:
+                home_data.create_sell_trade(
+                    self._time_slot, DEFAULT_SCM_COMMUNITY_NAME,
+                    home_data.self_production_for_community_kWh,
+                    home_data.self_production_for_community_kWh *
+                    market_maker_rate_decreased_fees)
+
+            home_bill.set_sold_to_grid(
+                home_data.self_production_for_grid_kWh, feed_in_tariff)
+            if home_data.self_production_for_grid_kWh > FLOATING_POINT_TOLERANCE:
+                home_data.create_sell_trade(
+                    self._time_slot, DEFAULT_SCM_GRID_NAME,
+                    home_data.self_production_for_grid_kWh,
+                    home_data.self_production_for_grid_kWh * feed_in_tariff)
+
+        # Next case is the consumption. In this case the energy allocated from the community
+        # is sufficient to cover the energy needs of the home.
         if home_data.allocated_community_energy_kWh > home_data.energy_need_kWh:
-            if home_data.energy_surplus_kWh > 0.0:
-                home_bill.set_sold_to_community(
-                    home_data.self_production_for_community_kWh, market_maker_rate_decreased_fees)
-                if home_data.self_production_for_community_kWh > FLOATING_POINT_TOLERANCE:
-                    home_data.create_sell_trade(
-                        self._time_slot, DEFAULT_SCM_COMMUNITY_NAME,
-                        home_data.self_production_for_community_kWh,
-                        home_data.self_production_for_community_kWh *
-                        market_maker_rate_decreased_fees)
-
-                home_bill.set_sold_to_grid(
-                    home_data.self_production_for_grid_kWh, feed_in_tariff)
-                if home_data.self_production_for_grid_kWh > FLOATING_POINT_TOLERANCE:
-                    home_data.create_sell_trade(
-                        self._time_slot, DEFAULT_SCM_GRID_NAME,
-                        home_data.self_production_for_grid_kWh,
-                        home_data.self_production_for_grid_kWh * feed_in_tariff)
-
-            elif home_data.energy_need_kWh > FLOATING_POINT_TOLERANCE:
+            if home_data.energy_need_kWh > FLOATING_POINT_TOLERANCE:
                 home_bill.set_bought_from_community(
                     home_data.energy_need_kWh, market_maker_rate_decreased_fees,
                     grid_fees * (1.0 - self._grid_fees_reduction), taxes_surcharges
@@ -439,6 +447,8 @@ class SCMManager:
                     self._time_slot, DEFAULT_SCM_COMMUNITY_NAME, home_data.energy_need_kWh,
                     home_data.energy_need_kWh * market_maker_rate_decreased_fees
                 )
+        # Next case is in case the allocated energy from the community is not sufficient for the
+        # home energy needs. In this case the energy deficit is bought from the grid.
         else:
             home_bill.set_bought_from_community(
                 home_data.allocated_community_energy_kWh, market_maker_rate_decreased_fees,
@@ -524,13 +534,20 @@ class SCMManager:
         community_bills = AreaEnergyBills()
         for data in self._bills.values():
             community_bills.base_energy_bill += data.base_energy_bill
+            community_bills.base_energy_bill_revenue += data.base_energy_bill_revenue
             community_bills.gsy_energy_bill += data.gsy_energy_bill
+            community_bills.base_energy_bill_excl_revenue += data.base_energy_bill_excl_revenue
+
             community_bills.bought_from_community += data.bought_from_community
             community_bills.spent_to_community += data.spent_to_community
+            community_bills.sold_to_community += data.sold_to_community
+            community_bills.earned_from_community += data.earned_from_community
+
             community_bills.bought_from_grid += data.bought_from_grid
             community_bills.spent_to_grid += data.spent_to_grid
             community_bills.sold_to_grid += data.sold_to_grid
             community_bills.earned_from_grid += data.earned_from_grid
+
             community_bills.tax_surcharges += data.tax_surcharges
             community_bills.grid_fees += data.grid_fees
             community_bills.marketplace_fee += data.marketplace_fee

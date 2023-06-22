@@ -44,7 +44,9 @@ PROFILE_UUID_NAMES = [
     "power_profile_uuid",
     "energy_rate_profile_uuid",
     "smart_meter_profile_uuid",
-    "buying_rate_profile_uuid"
+    "buying_rate_profile_uuid",
+    "consumption_kWh_profile_uuid",
+    "external_temp_C_profile_uuid"
 ]
 
 
@@ -123,24 +125,21 @@ class ProfileDBConnectionHandler:
                 f"Profile in DB is empty for profile with uuid {profile_uuid}")
         first_datapoint_time = first_datapoint[0].time
 
-        datapoints = select(
+        datapoints = list(select(
             datapoint for datapoint in self.Profile_Database_ProfileTimeSeries
             if datapoint.profile_uuid == profile_uuid
             and datapoint.time >= first_datapoint_time
             and datapoint.time <= first_datapoint_time + duration(days=7)
+        ))
+        diff_current_to_db_time = (
+            current_timestamp -
+            self._strip_timezone_and_create_pendulum_instance_from_datetime(datapoints[0].time)
         )
-
-        datapoint_dict = {
-            self._strip_timezone_and_create_pendulum_instance_from_datetime(datapoint.time).set(
-                year=current_timestamp.year,
-                month=current_timestamp.month,
-                day=current_timestamp.day
-            ): datapoint.value for datapoint in datapoints
+        return {
+            self._strip_timezone_and_create_pendulum_instance_from_datetime(
+                datapoint.time) + diff_current_to_db_time: datapoint.value
+            for datapoint in datapoints
         }
-
-        self._buffered_times = list(datapoint_dict.keys())
-
-        return datapoint_dict
 
     @db_session
     def _get_profiles_from_db(self, start_time: datetime, end_time: datetime) -> Query:
@@ -341,7 +340,7 @@ class ProfilesHandler:
         Returns: Profile chunk as dictionary
 
         """
-        if self.should_create_profile(profile):
+        if profile_uuid is None and self.should_create_profile(profile):
             return read_arbitrary_profile(profile_type,
                                           profile, current_timestamp=self.current_timestamp)
         if self.time_to_rotate_profile(profile):
@@ -371,7 +370,6 @@ class ProfilesHandler:
             profile_uuid = getattr(area.strategy, profile_uuid_name, None)
             if profile_uuid:
                 profile_uuids.append(uuid.UUID(profile_uuid))
-                break
 
         if area.children:
             for child in area.children:

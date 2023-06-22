@@ -22,15 +22,15 @@ import traceback
 from logging import getLogger
 from typing import Dict, TYPE_CHECKING, Optional
 
-from gsy_framework.constants_limits import HeartBeat, ConstSettings
+from gsy_framework.constants_limits import HeartBeat
 from gsy_framework.exceptions import GSyException
+from gsy_framework.redis_channels import SimulationCommandChannels, ExchangeChannels
 from gsy_framework.utils import RepeatingTimer
 from redis import Redis
 from redis.exceptions import ConnectionError as RedisConnectionError
 from rq import get_current_job
 from rq.exceptions import NoSuchJobError
 
-import gsy_e.constants
 from gsy_e.gsy_e_core.exceptions import LiveEventException
 
 log = getLogger(__name__)
@@ -44,26 +44,26 @@ if TYPE_CHECKING:
 
 
 class RedisSimulationCommunication:
+    # pylint: disable=too-many-instance-attributes
     """
     Handle Redis connection to the simulation, to receive incoming state change messages or live
     events.
     """
     def __init__(self, simulation_status, simulation_id, live_events, progress_info, area):
-        # pylint: disable=too-many-arguments
+        # pylint: disable=too-many-arguments, too-many-instance-attributes
         self._live_events = live_events
         self._simulation_id = simulation_id if simulation_id is not None else ""
         self._simulation_status = simulation_status
         self._area = area
         self._progress_info = progress_info
+        self.channel_names = SimulationCommandChannels(self._simulation_id)
         self._sub_callback_dict = {
-            f"{gsy_e.constants.CONFIGURATION_ID}/area-map/": self._calculate_area_map_callback,
-            f"{self._simulation_id}/stop": self._stop_callback,
-            f"{self._simulation_id}/pause": self._pause_callback,
-            f"{self._simulation_id}/resume": self._resume_callback,
-            f"{self._simulation_id}/live-event": self._live_event_callback,
-            f"{self._simulation_id}/bulk-live-event":
-                self._bulk_live_event_callback,
-        }
+            self.channel_names.area_map: self._area_map_callback,
+            self.channel_names.stop: self._stop_callback,
+            self.channel_names.pause: self._pause_callback,
+            self.channel_names.resume: self._resume_callback,
+            self.channel_names.live_event: self._live_event_callback,
+            self.channel_names.bulk_live_event: self._bulk_live_event_callback}
 
         try:
             self.redis_db = Redis.from_url(REDIS_URL, retry_on_timeout=True)
@@ -85,7 +85,6 @@ class RedisSimulationCommunication:
                                  response_params=None):
         if response_params is None:
             response_params = {}
-        response_channel = f"{self._simulation_id}/response/{command_type}"
 
         response_json = {
             "command": str(command_type),
@@ -103,15 +102,14 @@ class RedisSimulationCommunication:
                     "status": "error",
                     "error_message": f"Error when handling simulation {command_type}."
                 })
-        self._publish_json(response_channel, response_json)
+        self._publish_json(self.channel_names.response_channel(command_type), response_json)
 
-    def _calculate_area_map_callback(self, _) -> None:
+    def _area_map_callback(self, _) -> None:
         """Trigger the calculation of area uuid and name mapping and publish it
         back to a redis response channel"""
         area_mapping = self._area_uuid_name_map_wrapper(self._area)
-        response_channel = f"external-myco/{self._simulation_id}/area-map/response/"
-        response_dict = {"area_mapping": area_mapping, "event": "area_map_response"}
-        self._publish_json(response_channel, response_dict)
+        response_dict = {"area_mapping": area_mapping}
+        self._publish_json(self.channel_names.response_channel("area-map"), response_dict)
 
     @classmethod
     def _area_uuid_name_map_wrapper(
@@ -199,7 +197,7 @@ class RedisSimulationCommunication:
         self.redis_db.publish(channel, json.dumps(data))
 
     def _heartbeat_tick(self):
-        heartbeat_channel = f"{HeartBeat.CHANNEL_NAME}/{self._simulation_id}"
+        heartbeat_channel = f"{ExchangeChannels.heart_beat}/{self._simulation_id}"
         data = {"time": int(time.time())}
         self.redis_db.publish(heartbeat_channel, json.dumps(data))
 
@@ -207,6 +205,6 @@ class RedisSimulationCommunication:
 def publish_job_error_output(job_id, traceback_str):
     """Publish error messages to the Redis simulation error message channel."""
     Redis.from_url(REDIS_URL).publish(
-        ConstSettings.GeneralSettings.EXCHANGE_ERROR_CHANNEL,
+        ExchangeChannels.errors,
         json.dumps({"job_id": job_id, "errors": traceback_str})
     )

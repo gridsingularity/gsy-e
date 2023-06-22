@@ -19,7 +19,7 @@ from gsy_e.models.area import Area
 from gsy_e.models.strategy.storage import StorageStrategy
 from gsy_e.models.strategy.pv import PVStrategy
 from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy
-from gsy_e.gsy_e_core.util import d3a_path
+from gsy_e.gsy_e_core.util import gsye_root_path
 import os
 
 
@@ -36,7 +36,7 @@ def get_setup(config):
                          ),
                     Area("H1 General Load",
                          strategy=DefinedLoadStrategy(
-                             daily_load_profile=os.path.join(d3a_path,
+                             daily_load_profile=os.path.join(gsye_root_path,
                                                              "resources",
                                                              "SAM_MF2_Summer.csv"),
                              final_buying_rate=35),
@@ -54,7 +54,7 @@ def get_setup(config):
                          ),
                     Area("H2 General Load",
                          strategy=DefinedLoadStrategy(
-                             daily_load_profile=os.path.join(d3a_path,
+                             daily_load_profile=os.path.join(gsye_root_path,
                                                              "resources",
                                                              "SAM_MF2_Summer.csv"),
                              final_buying_rate=35),
@@ -70,7 +70,7 @@ def get_setup(config):
                 [
                     Area("H3 General Load",
                          strategy=DefinedLoadStrategy(
-                             daily_load_profile=os.path.join(d3a_path,
+                             daily_load_profile=os.path.join(gsye_root_path,
                                                              "resources",
                                                              "SAM_MF2_Summer.csv"),
                              final_buying_rate=35),
@@ -86,7 +86,7 @@ def get_setup(config):
                 [
                     Area("H4 General Load",
                          strategy=DefinedLoadStrategy(
-                             daily_load_profile=os.path.join(d3a_path,
+                             daily_load_profile=os.path.join(gsye_root_path,
                                                              "resources",
                                                              "SAM_MF2_Summer.csv"),
                              final_buying_rate=35),

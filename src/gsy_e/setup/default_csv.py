@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from gsy_e.models.area import Area
 # from gsy_e.models.strategy.commercial_producer import CommercialStrategy # NOQA
-from gsy_e.gsy_e_core.util import d3a_path
+from gsy_e.gsy_e_core.util import gsye_root_path
 from gsy_e.models.strategy.storage import StorageStrategy
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy
@@ -34,7 +34,7 @@ def get_setup(config):
                 [
                     Area("H1 General Load",
                          strategy=DefinedLoadStrategy(
-                             daily_load_profile=os.path.join(d3a_path,
+                             daily_load_profile=os.path.join(gsye_root_path,
                                                              "resources", "LOAD_DATA_1.csv"),
                              final_buying_rate=25),
                          ),

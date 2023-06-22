@@ -1,3 +1,4 @@
+# pylint: disable=redefined-outer-name
 """
 Copyright 2018 Grid Singularity
 This file is part of Grid Singularity Exchange.
@@ -15,25 +16,27 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from unittest.mock import MagicMock, Mock
-import uuid
 import json
+import uuid
+from collections import deque
+from unittest.mock import MagicMock, Mock
+
 import pytest
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from pendulum import now, duration
+
 from gsy_e.models.area import Area
+from gsy_e.models.strategy.external_strategies import IncomingRequest
 from gsy_e.models.strategy.external_strategies.load import (
     LoadHoursForecastExternalStrategy, LoadProfileForecastExternalStrategy,
     LoadHoursExternalStrategy)
 from gsy_e.models.strategy.external_strategies.pv import (PVForecastExternalStrategy,
                                                           PVExternalStrategy)
 from gsy_e.models.strategy.external_strategies.storage import StorageExternalStrategy
-from gsy_framework.constants_limits import ConstSettings, GlobalConfig
-from pendulum import now, duration
-from collections import deque
-from gsy_e.models.strategy.external_strategies import IncomingRequest
 
 
-@pytest.fixture
-def ext_strategy_fixture(request):
+@pytest.fixture(name="ext_strategy_fixture")
+def fixture_ext_strategy(request):
     strategy = request.param
     config = Mock()
     config.slot_length = duration(minutes=15)
@@ -54,10 +57,11 @@ def ext_strategy_fixture(request):
 
 class TestPVForecastExternalStrategy:
 
+    @staticmethod
     @pytest.mark.parametrize("ext_strategy_fixture", [LoadHoursForecastExternalStrategy(),
                                                       LoadProfileForecastExternalStrategy(),
                                                       PVForecastExternalStrategy()], indirect=True)
-    def test_event_market_cycle_calls_energy_update_methods(self, ext_strategy_fixture):
+    def test_event_market_cycle_calls_energy_update_methods(ext_strategy_fixture):
         ext_strategy_fixture.energy_forecast_buffer = {now(): 1}
         ext_strategy_fixture.energy_measurement_buffer = {now(): 1}
         ext_strategy_fixture.update_energy_forecast = Mock()
@@ -68,9 +72,10 @@ class TestPVForecastExternalStrategy:
         assert ext_strategy_fixture.energy_forecast_buffer == {}
         assert ext_strategy_fixture.energy_measurement_buffer == {}
 
+    @staticmethod
     @pytest.mark.parametrize("ext_strategy_fixture", [PVForecastExternalStrategy()],
                              indirect=True)
-    def test_update_energy_forecast_calls_set_available_energy(self, ext_strategy_fixture):
+    def test_update_energy_forecast_calls_set_available_energy(ext_strategy_fixture):
         time = ext_strategy_fixture.area.spot_market.time_slot
         energy = 1
         ext_strategy_fixture.energy_forecast_buffer = {time: energy}
@@ -79,10 +84,11 @@ class TestPVForecastExternalStrategy:
         ext_strategy_fixture.state.set_available_energy.assert_called_once_with(
             energy, time, overwrite=True)
 
+    @staticmethod
     @pytest.mark.parametrize("ext_strategy_fixture", [PVForecastExternalStrategy()],
                              indirect=True)
     def test_update_energy_forecast_doesnt_call_set_available_energy_for_past_markets(
-            self, ext_strategy_fixture):
+            ext_strategy_fixture):
         # do not call set_available_energy for time_slots in the past
         ext_strategy_fixture.state.set_available_energy = Mock()
         time = ext_strategy_fixture.area.spot_market.time_slot.subtract(minutes=15)
@@ -90,10 +96,11 @@ class TestPVForecastExternalStrategy:
         ext_strategy_fixture.update_energy_forecast()
         ext_strategy_fixture.state.set_available_energy.assert_not_called()
 
+    @staticmethod
     @pytest.mark.parametrize("ext_strategy_fixture", [LoadHoursForecastExternalStrategy(),
                                                       LoadProfileForecastExternalStrategy()],
                              indirect=True)
-    def test_update_energy_forecast_calls_set_desired_energy(self, ext_strategy_fixture):
+    def test_update_energy_forecast_calls_set_desired_energy(ext_strategy_fixture):
         time = ext_strategy_fixture.area.spot_market.time_slot
         energy = 1
         ext_strategy_fixture.energy_forecast_buffer = {time: energy}
@@ -104,11 +111,12 @@ class TestPVForecastExternalStrategy:
             energy * 1000, time, overwrite=True)
         ext_strategy_fixture.state.update_total_demanded_energy.assert_called_once_with(time)
 
+    @staticmethod
     @pytest.mark.parametrize("ext_strategy_fixture", [LoadHoursForecastExternalStrategy(),
                                                       LoadProfileForecastExternalStrategy()],
                              indirect=True)
     def test_update_energy_forecast_doesnt_call_set_desired_energy_for_past_markets(
-            self, ext_strategy_fixture):
+            ext_strategy_fixture):
         time = ext_strategy_fixture.area.spot_market.time_slot.subtract(minutes=15)
         ext_strategy_fixture.energy_forecast_buffer = {time: 1}
         ext_strategy_fixture.state.set_desired_energy = Mock()
@@ -117,11 +125,12 @@ class TestPVForecastExternalStrategy:
         ext_strategy_fixture.state.set_desired_energy.assert_not_called()
         ext_strategy_fixture.state.update_total_demanded_energy.assert_not_called()
 
+    @staticmethod
     @pytest.mark.parametrize("ext_strategy_fixture", [LoadHoursForecastExternalStrategy(),
                                                       LoadProfileForecastExternalStrategy(),
                                                       PVForecastExternalStrategy()], indirect=True)
     def test_update_energy_measurement_calls_set_energy_measurement_kWh(
-            self, ext_strategy_fixture):
+            ext_strategy_fixture):
         time = ext_strategy_fixture.area.spot_market.time_slot.subtract(minutes=15)
         energy = 1
         ext_strategy_fixture.energy_measurement_buffer = {time: energy}
@@ -129,21 +138,23 @@ class TestPVForecastExternalStrategy:
         ext_strategy_fixture.update_energy_measurement()
         ext_strategy_fixture.state.set_energy_measurement_kWh.assert_called_once_with(energy, time)
 
+    @staticmethod
     @pytest.mark.parametrize("ext_strategy_fixture", [LoadHoursForecastExternalStrategy(),
                                                       LoadProfileForecastExternalStrategy(),
                                                       PVForecastExternalStrategy()], indirect=True)
     def test_update_energy_measurement_doesnt_call_set_energy_measurement_kWh_for_future_markets(
-            self, ext_strategy_fixture):
+            ext_strategy_fixture):
         time = ext_strategy_fixture.area.spot_market.time_slot.add(minutes=15)
         ext_strategy_fixture.energy_measurement_buffer = {time: 1}
         ext_strategy_fixture.state.set_energy_measurement_kWh = Mock()
         ext_strategy_fixture.update_energy_measurement()
         ext_strategy_fixture.state.set_energy_measurement_kWh.assert_not_called()
 
+    @staticmethod
     @pytest.mark.parametrize("ext_strategy_fixture", [LoadHoursExternalStrategy(100),
                                                       StorageExternalStrategy()],
                              indirect=True)
-    def test_receive_bid_successful(self, ext_strategy_fixture):
+    def test_receive_bid_successful(ext_strategy_fixture):
         transaction_id = str(uuid.uuid4())
         arguments = {"transaction_id": transaction_id,
                      "price": 1,
@@ -152,15 +163,15 @@ class TestPVForecastExternalStrategy:
         assert ext_strategy_fixture.pending_requests == deque([])
         ext_strategy_fixture.bid(payload)
         assert len(ext_strategy_fixture.pending_requests) > 0
-        response_channel = f"{ext_strategy_fixture.channel_prefix}/response/bid"
         assert (ext_strategy_fixture.pending_requests ==
                 deque([IncomingRequest("bid", arguments,
-                                       response_channel)]))
+                                       ext_strategy_fixture.channel_names.bid_response)]))
 
+    @staticmethod
     @pytest.mark.parametrize("ext_strategy_fixture", [PVExternalStrategy(),
                                                       StorageExternalStrategy()],
                              indirect=True)
-    def test_receive_offer_successful(self, ext_strategy_fixture):
+    def test_receive_offer_successful(ext_strategy_fixture):
         transaction_id = str(uuid.uuid4())
         arguments = {"transaction_id": transaction_id,
                      "price": 1,
@@ -169,67 +180,66 @@ class TestPVForecastExternalStrategy:
         assert ext_strategy_fixture.pending_requests == deque([])
         ext_strategy_fixture.offer(payload)
         assert len(ext_strategy_fixture.pending_requests) > 0
-        response_channel = f"{ext_strategy_fixture.channel_prefix}/response/offer"
         assert (ext_strategy_fixture.pending_requests ==
                 deque([IncomingRequest("offer", arguments,
-                                       response_channel)]))
+                                       ext_strategy_fixture.channel_names.offer_response)]))
 
+    @staticmethod
     @pytest.mark.parametrize("ext_strategy_fixture", [PVExternalStrategy(),
                                                       StorageExternalStrategy()],
                              indirect=True)
-    def test_list_offers_successful(self, ext_strategy_fixture):
+    def test_list_offers_successful(ext_strategy_fixture):
         transaction_id = str(uuid.uuid4())
         arguments = {"transaction_id": transaction_id}
         payload = {"data": json.dumps(arguments)}
         assert ext_strategy_fixture.pending_requests == deque([])
         ext_strategy_fixture.list_offers(payload)
         assert len(ext_strategy_fixture.pending_requests) > 0
-        response_channel = f"{ext_strategy_fixture.channel_prefix}/response/list_offers"
         assert (ext_strategy_fixture.pending_requests ==
                 deque([IncomingRequest("list_offers", arguments,
-                                       response_channel)]))
+                                       ext_strategy_fixture.channel_names.list_offers_response)]))
 
+    @staticmethod
     @pytest.mark.parametrize("ext_strategy_fixture", [LoadHoursExternalStrategy(100),
                                                       StorageExternalStrategy()],
                              indirect=True)
-    def test_list_bids_successful(self, ext_strategy_fixture):
+    def test_list_bids_successful(ext_strategy_fixture):
         transaction_id = str(uuid.uuid4())
         arguments = {"transaction_id": transaction_id}
         payload = {"data": json.dumps(arguments)}
         assert ext_strategy_fixture.pending_requests == deque([])
         ext_strategy_fixture.list_bids(payload)
         assert len(ext_strategy_fixture.pending_requests) > 0
-        response_channel = f"{ext_strategy_fixture.channel_prefix}/response/list_bids"
         assert (ext_strategy_fixture.pending_requests ==
                 deque([IncomingRequest("list_bids", arguments,
-                                       response_channel)]))
+                                       ext_strategy_fixture.channel_names.list_bids_response)]))
 
+    @staticmethod
     @pytest.mark.parametrize("ext_strategy_fixture", [LoadHoursExternalStrategy(100),
                                                       StorageExternalStrategy()],
                              indirect=True)
-    def test_delete_bid_successful(self, ext_strategy_fixture):
+    def test_delete_bid_successful(ext_strategy_fixture):
         transaction_id = str(uuid.uuid4())
         arguments = {"transaction_id": transaction_id}
         payload = {"data": json.dumps(arguments)}
         assert ext_strategy_fixture.pending_requests == deque([])
         ext_strategy_fixture.delete_bid(payload)
         assert len(ext_strategy_fixture.pending_requests) > 0
-        response_channel = f"{ext_strategy_fixture.channel_prefix}/response/delete_bid"
         assert (ext_strategy_fixture.pending_requests ==
                 deque([IncomingRequest("delete_bid", arguments,
-                                       response_channel)]))
+                                       ext_strategy_fixture.channel_names.delete_bid_response)]))
 
+    @staticmethod
     @pytest.mark.parametrize("ext_strategy_fixture", [PVExternalStrategy(),
                                                       StorageExternalStrategy()],
                              indirect=True)
-    def test_delete_offer_successful(self, ext_strategy_fixture):
+    def test_delete_offer_successful(ext_strategy_fixture):
         transaction_id = str(uuid.uuid4())
         arguments = {"transaction_id": transaction_id}
         payload = {"data": json.dumps(arguments)}
         assert ext_strategy_fixture.pending_requests == deque([])
         ext_strategy_fixture.delete_offer(payload)
         assert len(ext_strategy_fixture.pending_requests) > 0
-        response_channel = f"{ext_strategy_fixture.channel_prefix}/response/delete_offer"
         assert (ext_strategy_fixture.pending_requests ==
                 deque([IncomingRequest("delete_offer", arguments,
-                                       response_channel)]))
+                                       ext_strategy_fixture.channel_names.delete_offer_response)]))

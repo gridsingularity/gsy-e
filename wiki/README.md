@@ -1,6 +1,4 @@
-# D3A User Wiki
-
-This repository contains the source files for the [D3A](d3a.io).
+# GSY User Wiki
 
 ## Running locally
 
@@ -9,7 +7,7 @@ Note that you will need the `pip` package manager, which is generally installed 
 Clone the repository to your local file system.
 
 ```bash
-git clone https://github.com/gridsingularity/d3a.git
+git clone https://github.com/gridsingularity/gsy-e.git
 ```
 
 Install `mkdocs` by using the `pip` package manager.
@@ -23,14 +21,15 @@ Now install all necessary dependencies, once again by using `pip`.
 ```bash
 pip install -r requirements.txt
 ```
+In `mkdocs.yml` change `site_url` to : `site_url: 'http://localhost:8000'` and comment out the whole `- redirects:` section.
 
-Run `mkdocs serve` from the repository root to spawn a hot reloading development server and navigate to `localhost:8000/d3a-documentation` in a web browser.
+Run `mkdocs serve` from the repository root to spawn a hot reloading development server and navigate to `localhost:8000/documentation` in a web browser.
 
 ## Publishing
 
-The wiki is hosted on github and is built based on the active `master` branch on the GitHub repository. 
+The wiki is hosted on github and is built based on the active `master` branch on the GitHub repository.
 
-To publish any changes to the wiki, navigate to your local instance of the `wiki` folder in the d3a git repository, and make sure it is up to date with your requested changes. Then run:
+To publish any changes to the wiki, navigate to your local instance of the `wiki` folder in the gsy-e git repository, and make sure it is up to date with your requested changes. Then run:
 
 ```bash
 mkdocs gh-deploy

@@ -22,17 +22,6 @@ nav:
         - 'Community Settings': 'community-settings.md'
         - 'Grid Market Settings': 'grid-market-settings.md'
         - 'Events (Adding Assets, Communities, etc.)': 'events.md'
-        - 'Results and Analysis':
-            - 'Results dashboard': 'results-dashboard'
-            - 'Community': 'results-community'
-            - 'Bills and traded energy': 'bills-traded-energy.md'
-            - 'Self-Sufficiency and Self-Consumption': 'self-sufficiency-self-consumption.md'
-            - 'Trade profile': 'trade-profile.md'
-            - 'Aggregate Market Summary': 'aggregate-market-summary.md'
-            - 'Price': 'price.md'
-            - 'Trades': 'trades.md'
-            - 'Results Download': 'results-download.md'
-            - 'Duplicating simulations': 'duplicating-simulations'
     - 'Instructions for researchers on backend code':
         - 'Backend Installation Instructions':
             - 'Linux Installation Instructions': 'linux-installation-instructions.md'
@@ -48,6 +37,17 @@ nav:
             - 'Overview': 'backend-results-overview.md'
             - 'Energy bills': 'backend-results-energy-bills.md'
     - 'Data Requirements and File Upload Format': 'data-requirements.md'
+- 'Results and Analysis':
+    - 'Results dashboard': 'results-dashboard'
+    - 'Community': 'results-community'
+    - 'Bills and traded energy': 'bills-traded-energy.md'
+    - 'Self-Sufficiency and Self-Consumption': 'self-sufficiency-self-consumption.md'
+    - 'Trade profile': 'trade-profile.md'
+    - 'Aggregate Market Summary': 'aggregate-market-summary.md'
+    - 'Price': 'price.md'
+    - 'Trades': 'trades.md'
+    - 'Results Download': 'results-download.md'
+    - 'Duplicating simulations': 'duplicating-simulations'
 - 'Market Mechanisms':
     - 'Market Types':
       - 'Overview': 'market-types.md'
@@ -84,7 +84,7 @@ nav:
             - 'Launch the Asset API':
                 - 'Registration - Simulations run on the User-Interface': 'registration-asset-api-user-interface.md'
                 - 'Registration - Simulations run on the Backend': 'registration-asset-api-backend.md'
-        - 'Implement dynamic grid fees through the Grid Singlarity Grid Operator API':
+        - 'Implement dynamic grid fees through the Grid Singularity Grid Operator API':
             - 'Walkthrough': 'implement-grid-fees-walkthrough.md'
             - 'Grid Operator API.':
                 - 'Grid Operator API Events': 'grid-operator-api-events.md'
@@ -109,7 +109,10 @@ nav:
         - 'Establish a connection with your energy assets': 'connection-energy-assets.md'
         - 'Send live data streams via the Exchange SDK': 'send-data-exchange-sdk.md'
         - 'Send live data streams via the REST API': 'send-data-rest-api.md'
-- 'Blockchain Integration': 'blockchain.md'
+- 'Blockchain Integration':
+  - 'GSY DEX Added Value': 'blockchain.md'
+  - 'GSy DEX System Components Overview': 'blockchain-system-components-overview.md'
+  - 'GSy DEX Node Installation, Operation and Development': 'blockchain-installation.md'
 - 'References': 'references.md'
 - 'Releases Archive': 'releases.md'
 ## - 'Not included':
@@ -194,6 +197,7 @@ markdown_extensions:
         permalink: true
     - mdtooltips
     - attr_list
+    - md_in_html
 
 plugins:
     - search:

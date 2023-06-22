@@ -18,6 +18,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import inspect
 import logging
 
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.enums import SpotMarketTypeEnum
+
 from gsy_e.models.area import Area, CoefficientArea
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
 from gsy_e.models.strategy.external_strategies.load import (
@@ -40,10 +43,10 @@ from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy
 from gsy_e.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
 from gsy_e.models.strategy.predefined_wind import WindUserProfileStrategy
 from gsy_e.models.strategy.pv import PVStrategy
-from gsy_e.models.strategy.scm.external.load import ExternalSCMLoadHoursStrategy
-from gsy_e.models.strategy.scm.external.pv import ExternalSCMPVStrategy
+from gsy_e.models.strategy.scm.external.load import ForecastSCMLoadStrategy
+from gsy_e.models.strategy.scm.external.pv import ForecastSCMPVStrategy
 from gsy_e.models.strategy.scm.load import SCMLoadHoursStrategy, SCMLoadProfileStrategy
-from gsy_e.models.strategy.scm.pv import SCMPVPredefinedStrategy, SCMPVStrategy, SCMPVUserProfile
+from gsy_e.models.strategy.scm.pv import SCMPVUserProfile
 from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
 from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
 from gsy_e.models.strategy.storage import StorageStrategy
@@ -76,7 +79,8 @@ class LeafBase:
     strategy = None
 
     def __init__(self, name, config, uuid=None, **kwargs):
-        if config.external_connection_enabled:
+        if (config.external_connection_enabled and
+                ConstSettings.MASettings.MARKET_TYPE != SpotMarketTypeEnum.COEFFICIENTS.value):
             if kwargs.get("forecast_stream_enabled", False) is True:
                 try:
                     self.strategy_type = forecast_strategy_mapping[self.strategy_type]
@@ -204,14 +208,6 @@ class FiniteDieselGenerator(Leaf):
     strategy_type = FinitePowerPlant
 
 
-class SCMPV(CoefficientLeaf):
-    strategy_type = SCMPVStrategy
-
-
-class SCMPredefinedPV(CoefficientLeaf):
-    strategy_type = SCMPVPredefinedStrategy
-
-
 class SCMPVProfile(CoefficientLeaf):
     strategy_type = SCMPVUserProfile
 
@@ -228,21 +224,27 @@ class SCMStorage(CoefficientLeaf):
     strategy_type = SCMStorageStrategy
 
 
+class ForecastSCMLoad(CoefficientLeaf):
+    strategy_type = ForecastSCMLoadStrategy
+
+
+class ForecastSCMPV(CoefficientLeaf):
+    strategy_type = ForecastSCMPVStrategy
+
+
 scm_leaf_mapping = {
     "LoadHours": SCMLoadHours,
     "LoadProfile": SCMLoadProfile,
     "Storage": SCMStorage,
-    "PV": SCMPV,
-    "PredefinedPV": SCMPredefinedPV,
+    "PV": SCMPVProfile,
     "PVProfile": SCMPVProfile
 }
 
-external_scm_leaf_mapping = {
-    "LoadHours": ExternalSCMLoadHoursStrategy,
-    "LoadProfile": ExternalSCMLoadHoursStrategy,
-    "PV": ExternalSCMPVStrategy,
-    "PredefinedPV": ExternalSCMPVStrategy,
-    "PVProfile": ExternalSCMPVStrategy
+forecast_scm_leaf_mapping = {
+    "LoadHours": ForecastSCMLoad,
+    "LoadProfile": ForecastSCMLoad,
+    "PV": ForecastSCMPV,
+    "PVProfile": ForecastSCMPV
 }
 
 forward_leaf_mapping = {

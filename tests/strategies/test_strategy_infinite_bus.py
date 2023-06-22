@@ -15,6 +15,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+# pylint: disable=no-member, redefined-outer-name, missing-function-docstring, protected-access
+# pylint: disable=too-many-instance-attributes, missing-class-docstring, unused-argument
 import os
 import sys
 from math import isclose
@@ -28,7 +30,7 @@ from gsy_framework.data_classes import Offer, Trade, BalancingOffer, Bid, Trader
 from gsy_e import constants
 from gsy_e.constants import TIME_ZONE
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
-from gsy_e.gsy_e_core.util import d3a_path
+from gsy_e.gsy_e_core.util import gsye_root_path
 from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
 
 TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
@@ -59,7 +61,7 @@ class FakeArea:
         self._past_markets = {}
         self._bids = {}
 
-    def get_future_market_from_id(self, id):
+    def get_future_market_from_id(self, _id):
         return self.test_market
 
     @property
@@ -105,6 +107,7 @@ class FakeMarket:
     def time_slot(self):
         return TIME
 
+    # pylint: disable=too-many-arguments
     def offer(self, price, energy, seller, original_price=None, time_slot=None):
         offer = Offer("id", pendulum.now(), price, energy, seller, time_slot=time_slot)
         self.created_offers.append(offer)
@@ -125,7 +128,8 @@ class FakeMarket:
         self.traded_offers.append(trade)
         return trade
 
-    def bid(self, price, energy, buyer, original_price=None, time_slot=None):
+    @staticmethod
+    def bid(price, energy, buyer, original_price=None, time_slot=None):
         bid = Bid("bid_id", pendulum.now(), price, energy, buyer,
                   time_slot=time_slot)
         return bid
@@ -145,6 +149,7 @@ def bus_test1(area_test1):
 
 
 def test_global_market_maker_rate_set_at_instantiation(area_test1):
+    # pylint: disable=unsubscriptable-object
     strategy = InfiniteBusStrategy(energy_sell_rate=35)
     strategy.area = area_test1
     strategy.event_activate()
@@ -316,7 +321,7 @@ def testing_event_market_cycle_post_offers(bus_test3, area_test3):
     bus_test3.event_market_cycle()
     assert len(area_test3.test_market.created_offers) == 1
     assert area_test3.test_market.created_offers[-1].energy == sys.maxsize
-    assert area_test3.test_market.created_offers[-1].price == float(30 * sys.maxsize)
+    assert isclose(area_test3.test_market.created_offers[-1].price, float(30 * sys.maxsize))
 
 
 @pytest.fixture()
@@ -353,7 +358,7 @@ def test_global_market_maker_rate_single_value(bus_test4):
 @pytest.fixture()
 def bus_test5(area_test1):
     c = InfiniteBusStrategy(
-        energy_rate_profile=os.path.join(d3a_path, "resources", "SAM_SF_Summer.csv"))
+        energy_rate_profile=os.path.join(gsye_root_path, "resources", "SAM_SF_Summer.csv"))
     c.area = area_test1
     c.owner = area_test1
     yield c
@@ -372,7 +377,7 @@ def test_global_market_maker_rate_profile_and_infinite_bus_selling_rate_profile(
 @pytest.fixture()
 def bus_test6(area_test1):
     c = InfiniteBusStrategy(
-        buying_rate_profile=os.path.join(d3a_path, "resources", "LOAD_DATA_1.csv"))
+        buying_rate_profile=os.path.join(gsye_root_path, "resources", "LOAD_DATA_1.csv"))
     c.area = area_test1
     c.owner = area_test1
     yield c

@@ -45,7 +45,7 @@ if TYPE_CHECKING:
     from gsy_e.models.market import MarketBase
 
 
-d3a_path = os.path.dirname(inspect.getsourcefile(gsy_e))
+gsye_root_path = os.path.dirname(inspect.getsourcefile(gsy_e))
 
 
 INTERVAL_DH_RE = rex("/^(?:(?P<days>[0-9]{1,4})[d:])?(?:(?P<hours>[0-9]{1,2})[h:])?$/")
@@ -402,7 +402,7 @@ def export_default_settings_to_json_file():
             "start_date": instance(GlobalConfig.start_date).format(gsy_e.constants.DATE_FORMAT),
     }
     all_settings = {"basic_settings": base_settings, "advanced_settings": constsettings_to_dict()}
-    settings_filename = os.path.join(d3a_path, "setup", "gsy_e_settings.json")
+    settings_filename = os.path.join(gsye_root_path, "setup", "gsy_e_settings.json")
     with open(settings_filename, "w") as settings_file:
         settings_file.write(json.dumps(all_settings, indent=2))
 
@@ -461,13 +461,6 @@ def convert_area_throughput_kVA_to_kWh(transfer_capacity_kWA, slot_length):
     """Convert area throughput frm kVA to kWh."""
     return transfer_capacity_kWA * slot_length.total_minutes() / 60.0 \
         if transfer_capacity_kWA is not None else 0.
-
-
-def get_simulation_queue_name():
-    """Get simulation queue name."""
-    listen_to_cn = os.environ.get("LISTEN_TO_CANARY_NETWORK_REDIS_QUEUE", "no") == "yes"
-    return (ConstSettings.GeneralSettings.CN_JOB_QUEUE_NAME
-            if listen_to_cn else ConstSettings.GeneralSettings.SIM_JOB_QUEUE_NAME)
 
 
 def should_read_profile_from_db(profile_uuid):

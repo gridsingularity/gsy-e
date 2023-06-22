@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Dict, Union
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.enums import HeatPumpSourceType
@@ -33,11 +33,11 @@ class HeatPumpEnergyParameters:
                  min_temp_C: float = ConstSettings.HeatPumpSettings.MIN_TEMP_C,
                  max_temp_C: float = ConstSettings.HeatPumpSettings.MAX_TEMP_C,
                  initial_temp_C: float = ConstSettings.HeatPumpSettings.INIT_TEMP_C,
-                 external_temp_C: Optional[float] = None,
-                 external_temp_profile_uuid: Optional[str] = None,
+                 external_temp_C_profile: Optional[Union[str, float, Dict]] = None,
+                 external_temp_C_profile_uuid: Optional[str] = None,
                  tank_volume_l: float = ConstSettings.HeatPumpSettings.TANK_VOL_L,
-                 consumption_kW: Optional[float] = None,
-                 consumption_profile_uuid: Optional[str] = None,
+                 consumption_kWh_profile: Optional[Union[str, float, Dict]] = None,
+                 consumption_kWh_profile_uuid: Optional[str] = None,
                  source_type: int = ConstSettings.HeatPumpSettings.SOURCE_TYPE):
 
         self._min_temp_C = min_temp_C
@@ -51,15 +51,13 @@ class HeatPumpEnergyParameters:
 
         self.state = HeatPumpState(initial_temp_C, self._slot_length)
 
-        if not consumption_profile_uuid and not consumption_kW:
-            consumption_kW = ConstSettings.HeatPumpSettings.CONSUMPTION_KW
         self._consumption_kWh: [DateTime, float] = EnergyProfile(
-            consumption_kW * 1000, consumption_profile_uuid)  # EnergyProfile requires values in W
+            consumption_kWh_profile, consumption_kWh_profile_uuid,
+            profile_type=InputProfileTypes.ENERGY_KWH)
 
-        if not external_temp_profile_uuid and not external_temp_C:
-            external_temp_C = ConstSettings.HeatPumpSettings.EXT_TEMP_C
         self._ext_temp_C: [DateTime, float] = EnergyProfile(
-            external_temp_C, external_temp_profile_uuid, profile_type=InputProfileTypes.IDENTITY)
+            external_temp_C_profile, external_temp_C_profile_uuid,
+            profile_type=InputProfileTypes.IDENTITY)
 
     def serialize(self):
         """Return dict with the current energy parameter values."""

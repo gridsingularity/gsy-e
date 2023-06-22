@@ -70,24 +70,24 @@ class StorageExternalMixin(ExternalMixin):
         super().event_activate(**kwargs)
         self.redis.sub_to_multiple_channels({
             **super().channel_dict,
-            f"{self.channel_prefix}/offer": self.offer,
-            f"{self.channel_prefix}/delete_offer": self.delete_offer,
-            f"{self.channel_prefix}/list_offers": self.list_offers,
-            f"{self.channel_prefix}/bid": self.bid,
-            f"{self.channel_prefix}/delete_bid": self.delete_bid,
-            f"{self.channel_prefix}/list_bids": self.list_bids,
+            self.channel_names.offer: self.offer,
+            self.channel_names.delete_offer: self.delete_offer,
+            self.channel_names.list_offers: self.list_offers,
+            self.channel_names.bid: self.bid,
+            self.channel_names.delete_bid: self.delete_bid,
+            self.channel_names.list_bids: self.list_bids,
         })
 
     def list_offers(self, payload: Dict) -> None:
         """Callback for list offers Redis endpoint."""
         self._get_transaction_id(payload)
-        list_offers_response_channel = f"{self.channel_prefix}/response/list_offers"
+        response_channel = self.channel_names.list_offers_response
         if not ExternalStrategyConnectionManager.check_for_connected_and_reply(
-                self.redis, list_offers_response_channel, self.connected):
+                self.redis, response_channel, self.connected):
             return
         arguments = json.loads(payload["data"])
         self.pending_requests.append(
-            IncomingRequest("list_offers", arguments, list_offers_response_channel))
+            IncomingRequest("list_offers", arguments, response_channel))
 
     def _list_offers_impl(self, arguments: Dict, response_channel: str) -> None:
         """Implementation for the list_offers callback, publish this device offers."""
@@ -109,9 +109,9 @@ class StorageExternalMixin(ExternalMixin):
     def delete_offer(self, payload: Dict) -> None:
         """Callback for delete offer Redis endpoint."""
         transaction_id = self._get_transaction_id(payload)
-        delete_offer_response_channel = f"{self.channel_prefix}/response/delete_offer"
+        response_channel = self.channel_names.delete_offer_response
         if not ExternalStrategyConnectionManager.check_for_connected_and_reply(
-                self.redis, delete_offer_response_channel, self.connected):
+                self.redis, response_channel, self.connected):
             return
         try:
             arguments = json.loads(payload["data"])
@@ -122,13 +122,13 @@ class StorageExternalMixin(ExternalMixin):
         except Exception:
             logging.exception("Error when handling delete offer request. Payload %s", payload)
             self.redis.publish_json(
-                delete_offer_response_channel,
+                response_channel,
                 {"command": "offer_delete",
                  "error": "Incorrect delete offer request. Available parameters: (offer).",
                  "transaction_id": transaction_id})
         else:
             self.pending_requests.append(
-                IncomingRequest("delete_offer", arguments, delete_offer_response_channel))
+                IncomingRequest("delete_offer", arguments, response_channel))
 
     def _delete_offer_impl(self, arguments: Dict, response_channel: str) -> None:
         """Implementation for the delete_offer callback, delete the received offer from market."""
@@ -158,9 +158,9 @@ class StorageExternalMixin(ExternalMixin):
         allowed_args = required_args.union({"replace_existing",
                                             "time_slot"})
 
-        offer_response_channel = f"{self.channel_prefix}/response/offer"
+        response_channel = self.channel_names.offer_response
         if not ExternalStrategyConnectionManager.check_for_connected_and_reply(
-                self.redis, offer_response_channel, self.connected):
+                self.redis, response_channel, self.connected):
             return
         try:
             arguments = json.loads(payload["data"])
@@ -173,7 +173,7 @@ class StorageExternalMixin(ExternalMixin):
         except Exception:
             logging.exception("Incorrect offer request. Payload %s.", payload)
             self.redis.publish_json(
-                offer_response_channel,
+                response_channel,
                 {"command": "offer",
                  "error": (
                      "Incorrect offer request. "
@@ -181,7 +181,7 @@ class StorageExternalMixin(ExternalMixin):
                  "transaction_id": transaction_id})
         else:
             self.pending_requests.append(
-                IncomingRequest("offer", arguments, offer_response_channel))
+                IncomingRequest("offer", arguments, response_channel))
 
     def can_offer_be_posted(self, time_slot: DateTime, offer_arguments: Dict):
         """Check that the energy being offered is <= than the energy available to be sold."""
@@ -231,13 +231,13 @@ class StorageExternalMixin(ExternalMixin):
     def list_bids(self, payload: Dict) -> None:
         """Callback for list bids Redis endpoint."""
         self._get_transaction_id(payload)
-        list_bids_response_channel = f"{self.channel_prefix}/response/list_bids"
+        response_channel = self.channel_names.list_bids_response
         if not ExternalStrategyConnectionManager.check_for_connected_and_reply(
-                self.redis, list_bids_response_channel, self.connected):
+                self.redis, response_channel, self.connected):
             return
         arguments = json.loads(payload["data"])
         self.pending_requests.append(
-            IncomingRequest("list_bids", arguments, list_bids_response_channel))
+            IncomingRequest("list_bids", arguments, response_channel))
 
     def _list_bids_impl(self, arguments, response_channel):
         try:
@@ -255,9 +255,9 @@ class StorageExternalMixin(ExternalMixin):
     def delete_bid(self, payload: Dict) -> None:
         """Callback for delete bid Redis endpoint."""
         transaction_id = self._get_transaction_id(payload)
-        delete_bid_response_channel = f"{self.channel_prefix}/response/delete_bid"
+        response_channel = self.channel_names.delete_bid_response
         if not ExternalStrategyConnectionManager.check_for_connected_and_reply(
-                self.redis, delete_bid_response_channel, self.connected):
+                self.redis, response_channel, self.connected):
             return
         try:
             arguments = json.loads(payload["data"])
@@ -266,7 +266,7 @@ class StorageExternalMixin(ExternalMixin):
                 raise Exception("Bid_id is not associated with any posted bid.")
         except Exception as e:
             self.redis.publish_json(
-                delete_bid_response_channel,
+                response_channel,
                 {"command": "bid_delete",
                  "error": "Incorrect delete bid request. Available parameters: (bid)."
                           f"Exception: {str(e)}",
@@ -274,7 +274,7 @@ class StorageExternalMixin(ExternalMixin):
             )
         else:
             self.pending_requests.append(
-                IncomingRequest("delete_bid", arguments, delete_bid_response_channel))
+                IncomingRequest("delete_bid", arguments, response_channel))
 
     def _delete_bid_impl(self, arguments, response_channel):
         try:
@@ -306,9 +306,9 @@ class StorageExternalMixin(ExternalMixin):
                                             "attributes",
                                             "requirements"})
 
-        bid_response_channel = f"{self.channel_prefix}/response/bid"
+        response_channel = self.channel_names.bid_response
         if not ExternalStrategyConnectionManager.check_for_connected_and_reply(
-                self.redis, bid_response_channel, self.connected):
+                self.redis, response_channel, self.connected):
             return
         try:
             arguments = json.loads(payload["data"])
@@ -320,7 +320,7 @@ class StorageExternalMixin(ExternalMixin):
 
         except Exception:
             self.redis.publish_json(
-                bid_response_channel,
+                response_channel,
                 {"command": "bid",
                  "error": (
                      "Incorrect bid request. "
@@ -328,7 +328,7 @@ class StorageExternalMixin(ExternalMixin):
                  "transaction_id": transaction_id})
         else:
             self.pending_requests.append(
-                IncomingRequest("bid", arguments, bid_response_channel))
+                IncomingRequest("bid", arguments, response_channel))
 
     def _can_bid_be_posted(self, time_slot: DateTime, bid_arguments: Dict) -> bool:
         """Check that the energy being bid is <= than the energy available to be bought."""

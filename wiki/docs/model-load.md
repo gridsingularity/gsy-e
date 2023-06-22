@@ -25,16 +25,16 @@ The Load configuration interface is shown below:
 
 To implement the load in a backend simulation, two options are available :
 
-[User configure Profile](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/load_hours.py)
+[User configure Profile](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/load_hours.py){target=_blank}
 
 ```python
 Market('Load', strategy=LoadHoursStrategy(avg_power_W=200, hrs_per_day=6,hrs_of_day=list(range(12, 18)), initial_buying_rate=0, final_buying_rate=35))
 ```
 
-[User upload Profile](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/predefined_load.py)
+[User upload Profile](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/predefined_load.py){target=_blank}
 
 ```python
-user_profile_path = os.path.join(d3a_path,"assets/load.csv")
+user_profile_path = os.path.join(gsye_root_path,"assets/load.csv")
 Market('Load', strategy=LoadProfileStrategy(daily_load_profile=user_profile_path, initial_buying_rate=0, final_buying_rate=35))
 ```
 

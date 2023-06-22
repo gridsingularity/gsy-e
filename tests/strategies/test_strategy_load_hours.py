@@ -31,7 +31,7 @@ from pendulum import DateTime, duration, today, now
 
 from gsy_e.constants import TIME_ZONE, TIME_FORMAT
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
-from gsy_e.gsy_e_core.util import d3a_path
+from gsy_e.gsy_e_core.util import gsye_root_path
 from gsy_e.models.area import Area
 from gsy_e.models.config import create_simulation_config_from_global_config
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
@@ -546,7 +546,7 @@ def test_use_market_maker_rate_parameter_is_respected(use_mmr, expected_rate):
 def test_use_market_maker_rate_parameter_is_respected_for_load_profiles(use_mmr, expected_rate):
     original_mmr = GlobalConfig.market_maker_rate
     GlobalConfig.market_maker_rate = 9
-    user_profile_path = os.path.join(d3a_path, "resources/Solar_Curve_W_sunny.csv")
+    user_profile_path = os.path.join(gsye_root_path, "resources/Solar_Curve_W_sunny.csv")
     load = DefinedLoadStrategy(
         daily_load_profile=user_profile_path,
         final_buying_rate=33,
@@ -643,7 +643,7 @@ def test_set_energy_measurement_of_last_market(utils_mock, load_hours_strategy_t
 @pytest.mark.parametrize("use_mmr, initial_buying_rate", [
     (True, 40), (False, 40)])
 def test_predefined_load_strategy_rejects_incorrect_rate_parameters(use_mmr, initial_buying_rate):
-    user_profile_path = os.path.join(d3a_path, "resources/Solar_Curve_W_sunny.csv")
+    user_profile_path = os.path.join(gsye_root_path, "resources/Solar_Curve_W_sunny.csv")
     load = DefinedLoadStrategy(
         daily_load_profile=user_profile_path,
         initial_buying_rate=initial_buying_rate,

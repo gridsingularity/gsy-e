@@ -70,12 +70,12 @@ class SmartMeterExternalMixin(ExternalMixin):
         super().event_activate(**kwargs) # noqa
         self.redis.sub_to_multiple_channels({
             **super().channel_dict,
-            f"{self.channel_prefix}/offer": self.offer,
-            f"{self.channel_prefix}/delete_offer": self.delete_offer,
-            f"{self.channel_prefix}/list_offers": self.list_offers,
-            f"{self.channel_prefix}/bid": self.bid,
-            f"{self.channel_prefix}/delete_bid": self.delete_bid,
-            f"{self.channel_prefix}/list_bids": self.list_bids,
+            self.channel_names.offer: self.offer,
+            self.channel_names.delete_offer: self.delete_offer,
+            self.channel_names.list_offers: self.list_offers,
+            self.channel_names.bid: self.bid,
+            self.channel_names.delete_bid: self.delete_bid,
+            self.channel_names.list_bids: self.list_bids,
         })
 
     def event_market_cycle(self) -> None:
@@ -110,9 +110,9 @@ class SmartMeterExternalMixin(ExternalMixin):
         required_args = {"price", "energy", "transaction_id"}
         allowed_args = required_args.union({"replace_existing",
                                             "time_slot"})
-        offer_response_channel = f"{self.channel_prefix}/response/offer"
+        response_channel = self.channel_names.offer_response
         if not ExternalStrategyConnectionManager.check_for_connected_and_reply(
-                self.redis, offer_response_channel, self.connected):
+                self.redis, response_channel, self.connected):
             return
         try:
             arguments = json.loads(payload["data"])
@@ -123,7 +123,7 @@ class SmartMeterExternalMixin(ExternalMixin):
         except Exception: # noqa
             logger.exception("Incorrect offer request. Payload %s.", payload)
             self.redis.publish_json(
-                offer_response_channel,
+                response_channel,
                 {"command": "offer",
                  "error": (
                      "Incorrect offer request. "
@@ -131,14 +131,14 @@ class SmartMeterExternalMixin(ExternalMixin):
                  "transaction_id": transaction_id})
         else:
             self.pending_requests.append(
-                IncomingRequest("offer", arguments, offer_response_channel))
+                IncomingRequest("offer", arguments, response_channel))
 
     def delete_offer(self, payload: Dict) -> None:
         """Callback for delete offer Redis endpoint."""
         transaction_id = self._get_transaction_id(payload)
-        delete_offer_response_channel = f"{self.channel_prefix}/response/delete_offer"
+        response_channel = self.channel_names.delete_offer_response
         if not ExternalStrategyConnectionManager.check_for_connected_and_reply(
-                self.redis, delete_offer_response_channel, self.connected):
+                self.redis, response_channel, self.connected):
             return
         try:
             arguments = json.loads(payload["data"])
@@ -149,24 +149,24 @@ class SmartMeterExternalMixin(ExternalMixin):
         except Exception: # noqa
             logger.exception("Error when handling delete offer request. Payload %s", payload)
             self.redis.publish_json(
-                delete_offer_response_channel,
+                response_channel,
                 {"command": "offer_delete",
                  "error": "Incorrect delete offer request. Available parameters: (offer).",
                  "transaction_id": transaction_id})
         else:
             self.pending_requests.append(
-                IncomingRequest("delete_offer", arguments, delete_offer_response_channel))
+                IncomingRequest("delete_offer", arguments, response_channel))
 
     def list_offers(self, payload: Dict) -> None:
         """Callback for list offers Redis endpoint."""
         assert self._get_transaction_id(payload)
-        list_offers_response_channel = f"{self.channel_prefix}/response/list_offers"
+        response_channel = self.channel_names.list_offers_response
         if not ExternalStrategyConnectionManager.check_for_connected_and_reply(
-                self.redis, list_offers_response_channel, self.connected):
+                self.redis, response_channel, self.connected):
             return
         arguments = json.loads(payload["data"])
         self.pending_requests.append(
-            IncomingRequest("list_offers", arguments, list_offers_response_channel))
+            IncomingRequest("list_offers", arguments, response_channel))
 
     def bid(self, payload: Dict) -> None:
         """Callback for bid Redis endpoint."""
@@ -174,9 +174,9 @@ class SmartMeterExternalMixin(ExternalMixin):
         required_args = {"price", "energy", "transaction_id"}
         allowed_args = required_args.union({"replace_existing",
                                             "time_slot"})
-        bid_response_channel = f"{self.channel_prefix}/response/bid"
+        response_channel = self.channel_names.bid_response
         if not ExternalStrategyConnectionManager.check_for_connected_and_reply(
-                self.redis, bid_response_channel, self.connected):
+                self.redis, response_channel, self.connected):
             return
         try:
             arguments = json.loads(payload["data"])
@@ -187,7 +187,7 @@ class SmartMeterExternalMixin(ExternalMixin):
             assert all(arg in allowed_args for arg in arguments.keys())
         except Exception: # noqa
             self.redis.publish_json(
-                bid_response_channel,
+                response_channel,
                 {"command": "bid",
                  "error": (
                      "Incorrect bid request. "
@@ -195,14 +195,14 @@ class SmartMeterExternalMixin(ExternalMixin):
                  "transaction_id": transaction_id})
         else:
             self.pending_requests.append(
-                IncomingRequest("bid", arguments, bid_response_channel))
+                IncomingRequest("bid", arguments, response_channel))
 
     def delete_bid(self, payload: Dict) -> None:
         """Callback for delete bid Redis endpoint."""
         transaction_id = self._get_transaction_id(payload)
-        delete_bid_response_channel = f"{self.channel_prefix}/response/delete_bid"
+        response_channel = self.channel_names.delete_bid_response
         if not ExternalStrategyConnectionManager.check_for_connected_and_reply(
-                self.redis, delete_bid_response_channel, self.connected):
+                self.redis, response_channel, self.connected):
             return
         try:
             arguments = json.loads(payload["data"])
@@ -211,7 +211,7 @@ class SmartMeterExternalMixin(ExternalMixin):
                 raise Exception("Bid_id is not associated with any posted bid.")
         except Exception as e:
             self.redis.publish_json(
-                delete_bid_response_channel,
+                response_channel,
                 {"command": "bid_delete",
                  "error": "Incorrect delete bid request. Available parameters: (bid)."
                           f"Exception: {str(e)}",
@@ -219,18 +219,18 @@ class SmartMeterExternalMixin(ExternalMixin):
             )
         else:
             self.pending_requests.append(
-                IncomingRequest("delete_bid", arguments, delete_bid_response_channel))
+                IncomingRequest("delete_bid", arguments, response_channel))
 
     def list_bids(self, payload: Dict) -> None:
         """Callback for list bids Redis endpoint."""
         assert self._get_transaction_id(payload)
-        list_bids_response_channel = f"{self.channel_prefix}/response/list_bids"
+        response_channel = self.channel_names.list_bids_response
         if not ExternalStrategyConnectionManager.check_for_connected_and_reply(
-                self.redis, list_bids_response_channel, self.connected):
+                self.redis, response_channel, self.connected):
             return
         arguments = json.loads(payload["data"])
         self.pending_requests.append(
-            IncomingRequest("list_bids", arguments, list_bids_response_channel))
+            IncomingRequest("list_bids", arguments, response_channel))
 
     def _incoming_commands_callback_selection(self, req: IncomingRequest) -> None:
         """

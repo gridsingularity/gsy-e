@@ -38,7 +38,7 @@ from gsy_e.models.strategy.finite_power_plant import FinitePowerPlant # NOQA
 
 from gsy_e.models.leaves import (
     Leaf, scm_leaf_mapping, CoefficientLeaf, forward_leaf_mapping,
-    external_scm_leaf_mapping) # NOQA
+    forecast_scm_leaf_mapping) # NOQA
 from gsy_e.models.leaves import *  # NOQA  # pylint: disable=wildcard-import
 
 logger = getLogger(__name__)
@@ -129,7 +129,7 @@ def _leaf_from_dict(description, config):
         strategy_type = description.pop("type")
         if (config.external_connection_enabled and
                 description.get("forecast_stream_enabled", False) is True):
-            leaf_type = external_scm_leaf_mapping.get(strategy_type)
+            leaf_type = forecast_scm_leaf_mapping.get(strategy_type)
         else:
             leaf_type = scm_leaf_mapping.get(strategy_type)
         if not leaf_type:

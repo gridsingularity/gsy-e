@@ -22,18 +22,18 @@ The PV configuration interface is shown in the figure below:
 
 There are two options to implement a PV in a backend:
 
-[Solar Profile](https://github.com/gridsingularity/gsy-e/blob/c2976cb4f0c8c2823ee755fa33c3efd611498ea0/src/gsy_e/models/strategy/pv.py) (for template generation profile)
+[Solar Profile](https://github.com/gridsingularity/gsy-e/blob/c2976cb4f0c8c2823ee755fa33c3efd611498ea0/src/gsy_e/models/strategy/pv.py){target=_blank} (for template generation profile)
 
 
 ```python
 Market ('H2 PV', strategy=PVStrategy(panel_count=4, initial_selling_rate=30, final_selling_rate=5, fit_to_limit=True, update_interval=duration(minutes=5)))
 ```
 
-[User Profile](https://github.com/gridsingularity/gsy-e/blob/c2976cb4f0c8c2823ee755fa33c3efd611498ea0/src/gsy_e/models/strategy/predefined_pv.py#L131-L178) (for uploaded generation profile)
+[User Profile](https://github.com/gridsingularity/gsy-e/blob/c2976cb4f0c8c2823ee755fa33c3efd611498ea0/src/gsy_e/models/strategy/predefined_pv.py#L131-L178){target=_blank} (for uploaded generation profile)
 
 
 ```python
-user_profile_path = os.path.join(d3a_path, "assets/Solar_Curve_W_sunny.csv")
+user_profile_path = os.path.join(gsye_root_path, "assets/Solar_Curve_W_sunny.csv")
 Market ('H1 PV', strategy=PVUserProfileStrategy(power_profile=user_profile_path,
                                              panel_count=))
 ```

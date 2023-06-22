@@ -22,12 +22,13 @@ from typing import TYPE_CHECKING, Dict, List
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.enums import AvailableMarketTypes, BidOfferMatchAlgoEnum, SpotMarketTypeEnum
 
-from gsy_e.gsy_e_core.myco_singleton import bid_offer_matcher
+from gsy_e.constants import ROUND_TOLERANCE
+from gsy_e.gsy_e_core.matching_engine_singleton import bid_offer_matcher
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_e.models.strategy.pv import PVStrategy
 from gsy_e.models.strategy.scm.load import SCMLoadHoursStrategy, SCMLoadProfileStrategy
-from gsy_e.models.strategy.scm.pv import SCMPVStrategy
+from gsy_e.models.strategy.scm.pv import SCMPVUserProfile
 from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
 from gsy_e.models.strategy.storage import StorageStrategy
 from gsy_e.models.strategy.heat_pump import HeatPumpStrategy
@@ -185,9 +186,9 @@ class LeafDataExporter(BaseDataExporter):
             produced = self.area.strategy.state.get_energy_production_forecast_kWh(slot, 0.0)
             return [produced, not_sold]
         if isinstance(self.area.strategy, HeatPumpStrategy):
-            return [self.area.strategy.state.get_storage_temp_C(slot),
-                    self.area.strategy.state.get_temp_decrease_K(slot),
-                    self.area.strategy.state.get_temp_increase_K(slot)
+            return [round(self.area.strategy.state.get_storage_temp_C(slot), ROUND_TOLERANCE),
+                    round(self.area.strategy.state.get_temp_decrease_K(slot), ROUND_TOLERANCE),
+                    round(self.area.strategy.state.get_temp_increase_K(slot), ROUND_TOLERANCE)
                     ]
         return []
 
@@ -376,7 +377,7 @@ class CoefficientLeafDataExporter(BaseDataExporter):
             return ["slot", "charge [kWh]", "offered [kWh]", "charge [%]"]
         if isinstance(self._area.strategy, (SCMLoadHoursStrategy, SCMLoadProfileStrategy)):
             return ["slot", "desired energy [kWh]", "deficit [kWh]"]
-        if isinstance(self._area.strategy, SCMPVStrategy):
+        if isinstance(self._area.strategy, SCMPVUserProfile):
             return ["slot", "produced [kWh]", "not sold [kWh]"]
         return []
 
@@ -395,7 +396,7 @@ class CoefficientLeafDataExporter(BaseDataExporter):
             desired = self._area.strategy.state.get_desired_energy_Wh(slot) / 1000
             # All energy is traded in SCM
             return [[slot, desired, 0.]]
-        if isinstance(self._area.strategy, SCMPVStrategy):
+        if isinstance(self._area.strategy, SCMPVUserProfile):
             not_sold = self._area.strategy.state.get_available_energy_kWh(slot)
             produced = self._area.strategy.state.get_energy_production_forecast_kWh(slot, 0.0)
             return [[slot, produced, not_sold]]

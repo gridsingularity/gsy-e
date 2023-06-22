@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
 from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy
-from gsy_e.gsy_e_core.util import d3a_path
+from gsy_e.gsy_e_core.util import gsye_root_path
 import os
 
 """
@@ -27,7 +27,7 @@ DefinedLoadStrategy Strategy requires daily_load_profile and
 final_buying_rate is optional.
 """
 
-profile_path = os.path.join(d3a_path, "resources/LOAD_DATA_1.csv")
+profile_path = os.path.join(gsye_root_path, "resources/LOAD_DATA_1.csv")
 
 
 def get_setup(config):

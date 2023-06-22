@@ -1,16 +1,17 @@
+# pylint: disable=protected-access, no-self-use
 import logging
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
+import pendulum
 import pytest
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
-from pendulum import datetime
-import pendulum
-
 from gsy_framework.enums import AvailableMarketTypes, SpotMarketTypeEnum
+from pendulum import datetime
+
 from gsy_e.gsy_e_core.enums import FORWARD_MARKET_TYPES
-from gsy_e.gsy_e_core.sim_results.endpoint_buffer import \
-    SimulationEndpointBuffer, CoefficientEndpointBuffer
+from gsy_e.gsy_e_core.sim_results.endpoint_buffer import (
+    SimulationEndpointBuffer, CoefficientEndpointBuffer)
 from gsy_e.models.area.scm_manager import SCMManager
 
 logger = logging.getLogger(__name__)
@@ -94,7 +95,7 @@ class TestSimulationEndpointBuffer:
                 "creation_time": creation_time, "time_slot": time_slot})
 
     def test_prepare_results_for_publish_creates_dict_successfully(self, general_setup):
-        area, slot_length = general_setup
+        area, _ = general_setup
         endpoint_buffer = SimulationEndpointBuffer(
             job_id="JOB_1",
             random_seed=41,
@@ -114,7 +115,6 @@ class TestSimulationEndpointBuffer:
                 "elapsed_time_seconds": 0,
                 "percentage_completed": 0,
             },
-            "bids_offers_trades": {},
             "results_area_uuids": [],
             "simulation_state": {"general": {}, "areas": {}},
             "simulation_raw_data": {},
@@ -266,6 +266,8 @@ class TestSimulationEndpointBufferForward:
             serializable_dict=lambda: {
                 "creation_time": creation_time, "time_slot": time_slot})
 
+    @patch("gsy_e.gsy_e_core.sim_results.endpoint_buffer.SimulationResultValidator."
+           "validate_simulation_raw_data", lambda self, data: True)
     def test_forward_results_are_generated(   # pylint: disable-msg=too-many-locals
             self, forward_setup):
         """Test results are being correctly generated with respect to
@@ -343,7 +345,6 @@ class TestSimulationEndpointBufferForward:
                 "elapsed_time_seconds": 0,
                 "percentage_completed": 0,
             },
-            "bids_offers_trades": {},
             "results_area_uuids": [],
             "simulation_state": {"general": {}, "areas": {}},
             "simulation_raw_data": {},
@@ -488,7 +489,9 @@ class TestSimulationEndpointBufferForward:
 
 class TestCoefficientEndpointBuffer(TestSimulationEndpointBuffer):
     """Tests for the CoefficientEndpointBuffer class."""
-    def test_update_stats_scm_updated_successfully(self, scm_setup):
+
+    @staticmethod
+    def test_update_stats_scm_updated_successfully(scm_setup):
         coefficient_area, _ = scm_setup
 
         endpoint_buffer = CoefficientEndpointBuffer(

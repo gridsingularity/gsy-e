@@ -24,6 +24,7 @@ from gsy_framework.constants_limits import DATE_TIME_FORMAT, DATE_TIME_UI_FORMAT
 from gsy_framework.constants_limits import TIME_FORMAT, DATE_FORMAT, GlobalConfig  # NOQA
 
 FLOATING_POINT_TOLERANCE = 0.00001
+ROUND_TOLERANCE = 5
 
 # Percentual standard deviation relative to the forecast energy, used to compute the (simulated)
 # real energy produced/consumed by a device.
@@ -36,7 +37,7 @@ DISPATCH_EVENTS_BOTTOM_TO_TOP = True
 # Controls how often will event tick be dispatched to external connections. Defaults to
 # 20% of the slot length
 DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 10
-DISPATCH_MYCO_EVENT_TICK_FREQUENCY_PERCENT = 2
+DISPATCH_MATCHING_ENGINE_EVENT_TICK_FREQUENCY_PERCENT = 2
 
 CONFIGURATION_ID = os.environ.get("CONFIGURATION_ID", "")
 # Controls whether the external connection is for use with the redis api client

@@ -27,22 +27,22 @@ from pendulum import datetime
 from gsy_e import setup as d3a_setup
 from gsy_e.gsy_e_core import util
 from gsy_e.gsy_e_core.cli import available_simulation_scenarios
+from gsy_e.gsy_e_core.market_counters import FutureMarketCounter
 from gsy_e.gsy_e_core.util import (retry_function,
-                                   get_simulation_queue_name, get_market_maker_rate_from_config,
+                                   get_market_maker_rate_from_config,
                                    export_default_settings_to_json_file, constsettings_to_dict,
                                    convert_str_to_pause_after_interval)
-from gsy_e.gsy_e_core.market_counters import FutureMarketCounter
 
 
 class TestD3ACoreUtil:
 
     def setup_method(self):
-        self.original_d3a_path = util.d3a_path
+        # pylint: disable=attribute-defined-outside-init
+        self.original_gsye_root_path = util.gsye_root_path
 
     def teardown_method(self):
-        util.d3a_path = self.original_d3a_path
+        util.gsye_root_path = self.original_gsye_root_path
         GlobalConfig.market_maker_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
-        os.environ.pop("LISTEN_TO_CANARY_NETWORK_REDIS_QUEUE", None)
 
     @staticmethod
     def test_validate_all_setup_scenarios_are_available():
@@ -72,14 +72,6 @@ class TestD3ACoreUtil:
         assert retry_counter == 3
 
     @staticmethod
-    def test_get_simulation_queue_name():
-        assert get_simulation_queue_name() == "exchange"
-        os.environ["LISTEN_TO_CANARY_NETWORK_REDIS_QUEUE"] = "no"
-        assert get_simulation_queue_name() == "exchange"
-        os.environ["LISTEN_TO_CANARY_NETWORK_REDIS_QUEUE"] = "yes"
-        assert get_simulation_queue_name() == "canary_network"
-
-    @staticmethod
     def test_get_market_maker_rate_from_config():
         original_mmr = GlobalConfig.market_maker_rate
         assert get_market_maker_rate_from_config(None, 2) == 2
@@ -95,21 +87,21 @@ class TestD3ACoreUtil:
 
     @staticmethod
     def test_export_default_settings_to_json_file():
-        temp_dir = tempfile.TemporaryDirectory()
-        util.d3a_path = temp_dir.name
-        os.mkdir(os.path.join(temp_dir.name, "setup"))
-        export_default_settings_to_json_file()
-        setup_dir = os.path.join(temp_dir.name, "setup")
-        assert os.path.exists(setup_dir)
-        assert set(os.listdir(setup_dir)) == {"gsy_e_settings.json"}
-        file_path = os.path.join(setup_dir, "gsy_e_settings.json")
-        file_contents = json.load(open(file_path))
-        assert file_contents["basic_settings"]["sim_duration"] == "24h"
-        assert file_contents["basic_settings"]["slot_length"] == "15m"
-        assert file_contents["basic_settings"]["tick_length"] == "15s"
-        assert file_contents["basic_settings"]["cloud_coverage"] == 0
-        assert "advanced_settings" in file_contents
-        temp_dir.cleanup()
+        with tempfile.TemporaryDirectory() as temp_dir_name:
+            util.gsye_root_path = temp_dir_name
+            os.mkdir(os.path.join(temp_dir_name, "setup"))
+            export_default_settings_to_json_file()
+            setup_dir = os.path.join(temp_dir_name, "setup")
+            assert os.path.exists(setup_dir)
+            assert set(os.listdir(setup_dir)) == {"gsy_e_settings.json"}
+            file_path = os.path.join(setup_dir, "gsy_e_settings.json")
+            with open(file_path, encoding="utf-8") as fp:
+                file_contents = json.load(fp)
+                assert file_contents["basic_settings"]["sim_duration"] == "24h"
+                assert file_contents["basic_settings"]["slot_length"] == "15m"
+                assert file_contents["basic_settings"]["tick_length"] == "15s"
+                assert file_contents["basic_settings"]["cloud_coverage"] == 0
+                assert "advanced_settings" in file_contents
 
     @staticmethod
     def test_convert_str_to_pause_after_interval():

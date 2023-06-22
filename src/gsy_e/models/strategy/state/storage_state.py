@@ -238,7 +238,8 @@ class StorageState(StateInterface):
         self._clamp_energy_to_sell_kWh([time_slot])
         self._clamp_energy_to_buy_kWh([time_slot])
         self._calculate_and_update_soc(time_slot)
-        charge = limit_float_precision(self.used_storage / self.capacity)
+        charge = (limit_float_precision(self.used_storage / self.capacity)
+                  if self.capacity > 0 else 0)
         max_value = self.capacity - self.min_allowed_soc_ratio * self.capacity
         assert self.min_allowed_soc_ratio <= charge or \
             isclose(self.min_allowed_soc_ratio, charge, rel_tol=1e-06), \
@@ -254,7 +255,8 @@ class StorageState(StateInterface):
 
     def _calculate_and_update_soc(self, time_slot: DateTime) -> None:
         """Calculate the soc of the storage and update the soc history."""
-        self.charge_history[time_slot] = 100.0 * self.used_storage / self.capacity
+        if self.capacity > 0:
+            self.charge_history[time_slot] = 100.0 * self.used_storage / self.capacity
         self.charge_history_kWh[time_slot] = self.used_storage
 
     def add_default_values_to_state_profiles(self, future_time_slots: List):
@@ -432,7 +434,7 @@ class StorageState(StateInterface):
 
     def get_soc_level(self, time_slot: DateTime) -> float:
         """Get the SOC level of the storage, in percentage units."""
-        if self.charge_history[time_slot] == "-":
+        if self.charge_history[time_slot] == "-" and self.capacity > 0:
             return self.used_storage / self.capacity
         return self.charge_history[time_slot] / 100.0
 

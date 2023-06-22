@@ -31,7 +31,7 @@ from gsy_framework.utils import generate_market_slot_list
 from parameterized import parameterized
 
 from gsy_e.constants import TIME_FORMAT, TIME_ZONE
-from gsy_e.gsy_e_core.util import d3a_path
+from gsy_e.gsy_e_core.util import gsye_root_path
 from gsy_e.models.config import create_simulation_config_from_global_config
 from gsy_e.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
 from gsy_e.models.strategy.pv import PVStrategy
@@ -541,7 +541,7 @@ def test_use_mmr_parameter_is_respected2(strategy_type, use_mmr, expected_rate):
 def test_use_mmr_parameter_is_respected_for_pv_profiles(use_mmr, expected_rate):
     original_mmr = GlobalConfig.market_maker_rate
     GlobalConfig.market_maker_rate = 13
-    user_profile_path = os.path.join(d3a_path, "resources/Solar_Curve_W_sunny.csv")
+    user_profile_path = os.path.join(gsye_root_path, "resources/Solar_Curve_W_sunny.csv")
     pv = PVUserProfileStrategy(
         power_profile=user_profile_path, initial_selling_rate=17, use_market_maker_rate=use_mmr)
     pv.area = FakeArea()

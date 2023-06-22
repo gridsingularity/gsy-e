@@ -32,7 +32,7 @@ import gsy_e.constants
 from gsy_e.gsy_e_core.bc_connection.simulation import BcSimulationCommunication
 from gsy_e.gsy_e_core.exceptions import SimulationException
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
-from gsy_e.gsy_e_core.myco_singleton import bid_offer_matcher
+from gsy_e.gsy_e_core.matching_engine_singleton import bid_offer_matcher
 from gsy_e.gsy_e_core.simulation.external_events import SimulationExternalEvents
 from gsy_e.gsy_e_core.simulation.progress_info import SimulationProgressInfo
 from gsy_e.gsy_e_core.simulation.results_manager import (
@@ -101,8 +101,9 @@ class Simulation:
         self.progress_info = SimulationProgressInfo()
         self.simulation_id = redis_job_id
 
-        self._external_events = SimulationExternalEvents(self)
+        # order matters here: self.area has to be not-None before _external_events are initiated
         self._init()
+        self._external_events = SimulationExternalEvents(self)
 
         deserialize_events_to_areas(simulation_events, self.area)
 
@@ -241,17 +242,17 @@ class Simulation:
                     log.error("Received stop command for configuration id %s and job id %s.",
                               gsy_e.constants.CONFIGURATION_ID, self.simulation_id)
                     sleep(5)
-                    self._simulation_finish_actions(slot_count)
+                    self._simulation_stopped_finish_actions(slot_count, status="stopped")
                     return
 
                 self._external_events.tick_update(self.area)
 
             self._results.update_csv_on_market_cycle(slot_no, self.area)
             self.status.handle_incremental_mode()
-        self._simulation_finish_actions(slot_count)
+        self._simulation_stopped_finish_actions(slot_count)
 
-    def _simulation_finish_actions(self, slot_count: int) -> None:
-        self.status.sim_status = "finished"
+    def _simulation_stopped_finish_actions(self, slot_count: int, status="finished") -> None:
+        self.status.sim_status = status
         self._deactivate_areas(self.area)
         self.config.external_redis_communicator.publish_aggregator_commands_responses_events()
         bid_offer_matcher.event_finish()
@@ -493,7 +494,7 @@ class CoefficientSimulation(Simulation):
 
             self._external_events.update(self.area)
 
-            self._compute_memory_info()
+            # self._compute_memory_info()
 
             self._time.handle_slowdown_and_realtime_scm(slot_no, slot_count, self.config)
 
@@ -501,17 +502,17 @@ class CoefficientSimulation(Simulation):
                 log.error("Received stop command for configuration id %s and job id %s.",
                           gsy_e.constants.CONFIGURATION_ID, self.simulation_id)
                 sleep(5)
-                self._simulation_finish_actions(slot_count)
+                self._simulation_stopped_finish_actions(slot_count, status="stopped")
                 return
 
             self._results.update_csv_files(slot_no, self.progress_info.current_slot_time,
                                            self.area, scm_manager)
             self.status.handle_incremental_mode()
 
-        self._simulation_finish_actions(slot_count)
+        self._simulation_stopped_finish_actions(slot_count)
 
-    def _simulation_finish_actions(self, slot_count: int) -> None:
-        self.status.sim_status = "finished"
+    def _simulation_stopped_finish_actions(self, slot_count: int, status="finished") -> None:
+        self.status.sim_status = status
         self._deactivate_areas(self.area)
         self.config.external_redis_communicator.publish_aggregator_commands_responses_events()
         if not self.status.stopped:

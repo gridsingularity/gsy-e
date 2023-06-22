@@ -1,6 +1,6 @@
 ##Backend Simulation Configuration
 
-In the backend, the simulation process is slightly different. There is no need to login to set up a simulation. The user first needs to download the code from our Github Repository (Installation Instructions for [Linux](linux-installation-instructions.md), [Mac](ios-installation-instructions.md) and [Windows](vm-installation-instructions.md)). In the setup-file (in Python programming language), general and [trading strategy](default-trading-strategy.md) settings can be defined. Examples can be found in the relevant [Grid Singularity GitHub](https://github.com/gridsingularity/gsy-e/tree/master/src/gsy_e/setup) folder.
+In the backend, the simulation process is slightly different. There is no need to login to set up a simulation. The user first needs to download the code from our Github Repository (Installation Instructions for [Linux](linux-installation-instructions.md), [Mac](ios-installation-instructions.md) and [Windows](vm-installation-instructions.md)). In the setup-file (in Python programming language), general and [trading strategy](default-trading-strategy.md) settings can be defined. Examples can be found in the relevant [Grid Singularity GitHub](https://github.com/gridsingularity/gsy-e/tree/master/src/gsy_e/setup){target=_blank} folder.
 
 This is the most basic skeleton for a setup-file:
 
@@ -87,7 +87,7 @@ Additionally, the user has the possibility to change the default general setting
 
 For a description of each grid component please see the **Modelling** section.
 
-The user can overwrite the configuration settings by changing variables of the [ConstSettings](https://github.com/gridsingularity/gsy-framework/blob/master/gsy_framework/constants_limits.py) class in the setup-file. This class defines the default values for various parameters (general simulation settings, market settings and energy asset configuration). For instance, the user can define multiple configuration parameters in the get_setup function by overwriting the[ ConstSettings](https://github.com/gridsingularity/gsy-framework/blob/master/gsy_framework/constants_limits.py) default values. For example, the following parameters can be set :
+The user can overwrite the configuration settings by changing variables of the [ConstSettings](https://github.com/gridsingularity/gsy-framework/blob/master/gsy_framework/constants_limits.py){target=_blank} class in the setup-file. This class defines the default values for various parameters (general simulation settings, market settings and energy asset configuration). For instance, the user can define multiple configuration parameters in the get_setup function by overwriting the[ ConstSettings](https://github.com/gridsingularity/gsy-framework/blob/master/gsy_framework/constants_limits.py){target=_blank} default values. For example, the following parameters can be set :
 
 * Market_type (if equal to 1: [One-Sided Pay-as-Offer](one-sided-pay-as-offer.md), if equal to 2 : [Two-Sided Pay-as-Bid](two-sided-pay-as-bid.md), if equal to 3 : [Two-Sided Pay-as-Clear](two-sided-pay-as-clear.md))
 * Grid_fee_type (if equal to 1: [Constant grid fee](constant-fees.md), if equal to 2 : [Percentage grid fee](percentage-fees.md))

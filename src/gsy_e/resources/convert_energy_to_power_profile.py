@@ -3,7 +3,7 @@ import argparse
 from itertools import product
 from pendulum import duration
 from gsy_framework.constants_limits import GlobalConfig
-from gsy_framework.read_user_profile import _readCSV, default_profile_dict
+from gsy_framework.read_user_profile import _read_csv, default_profile_dict
 
 
 def minute_profile_dict(val):
@@ -41,7 +41,7 @@ def convert_energy_to_power(e):
 
 
 def convert_energy_profile_to_power(input_profile, output_file):
-    profile = _readCSV(input_profile)
+    profile = _read_csv(input_profile)
     # Create a minute-resolution profile, filling the empty slots with previous values
     profile = _fill_gaps_in_profile(profile)
     GlobalConfig.sim_duration = duration(days=1) - duration(minutes=1)

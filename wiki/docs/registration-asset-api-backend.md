@@ -1,4 +1,4 @@
-*Note: If you are running the Grid Singularity exchange (currently via prior interface, D3A) using a virtual machine and [vagrant](vm-installation-instructions.md), the latest GSy-e SDK is already installed on your computer and you can skip to the Launch Simulation section below. If you are running the exchange software locally, please follow the following instructions.*
+*Note: If you are running the Grid Singularity exchange (previously callled D3A) using a virtual machine and [vagrant](vm-installation-instructions.md), the latest GSy-e SDK is already installed on your computer and you can skip to the Launch Simulation section below. If you are running the exchange software locally, please follow the following instructions.*
 
 ###Start Redis server
 
@@ -8,12 +8,12 @@ To use the API locally, your script interacts with the simulation using a local 
 redis-server /usr/local/etc/redis.conf
 ```
 
-To install redis in Ubuntu follow the instructions in this [link](https://redis.io/topics/quickstart).
+To install redis in Ubuntu follow the instructions in this [link](https://redis.io/topics/quickstart){target=_blank}.
 
 
 ###Open external connection to API for Assets
 
-In the setup file (template available [here](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/api_setup/default_community.py)), an asset must be designated as open to external connection via the API. This is controlled when setting up the simulation in the setup file by designating the ExternalStrategy for each relevant energy assets :
+In the setup file (template available [here](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/api_setup/default_community.py){target=_blank}), an asset must be designated as open to external connection via the API. This is controlled when setting up the simulation in the setup file by designating the ExternalStrategy for each relevant energy assets :
 
 ```
 Market('Family 3 children+PV+Batt',
@@ -47,12 +47,12 @@ By default, trading strategies do not allow API connections unless the `External
 
 ###Launch simulation
 
-This requires you to have the backend codebase installed on your machine to run simulations (see [Installation Instructions](linux-installation-instructions.md)). First, navigate to the Grid Singularity folder (currently still D3A) in a new terminal, then activate the Grid Singularity (currently still D3A) environment with the command:
+This requires you to have the backend codebase installed on your machine to run simulations (see [Installation Instructions](linux-installation-instructions.md)). First, navigate to the Grid Singularity folder (gsy) in a new terminal, then activate the Grid Singularity (gsy-env) environment with the command:
 ```
 workon gsy-env
 ```
 
-An template setup is already available in github and ready to be run [here](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/api_setup/default_community.py) (data available for the July 2021).
+An template setup is already available in github and ready to be run [here](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/api_setup/default_community.py){target=_blank} (data available for the July 2021).
 
 To run this simulation and wait for the API template script to execute:
 
@@ -124,6 +124,6 @@ Display critical and non-critical errors messages and general information such a
 
 Display full information on the agent (for instance all command and response, such as placing bids and offers on the market)
 
-For a video tutorial on the Asset API, please follow this [link](https://youtu.be/oCcQ6pYFd5w).
+For a video tutorial on the Asset API, please follow this [link](https://youtu.be/oCcQ6pYFd5w){target=_blank}.
 
 *We recommend that the users experiment with trading strategies, verify their data and familiarize themselves with the Grid Singularity user interface and APIs in a Collaboration environment before initiating a Canary Test Network.*

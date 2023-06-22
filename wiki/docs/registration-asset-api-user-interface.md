@@ -6,7 +6,7 @@ The Asset API is launched with a cli command. To launch the Asset API, the user 
 workon gsy-e-sdk
 ```
 
-And go to the [GSy Exchange SDK repository](https://github.com/gridsingularity/gsy-e-sdk)
+And go to the [GSy Exchange SDK repository](https://github.com/gridsingularity/gsy-e-sdk){target=_blank}
 
 ```
 cd path_to_repository/gsy-e-sdk
@@ -20,17 +20,17 @@ gsy-e-sdk run --help
 
 The arguments are :
 
-*   `base-setup-path` --> Set the base path where user's client script resides, otherwise `gsy-e-sdk/setups` is taken as default for user's client scripts. Users can provide either an absolute or a relative file path.
+*   `base-setup-path` --> Set the base path where the user's client script resides, otherwise `gsy-e-sdk/setups` is taken as default for the user's client scripts. Users can provide either an absolute or a relative file path.
 *   `setup` --> Name of user's SDK module/script.
-*   `username` --> Username of agent authorized to communicate with respective collaboration/CN.
+*   `username` --> Username of agent authorised to communicate with respective collaboration/CN.
 *   `password` --> Password of respective agent
-*   `domain-name` --> D3A domain name
-*   `web-socket` --> D3A websocket URI
-*   `simulation-id` --> UUID of the collaboration or Canary Network (CN)
-*   `simulation-config-path` --> Path to the JSON file that contains the user's collaboration/CN information. This file can be downloaded from the "Registry" page, currently still at d3a.io.
-*   `run-on-redis` --> This flag targets the local testing of the SDK, where no user authentication is required. A locally running redis server and Grid Singularity (d3a.io) simulation are needed here.
+*   `domain-name` --> Grid Singularity Exchange domain name
+*   `web-socket` --> Grid Singularity Exchange websocket URI
+*   `simulation-id` --> UUID of the collaboration or Canary Test Network
+*   `simulation-config-path` --> Path to the JSON file that contains the user's collaboration/CN information.
+*   `run-on-redis` --> This flag targets the local testing of the SDK, where no user authentication is required. A locally running redis server and a running Grid Singularity CLI simulation are needed here.
 
-The API agent can interface with a local simulation ([backend](setup-configuration.md)) or a [collaboration](collaboration.md)/[Canary Network](connect-ctn.md) ([User-Interface](https://www.d3a.io/)). There are 3 methods to parse the required information when launching the API to connect to the UI, as thoroughly explained in the text below:
+The API agent can interface with a local simulation ([backend](setup-configuration.md)) or a [collaboration](collaboration.md)/[Canary Network](connect-ctn.md) ([User-Interface](https://www.d3a.io/){target=_blank}). There are 3 methods to parse the required information when launching the API to connect to the UI, as thoroughly explained in the text below:
 
 1. Simulation configuration file
 2. CLI command
@@ -38,7 +38,7 @@ The API agent can interface with a local simulation ([backend](setup-configurati
 
 ####Simulation configuration file:
 
-The simulation configuration file is a JSON format file downloadable on the [User-Interface](https://www.d3a.io/).  It contains all the information about the simulation setup (username, simulation name and UUID, domain name, websocket domain name, global settings of the simulation and the registry, consisting of all the grid hierarchy including markets and assets and whether or not the user is connected to those). To download this file the user needs to go to the Registry page of the relevant collaboration/Canary Test Network and click on the top right edit icon and Download Exchange SDK Summary.
+The simulation configuration file is a JSON format file downloadable on the [User-Interface](https://www.d3a.io/){target=_blank}.  It contains all the information about the simulation setup (username, simulation name and UUID, domain name, websocket domain name, global settings of the simulation and the registry, consisting of all the grid hierarchy including markets and assets and whether or not the user is connected to those). To download this file the user needs to go to the Registry page of the relevant collaboration/Canary Test Network and click on the top right edit icon and Download Exchange SDK Summary.
 
 
 ![alt_text](img/api-overview-3.png)
@@ -82,7 +82,7 @@ gsy-e-sdk --log-level INFO run  --setup asset_api_template
 To interact with a locally running simulation (backend simulation), username, passwords, domain and websocket names and simulation_id are not necessary. There is only an additional flag required in the CLI command : `--run-on-redis`.
 
 ```
-d3a-api-client --log-level INFO run --setup asset_api_template --run-on-redis
+gsy-e-sdk --log-level INFO run --setup asset_api_template --run-on-redis
 ```
 
 Once the Asset SDK Script has been launched, you can click on “Run” in the Results page of your Collaboration in the User-Interface.

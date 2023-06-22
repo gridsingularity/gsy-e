@@ -24,13 +24,18 @@ from typing import Dict, List
 from gsy_framework.constants_limits import GlobalConfig
 from gsy_framework.data_classes import BidOfferMatch
 from gsy_framework.enums import AvailableMarketTypes
+from gsy_framework.redis_channels import MatchingEngineChannels
 
 import gsy_e.constants
-from gsy_e.gsy_e_core.exceptions import InvalidBidOfferPairException, MycoValidationException
+from gsy_e.gsy_e_core.exceptions import (InvalidBidOfferPairException,
+                                         MatchingEngineValidationException)
 from gsy_e.gsy_e_core.market_counters import ExternalTickCounter
-from gsy_e.gsy_e_core.redis_connections.area_market import myco_redis_communicator_factory
+from gsy_e.gsy_e_core.redis_connections.area_market import (
+    matching_engine_redis_communicator_factory)
 from gsy_e.models.market.two_sided import TwoSidedMarket
-from gsy_e.models.myco_matcher.myco_matcher_interface import MycoMatcherInterface
+from gsy_e.models.matching_engine_matcher.matching_engine_matcher_interface import (
+    MatchingEngineMatcherInterface)
+
 
 # pylint: disable=fixme
 
@@ -45,7 +50,7 @@ class ExternalMatcherEventsEnum(Enum):
 
 
 # pylint: disable=too-many-instance-attributes
-class MycoExternalMatcher(MycoMatcherInterface):
+class MatchingEngineExternalMatcher(MatchingEngineMatcherInterface):
     """Class responsible for external bids / offers matching."""
     def __init__(self):
         super().__init__()
@@ -58,20 +63,21 @@ class MycoExternalMatcher(MycoMatcherInterface):
 
         self._tick_counter = ExternalTickCounter(
             GlobalConfig.ticks_per_slot,
-            gsy_e.constants.DISPATCH_MYCO_EVENT_TICK_FREQUENCY_PERCENT
+            gsy_e.constants.DISPATCH_MATCHING_ENGINE_EVENT_TICK_FREQUENCY_PERCENT
         )
 
-        self.myco_ext_conn = None
-        self._channel_prefix = f"external-myco/{self.simulation_id}"
-        self._events_channel = f"{self._channel_prefix}/events/"
+        self.matching_engine_ext_conn = None
+        self._events_channel = MatchingEngineChannels(self.simulation_id).events
         self._setup_redis_connection()
 
     def _setup_redis_connection(self):
-        self.myco_ext_conn = myco_redis_communicator_factory()
-        self.myco_ext_conn.sub_to_multiple_channels(
-            {"external-myco/simulation-id/": self.publish_simulation_id,
-             f"{self._channel_prefix}/offers-bids/": self._publish_orders_message_buffer.append,
-             f"{self._channel_prefix}/recommendations/": self._populate_recommendations})
+        self.matching_engine_ext_conn = matching_engine_redis_communicator_factory()
+        channel_names = MatchingEngineChannels(self.simulation_id)
+        self.matching_engine_ext_conn.sub_to_multiple_channels(
+            {channel_names.simulation_id: self.publish_simulation_id,
+             channel_names.offers_bids: self._publish_orders_message_buffer.append,
+             channel_names.recommendations: self._populate_recommendations
+             })
 
     def _publish_orders(self):
         """Publish open offers and bids.
@@ -123,8 +129,8 @@ class MycoExternalMatcher(MycoMatcherInterface):
                 "bids_offers": market_orders_list_mapping,
             })
 
-            channel = f"{self._channel_prefix}/offers-bids/response/"
-            self.myco_ext_conn.publish_json(channel, response_data)
+            self.matching_engine_ext_conn.publish_json(
+                MatchingEngineChannels(self.simulation_id).response, response_data)
 
     def _populate_recommendations(self, message):
         """Receive trade recommendations and store them to be consumed in a later stage."""
@@ -138,7 +144,7 @@ class MycoExternalMatcher(MycoMatcherInterface):
         Validate recommendations and if any pair raised a blocking exception
          ie. InvalidBidOfferPairException the matching will be cancelled.
         """
-        channel = f"{self._channel_prefix}/recommendations/response/"
+        channel = MatchingEngineChannels(self.simulation_id).response
         response_data = {
             "event": ExternalMatcherEventsEnum.MATCH.value,
             "status": "success"}
@@ -147,10 +153,10 @@ class MycoExternalMatcher(MycoMatcherInterface):
         if len(recommendations) == 0:
             return
         response_data.update(
-            MycoExternalMatcherValidator.validate_and_report(self, recommendations))
+            MatchingEngineExternalMatcherValidator.validate_and_report(self, recommendations))
         if response_data["status"] != "success":
             logging.debug("All recommendations failed: %s", response_data)
-            self.myco_ext_conn.publish_json(channel, response_data)
+            self.matching_engine_ext_conn.publish_json(channel, response_data)
             self._recommendations = []
             return
 
@@ -174,18 +180,19 @@ class MycoExternalMatcher(MycoMatcherInterface):
                 recommendation["message"] = str(exception)
                 continue
         self._recommendations = []
-        self.myco_ext_conn.publish_json(channel, response_data)
+        self.matching_engine_ext_conn.publish_json(channel, response_data)
 
     def publish_simulation_id(self, _):
-        """Publish the simulation id to the redis myco client.
+        """Publish the simulation id to the redis matching engine client.
 
         At the moment the id of the simulations run by the cli is set as ""
-        however, this function guarantees that the myco is aware of the running collaboration id
-        regardless of the value set in gsy_e.
+        however, this function guarantees that the matching engine is aware of the
+        running collaboration id regardless of the value set in gsy_e.
         """
 
-        channel = "external-myco/simulation-id/response/"
-        self.myco_ext_conn.publish_json(channel, {"simulation_id": self.simulation_id})
+        self.matching_engine_ext_conn.publish_json(
+            MatchingEngineChannels(self.simulation_id).simulation_id_response,
+            {"simulation_id": self.simulation_id})
 
     def _get_markets_ids_to_markets_info_mapping(self) -> Dict[str, Dict]:
         """Map each market ID to the information of its market object.
@@ -206,8 +213,8 @@ class MycoExternalMatcher(MycoMatcherInterface):
 
     def event_tick(self, **kwargs):
         """
-        Publish the tick event to the Myco client. Should be performed after the tick event from
-        all areas has been completed.
+        Publish the tick event to the Matching Engine client. Should be performed
+        after the tick event from all areas has been completed.
         """
         current_tick_in_slot = kwargs.pop("current_tick_in_slot", 0)
         # If External matching is enabled, limit the number of ticks dispatched.
@@ -219,23 +226,26 @@ class MycoExternalMatcher(MycoMatcherInterface):
             "event": ExternalMatcherEventsEnum.TICK.value,
             "markets_info": market_id_to_market_info,
             **kwargs}
-        self.myco_ext_conn.publish_json(self._events_channel, data)
+        self.matching_engine_ext_conn.publish_json(self._events_channel, data)
         # Publish the orders of the market at the end of the tick, in order for the external
         # commands and aggregator commands to have already been processed
         self._publish_orders()
 
     def event_market_cycle(self, **kwargs):
-        """Publish the market event to the Myco client and clear finished markets cache."""
+        """
+        Publish the market event to the Matching Engine client and clear
+        finished markets cache.
+        """
 
         self.area_markets_mapping = {}  # clear finished markets
         data = {"event": ExternalMatcherEventsEnum.MARKET.value, **kwargs}
-        self.myco_ext_conn.publish_json(self._events_channel, data)
+        self.matching_engine_ext_conn.publish_json(self._events_channel, data)
 
     def event_finish(self, **kwargs):
-        """Publish the finish event to the Myco client."""
+        """Publish the finish event to the Matching Engine client."""
 
         data = {"event": ExternalMatcherEventsEnum.FINISH.value}
-        self.myco_ext_conn.publish_json(self._events_channel, data)
+        self.matching_engine_ext_conn.publish_json(self._events_channel, data)
 
     @staticmethod
     def _get_orders(market: TwoSidedMarket, filters: Dict) -> Dict:
@@ -254,32 +264,33 @@ class MycoExternalMatcher(MycoMatcherInterface):
         return orders
 
 
-class MycoExternalMatcherValidator:
+class MatchingEngineExternalMatcherValidator:
     """Class responsible for the validation of external recommendations."""
 
     # Blocking exceptions are ones that should block the matching process
-    BLOCKING_EXCEPTIONS = (MycoValidationException, )
+    BLOCKING_EXCEPTIONS = (MatchingEngineValidationException, )
 
     @staticmethod
-    def _validate_valid_dict(_: MycoExternalMatcher, recommendation: Dict):
+    def _validate_valid_dict(_: MatchingEngineExternalMatcher, recommendation: Dict):
         """Check whether the recommendation dict is valid."""
         if not BidOfferMatch.is_valid_dict(recommendation):
-            raise MycoValidationException(f"BidOfferMatch is not valid {recommendation}")
+            raise MatchingEngineValidationException(f"BidOfferMatch is not valid {recommendation}")
 
     @staticmethod
-    def _validate_market_exists(matcher: MycoExternalMatcher, recommendation: Dict):
-        """Check whether myco matcher is keeping track of the received market id"""
+    def _validate_market_exists(matcher: MatchingEngineExternalMatcher, recommendation: Dict):
+        """Check whether matching engine matcher is keeping track of the received market id"""
         market = matcher.area_markets_mapping.get(
             f"{recommendation.get('market_id')}-{recommendation.get('time_slot')}")
         if market is None:
             # The market doesn't exist
-            raise MycoValidationException(
+            raise MatchingEngineValidationException(
                 f"Market with id {recommendation.get('market_id')} "
                 f"and time slot {recommendation.get('time_slot')} doesn't exist."
                 f"{recommendation}")
 
     @staticmethod
-    def _validate_orders_exist_in_market(matcher: MycoExternalMatcher, recommendation: Dict):
+    def _validate_orders_exist_in_market(matcher: MatchingEngineExternalMatcher,
+                                         recommendation: Dict):
         """Check whether all bids/offers exist in the market."""
 
         market = matcher.area_markets_mapping.get(
@@ -293,14 +304,15 @@ class MycoExternalMatcherValidator:
                 "Not all bids and offers exist in the market.")
 
     @classmethod
-    def _validate(cls, matcher: MycoExternalMatcher, recommendation: Dict):
+    def _validate(cls, matcher: MatchingEngineExternalMatcher, recommendation: Dict):
         """Call corresponding validation methods."""
         cls._validate_valid_dict(matcher, recommendation)
         cls._validate_market_exists(matcher, recommendation)
         cls._validate_orders_exist_in_market(matcher, recommendation)
 
     @classmethod
-    def validate_and_report(cls, matcher: MycoExternalMatcher, recommendations: List) -> Dict:
+    def validate_and_report(cls, matcher: MatchingEngineExternalMatcher,
+                            recommendations: List) -> Dict:
         """Validate recommendations and return a detailed report."""
 
         response = {"status": "success", "recommendations": []}
@@ -310,7 +322,7 @@ class MycoExternalMatcherValidator:
                 response["recommendations"].append(
                     {**recommendation, "status": "success"}
                 )
-            except (MycoValidationException, InvalidBidOfferPairException) as exception:
+            except (MatchingEngineValidationException, InvalidBidOfferPairException) as exception:
                 if isinstance(exception, cls.BLOCKING_EXCEPTIONS):
                     response["status"] = "fail"
                     response[

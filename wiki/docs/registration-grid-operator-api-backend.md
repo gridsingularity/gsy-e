@@ -6,7 +6,7 @@ To use the API locally, your script interacts with the simulation using a local 
 redis-server /usr/local/etc/redis.conf
 ```
 
-To install redis in Ubuntu follow the instructions in this [link](https://redis.io/topics/quickstart).
+To install redis in Ubuntu follow the instructions in this [link](https://redis.io/topics/quickstart){target=_blank}.
 
 ###Open Markets for external cnnection
 The API supports multiple markets managed with the Grid Operator API. Access is controlled when setting up the simulation, using the `Market` and `Asset` classes’ boolean argument called external_connection_available:
@@ -22,7 +22,7 @@ If set to `True`, the market  allows all the Grid Operator API to connect to tha
 
 ###Launch simulation
 
-This requires you to have the backend codebase installed on your machine to run simulations (see [Installation Instructions](linux-installation-instructions.md)). First, navigate to the Grid Singularity folder (currently still D3A) in a new terminal, then activate the Grid Singularity (currently still D3A) environment with the command:
+This requires you to have the backend codebase installed on your machine to run simulations (see [Installation Instructions](linux-installation-instructions.md)). First, navigate to the Grid Singularity folder (gsy) in a new terminal, then activate the Grid Singularity (gsy-env) environment with the command:
 ```
 workon gsy-env
 ```
@@ -94,6 +94,6 @@ Display critical and non-critical errors messages and general information such a
 
 Display full information on the agent (for instance all command and response, such as placing bids and offers on the market)
 
-For a video tutorial on the Asset API, please follow this [link](https://youtu.be/oCcQ6pYFd5w).
+For a video tutorial on the Asset API, please follow this [link](https://youtu.be/oCcQ6pYFd5w){target=_blank}.
 
 *We recommend that the users experiment with trading strategies, verify their data and familiarize themselves with the Grid Singularity user interface and APIs in a Collaboration environment before initiating a Canary Test Network.*

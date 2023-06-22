@@ -19,16 +19,16 @@ from abc import ABC, abstractmethod
 from typing import Dict, List, Callable
 
 
-class MycoMatcherInterface(ABC):
-    """Interface for myco matchers' public methods."""
+class MatchingEngineMatcherInterface(ABC):
+    """Interface for matching engine matchers' public methods."""
     def __init__(self):
         self.area_uuid_markets_mapping: Dict[str, Dict] = {}
 
     def activate(self):
-        """Method to be called upon the activation of MycoMatcher."""
+        """Method to be called upon the activation of MatchingEngineMatcher."""
 
     def update_area_uuid_markets_mapping(self, area_uuid_markets_mapping: Dict[str, Dict]) -> None:
-        """Interface for updating the area_uuid_markets_mapping of Myco matchers."""
+        """Interface for updating the area_uuid_markets_mapping of Matching Engine matchers."""
         self.area_uuid_markets_mapping.update(area_uuid_markets_mapping)
 
     @abstractmethod
@@ -51,6 +51,8 @@ class MycoMatcherInterface(ABC):
         for market in markets:
             if not market:
                 continue
+            if market.no_new_order:
+                continue
             while True:
                 # Perform matching until all recommendations and their residuals are handled.
                 orders = market.orders_per_slot()
@@ -66,3 +68,4 @@ class MycoMatcherInterface(ABC):
                 trades_occurred = market.match_recommendations(bid_offer_pairs)
                 if not trades_occurred:
                     break
+            market.no_new_order = True

@@ -663,8 +663,10 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
         return self.area.spot_market
 
     @property
-    def spot_market_time_slot(self) -> DateTime:
+    def spot_market_time_slot(self) -> Optional[DateTime]:
         """Time slot of the current spot market"""
+        if not self.spot_market:
+            return None
         return self.spot_market.time_slot
 
     def update_offer_rates(self, market: "OneSidedMarket", updated_rate: float,

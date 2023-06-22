@@ -27,13 +27,13 @@ from gsy_e.models.area import Area
 from gsy_e.models.config import SimulationConfig
 from gsy_e.models.leaves import (
     PV, LoadHours, SmartMeter, Storage,
-    SCMPV, SCMLoadHours, SCMLoadProfile, SCMPredefinedPV, SCMPVProfile, SCMStorage)
+    SCMLoadHours, SCMLoadProfile, SCMPVProfile, SCMStorage)
 from gsy_e.models.strategy.external_strategies.load import LoadHoursExternalStrategy
 from gsy_e.models.strategy.external_strategies.pv import PVExternalStrategy
 from gsy_e.models.strategy.external_strategies.storage import StorageExternalStrategy
 from gsy_e.models.strategy.pv import PVStrategy
 from gsy_e.models.strategy.scm.load import SCMLoadHoursStrategy, SCMLoadProfileStrategy
-from gsy_e.models.strategy.scm.pv import SCMPVPredefinedStrategy, SCMPVStrategy, SCMPVUserProfile
+from gsy_e.models.strategy.scm.pv import SCMPVUserProfile
 from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
 from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
 from gsy_e.models.strategy.forward.pv import ForwardPVStrategy
@@ -67,7 +67,7 @@ def _create_config(settings=None):
             if "tick_length" in settings else GlobalConfig.tick_length,
         "market_maker_rate":
             settings.get("market_maker_rate",
-                         str(ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE)),
+                         ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE),
         "cloud_coverage": settings.get("cloud_coverage", GlobalConfig.cloud_coverage),
         "pv_user_profile": settings.get("pv_user_profile", None),
         "capacity_kW": settings.get("capacity_kW",
@@ -200,8 +200,6 @@ def test_leaf_deserialization_scm():
              "feed_in_tariff": 0.8,
              "market_maker_rate": 0.9,
              "children":[
-                 {"name": "pv1", "type": "PV", "capacity_kW": 4},
-                 {"name": "pv1", "type": "PredefinedPV", "cloud_coverage": 1},
                  {"name": "pv1", "type": "PVProfile", "power_profile": "test1.csv",
                   "power_profile_uuid": "fedcba"},
                  {"name": "load1", "type": "LoadHours", "avg_power_W": 200},
@@ -221,36 +219,29 @@ def test_leaf_deserialization_scm():
     assert recovered._marketplace_monthly_fee == 0.7
     assert recovered._feed_in_tariff == 0.8
     assert recovered.market_maker_rate == 0.9
-    assert isinstance(recovered.children[0], SCMPV)
-    assert isinstance(recovered.children[0].strategy, SCMPVStrategy)
-    assert recovered.children[0].strategy._energy_params.capacity_kW == 4
 
-    assert isinstance(recovered.children[1], SCMPredefinedPV)
-    assert isinstance(recovered.children[1].strategy, SCMPVPredefinedStrategy)
-    assert recovered.children[1].strategy._energy_params.cloud_coverage == 1
+    assert isinstance(recovered.children[0], SCMPVProfile)
+    assert isinstance(recovered.children[0].strategy, SCMPVUserProfile)
 
-    assert isinstance(recovered.children[2], SCMPVProfile)
-    assert isinstance(recovered.children[2].strategy, SCMPVUserProfile)
-
-    assert recovered.children[2].strategy._energy_params.\
+    assert recovered.children[0].strategy._energy_params.\
         energy_profile.input_profile == "test1.csv"
+    assert recovered.children[0].strategy._energy_params.\
+        energy_profile.input_profile_uuid is None
+
+    assert isinstance(recovered.children[1], SCMLoadHours)
+    assert isinstance(recovered.children[1].strategy, SCMLoadHoursStrategy)
+    assert recovered.children[1].strategy._energy_params.avg_power_W == 200
+
+    assert isinstance(recovered.children[2], SCMLoadProfile)
+    assert isinstance(recovered.children[2].strategy, SCMLoadProfileStrategy)
+    assert recovered.children[2].strategy._energy_params.\
+        energy_profile.input_profile == "test.csv"
     assert recovered.children[2].strategy._energy_params.\
         energy_profile.input_profile_uuid is None
 
-    assert isinstance(recovered.children[3], SCMLoadHours)
-    assert isinstance(recovered.children[3].strategy, SCMLoadHoursStrategy)
-    assert recovered.children[3].strategy._energy_params.avg_power_W == 200
-
-    assert isinstance(recovered.children[4], SCMLoadProfile)
-    assert isinstance(recovered.children[4].strategy, SCMLoadProfileStrategy)
-    assert recovered.children[4].strategy._energy_params.\
-        energy_profile.input_profile == "test.csv"
-    assert recovered.children[4].strategy._energy_params.\
-        energy_profile.input_profile_uuid is None
-
-    assert isinstance(recovered.children[5], SCMStorage)
-    assert isinstance(recovered.children[5].strategy, SCMStorageStrategy)
-    assert recovered.children[5].strategy._state.initial_soc == 34
+    assert isinstance(recovered.children[3], SCMStorage)
+    assert isinstance(recovered.children[3].strategy, SCMStorageStrategy)
+    assert recovered.children[3].strategy._state.initial_soc == 34
 
 
 @pytest.fixture

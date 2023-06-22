@@ -36,7 +36,7 @@ The balancing agent follows the lead of the _spot_market_trade_ of its lower hie
 
 ##Constant Parameters
 
-The following are the constant parameters related to the balancing market, with defaults available [here](https://github.com/gridsingularity/gsy-framework/blob/master/gsy_framework/constants_limits.py).
+The following are the constant parameters related to the balancing market, with defaults available [here](https://github.com/gridsingularity/gsy-framework/blob/master/gsy_framework/constants_limits.py){target=_blank}.
 
 ENABLE_BALANCING_MARKET →  (Default: False) (It enables the simulation with Balancing Market)
 
@@ -48,4 +48,4 @@ BALANCING_OFFER_SUPPLY_RATIO → (Default: 0.1) (It dictates the ratio of _spot_
 
 BALANCING_FLEXIBLE_LOADS_SUPPORT → (Default: True) (It enables [Load Strategy](consumption.md) to place _supply_balancing_offer_ (effectively curtailing it's load))
 
-Multiple examples of balancing market setup are available [here](https://github.com/gridsingularity/gsy-e/tree/master/src/gsy_e/setup/balancing_market).
+Multiple examples of balancing market setup are available [here](https://github.com/gridsingularity/gsy-e/tree/master/src/gsy_e/setup/balancing_market){target=_blank}.

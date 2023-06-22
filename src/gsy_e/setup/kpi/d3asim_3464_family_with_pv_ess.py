@@ -29,8 +29,8 @@ from gsy_e.models.strategy.storage import StorageStrategy
 def get_setup(config):
     ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS = 0
     ConstSettings.MASettings.MARKET_TYPE = 2
-    ConstSettings.MASettings.MIN_OFFER_AGE = 0
-    ConstSettings.MASettings.MIN_BID_AGE = 0
+    ConstSettings.MASettings.MIN_OFFER_AGE = 1
+    ConstSettings.MASettings.MIN_BID_AGE = 1
 
     area = Area(
         "Grid",

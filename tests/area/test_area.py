@@ -155,7 +155,7 @@ class TestArea:
 
     @staticmethod
     @patch("gsy_e.models.area.Area._consume_commands_from_aggregator", Mock())
-    @patch("gsy_e.models.area.Area._update_myco_matcher", Mock())
+    @patch("gsy_e.models.area.Area._update_matching_engine_matcher", Mock())
     @patch("gsy_e.models.area.area.bid_offer_matcher.match_recommendations")
     def test_tick(mock_match_recommendations, config):
         """Test the correct chain of function calls in the Area's tick function."""
@@ -167,7 +167,7 @@ class TestArea:
         area.children = [area_child]
         area.grid_fee_percentage = 1
 
-        manager.attach_mock(area._update_myco_matcher, "update_matcher")
+        manager.attach_mock(area._update_matching_engine_matcher, "update_matcher")
         manager.attach_mock(mock_match_recommendations, "match")
 
         ConstSettings.MASettings.MARKET_TYPE = SpotMarketTypeEnum.ONE_SIDED.value
@@ -175,7 +175,8 @@ class TestArea:
         assert manager.mock_calls == []
 
         # TWO Sided markets with internal matching, the order should be ->
-        # consume commands from aggregator -> update myco cache -> call myco clearing
+        # consume commands from aggregator -> update matching engine cache
+        # -> call matching engine clearing
         manager.reset_mock()
         ConstSettings.MASettings.MARKET_TYPE = SpotMarketTypeEnum.TWO_SIDED.value
         area.strategy = None
@@ -183,7 +184,8 @@ class TestArea:
         assert manager.mock_calls == [call.update_matcher(), call.match()]
 
         # TWO Sided markets with external matching, the order should be ->
-        # call myco clearing -> consume commands from aggregator -> update myco cache
+        # call matching engine clearing -> consume commands from aggregator
+        # -> update matching engine cache
         manager.reset_mock()
         ConstSettings.MASettings.BID_OFFER_MATCH_TYPE = BidOfferMatchAlgoEnum.EXTERNAL.value
         area.tick()

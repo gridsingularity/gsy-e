@@ -22,11 +22,12 @@ from gsy_framework.matching_algorithms import (PayAsBidMatchingAlgorithm,
 from gsy_e.gsy_e_core.market_counters import (DayForwardMarketCounter, IntraDayMarketCounter,
                                               MonthForwardMarketCounter, WeekForwardMarketCounter,
                                               YearForwardMarketCounter)
-from gsy_e.models.myco_matcher.myco_matcher_interface import MycoMatcherInterface
+from gsy_e.models.matching_engine_matcher.matching_engine_matcher_interface import \
+    MatchingEngineMatcherInterface
 
 
-class MycoInternalForwardMarketMatcher(MycoMatcherInterface):
-    """Myco matcher that deals with matching in the forward markets."""
+class MatchingEngineInternalForwardMarketMatcher(MatchingEngineMatcherInterface):
+    """MatchingEngine matcher that deals with matching in the forward markets."""
 
     def __init__(self):
         super().__init__()

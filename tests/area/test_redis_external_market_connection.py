@@ -4,12 +4,10 @@ from unittest.mock import Mock, patch, PropertyMock
 import pytest
 from gsy_framework.exceptions import GSyAreaException
 
-import gsy_e
 from gsy_e.models.area.redis_external_market_connection import RedisMarketExternalConnection
 
 
 # pylint:disable=protected-access, disable=no-self-use
-
 
 @pytest.fixture(name="market_connection")
 def redis_external_market_connection_fixture() -> "RedisMarketExternalConnection":
@@ -41,15 +39,6 @@ class TestRedisMarketExternalConnection:
         market_connection.aggregator = None
         assert not market_connection.is_aggregator_controlled
 
-    def test_channel_prefix(self, market_connection):
-        """Test the channel prefix used to publish messages."""
-        with patch("gsy_e.constants.EXTERNAL_CONNECTION_WEB", True):
-            assert market_connection.channel_prefix == \
-                   f"external/{gsy_e.constants.CONFIGURATION_ID}/{market_connection.area.uuid}"
-
-        with patch("gsy_e.constants.EXTERNAL_CONNECTION_WEB", False):
-            assert market_connection.channel_prefix == f"{market_connection.area.slug}"
-
     def test_get_transaction_id(self, market_connection):
         """Test the extraction of transaction_id from messages."""
         data = json.dumps({"transaction_id": "123"})
@@ -69,7 +58,8 @@ class TestRedisMarketExternalConnection:
         assert market_connection._register({}) is None
         assert market_connection._connected
         register_mock.assert_called_once_with(
-            market_connection._redis_communicator, market_connection.channel_prefix,
+            market_connection._redis_communicator,
+            market_connection.channel_names.register_response,
             False, "mock_transaction_id", area_uuid=market_connection.area.uuid)
 
     @patch("gsy_e.models.area.redis_external_market_connection."
@@ -82,7 +72,8 @@ class TestRedisMarketExternalConnection:
         assert market_connection._unregister({}) is None
         assert not market_connection._connected
         unregister_mock.assert_called_once_with(
-            market_connection._redis_communicator, market_connection.channel_prefix,
+            market_connection._redis_communicator,
+            market_connection.channel_names.unregister_response,
             True, "mock_transaction_id")
 
     def test_sub_to_external_channels(self, market_connection):
@@ -92,12 +83,16 @@ class TestRedisMarketExternalConnection:
         market_connection._redis_communicator.is_enabled = False
         market_connection.sub_to_external_channels()
         assert market_connection.aggregator is not None
-        prefix = market_connection.channel_prefix
-        market_connection._redis_communicator.sub_to_multiple_channels.assert_called_once_with(
-            {f"{prefix}/dso_market_stats": market_connection.dso_market_stats_callback,
-             f"{prefix}/grid_fees": market_connection.set_grid_fees_callback,
-             f"{prefix}/register_participant": market_connection._register,
-             f"{prefix}/unregister_participant": market_connection._unregister})
+        market_connection._redis_communicator.sub_to_multiple_channels.assert_called_once_with({
+            market_connection.channel_names.dso_market_stats:
+                market_connection.dso_market_stats_callback,
+            market_connection.channel_names.grid_fees:
+                market_connection.set_grid_fees_callback,
+            market_connection.channel_names.register:
+                market_connection._register,
+            market_connection.channel_names.unregister:
+                market_connection._unregister
+        })
 
         market_connection._redis_communicator.is_enabled = True
         market_connection.sub_to_external_channels()
@@ -107,7 +102,6 @@ class TestRedisMarketExternalConnection:
         """Test the set_grid_fees callback by passing a conflicting grid fee type."""
         market_connection.area.area_reconfigure_event = Mock()
         market_connection._redis_communicator = Mock()
-        response_channel = f"{market_connection.channel_prefix}/response/grid_fees"
 
         # market_connection._connected is False -> should return early
         market_connection.set_grid_fees_callback({"data": {"fee_percent": 12}})
@@ -123,7 +117,7 @@ class TestRedisMarketExternalConnection:
         assert market_connection.set_grid_fees_callback({"data": {"fee_percent": 12}}) is None
         market_connection.area.area_reconfigure_event.assert_not_called()
         market_connection._redis_communicator.publish_json.assert_called_once_with(
-            response_channel, expected_response)
+            market_connection.channel_names.grid_fees_response, expected_response)
 
         # In the case of is_aggregator_controlled = True, the callback should return the response
         with patch("gsy_e.models.area.redis_external_market_connection."
@@ -137,7 +131,6 @@ class TestRedisMarketExternalConnection:
         market_connection._connected = True
         market_connection.area.area_reconfigure_event = Mock()
         market_connection._redis_communicator = Mock()
-        response_channel = f"{market_connection.channel_prefix}/response/grid_fees"
 
         # passing fee_percent while config.grid_fee_type == 2
         market_connection.area.grid_fee_constant = None
@@ -154,7 +147,7 @@ class TestRedisMarketExternalConnection:
         market_connection.area.area_reconfigure_event.assert_called_once_with(
             grid_fee_percentage=grid_fee_percentage, grid_fee_constant=None)
         market_connection._redis_communicator.publish_json.assert_called_once_with(
-            response_channel, expected_response)
+            market_connection.channel_names.grid_fees_response, expected_response)
 
         # In the case of is_aggregator_controlled = True, the callback should return the response
         with patch("gsy_e.models.area.redis_external_market_connection."
@@ -174,7 +167,7 @@ class TestRedisMarketExternalConnection:
 
     def test_dso_market_stats_callback(self, market_connection):
         """Test the dso_market_stats_callback method."""
-        response_channel = f"{market_connection.channel_prefix}/response/dso_market_stats"
+        response_channel = market_connection.channel_names.dso_market_stats_response
         market_connection._redis_communicator = Mock()
         assert market_connection.dso_market_stats_callback({"data": {}}) is None
         market_connection._redis_communicator.assert_not_called()
@@ -220,12 +213,11 @@ class TestRedisMarketExternalConnection:
         # Dispatch to redis communicator
         market_connection.aggregator.reset_mock()
         market_connection._redis_communicator.is_enabled = True
-        event_channel = f"{market_connection.channel_prefix}/events/finish"
         with patch("gsy_e.models.area.redis_external_market_connection."
                    "RedisMarketExternalConnection.is_aggregator_controlled", False):
             market_connection.deactivate()
         market_connection._redis_communicator.publish_json.assert_called_once_with(
-            event_channel, {"event": "finish"})
+            market_connection.channel_names.finish, {"event": "finish"})
 
     def test_trigger_aggregator_commands(self, market_connection):
         """Test how trigger_aggregator_commands calls the callbacks."""
