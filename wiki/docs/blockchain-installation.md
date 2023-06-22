@@ -7,7 +7,7 @@ In the following section you will learn how to:
 - [Run the GSy DEX code using docker-compose](#run-the-gsy-dex-code-using-docker-compose)
 
 
-You will also be provided with information on [select pallets](#pallets) and choice of [primitives/data structures](#gsy-dex-primitives) to help you explore the [GSy DEX](blockchain-added-value.md) codebase.
+You will also be provided with information on [select pallets](#pallets) and choice of [primitives/data structures](#gsy-dex-primitives) to help you explore the [GSy DEX](blockchain.md) codebase.
 
 ### Setup your computer for Substrate development
 
