@@ -33,5 +33,5 @@ To create a Grid Singularity Canary Test Network, follow these steps (a video tu
 
 ![img](img/ctn-2.png)
 
-- The *Grid Operator,* once registered, has access to manage grid fees and network congestion through the [Grid Operator API](https://gridsingularity.github.io/d3a/grid-operator-api/)*.*
-- Connect live data streams to the energy exchange (see section [below](https://docs.google.com/document/d/1B1aFLsB5NqrXMnSb4fpMaN84vsXUo1LigS0zCJpZLHo/edit#heading=h.lu5xu9ls176)).
+- The *Grid Operator,* once registered, has access to manage grid fees and network congestion through the [Grid Operator API](grid-operator-api-events.md)*.*
+- Connect live data streams to the energy exchange (see section [below](connection-energy-assets.md)).
