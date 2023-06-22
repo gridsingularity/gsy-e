@@ -1,4 +1,4 @@
-For local test runs of Grid Singularity Exchange (backend simulation), [redis](https://redis.io/) is used as a communication protocol.
+For local test runs of Grid Singularity Exchange (backend simulation), [redis](https://redis.io/){target=_blank} is used as a communication protocol.
 
 ###Install Redis server
 
@@ -6,7 +6,7 @@ To install the Redis server, open a new terminal window and type:
 ```
 brew install redis
 ```
-To install redis in Ubuntu follow the instructions in this [link](https://redis.io/topics/quickstart).
+To install redis in Ubuntu follow the instructions in this [link](https://redis.io/topics/quickstart){target=_blank}.
 To start the redis instance, open a new terminal and run the following command:
 
 ```

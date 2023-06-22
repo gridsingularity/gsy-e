@@ -84,7 +84,7 @@ nav:
             - 'Launch the Asset API':
                 - 'Registration - Simulations run on the User-Interface': 'registration-asset-api-user-interface.md'
                 - 'Registration - Simulations run on the Backend': 'registration-asset-api-backend.md'
-        - 'Implement dynamic grid fees through the Grid Singlarity Grid Operator API':
+        - 'Implement dynamic grid fees through the Grid Singularity Grid Operator API':
             - 'Walkthrough': 'implement-grid-fees-walkthrough.md'
             - 'Grid Operator API.':
                 - 'Grid Operator API Events': 'grid-operator-api-events.md'
@@ -110,7 +110,7 @@ nav:
         - 'Send live data streams via the Exchange SDK': 'send-data-exchange-sdk.md'
         - 'Send live data streams via the REST API': 'send-data-rest-api.md'
 - 'Blockchain Integration':
-  - 'GSY DEX Added Value': 'blockchain-added-value.md'
+  - 'GSY DEX Added Value': 'blockchain.md'
   - 'GSy DEX System Components Overview': 'blockchain-system-components-overview.md'
   - 'GSy DEX Node Installation, Operation and Development': 'blockchain-installation.md'
 - 'References': 'references.md'

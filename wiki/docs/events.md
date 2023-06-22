@@ -29,7 +29,7 @@ Once an event is set, the user can track it on the timeline displayed at the top
 
 ##Events in Simulations run using the Backend
 
-In a [backend](https://github.com/gridsingularity/gsy-e) simulation, events need to be defined by the user in the setup files before the start of the simulation, and they are associated with a specific point in time (or duration), at which the event is triggered. An event has to be associated with a market by using the `event_list` constructor parameter for that market.
+In a [backend](https://github.com/gridsingularity/gsy-e){target=_blank} simulation, events need to be defined by the user in the setup files before the start of the simulation, and they are associated with a specific point in time (or duration), at which the event is triggered. An event has to be associated with a market by using the `event_list` constructor parameter for that market.
 
 There are four different event types, described in further detail below:
 
@@ -48,9 +48,9 @@ The term _disabled market_ means that the relevant markets and submarkets are no
 
 Examples for these events are available on the Grid Singularity GitHub:
 
-*   EnableMarketEvent: [isolated_enable_event.py](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/isolated_enable_event.py)
-*   DisableMarketEvent: [isolated_disable_event.py](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/isolated_disable_event.py)
-*   DisableIntervalMarketEvent: [disable_interval_event.py](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/disable_interval_event.py)
+*   EnableMarketEvent: [isolated_enable_event.py](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/isolated_enable_event.py){target=_blank}
+*   DisableMarketEvent: [isolated_disable_event.py](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/isolated_disable_event.py){target=_blank}
+*   DisableIntervalMarketEvent: [disable_interval_event.py](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/disable_interval_event.py){target=_blank}
 
 ###Connect/Disconnect Market Events
 
@@ -58,21 +58,21 @@ These events are similar to the enable/disable event; both have a similar API an
 
 You can find examples for these events on Grid Singularity GitHub:
 
-*   ConnectMarketEvent: [isolated_connect_event.py](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/isolated_connect_event.py)
-*   DisconnectMarketEvent: [isolated_disconnect_event.py](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/isolated_disconnect_event.py)
-*   DisconnectIntervalMarketEvent: [disconnect_interval_event.py](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/disconnect_interval_event.py)
+*   ConnectMarketEvent: [isolated_connect_event.py](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/isolated_connect_event.py){target=_blank}
+*   DisconnectMarketEvent: [isolated_disconnect_event.py](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/isolated_disconnect_event.py){target=_blank}
+*   DisconnectIntervalMarketEvent: [disconnect_interval_event.py](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/disconnect_interval_event.py){target=_blank}
 
 ###Strategy Events
 
 These events are used to change an asset’s trading strategy during the simulation runtime. These are distinct events with no interval event provided.
 
-*   Load StrategyEvent: [load_event.py](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/load_event.py)
-*   PV StrategyEvent: [pv_event.py](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/pv_event.py)
-*   Storage StrategyEvent: [storage_event.py](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/storage_event.py)
+*   Load StrategyEvent: [load_event.py](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/load_event.py){target=_blank}
+*   PV StrategyEvent: [pv_event.py](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/pv_event.py){target=_blank}
+*   Storage StrategyEvent: [storage_event.py](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/storage_event.py){target=_blank}
 
 ###Configuration Events
 
 These events are used to change the market configuration (including submarkets and assets) during runtime. A useful application for this event is to set different weather conditions for a subset of the grid. Configuration events are distinct and no interval event is provided. There are currently two configuration events:
 
-*   Cloud Coverage Event: [cloud_coverage_event.py](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/cloud_coverage_event.py)
-*   PV User Profile Event : [userprofile_pv_event.py](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/userprofile_pv_event.py)
+*   Cloud Coverage Event: [cloud_coverage_event.py](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/cloud_coverage_event.py){target=_blank}
+*   PV User Profile Event : [userprofile_pv_event.py](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/userprofile_pv_event.py){target=_blank}

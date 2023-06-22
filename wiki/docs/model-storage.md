@@ -35,7 +35,7 @@ The storage configuration interface is shown below:
 
 To implement the storage in a backend simulation one option is available:
 
-[Energy Storage System](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/storage.py)
+[Energy Storage System](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/storage.py){target=_blank}
 
 
 ```python
