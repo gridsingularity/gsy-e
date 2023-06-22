@@ -1,4 +1,4 @@
-A Matching API template script is available [here](https://github.com/gridsingularity/gsy-matching-engine-sdk/blob/master/gsy_matching_engine_sdk/setups/matching_engine_matcher.py). See the TODO flags there connect to your preferred customized clearing algorithm and to request, if desired, bids and offers from specific markets.
+A Matching API template script is available [here](https://github.com/gridsingularity/gsy-matching-engine-sdk/blob/master/gsy_matching_engine_sdk/setups/matching_engine_matcher.py){target=_blank}. See the TODO flags there connect to your preferred customized clearing algorithm and to request, if desired, bids and offers from specific markets.
 
 At the beginning of the Matching API script, the MatchingEngineMatcher class is defined as well as the on_area_map_response method, which allows the users to define the list of markets from which they want to request bids and offers from.
 
@@ -26,7 +26,7 @@ Right after, the on_market_cyce and the on_tick methods are triggered. In the la
     def on_tick(self, data):
         self.request_offers_bids(filters={})
 ```
-In the next section, the bids/offers that had been previously requested from the market are stored in the matching_data variable. The matching algorithm ([AttributedMatchingAlgorithm](https://github.com/gridsingularity/gsy-matching-engine-sdk/blob/master/gsy_matching_engine_sdk/matching_algorithms/attributed_matching_algorithm.py) in the example here) takes those data as input and outputs a list of recommendations. Each recommendation is a nested dictionary with the following structure:
+In the next section, the bids/offers that had been previously requested from the market are stored in the matching_data variable. The matching algorithm ([AttributedMatchingAlgorithm](https://github.com/gridsingularity/gsy-matching-engine-sdk/blob/master/gsy_matching_engine_sdk/matching_algorithms/attributed_matching_algorithm.py){target=_blank} in the example here) takes those data as input and outputs a list of recommendations. Each recommendation is a nested dictionary with the following structure:
 
 ```json
 [{'market_id': '0fd481d9-98af-43cd-9e98-196c1fe9877f',
@@ -69,11 +69,11 @@ The matching algorithm can be written as a separate class file and can be refere
 ```
 At the moment, there are 3 default matching algorithms available to use and to build upon:
 
-1. [Pay as Bid algorithm](https://github.com/gridsingularity/gsy-framework/blob/master/gsy_framework/matching_algorithms/pay_as_bid_matching_algorithm.py) - this clears markets continuously during the market slot following this [strategy](two-sided-pay-as-bid.md);
-2. [Pay as Clear algorithm](https://github.com/gridsingularity/gsy-framework/blob/master/gsy_framework/matching_algorithms/pay_as_clear_matching_algorithm.py) - this clears markets by ordering bids and offers and defining a single clearing price, following this [strategy](two-sided-pay-as-clear.md);
-3. [Attributed matching algorithm](https://github.com/gridsingularity/gsy-matching-engine-sdk/blob/master/gsy_matching_engine_sdk/matching_algorithms/attributed_matching_algorithm.py) - this follows the same logic as the [Pay-as-Bid clearing](https://github.com/gridsingularity/gsy-framework/blob/master/gsy_framework/matching_algorithms/pay_as_bid_matching_algorithm.py) but takes into account [degrees of freedom](degrees-of-freedom.md) such as attributes and requirements (listed as dictionaries for bids and offers):
-    - [Attributes](https://github.com/gridsingularity/d3a-api-client/blob/master/README.md#attributes) - “energy type”, currently implemented only for offers (e.g. “green” energy)
-    - [Requirements](https://github.com/gridsingularity/d3a-api-client/blob/master/README.md#requirements) - “trading partners” implemented for offers and “energy type”, “trading partners”, “energy”, and “price” implemented for bids.
+1. [Pay as Bid algorithm](https://github.com/gridsingularity/gsy-framework/blob/master/gsy_framework/matching_algorithms/pay_as_bid_matching_algorithm.py){target=_blank} - this clears markets continuously during the market slot following this [strategy](two-sided-pay-as-bid.md);
+2. [Pay as Clear algorithm](https://github.com/gridsingularity/gsy-framework/blob/master/gsy_framework/matching_algorithms/pay_as_clear_matching_algorithm.py){target=_blank} - this clears markets by ordering bids and offers and defining a single clearing price, following this [strategy](two-sided-pay-as-clear.md);
+3. [Attributed matching algorithm](https://github.com/gridsingularity/gsy-matching-engine-sdk/blob/master/gsy_matching_engine_sdk/matching_algorithms/attributed_matching_algorithm.py){target=_blank} - this follows the same logic as the [Pay-as-Bid clearing](https://github.com/gridsingularity/gsy-framework/blob/master/gsy_framework/matching_algorithms/pay_as_bid_matching_algorithm.py){target=_blank} but takes into account [degrees of freedom](degrees-of-freedom.md) such as attributes and requirements (listed as dictionaries for bids and offers):
+    - [Attributes](https://github.com/gridsingularity/d3a-api-client/blob/master/README.md#attributes){target=_blank} - “energy type”, currently implemented only for offers (e.g. “green” energy)
+    - [Requirements](https://github.com/gridsingularity/d3a-api-client/blob/master/README.md#requirements){target=_blank} - “trading partners” implemented for offers and “energy type”, “trading partners”, “energy”, and “price” implemented for bids.
 
 ```python
 def on_offers_bids_response(self, data):

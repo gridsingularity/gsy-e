@@ -10,10 +10,10 @@ At each tick of the market slot, the Asset API receives updated asset informatio
 
 When the trade occurs, trade details are sent by the Asset API. If there are unmatched bids or offers, they are not carried to the next market cycle.
 
-In order to facilitate bid and offer management and scheduling, a python file with the [class Oracle](https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/asset_api_template.py) is provided. The Oracle class acts as an information aggregator for all of the energy assets (e.g. loads, PVs and storage) managed by the user, and allows the user to post bids and offers on their behalf. Several functions are triggered for different types of [events](events.md), and can be overridden.
+In order to facilitate bid and offer management and scheduling, a python file with the [class Oracle](https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/asset_api_template.py){target=_blank} is provided. The Oracle class acts as an information aggregator for all of the energy assets (e.g. loads, PVs and storage) managed by the user, and allows the user to post bids and offers on their behalf. Several functions are triggered for different types of [events](events.md), and can be overridden.
 
 
-###Each new market slot
+### Each new market slot
 ```
 def on_market_cycle(self, market_info):
 ```
@@ -57,7 +57,7 @@ In the variable market_info the user will get a dictionary with information on t
 }
 ```
 
-###On % of market completion
+### On % of market completion
 
 ```
 def on_tick(self, tick_info):
@@ -65,7 +65,7 @@ def on_tick(self, tick_info):
 
 At each 10% of market slot completion (e.g. 10%, 20%, 30%, …), the same information as market_info will be passed, with updated asset energy requirements based on trades. This can be used to update the user’s bid or offer price at these milestones.
 
-###On event or response
+### On event or response
 
 ```
 def on_event_or_response(self, message):
@@ -73,7 +73,7 @@ def on_event_or_response(self, message):
 
 Each time the managed assets are triggered with an event or get any responses (from sending the batch commands such as trades confirmations), this information is repassed through on_event_or_response. This information can be stored locally or acted upon.
 
-###On finish
+### On finish
 
 ```
 def on_finish(self, finish_info):

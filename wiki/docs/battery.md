@@ -29,7 +29,7 @@ offer_rate = initial_selling_rate - ((initial_selling_rate - final_selling_rate)
 
 As an example, considering an initial_selling_rate of 30 cents/kWh and a final_selling_rate of 20 cents/kWh, a storage with an SOC of 1% would sell its energy at 29.9 cents/kWh, and a battery at 100% SOC would sell its energy at 20 cents/kWh.
 
-*Note: The current default setting of  the battery component is 100% energy conversion efficiency.  It is not possible to change this setting at the moment but it may be in the future versions of the software. Interested contributors may propose such additions to our open source code on [GitHub](https://github.com/gridsingularity/gsy-e).*
+*Note: The current default setting of  the battery component is 100% energy conversion efficiency.  It is not possible to change this setting at the moment but it may be in the future versions of the software. Interested contributors may propose such additions to our open source code on [GitHub](https://github.com/gridsingularity/gsy-e){target=_blank}.*
 
 ![alt_text](img/battery-advanced.png)
 

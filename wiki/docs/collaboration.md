@@ -1,6 +1,6 @@
-*Note: Collaborations are only available at Grid Singularity’s previous interface (d3a*[*.io*](https://www.d3a.io/)*) at the moment, and we will update this document as soon as the tool is migrated to the new interface.* 
+*Note: Collaborations are only available at Grid Singularity’s previous interface (d3a*[*.io*](https://www.d3a.io/){target=_blank}*) at the moment, and we will update this document as soon as the tool is migrated to the new interface.*
 
-Collaboration is a type of simulation in the [Grid Singularity ](https://www.d3a.io/)user interface that allows multiple users to participate in the same environment. They can act in a collaborative or competitive way, aiming to optimize specific metrics, for instance the cost of [energy bill](bills-traded-energy.md) or peak congestion. Users can connect through the [Grid Singularity API](APIs-introduction.md) to actively engage in the collaboration, assuming one of the following roles:
+Collaboration is a type of simulation in the [Grid Singularity ](https://www.d3a.io/){target=_blank}user interface that allows multiple users to participate in the same environment. They can act in a collaborative or competitive way, aiming to optimize specific metrics, for instance the cost of [energy bill](bills-traded-energy.md) or peak congestion. Users can connect through the [Grid Singularity API](APIs-introduction.md) to actively engage in the collaboration, assuming one of the following roles:
 
 ###Exchange Operator
 
