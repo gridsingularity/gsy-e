@@ -1451,11 +1451,11 @@
       <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-3" type="checkbox" id="nav-5-2-3">
     
     <label class="md-nav__link" for="nav-5-2-3">
-      Implement dynamic grid fees through the Grid Singlarity Grid Operator API
+      Implement dynamic grid fees through the Grid Singularity Grid Operator API
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
       <label class="md-nav__title" for="nav-5-2-3">
-        Implement dynamic grid fees through the Grid Singlarity Grid Operator API
+        Implement dynamic grid fees through the Grid Singularity Grid Operator API
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
@@ -1872,7 +1872,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../blockchain-added-value/" title="GSY DEX Added Value" class="md-nav__link">
+    <a href="../blockchain/" title="GSY DEX Added Value" class="md-nav__link">
       GSY DEX Added Value
     </a>
   </li>
@@ -2001,11 +2001,11 @@
 <p><img alt="alt_text" src="../img/model-pv-1.png" style="height:750px;width:240px" /></p>
 <h2 id="backend-configuration">Backend Configuration<a class="headerlink" href="#backend-configuration" title="Permanent link">&para;</a></h2>
 <p>There are two options to implement a PV in a backend:</p>
-<p><a href="https://github.com/gridsingularity/gsy-e/blob/c2976cb4f0c8c2823ee755fa33c3efd611498ea0/src/gsy_e/models/strategy/pv.py">Solar Profile</a> (for template generation profile)</p>
+<p><a href="https://github.com/gridsingularity/gsy-e/blob/c2976cb4f0c8c2823ee755fa33c3efd611498ea0/src/gsy_e/models/strategy/pv.py" target="_blank">Solar Profile</a> (for template generation profile)</p>
 <pre class="codehilite"><code class="language-python">Market ('H2 PV', strategy=PVStrategy(panel_count=4, initial_selling_rate=30, final_selling_rate=5, fit_to_limit=True, update_interval=duration(minutes=5)))
 </code></pre>
 
-<p><a href="https://github.com/gridsingularity/gsy-e/blob/c2976cb4f0c8c2823ee755fa33c3efd611498ea0/src/gsy_e/models/strategy/predefined_pv.py#L131-L178">User Profile</a> (for uploaded generation profile)</p>
+<p><a href="https://github.com/gridsingularity/gsy-e/blob/c2976cb4f0c8c2823ee755fa33c3efd611498ea0/src/gsy_e/models/strategy/predefined_pv.py#L131-L178" target="_blank">User Profile</a> (for uploaded generation profile)</p>
 <pre class="codehilite"><code class="language-python">user_profile_path = os.path.join(gsye_root_path, &quot;assets/Solar_Curve_W_sunny.csv&quot;)
 Market ('H1 PV', strategy=PVUserProfileStrategy(power_profile=user_profile_path,
                                              panel_count=))

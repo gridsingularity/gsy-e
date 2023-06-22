@@ -1514,11 +1514,11 @@
       <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-3" type="checkbox" id="nav-5-2-3">
     
     <label class="md-nav__link" for="nav-5-2-3">
-      Implement dynamic grid fees through the Grid Singlarity Grid Operator API
+      Implement dynamic grid fees through the Grid Singularity Grid Operator API
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
       <label class="md-nav__title" for="nav-5-2-3">
-        Implement dynamic grid fees through the Grid Singlarity Grid Operator API
+        Implement dynamic grid fees through the Grid Singularity Grid Operator API
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
@@ -1935,7 +1935,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../blockchain-added-value/" title="GSY DEX Added Value" class="md-nav__link">
+    <a href="../blockchain/" title="GSY DEX Added Value" class="md-nav__link">
       GSY DEX Added Value
     </a>
   </li>
@@ -2067,7 +2067,7 @@
 <p>At the beginning of each market slot, the <a href="../asset-api-template-script/">Asset API</a> receives markets and assets information structured in a nested dictionary according to the grid hierarchy. Each market provides statistics such as minimum, median and maximum trade rates, total energy volume traded, grid fees and each asset returns the last bills and energy volume traded in the previous market slot.</p>
 <p>At each tick of the market slot, the Asset API receives updated asset information (e.g. remaining energy to buy/sell) and can post/update/delete bids and offers.</p>
 <p>When the trade occurs, trade details are sent by the Asset API. If there are unmatched bids or offers, they are not carried to the next market cycle.</p>
-<p>In order to facilitate bid and offer management and scheduling, a python file with the <a href="https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/asset_api_template.py">class Oracle</a> is provided. The Oracle class acts as an information aggregator for all of the energy assets (e.g. loads, PVs and storage) managed by the user, and allows the user to post bids and offers on their behalf. Several functions are triggered for different types of <a href="../events/">events</a>, and can be overridden.</p>
+<p>In order to facilitate bid and offer management and scheduling, a python file with the <a href="https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/asset_api_template.py" target="_blank">class Oracle</a> is provided. The Oracle class acts as an information aggregator for all of the energy assets (e.g. loads, PVs and storage) managed by the user, and allows the user to post bids and offers on their behalf. Several functions are triggered for different types of <a href="../events/">events</a>, and can be overridden.</p>
 <h3 id="each-new-market-slot">Each new market slot<a class="headerlink" href="#each-new-market-slot" title="Permanent link">&para;</a></h3>
 <pre class="codehilite"><code>def on_market_cycle(self, market_info):
 </code></pre>

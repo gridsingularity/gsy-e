@@ -1455,11 +1455,11 @@
       <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-3" type="checkbox" id="nav-5-2-3">
     
     <label class="md-nav__link" for="nav-5-2-3">
-      Implement dynamic grid fees through the Grid Singlarity Grid Operator API
+      Implement dynamic grid fees through the Grid Singularity Grid Operator API
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
       <label class="md-nav__title" for="nav-5-2-3">
-        Implement dynamic grid fees through the Grid Singlarity Grid Operator API
+        Implement dynamic grid fees through the Grid Singularity Grid Operator API
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
@@ -1944,7 +1944,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../blockchain-added-value/" title="GSY DEX Added Value" class="md-nav__link">
+    <a href="../blockchain/" title="GSY DEX Added Value" class="md-nav__link">
       GSY DEX Added Value
     </a>
   </li>
@@ -2087,8 +2087,8 @@
 <p>The Historical Data API has been developed by Grid Singularity to allow users to retrieve the assets’ historical data in a given simulation, such as loads (consumption profiles) or generation profiles. This information can be used, for instance, by trading agents to adapt the assets’ trading settings to optimise the asset owner’s savings / revenue from these assets.</p>
 <p>This API requires the following parameters:</p>
 <ul>
-<li><em>Simulation_id</em>: This is the ID of the simulation or the Grid <a href="https://gridsingularity.github.io/gsy-e/connect-ctn/">Singularity Canary Test Network</a>, and can be found in the url on the <a href="https://gridsingularity.com/singularity-map">Grid Singularity user interface (UI)</a>  (see Fig. 1)</li>
-<li><em>Market_uuid</em>: This is the ID of the asset or market of the energy community for which the historical information is to be retrieved. It can also be found in the url on the <a href="https://gridsingularity.com/singularity-map">Grid Singularity UI</a> (see Fig. 1)</li>
+<li><em>Simulation_id</em>: This is the ID of the simulation or the Grid <a href="../connect-ctn/" target="_blank">Singularity Canary Test Network</a>, and can be found in the url on the <a href="https://gridsingularity.com/singularity-map" target="_blank">Grid Singularity user interface (UI)</a> (see Fig. 1)</li>
+<li><em>Market_uuid</em>: This is the ID of the asset or market of the energy community for which the historical information is to be retrieved. It can also be found in the url on the <a href="https://gridsingularity.com/singularity-map" target="_blank">Grid Singularity UI</a> (see Fig. 1)</li>
 <li><em>Start_time</em> and <em>end_time</em>: This is the time period for which the historical information is downloaded</li>
 </ul>
 <p>You can then connect to the API with the following URL, which divides the parameters with a slash (/):</p>
@@ -2097,7 +2097,7 @@
 <p>Grid Singularity has developed the Grid Data API to provide information about the topology of a simulated energy community, listing the relevant attributes and connections for each energy asset.</p>
 <p>This API requires the following parameters:</p>
 <ul>
-<li><em>Simulation_id</em>: This is the ID of the simulation or the Grid <a href="https://gridsingularity.github.io/gsy-e/connect-ctn/">Singularity Canary Test Network</a>, and can be found in the url on the <a href="https://gridsingularity.com/singularity-map">Grid Singularity user interface (UI)</a>  (see Fig. 1)</li>
+<li><em>Simulation_id</em>: This is the ID of the simulation or the Grid <a href="../connect-ctn/">Singularity Canary Test Network</a>, and can be found in the url on the <a href="https://gridsingularity.com/singularity-map" target="_blank">Grid Singularity user interface (UI)</a> (see Fig. 1)</li>
 </ul>
 <p>You can then connect to the API with the following URL, which divides the parameters with a slash (/):</p>
 <p><em>https://gsyweb.gridsingularity.com/external-connection/configurations/{simulation_id}/registry</em></p>
@@ -2111,17 +2111,17 @@
 </ul>
 <p>We will gradually add more data points to the response of the Grid Data API, for instance the geographic location (longitude and latitude) of each asset.</p>
 <p><img alt="alt_text" src="../img/get-simulation-data_1.png" />
-Figure 1: Screenshot of a simulation url, which includes the simulation_id and the market_uuid parameters in the <a href="https://gridsingularity.com/singularity-map">Grid Singularity UI</a></p>
+Figure 1: Screenshot of a simulation url, which includes the simulation_id and the market_uuid parameters in the <a href="https://gridsingularity.com/singularity-map" target="_blank">Grid Singularity UI</a></p>
 <h2 id="connect-to-the-data-apis">Connect to the data APIs<a class="headerlink" href="#connect-to-the-data-apis" title="Permanent link">&para;</a></h2>
 <h3 id="perform-a-request-using-postman">Perform a request using Postman<a class="headerlink" href="#perform-a-request-using-postman" title="Permanent link">&para;</a></h3>
 <p>Postman is a widely used API client that enables you to save your requests as well as share settings with others. To use Postman with this API, the first step is to create a “collection” that contains all settings needed to perform a request to the Historical Data API.</p>
 <p>To install and set up a collection on postman, please follow these steps:</p>
 <ol>
-<li>Download and install app from <a href="https://www.postman.com/downloads/">Postman</a></li>
+<li>Download and install app from <a href="https://www.postman.com/downloads/" target="_blank">Postman</a></li>
 <li>
 <p>Import attached collection:</p>
 <ul>
-<li>Download the collection file <a href="https://api.media.atlassian.com/file/f0ebe667-59bd-494c-baba-d6a21e9ad730/binary?token=eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJjZGM0ZmNjYS1kMzc5LTRlMmMtOGM4YS02OGI5MjY4OWExNTYiLCJhY2Nlc3MiOnsidXJuOmZpbGVzdG9yZTpmaWxlOmYwZWJlNjY3LTU5YmQtNDk0Yy1iYWJhLWQ2YTIxZTlhZDczMCI6WyJyZWFkIl19LCJleHAiOjE2NTg1ODAzMzQsIm5iZiI6MTY1ODQ5NzQxNH0.MGCG6Dc-VKD7_Dn8y2eiT3LlahLzjzr-TkxEcdIxUM4&amp;client=cdc4fcca-d379-4e2c-8c8a-68b92689a156&amp;name=historical_data_api_postman_collection_20210722.postman_collection.json">here</a>.</li>
+<li>Download the collection file <a href="https://api.media.atlassian.com/file/f0ebe667-59bd-494c-baba-d6a21e9ad730/binary?token=eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJjZGM0ZmNjYS1kMzc5LTRlMmMtOGM4YS02OGI5MjY4OWExNTYiLCJhY2Nlc3MiOnsidXJuOmZpbGVzdG9yZTpmaWxlOmYwZWJlNjY3LTU5YmQtNDk0Yy1iYWJhLWQ2YTIxZTlhZDczMCI6WyJyZWFkIl19LCJleHAiOjE2NTg1ODAzMzQsIm5iZiI6MTY1ODQ5NzQxNH0.MGCG6Dc-VKD7_Dn8y2eiT3LlahLzjzr-TkxEcdIxUM4&amp;client=cdc4fcca-d379-4e2c-8c8a-68b92689a156&amp;name=historical_data_api_postman_collection_20210722.postman_collection.json" target="_blank">here</a>.</li>
 <li>Go to <em>File</em> &gt; <em>Import</em> and click on <em>Upload Files</em>, select the collection file that you just downloaded and click on <em>Import</em>.</li>
 </ul>
 <p><a href="https://www.youtube.com/watch?v=i1Xy6RYOv_o"><img alt="VIDEO" src="https://img.youtube.com/vi/i1Xy6RYOv_o/0.jpg" /></a></p>

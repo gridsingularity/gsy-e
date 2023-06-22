@@ -1451,11 +1451,11 @@
       <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-3" type="checkbox" id="nav-5-2-3">
     
     <label class="md-nav__link" for="nav-5-2-3">
-      Implement dynamic grid fees through the Grid Singlarity Grid Operator API
+      Implement dynamic grid fees through the Grid Singularity Grid Operator API
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
       <label class="md-nav__title" for="nav-5-2-3">
-        Implement dynamic grid fees through the Grid Singlarity Grid Operator API
+        Implement dynamic grid fees through the Grid Singularity Grid Operator API
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
@@ -1872,7 +1872,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../blockchain-added-value/" title="GSY DEX Added Value" class="md-nav__link">
+    <a href="../blockchain/" title="GSY DEX Added Value" class="md-nav__link">
       GSY DEX Added Value
     </a>
   </li>
@@ -1988,22 +1988,22 @@
 <h2 id="user-interface-configuration">User Interface Configuration<a class="headerlink" href="#user-interface-configuration" title="Permanent link">&para;</a></h2>
 <p>The following parameters can be configured:</p>
 <ul>
-<li><strong>Name</strong>: Must be unique. </li>
+<li><strong>Name</strong>: Must be unique.</li>
 <li><strong>Energy rate</strong>: Selling price of the power plant in cents/kWh.</li>
 <li><strong>Maximum available power</strong>: Maximum power that the power plant can supply in kW (in the backend this parameter can also be set based on an uploaded profile).</li>
 </ul>
-<p>The configuration interface is shown below: </p>
+<p>The configuration interface is shown below:</p>
 <p><img alt="alt_text" src="../img/model-power-plant-1.png" style="height:450px;width:275px" /></p>
 <h2 id="backend-configuration">Backend Configuration<a class="headerlink" href="#backend-configuration" title="Permanent link">&para;</a></h2>
-<p>To implement the power plant in a backend simulation one option is available:  </p>
-<p><a href="https://github.com/gridsingularity/d3a/blob/54d76a47db04062aa2564826b5da8e637d6c9185/src/d3a/models/strategy/finite_power_plant.py#L25">Finite Power Plant</a></p>
+<p>To implement the power plant in a backend simulation one option is available:</p>
+<p><a href="https://github.com/gridsingularity/d3a/blob/54d76a47db04062aa2564826b5da8e637d6c9185/src/d3a/models/strategy/finite_power_plant.py#L25" target="_blank">Finite Power Plant</a></p>
 <pre class="codehilite"><code class="language-python">profile_kW = {
     0: 0.1,
     8: 0.15,
     12: 0.2,
     19: 0.15,
     22: 0.1
-}  
+}
 Market (&quot;Power Plant', strategy=FinitePowerPlant(energy_rate=31.3, max_available_power_kW=profile_kW))
 </code></pre>
                 

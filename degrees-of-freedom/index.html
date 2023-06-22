@@ -1456,11 +1456,11 @@
       <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-3" type="checkbox" id="nav-5-2-3">
     
     <label class="md-nav__link" for="nav-5-2-3">
-      Implement dynamic grid fees through the Grid Singlarity Grid Operator API
+      Implement dynamic grid fees through the Grid Singularity Grid Operator API
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
       <label class="md-nav__title" for="nav-5-2-3">
-        Implement dynamic grid fees through the Grid Singlarity Grid Operator API
+        Implement dynamic grid fees through the Grid Singularity Grid Operator API
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
@@ -1877,7 +1877,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../blockchain-added-value/" title="GSY DEX Added Value" class="md-nav__link">
+    <a href="../blockchain/" title="GSY DEX Added Value" class="md-nav__link">
       GSY DEX Added Value
     </a>
   </li>
@@ -1953,8 +1953,8 @@
                 
                   <h1>Degrees of Freedom</h1>
                 
-                <p>Through the Grid Singularity Exchange, and as permitted by local legislation, users can enjoy enhanced <strong>degrees of freedom</strong>, or <strong>choices to trade or share energy based on a set of preferences</strong>, such as energy quantity, price, source or preferred trading partner. The degrees of freedom are a key functionality of the <a href="https://gridsingularity.medium.com/discussion-paper-grid-singularitys-implementation-of-symbiotic-energy-markets-bd3954af43c8">Symbiotic Energy Market</a>, a future decentralised market design we aim to enable to the extent that legislation in relevant markets allows people to have more energy choices. A user might be interested to set trading preferences in order to prioritise consumption of green energy (i.e. solar, wind) over grey energy (i.e. coal) or in order to buy or sell energy directly to a friend or family member, for example.</p>
-<p>The <a href="../market-agent/">bids and offers</a> for an energy asset include a set of attributes and requirements that reflect its owner’s trading preferences. <strong>Attributes</strong> are parameters currently supported only for offers, that describe the energy type of the offer posted, which is commonly associated with the energy source (e.g. PV, Wind, Hydro, Biomass, etc…). On the other hand, <strong>requirements</strong> are parameters associated with both bids and offers, and represent the trading preferences of the users. The currently supported requirements are the following:</p>
+                <p>Through the Grid Singularity Exchange, and as permitted by local legislation, users can enjoy enhanced degrees of freedom, or choices to trade or share energy based on a set of preferences, such as energy quantity, price, source or preferred trading partner. The degrees of freedom are a key functionality of the <a href="https://gridsingularity.medium.com/discussion-paper-grid-singularitys-implementation-of-symbiotic-energy-markets-bd3954af43c8" target="_blank">Symbiotic Energy Market</a>, a future decentralised market design we aim to enable to the extent that legislation in relevant markets allows people to have more energy choices. The implementation of a decentralised version of the Grid Singularity Exchange (GSy DEX) is described <a href="../blockchain/">here</a>.</p>
+<p>A user might be interested to set trading preferences in order to prioritise consumption of green energy (i.e. solar, wind) over grey energy (i.e. coal) or in order to buy or sell energy directly to a friend or family member, for example.The <a href="../market-agent/">bids and offers</a> for an energy asset include a set of attributes and requirements that reflect its owner’s trading preferences. Attributes are parameters currently supported only for offers, that describe the energy type of the offer posted, which is commonly associated with the energy source (e.g. PV, Wind, Hydro, Biomass, etc…). On the other hand, requirements are parameters associated with both bids and offers, and represent the trading preferences of the users. The currently supported requirements are the following:</p>
 <ul>
 <li>Offers:<ul>
 <li>Preferred trading partners: community participants the users wish to sell energy to;</li>
@@ -1968,14 +1968,16 @@
 </ul>
 </li>
 </ul>
-<p>Naturally, attributes and requirements can be aggregated/grouped in different combinations to express customised trading preferences. Below is an example of a bid and offer with attributes and requirements (figure 3.22). The bid submits three sets of conditions that must be interpreted as OR statements, i.e. each condition must be assessed individually and each requirement of the condition must be fulfilled. In this example, the Consumer desires to buy up to 1.0 kWh from their Mom for a maximum of 28 cents OR up to 1.0 kWh of solar energy for a maximum of 25 cents OR up to 0.5 kWh of energy from any source for a maximum of 20 cents. The Producer has 0.8 kWh of solar energy to sell for no less than 21 cents.</p>
-<p>In this case, the second condition is fulfilled by the offer, thus the two orders are successfully matched:
-- The energy source (solar) is the same in the bid and the offer;
-- The energy to be traded results in 0.8 kWh;
-- The trading price can range between 21 and 25 cents and will be determined by the matching algorithm in place.</p>
+<p>Naturally, attributes and requirements can be aggregated/grouped in different combinations to express customised trading preferences. The figure below displays an example of a bid and offer with attributes and requirements. The bid submits three sets of conditions that must be interpreted as OR statements, i.e. each condition must be assessed individually and each requirement of the condition must be fulfilled. In this example, the Consumer desires to buy up to 1.0 kWh from their Mom for a maximum of 28 cents OR up to 1.0 kWh of solar energy for a maximum of 25 cents OR up to 0.5 kWh of energy from any source for a maximum of 20 cents. The Producer has 0.8 kWh of solar energy to sell for no less than 21 cents.</p>
+<p>In this case, the second condition is fulfilled by the offer, thus the two orders are successfully matched:</p>
+<ul>
+<li>The energy source (solar) is the same in the bid and the offer;</li>
+<li>The energy to be traded results in 0.8 kWh;</li>
+<li>The trading price can range between 21 and 25 cents and will be determined by the matching algorithm in place.</li>
+</ul>
 <p><img alt="alt_text" src="../img/degrees-of-freedom.png" /></p>
 <p><strong><em>Figure 3.22</em></strong>. <em>Example of a bid and offer with attributes and requirements.</em></p>
-<p>Matching algorithms parse the orderbook and submit proposed bid and offer matches to the Grid Singularity Exchange through the <a href="../matching-api-walkthrough/">Matching API</a>. A verification function, integrated into the exchange code, confirms that the attributes of the proposed bid and offer match satisfies each other’s respective requirements. The verification function accepts a bid / offer pair as input and, if the requirements are met, a trade is created. Otherwise, the trade is rejected.</p>
+<p>The <a href="../blockchain-system-components-overview/">GSy Matching Engine</a> parses the order book and submits proposed bids and offers matches to the Grid Singularity Exchange via the Matching API. A verification function, integrated into the <a href="../blockchain/">exchange</a>, confirms that the attributes of the proposed bid and offer match satisfies each other’s respective requirements. The verification function accepts a bid / offer pair as input and, if the requirements are met, a trade is created. Otherwise, the trade is rejected.</p>
 <p>Multi-attributed bids and offers are submitted through Grid Singularity’s existing <a href="../configure-trading-strategies-walkthrough/">Asset API</a>. For more information on how to add attributes and requirements to bids and offers by using the Asset API, please follow <a href="../matching-api-template-script/">this link</a>.</p>
                 
                   

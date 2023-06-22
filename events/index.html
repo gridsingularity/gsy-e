@@ -1530,11 +1530,11 @@
       <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-3" type="checkbox" id="nav-5-2-3">
     
     <label class="md-nav__link" for="nav-5-2-3">
-      Implement dynamic grid fees through the Grid Singlarity Grid Operator API
+      Implement dynamic grid fees through the Grid Singularity Grid Operator API
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
       <label class="md-nav__title" for="nav-5-2-3">
-        Implement dynamic grid fees through the Grid Singlarity Grid Operator API
+        Implement dynamic grid fees through the Grid Singularity Grid Operator API
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
@@ -1951,7 +1951,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../blockchain-added-value/" title="GSY DEX Added Value" class="md-nav__link">
+    <a href="../blockchain/" title="GSY DEX Added Value" class="md-nav__link">
       GSY DEX Added Value
     </a>
   </li>
@@ -2117,7 +2117,7 @@
 <p><img alt="alt_text" src="../img/events-5.png" style="height:50px;width:50px" />
  whenever multiple events have been executed at the same time</p>
 <h2 id="events-in-simulations-run-using-the-backend">Events in Simulations run using the Backend<a class="headerlink" href="#events-in-simulations-run-using-the-backend" title="Permanent link">&para;</a></h2>
-<p>In a <a href="https://github.com/gridsingularity/gsy-e">backend</a> simulation, events need to be defined by the user in the setup files before the start of the simulation, and they are associated with a specific point in time (or duration), at which the event is triggered. An event has to be associated with a market by using the <code>event_list</code> constructor parameter for that market.</p>
+<p>In a <a href="https://github.com/gridsingularity/gsy-e" target="_blank">backend</a> simulation, events need to be defined by the user in the setup files before the start of the simulation, and they are associated with a specific point in time (or duration), at which the event is triggered. An event has to be associated with a market by using the <code>event_list</code> constructor parameter for that market.</p>
 <p>There are four different event types, described in further detail below:</p>
 <ul>
 <li>Add/Remove Market Events</li>
@@ -2131,30 +2131,30 @@
 <p>The term <em>disabled market</em> means that the relevant markets and submarkets are not performing any trading, and are hence inactive in the simulation for the time that the market is disabled. Once enabled, the relevant market and its submarkets will start to operate.</p>
 <p>Examples for these events are available on the Grid Singularity GitHub:</p>
 <ul>
-<li>EnableMarketEvent: <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/isolated_enable_event.py">isolated_enable_event.py</a></li>
-<li>DisableMarketEvent: <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/isolated_disable_event.py">isolated_disable_event.py</a></li>
-<li>DisableIntervalMarketEvent: <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/disable_interval_event.py">disable_interval_event.py</a></li>
+<li>EnableMarketEvent: <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/isolated_enable_event.py" target="_blank">isolated_enable_event.py</a></li>
+<li>DisableMarketEvent: <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/isolated_disable_event.py" target="_blank">isolated_disable_event.py</a></li>
+<li>DisableIntervalMarketEvent: <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/disable_interval_event.py" target="_blank">disable_interval_event.py</a></li>
 </ul>
 <h3 id="connectdisconnect-market-events">Connect/Disconnect Market Events<a class="headerlink" href="#connectdisconnect-market-events" title="Permanent link">&para;</a></h3>
 <p>These events are similar to the enable/disable event; both have a similar API and both are used for removing a market from the grid. The difference is that the Connect/Disconnect events are decoupling the relevant submarkets and assets from the main grid. When the event is enabled, there will be two independent grids trading energy internally, but not with each other. This is contrary to enable/disable events, where the subtree is not performing any trades. This can simulate grids that are abruptly decoupled from the main grid, but manage to self-sustain their assets by continuing to trade energy even after they are disconnected from the main grid.</p>
 <p>You can find examples for these events on Grid Singularity GitHub:</p>
 <ul>
-<li>ConnectMarketEvent: <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/isolated_connect_event.py">isolated_connect_event.py</a></li>
-<li>DisconnectMarketEvent: <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/isolated_disconnect_event.py">isolated_disconnect_event.py</a></li>
-<li>DisconnectIntervalMarketEvent: <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/disconnect_interval_event.py">disconnect_interval_event.py</a></li>
+<li>ConnectMarketEvent: <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/isolated_connect_event.py" target="_blank">isolated_connect_event.py</a></li>
+<li>DisconnectMarketEvent: <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/isolated_disconnect_event.py" target="_blank">isolated_disconnect_event.py</a></li>
+<li>DisconnectIntervalMarketEvent: <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/disconnect_interval_event.py" target="_blank">disconnect_interval_event.py</a></li>
 </ul>
 <h3 id="strategy-events">Strategy Events<a class="headerlink" href="#strategy-events" title="Permanent link">&para;</a></h3>
 <p>These events are used to change an asset’s trading strategy during the simulation runtime. These are distinct events with no interval event provided.</p>
 <ul>
-<li>Load StrategyEvent: <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/load_event.py">load_event.py</a></li>
-<li>PV StrategyEvent: <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/pv_event.py">pv_event.py</a></li>
-<li>Storage StrategyEvent: <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/storage_event.py">storage_event.py</a></li>
+<li>Load StrategyEvent: <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/load_event.py" target="_blank">load_event.py</a></li>
+<li>PV StrategyEvent: <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/pv_event.py" target="_blank">pv_event.py</a></li>
+<li>Storage StrategyEvent: <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/storage_event.py" target="_blank">storage_event.py</a></li>
 </ul>
 <h3 id="configuration-events">Configuration Events<a class="headerlink" href="#configuration-events" title="Permanent link">&para;</a></h3>
 <p>These events are used to change the market configuration (including submarkets and assets) during runtime. A useful application for this event is to set different weather conditions for a subset of the grid. Configuration events are distinct and no interval event is provided. There are currently two configuration events:</p>
 <ul>
-<li>Cloud Coverage Event: <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/cloud_coverage_event.py">cloud_coverage_event.py</a></li>
-<li>PV User Profile Event : <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/userprofile_pv_event.py">userprofile_pv_event.py</a></li>
+<li>Cloud Coverage Event: <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/cloud_coverage_event.py" target="_blank">cloud_coverage_event.py</a></li>
+<li>PV User Profile Event : <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/userprofile_pv_event.py" target="_blank">userprofile_pv_event.py</a></li>
 </ul>
                 
                   

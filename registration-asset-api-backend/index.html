@@ -1588,11 +1588,11 @@
       <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-3" type="checkbox" id="nav-5-2-3">
     
     <label class="md-nav__link" for="nav-5-2-3">
-      Implement dynamic grid fees through the Grid Singlarity Grid Operator API
+      Implement dynamic grid fees through the Grid Singularity Grid Operator API
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
       <label class="md-nav__title" for="nav-5-2-3">
-        Implement dynamic grid fees through the Grid Singlarity Grid Operator API
+        Implement dynamic grid fees through the Grid Singularity Grid Operator API
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
@@ -2009,7 +2009,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../blockchain-added-value/" title="GSY DEX Added Value" class="md-nav__link">
+    <a href="../blockchain/" title="GSY DEX Added Value" class="md-nav__link">
       GSY DEX Added Value
     </a>
   </li>
@@ -2215,9 +2215,9 @@
 <pre class="codehilite"><code>redis-server /usr/local/etc/redis.conf
 </code></pre>
 
-<p>To install redis in Ubuntu follow the instructions in this <a href="https://redis.io/topics/quickstart">link</a>.</p>
+<p>To install redis in Ubuntu follow the instructions in this <a href="https://redis.io/topics/quickstart" target="_blank">link</a>.</p>
 <h3 id="open-external-connection-to-api-for-assets">Open external connection to API for Assets<a class="headerlink" href="#open-external-connection-to-api-for-assets" title="Permanent link">&para;</a></h3>
-<p>In the setup file (template available <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/api_setup/default_community.py">here</a>), an asset must be designated as open to external connection via the API. This is controlled when setting up the simulation in the setup file by designating the ExternalStrategy for each relevant energy assets :</p>
+<p>In the setup file (template available <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/api_setup/default_community.py" target="_blank">here</a>), an asset must be designated as open to external connection via the API. This is controlled when setting up the simulation in the setup file by designating the ExternalStrategy for each relevant energy assets :</p>
 <pre class="codehilite"><code>Market('Family 3 children+PV+Batt',
                          [
                              Asset('Load 3 L17', strategy=LoadProfileExternalStrategy(
@@ -2249,7 +2249,7 @@ initial_selling_rate=30,                                                        
 <pre class="codehilite"><code>workon gsy-env
 </code></pre>
 
-<p>An template setup is already available in github and ready to be run <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/api_setup/default_community.py">here</a> (data available for the July 2021).</p>
+<p>An template setup is already available in github and ready to be run <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/api_setup/default_community.py" target="_blank">here</a> (data available for the July 2021).</p>
 <p>To run this simulation and wait for the API template script to execute:</p>
 <pre class="codehilite"><code>gsy-env -l INFO run -t 15s -s 15m --setup api_setup.default_community --slot-length-realtime 5 --start-date 2021-07-01 --enable-external-connection --paused
 </code></pre>
@@ -2290,7 +2290,7 @@ storage_names = ['Tesla Powerwall 3']
 <p>Display critical and non-critical errors messages and general information such as market progression and trades</p>
 <h5 id="debug">DEBUG<a class="headerlink" href="#debug" title="Permanent link">&para;</a></h5>
 <p>Display full information on the agent (for instance all command and response, such as placing bids and offers on the market)</p>
-<p>For a video tutorial on the Asset API, please follow this <a href="https://youtu.be/oCcQ6pYFd5w">link</a>.</p>
+<p>For a video tutorial on the Asset API, please follow this <a href="https://youtu.be/oCcQ6pYFd5w" target="_blank">link</a>.</p>
 <p><em>We recommend that the users experiment with trading strategies, verify their data and familiarize themselves with the Grid Singularity user interface and APIs in a Collaboration environment before initiating a Canary Test Network.</em></p>
                 
                   

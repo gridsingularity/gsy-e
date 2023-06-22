@@ -71,17 +71,17 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://gridsingularity.github.io/gsy-e/documentation/blockchain-added-value/</loc>
-         <lastmod>2023-06-22</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
          <loc>https://gridsingularity.github.io/gsy-e/documentation/blockchain-installation/</loc>
          <lastmod>2023-06-22</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://gridsingularity.github.io/gsy-e/documentation/blockchain-system-components-overview/</loc>
+         <lastmod>2023-06-22</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://gridsingularity.github.io/gsy-e/documentation/blockchain/</loc>
          <lastmod>2023-06-22</lastmod>
          <changefreq>daily</changefreq>
     </url>

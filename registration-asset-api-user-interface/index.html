@@ -1514,11 +1514,11 @@
       <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-3" type="checkbox" id="nav-5-2-3">
     
     <label class="md-nav__link" for="nav-5-2-3">
-      Implement dynamic grid fees through the Grid Singlarity Grid Operator API
+      Implement dynamic grid fees through the Grid Singularity Grid Operator API
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
       <label class="md-nav__title" for="nav-5-2-3">
-        Implement dynamic grid fees through the Grid Singlarity Grid Operator API
+        Implement dynamic grid fees through the Grid Singularity Grid Operator API
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
@@ -1935,7 +1935,7 @@
 
 
   <li class="md-nav__item">
-    <a href="../blockchain-added-value/" title="GSY DEX Added Value" class="md-nav__link">
+    <a href="../blockchain/" title="GSY DEX Added Value" class="md-nav__link">
       GSY DEX Added Value
     </a>
   </li>
@@ -2066,7 +2066,7 @@
 <pre class="codehilite"><code>workon gsy-e-sdk
 </code></pre>
 
-<p>And go to the <a href="https://github.com/gridsingularity/gsy-e-sdk">GSy Exchange SDK repository</a></p>
+<p>And go to the <a href="https://github.com/gridsingularity/gsy-e-sdk" target="_blank">GSy Exchange SDK repository</a></p>
 <pre class="codehilite"><code>cd path_to_repository/gsy-e-sdk
 </code></pre>
 
@@ -2086,14 +2086,14 @@
 <li><code>simulation-config-path</code> --&gt; Path to the JSON file that contains the user's collaboration/CN information.</li>
 <li><code>run-on-redis</code> --&gt; This flag targets the local testing of the SDK, where no user authentication is required. A locally running redis server and a running Grid Singularity CLI simulation are needed here.</li>
 </ul>
-<p>The API agent can interface with a local simulation (<a href="../setup-configuration/">backend</a>) or a <a href="../collaboration/">collaboration</a>/<a href="../connect-ctn/">Canary Network</a> (<a href="https://www.d3a.io/">User-Interface</a>). There are 3 methods to parse the required information when launching the API to connect to the UI, as thoroughly explained in the text below:</p>
+<p>The API agent can interface with a local simulation (<a href="../setup-configuration/">backend</a>) or a <a href="../collaboration/">collaboration</a>/<a href="../connect-ctn/">Canary Network</a> (<a href="https://www.d3a.io/" target="_blank">User-Interface</a>). There are 3 methods to parse the required information when launching the API to connect to the UI, as thoroughly explained in the text below:</p>
 <ol>
 <li>Simulation configuration file</li>
 <li>CLI command</li>
 <li>Environment variables</li>
 </ol>
 <h4 id="simulation-configuration-file">Simulation configuration file:<a class="headerlink" href="#simulation-configuration-file" title="Permanent link">&para;</a></h4>
-<p>The simulation configuration file is a JSON format file downloadable on the <a href="https://www.d3a.io/">User-Interface</a>.  It contains all the information about the simulation setup (username, simulation name and UUID, domain name, websocket domain name, global settings of the simulation and the registry, consisting of all the grid hierarchy including markets and assets and whether or not the user is connected to those). To download this file the user needs to go to the Registry page of the relevant collaboration/Canary Test Network and click on the top right edit icon and Download Exchange SDK Summary.</p>
+<p>The simulation configuration file is a JSON format file downloadable on the <a href="https://www.d3a.io/" target="_blank">User-Interface</a>.  It contains all the information about the simulation setup (username, simulation name and UUID, domain name, websocket domain name, global settings of the simulation and the registry, consisting of all the grid hierarchy including markets and assets and whether or not the user is connected to those). To download this file the user needs to go to the Registry page of the relevant collaboration/Canary Test Network and click on the top right edit icon and Download Exchange SDK Summary.</p>
 <p><img alt="alt_text" src="../img/api-overview-3.png" /></p>
 <p>To run the Asset API, you can run the following command by adapting the arguments to your case:</p>
 <pre class="codehilite"><code>gsy-e-sdk --log-level INFO run  --setup asset_api_template -u username -p password -i absolute_path/my_simulation_config.json
