@@ -59,9 +59,9 @@ class LoadExternalMixin(ExternalMixin):
     def channel_dict(self) -> Dict:
         """Bid-related Redis API channels."""
         return {**super().channel_dict,
-                f"{self.channel_prefix}/bid": self.bid,
-                f"{self.channel_prefix}/delete_bid": self.delete_bid,
-                f"{self.channel_prefix}/list_bids": self.list_bids,
+                self.channel_names.bid: self.bid,
+                self.channel_names.delete_bid: self.delete_bid,
+                self.channel_names.list_bids: self.list_bids,
                 }
 
     def filtered_market_bids(self, market: "TwoSidedMarket") -> List[Dict]:
@@ -87,13 +87,13 @@ class LoadExternalMixin(ExternalMixin):
     def list_bids(self, payload: Dict) -> None:
         """Callback for list bids Redis endpoint."""
         self._get_transaction_id(payload)
-        list_bids_response_channel = f"{self.channel_prefix}/response/list_bids"
+        response_channel = self.channel_names.list_bids_response
         if not ExternalStrategyConnectionManager.check_for_connected_and_reply(
-                self.redis, list_bids_response_channel, self.connected):
+                self.redis, response_channel, self.connected):
             return
         arguments = json.loads(payload["data"])
         self.pending_requests.append(
-            IncomingRequest("list_bids", arguments, list_bids_response_channel))
+            IncomingRequest("list_bids", arguments, response_channel))
 
     def _list_bids_impl(self, arguments: Dict, response_channel: str) -> None:
         """Implementation for the list_bids callback, publish this device bids."""
@@ -114,9 +114,9 @@ class LoadExternalMixin(ExternalMixin):
     def delete_bid(self, payload: Dict) -> None:
         """Callback for delete bid Redis endpoint."""
         transaction_id = self._get_transaction_id(payload)
-        delete_bid_response_channel = f"{self.channel_prefix}/response/delete_bid"
+        response_channel = self.channel_names.delete_bid_response
         if not ExternalStrategyConnectionManager.check_for_connected_and_reply(
-                self.redis, delete_bid_response_channel, self.connected):
+                self.redis, response_channel, self.connected):
             return
         try:
             arguments = json.loads(payload["data"])
@@ -125,14 +125,14 @@ class LoadExternalMixin(ExternalMixin):
                 raise GSyException("Bid_id is not associated with any posted bid.")
         except (GSyException, json.JSONDecodeError) as exception:
             self.redis.publish_json(
-                delete_bid_response_channel,
+                response_channel,
                 {"command": "bid_delete",
                  "error": f"Incorrect delete bid request. Available parameters: (bid)."
                           f"Exception: {str(exception)}",
                  "transaction_id": transaction_id})
         else:
             self.pending_requests.append(
-                IncomingRequest("delete_bid", arguments, delete_bid_response_channel))
+                IncomingRequest("delete_bid", arguments, response_channel))
 
     def _delete_bid_impl(self, arguments: Dict, response_channel: str) -> None:
         """Implementation for the delete_bid callback, delete the received bid from market."""
@@ -161,9 +161,9 @@ class LoadExternalMixin(ExternalMixin):
                                             "attributes",
                                             "requirements"})
 
-        bid_response_channel = f"{self.channel_prefix}/response/bid"
+        response_channel = self.channel_names.bid_response
         if not ExternalStrategyConnectionManager.check_for_connected_and_reply(
-                self.redis, bid_response_channel, self.connected):
+                self.redis, response_channel, self.connected):
             return
         arguments = json.loads(payload["data"])
         if (  # Check that all required arguments have been provided
@@ -171,10 +171,10 @@ class LoadExternalMixin(ExternalMixin):
               # Check that every provided argument is allowed
               and all(arg in allowed_args for arg in arguments.keys())):
             self.pending_requests.append(
-                IncomingRequest("bid", arguments, bid_response_channel))
+                IncomingRequest("bid", arguments, response_channel))
         else:
             self.redis.publish_json(
-                bid_response_channel,
+                response_channel,
                 {"command": "bid",
                  "error": (
                      "Incorrect bid request. ",

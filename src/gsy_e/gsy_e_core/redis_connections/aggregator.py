@@ -5,6 +5,7 @@ from threading import Lock
 
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.enums import SpotMarketTypeEnum
+from gsy_framework.redis_channels import AggregatorChannels
 from gsy_framework.utils import create_subdict_or_update
 from redis import Redis
 
@@ -150,7 +151,7 @@ class AggregatorHandler:
                 "device_uuid": message["device_uuid"],
                 "transaction_id": message["transaction_id"]}
         self.redis_db.publish(
-            "aggregator_response", json.dumps(response_message)
+            AggregatorChannels().response, json.dumps(response_message)
         )
 
     def _unselect_aggregator(self, message):
@@ -166,7 +167,7 @@ class AggregatorHandler:
                     "device_uuid": message["device_uuid"],
                     "transaction_id": message["transaction_id"]}
                 self.redis_db.publish(
-                    "aggregator_response", json.dumps(response_message)
+                    AggregatorChannels().response, json.dumps(response_message)
                 )
             except Exception as e:  # pylint: disable=broad-except
                 response_message = {
@@ -176,7 +177,7 @@ class AggregatorHandler:
                     "msg": f"Error unselecting aggregator : {e}"
                 }
             self.redis_db.publish(
-                "aggregator_response", json.dumps(response_message)
+                AggregatorChannels().response, json.dumps(response_message)
             )
 
     def _create_aggregator(self, message):
@@ -187,7 +188,7 @@ class AggregatorHandler:
                 "status": "ready", "name": message["name"],
                 "transaction_id": message["transaction_id"]}
             self.redis_db.publish(
-                "aggregator_response", json.dumps(success_response_message)
+                AggregatorChannels().response, json.dumps(success_response_message)
             )
 
         else:
@@ -195,7 +196,7 @@ class AggregatorHandler:
                 "status": "error", "aggregator_uuid": message["transaction_id"],
                 "transaction_id": message["transaction_id"]}
             self.redis_db.publish(
-                "aggregator_response", json.dumps(error_response_message)
+                AggregatorChannels().response, json.dumps(error_response_message)
             )
 
     def _delete_aggregator(self, message):
@@ -205,14 +206,14 @@ class AggregatorHandler:
                 "status": "deleted", "aggregator_uuid": message["aggregator_uuid"],
                 "transaction_id": message["transaction_id"]}
             self.redis_db.publish(
-                "aggregator_response", json.dumps(success_response_message)
+                AggregatorChannels().response, json.dumps(success_response_message)
             )
         else:
             error_response_message = {
                 "status": "error", "aggregator_uuid": message["aggregator_uuid"],
                 "transaction_id": message["transaction_id"]}
             self.redis_db.publish(
-                "aggregator_response", json.dumps(error_response_message)
+                AggregatorChannels().response, json.dumps(error_response_message)
             )
 
     def receive_batch_commands_callback(self, payload):
@@ -263,12 +264,8 @@ class AggregatorHandler:
             event_type:
 
         Returns:
-
         """
         for aggregator_uuid, event in event_dict.items():
-            event_channel = f"external-aggregator/{gsy_e.constants.CONFIGURATION_ID}/" \
-                            f"{aggregator_uuid}/events/all"
-
             publish_event_dict = {
                 **event,
                 "event": event_type,
@@ -278,7 +275,9 @@ class AggregatorHandler:
             if ConstSettings.MASettings.MARKET_TYPE != SpotMarketTypeEnum.COEFFICIENTS.value:
                 publish_event_dict["num_ticks"] = (
                         100 / gsy_e.constants.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT)
-            redis.publish_json(event_channel, publish_event_dict)
+            redis.publish_json(
+                AggregatorChannels(gsy_e.constants.CONFIGURATION_ID, aggregator_uuid).events,
+                publish_event_dict)
 
         event_dict.clear()
 
@@ -301,8 +300,8 @@ class AggregatorHandler:
         for transaction_id, batch_commands in self.responses_batch_commands.items():
             for aggregator_uuid, response_body in batch_commands.items():
                 redis.publish_json(
-                    f"external-aggregator/{gsy_e.constants.CONFIGURATION_ID}/"
-                    f"{aggregator_uuid}/response/batch_commands",
+                    AggregatorChannels(
+                        gsy_e.constants.CONFIGURATION_ID, aggregator_uuid).batch_commands_response,
                     {
                         "command": "batch_commands",
                         "transaction_id": transaction_id,
