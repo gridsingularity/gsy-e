@@ -161,7 +161,8 @@ def _create_config_settings_object(
             instance((datetime.combine(date.today(), datetime.min.time()))))
         if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
             # For SCM CNs, run with 2 days delay in order to be able to get results.
-            config_settings["start_date"] = config_settings["start_date"].subtract(days=2)
+            config_settings["start_date"] = config_settings["start_date"].subtract(
+                days=gsy_e.constants.SCM_CN_DAYS_OF_DELAY)
 
     validate_global_settings(config_settings)
     config = SimulationConfig(**config_settings)
