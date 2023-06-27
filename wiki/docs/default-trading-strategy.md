@@ -33,8 +33,8 @@ The following plot shows the energy rate change in a spot market slot (slot_leng
 
 Assets can also deploy more intelligent trading strategies, as demonstrated in the 2020 Energy Singularity Challenge, described in the following two articles:
 
-* Grid Singularity. (September 10, 2020). _[En Route to Energy Singularity Odyssey Momentum: Learnings from the 2020 Chaos Experiment](https://gridsingularity.medium.com/en-route-to-energy-singularity-odyssey-momentum-learnings-from-the-2020-chaos-experiment-8dc38ff26869 )_
-* Grid Singularity. (November 25, 2020). _[Energy Singularity Challenge 2020: Social Energy Networks](https://gridsingularity.medium.com/energy-singularity-challenge-2020-social-energy-networks-157b390e5f39 )_
+* Grid Singularity. (September 10, 2020). _[En Route to Energy Singularity Odyssey Momentum: Learnings from the 2020 Chaos Experiment](https://gridsingularity.medium.com/en-route-to-energy-singularity-odyssey-momentum-learnings-from-the-2020-chaos-experiment-8dc38ff26869 ){target=_blank}_
+* Grid Singularity. (November 25, 2020). _[Energy Singularity Challenge 2020: Social Energy Networks](https://gridsingularity.medium.com/energy-singularity-challenge-2020-social-energy-networks-157b390e5f39 ){target=_blank}_
 
 Information on how to set up and train intelligent trading strategies through the Grid Singularity Asset API is available [here](configure-trading-strategies-walkthrough.md).
 

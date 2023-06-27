@@ -1,11 +1,11 @@
-The Grid Operator API template scripts are flexible and versatile Python scripts that can be easily modified to implement dynamic grid fees in the Grid Singularity Exchange. 
+The Grid Operator API template scripts are flexible and versatile Python scripts that can be easily modified to implement dynamic grid fees in the Grid Singularity Exchange.
 
 In this section, each script will be described along with its functionalities in order of complexity.
 
 ##Implement basic grid fees
-A template file for managing the market fees through the gsy-e-sdk API client is available [here](https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/grid_operator_api_scripts/rest_grid_fees.py). The script illustrates the most basic implementation of a Grid Operator API strategy: setting grid fees for different markets in the Grid Singularity Exchange. 
+A template file for managing the market fees through the gsy-e-sdk API client is available [here](https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/grid_operator_api_scripts/rest_grid_fees.py){target=_blank}. The script illustrates the most basic implementation of a Grid Operator API strategy: setting grid fees for different markets in the Grid Singularity Exchange.
 
-Initially, the user needs to list the markets to be managed via  the API.  For simulations launched via the user-interface (UI), the CONNECT_TO_ALL_ASSETS parameter is available. If this parameter is set to True, the Grid Operator API connects automatically to all the markets for which the user is [registered](https://gridsingularity.github.io/gsy-e/implement-grid-fees-walkthrough/).
+Initially, the user needs to list the markets to be managed via  the API.  For simulations launched via the user-interface (UI), the CONNECT_TO_ALL_ASSETS parameter is available. If this parameter is set to True, the Grid Operator API connects automatically to all the markets for which the user is [registered](implement-grid-fees-walkthrough.md).
 
 ```python
 # List of markets' names to be connected with the API
@@ -18,7 +18,7 @@ ORACLE_NAME = "dso"
 SLOT_LENGTH = 15  # leave as is
 CONNECT_TO_ALL_MARKETS = True
 ```
-At the beginning of each [market slot](https://gridsingularity.github.io/gsy-e/asset-api-events/#each-new-market-slot), the script loops through the markets configured in the simulation. For each market, it reads the market fee for the current time slot and sets it for the next.  That information is logged in the terminal in a table format.
+At the beginning of each [market slot](asset-api-events.md#each-new-market-slot), the script loops through the markets configured in the simulation. For each market, it reads the market fee for the current time slot and sets it for the next.  That information is logged in the terminal in a table format.
 
 ```python
 def on_market_cycle(self, market_info):
@@ -32,7 +32,7 @@ def on_market_cycle(self, market_info):
    next_market_fee = self._set_new_market_fee()
    log_grid_fees_information(MARKET_NAMES, current_market_fee, next_market_fee)
 ```
-Since there is no preconfigured pricing strategy in this script, the market fee is hardcoded in the _set_new_market_fee_ function (in this example, it was assigned a value of 10). Then, the batch commands are executed. 
+Since there is no preconfigured pricing strategy in this script, the market fee is hardcoded in the _set_new_market_fee_ function (in this example, it was assigned a value of 10). Then, the batch commands are executed.
 
 ```python
 def _set_new_market_fee(self):
@@ -49,7 +49,7 @@ def _set_new_market_fee(self):
    self.execute_batch_commands()
    return next_market_fee
 ```
-Later in the script, the _on_event_or_response_ is called. By default, the Asset API template does not perform any operation here but the user can add [events](https://gridsingularity.github.io/gsy-e/asset-api-events/). For instance, the user could record all the trades occurring in that event.  Lastly, the script overwrites the _on_finish event_ so that the script stops whenever the function is triggered. If the user wishes to save any information reported in the logs, it can be done by exporting it to an external file.
+Later in the script, the _on_event_or_response_ is called. By default, the Asset API template does not perform any operation here but the user can add [events](asset-api-events.md). For instance, the user could record all the trades occurring in that event.  Lastly, the script overwrites the _on_finish event_ so that the script stops whenever the function is triggered. If the user wishes to save any information reported in the logs, it can be done by exporting it to an external file.
 
 ```python
 def on_event_or_response(self, message):
@@ -59,7 +59,7 @@ def on_finish(self, finish_info):
    self.is_finished = True
 ```
 
-The rest of the script is used to connect to the energy assets of a running simulation/collaboration/Canary Test Network. These lines should work as is and no changes are required. 
+The rest of the script is used to connect to the energy assets of a running simulation/collaboration/Canary Test Network. These lines should work as is and no changes are required.
 
 ```python
 market_args = {
@@ -92,14 +92,14 @@ while not aggregator.is_finished:
    sleep(0.5)
 
 ```
-For simulations ran in the backend, a similar script is available [here](https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/grid_operator_api_scripts/redis_grid_fees.py).
+For simulations ran in the backend, a similar script is available [here](https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/grid_operator_api_scripts/redis_grid_fees.py){target=_blank}.
 
 ##Implement dynamic grid fees with Time of Use strategy
-In Time of Use (ToU) strategy, grid fees are applied depending on the time of the day (hours and minutes) regardless of the market conditions. After analyzing import and export patterns of their client, grid operators can create a time-based curve, increasing fees at peak predicted times (e.g. morning and dinner time). Below is an example of a ToU strategy used by the grid operators in one of the experiments at [Odyssey hackathon](https://gridsingularity.medium.com/energy-singularity-challenge-2020-testing-novel-grid-fee-models-and-intelligent-peer-to-peer-6a0d715a9063).
+In Time of Use (ToU) strategy, grid fees are applied depending on the time of the day (hours and minutes) regardless of the market conditions. After analyzing import and export patterns of their client, grid operators can create a time-based curve, increasing fees at peak predicted times (e.g. morning and dinner time). Below is an example of a ToU strategy used by the grid operators in one of the experiments at [Odyssey hackathon](https://gridsingularity.medium.com/energy-singularity-challenge-2020-testing-novel-grid-fee-models-and-intelligent-peer-to-peer-6a0d715a9063){target=_blank}.
 
 ![alt_text](img/grid-operator-api-2.png)
 
-A template script can be found [here](https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/grid_operator_api_scripts/rest_tou_strategy.py). The ToU strategy is uploaded to the Grid Operator API script as a CSV file (an example can be found [here](https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/grid_operator_api_scripts/resources/ToU.csv)), with the following structure:
+A template script can be found [here](https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/grid_operator_api_scripts/rest_tou_strategy.py){target=_blank}. The ToU strategy is uploaded to the Grid Operator API script as a CSV file (an example can be found [here](https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/grid_operator_api_scripts/resources/ToU.csv){target=_blank}), with the following structure:
 
 ![alt_text](img/grid-operator-api-7.png){:style="height:221px;width:329px;text-align:center"}
 
@@ -139,13 +139,13 @@ def calculate_next_slot_market_fee(market_time: DateTime, market_name:str) -> fl
        next_fee = None
    return next_fee
 ```
-The rest of the script has been covered in the previous section. For simulations ran in the backend, a similar script is available [here](https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/grid_operator_api_scripts/redis_tou_strategy.py).
+The rest of the script has been covered in the previous section. For simulations ran in the backend, a similar script is available [here](https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/grid_operator_api_scripts/redis_tou_strategy.py){target=_blank}.
 
 ##Implement dynamic grid fees with Aziiz strategy
 
-The Aziiz strategy, named after the researcher who suggested this [model](https://gridsingularity.medium.com/energy-singularity-challenge-2020-testing-novel-grid-fee-models-and-intelligent-peer-to-peer-6a0d715a9063), is using past market information to determine the next grid fee. The model looks at past imports and exports on a specific market, applies a moving average and then based on this number sets the next grid fee for that market. This model has the advantage of integrating market conditions into its strategy. For instance, if past market slots experienced high imports, the model will increase fees in the relevant market to incentivise market participants to contain the energy within that market. 
+The Aziiz strategy, named after the researcher who suggested this [model](https://gridsingularity.medium.com/energy-singularity-challenge-2020-testing-novel-grid-fee-models-and-intelligent-peer-to-peer-6a0d715a9063){target=_blank}, is using past market information to determine the next grid fee. The model looks at past imports and exports on a specific market, applies a moving average and then based on this number sets the next grid fee for that market. This model has the advantage of integrating market conditions into its strategy. For instance, if past market slots experienced high imports, the model will increase fees in the relevant market to incentivise market participants to contain the energy within that market.
 
-A template script can be found [here](https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/grid_operator_api_scripts/rest_aziiz_strategy.py). With this strategy, two more parameters are available at the beginning of the script and can be tuned:
+A template script can be found [here](https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/grid_operator_api_scripts/rest_aziiz_strategy.py){target=_blank}. With this strategy, two more parameters are available at the beginning of the script and can be tuned:
 
 ```python
 MOVING_AVERAGE_PEAK = True
@@ -153,7 +153,7 @@ LOOK_BACK_INDEX = 4
 ```
 If MOVING_AVERAGE_PEAK is set to True, the Aziiz strategy will compare the average of the last markets’ (how many is defined by the LOOK_BACK_INDEX parameter) peak import/export to the threshold.
 
-The _on_market_slot_ event is used to request market statistics from the simulation, based on which import / export balance can be calculated for each market. This is the criteria to determine which grid fees to apply in each market. 
+The _on_market_slot_ event is used to request market statistics from the simulation, based on which import / export balance can be calculated for each market. This is the criteria to determine which grid fees to apply in each market.
 
 ```python
 def calculate_import_export_balance(self):
@@ -172,7 +172,7 @@ def calculate_import_export_balance(self):
        )
    self.balance_hist.append(self.balance)
 ```
-In the Aziiz strategy, grid fees can be set for every peak import/export threshold for each market. A JSON file containing this information is uploaded to the Grid Operator API script. An example can be found [here](https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/grid_operator_api_scripts/resources/aziiz.json). 
+In the Aziiz strategy, grid fees can be set for every peak import/export threshold for each market. A JSON file containing this information is uploaded to the Grid Operator API script. An example can be found [here](https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/grid_operator_api_scripts/resources/aziiz.json){target=_blank}.
 
 ```python
 {
@@ -194,9 +194,9 @@ In the Aziiz strategy, grid fees can be set for every peak import/export thresho
    ]
 }
 ```
-If the average is lower than the threshold, the relevant grid fee will be applied; for instance in the figure above, if the average peak is equal to 22 kWh, the next grid fee will be 3 cents/KWh. 
+If the average is lower than the threshold, the relevant grid fee will be applied; for instance in the figure above, if the average peak is equal to 22 kWh, the next grid fee will be 3 cents/KWh.
 
-Below is a snippet of the _set_new_market_fee adapted to the Aziiz strategy. All the fees are added to the batch command and then executed. 
+Below is a snippet of the _set_new_market_fee adapted to the Aziiz strategy. All the fees are added to the batch command and then executed.
 
 ```python
 def _set_new_market_fee(self):
@@ -232,6 +232,6 @@ def _set_new_market_fee(self):
 ```
 The rest of the script has been already covered in this previous section. For simulations run in the backend, a similar script is available here.
 
-For a video tutorial on the Grid Operator API, please follow this [link](https://www.youtube.com/watch?v=3OMkWLSrl4c).
+For a video tutorial on the Grid Operator API, please follow this [link](https://www.youtube.com/watch?v=3OMkWLSrl4c){target=_blank}.
 
 The next step is to adapt the Grid Operator API template scripts developed by Grid Singularity to customize the grid fee strategies to implement dynamic grid fees in the Grid Singularity Exchange.

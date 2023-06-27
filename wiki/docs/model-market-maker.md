@@ -24,14 +24,14 @@ The Market Maker configuration interface is shown below:
 
 To implement a market maker in a backend simulation, two methods are available :
 
-[infinite power plant](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/market_maker_strategy.py):
+[infinite power plant](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/market_maker_strategy.py){target=_blank}:
 
 ```python
 Market ('Market Maker', strategy=MarketMakerStrategy(energy_rate=selling_rate,
 grid_connected=True))
 ```
 
-[infinite bus ](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/infinite_bus.py):
+[infinite bus ](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/infinite_bus.py){target=_blank}:
 
 ```python
 Market ('Market Maker', strategy=InfiniteBusStrategy(energy_buy_rate=22, energy_sell_rate=22))

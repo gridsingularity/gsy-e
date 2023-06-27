@@ -2,7 +2,7 @@ The Singularity Map is an interactive Grid Singularity exchange simulation platf
 
 ![alt_text](img/community.png)
 
-***Figure 2.1***. *The Singularity Map - Grid Singularity Exchange web-based interface at [https://map.gridsingularity.com/singularity-map](https://gridsingularity.com/singularity-map).*
+***Figure 2.1***. *The Singularity Map - Grid Singularity Exchange web-based interface at [https://map.gridsingularity.com/singularity-map](https://gridsingularity.com/singularity-map){target=_blank}.*
 
 The map includes a search bar in the top left corner, a list of simulations in the extendable panel below the search bar, user icons on the right hand side of the screen (explained below) and coloured dots representing different simulations on the map.
 

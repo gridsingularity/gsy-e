@@ -1,4 +1,4 @@
-In the [User Interface](https://www.d3a.io/), each energy asset and market can be pinned on a map with geographic coordinates in the form of a geotag, linked to a **physical address**. If a geotag is set at the market level, all submarkets and their assets are tied to these coordinates.
+In the [User Interface](https://www.d3a.io/){target=_blank}, each energy asset and market can be pinned on a map with geographic coordinates in the form of a geotag, linked to a **physical address**. If a geotag is set at the market level, all submarkets and their assets are tied to these coordinates.
 
 ![alt_text](img/map-1.png)
 
@@ -14,4 +14,4 @@ Once the user has added locations via geotags for its markets and energy assets,
 
 ![alt_text](img/map-3.png)
 
-For a video tutorial on the map feature, please follow this [link](https://youtu.be/2ylGNMjbhDY).
+For a video tutorial on the map feature, please follow this [link](https://youtu.be/2ylGNMjbhDY){target=_blank}.

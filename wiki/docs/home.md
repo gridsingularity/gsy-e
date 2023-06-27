@@ -7,7 +7,7 @@ Users can add homes/buildings to their community by selecting the custom home or
 A home functions as a market, where multiple assets can trade with each other or trade together as a single entity. The custom home has no assets included initially and it is suited for users who would prefer to configure the  energy assets manually or upload their own energy data.
 The template homes are suitable for users who are interested in quickly building a prototype of an energy community using template data to represent the homes and assets. They can still add, remove or edit assets to assess the impact of different configurations.
 
-The template homes have been created using data from [Load Profile Generator](https://www.loadprofilegenerator.de/) and [Energy Data Map](https://energydatamap.com/) to represent the typical consumption and generation behaviour for different types of homes in an active energy community.
+The template homes have been created using data from [Load Profile Generator](https://www.loadprofilegenerator.de/){target=_blank} and [Energy Data Map](https://energydatamap.com/){target=_blank} to represent the typical consumption and generation behaviour for different types of homes in an active energy community.
 
 ##Configuration options
 

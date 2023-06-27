@@ -2,7 +2,7 @@
 
 There are two options to implement a PV in a backend:
 
-[Solar Profile](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/pv.py) (for template generation profile):
+[Solar Profile](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/pv.py){target=_blank} (for template generation profile):
 ```python
 Market(
     "H2 PV",
@@ -14,7 +14,7 @@ Market(
         update_interval=duration(minutes=5)))
 ```
 
-[User Profile](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/predefined_pv.py) (for uploaded generation profile):
+[User Profile](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/predefined_pv.py){target=_blank} (for uploaded generation profile):
 ```python
 user_profile_path = os.path.join(gsy_e_path, "assets/Solar_Curve_W_sunny.csv")
 Market('H1 PV', strategy=PVUserProfileStrategy(power_profile=user_profile_path, panel_count=4))
@@ -24,7 +24,7 @@ Market('H1 PV', strategy=PVUserProfileStrategy(power_profile=user_profile_path, 
 
 To implement the consumption profile (load) in a backend simulation, two options are available:
 
-[User configure Profile](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/load_hours.py):
+[User configure Profile](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/load_hours.py){target=_blank}:
 ```python
 Market(
     'Load',
@@ -33,7 +33,7 @@ Market(
         final_buying_rate=35))
 ```
 
-[User upload Profile](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/predefined_load.py):
+[User upload Profile](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/predefined_load.py){target=_blank}:
 ```python
 user_profile_path = os.path.join(gsy_e_path,"assets/load.csv")
 
@@ -53,7 +53,7 @@ For information on changes in buying and selling rates, please see: [Trading str
 
 To implement a battery in a backend simulation one option is available:
 
-[Energy Storage System](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/storage.py)
+[Energy Storage System](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/storage.py){target=_blank}
 ```python
 Market(
     'Storage',
@@ -66,7 +66,7 @@ Market(
 
 To implement the power plant in a backend simulation one option is available:
 
-[Finite Power Plant](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/finite_power_plant.py)
+[Finite Power Plant](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/finite_power_plant.py){target=_blank}
 ```python
 profile_kW = {
 0: 0.1,
@@ -83,12 +83,12 @@ Market(
 ## Market Maker
 To implement a market maker in a backend simulation, two methods are available :
 
-[Infinite power plant](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/market_maker_strategy.py)
+[Infinite power plant](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/market_maker_strategy.py){target=_blank}
 ```python
 Market('Market Maker', strategy=MarketMakerStrategy(energy_rate=selling_rate, grid_connected=True))
 ```
 
-[Infinite bus](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/infinite_bus.py)
+[Infinite bus](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/infinite_bus.py){target=_blank}
 ```python
 Market('Market Maker', strategy=InfiniteBusStrategy(energy_buy_rate=22, energy_sell_rate=22))
 ```
@@ -103,7 +103,7 @@ If the cap_price_strategy is True, the offer price for the storage is calculated
 As an example, considering an `initial_selling_rate` of 30 cents/kWh and a `final_selling_rate` of 20 cents/kWh, a storage with an SOC of 1% would sell its energy at 29.9 cents/kWh, and a battery at 100% SOC would sell its energy at 20 cents/kWh.
 To implement a power plant in a backend simulation, one option is available:
 
-[Finite Power Plant](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/finite_power_plant.py)
+[Finite Power Plant](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/finite_power_plant.py){target=_blank}
 
 ```python
 profile_kW = {
