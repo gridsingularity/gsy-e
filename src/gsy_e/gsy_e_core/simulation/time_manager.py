@@ -28,7 +28,7 @@ from gsy_framework.enums import SpotMarketTypeEnum
 from pendulum import DateTime, duration, now
 
 import gsy_e.constants
-from gsy_e.constants import TIME_ZONE
+from gsy_e.constants import TIME_ZONE, SCM_CN_DAYS_OF_DELAY
 
 if TYPE_CHECKING:
     from gsy_e.models.area import Area, AreaBase
@@ -117,10 +117,18 @@ class SimulationTimeManager:
 @dataclass
 class SimulationTimeManagerScm:
     """Handles simulation time management."""
-    start_time: DateTime = now(tz=TIME_ZONE)
+    start_time: DateTime = None
     paused_time: int = 0  # Time spent in paused state, in seconds
     slot_length_realtime: duration = None
     slot_time_counter: float = time()
+
+    def __post_init__(self):
+        self.start_time: DateTime = self._set_start_time()
+
+    @staticmethod
+    def _set_start_time():
+        # Set SCM start time. By default it is 2 days before the current datetime.
+        return now(tz=TIME_ZONE) - duration(days=SCM_CN_DAYS_OF_DELAY)
 
     def reset(self, not_restored_from_state: bool = True) -> None:
         """
@@ -129,7 +137,7 @@ class SimulationTimeManagerScm:
         """
         self.slot_time_counter = int(time())
         if not_restored_from_state:
-            self.start_time = now(tz=TIME_ZONE)
+            self.start_time = self._set_start_time()
             self.paused_time = 0
 
     def handle_slowdown_and_realtime_scm(self, slot_no: int, slot_count: int,
@@ -157,8 +165,9 @@ class SimulationTimeManagerScm:
 
         self.slot_time_counter = int(time())
 
+    @staticmethod
     def calc_resume_slot_and_count_realtime(
-            self, config: "SimulationConfig", slot_resume: int) -> Tuple[int, int]:
+            config: "SimulationConfig", slot_resume: int) -> Tuple[int, int]:
         """Calculate total slot count and the slot where to resume the realtime simulation."""
         slot_count = int(config.sim_duration / config.slot_length)
 
@@ -171,6 +180,8 @@ class SimulationTimeManagerScm:
             seconds_elapsed_in_slot = seconds_since_midnight % config.slot_length.seconds
             sleep_time_s = config.slot_length.total_seconds() - seconds_elapsed_in_slot
             sleep(sleep_time_s)
+            log.debug("Resume Slot %s/%s: Sleep time of %s s was applied",
+                      slot_resume, slot_count, sleep_time_s)
 
         return slot_count, slot_resume
 
