@@ -1,8 +1,8 @@
-Grid Singularity exchange engine can be used to simulate, collaborate and optimize grid-aware local energy markets (LEMs). The simulation tool is freely available through our User Interface (UI) at [map.gridsingularity](https://map.gridsingularity.com/singularity-map) and our [backend codebase](https://github.com/gridsingularity/gsy-e) is open source under [GNU general public license](https://www.gnu.org/licenses/gpl-3.0.en.html).
+Grid Singularity exchange engine can be used to simulate, collaborate and optimize grid-aware local energy markets (LEMs). The simulation tool is freely available through our User Interface (UI) at [map.gridsingularity](https://map.gridsingularity.com/singularity-map){target=_blank} and our [backend codebase](https://github.com/gridsingularity/gsy-e){target=_blank} is open source under [GNU general public license](https://www.gnu.org/licenses/gpl-3.0.en.html){target=_blank}.
 
 This section will focus on a step-by-step guide to create and simulate LEMs using our software, starting with an explanation and guide for the UI, followed by a more technical tutorial to reproduce in the backend.
 
-##User-Interface Simulation Configuration
+## User-Interface Simulation Configuration
 
 When creating a new simulation, simulation collaboration or a simulation in the Canary Test Network, the user needs to define the following general settings:
 
@@ -39,9 +39,9 @@ After adding the first market the user has to select a [Market Maker](model-mark
 
 Once the modelling is completed, the user goes to the [Results page](results.md) to initiate the simulation and view results.
 
-##Backend Simulation Configuration
+## Backend Simulation Configuration
 
-In the backend, the simulation process is slightly different. There is no need to login to set up a simulation. The user first needs to download the code from our Github Repository (Installation Instructions for [Linux](linux-installation-instructions.md), [Mac](ios-installation-instructions.md) and [Windows](vm-installation-instructions.md)). In the setup-file (in Python programming language), general and [trading strategy](default-trading-strategy.md) settings can be defined. Examples can be found in the relevant [Grid Singularity GitHub](https://github.com/gridsingularity/gsy-e/tree/master/src/gsy_e/setup) folder.
+In the backend, the simulation process is slightly different. There is no need to login to set up a simulation. The user first needs to download the code from our Github Repository (Installation Instructions for [Linux](linux-installation-instructions.md), [Mac](ios-installation-instructions.md) and [Windows](vm-installation-instructions.md)). In the setup-file (in Python programming language), general and [trading strategy](default-trading-strategy.md) settings can be defined. Examples can be found in the relevant [Grid Singularity GitHub](https://github.com/gridsingularity/gsy-e/tree/master/src/gsy_e/setup){target=_blank} folder.
 
 This is the most basic skeleton for a setup-file:
 
@@ -124,11 +124,11 @@ Additionally the user has the possibility to change the default general settings
 1. Setup file (best option)
 2. d3a-setting.json
 
-###setup-file (best option):
+### setup-file (best option):
 
 For a description of each grid component please see the **Modelling** section.
 
-The user can overwrite the configuration settings by changing variables of the [ConstSettings](https://github.com/gridsingularity/d3a-interface/blob/master/d3a_interface/constants_limits.py) class in the setup-file. This class defines the default values for various parameters (general simulation settings, market settings and energy asset configuration). For instance, the user can define multiple configuration parameters in the get_setup function by overwriting the[ ConstSettings](https://github.com/gridsingularity/d3a-interface/blob/master/d3a_interface/constants_limits.py) default values. For example, the following parameters can be set :
+The user can overwrite the configuration settings by changing variables of the [ConstSettings](https://github.com/gridsingularity/d3a-interface/blob/master/d3a_interface/constants_limits.py){target=_blank} class in the setup-file. This class defines the default values for various parameters (general simulation settings, market settings and energy asset configuration). For instance, the user can define multiple configuration parameters in the get_setup function by overwriting the[ ConstSettings](https://github.com/gridsingularity/d3a-interface/blob/master/d3a_interface/constants_limits.py){target=_blank} default values. For example, the following parameters can be set :
 
 * Market_type (if equal to 1: [One-Sided Pay-as-Offer](one-sided-pay-as-offer.md), if equal to 2 : [Two-Sided Pay-as-Bid](two-sided-pay-as-bid.md), if equal to 3 : [Two-Sided Pay-as-Clear](two-sided-pay-as-clear.md))
 * Grid_fee_type (if equal to 1: [Constant grid fee](constant-fees.md), if equal to 2 : [Percentage grid fee](percentage-fees.md))
@@ -144,13 +144,13 @@ def get_setup(config):
     ConstSettings.MASettings.GRID_FEE_TYPE = 1
 ```
 
-###d3a-settings.json
+### d3a-settings.json
 
 These general settings can also be parsed via a settings file in JSON format, which contains all constants in the advanced_settings branch. An example can be found here: src/d3a/setup/d3a-settings.json The settings JSON file can be parsed via the --settings-file keyword
 
-####Setting General Configuration Parameters
+#### Setting General Configuration Parameters
 
-The following parameters are part of [Simulation Config](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/config.py#L32) and are initialised before updating any [ConstSettings](https://github.com/gridsingularity/gsy-framework/blob/master/gsy_framework/constants_limits.py):
+The following parameters are part of [Simulation Config](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/config.py#L32){target=_blank} and are initialised before updating any [ConstSettings](https://github.com/gridsingularity/gsy-framework/blob/master/gsy_framework/constants_limits.py){target=_blank}:
 
 *   sim_duration
 *   slot_length
@@ -187,7 +187,7 @@ def get_setup(config):
     return area
 ```
 
-####Simulation launch
+#### Simulation launch
 
 Once the entire grid architecture is modelled, including energy assets, the user can launch the trading simulation by running a command line including desired setup features:
 

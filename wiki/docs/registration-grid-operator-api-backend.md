@@ -6,7 +6,7 @@ To use the API locally, your script interacts with the simulation using a local 
 redis-server /usr/local/etc/redis.conf
 ```
 
-To install redis in Ubuntu follow the instructions in this [link](https://redis.io/topics/quickstart).
+To install redis in Ubuntu follow the instructions in this [link](https://redis.io/topics/quickstart){target=_blank}.
 
 ###Open Markets for external cnnection
 The API supports multiple markets managed with the Grid Operator API. Access is controlled when setting up the simulation, using the `Market` and `Asset` classes’ boolean argument called external_connection_available:
@@ -94,6 +94,6 @@ Display critical and non-critical errors messages and general information such a
 
 Display full information on the agent (for instance all command and response, such as placing bids and offers on the market)
 
-For a video tutorial on the Asset API, please follow this [link](https://youtu.be/oCcQ6pYFd5w).
+For a video tutorial on the Asset API, please follow this [link](https://youtu.be/oCcQ6pYFd5w){target=_blank}.
 
 *We recommend that the users experiment with trading strategies, verify their data and familiarize themselves with the Grid Singularity user interface and APIs in a Collaboration environment before initiating a Canary Test Network.*

@@ -12,7 +12,7 @@ The following features were implemented:
 * Both template scripts include **readable text outputs** from the trading or grid fee strategy
 * **Canary network results** are viewable real-time, with data and trading results populated in 15 minute intervals. Results for previous weeks are available by selecting the week at the top of results.
 * Users can **view and duplicate public simulations** on the map, allowing experimentation and rapid prototyping.
-  [Grid Singularity v1.5 Tutorial](https://www.youtube.com/watch?v=8tAl8Td2XsU&list=PLdIkfx9NcrQeD8kLBvASosLce9qJ4gQIH&index=19)
+  [Grid Singularity v1.5 Tutorial](https://www.youtube.com/watch?v=8tAl8Td2XsU&list=PLdIkfx9NcrQeD8kLBvASosLce9qJ4gQIH&index=19){target=_blank}
 
 ##Version 1.4
 The following features were implemented:
@@ -20,21 +20,21 @@ The following features were implemented:
 * A **map legend** has been added to clarify how colors on the map represent the exporting or importing of energy
 * Users can add a **profile picture** to personalize their account by clicking on their name
 * **Custom assets** can be added to a home with configurable production / consumption quantity or storage capacity through the advanced menu.
-* **Custom PVs** can be added which use the [energydatamap.com](https://energydatamap.com/) API, allowing a production forecast to be used for the simulation’s geographical location. Advanced custom PV settings allow users to set the orientation of the PV (e.g. flat, tilted, facade) and azimuth and tilt.
+* **Custom PVs** can be added which use the [energydatamap.com](https://energydatamap.com/){target=_blank} API, allowing a production forecast to be used for the simulation’s geographical location. Advanced custom PV settings allow users to set the orientation of the PV (e.g. flat, tilted, facade) and azimuth and tilt.
 * A **list view navigation** shows all assets in a home and community. Clicking on an asset allows further configuration.
 * **Key results have been simplified** for easier reference, including community self-sufficiency and self-consumption with information about what the metrics mean.
 * A **Savings KPI** has been introduced for each home in the community, showing if and how much a home has been saving compared to buying from the local utility. The total bill including amount owed or earned is shown, along with a graph of the daily savings.
 * **Asset result highlights** the total amount spent or earnt by each asset, including an average price per kWh of energy. Batteries also show their current state of charge and average buying and selling price.
-  [Grid Singularity v1.4 Tutorial](https://www.youtube.com/watch?v=NMlHwe6da0k&list=PLdIkfx9NcrQeD8kLBvASosLce9qJ4gQIH&index=3)
+  [Grid Singularity v1.4 Tutorial](https://www.youtube.com/watch?v=NMlHwe6da0k&list=PLdIkfx9NcrQeD8kLBvASosLce9qJ4gQIH&index=3){target=_blank}
 
 ##Version 1.0.0
 The following features were implemented :
 
-* Our new user interface (UI), found at [Grid Singularity map](https://map.gridsingularity.com/singularity-map) will replace the old one at [d3a.io](https://www.d3a.io/). This new UI is intended to make creating and running simulations much **easier** for users who might be new to thinking about their energy use and **simulating** their own energy community.
+* Our new user interface (UI), found at [Grid Singularity map](https://map.gridsingularity.com/singularity-map){target=_blank} will replace the old one at [d3a.io](https://www.d3a.io/){target=_blank}. This new UI is intended to make creating and running simulations much **easier** for users who might be new to thinking about their energy use and **simulating** their own energy community.
 * Additional features in the map include a **search bar**, which facilitates searching for an address or town on the map. After running the simulation, highlighted results displayed directly above each home and community in the map.
-* There are standard (template) homes and profiles that can be used by users who do not have information about actual energy consumption and/or production, generated from [loadprofilegenerator.de](https://www.loadprofilegenerator.de/) and [energydatamap.com](https://energydatamap.com/).
+* There are standard (template) homes and profiles that can be used by users who do not have information about actual energy consumption and/or production, generated from [loadprofilegenerator.de](https://www.loadprofilegenerator.de/){target=_blank} and [energydatamap.com](https://energydatamap.com/){target=_blank}.
 * We provide additional information on the [Canary Test Network](canary-network.md) for live data simulations, which is the next step in building an energy community
-* Animated color visuals in the map view assist analysis, with a color assigned to each home and community on the [map](https://map.gridsingularity.com/singularity-map) when the simulation is running: **green** for net exports, **blue** for neutral, and **red** for net imports
+* Animated color visuals in the map view assist analysis, with a color assigned to each home and community on the [map](https://map.gridsingularity.com/singularity-map){target=_blank} when the simulation is running: **green** for net exports, **blue** for neutral, and **red** for net imports
 * We also provide **Map 3D** view, where users can view their simulations and homes in 3-Dimensions
 * Side navigation bar summarizes the contents of a users’ energy community to additionally aid optimal energy community configuration
 * Smart meter asset, a new asset type which can be configured directly in the codebase simulation file to allow users to upload **smart meter** net consumption and production profiles
@@ -45,7 +45,7 @@ The following features were implemented :
 The following features were implemented :
 
 * [Market slot](markets.md) length realtime: This can be set to simulations and collaborations. It slows down the running pace with a constant value (speed can go from the fasted as possible up until real-time.
-* Public library is updated: New [loads](model-load.md) and [PVs](model-pv.md) profiles were added to the public library. A total of **24** loads, representing various types of households was generated using [loadprofilegenerator.de](https://www.loadprofilegenerator.de/). PV production profiles were taken from [energydatamap.com](https://energydatamap.com/) for different cities. These new loads and PVs have profiles of a full year (2021).
+* Public library is updated: New [loads](model-load.md) and [PVs](model-pv.md) profiles were added to the public library. A total of **24** loads, representing various types of households was generated using [loadprofilegenerator.de](https://www.loadprofilegenerator.de/){target=_blank}. PV production profiles were taken from [energydatamap.com](https://energydatamap.com/) for different cities. These new loads and PVs have profiles of a full year (2021).
 * Users can now download the **registry** page as a JSON file, to facilitate the connection with the API to a collaboration/Canary Network.
 
 ##Version 0.11.0

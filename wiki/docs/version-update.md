@@ -1,5 +1,5 @@
 
-##Grid Singularity [Exchange](https://github.com/gridsingularity/gsy-e) Update
+##Grid Singularity [Exchange](https://github.com/gridsingularity/gsy-e){target=_blank} Update
 
 Please start by opening a terminal and activating the Grid Singularity D3A virtual environment as described in the Installation Instructions. Then type:
 ```
@@ -13,7 +13,7 @@ If fab sync does not work on your machine, please try:
 pip install -e .
 ```
 
-##Grid Singularity Exchange [SDK](https://github.com/gridsingularity/gsy-e-sdk) Update
+##Grid Singularity Exchange [SDK](https://github.com/gridsingularity/gsy-e-sdk){target=_blank} Update
 
 Please start by opening a terminal and activating the Exchange SDK virtual environment as described in the API Installation Instructions. Then type:
 

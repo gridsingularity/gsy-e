@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
+import logging
 import math
 import pathlib
 
@@ -28,9 +28,11 @@ from pendulum.datetime import DateTime
 
 from gsy_e.gsy_e_core.exceptions import GSyException
 from gsy_e.gsy_e_core.util import gsye_root_path
-from gsy_e.models.strategy.state import PVState
 from gsy_e.models.strategy import utils
 from gsy_e.models.strategy.profile import EnergyProfile
+from gsy_e.models.strategy.state import PVState
+
+log = logging.getLogger(__name__)
 
 
 class PVEnergyParameters:
@@ -204,4 +206,7 @@ class PVUserProfileEnergyParameters(PVEnergyParameters):
         for time_slot in time_slots:
             available_energy_kWh = find_object_of_same_weekday_and_time(
                 self.energy_profile.profile, time_slot) * self.panel_count
+            if available_energy_kWh is None:
+                log.error("Could not read area %s profile on timeslot %s.", owner_name, time_slot)
+                available_energy_kWh = 0.0
             self._state.set_available_energy(available_energy_kWh, time_slot, reconfigure)
