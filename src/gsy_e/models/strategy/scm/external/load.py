@@ -22,8 +22,9 @@ from gsy_e.models.strategy.scm.load import SCMLoadProfileStrategy
 class ForecastSCMLoadStrategy(SCMForecastExternalMixin, SCMLoadProfileStrategy):
     """External SCM Load strategy"""
 
-    def _update_energy_requirement(self, _area):
-        """Overwrite method that sets the energy requirement in the state."""
+    # def _update_energy_requirement(self, _area):
+    #     """Overwrite method that sets the energy requirement in the state."""
+    #
 
     def update_energy_forecast(self) -> None:
         """Set energy forecast for future markets."""
