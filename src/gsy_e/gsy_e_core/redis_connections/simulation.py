@@ -166,6 +166,12 @@ class RedisSimulationCommunication:
 
     def _bulk_live_event_callback(self, message):
         data = json.loads(message["data"])
+        if not self._progress_info.current_slot_str:
+            self._generate_redis_response(
+                data, False, "bulk-live-event",
+                {"activation_time": None}
+            )
+
         try:
             for event in data["bulk_event_list"]:
                 self._live_events.add_event(event, bulk_event=True)

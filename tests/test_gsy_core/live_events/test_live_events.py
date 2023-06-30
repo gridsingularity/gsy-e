@@ -1,26 +1,25 @@
-import unittest
 from pathlib import Path
 from unittest.mock import Mock
 
+import pytest
 from gsy_framework.constants_limits import GlobalConfig
 from pendulum import duration
 
-from gsy_e.gsy_e_core.live_events import CreateAreaEvent, UpdateAreaEvent
-from gsy_e.gsy_e_core.live_events import LiveEvents
+from gsy_e.gsy_e_core.live_events import CreateAreaEvent, UpdateAreaEvent, LiveEvents
 from gsy_e.gsy_e_core.util import gsye_root_path
 from gsy_e.models.area import Area
 from gsy_e.models.config import SimulationConfig
-from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
 from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_e.models.strategy.market_maker_strategy import MarketMakerStrategy
 from gsy_e.models.strategy.pv import PVStrategy
+from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
 from gsy_e.models.strategy.storage import StorageStrategy
 
 
-class TestLiveEvents(unittest.TestCase):
+class TestLiveEvents:
 
-    def setUp(self):
+    def setup_method(self):
         GlobalConfig.FEED_IN_TARIFF = 20
         self.config = SimulationConfig(
             sim_duration=duration(hours=12),
@@ -67,7 +66,7 @@ class TestLiveEvents(unittest.TestCase):
                               config=self.config)
         self.area_grid.activate()
 
-    def tearDown(self) -> None:
+    def teardown_method(self) -> None:
         GlobalConfig.sim_duration = duration(days=GlobalConfig.DURATION_D)
         GlobalConfig.FEED_IN_TARIFF = 20
 
@@ -119,7 +118,7 @@ class TestLiveEvents(unittest.TestCase):
                 "type": "Wrong Device", "name": "wrong", "some_attribute": 24}
         }
 
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             CreateAreaEvent(
                 parent_uuid=event_dict["parent_uuid"],
                 area_representation=event_dict["area_representation"],
