@@ -204,9 +204,11 @@ class PVUserProfileEnergyParameters(PVEnergyParameters):
                 f"PV {owner_name} tries to set its available energy forecast without a "
                 "power profile.")
         for time_slot in time_slots:
-            available_energy_kWh = find_object_of_same_weekday_and_time(
-                self.energy_profile.profile, time_slot) * self.panel_count
-            if available_energy_kWh is None:
+            energy_from_profile_kWh = find_object_of_same_weekday_and_time(
+                self.energy_profile.profile, time_slot)
+            if energy_from_profile_kWh is None:
                 log.error("Could not read area %s profile on timeslot %s.", owner_name, time_slot)
-                available_energy_kWh = 0.0
+                energy_from_profile_kWh = 0.0
+
+            available_energy_kWh = energy_from_profile_kWh * self.panel_count
             self._state.set_available_energy(available_energy_kWh, time_slot, reconfigure)
