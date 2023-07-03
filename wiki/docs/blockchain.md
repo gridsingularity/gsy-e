@@ -9,11 +9,13 @@ The GSy DEX is currently available in the form of simulated transactions, intend
 Full blockchain deployment will be enabled once the following [GSy DEX System Components](blockchain-system-components-overview.md) are completed, with current development in part supported by the European Union [FEDECOM project](https://fedecom-project.eu/){target=_blank}:
 
 - [GSy Node](blockchain-system-components-overview.md#gsy-node) (completed)
-- [GSy DEX API Off-Chain Storage](blockchain-system-components-overview.md#gsy-dex-off-chain-storage) (in development)
 - [GSy DEX Matching Engine](blockchain-system-components-overview.md#gsy-dex-matching-engine) (in development) and GSy Matching API (developed in Python; Rust version to be released with the Engine)
 - [GSy DEX Execution Engine](blockchain-system-components-overview.md#gsy-dex-execution-engine) (in development)
 - [GSy DEX Analytics Engine](blockchain-system-components-overview.md#gsy-dex-analytics-engine) (in development)
 - [GSy DEX API Gateway](blockchain-system-components-overview.md#gsy-dex-api-gateway) (in development)
+- [GSy DEX API Off-Chain Storage](blockchain-system-components-overview.md#gsy-dex-off-chain-storage) (in development)
+- [Energy Web Green Proofs](blockchain-system-components-overview.md#energy-web-green-proofs) (in development)
+
 
 The [Energy Web Chain](https://www.energyweb.org/){target=_blank} is the blockchain of choice for the Grid Singularity Exchange decentralised implementation, anchored upon [Polkadot’s](https://polkadot.network/){target=_blank} scaling solution. Grid Singularity, an energy technology startup, and the Rocky Mountain Institute, a nonprofit clean technology organisation, jointly founded the Energy Web Foundation (EWF) in January 2017 as a non-profit entrepreneurial foundation building web3 applications for the energy transition. Having significantly contributed to EWF development and the launch of the Energy Web Chain, Grid Singularity’s role today in the Energy Web is supervisory and advisory via Foundation Council.
 
