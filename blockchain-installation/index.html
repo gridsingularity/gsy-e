@@ -13,7 +13,7 @@
         <meta name="description" content="Documentation for the Grid Singularity Exchange">
       
       
-        <link rel="canonical" href="https://gridsingularity.github.io/gsy-e/documentation/blockchain-installation/">
+        <link rel="canonical" href="http://localhost:8000/blockchain-installation/">
       
       
         <meta name="author" content="Grid Singularity">
@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../img/Profile.png">
-      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-4.0.2">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-4.0.2">
     
     
       
@@ -119,7 +119,7 @@
   <nav class="md-header-nav md-grid">
     <div class="md-flex">
       <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="https://gridsingularity.github.io/gsy-e/documentation/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
+        <a href="http://localhost:8000/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
           
             <img src="../img/Profile.png" width="32" height="32">
           
@@ -209,7 +209,7 @@
                   <div class="md-sidebar__inner">
                     <nav class="md-nav md-nav--primary" data-md-level="0">
   <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="https://gridsingularity.github.io/gsy-e/documentation/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
+    <a href="http://localhost:8000/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
       
         <img src="../img/Profile.png" width="48" height="48">
       
@@ -2276,50 +2276,50 @@
 <p>Please install Rust toolchain and the Developer Tools following the instructions from Substrate <a href="https://docs.substrate.io/main-docs/install/" target="_blank">here</a>.</p>
 <h3 id="run-the-gsy-dex-code">Run the GSy DEX code<a class="headerlink" href="#run-the-gsy-dex-code" title="Permanent link">&para;</a></h3>
 <p>The <code>cargo run</code> command will perform an initial build. Use the following command to build the node without launching it:</p>
-<pre class="codehilite"><code class="language-commandline">cd gsy-node
+<div class="codehilite"><pre><span></span><code>cd gsy-node
 cargo build --release
-</code></pre>
+</code></pre></div>
 
 <p>Once the project has been built, the following command can be used to explore all parameters and subcommands:</p>
-<pre class="codehilite"><code class="language-commandline">./target/release/gsy-node -h
-</code></pre>
+<div class="codehilite"><pre><span></span><code>./target/release/gsy-node -h
+</code></pre></div>
 
 <p>The <code>cargo run</code> command will launch a temporary node and its state will be discarded after you terminate the process.
 This command will start the single-node development chain with persistent state. This is useful in order to not discard the state of the node once the node stops running:</p>
-<pre class="codehilite"><code class="language-commandline">./target/release/gsy-node --dev
-</code></pre>
+<div class="codehilite"><pre><span></span><code>./target/release/gsy-node --dev
+</code></pre></div>
 
 <p>Purge the development chain's state:</p>
-<pre class="codehilite"><code class="language-commandline">./target/release/gsy-node purge-chain --dev
-</code></pre>
+<div class="codehilite"><pre><span></span><code>./target/release/gsy-node purge-chain --dev
+</code></pre></div>
 
 <p>Start the development chain with detailed logging:</p>
-<pre class="codehilite"><code class="language-commandline">RUST_BACKTRACE=1 ./target/release/gsy-node -ldebug --dev
-</code></pre>
+<div class="codehilite"><pre><span></span><code>RUST_BACKTRACE=1 ./target/release/gsy-node -ldebug --dev
+</code></pre></div>
 
 <p>Integration with the current version of the <a href="https://github.com/gridsingularity/gsy-e" target="_blank">GSy Energy Exchange</a> is also possible, with the objective of modelling, simulation and optimisation of energy marketplaces. To install, please refer to these <a href="https://github.com/gridsingularity/gsy-e#basic-setup">installation instructions</a>.</p>
 <p>Once installation is completed, a new energy marketplace can be modelled following the instructions <a href="../general-settings/#backend-simulation-configuration">here</a>. The same marketplace can also be simulated using the GSy DEX as the exchange engine.  In order to switch to the GSy DEX and enable blockchain operations, the command-line flag <code>--enable-bc</code> should be used. The mnemonic of the GSy DEX account should also be provided, in order to authorise the exchange engine to restore your key when needed and interact as bids and offers’ aggregator on your behalf with the blockchain. Finally, the <code>ENABLE_SUBSTRATE</code> parameter should be set to True.</p>
 <h3 id="co-develop-the-gsy-dex">Co-develop the GSy DEX<a class="headerlink" href="#co-develop-the-gsy-dex" title="Permanent link">&para;</a></h3>
 <p>To develop and extend the GSy DEX features and applications please follow this guide, which is based on the <a href="https://rustup.rs" target="_blank">rustup</a> installer tool for Rust toolchain management.</p>
 <p>First install and configure <code>rustup</code>:</p>
-<pre class="codehilite"><code class="language-commandline"># Install
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+<div class="codehilite"><pre><span></span><code># Install
+curl --proto &#39;=https&#39; --tlsv1.2 -sSf https://sh.rustup.rs | sh
 # Configure
 source ~/.cargo/env
-</code></pre>
+</code></pre></div>
 
 <p>Configure the Rust toolchain to default to the latest stable version, add nightly and the nightly wasm target:</p>
-<pre class="codehilite"><code class="language-commandline">rustup default stable
+<div class="codehilite"><pre><span></span><code>rustup default stable
 rustup update
 rustup update nightly
 rustup target add wasm32-unknown-unknown --toolchain nightly
-</code></pre>
+</code></pre></div>
 
 <p>In order to test your setup, the best way to ensure that you have successfully prepared a computer for the <a href="../blockchain-system-components-overview/#gsy-node">GSy Node</a> development is to follow the steps in the <a href="https://docs.substrate.io/tutorials/">first Substrate tutorial</a>.</p>
 <p>In order to run the code in developer mode, use Rust's native <code>cargo</code> command to build and launch the <a href="../blockchain-system-components-overview/#gsy-node">GSy Node</a>:</p>
-<pre class="codehilite"><code class="language-commandline">cd gsy-node
+<div class="codehilite"><pre><span></span><code>cd gsy-node
 cargo run --release -- --dev --tmp
-</code></pre>
+</code></pre></div>
 
 <p>You should always use the <code>--release</code> flag to build <a href="https://docs.substrate.io/build/build-process/" target="_blank">optimised artifacts</a>.</p>
 <p>The command-line options specify how you want the running node to operate. In this case, the <code>--dev</code> option specifies that the node runs in development mode using the predefined development chain specification.</p>
@@ -2327,7 +2327,7 @@ cargo run --release -- --dev --tmp
 <p>Using the <code>--dev</code> option ensures that you have a clean working state any time you stop and restart the node.</p>
 <p>Verify your node is up and running successfully by reviewing the output displayed in the terminal.</p>
 <p>The terminal should display output similar to this:</p>
-<pre class="codehilite"><code class="language-commandline">2022-08-16 13:43:58 Substrate Node
+<div class="codehilite"><pre><span></span><code>2022-08-16 13:43:58 Substrate Node
 2022-08-16 13:43:58 ✌️  version 4.0.0-dev-de262935ede
 2022-08-16 13:43:58 ❤️  by Substrate DevHub &lt;https://github.com/substrate-developer-hub&gt;, 2017-2022
 2022-08-16 13:43:58 📋 Chain specification: Development
@@ -2344,7 +2344,7 @@ cargo run --release -- --dev --tmp
 ...
 ...
 2022-08-16 13:54:26 💤 Idle (0 peers), best: #3 (0xcdac…26e5), finalized #1 (0x107c…9bae), ⬇ 0 ⬆ 0
-</code></pre>
+</code></pre></div>
 
 <p>If the block number, denoted by the logs that include the string <code>finalized #&lt;block-number&gt;</code>, is increasing, the <a href="../blockchain-system-components-overview/#gsy-node">GSy Node</a> is producing new blocks and its consensus algorithm is operating correctly.</p>
 <h3 id="connect-external-ui-to-the-gsy-dex">Connect external UI to the GSy DEX<a class="headerlink" href="#connect-external-ui-to-the-gsy-dex" title="Permanent link">&para;</a></h3>
@@ -2352,13 +2352,13 @@ cargo run --release -- --dev --tmp
 <h3 id="run-the-gsy-dex-code-using-docker-compose">Run the GSy DEX code using Docker Compose<a class="headerlink" href="#run-the-gsy-dex-code-using-docker-compose" title="Permanent link">&para;</a></h3>
 <p>First, install <a href="https://docs.docker.com/get-docker/" target="_blank">Docker</a> and <a href="https://docs.docker.com/compose/install/" target="_blank">Docker Compose</a>.</p>
 <p>Build and tag the docker image:</p>
-<pre class="codehilite"><code class="language-commandline">docker build -t gsy_dex_image .
+<div class="codehilite"><pre><span></span><code>docker build -t gsy_dex_image .
 docker tag gsy_dex_image:latest gsy_dex_image:staging
-</code></pre>
+</code></pre></div>
 
 <p>and start docker-compose:</p>
-<pre class="codehilite"><code class="language-commandline">docker-compose up
-</code></pre>
+<div class="codehilite"><pre><span></span><code>docker-compose up
+</code></pre></div>
 
 <h3 id="explore-the-gsy-dex-code">Explore the GSy DEX code<a class="headerlink" href="#explore-the-gsy-dex-code" title="Permanent link">&para;</a></h3>
 <p>A blockchain node is an application that allows users to participate in a blockchain network. Substrate-based blockchain nodes ensure a number of capabilities:</p>
@@ -2371,8 +2371,8 @@ docker tag gsy_dex_image:latest gsy_dex_image:staging
 - <code>chain_spec.rs</code>: A <a href="https://docs.substrate.io/build/chain-spec/" target="_blank">chain specification</a> is a source code file that defines a Substrate chain's initial (genesis) state. Chain specifications are useful for development and testing, and critical when architecting the launch of a production chain. Take note of the <code>development_config</code> and <code>testnet_genesis</code> functions, which are used to define the genesis state for the local development chain configuration. These functions identify some <a href="https://docs.substrate.io/learn/accounts-addresses-keys/">well-known accounts</a> and use them to configure the blockchain's initial state.
 - <code>service.rs</code>: This file defines the node implementation. Take note of the libraries that this file imports and the names of the functions it invokes. In particular, there are references to consensus-related topics, such as the <a href="https://docs.substrate.io/learn/consensus/#finalization-and-forks" target="_blank">longest chain rule</a>, the <a href="https://paritytech.github.io/substrate/master/sc_consensus_aura/index.html" target="_blank">Aura</a> block authoring mechanism and the <a href="https://paritytech.github.io/substrate/master/sc_consensus_grandpa/index.html" target="_blank">GRANDPA</a> finality gadget.</p>
 <p>After the node has been built, refer to the embedded documentation to learn more about the capabilities and configuration parameters it facilitates:</p>
-<pre class="codehilite"><code class="language-commandline">./target/release/gsy-node --help
-</code></pre>
+<div class="codehilite"><pre><span></span><code>./target/release/gsy-node --help
+</code></pre></div>
 
 <h4 id="runtime">Runtime<a class="headerlink" href="#runtime" title="Permanent link">&para;</a></h4>
 <p>In Substrate, the terms "<a href="https://docs.substrate.io/reference/glossary/#runtime" target="_blank">runtime</a>" and "<a href="https://docs.substrate.io/reference/glossary/#state-transition-function-stf" target="_blank">state transition function</a>" are analogous and refer to the core logic of the blockchain that is responsible for validating blocks and executing the state changes. The gsy-node Rust package in this repository uses the <a href="https://docs.substrate.io/quick-start/substrate-at-a-glance/#what-is-frame" target="_blank">FRAME</a> framework to construct a blockchain runtime. FRAME allows runtime developers to declare domain-specific logic in modules called "pallets". At the heart of FRAME is helpful <a href="https://docs.substrate.io/reference/frame-macros/" target="_blank">macro language</a> that makes it easy to create and flexibly compose pallets to generate blockchains that can address a <a href="https://substrate.io/ecosystem/projects/" target="_blank">variety of needs</a>.</p>
@@ -2595,7 +2595,7 @@ docker tag gsy_dex_image:latest gsy_dex_image:staging
     
       <script src="../assets/javascripts/application.05d1c8d6.js"></script>
       
-      <script>app.initialize({version:"1.3.0",url:{base:".."}})</script>
+      <script>app.initialize({version:"1.4.2",url:{base:".."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
       

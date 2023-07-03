@@ -13,7 +13,7 @@
         <meta name="description" content="Documentation for the Grid Singularity Exchange">
       
       
-        <link rel="canonical" href="https://gridsingularity.github.io/gsy-e/documentation/asset-api-template-script/">
+        <link rel="canonical" href="http://localhost:8000/asset-api-template-script/">
       
       
         <meta name="author" content="Grid Singularity">
@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../img/Profile.png">
-      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-4.0.2">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-4.0.2">
     
     
       
@@ -119,7 +119,7 @@
   <nav class="md-header-nav md-grid">
     <div class="md-flex">
       <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="https://gridsingularity.github.io/gsy-e/documentation/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
+        <a href="http://localhost:8000/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
           
             <img src="../img/Profile.png" width="32" height="32">
           
@@ -209,7 +209,7 @@
                   <div class="md-sidebar__inner">
                     <nav class="md-nav md-nav--primary" data-md-level="0">
   <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="https://gridsingularity.github.io/gsy-e/documentation/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
+    <a href="http://localhost:8000/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
       
         <img src="../img/Profile.png" width="48" height="48">
       
@@ -2080,111 +2080,111 @@
 <h2 id="post-bids-and-offers-to-the-grid-singularity-exchange">Post bids and offers to the Grid Singularity Exchange<a class="headerlink" href="#post-bids-and-offers-to-the-grid-singularity-exchange" title="Permanent link">&para;</a></h2>
 <p>The key functionality of the Asset API is to post bids or offers to the Grid Singularity Exchange on behalf of energy asset owners based on their preferences. A template script can be found <a href="https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/asset_api_scripts/rest_bid_offer_posting.py" target="_blank">here</a>.</p>
 <p>Users need to list the names of the assets to be connected with the Asset API, as shown in the following example. For simulations launched from the user-interface (UI), the CONNECT_TO_ALL_ASSETS parameter is available. If set to True, the Asset API connects automatically to all the assets the aggregator is connected to.</p>
-<pre class="codehilite"><code class="language-python"># List of assets' names to be connected with the API
-LOAD_NAMES = [&quot;Load 1 L13&quot;, &quot;Load 2 L21&quot;, &quot;Load 3 L17&quot;]
-PV_NAMES = [&quot;PV 1 (4kW)&quot;, &quot;PV 3 (5kW)&quot;]
-STORAGE_NAMES = [&quot;Tesla Powerwall 3&quot;]
+<div class="codehilite"><pre><span></span><code><span class="c1"># List of assets&#39; names to be connected with the API</span>
+<span class="n">LOAD_NAMES</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Load 1 L13&quot;</span><span class="p">,</span> <span class="s2">&quot;Load 2 L21&quot;</span><span class="p">,</span> <span class="s2">&quot;Load 3 L17&quot;</span><span class="p">]</span>
+<span class="n">PV_NAMES</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;PV 1 (4kW)&quot;</span><span class="p">,</span> <span class="s2">&quot;PV 3 (5kW)&quot;</span><span class="p">]</span>
+<span class="n">STORAGE_NAMES</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Tesla Powerwall 3&quot;</span><span class="p">]</span>
 
-CONNECT_TO_ALL_ASSETS = True
-</code></pre>
+<span class="n">CONNECT_TO_ALL_ASSETS</span> <span class="o">=</span> <span class="kc">True</span>
+</code></pre></div>
 
 <p>The goal of this template script is to send, at each <a href="../asset-api-events/#each-new-market-slot">market slot</a>, a bid and/or an offer for each energy asset. This is performed by the <em>post_bid_offer</em> function, which loops through all the assets connected with the Asset API, extracts their required or available energy and posts these values along with an associated rate for clearance and settlement by the Grid Singularity Exchange. As shown in the snippet below, the process is separated for consumption, generation and storage assets.</p>
-<pre class="codehilite"><code class="language-python">def post_bid_offer(self):
-   &quot;&quot;&quot;Post a bid or an offer to the exchange.&quot;&quot;&quot;
-   for area_uuid, area_dict in self.latest_grid_tree_flat.items():
-       asset_info = area_dict.get(&quot;asset_info&quot;)
-       if not asset_info:
-           continue
+<div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">post_bid_offer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">   </span><span class="sd">&quot;&quot;&quot;Post a bid or an offer to the exchange.&quot;&quot;&quot;</span>
+   <span class="k">for</span> <span class="n">area_uuid</span><span class="p">,</span> <span class="n">area_dict</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">latest_grid_tree_flat</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+       <span class="n">asset_info</span> <span class="o">=</span> <span class="n">area_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;asset_info&quot;</span><span class="p">)</span>
+       <span class="k">if</span> <span class="ow">not</span> <span class="n">asset_info</span><span class="p">:</span>
+           <span class="k">continue</span>
 
-       # Consumption assets
-       required_energy = asset_info.get(&quot;energy_requirement_kWh&quot;)
-       if required_energy:
-           self.add_to_batch_commands.bid_energy_rate(
-               asset_uuid=area_uuid, rate=10, energy=required_energy
-           )
+       <span class="c1"># Consumption assets</span>
+       <span class="n">required_energy</span> <span class="o">=</span> <span class="n">asset_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;energy_requirement_kWh&quot;</span><span class="p">)</span>
+       <span class="k">if</span> <span class="n">required_energy</span><span class="p">:</span>
+           <span class="bp">self</span><span class="o">.</span><span class="n">add_to_batch_commands</span><span class="o">.</span><span class="n">bid_energy_rate</span><span class="p">(</span>
+               <span class="n">asset_uuid</span><span class="o">=</span><span class="n">area_uuid</span><span class="p">,</span> <span class="n">rate</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">energy</span><span class="o">=</span><span class="n">required_energy</span>
+           <span class="p">)</span>
 
-       # Generation assets
-       available_energy = asset_info.get(&quot;available_energy_kWh&quot;)
-       if available_energy:
-           self.add_to_batch_commands.offer_energy_rate(
-               asset_uuid=area_uuid, rate=10, energy=available_energy
-           )
+       <span class="c1"># Generation assets</span>
+       <span class="n">available_energy</span> <span class="o">=</span> <span class="n">asset_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;available_energy_kWh&quot;</span><span class="p">)</span>
+       <span class="k">if</span> <span class="n">available_energy</span><span class="p">:</span>
+           <span class="bp">self</span><span class="o">.</span><span class="n">add_to_batch_commands</span><span class="o">.</span><span class="n">offer_energy_rate</span><span class="p">(</span>
+               <span class="n">asset_uuid</span><span class="o">=</span><span class="n">area_uuid</span><span class="p">,</span> <span class="n">rate</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">energy</span><span class="o">=</span><span class="n">available_energy</span>
+           <span class="p">)</span>
 
-       # Storage assets
-       buy_energy = asset_info.get(&quot;energy_to_buy&quot;)
-       if buy_energy:
-           self.add_to_batch_commands.bid_energy_rate(
-               asset_uuid=area_uuid, rate=10, energy=buy_energy
-           )
+       <span class="c1"># Storage assets</span>
+       <span class="n">buy_energy</span> <span class="o">=</span> <span class="n">asset_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;energy_to_buy&quot;</span><span class="p">)</span>
+       <span class="k">if</span> <span class="n">buy_energy</span><span class="p">:</span>
+           <span class="bp">self</span><span class="o">.</span><span class="n">add_to_batch_commands</span><span class="o">.</span><span class="n">bid_energy_rate</span><span class="p">(</span>
+               <span class="n">asset_uuid</span><span class="o">=</span><span class="n">area_uuid</span><span class="p">,</span> <span class="n">rate</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">energy</span><span class="o">=</span><span class="n">buy_energy</span>
+           <span class="p">)</span>
 
-       sell_energy = asset_info.get(&quot;energy_to_sell&quot;)
-       if sell_energy:
-           self.add_to_batch_commands.offer_energy_rate(
-               asset_uuid=area_uuid, rate=10, energy=sell_energy
-           )
+       <span class="n">sell_energy</span> <span class="o">=</span> <span class="n">asset_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;energy_to_sell&quot;</span><span class="p">)</span>
+       <span class="k">if</span> <span class="n">sell_energy</span><span class="p">:</span>
+           <span class="bp">self</span><span class="o">.</span><span class="n">add_to_batch_commands</span><span class="o">.</span><span class="n">offer_energy_rate</span><span class="p">(</span>
+               <span class="n">asset_uuid</span><span class="o">=</span><span class="n">area_uuid</span><span class="p">,</span> <span class="n">rate</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">energy</span><span class="o">=</span><span class="n">sell_energy</span>
+           <span class="p">)</span>
 
-       self.execute_batch_commands()
-</code></pre>
+       <span class="bp">self</span><span class="o">.</span><span class="n">execute_batch_commands</span><span class="p">()</span>
+</code></pre></div>
 
 <p>Later in the script, the <em>on_event_or_response</em> is called. By default, the Asset API template does not perform any operation here but the user can add <a href="../asset-api-events/">events</a>. For instance, the user could record all the trades occurring in that event. Lastly, the script overwrites the <em>on_finish</em> event so that when this function is triggered, the script stops. If the user wishes to save any information reported in the logs, this can be done by exporting it to an external file.</p>
-<pre class="codehilite"><code class="language-python">def on_event_or_response(self, message):
-   pass
+<div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">on_event_or_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">):</span>
+   <span class="k">pass</span>
 
-def on_finish(self, finish_info):
-   self.is_finished = True
-</code></pre>
+<span class="k">def</span> <span class="nf">on_finish</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">finish_info</span><span class="p">):</span>
+   <span class="bp">self</span><span class="o">.</span><span class="n">is_finished</span> <span class="o">=</span> <span class="kc">True</span>
+</code></pre></div>
 
 <p>The rest of the script is used to connect to the energy assets of a running <a href="../community/">simulation</a>/<a href="../collaboration/">collaboration</a>/<a href="../connect-ctn/">Canary Test Network</a>, with the purpose of actively placing bids and offers on their behalf.</p>
-<pre class="codehilite"><code class="language-python">aggregator = Oracle(aggregator_name=ORACLE_NAME)
-simulation_id = os.environ[&quot;API_CLIENT_SIMULATION_ID&quot;]
-domain_name = os.environ[&quot;API_CLIENT_DOMAIN_NAME&quot;]
-websockets_domain_name = os.environ[&quot;API_CLIENT_WEBSOCKET_DOMAIN_NAME&quot;]
-asset_args = {&quot;autoregister&quot;: False, &quot;start_websocket&quot;: False}
-if CONNECT_TO_ALL_ASSETS:
-   registry = aggregator.get_configuration_registry()
-   registered_assets = get_assets_name(registry)
-   LOAD_NAMES = registered_assets[&quot;Load&quot;]
-   PV_NAMES = registered_assets[&quot;PV&quot;]
-   STORAGE_NAMES = registered_assets[&quot;Storage&quot;]
+<div class="codehilite"><pre><span></span><code><span class="n">aggregator</span> <span class="o">=</span> <span class="n">Oracle</span><span class="p">(</span><span class="n">aggregator_name</span><span class="o">=</span><span class="n">ORACLE_NAME</span><span class="p">)</span>
+<span class="n">simulation_id</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;API_CLIENT_SIMULATION_ID&quot;</span><span class="p">]</span>
+<span class="n">domain_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;API_CLIENT_DOMAIN_NAME&quot;</span><span class="p">]</span>
+<span class="n">websockets_domain_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;API_CLIENT_WEBSOCKET_DOMAIN_NAME&quot;</span><span class="p">]</span>
+<span class="n">asset_args</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;autoregister&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;start_websocket&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
+<span class="k">if</span> <span class="n">CONNECT_TO_ALL_ASSETS</span><span class="p">:</span>
+   <span class="n">registry</span> <span class="o">=</span> <span class="n">aggregator</span><span class="o">.</span><span class="n">get_configuration_registry</span><span class="p">()</span>
+   <span class="n">registered_assets</span> <span class="o">=</span> <span class="n">get_assets_name</span><span class="p">(</span><span class="n">registry</span><span class="p">)</span>
+   <span class="n">LOAD_NAMES</span> <span class="o">=</span> <span class="n">registered_assets</span><span class="p">[</span><span class="s2">&quot;Load&quot;</span><span class="p">]</span>
+   <span class="n">PV_NAMES</span> <span class="o">=</span> <span class="n">registered_assets</span><span class="p">[</span><span class="s2">&quot;PV&quot;</span><span class="p">]</span>
+   <span class="n">STORAGE_NAMES</span> <span class="o">=</span> <span class="n">registered_assets</span><span class="p">[</span><span class="s2">&quot;Storage&quot;</span><span class="p">]</span>
 
 
-def register_asset_list(asset_names: List, asset_params: Dict, asset_uuid_map: Dict) -&gt; Dict:
-   &quot;&quot;&quot;Register the provided list of assets with the aggregator.&quot;&quot;&quot;
-   for asset_name in asset_names:
-       print(&quot;Registered asset:&quot;, asset_name)
-       uuid = get_area_uuid_from_area_name_and_collaboration_id(
-           simulation_id, asset_name, domain_name
-       )
-       asset_params[&quot;asset_uuid&quot;] = uuid
-       asset_uuid_map[uuid] = asset_name
-       asset = RestAssetClient(**asset_params)
-       asset.select_aggregator(aggregator.aggregator_uuid)
-   return asset_uuid_map
+<span class="k">def</span> <span class="nf">register_asset_list</span><span class="p">(</span><span class="n">asset_names</span><span class="p">:</span> <span class="n">List</span><span class="p">,</span> <span class="n">asset_params</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">asset_uuid_map</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="w">   </span><span class="sd">&quot;&quot;&quot;Register the provided list of assets with the aggregator.&quot;&quot;&quot;</span>
+   <span class="k">for</span> <span class="n">asset_name</span> <span class="ow">in</span> <span class="n">asset_names</span><span class="p">:</span>
+       <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Registered asset:&quot;</span><span class="p">,</span> <span class="n">asset_name</span><span class="p">)</span>
+       <span class="n">uuid</span> <span class="o">=</span> <span class="n">get_area_uuid_from_area_name_and_collaboration_id</span><span class="p">(</span>
+           <span class="n">simulation_id</span><span class="p">,</span> <span class="n">asset_name</span><span class="p">,</span> <span class="n">domain_name</span>
+       <span class="p">)</span>
+       <span class="n">asset_params</span><span class="p">[</span><span class="s2">&quot;asset_uuid&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">uuid</span>
+       <span class="n">asset_uuid_map</span><span class="p">[</span><span class="n">uuid</span><span class="p">]</span> <span class="o">=</span> <span class="n">asset_name</span>
+       <span class="n">asset</span> <span class="o">=</span> <span class="n">RestAssetClient</span><span class="p">(</span><span class="o">**</span><span class="n">asset_params</span><span class="p">)</span>
+       <span class="n">asset</span><span class="o">.</span><span class="n">select_aggregator</span><span class="p">(</span><span class="n">aggregator</span><span class="o">.</span><span class="n">aggregator_uuid</span><span class="p">)</span>
+   <span class="k">return</span> <span class="n">asset_uuid_map</span>
 
 
-print()
-print(&quot;Registering assets ...&quot;)
-asset_uuid_mapping = {}
-asset_uuid_mapping = register_asset_list(LOAD_NAMES + PV_NAMES + STORAGE_NAMES,
-                                        asset_args, asset_uuid_mapping)
-print()
-print(&quot;Summary of assets registered:&quot;)
-print()
-print(asset_uuid_mapping)
+<span class="nb">print</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Registering assets ...&quot;</span><span class="p">)</span>
+<span class="n">asset_uuid_mapping</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">asset_uuid_mapping</span> <span class="o">=</span> <span class="n">register_asset_list</span><span class="p">(</span><span class="n">LOAD_NAMES</span> <span class="o">+</span> <span class="n">PV_NAMES</span> <span class="o">+</span> <span class="n">STORAGE_NAMES</span><span class="p">,</span>
+                                        <span class="n">asset_args</span><span class="p">,</span> <span class="n">asset_uuid_mapping</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Summary of assets registered:&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">asset_uuid_mapping</span><span class="p">)</span>
 
-# loop to allow persistence
-while not aggregator.is_finished:
-   sleep(0.5)
-</code></pre>
+<span class="c1"># loop to allow persistence</span>
+<span class="k">while</span> <span class="ow">not</span> <span class="n">aggregator</span><span class="o">.</span><span class="n">is_finished</span><span class="p">:</span>
+   <span class="n">sleep</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+</code></pre></div>
 
 <p>For simulations run in the backend, a similar script is available <a href="https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/asset_api_scripts/redis_bid_offer_posting.py" target="_blank">here</a>.</p>
 <h2 id="implement-trading-strategies">Implement trading strategies<a class="headerlink" href="#implement-trading-strategies" title="Permanent link">&para;</a></h2>
 <p>One of the main functionalities provided by the Asset API is to implement customized trading strategies. The Asset API script stores energy assets information such as the energy requirements for the <a href="../consumption/">loads</a>, the energy available for the <a href="../solar-panels/">PVs</a> and the State of Charge for the <a href="../battery/">storage</a>. This information when aggregated could be valuable when designing a smarter trading strategy. A template script can be found <a href="https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/asset_api_scripts/rest_basic_strategies.py">here</a>.</p>
 <p>At the beginning of the <em><a href="../asset-api-events/#each-new-market-slot">on_market_slot</a></em> event, the script generates the trading strategies (in the <em>build_strategies</em> function). The <a href="../assets-installation/#market-maker">Market Maker</a> price and the Feed-in Tariff values are required to set the pricing boundaries for the trading strategy.</p>
-<pre class="codehilite"><code class="language-python">fit_rate = market_info[&quot;feed_in_tariff_rate&quot;]
-market_maker_rate = market_info[&quot;market_maker_rate&quot;]
-med_price = (market_maker_rate - fit_rate) / 2 + fit_rate
-</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="n">fit_rate</span> <span class="o">=</span> <span class="n">market_info</span><span class="p">[</span><span class="s2">&quot;feed_in_tariff_rate&quot;</span><span class="p">]</span>
+<span class="n">market_maker_rate</span> <span class="o">=</span> <span class="n">market_info</span><span class="p">[</span><span class="s2">&quot;market_maker_rate&quot;</span><span class="p">]</span>
+<span class="n">med_price</span> <span class="o">=</span> <span class="p">(</span><span class="n">market_maker_rate</span> <span class="o">-</span> <span class="n">fit_rate</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">fit_rate</span>
+</code></pre></div>
 
 <p>Then, the script creates the <em>asset_strategy</em> dictionary, which contains various information for each asset, such as its name, its type (load, PV or storage) and the <a href="../grid-fees/">grid fees</a> between the assets and the market maker. To calculate the grid fees between two assets or markets in the grid, the  <em><a href="https://github.com/gridsingularity/gsy-e-sdk/blob/3dea1f42e283736ccbaaac6e51f4127e2bbfb020/gsy_e_sdk/aggregator.py#L194">calculate_grid_fee</a></em> function is used,which takes 3 arguments:</p>
 <ul>
@@ -2193,281 +2193,281 @@ med_price = (market_maker_rate - fit_rate) / 2 + fit_rate
 <li><em>fee_type</em>: can either be "current_market_fee" or “last_market_fee”</li>
 </ul>
 <p>The fees are integrated in the pricing strategy in order to avoid any power outages for the loads or PV curtailment.</p>
-<pre class="codehilite"><code class="language-python">for area_uuid, area_dict in self.latest_grid_tree_flat.items():
-   if &quot;asset_info&quot; not in area_dict or area_dict[&quot;asset_info&quot;] is None:
-       continue
-   self.asset_strategy[area_uuid] = {}
-   self.asset_strategy[area_uuid][&quot;asset_name&quot;] = area_dict[&quot;area_name&quot;]
-   self.asset_strategy[area_uuid][
-       &quot;fee_to_market_maker&quot;
-   ] = self.calculate_grid_fee(
-       area_uuid,
-       self.get_uuid_from_area_name(&quot;Market Maker&quot;),
-       &quot;current_market_fee&quot;,
-   )
-</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="k">for</span> <span class="n">area_uuid</span><span class="p">,</span> <span class="n">area_dict</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">latest_grid_tree_flat</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+   <span class="k">if</span> <span class="s2">&quot;asset_info&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">area_dict</span> <span class="ow">or</span> <span class="n">area_dict</span><span class="p">[</span><span class="s2">&quot;asset_info&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+       <span class="k">continue</span>
+   <span class="bp">self</span><span class="o">.</span><span class="n">asset_strategy</span><span class="p">[</span><span class="n">area_uuid</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+   <span class="bp">self</span><span class="o">.</span><span class="n">asset_strategy</span><span class="p">[</span><span class="n">area_uuid</span><span class="p">][</span><span class="s2">&quot;asset_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">area_dict</span><span class="p">[</span><span class="s2">&quot;area_name&quot;</span><span class="p">]</span>
+   <span class="bp">self</span><span class="o">.</span><span class="n">asset_strategy</span><span class="p">[</span><span class="n">area_uuid</span><span class="p">][</span>
+       <span class="s2">&quot;fee_to_market_maker&quot;</span>
+   <span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_grid_fee</span><span class="p">(</span>
+       <span class="n">area_uuid</span><span class="p">,</span>
+       <span class="bp">self</span><span class="o">.</span><span class="n">get_uuid_from_area_name</span><span class="p">(</span><span class="s2">&quot;Market Maker&quot;</span><span class="p">),</span>
+       <span class="s2">&quot;current_market_fee&quot;</span><span class="p">,</span>
+   <span class="p">)</span>
+</code></pre></div>
 
 <p>Lastly, in the <em>asset_strategy</em> dictionary, the pricing strategy is defined for each asset individually. This allows assets to have independent strategies depending on the available market information and their location in the grid.</p>
 <p>The current pricing strategies are deterministic, representing a linear function bounded between the Feed-in Tariff-grid fee (lower boundary) and the Market Maker price + grid fee (upper boundary). Since the Asset API can post up to 10 bids/offers per market slot, the strategies incrementally ramp up (bids) or down (offers) for a total of 10 prices per energy asset. The final bid/offer price is set at least 2 ticks before the end of the market slot (9th and 10th tick in the example). The load strategy, the PV strategy and the storage strategy, as assets that can charge and discharge and therefore place bids and offers at the same time, are designed as follows.</p>
-<pre class="codehilite"><code class="language-python"># Consumption strategy
-if &quot;energy_requirement_kWh&quot; in area_dict[&quot;asset_info&quot;]:
-   load_strategy = []
-   for tick in range(0, TICKS):
-       if tick &lt; TICKS - 2:
-           buy_rate = (fit_rate -
-                       self.asset_strategy[area_uuid][&quot;fee_to_market_maker&quot;] +
-                       (market_maker_rate +
-                        2 * self.asset_strategy[area_uuid][&quot;fee_to_market_maker&quot;] -
-                        fit_rate) * (tick / TICKS)
-                       )
-           load_strategy.append(buy_rate)
-       else:
-           buy_rate = market_maker_rate + (
-               self.asset_strategy[area_uuid][&quot;fee_to_market_maker&quot;])
-           load_strategy.append(buy_rate)
-   self.asset_strategy[area_uuid][&quot;buy_rates&quot;] = load_strategy
+<div class="codehilite"><pre><span></span><code><span class="c1"># Consumption strategy</span>
+<span class="k">if</span> <span class="s2">&quot;energy_requirement_kWh&quot;</span> <span class="ow">in</span> <span class="n">area_dict</span><span class="p">[</span><span class="s2">&quot;asset_info&quot;</span><span class="p">]:</span>
+   <span class="n">load_strategy</span> <span class="o">=</span> <span class="p">[]</span>
+   <span class="k">for</span> <span class="n">tick</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">TICKS</span><span class="p">):</span>
+       <span class="k">if</span> <span class="n">tick</span> <span class="o">&lt;</span> <span class="n">TICKS</span> <span class="o">-</span> <span class="mi">2</span><span class="p">:</span>
+           <span class="n">buy_rate</span> <span class="o">=</span> <span class="p">(</span><span class="n">fit_rate</span> <span class="o">-</span>
+                       <span class="bp">self</span><span class="o">.</span><span class="n">asset_strategy</span><span class="p">[</span><span class="n">area_uuid</span><span class="p">][</span><span class="s2">&quot;fee_to_market_maker&quot;</span><span class="p">]</span> <span class="o">+</span>
+                       <span class="p">(</span><span class="n">market_maker_rate</span> <span class="o">+</span>
+                        <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">asset_strategy</span><span class="p">[</span><span class="n">area_uuid</span><span class="p">][</span><span class="s2">&quot;fee_to_market_maker&quot;</span><span class="p">]</span> <span class="o">-</span>
+                        <span class="n">fit_rate</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">tick</span> <span class="o">/</span> <span class="n">TICKS</span><span class="p">)</span>
+                       <span class="p">)</span>
+           <span class="n">load_strategy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">buy_rate</span><span class="p">)</span>
+       <span class="k">else</span><span class="p">:</span>
+           <span class="n">buy_rate</span> <span class="o">=</span> <span class="n">market_maker_rate</span> <span class="o">+</span> <span class="p">(</span>
+               <span class="bp">self</span><span class="o">.</span><span class="n">asset_strategy</span><span class="p">[</span><span class="n">area_uuid</span><span class="p">][</span><span class="s2">&quot;fee_to_market_maker&quot;</span><span class="p">])</span>
+           <span class="n">load_strategy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">buy_rate</span><span class="p">)</span>
+   <span class="bp">self</span><span class="o">.</span><span class="n">asset_strategy</span><span class="p">[</span><span class="n">area_uuid</span><span class="p">][</span><span class="s2">&quot;buy_rates&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">load_strategy</span>
 
-# Generation strategy
-if &quot;available_energy_kWh&quot; in area_dict[&quot;asset_info&quot;]:
-   gen_strategy = []
-   for tick in range(0, TICKS):
-       if tick &lt; TICKS - 2:
-           sell_rate = (market_maker_rate +
-                        self.asset_strategy[area_uuid][&quot;fee_to_market_maker&quot;] -
-                        (market_maker_rate +
-                         2 * self.asset_strategy[area_uuid][&quot;fee_to_market_maker&quot;] -
-                         fit_rate) * (tick / TICKS)
-                        )
-           gen_strategy.append(max(0, sell_rate))
-       else:
-           sell_rate = fit_rate - (
-               self.asset_strategy[area_uuid][&quot;fee_to_market_maker&quot;])
-           gen_strategy.append(max(0, sell_rate))
-   self.asset_strategy[area_uuid][&quot;sell_rates&quot;] = gen_strategy
+<span class="c1"># Generation strategy</span>
+<span class="k">if</span> <span class="s2">&quot;available_energy_kWh&quot;</span> <span class="ow">in</span> <span class="n">area_dict</span><span class="p">[</span><span class="s2">&quot;asset_info&quot;</span><span class="p">]:</span>
+   <span class="n">gen_strategy</span> <span class="o">=</span> <span class="p">[]</span>
+   <span class="k">for</span> <span class="n">tick</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">TICKS</span><span class="p">):</span>
+       <span class="k">if</span> <span class="n">tick</span> <span class="o">&lt;</span> <span class="n">TICKS</span> <span class="o">-</span> <span class="mi">2</span><span class="p">:</span>
+           <span class="n">sell_rate</span> <span class="o">=</span> <span class="p">(</span><span class="n">market_maker_rate</span> <span class="o">+</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">asset_strategy</span><span class="p">[</span><span class="n">area_uuid</span><span class="p">][</span><span class="s2">&quot;fee_to_market_maker&quot;</span><span class="p">]</span> <span class="o">-</span>
+                        <span class="p">(</span><span class="n">market_maker_rate</span> <span class="o">+</span>
+                         <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">asset_strategy</span><span class="p">[</span><span class="n">area_uuid</span><span class="p">][</span><span class="s2">&quot;fee_to_market_maker&quot;</span><span class="p">]</span> <span class="o">-</span>
+                         <span class="n">fit_rate</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">tick</span> <span class="o">/</span> <span class="n">TICKS</span><span class="p">)</span>
+                        <span class="p">)</span>
+           <span class="n">gen_strategy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">sell_rate</span><span class="p">))</span>
+       <span class="k">else</span><span class="p">:</span>
+           <span class="n">sell_rate</span> <span class="o">=</span> <span class="n">fit_rate</span> <span class="o">-</span> <span class="p">(</span>
+               <span class="bp">self</span><span class="o">.</span><span class="n">asset_strategy</span><span class="p">[</span><span class="n">area_uuid</span><span class="p">][</span><span class="s2">&quot;fee_to_market_maker&quot;</span><span class="p">])</span>
+           <span class="n">gen_strategy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">sell_rate</span><span class="p">))</span>
+   <span class="bp">self</span><span class="o">.</span><span class="n">asset_strategy</span><span class="p">[</span><span class="n">area_uuid</span><span class="p">][</span><span class="s2">&quot;sell_rates&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">gen_strategy</span>
 
-# Storage strategy
-if &quot;used_storage&quot; in area_dict[&quot;asset_info&quot;]:
-   batt_buy_strategy = []
-   batt_sell_strategy = []
-   for tick in range(0, TICKS):
-       buy_rate = (fit_rate -
-                   self.asset_strategy[area_uuid][&quot;fee_to_market_maker&quot;] +
-                   (med_price -
-                    (fit_rate -
-                     self.asset_strategy[area_uuid][&quot;fee_to_market_maker&quot;]
-                     )
-                    ) * (tick / TICKS)
-                   )
-       batt_buy_strategy.append(buy_rate)
-       sell_rate = (market_maker_rate +
-                    self.asset_strategy[area_uuid][&quot;fee_to_market_maker&quot;] -
-                    (market_maker_rate +
-                     self.asset_strategy[area_uuid][&quot;fee_to_market_maker&quot;] -
-                     med_price) * (tick / TICKS)
-                    )
-       batt_sell_strategy.append(sell_rate)
-   self.asset_strategy[area_uuid][&quot;buy_rates&quot;] = batt_buy_strategy
-   self.asset_strategy[area_uuid][&quot;sell_rates&quot;] = batt_sell_strategy
-</code></pre>
+<span class="c1"># Storage strategy</span>
+<span class="k">if</span> <span class="s2">&quot;used_storage&quot;</span> <span class="ow">in</span> <span class="n">area_dict</span><span class="p">[</span><span class="s2">&quot;asset_info&quot;</span><span class="p">]:</span>
+   <span class="n">batt_buy_strategy</span> <span class="o">=</span> <span class="p">[]</span>
+   <span class="n">batt_sell_strategy</span> <span class="o">=</span> <span class="p">[]</span>
+   <span class="k">for</span> <span class="n">tick</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">TICKS</span><span class="p">):</span>
+       <span class="n">buy_rate</span> <span class="o">=</span> <span class="p">(</span><span class="n">fit_rate</span> <span class="o">-</span>
+                   <span class="bp">self</span><span class="o">.</span><span class="n">asset_strategy</span><span class="p">[</span><span class="n">area_uuid</span><span class="p">][</span><span class="s2">&quot;fee_to_market_maker&quot;</span><span class="p">]</span> <span class="o">+</span>
+                   <span class="p">(</span><span class="n">med_price</span> <span class="o">-</span>
+                    <span class="p">(</span><span class="n">fit_rate</span> <span class="o">-</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">asset_strategy</span><span class="p">[</span><span class="n">area_uuid</span><span class="p">][</span><span class="s2">&quot;fee_to_market_maker&quot;</span><span class="p">]</span>
+                     <span class="p">)</span>
+                    <span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">tick</span> <span class="o">/</span> <span class="n">TICKS</span><span class="p">)</span>
+                   <span class="p">)</span>
+       <span class="n">batt_buy_strategy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">buy_rate</span><span class="p">)</span>
+       <span class="n">sell_rate</span> <span class="o">=</span> <span class="p">(</span><span class="n">market_maker_rate</span> <span class="o">+</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">asset_strategy</span><span class="p">[</span><span class="n">area_uuid</span><span class="p">][</span><span class="s2">&quot;fee_to_market_maker&quot;</span><span class="p">]</span> <span class="o">-</span>
+                    <span class="p">(</span><span class="n">market_maker_rate</span> <span class="o">+</span>
+                     <span class="bp">self</span><span class="o">.</span><span class="n">asset_strategy</span><span class="p">[</span><span class="n">area_uuid</span><span class="p">][</span><span class="s2">&quot;fee_to_market_maker&quot;</span><span class="p">]</span> <span class="o">-</span>
+                     <span class="n">med_price</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">tick</span> <span class="o">/</span> <span class="n">TICKS</span><span class="p">)</span>
+                    <span class="p">)</span>
+       <span class="n">batt_sell_strategy</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sell_rate</span><span class="p">)</span>
+   <span class="bp">self</span><span class="o">.</span><span class="n">asset_strategy</span><span class="p">[</span><span class="n">area_uuid</span><span class="p">][</span><span class="s2">&quot;buy_rates&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">batt_buy_strategy</span>
+   <span class="bp">self</span><span class="o">.</span><span class="n">asset_strategy</span><span class="p">[</span><span class="n">area_uuid</span><span class="p">][</span><span class="s2">&quot;sell_rates&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">batt_sell_strategy</span>
+</code></pre></div>
 
 <p>At each <em>on_tick</em> event, the Asset API will post new bids and offers, or update / delete existing ones. This allows the Exchange SDK to update their price strategy until all consumption and generation have been traded. In the following lines the Exchange SDK updates the existing bids/offers with new prices to optimize trades. The updated energy information is found in <em>latest_grid_tree_flat.items()</em> and the prices for each bid/offer depend on the market slot progression. All the commands are then executed.</p>
-<pre class="codehilite"><code class="language-python">def post_bid_offer(self, rate_index=0):
-   &quot;&quot;&quot;Post a bid or an offer to the exchange.&quot;&quot;&quot;
-   for area_uuid, area_dict in self.latest_grid_tree_flat.items():
-       asset_info = area_dict.get(&quot;asset_info&quot;)
-       if not asset_info:
-           continue
+<div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">post_bid_offer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rate_index</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="w">   </span><span class="sd">&quot;&quot;&quot;Post a bid or an offer to the exchange.&quot;&quot;&quot;</span>
+   <span class="k">for</span> <span class="n">area_uuid</span><span class="p">,</span> <span class="n">area_dict</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">latest_grid_tree_flat</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+       <span class="n">asset_info</span> <span class="o">=</span> <span class="n">area_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;asset_info&quot;</span><span class="p">)</span>
+       <span class="k">if</span> <span class="ow">not</span> <span class="n">asset_info</span><span class="p">:</span>
+           <span class="k">continue</span>
 
-       # Consumption assets
-       required_energy = asset_info.get(&quot;energy_requirement_kWh&quot;)
-       if required_energy:
-           rate = self.asset_strategy[area_uuid][&quot;buy_rates&quot;][rate_index]
-           self.add_to_batch_commands.bid_energy_rate(
-               asset_uuid=area_uuid, rate=rate, energy=required_energy
-           )
+       <span class="c1"># Consumption assets</span>
+       <span class="n">required_energy</span> <span class="o">=</span> <span class="n">asset_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;energy_requirement_kWh&quot;</span><span class="p">)</span>
+       <span class="k">if</span> <span class="n">required_energy</span><span class="p">:</span>
+           <span class="n">rate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">asset_strategy</span><span class="p">[</span><span class="n">area_uuid</span><span class="p">][</span><span class="s2">&quot;buy_rates&quot;</span><span class="p">][</span><span class="n">rate_index</span><span class="p">]</span>
+           <span class="bp">self</span><span class="o">.</span><span class="n">add_to_batch_commands</span><span class="o">.</span><span class="n">bid_energy_rate</span><span class="p">(</span>
+               <span class="n">asset_uuid</span><span class="o">=</span><span class="n">area_uuid</span><span class="p">,</span> <span class="n">rate</span><span class="o">=</span><span class="n">rate</span><span class="p">,</span> <span class="n">energy</span><span class="o">=</span><span class="n">required_energy</span>
+           <span class="p">)</span>
 
-       # Generation assets
-       available_energy = asset_info.get(&quot;available_energy_kWh&quot;)
-       if available_energy:
-           rate = self.asset_strategy[area_uuid][&quot;sell_rates&quot;][rate_index]
-           self.add_to_batch_commands.offer_energy_rate(
-               asset_uuid=area_uuid, rate=rate, energy=available_energy
-           )
+       <span class="c1"># Generation assets</span>
+       <span class="n">available_energy</span> <span class="o">=</span> <span class="n">asset_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;available_energy_kWh&quot;</span><span class="p">)</span>
+       <span class="k">if</span> <span class="n">available_energy</span><span class="p">:</span>
+           <span class="n">rate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">asset_strategy</span><span class="p">[</span><span class="n">area_uuid</span><span class="p">][</span><span class="s2">&quot;sell_rates&quot;</span><span class="p">][</span><span class="n">rate_index</span><span class="p">]</span>
+           <span class="bp">self</span><span class="o">.</span><span class="n">add_to_batch_commands</span><span class="o">.</span><span class="n">offer_energy_rate</span><span class="p">(</span>
+               <span class="n">asset_uuid</span><span class="o">=</span><span class="n">area_uuid</span><span class="p">,</span> <span class="n">rate</span><span class="o">=</span><span class="n">rate</span><span class="p">,</span> <span class="n">energy</span><span class="o">=</span><span class="n">available_energy</span>
+           <span class="p">)</span>
 
-       # Storage assets
-       buy_energy = asset_info.get(&quot;energy_to_buy&quot;)
-       if buy_energy:
-           buy_rate = self.asset_strategy[area_uuid][&quot;buy_rates&quot;][rate_index]
-           self.add_to_batch_commands.bid_energy_rate(
-               asset_uuid=area_uuid, rate=buy_rate, energy=buy_energy
-           )
+       <span class="c1"># Storage assets</span>
+       <span class="n">buy_energy</span> <span class="o">=</span> <span class="n">asset_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;energy_to_buy&quot;</span><span class="p">)</span>
+       <span class="k">if</span> <span class="n">buy_energy</span><span class="p">:</span>
+           <span class="n">buy_rate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">asset_strategy</span><span class="p">[</span><span class="n">area_uuid</span><span class="p">][</span><span class="s2">&quot;buy_rates&quot;</span><span class="p">][</span><span class="n">rate_index</span><span class="p">]</span>
+           <span class="bp">self</span><span class="o">.</span><span class="n">add_to_batch_commands</span><span class="o">.</span><span class="n">bid_energy_rate</span><span class="p">(</span>
+               <span class="n">asset_uuid</span><span class="o">=</span><span class="n">area_uuid</span><span class="p">,</span> <span class="n">rate</span><span class="o">=</span><span class="n">buy_rate</span><span class="p">,</span> <span class="n">energy</span><span class="o">=</span><span class="n">buy_energy</span>
+           <span class="p">)</span>
 
-       sell_energy = asset_info.get(&quot;energy_to_sell&quot;)
-       if sell_energy:
-           sell_rate = self.asset_strategy[area_uuid][&quot;sell_rates&quot;][rate_index]
-           self.add_to_batch_commands.offer_energy_rate(
-               asset_uuid=area_uuid, rate=sell_rate, energy=sell_energy
-           )
+       <span class="n">sell_energy</span> <span class="o">=</span> <span class="n">asset_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;energy_to_sell&quot;</span><span class="p">)</span>
+       <span class="k">if</span> <span class="n">sell_energy</span><span class="p">:</span>
+           <span class="n">sell_rate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">asset_strategy</span><span class="p">[</span><span class="n">area_uuid</span><span class="p">][</span><span class="s2">&quot;sell_rates&quot;</span><span class="p">][</span><span class="n">rate_index</span><span class="p">]</span>
+           <span class="bp">self</span><span class="o">.</span><span class="n">add_to_batch_commands</span><span class="o">.</span><span class="n">offer_energy_rate</span><span class="p">(</span>
+               <span class="n">asset_uuid</span><span class="o">=</span><span class="n">area_uuid</span><span class="p">,</span> <span class="n">rate</span><span class="o">=</span><span class="n">sell_rate</span><span class="p">,</span> <span class="n">energy</span><span class="o">=</span><span class="n">sell_energy</span>
+           <span class="p">)</span>
 
-       self.execute_batch_commands()
-</code></pre>
+       <span class="bp">self</span><span class="o">.</span><span class="n">execute_batch_commands</span><span class="p">()</span>
+</code></pre></div>
 
 <p>The rest of the script functionality has been covered in the <a href="../setup-configuration/">previous section</a>. For simulations run in the backend, a similar script is available <a href="https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/asset_api_scripts/redis_basic_strategies.py" target="_blank">here</a>.</p>
 <h2 id="introduce-trading-preferences-with-the-degrees-of-freedom">Introduce trading preferences with the Degrees of Freedom<a class="headerlink" href="#introduce-trading-preferences-with-the-degrees-of-freedom" title="Permanent link">&para;</a></h2>
 <p>With the Asset API, users also have the option to specify trading preferences for each asset, such as preferred trading partners, energy type, energy amount and rate. An example of such a script can be found <a href="https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/asset_api_scripts/degrees_of_freedom.py" target="_blank">here</a>. These preferences are also known as requirements and attributes or “degrees of freedom”, as explained <a href="../degrees-of-freedom/">here</a>.</p>
 <p>Requirements are uploaded to the template script via a JSON file (an example can be found <a href="https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/asset_api_scripts/resources/requirements.json" target="_blank">here</a>), which has the following structure:</p>
-<pre class="codehilite"><code class="language-python">{
-   &quot;Load 3 L17&quot;:[
-       {
-           &quot;Trading Partners&quot;: [&quot;PV 9 (15kW)&quot;],
-           &quot;Energy Types&quot;: [],
-           &quot;Energy&quot;: &quot;None&quot;,
-           &quot;Rate&quot;: &quot;None&quot;
-   }
-   ],
-   &quot;Load 2 L21&quot;:[
-       {
-           &quot;Trading Partners&quot;: [&quot;PV 5 (10kW)&quot;],
-           &quot;Energy Types&quot;: [],
-           &quot;Energy&quot;: 10,
-           &quot;Rate&quot;: 3
-   }
-   ],
-   &quot;Load 1 L13&quot;:[
-       {
-           &quot;Trading Partners&quot;: [],
-           &quot;Energy Types&quot;: [],
-           &quot;Energy&quot;: &quot;None&quot;,
-           &quot;Rate&quot;: &quot;None&quot;
-   }
-]
-}
-</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
+   <span class="s2">&quot;Load 3 L17&quot;</span><span class="p">:[</span>
+       <span class="p">{</span>
+           <span class="s2">&quot;Trading Partners&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;PV 9 (15kW)&quot;</span><span class="p">],</span>
+           <span class="s2">&quot;Energy Types&quot;</span><span class="p">:</span> <span class="p">[],</span>
+           <span class="s2">&quot;Energy&quot;</span><span class="p">:</span> <span class="s2">&quot;None&quot;</span><span class="p">,</span>
+           <span class="s2">&quot;Rate&quot;</span><span class="p">:</span> <span class="s2">&quot;None&quot;</span>
+   <span class="p">}</span>
+   <span class="p">],</span>
+   <span class="s2">&quot;Load 2 L21&quot;</span><span class="p">:[</span>
+       <span class="p">{</span>
+           <span class="s2">&quot;Trading Partners&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;PV 5 (10kW)&quot;</span><span class="p">],</span>
+           <span class="s2">&quot;Energy Types&quot;</span><span class="p">:</span> <span class="p">[],</span>
+           <span class="s2">&quot;Energy&quot;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span>
+           <span class="s2">&quot;Rate&quot;</span><span class="p">:</span> <span class="mi">3</span>
+   <span class="p">}</span>
+   <span class="p">],</span>
+   <span class="s2">&quot;Load 1 L13&quot;</span><span class="p">:[</span>
+       <span class="p">{</span>
+           <span class="s2">&quot;Trading Partners&quot;</span><span class="p">:</span> <span class="p">[],</span>
+           <span class="s2">&quot;Energy Types&quot;</span><span class="p">:</span> <span class="p">[],</span>
+           <span class="s2">&quot;Energy&quot;</span><span class="p">:</span> <span class="s2">&quot;None&quot;</span><span class="p">,</span>
+           <span class="s2">&quot;Rate&quot;</span><span class="p">:</span> <span class="s2">&quot;None&quot;</span>
+   <span class="p">}</span>
+<span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div>
 
 <p>In this example it is shown how, for each load, the four above mentioned requirements are listed and specified in value. It is also possible not to set any specific requirement to an asset, as for Load 1 L13. If, for example, “Energy” and “Rate” are set to None, the default energy and rate values from the template trading strategies are assigned. At <a href="../asset-api-events/#each-new-market-slot">each market slot</a>, the Asset API loads and reads the information contained in this JSON file with the following function:</p>
-<pre class="codehilite"><code class="language-python">def read_requirements(self):
-   &quot;&quot;&quot;Load the JSON file containing the list of requirements for each asset.&quot;&quot;&quot;
-   with open(
-       os.path.join(module_dir, &quot;resources/requirements.json&quot;),
-       &quot;r&quot;,
-       encoding=&quot;utf-8&quot;,
-   ) as file:
-       self.degrees_of_freedom = json.load(file)
-</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">read_requirements</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">   </span><span class="sd">&quot;&quot;&quot;Load the JSON file containing the list of requirements for each asset.&quot;&quot;&quot;</span>
+   <span class="k">with</span> <span class="nb">open</span><span class="p">(</span>
+       <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">module_dir</span><span class="p">,</span> <span class="s2">&quot;resources/requirements.json&quot;</span><span class="p">),</span>
+       <span class="s2">&quot;r&quot;</span><span class="p">,</span>
+       <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">,</span>
+   <span class="p">)</span> <span class="k">as</span> <span class="n">file</span><span class="p">:</span>
+       <span class="bp">self</span><span class="o">.</span><span class="n">degrees_of_freedom</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+</code></pre></div>
 
 <p>Subsequently, a bid with the associated requirements is posted to the Exchange (for more on how to post bids and offers please see <a href="./">here</a>.) The requirements uploaded through the JSON file must be converted to the correct format ahead of submission to the Exchange. To do so, the <em>build_requirements_dict</em> function is used:</p>
-<pre class="codehilite"><code class="language-python">def build_requirements_dict(self, rate, energy, area_name):
-   &quot;&quot;&quot;Return a dictionary with the requirements of the asset.&quot;&quot;&quot;
-   asset_dof_list = self.degrees_of_freedom[area_name]
-   for asset_dof in asset_dof_list:
-       id_trading_partners_list = get_partner_ids(asset_dof[&quot;Trading Partners&quot;])
-       energy_types_list = asset_dof[&quot;Energy Types&quot;]
-       energy_requirement = (
-           energy
-           if asset_dof[&quot;Energy&quot;] == &quot;None&quot;
-           else min(asset_dof[&quot;Energy&quot;], energy)
-       )
-       rate_requirement = (
-           rate if asset_dof[&quot;Rate&quot;] == &quot;None&quot; else asset_dof[&quot;Rate&quot;]
-       )
-       requirements = [
-           {
-               &quot;trading_partners&quot;: id_trading_partners_list,
-               &quot;energy_type&quot;: energy_types_list,
-               &quot;energy&quot;: energy_requirement,
-               &quot;price&quot;: rate_requirement * energy_requirement,
-           }
-       ]
-   return requirements
-</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">build_requirements_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rate</span><span class="p">,</span> <span class="n">energy</span><span class="p">,</span> <span class="n">area_name</span><span class="p">):</span>
+<span class="w">   </span><span class="sd">&quot;&quot;&quot;Return a dictionary with the requirements of the asset.&quot;&quot;&quot;</span>
+   <span class="n">asset_dof_list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">degrees_of_freedom</span><span class="p">[</span><span class="n">area_name</span><span class="p">]</span>
+   <span class="k">for</span> <span class="n">asset_dof</span> <span class="ow">in</span> <span class="n">asset_dof_list</span><span class="p">:</span>
+       <span class="n">id_trading_partners_list</span> <span class="o">=</span> <span class="n">get_partner_ids</span><span class="p">(</span><span class="n">asset_dof</span><span class="p">[</span><span class="s2">&quot;Trading Partners&quot;</span><span class="p">])</span>
+       <span class="n">energy_types_list</span> <span class="o">=</span> <span class="n">asset_dof</span><span class="p">[</span><span class="s2">&quot;Energy Types&quot;</span><span class="p">]</span>
+       <span class="n">energy_requirement</span> <span class="o">=</span> <span class="p">(</span>
+           <span class="n">energy</span>
+           <span class="k">if</span> <span class="n">asset_dof</span><span class="p">[</span><span class="s2">&quot;Energy&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;None&quot;</span>
+           <span class="k">else</span> <span class="nb">min</span><span class="p">(</span><span class="n">asset_dof</span><span class="p">[</span><span class="s2">&quot;Energy&quot;</span><span class="p">],</span> <span class="n">energy</span><span class="p">)</span>
+       <span class="p">)</span>
+       <span class="n">rate_requirement</span> <span class="o">=</span> <span class="p">(</span>
+           <span class="n">rate</span> <span class="k">if</span> <span class="n">asset_dof</span><span class="p">[</span><span class="s2">&quot;Rate&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;None&quot;</span> <span class="k">else</span> <span class="n">asset_dof</span><span class="p">[</span><span class="s2">&quot;Rate&quot;</span><span class="p">]</span>
+       <span class="p">)</span>
+       <span class="n">requirements</span> <span class="o">=</span> <span class="p">[</span>
+           <span class="p">{</span>
+               <span class="s2">&quot;trading_partners&quot;</span><span class="p">:</span> <span class="n">id_trading_partners_list</span><span class="p">,</span>
+               <span class="s2">&quot;energy_type&quot;</span><span class="p">:</span> <span class="n">energy_types_list</span><span class="p">,</span>
+               <span class="s2">&quot;energy&quot;</span><span class="p">:</span> <span class="n">energy_requirement</span><span class="p">,</span>
+               <span class="s2">&quot;price&quot;</span><span class="p">:</span> <span class="n">rate_requirement</span> <span class="o">*</span> <span class="n">energy_requirement</span><span class="p">,</span>
+           <span class="p">}</span>
+       <span class="p">]</span>
+   <span class="k">return</span> <span class="n">requirements</span>
+</code></pre></div>
 
 <p>The rest of the script functionality has been covered in the <a href="../setup-configuration/">previous section</a>. It is important to note that currently there is no available template script for introducing degrees of freedom from the UI, but solely from the <a href="../setup-configuration/">backend</a>.</p>
 <h2 id="send-live-data-to-a-canary-test-network">Send live data to a Canary Test Network<a class="headerlink" href="#send-live-data-to-a-canary-test-network" title="Permanent link">&para;</a></h2>
 <p>As noted <a href="../send-data-exchange-sdk/">here</a>, the Asset API has the functionality to send live data to Grid Singularity <a href="../connect-ctn/">Canary Test Network</a>. A template script can be found <a href="https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/asset_api_scripts/canary_network_live_data.py">here</a>. To do so, at each <a href="../asset-api-events/#each-new-market-slot">market slot</a>, forecast for the next 15 minutes are sent through the following function:</p>
-<pre class="codehilite"><code class="language-python">def send_forecasts(self, market_info):
-   &quot;&quot;&quot;Send forecasts of the next market slot to the exchange.&quot;&quot;&quot;
-   forecast_market_slot = (
-       from_format(market_info[&quot;market_slot&quot;], DATE_TIME_FORMAT)
-       .add(minutes=15)
-       .format(DATE_TIME_FORMAT)
-   )
-   # pylint: disable=unused-variable
-   for area_uuid, area_dict in self.latest_grid_tree_flat.items():
-       asset_info = area_dict.get(&quot;asset_info&quot;)
-       if not asset_info:
-           continue
+<div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">send_forecasts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">market_info</span><span class="p">):</span>
+<span class="w">   </span><span class="sd">&quot;&quot;&quot;Send forecasts of the next market slot to the exchange.&quot;&quot;&quot;</span>
+   <span class="n">forecast_market_slot</span> <span class="o">=</span> <span class="p">(</span>
+       <span class="n">from_format</span><span class="p">(</span><span class="n">market_info</span><span class="p">[</span><span class="s2">&quot;market_slot&quot;</span><span class="p">],</span> <span class="n">DATE_TIME_FORMAT</span><span class="p">)</span>
+       <span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+       <span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">DATE_TIME_FORMAT</span><span class="p">)</span>
+   <span class="p">)</span>
+   <span class="c1"># pylint: disable=unused-variable</span>
+   <span class="k">for</span> <span class="n">area_uuid</span><span class="p">,</span> <span class="n">area_dict</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">latest_grid_tree_flat</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+       <span class="n">asset_info</span> <span class="o">=</span> <span class="n">area_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;asset_info&quot;</span><span class="p">)</span>
+       <span class="k">if</span> <span class="ow">not</span> <span class="n">asset_info</span><span class="p">:</span>
+           <span class="k">continue</span>
 
-       # Consumption assets
-       if &quot;energy_requirement_kWh&quot; in asset_info:
-           asset_name = area_dict[&quot;area_name&quot;]
-           globals()[f&quot;{asset_name}&quot;].set_energy_forecast(
-               energy_forecast_kWh={forecast_market_slot: 1.2},
-               do_not_wait=False,
-           )
+       <span class="c1"># Consumption assets</span>
+       <span class="k">if</span> <span class="s2">&quot;energy_requirement_kWh&quot;</span> <span class="ow">in</span> <span class="n">asset_info</span><span class="p">:</span>
+           <span class="n">asset_name</span> <span class="o">=</span> <span class="n">area_dict</span><span class="p">[</span><span class="s2">&quot;area_name&quot;</span><span class="p">]</span>
+           <span class="nb">globals</span><span class="p">()[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">asset_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">set_energy_forecast</span><span class="p">(</span>
+               <span class="n">energy_forecast_kWh</span><span class="o">=</span><span class="p">{</span><span class="n">forecast_market_slot</span><span class="p">:</span> <span class="mf">1.2</span><span class="p">},</span>
+               <span class="n">do_not_wait</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+           <span class="p">)</span>
 
-       # Generation assets
-       if &quot;available_energy_kWh&quot; in asset_info:
-           asset_name = area_dict[&quot;area_name&quot;]
-           globals()[f&quot;{asset_name}&quot;].set_energy_forecast(
-               energy_forecast_kWh={forecast_market_slot: 0.86},
-               do_not_wait=False,
-           )
-       self.execute_batch_commands()
-</code></pre>
+       <span class="c1"># Generation assets</span>
+       <span class="k">if</span> <span class="s2">&quot;available_energy_kWh&quot;</span> <span class="ow">in</span> <span class="n">asset_info</span><span class="p">:</span>
+           <span class="n">asset_name</span> <span class="o">=</span> <span class="n">area_dict</span><span class="p">[</span><span class="s2">&quot;area_name&quot;</span><span class="p">]</span>
+           <span class="nb">globals</span><span class="p">()[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">asset_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">set_energy_forecast</span><span class="p">(</span>
+               <span class="n">energy_forecast_kWh</span><span class="o">=</span><span class="p">{</span><span class="n">forecast_market_slot</span><span class="p">:</span> <span class="mf">0.86</span><span class="p">},</span>
+               <span class="n">do_not_wait</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+           <span class="p">)</span>
+       <span class="bp">self</span><span class="o">.</span><span class="n">execute_batch_commands</span><span class="p">()</span>
+</code></pre></div>
 
 <p>The <em>forecast_market_slot</em>, namely the marker slot at which the forecasted value is sent, is first retrieved by the <em>market_info</em> dictionary. Then, the <em>set_energy_forecast</em> function is used to send consumption / generation forecasted values to the Grid Singularity Exchange. In this example, 1.2 kWh are sent as consumption forecasts and 0.86 kWh are sent as generation forecasts.</p>
 <p>The rest of the script functionality has been covered in the <a href="../setup-configuration/">previous section</a>.</p>
 <h2 id="post-energy-deviations-in-the-settlement-market">Post energy deviations in the Settlement Market<a class="headerlink" href="#post-energy-deviations-in-the-settlement-market" title="Permanent link">&para;</a></h2>
 <p>Finally, the Asset API can also be used to post energy deviations between forecasts (namely the values of consumption or generation that an asset was expected to consume or produce) and measurements (namely the actual consumption or generation values) in the <a href="../markets-rotation/">Settlement Market</a>. A template script can be found <a href="https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/asset_api_scripts/redis_settle_energy_deviations.py">here</a>.</p>
 <p>As noted in the previous section, users can send forecasts (generated by assets or other data source) to the Grid Singularity Exchange by  using the Asset API. To settle energy deviations in the Settlement Market, further action is needed, which is to send measurements to the Exchange at each market slot by using the following function:</p>
-<pre class="codehilite"><code class="language-python">def send_measurements(self, market_info):
-   &quot;&quot;&quot;Send measurements for the current market slot to the exchange.&quot;&quot;&quot;
-   # pylint: disable=unused-variable
-   for area_uuid, area_dict in self.latest_grid_tree_flat.items():
-       if &quot;asset_info&quot; not in area_dict or area_dict[&quot;asset_info&quot;] is None:
-           continue
-       # Consumption assets
-       if &quot;energy_requirement_kWh&quot; in area_dict[&quot;asset_info&quot;]:
-           self.add_to_batch_commands.set_energy_measurement(
-               asset_uuid=area_uuid,
-               energy_measurement_kWh={market_info[&quot;market_slot&quot;]: 1.23},
-           )
-       # Generation assets
-       if &quot;available_energy_kWh&quot; in area_dict[&quot;asset_info&quot;]:
-           self.add_to_batch_commands.set_energy_measurement(
-               asset_uuid=area_uuid,
-               energy_measurement_kWh={market_info[&quot;market_slot&quot;]: 0.87},
-           )
-</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">send_measurements</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">market_info</span><span class="p">):</span>
+<span class="w">   </span><span class="sd">&quot;&quot;&quot;Send measurements for the current market slot to the exchange.&quot;&quot;&quot;</span>
+   <span class="c1"># pylint: disable=unused-variable</span>
+   <span class="k">for</span> <span class="n">area_uuid</span><span class="p">,</span> <span class="n">area_dict</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">latest_grid_tree_flat</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+       <span class="k">if</span> <span class="s2">&quot;asset_info&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">area_dict</span> <span class="ow">or</span> <span class="n">area_dict</span><span class="p">[</span><span class="s2">&quot;asset_info&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+           <span class="k">continue</span>
+       <span class="c1"># Consumption assets</span>
+       <span class="k">if</span> <span class="s2">&quot;energy_requirement_kWh&quot;</span> <span class="ow">in</span> <span class="n">area_dict</span><span class="p">[</span><span class="s2">&quot;asset_info&quot;</span><span class="p">]:</span>
+           <span class="bp">self</span><span class="o">.</span><span class="n">add_to_batch_commands</span><span class="o">.</span><span class="n">set_energy_measurement</span><span class="p">(</span>
+               <span class="n">asset_uuid</span><span class="o">=</span><span class="n">area_uuid</span><span class="p">,</span>
+               <span class="n">energy_measurement_kWh</span><span class="o">=</span><span class="p">{</span><span class="n">market_info</span><span class="p">[</span><span class="s2">&quot;market_slot&quot;</span><span class="p">]:</span> <span class="mf">1.23</span><span class="p">},</span>
+           <span class="p">)</span>
+       <span class="c1"># Generation assets</span>
+       <span class="k">if</span> <span class="s2">&quot;available_energy_kWh&quot;</span> <span class="ow">in</span> <span class="n">area_dict</span><span class="p">[</span><span class="s2">&quot;asset_info&quot;</span><span class="p">]:</span>
+           <span class="bp">self</span><span class="o">.</span><span class="n">add_to_batch_commands</span><span class="o">.</span><span class="n">set_energy_measurement</span><span class="p">(</span>
+               <span class="n">asset_uuid</span><span class="o">=</span><span class="n">area_uuid</span><span class="p">,</span>
+               <span class="n">energy_measurement_kWh</span><span class="o">=</span><span class="p">{</span><span class="n">market_info</span><span class="p">[</span><span class="s2">&quot;market_slot&quot;</span><span class="p">]:</span> <span class="mf">0.87</span><span class="p">},</span>
+           <span class="p">)</span>
+</code></pre></div>
 
 <p>As shown in the snippet above, <em>set_energy_measurement</em> is used to send values to the Exchange which, in this example, are sent to the current market slot.</p>
 <p>Later, in <em>settle_energy_deviation</em>, the Asset API computes the difference between the forecast and measured values, called in the script <em>unsettled_deviation</em>.  Depending on whether this value is positive or negative, a bid or an offer will be posted in the Settlement Market. The rate, as well as the time slot for order placement can be arbitrarily set by the user. Below is the snippet of the described function:</p>
-<pre class="codehilite"><code class="language-python">def settle_energy_deviations(self):
-   &quot;&quot;&quot;Post the energy deviations between forecasts
-   and measurements in the Settlement market.&quot;&quot;&quot;
-   for area_uuid, area_dict in self.latest_grid_tree_flat.items():
-       if not area_dict.get(&quot;asset_info&quot;):
-           continue
-       time_slot = (
-           list(area_dict[&quot;asset_info&quot;][&quot;unsettled_deviation_kWh&quot;].keys())[-1])
-       unsettled_deviation = area_dict[&quot;asset_info&quot;][
-           &quot;unsettled_deviation_kWh&quot;
-       ].get(time_slot)
-       if unsettled_deviation &gt; 0:
-           self.add_to_batch_commands.bid_energy_rate(
-               asset_uuid=area_uuid,
-               rate=5,
-               energy=unsettled_deviation,
-               time_slot=time_slot,
-           )
-       if unsettled_deviation &lt; 0:
-           self.add_to_batch_commands.offer_energy_rate(
-               asset_uuid=area_uuid,
-               rate=10,
-               energy=abs(unsettled_deviation),
-               time_slot=time_slot,
-           )
-</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="k">def</span> <span class="nf">settle_energy_deviations</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">   </span><span class="sd">&quot;&quot;&quot;Post the energy deviations between forecasts</span>
+<span class="sd">   and measurements in the Settlement market.&quot;&quot;&quot;</span>
+   <span class="k">for</span> <span class="n">area_uuid</span><span class="p">,</span> <span class="n">area_dict</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">latest_grid_tree_flat</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+       <span class="k">if</span> <span class="ow">not</span> <span class="n">area_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;asset_info&quot;</span><span class="p">):</span>
+           <span class="k">continue</span>
+       <span class="n">time_slot</span> <span class="o">=</span> <span class="p">(</span>
+           <span class="nb">list</span><span class="p">(</span><span class="n">area_dict</span><span class="p">[</span><span class="s2">&quot;asset_info&quot;</span><span class="p">][</span><span class="s2">&quot;unsettled_deviation_kWh&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+       <span class="n">unsettled_deviation</span> <span class="o">=</span> <span class="n">area_dict</span><span class="p">[</span><span class="s2">&quot;asset_info&quot;</span><span class="p">][</span>
+           <span class="s2">&quot;unsettled_deviation_kWh&quot;</span>
+       <span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">time_slot</span><span class="p">)</span>
+       <span class="k">if</span> <span class="n">unsettled_deviation</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+           <span class="bp">self</span><span class="o">.</span><span class="n">add_to_batch_commands</span><span class="o">.</span><span class="n">bid_energy_rate</span><span class="p">(</span>
+               <span class="n">asset_uuid</span><span class="o">=</span><span class="n">area_uuid</span><span class="p">,</span>
+               <span class="n">rate</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+               <span class="n">energy</span><span class="o">=</span><span class="n">unsettled_deviation</span><span class="p">,</span>
+               <span class="n">time_slot</span><span class="o">=</span><span class="n">time_slot</span><span class="p">,</span>
+           <span class="p">)</span>
+       <span class="k">if</span> <span class="n">unsettled_deviation</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+           <span class="bp">self</span><span class="o">.</span><span class="n">add_to_batch_commands</span><span class="o">.</span><span class="n">offer_energy_rate</span><span class="p">(</span>
+               <span class="n">asset_uuid</span><span class="o">=</span><span class="n">area_uuid</span><span class="p">,</span>
+               <span class="n">rate</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+               <span class="n">energy</span><span class="o">=</span><span class="nb">abs</span><span class="p">(</span><span class="n">unsettled_deviation</span><span class="p">),</span>
+               <span class="n">time_slot</span><span class="o">=</span><span class="n">time_slot</span><span class="p">,</span>
+           <span class="p">)</span>
+</code></pre></div>
 
 <p>The rest of the script functionality has been covered in the <a href="../setup-configuration/">previous section</a>. It is important to note that currently there is no available template script for interacting with the Settlement Market from the UI, but solely from the <a href="../setup-configuration/">backend</a>.</p>
 <p>The next step is to adapt the Asset API template scripts developed by Grid Singularity to customize your trading strategies, whether to send live data to the Grid Singularity <a href="../connect-ctn/">Canary Test Network</a> or to interact with the <a href="../settlement-market-structure/">Settlement Market</a>.</p>
@@ -2558,7 +2558,7 @@ if &quot;used_storage&quot; in area_dict[&quot;asset_info&quot;]:
     
       <script src="../assets/javascripts/application.05d1c8d6.js"></script>
       
-      <script>app.initialize({version:"1.3.0",url:{base:".."}})</script>
+      <script>app.initialize({version:"1.4.2",url:{base:".."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
       

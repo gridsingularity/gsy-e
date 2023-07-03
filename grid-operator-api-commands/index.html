@@ -13,7 +13,7 @@
         <meta name="description" content="Documentation for the Grid Singularity Exchange">
       
       
-        <link rel="canonical" href="https://gridsingularity.github.io/gsy-e/documentation/grid-operator-api-commands/">
+        <link rel="canonical" href="http://localhost:8000/grid-operator-api-commands/">
       
       
         <meta name="author" content="Grid Singularity">
@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../img/Profile.png">
-      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-4.0.2">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-4.0.2">
     
     
       
@@ -119,7 +119,7 @@
   <nav class="md-header-nav md-grid">
     <div class="md-flex">
       <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="https://gridsingularity.github.io/gsy-e/documentation/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
+        <a href="http://localhost:8000/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
           
             <img src="../img/Profile.png" width="32" height="32">
           
@@ -209,7 +209,7 @@
                   <div class="md-sidebar__inner">
                     <nav class="md-nav md-nav--primary" data-md-level="0">
   <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="https://gridsingularity.github.io/gsy-e/documentation/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
+    <a href="http://localhost:8000/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
       
         <img src="../img/Profile.png" width="48" height="48">
       
@@ -2038,18 +2038,18 @@
 <h3 id="last_market_dso_stats">last_market_dso_stats()<a class="headerlink" href="#last_market_dso_stats" title="Permanent link">&para;</a></h3>
 <p>This command is used to <strong>request information</strong> from different markets for the last market slot.</p>
 <p>This batch command receives one argument : <strong>area_uuid</strong>. This latter is the Universal Unique Identifier of the requested market statistic. Here is an example:</p>
-<pre class="codehilite"><code>self.add_to_batch_commands.last_market_dso_stats(area_uuid = &quot;62f827ec-ef86-4782-b5c3-88327751d97d&quot;)
-</code></pre>
+<div class="codehilite"><pre><span></span><code>self.add_to_batch_commands.last_market_dso_stats(area_uuid = &quot;62f827ec-ef86-4782-b5c3-88327751d97d&quot;)
+</code></pre></div>
 
 <h3 id="grid_fees">grid_fees()<a class="headerlink" href="#grid_fees" title="Permanent link">&para;</a></h3>
 <p>This command is used to <strong>send the new grid fee</strong> for a specific market. The grid fee needs to be set as a positive value and the unit is cents/kWh.</p>
 <p>This batch command receives two arguments: <strong>area_uuid</strong> and <strong>fee_cents_kwh</strong>. Here is an example:</p>
-<pre class="codehilite"><code>self.add_to_batch_commands.grid_fees(area_uuid=62f827ec-ef86-4782-b5c3-88327751d97d&quot;, fee_cents_kwh=3.2)
-</code></pre>
+<div class="codehilite"><pre><span></span><code>self.add_to_batch_commands.grid_fees(area_uuid=62f827ec-ef86-4782-b5c3-88327751d97d&quot;, fee_cents_kwh=3.2)
+</code></pre></div>
 
 <p>After adding all the wanted commands in the batch, the API can execute it with the following command:</p>
-<pre class="codehilite"><code>response = self.execute_batch_commands()
-</code></pre>
+<div class="codehilite"><pre><span></span><code>response = self.execute_batch_commands()
+</code></pre></div>
 
 <p>In return the simulation will provide a response for all commands submitted.</p>
                 
@@ -2139,7 +2139,7 @@
     
       <script src="../assets/javascripts/application.05d1c8d6.js"></script>
       
-      <script>app.initialize({version:"1.3.0",url:{base:".."}})</script>
+      <script>app.initialize({version:"1.4.2",url:{base:".."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
       

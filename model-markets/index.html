@@ -13,7 +13,7 @@
         <meta name="description" content="Documentation for the Grid Singularity Exchange">
       
       
-        <link rel="canonical" href="https://gridsingularity.github.io/gsy-e/documentation/model-markets/">
+        <link rel="canonical" href="http://localhost:8000/model-markets/">
       
       
         <meta name="author" content="Grid Singularity">
@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../img/Profile.png">
-      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-4.0.2">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-4.0.2">
     
     
       
@@ -119,7 +119,7 @@
   <nav class="md-header-nav md-grid">
     <div class="md-flex">
       <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="https://gridsingularity.github.io/gsy-e/documentation/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
+        <a href="http://localhost:8000/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
           
             <img src="../img/Profile.png" width="32" height="32">
           
@@ -209,7 +209,7 @@
                   <div class="md-sidebar__inner">
                     <nav class="md-nav md-nav--primary" data-md-level="0">
   <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="https://gridsingularity.github.io/gsy-e/documentation/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
+    <a href="http://localhost:8000/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
       
         <img src="../img/Profile.png" width="48" height="48">
       
@@ -1997,13 +1997,13 @@
 <p><img alt="alt_text" src="../img/model-market-1.png" style="height:450px;width:275px" /></p>
 <h2 id="backend-configuration">Backend configuration<a class="headerlink" href="#backend-configuration" title="Permanent link">&para;</a></h2>
 <p>These parameters can be set in the backend in the Area / Market class :</p>
-<pre class="codehilite"><code class="language-python">Area('Market',
-                         [
-... &quot;some assets here&quot;
-                         ],
-grid_fee_constant=2,
-throughput=ThroughputParameters(import_capacity_kVA=2.0, export_capacity_kVA=2.0, baseline_peak_energy_import_kWh=0.4, baseline_peak_energy_export_kWh=0.4))
-</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="n">Area</span><span class="p">(</span><span class="s1">&#39;Market&#39;</span><span class="p">,</span>
+                         <span class="p">[</span>
+<span class="o">...</span> <span class="s2">&quot;some assets here&quot;</span>
+                         <span class="p">],</span>
+<span class="n">grid_fee_constant</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+<span class="n">throughput</span><span class="o">=</span><span class="n">ThroughputParameters</span><span class="p">(</span><span class="n">import_capacity_kVA</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">export_capacity_kVA</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">baseline_peak_energy_import_kWh</span><span class="o">=</span><span class="mf">0.4</span><span class="p">,</span> <span class="n">baseline_peak_energy_export_kWh</span><span class="o">=</span><span class="mf">0.4</span><span class="p">))</span>
+</code></pre></div>
                 
                   
                 
@@ -2056,7 +2056,7 @@ throughput=ThroughputParameters(import_capacity_kVA=2.0, export_capacity_kVA=2.0
     
       <script src="../assets/javascripts/application.05d1c8d6.js"></script>
       
-      <script>app.initialize({version:"1.3.0",url:{base:".."}})</script>
+      <script>app.initialize({version:"1.4.2",url:{base:".."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
       

@@ -13,7 +13,7 @@
         <meta name="description" content="Documentation for the Grid Singularity Exchange">
       
       
-        <link rel="canonical" href="https://gridsingularity.github.io/gsy-e/documentation/assets-installation/">
+        <link rel="canonical" href="http://localhost:8000/assets-installation/">
       
       
         <meta name="author" content="Grid Singularity">
@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../img/Profile.png">
-      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-4.0.2">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-4.0.2">
     
     
       
@@ -119,7 +119,7 @@
   <nav class="md-header-nav md-grid">
     <div class="md-flex">
       <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="https://gridsingularity.github.io/gsy-e/documentation/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
+        <a href="http://localhost:8000/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
           
             <img src="../img/Profile.png" width="32" height="32">
           
@@ -209,7 +209,7 @@
                   <div class="md-sidebar__inner">
                     <nav class="md-nav md-nav--primary" data-md-level="0">
   <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="https://gridsingularity.github.io/gsy-e/documentation/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
+    <a href="http://localhost:8000/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
       
         <img src="../img/Profile.png" width="48" height="48">
       
@@ -2128,36 +2128,36 @@
                 <h2 id="solar-panels">Solar Panels<a class="headerlink" href="#solar-panels" title="Permanent link">&para;</a></h2>
 <p>There are two options to implement a PV in a backend:</p>
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/pv.py" target="_blank">Solar Profile</a> (for template generation profile):</p>
-<pre class="codehilite"><code class="language-python">Market(
-    &quot;H2 PV&quot;,
-    strategy=PVStrategy(
-        panel_count=4,
-        initial_selling_rate=30,
-        final_selling_rate=5,
-        fit_to_limit=True,
-        update_interval=duration(minutes=5)))
-</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="n">Market</span><span class="p">(</span>
+    <span class="s2">&quot;H2 PV&quot;</span><span class="p">,</span>
+    <span class="n">strategy</span><span class="o">=</span><span class="n">PVStrategy</span><span class="p">(</span>
+        <span class="n">panel_count</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+        <span class="n">initial_selling_rate</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
+        <span class="n">final_selling_rate</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+        <span class="n">fit_to_limit</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">update_interval</span><span class="o">=</span><span class="n">duration</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="mi">5</span><span class="p">)))</span>
+</code></pre></div>
 
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/predefined_pv.py" target="_blank">User Profile</a> (for uploaded generation profile):</p>
-<pre class="codehilite"><code class="language-python">user_profile_path = os.path.join(gsy_e_path, &quot;assets/Solar_Curve_W_sunny.csv&quot;)
-Market('H1 PV', strategy=PVUserProfileStrategy(power_profile=user_profile_path, panel_count=4))
-</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="n">user_profile_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">gsy_e_path</span><span class="p">,</span> <span class="s2">&quot;assets/Solar_Curve_W_sunny.csv&quot;</span><span class="p">)</span>
+<span class="n">Market</span><span class="p">(</span><span class="s1">&#39;H1 PV&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">PVUserProfileStrategy</span><span class="p">(</span><span class="n">power_profile</span><span class="o">=</span><span class="n">user_profile_path</span><span class="p">,</span> <span class="n">panel_count</span><span class="o">=</span><span class="mi">4</span><span class="p">))</span>
+</code></pre></div>
 
 <h2 id="consumption">Consumption<a class="headerlink" href="#consumption" title="Permanent link">&para;</a></h2>
 <p>To implement the consumption profile (load) in a backend simulation, two options are available:</p>
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/load_hours.py" target="_blank">User configure Profile</a>:</p>
-<pre class="codehilite"><code class="language-python">Market(
-    'Load',
-    strategy=LoadHoursStrategy(
-        avg_power_W=200, hrs_per_day=6,hrs_of_day=list(range(12, 18)), initial_buying_rate=0,
-        final_buying_rate=35))
-</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="n">Market</span><span class="p">(</span>
+    <span class="s1">&#39;Load&#39;</span><span class="p">,</span>
+    <span class="n">strategy</span><span class="o">=</span><span class="n">LoadHoursStrategy</span><span class="p">(</span>
+        <span class="n">avg_power_W</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">hrs_per_day</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span><span class="n">hrs_of_day</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">18</span><span class="p">)),</span> <span class="n">initial_buying_rate</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">final_buying_rate</span><span class="o">=</span><span class="mi">35</span><span class="p">))</span>
+</code></pre></div>
 
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/predefined_load.py" target="_blank">User upload Profile</a>:</p>
-<pre class="codehilite"><code class="language-python">user_profile_path = os.path.join(gsy_e_path,&quot;assets/load.csv&quot;)
+<div class="codehilite"><pre><span></span><code><span class="n">user_profile_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">gsy_e_path</span><span class="p">,</span><span class="s2">&quot;assets/load.csv&quot;</span><span class="p">)</span>
 
-Market('Load', strategy=LoadProfileStrategy(daily_load_profile=user_profile_path, initial_buying_rate)
-</code></pre>
+<span class="n">Market</span><span class="p">(</span><span class="s1">&#39;Load&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">LoadProfileStrategy</span><span class="p">(</span><span class="n">daily_load_profile</span><span class="o">=</span><span class="n">user_profile_path</span><span class="p">,</span> <span class="n">initial_buying_rate</span><span class="p">)</span>
+</code></pre></div>
 
 <h3 id="addendum-hrs_of_day-and-hrs_per_day">Addendum: <code>hrs_of_day</code> and <code>hrs_per_day</code><a class="headerlink" href="#addendum-hrs_of_day-and-hrs_per_day" title="Permanent link">&para;</a></h3>
 <p><code>hrs_of_day</code> defines the allowed time-window in which the load has to consume for a time defined by <code>hrs_per_day</code>.</p>
@@ -2168,37 +2168,37 @@ Market('Load', strategy=LoadProfileStrategy(daily_load_profile=user_profile_path
 <h2 id="batteries">Batteries<a class="headerlink" href="#batteries" title="Permanent link">&para;</a></h2>
 <p>To implement a battery in a backend simulation one option is available:</p>
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/storage.py" target="_blank">Energy Storage System</a></p>
-<pre class="codehilite"><code class="language-python">Market(
-    'Storage',
-    strategy=StorageStrategy(
-        initial_soc=50, energy_rate_decrease_per_update=3, battery_capacity_kWh=1.2,
-        max_abs_battery_power_kW=5, final_buying_rate=16.99, final_selling_rate= 17.01))
-</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="n">Market</span><span class="p">(</span>
+    <span class="s1">&#39;Storage&#39;</span><span class="p">,</span>
+    <span class="n">strategy</span><span class="o">=</span><span class="n">StorageStrategy</span><span class="p">(</span>
+        <span class="n">initial_soc</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">energy_rate_decrease_per_update</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">battery_capacity_kWh</span><span class="o">=</span><span class="mf">1.2</span><span class="p">,</span>
+        <span class="n">max_abs_battery_power_kW</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">final_buying_rate</span><span class="o">=</span><span class="mf">16.99</span><span class="p">,</span> <span class="n">final_selling_rate</span><span class="o">=</span> <span class="mf">17.01</span><span class="p">))</span>
+</code></pre></div>
 
 <h2 id="power-plant">Power Plant<a class="headerlink" href="#power-plant" title="Permanent link">&para;</a></h2>
 <p>To implement the power plant in a backend simulation one option is available:</p>
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/finite_power_plant.py" target="_blank">Finite Power Plant</a></p>
-<pre class="codehilite"><code class="language-python">profile_kW = {
-0: 0.1,
-8: 0.15,
-12: 0.2,
-19: 0.15,
-22: 0.1
-}
-Market(
-    &quot;Power Plant&quot;,
-    strategy=FinitePowerPlant(energy_rate=31.3, max_available_power_kW=profile_kW))
-</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="n">profile_kW</span> <span class="o">=</span> <span class="p">{</span>
+<span class="mi">0</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
+<span class="mi">8</span><span class="p">:</span> <span class="mf">0.15</span><span class="p">,</span>
+<span class="mi">12</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span>
+<span class="mi">19</span><span class="p">:</span> <span class="mf">0.15</span><span class="p">,</span>
+<span class="mi">22</span><span class="p">:</span> <span class="mf">0.1</span>
+<span class="p">}</span>
+<span class="n">Market</span><span class="p">(</span>
+    <span class="s2">&quot;Power Plant&quot;</span><span class="p">,</span>
+    <span class="n">strategy</span><span class="o">=</span><span class="n">FinitePowerPlant</span><span class="p">(</span><span class="n">energy_rate</span><span class="o">=</span><span class="mf">31.3</span><span class="p">,</span> <span class="n">max_available_power_kW</span><span class="o">=</span><span class="n">profile_kW</span><span class="p">))</span>
+</code></pre></div>
 
 <h2 id="market-maker">Market Maker<a class="headerlink" href="#market-maker" title="Permanent link">&para;</a></h2>
 <p>To implement a market maker in a backend simulation, two methods are available :</p>
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/market_maker_strategy.py" target="_blank">Infinite power plant</a></p>
-<pre class="codehilite"><code class="language-python">Market('Market Maker', strategy=MarketMakerStrategy(energy_rate=selling_rate, grid_connected=True))
-</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="n">Market</span><span class="p">(</span><span class="s1">&#39;Market Maker&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">MarketMakerStrategy</span><span class="p">(</span><span class="n">energy_rate</span><span class="o">=</span><span class="n">selling_rate</span><span class="p">,</span> <span class="n">grid_connected</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+</code></pre></div>
 
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/infinite_bus.py" target="_blank">Infinite bus</a></p>
-<pre class="codehilite"><code class="language-python">Market('Market Maker', strategy=InfiniteBusStrategy(energy_buy_rate=22, energy_sell_rate=22))
-</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="n">Market</span><span class="p">(</span><span class="s1">&#39;Market Maker&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">InfiniteBusStrategy</span><span class="p">(</span><span class="n">energy_buy_rate</span><span class="o">=</span><span class="mi">22</span><span class="p">,</span> <span class="n">energy_sell_rate</span><span class="o">=</span><span class="mi">22</span><span class="p">))</span>
+</code></pre></div>
 
 <h3 id="addendum-storage-capacity-based-method">Addendum: Storage Capacity Based Method.<a class="headerlink" href="#addendum-storage-capacity-based-method" title="Permanent link">&para;</a></h3>
 <p>This method was created to sell energy at lower prices during high state of charge - SOC (when the battery has more energy stored) and at higher prices during low SOC (when the battery can afford to sell its stored energy for less).
@@ -2207,15 +2207,15 @@ If the cap_price_strategy is True, the offer price for the storage is calculated
 <p>As an example, considering an <code>initial_selling_rate</code> of 30 cents/kWh and a <code>final_selling_rate</code> of 20 cents/kWh, a storage with an SOC of 1% would sell its energy at 29.9 cents/kWh, and a battery at 100% SOC would sell its energy at 20 cents/kWh.
 To implement a power plant in a backend simulation, one option is available:</p>
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/finite_power_plant.py" target="_blank">Finite Power Plant</a></p>
-<pre class="codehilite"><code class="language-python">profile_kW = {
-    0: 0.1,
-    8: 0.15,
-    12: 0.2,
-    19: 0.15,
-    22: 0.1
-}
-Market(&quot;Power Plant&quot;, strategy=FinitePowerPlant(energy_rate=31.3, max_available_power_kW=profile_kW))
-</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="n">profile_kW</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="mi">0</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
+    <span class="mi">8</span><span class="p">:</span> <span class="mf">0.15</span><span class="p">,</span>
+    <span class="mi">12</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span>
+    <span class="mi">19</span><span class="p">:</span> <span class="mf">0.15</span><span class="p">,</span>
+    <span class="mi">22</span><span class="p">:</span> <span class="mf">0.1</span>
+<span class="p">}</span>
+<span class="n">Market</span><span class="p">(</span><span class="s2">&quot;Power Plant&quot;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">FinitePowerPlant</span><span class="p">(</span><span class="n">energy_rate</span><span class="o">=</span><span class="mf">31.3</span><span class="p">,</span> <span class="n">max_available_power_kW</span><span class="o">=</span><span class="n">profile_kW</span><span class="p">))</span>
+</code></pre></div>
                 
                   
                 
@@ -2303,7 +2303,7 @@ Market(&quot;Power Plant&quot;, strategy=FinitePowerPlant(energy_rate=31.3, max_
     
       <script src="../assets/javascripts/application.05d1c8d6.js"></script>
       
-      <script>app.initialize({version:"1.3.0",url:{base:".."}})</script>
+      <script>app.initialize({version:"1.4.2",url:{base:".."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
       

@@ -13,7 +13,7 @@
         <meta name="description" content="Documentation for the Grid Singularity Exchange">
       
       
-        <link rel="canonical" href="https://gridsingularity.github.io/gsy-e/documentation/blockchain-system-components-overview/">
+        <link rel="canonical" href="http://localhost:8000/blockchain-system-components-overview/">
       
       
         <meta name="author" content="Grid Singularity">
@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../img/Profile.png">
-      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-4.0.2">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-4.0.2">
     
     
       
@@ -119,7 +119,7 @@
   <nav class="md-header-nav md-grid">
     <div class="md-flex">
       <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="https://gridsingularity.github.io/gsy-e/documentation/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
+        <a href="http://localhost:8000/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
           
             <img src="../img/Profile.png" width="32" height="32">
           
@@ -209,7 +209,7 @@
                   <div class="md-sidebar__inner">
                     <nav class="md-nav md-nav--primary" data-md-level="0">
   <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="https://gridsingularity.github.io/gsy-e/documentation/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
+    <a href="http://localhost:8000/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
       
         <img src="../img/Profile.png" width="48" height="48">
       
@@ -2097,14 +2097,14 @@
                 
                   <h1>GSy DEX System Components Overview</h1>
                 
-                <p>The <a href="../blockchain/">GSy DEX</a> is composed of several components that work together to provide a secure, scalable, and efficient platform for energy trading. The core of the GSy DEX is built using the <a href="https://substrate.io/">Substrate</a> framework, which provides the distributed ledger and custom runtime for implementing the state transition functions required for the energy exchange. Additionally, the system includes a set of ancillary services that enable further scalability and security.</p>
+                <p>The <a href="../blockchain/">GSy DEX</a> is composed of several components that work together to provide a secure, scalable, and efficient platform for energy trading. The core of the GSy DEX is built using the <a href="https://substrate.io/" target="_blank">Substrate</a> framework, which provides the distributed ledger and custom runtime for implementing the state transition functions required for the energy exchange. Additionally, the system includes a set of ancillary services that enable further scalability and security.</p>
 <h3 id="gsy-node">GSy Node<a class="headerlink" href="#gsy-node" title="Permanent link">&para;</a></h3>
 <p>The <a href="https://substrate.io/" target="_blank">Substrate</a>-based GSy Node is the backbone of the exchange, consisting of two main parts:</p>
 <ol>
-<li>Client with external node services: This component handles network activities such as peer discovery, managing transaction requests, reaching consensus with peers, and responding to remote procedure calls (RPC).</li>
+<li>Client with external node services: This component handles network activities such as peer discovery, managing transaction requests, reaching consensus with peers, and responding to remote procedure calls (<a href="https://docs.substrate.io/build/remote-procedure-calls/" target="_blank">RPC</a>).</li>
 <li>Custom runtime: This component contains all the business logic for executing the state transition functions of the blockchain. The custom runtime is designed to improve scalability and security, avoiding and mitigating multiple blockchain attack types more  effectively than by using smart contracts or a generalised virtual machine.</li>
 </ol>
-<p>For more, please see the section on GSy Node Installation, Operation and Development.</p>
+<p>For more, please see the section on <a href="../blockchain-installation/">GSy Node Installation, Operation and Development</a>.</p>
 <h3 id="gsy-dex-matching-engine">GSy DEX Matching Engine<a class="headerlink" href="#gsy-dex-matching-engine" title="Permanent link">&para;</a></h3>
 <p>The GSy DEX Matching Engine is responsible for identifying suitable matches for energy supply and demand based on the participants' preferences and market conditions. By efficiently matching bids and offers, the engine facilitates a seamless and optimised exchange clearance.</p>
 <p>Multi-attribute auctions, which account for the participants’ preferences and varied market conditions, require more advanced clearing algorithms than single attribute auctions, such as those based on price alone. The optimal approach is to engage (potentially untrusted) off-chain workers to run matching algorithms and then require either the use of trusted execution environments (enclaves) or an on-chain verification to determine whether the matching algorithm ran correctly. To enable this approach, the matching process is decoupled from the exchange, and moved to a dedicated component, namely the Matching Engine. The GSy DEX Matching Engine will operate as (one or multiple) individual autonomous service(s), responsible for identifying suitable matches for multiple open order books. Grid Singularity will serve as the Matching Engine Operator for the <a href="../blockchain/">GSy DEX</a>.</p>
@@ -2230,7 +2230,7 @@
     
       <script src="../assets/javascripts/application.05d1c8d6.js"></script>
       
-      <script>app.initialize({version:"1.3.0",url:{base:".."}})</script>
+      <script>app.initialize({version:"1.4.2",url:{base:".."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
       

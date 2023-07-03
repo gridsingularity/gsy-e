@@ -13,7 +13,7 @@
         <meta name="description" content="Documentation for the Grid Singularity Exchange">
       
       
-        <link rel="canonical" href="https://gridsingularity.github.io/gsy-e/documentation/grid-operator-api-events/">
+        <link rel="canonical" href="http://localhost:8000/grid-operator-api-events/">
       
       
         <meta name="author" content="Grid Singularity">
@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../img/Profile.png">
-      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-4.0.2">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-4.0.2">
     
     
       
@@ -119,7 +119,7 @@
   <nav class="md-header-nav md-grid">
     <div class="md-flex">
       <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="https://gridsingularity.github.io/gsy-e/documentation/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
+        <a href="http://localhost:8000/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
           
             <img src="../img/Profile.png" width="32" height="32">
           
@@ -209,7 +209,7 @@
                   <div class="md-sidebar__inner">
                     <nav class="md-nav md-nav--primary" data-md-level="0">
   <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="https://gridsingularity.github.io/gsy-e/documentation/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
+    <a href="http://localhost:8000/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
       
         <img src="../img/Profile.png" width="48" height="48">
       
@@ -2124,18 +2124,18 @@
 <h2 id="api-events">API Events<a class="headerlink" href="#api-events" title="Permanent link">&para;</a></h2>
 <p>In the Grid Operator there are 3 events that are triggered while a simulation is running.</p>
 <h3 id="each-new-market-slot">Each new market slot<a class="headerlink" href="#each-new-market-slot" title="Permanent link">&para;</a></h3>
-<pre class="codehilite"><code>def on_market_cycle(self, market_info):
-</code></pre>
+<div class="codehilite"><pre><span></span><code>def on_market_cycle(self, market_info):
+</code></pre></div>
 
 <p>As shown in the schematic above, this event triggered at the start of every market slot. When a new market slot is created the API receives the <code>market_info</code>, containing market information and the code within the script event is executed.</p>
 <h3 id="on-event-or-response">On event or response<a class="headerlink" href="#on-event-or-response" title="Permanent link">&para;</a></h3>
-<pre class="codehilite"><code>def on_event_or_response(self, message):
-</code></pre>
+<div class="codehilite"><pre><span></span><code>def on_event_or_response(self, message):
+</code></pre></div>
 
 <p>In this event, the API receives a message for every event (<code>on_market_cycle</code>) or response for each commands (e.g. submitting new grid fees)</p>
 <h3 id="on-finish">On finish<a class="headerlink" href="#on-finish" title="Permanent link">&para;</a></h3>
-<pre class="codehilite"><code>def on_finish(self, finish_info):
-</code></pre>
+<div class="codehilite"><pre><span></span><code>def on_finish(self, finish_info):
+</code></pre></div>
 
 <p>This event is triggered when the simulation/collaboration finishes. Within that function, information stored during the simulation could potentially be exported for further analysis.</p>
                 
@@ -2225,7 +2225,7 @@
     
       <script src="../assets/javascripts/application.05d1c8d6.js"></script>
       
-      <script>app.initialize({version:"1.3.0",url:{base:".."}})</script>
+      <script>app.initialize({version:"1.4.2",url:{base:".."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
       
