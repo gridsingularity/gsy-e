@@ -313,6 +313,7 @@ class TestCoefficientArea:
         "taxes_surcharges",
         "fixed_monthly_fee",
         "marketplace_monthly_fee",
+        "assistance_monthly_fee",
         "market_maker_rate",
         "feed_in_tariff",
     ])

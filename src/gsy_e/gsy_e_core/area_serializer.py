@@ -184,6 +184,7 @@ def area_from_dict(description, config):
                 taxes_surcharges=description.get("taxes_surcharges", 0.0),
                 fixed_monthly_fee=description.get("fixed_monthly_fee", 0.0),
                 marketplace_monthly_fee=description.get("marketplace_monthly_fee", 0.0),
+                assistance_monthly_fee=description.get("assistance_monthly_fee", 0.0),
                 market_maker_rate=description.get(
                     "market_maker_rate",
                     ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE / 100.),

@@ -197,6 +197,7 @@ def test_leaf_deserialization_scm():
              "taxes_surcharges": 0.5,
              "fixed_monthly_fee": 0.6,
              "marketplace_monthly_fee": 0.7,
+             "assistance_monthly_fee": 0.2,
              "feed_in_tariff": 0.8,
              "market_maker_rate": 0.9,
              "children":[
@@ -217,6 +218,7 @@ def test_leaf_deserialization_scm():
     assert recovered._taxes_surcharges == 0.5
     assert recovered._fixed_monthly_fee == 0.6
     assert recovered._marketplace_monthly_fee == 0.7
+    assert recovered._assistance_monthly_fee == 0.2
     assert recovered._feed_in_tariff == 0.8
     assert recovered.market_maker_rate == 0.9
 
