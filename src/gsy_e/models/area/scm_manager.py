@@ -56,6 +56,12 @@ class HomeAfterMeterData:
 
     def serializable_dict(self) -> Dict:
         """Dict representation that can be serialized."""
+        if not isclose(
+            self.energy_surplus_kWh,
+                self.energy_sold_to_grid_kWh + self.self_production_for_community_kWh):
+            logging.error(
+                "Incorrect calculation of sold to grid and self production for community. "
+                "Home details: %s", self.to_dict())
         output_dict = self.to_dict()
         output_dict["trades"] = [trade.serializable_dict() for trade in self.trades]
         return output_dict
@@ -114,10 +120,14 @@ class HomeAfterMeterData:
     @property
     def energy_sold_to_grid_kWh(self) -> float:
         """Amount of energy sold by the home to the grid."""
-        return (
-            self.allocated_community_energy_kWh - self.energy_need_kWh
-            if self.allocated_community_energy_kWh > self.energy_need_kWh
-            else 0.0)
+        if not isclose(
+            self.production_kWh, (
+                    self.self_production_for_community_kWh + self.self_production_for_grid_kWh +
+                    self.self_consumed_energy_kWh)):
+            logging.error(
+                "Incorrect SCM calculation of sold to grid. Asset information: %s, "
+                "Self production for grid: %s", asdict(self), self.self_production_for_grid_kWh)
+        return self.self_production_for_grid_kWh
 
     def create_buy_trade(self, current_time_slot: DateTime, seller_name: str,
                          traded_energy_kWh: float, trade_price_cents: float) -> None:
@@ -302,6 +312,20 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
         return (self.spent_to_grid + self.spent_to_community
                 - self.earned_from_grid - self.earned_from_community)
 
+    def calculate_base_energy_bill(
+            self, home_data: HomeAfterMeterData, market_maker_rate_normal_fees: float,
+            feed_in_tariff: float):
+        """Calculate the base (not with GSy improvements) energy bill for the home."""
+        base_energy_bill = (
+                home_data.energy_need_kWh * market_maker_rate_normal_fees +
+                self.marketplace_fee + self.fixed_fee + self.assistance_fee -
+                home_data.energy_surplus_kWh * feed_in_tariff)
+        self.base_energy_bill = base_energy_bill
+        self.base_energy_bill_revenue = home_data.energy_surplus_kWh * feed_in_tariff
+        self.base_energy_bill_excl_revenue = (
+                home_data.energy_need_kWh * market_maker_rate_normal_fees + self.marketplace_fee
+                + self.fixed_fee + self.assistance_fee)
+
 
 class SCMManager:
     """Handle the community manager coefficient trade."""
@@ -410,15 +434,8 @@ class SCMManager:
         home_bill = AreaEnergyBills(
             marketplace_fee=marketplace_fee, fixed_fee=fixed_fee, assistance_fee=assistance_fee,
             gsy_energy_bill=marketplace_fee + fixed_fee + assistance_fee)
-
-        base_energy_bill = (
-                home_data.energy_need_kWh * market_maker_rate_normal_fees + marketplace_fee +
-                fixed_fee + assistance_fee - home_data.energy_surplus_kWh * feed_in_tariff)
-        home_bill.base_energy_bill = base_energy_bill
-        home_bill.base_energy_bill_revenue = home_data.energy_surplus_kWh * feed_in_tariff
-        home_bill.base_energy_bill_excl_revenue = (
-                home_data.energy_need_kWh * market_maker_rate_normal_fees + marketplace_fee
-                + fixed_fee + assistance_fee)
+        home_bill.calculate_base_energy_bill(
+            home_data, market_maker_rate_normal_fees, feed_in_tariff)
 
         # First handle the sold energy case. This case occurs in case of energy surplus of a home.
         if home_data.energy_surplus_kWh > 0.0:
