@@ -5,7 +5,7 @@ class NonBlockchainInterface:
     def __init__(self, market_id, simulation_id=None):
         self.market_id = market_id
         self.simulation_id = simulation_id
-        print(f"new market created with id: {market_id}")
+        #print(f"new market created with id: {market_id}")
 
 
     def create_new_offer(self, energy, price, seller):
