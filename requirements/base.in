@@ -3,9 +3,9 @@ awesome-slugify
 cached_property
 click
 click-default-group
-colorlog==4.7.2
-numpy==1.20.3
-pendulum==2.1.2
+colorlog
+numpy
+pendulum
 plotly
 python-rex
 redis
@@ -13,4 +13,4 @@ rq
 pytz
 sortedcontainers
 pony
--e git+https://github.com/gridsingularity/gsy-framework@master#egg=gsy_framework
+-e git+https://github.com/gridsingularity/gsy-framework@python-311-support#egg=gsy_framework
