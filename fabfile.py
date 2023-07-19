@@ -97,8 +97,6 @@ def compile(upgrade="", package=None):
         fab_compile_requirements_file(REQ_DIR / "base.in", upgrade, package)
         fab_compile_requirements_file(REQ_DIR / "dev.in", upgrade, package)
         fab_compile_requirements_file(REQ_DIR / "tests.in", upgrade, package)
-        fab_compile_requirements_file(REQ_DIR / "blockchain.in", upgrade, package)
-        fab_compile_requirements_file(REQ_DIR / "pandapower.in", upgrade, package)
 
 
 @task(default=True)
