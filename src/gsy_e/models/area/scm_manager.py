@@ -62,6 +62,8 @@ class HomeAfterMeterData:
             logging.error(
                 "Incorrect calculation of sold to grid and self production for community. "
                 "Home details: %s", self.to_dict())
+        if self.energy_sold_to_grid_kWh > 1000.0:
+            logging.error("Energy sold %s.", self.energy_sold_to_grid_kWh)
         output_dict = self.to_dict()
         output_dict["trades"] = [trade.serializable_dict() for trade in self.trades]
         return output_dict

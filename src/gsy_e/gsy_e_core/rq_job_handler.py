@@ -56,7 +56,7 @@ def launch_simulation_from_rq_job(scenario: Dict,
 
         run_simulation(setup_module_name=scenario_name,
                        simulation_config=_create_config_settings_object(
-                           scenario, settings, aggregator_device_mapping),
+                           scenario, settings, aggregator_device_mapping, saved_state),
                        simulation_events=events,
                        redis_job_id=job_id,
                        saved_sim_state=saved_state,
@@ -130,7 +130,8 @@ def _configure_constants_constsettings(
 
 
 def _create_config_settings_object(
-        scenario: Dict, settings: Dict, aggregator_device_mapping: Dict) -> SimulationConfig:
+        scenario: Dict, settings: Dict, aggregator_device_mapping: Dict, saved_state: dict
+) -> SimulationConfig:
     config_settings = {
         "start_date":
             instance(datetime.combine(settings.get("start_date"), datetime.min.time()))
@@ -156,7 +157,8 @@ def _create_config_settings_object(
         "aggregator_device_mapping": aggregator_device_mapping
     }
 
-    if GlobalConfig.IS_CANARY_NETWORK:
+    scm_past_slots = saved_state.pop("scm_past_slots", False)
+    if GlobalConfig.IS_CANARY_NETWORK and not scm_past_slots:
         config_settings["start_date"] = (
             instance((datetime.combine(date.today(), datetime.min.time()))))
         if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
@@ -164,7 +166,12 @@ def _create_config_settings_object(
             config_settings["start_date"] = config_settings["start_date"].subtract(
                 days=gsy_e.constants.SCM_CN_DAYS_OF_DELAY)
 
+    if scm_past_slots:
+        GlobalConfig.IS_CANARY_NETWORK = False
+        gsy_e.constants.RUN_IN_REALTIME = False
+
     validate_global_settings(config_settings)
     config = SimulationConfig(**config_settings)
     config.area = scenario
+    config.scm_past_slots = scm_past_slots
     return config

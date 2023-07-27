@@ -146,7 +146,8 @@ class CoefficientSimulationResultsManager(SimulationResultsManager):
         """Construct objects that contain the simulation results for the broker and CSV output."""
         self._endpoint_buffer = CoefficientEndpointBuffer(
             redis_job_id, config_params.seed,
-            area, self.export_results_on_finish)
+            area, self.export_results_on_finish,
+            scm_past_slots=config_params.config.scm_past_slots)
 
         if self.export_results_on_finish:
             self._export = CoefficientExportAndPlot(
@@ -184,11 +185,13 @@ class CoefficientSimulationResultsManager(SimulationResultsManager):
         progress_info = simulation.progress_info
         area = simulation.area
         simulation_status = simulation.status.status
+        scm_past_slots = simulation.config.scm_past_slots
 
         if self._should_send_results_to_broker:
             self._endpoint_buffer.update_coefficient_stats(
                 area, simulation_status, progress_info, current_state,
                 False, self._scm_manager)
+            self._endpoint_buffer.simulation_progress["scm_past_slots"] = scm_past_slots
             results = self._endpoint_buffer.prepare_results_for_publish()
             if results is None:
                 return
