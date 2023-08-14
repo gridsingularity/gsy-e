@@ -4,6 +4,7 @@ import traceback
 from datetime import datetime, date
 from typing import Dict, Optional
 
+import pendulum
 from gsy_framework.constants_limits import GlobalConfig, ConstSettings
 from gsy_framework.enums import ConfigurationType, SpotMarketTypeEnum
 from gsy_framework.settings_validators import validate_global_settings
@@ -191,8 +192,7 @@ def _handle_scm_past_slots_simulation_run(
     if GlobalConfig.IS_CANARY_NETWORK and scm_past_slots:
         config = _create_config_settings_object(
             scenario, settings, aggregator_device_mapping)
-        config.end_date = now().subtract(
-            minutes=config.slot_length.total_minutes()).subtract(
+        config.end_date = now(tz=pendulum.UTC).subtract(
             days=gsy_e.constants.SCM_CN_DAYS_OF_DELAY)
         config.sim_duration = config.end_date - config.start_date
         GlobalConfig.IS_CANARY_NETWORK = False
