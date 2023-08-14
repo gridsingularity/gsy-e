@@ -522,13 +522,14 @@ class SCMManager:
                 ]
             }
 
+        if area_uuid not in self._bills:
+            return {"bills": {}, "after_meter_data": {}, "trades": []}
+
         min_savings = min(bill.savings_percent for bill in self._bills.values())
         max_savings = max(bill.savings_percent for bill in self._bills.values())
         for bill in self._bills.values():
             bill.set_min_max_community_savings(min_savings, max_savings)
 
-        if area_uuid not in self._bills:
-            return {"bills": {}, "after_meter_data": {}, "trades": []}
         return {
             "bills": self._bills[area_uuid].to_dict(),
             "after_meter_data": (

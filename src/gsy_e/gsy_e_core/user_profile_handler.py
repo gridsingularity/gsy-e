@@ -89,6 +89,9 @@ class ProfileDBConnectionHandler:
         Requires a postgres DB server running
 
         """
+        if self._db.provider is not None:
+            # DB already connected.
+            return
         self._db.bind(provider="postgres",
                       user=os.environ.get("PROFILE_DB_USER", "d3a_web"),
                       password=os.environ.get("PROFILE_DB_PASSWORD", "d3a_web"),
