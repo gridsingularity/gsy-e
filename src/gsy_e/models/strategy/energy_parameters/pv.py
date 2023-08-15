@@ -26,6 +26,7 @@ from gsy_framework.utils import (convert_kW_to_kWh, find_object_of_same_weekday_
 from gsy_framework.validators import PVValidator
 from pendulum.datetime import DateTime
 
+import gsy_e.constants
 from gsy_e.gsy_e_core.exceptions import GSyException
 from gsy_e.gsy_e_core.util import gsye_root_path
 from gsy_e.models.strategy import utils
@@ -155,8 +156,13 @@ class PVPredefinedEnergyParameters(PVEnergyParameters):
                 f"PV {owner_name} tries to set its available energy forecast without a "
                 "power profile.")
         for time_slot in time_slots:
-            available_energy_kWh = find_object_of_same_weekday_and_time(
-                self.energy_profile, time_slot) * self.panel_count
+            datapoint_kWh = find_object_of_same_weekday_and_time(
+                self.energy_profile, time_slot)
+            if datapoint_kWh is None:
+                log.error("Could not read area %s profile on timeslot %s. Configuration %s.",
+                          owner_name, time_slot, gsy_e.constants.CONFIGURATION_ID)
+                datapoint_kWh = 0.0
+            available_energy_kWh = datapoint_kWh * self.panel_count
             self._state.set_available_energy(available_energy_kWh, time_slot, reconfigure)
 
     def reconfigure(self, **kwargs):
@@ -207,7 +213,8 @@ class PVUserProfileEnergyParameters(PVEnergyParameters):
             energy_from_profile_kWh = find_object_of_same_weekday_and_time(
                 self.energy_profile.profile, time_slot)
             if energy_from_profile_kWh is None:
-                log.error("Could not read area %s profile on timeslot %s.", owner_name, time_slot)
+                log.error("Could not read area %s profile on timeslot %s. Configuration %s.",
+                          owner_name, time_slot, gsy_e.constants.CONFIGURATION_ID)
                 energy_from_profile_kWh = 0.0
 
             available_energy_kWh = energy_from_profile_kWh * self.panel_count
