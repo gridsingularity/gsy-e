@@ -195,6 +195,7 @@ def _handle_scm_past_slots_simulation_run(
         config.end_date = now(tz=pendulum.UTC).subtract(
             days=gsy_e.constants.SCM_CN_DAYS_OF_DELAY)
         config.sim_duration = config.end_date - config.start_date
+        GlobalConfig.sim_duration = config.sim_duration
         GlobalConfig.IS_CANARY_NETWORK = False
         gsy_e.constants.RUN_IN_REALTIME = False
         run_simulation(setup_module_name=scenario_name,
