@@ -243,7 +243,7 @@ class ProfileDBConnectionHandler:
         """
         time_stamps = generate_market_slot_list(current_timestamp)
         if not time_stamps:
-            logging.error(
+            log.error(
                 "Empty market slot list. Current timestamp %s, duration %s, is canary %s, "
                 "slot length %s", current_timestamp, GlobalConfig.sim_duration,
                 GlobalConfig.IS_CANARY_NETWORK, GlobalConfig.slot_length)
