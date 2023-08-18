@@ -75,8 +75,6 @@ class HeatPumpState(StateInterface):
 
     def update_temp_increase_K(self, time_slot: DateTime, temp_diff_K: float):
         """Set the temperature increase for a given time slot."""
-        assert (self._storage_temp_C[time_slot] + self._temp_increase_K[time_slot] +
-                temp_diff_K < self._max_temp_C)
         self._temp_increase_K[time_slot] += temp_diff_K
 
     def get_min_energy_demand_kWh(self, time_slot: DateTime) -> float:
