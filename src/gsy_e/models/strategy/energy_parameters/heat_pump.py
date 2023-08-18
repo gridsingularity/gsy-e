@@ -49,7 +49,7 @@ class HeatPumpEnergyParameters:
         self._max_energy_consumption_kWh = (
                 maximum_power_rating_kW * self._slot_length.total_hours())
 
-        self.state = HeatPumpState(initial_temp_C, self._slot_length)
+        self.state = HeatPumpState(initial_temp_C, min_temp_C, max_temp_C, self._slot_length)
 
         self._consumption_kWh: [DateTime, float] = EnergyProfile(
             consumption_kWh_profile, consumption_kWh_profile_uuid,
