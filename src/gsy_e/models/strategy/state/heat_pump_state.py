@@ -32,8 +32,7 @@ class HeatPumpState(StateInterface):
     """State for the heat pump strategy."""
 
     def __init__(
-            self, initial_temp_C: float, min_temp_C: float,
-            max_temp_C: float, slot_length: duration):
+            self, initial_temp_C: float, slot_length: duration):
         # the defaultdict was only selected for the initial slot
         self._storage_temp_C: Dict[DateTime, float] = defaultdict(lambda: initial_temp_C)
         self._min_energy_demand_kWh: Dict[DateTime, float] = {}
@@ -42,8 +41,6 @@ class HeatPumpState(StateInterface):
         self._temp_decrease_K: Dict[DateTime, float] = defaultdict(lambda: 0)
         self._temp_increase_K: Dict[DateTime, float] = defaultdict(lambda: 0)
         self._slot_length = slot_length
-        self._min_temp_C = min_temp_C
-        self._max_temp_C = max_temp_C
 
     def get_storage_temp_C(self, time_slot: DateTime) -> float:
         """Return temperature of storage for a time slot in degree celsius."""
@@ -68,10 +65,11 @@ class HeatPumpState(StateInterface):
 
     def set_temp_decrease_K(self, time_slot: DateTime, temp_diff_K: float):
         """Set the temperature decrease for a given time slot."""
-        if self._storage_temp_C[time_slot] - temp_diff_K < self._min_temp_C:
-            self._temp_decrease_K[time_slot] = 0.
-        else:
-            self._temp_decrease_K[time_slot] = temp_diff_K
+        temp_decrease = temp_diff_K
+        # Do not allow temperature to go below zero
+        if self._storage_temp_C[time_slot] - temp_diff_K < -FLOATING_POINT_TOLERANCE:
+            temp_decrease = self._storage_temp_C[time_slot]
+        self._temp_decrease_K[time_slot] = temp_decrease
 
     def update_temp_increase_K(self, time_slot: DateTime, temp_diff_K: float):
         """Set the temperature increase for a given time slot."""
