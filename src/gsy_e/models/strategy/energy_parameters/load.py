@@ -24,6 +24,7 @@ from gsy_framework.utils import find_object_of_same_weekday_and_time
 from gsy_framework.validators.load_validator import LoadValidator
 from pendulum import DateTime, duration
 
+import gsy_e.constants
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.exceptions import GSyException
 from gsy_e.models.strategy.state import LoadState
@@ -209,7 +210,9 @@ class DefinedLoadEnergyParameters(LoadHoursPerDayEnergyParameters):
         load_energy_kwh = find_object_of_same_weekday_and_time(
             self.energy_profile.profile, time_slot)
         if load_energy_kwh is None:
-            log.error("Could not read area %s profile on timeslot %s.", self._area, time_slot)
+            log.error("Could not read area profile %s on timeslot %s. Configuration %s.",
+                      self.energy_profile.input_profile_uuid, time_slot,
+                      gsy_e.constants.CONFIGURATION_ID)
             load_energy_kwh = 0.0
         self.state.set_desired_energy(load_energy_kwh * 1000, time_slot, overwrite=False)
         self.state.update_total_demanded_energy(time_slot)
