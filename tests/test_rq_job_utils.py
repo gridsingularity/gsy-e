@@ -47,7 +47,7 @@ class TestRQJobUtils:
             },
             "events": None,
             "aggregator_device_mapping": {},
-            "saved_state": None,
+            "saved_state": {},
             "job_id": "TEST_SIM_RUNS",
             "connect_to_profiles_db": False
         })

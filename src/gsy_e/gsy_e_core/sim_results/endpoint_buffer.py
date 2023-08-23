@@ -392,8 +392,17 @@ class CoefficientEndpointBuffer(SimulationEndpointBuffer):
     """Calculate the endpoint results for the Coefficient based market."""
 
     def __init__(self, *args, **kwargs):
+        self._scm_past_slots = kwargs.pop("scm_past_slots", False)
         super().__init__(*args, **kwargs)
         self._scm_manager = None
+
+    def _generate_result_report(self) -> Dict:
+        """Create dict that contains all statistics that are sent to the gsy-web."""
+        result_dict = super()._generate_result_report()
+        return {
+            "scm_past_slots": self._scm_past_slots,
+            **result_dict
+        }
 
     def update_coefficient_stats(  # pylint: disable=too-many-arguments
             self, area: "AreaBase", simulation_status: str,

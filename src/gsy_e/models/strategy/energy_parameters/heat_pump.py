@@ -40,6 +40,8 @@ class HeatPumpEnergyParameters:
                  consumption_kWh_profile_uuid: Optional[str] = None,
                  source_type: int = ConstSettings.HeatPumpSettings.SOURCE_TYPE):
 
+        # As a precaution, clamp the initial temp value with the min and max allowed temp value
+        initial_temp_C = min(max(min_temp_C, initial_temp_C), max_temp_C)
         self._min_temp_C = min_temp_C
         self._max_temp_C = max_temp_C
         self._source_type = source_type

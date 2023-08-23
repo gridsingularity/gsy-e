@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import logging
 import os
 import uuid
 from datetime import datetime
@@ -33,6 +34,8 @@ from gsy_e.gsy_e_core.util import should_read_profile_from_db
 
 if TYPE_CHECKING:
     from gsy_e.models.area import Area
+
+log = logging.getLogger(__name__)
 
 
 class ProfileDBConnectionException(Exception):
@@ -89,6 +92,9 @@ class ProfileDBConnectionHandler:
         Requires a postgres DB server running
 
         """
+        if self._db.provider is not None:
+            # DB already connected.
+            return
         self._db.bind(provider="postgres",
                       user=os.environ.get("PROFILE_DB_USER", "d3a_web"),
                       password=os.environ.get("PROFILE_DB_PASSWORD", "d3a_web"),
@@ -236,6 +242,11 @@ class ProfileDBConnectionHandler:
 
         """
         time_stamps = generate_market_slot_list(current_timestamp)
+        if not time_stamps:
+            log.error(
+                "Empty market slot list. Current timestamp %s, duration %s, is canary %s, "
+                "slot length %s", current_timestamp, GlobalConfig.sim_duration,
+                GlobalConfig.IS_CANARY_NETWORK, GlobalConfig.slot_length)
         return min(time_stamps), max(time_stamps)
 
     def _should_buffer_profiles(self, current_timestamp: DateTime):

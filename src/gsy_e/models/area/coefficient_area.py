@@ -52,6 +52,7 @@ class CoefficientArea(AreaBase):
                  taxes_surcharges: float = 0.0,
                  fixed_monthly_fee: float = 0.0,
                  marketplace_monthly_fee: float = 0.0,
+                 assistance_monthly_fee: float = 0.0,
                  market_maker_rate: float = (
                          ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE / 100.),
                  feed_in_tariff: float = GlobalConfig.FEED_IN_TARIFF / 100.,
@@ -70,6 +71,8 @@ class CoefficientArea(AreaBase):
             fixed_monthly_fee, "fixed_monthly_fee")
         self._marketplace_monthly_fee = self.validate_coefficient_area_setting(
             marketplace_monthly_fee, "marketplace_monthly_fee")
+        self._assistance_monthly_fee = self.validate_coefficient_area_setting(
+            assistance_monthly_fee, "assistance_monthly_fee")
         self._market_maker_rate = self.validate_coefficient_area_setting(
             market_maker_rate, "market_maker_rate")
         self._feed_in_tariff = self.validate_coefficient_area_setting(
@@ -153,8 +156,8 @@ class CoefficientArea(AreaBase):
         scm_manager.add_home_data(
             self.uuid, self.name, self.grid_fee_constant, self.coefficient_percentage,
             self._taxes_surcharges, self._fixed_monthly_fee, self._marketplace_monthly_fee,
-            self._market_maker_rate, self._feed_in_tariff, home_production_kWh,
-            home_consumption_kWh, dict(asset_energy_requirements_kWh))
+            self._assistance_monthly_fee, self._market_maker_rate, self._feed_in_tariff,
+            home_production_kWh, home_consumption_kWh, dict(asset_energy_requirements_kWh))
 
     def calculate_home_after_meter_data(
             self, current_time_slot: DateTime, scm_manager: "SCMManager") -> None:

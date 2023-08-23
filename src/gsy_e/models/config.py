@@ -90,6 +90,7 @@ class SimulationConfig:
             self.external_redis_communicator.aggregator.set_aggregator_device_mapping(
                 aggregator_device_mapping
             )
+        self.scm_past_slots = False
 
     def __repr__(self):
         return json.dumps(self.as_dict())

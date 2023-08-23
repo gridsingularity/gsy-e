@@ -28,9 +28,11 @@ from gsy_e.models.strategy.state.base_states import StateInterface, UnexpectedSt
 
 
 class HeatPumpState(StateInterface):
+    # pylint: disable=too-many-instance-attributes
     """State for the heat pump strategy."""
 
-    def __init__(self, initial_temp_C: float, slot_length: duration):
+    def __init__(
+            self, initial_temp_C: float, slot_length: duration):
         # the defaultdict was only selected for the initial slot
         self._storage_temp_C: Dict[DateTime, float] = defaultdict(lambda: initial_temp_C)
         self._min_energy_demand_kWh: Dict[DateTime, float] = {}
@@ -63,11 +65,15 @@ class HeatPumpState(StateInterface):
 
     def set_temp_decrease_K(self, time_slot: DateTime, temp_diff_K: float):
         """Set the temperature decrease for a given time slot."""
-        self._temp_decrease_K[time_slot] = temp_diff_K
+        temp_decrease = temp_diff_K
+        # Do not allow temperature to go below zero
+        if self._storage_temp_C[time_slot] - temp_diff_K < -FLOATING_POINT_TOLERANCE:
+            temp_decrease = self._storage_temp_C[time_slot]
+        self._temp_decrease_K[time_slot] = temp_decrease
 
-    def update_temp_increase_K(self, time_slot: DateTime, temp_diff: float):
+    def update_temp_increase_K(self, time_slot: DateTime, temp_diff_K: float):
         """Set the temperature increase for a given time slot."""
-        self._temp_increase_K[time_slot] += temp_diff
+        self._temp_increase_K[time_slot] += temp_diff_K
 
     def get_min_energy_demand_kWh(self, time_slot: DateTime) -> float:
         """Return the minimal energy demanded for a given time slot."""

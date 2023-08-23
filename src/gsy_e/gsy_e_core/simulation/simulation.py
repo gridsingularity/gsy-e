@@ -536,7 +536,7 @@ def run_simulation(setup_module_name: str = "", simulation_config: SimulationCon
     # pylint: disable=too-many-arguments
     try:
         redis_job_id = (
-            redis_job_id if saved_sim_state is None
+            redis_job_id if not saved_sim_state
             else saved_sim_state["general"]["simulation_id"])
         simulation = simulation_class_factory()(
             setup_module_name=setup_module_name,
@@ -550,7 +550,7 @@ def run_simulation(setup_module_name: str = "", simulation_config: SimulationCon
         log.error(ex)
         return
 
-    if (saved_sim_state is not None and
+    if (saved_sim_state and
             saved_sim_state["areas"] != {} and
             saved_sim_state["general"]["sim_status"] in ["running", "paused"]):
         simulation.restore_global_state(saved_sim_state["general"])

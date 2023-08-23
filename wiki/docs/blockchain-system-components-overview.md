@@ -1,12 +1,12 @@
-The [GSy DEX](blockchain.md) is composed of several components that work together to provide a secure, scalable, and efficient platform for energy trading. The core of the GSy DEX is built using the [Substrate](https://substrate.io/) framework, which provides the distributed ledger and custom runtime for implementing the state transition functions required for the energy exchange. Additionally, the system includes a set of ancillary services that enable further scalability and security.
+The [GSy DEX](blockchain.md) is composed of several components that work together to provide a secure, scalable, and efficient platform for energy trading. The core of the GSy DEX is built using the [Substrate](https://substrate.io/){target=_blank} framework, which provides the distributed ledger and custom runtime for implementing the state transition functions required for the energy exchange. Additionally, the system includes a set of ancillary services that enable further scalability and security.
 
 ### GSy Node
 The [Substrate](https://substrate.io/){target=_blank}-based GSy Node is the backbone of the exchange, consisting of two main parts:
 
-1. Client with external node services: This component handles network activities such as peer discovery, managing transaction requests, reaching consensus with peers, and responding to remote procedure calls (RPC).
+1. Client with external node services: This component handles network activities such as peer discovery, managing transaction requests, reaching consensus with peers, and responding to remote procedure calls ([RPC](https://docs.substrate.io/build/remote-procedure-calls/){target=_blank}).
 2. Custom runtime: This component contains all the business logic for executing the state transition functions of the blockchain. The custom runtime is designed to improve scalability and security, avoiding and mitigating multiple blockchain attack types more  effectively than by using smart contracts or a generalised virtual machine.
 
-For more, please see the section on GSy Node Installation, Operation and Development.
+For more, please see the section on [GSy Node Installation, Operation and Development](blockchain-installation.md).
 
 ### GSy DEX Matching Engine
 The GSy DEX Matching Engine is responsible for identifying suitable matches for energy supply and demand based on the participants' preferences and market conditions. By efficiently matching bids and offers, the engine facilitates a seamless and optimised exchange clearance.
