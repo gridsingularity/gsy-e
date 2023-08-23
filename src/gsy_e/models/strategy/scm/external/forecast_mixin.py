@@ -66,8 +66,9 @@ class SCMForecastExternalMixin(ForecastExternalMixin):
         """Return the progress information of the simulation."""
         return {"market_slot": self.owner.current_market_time_slot.format(DATE_TIME_FORMAT)}
 
-    # def market_cycle(self, _area) -> None:
-    #     """Call forecast and measurement update."""
-    #     self.update_energy_forecast()
-    #     self.update_energy_measurement()
-    #     self._clear_energy_buffers()
+    def market_cycle(self, _area) -> None:
+        """Call forecast and measurement update."""
+        super().market_cycle(_area)
+        self.update_energy_forecast()
+        self.update_energy_measurement()
+        self._clear_energy_buffers()
