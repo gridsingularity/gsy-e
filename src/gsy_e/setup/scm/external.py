@@ -28,6 +28,7 @@ from gsy_e.models.strategy.scm.smart_meter import SCMSmartMeterStrategy
 from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
 
 pv_profile = os.path.join(gsye_root_path, "resources", "Solar_Curve_W_sunny.csv")
+load_profile = os.path.join(gsye_root_path, "resources", "LOAD_DATA_1.csv")
 
 
 def get_setup(config):
@@ -51,7 +52,8 @@ def get_setup(config):
                 "House 2",
                 [
                     CoefficientArea("forecast-measurement-load",
-                                    strategy=ForecastSCMLoadStrategy()),
+                                    strategy=ForecastSCMLoadStrategy(
+                                        daily_load_profile=load_profile)),
                     CoefficientArea("forecast-measurement-pv",
                                     strategy=ForecastSCMPVStrategy()),
                     CoefficientArea("H2 Smart Meter",
