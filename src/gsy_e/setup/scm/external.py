@@ -55,7 +55,7 @@ def get_setup(config):
                                     strategy=ForecastSCMLoadStrategy(
                                         daily_load_profile=load_profile)),
                     CoefficientArea("forecast-measurement-pv",
-                                    strategy=ForecastSCMPVStrategy()),
+                                    strategy=ForecastSCMPVStrategy(power_profile=pv_profile)),
                     CoefficientArea("H2 Smart Meter",
                                     strategy=SCMSmartMeterStrategy(smart_meter_profile={0: 100})),
                 ],
