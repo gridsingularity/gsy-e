@@ -87,6 +87,7 @@ class HeatPumpEnergyParameters:
         """React to an event_traded_energy."""
         self._decrement_posted_energy(time_slot, energy_kWh)
 
+        self.state.update_energy_consumption_kWh(time_slot, energy_kWh)
         self.state.update_temp_increase_K(
             time_slot, self._calc_temp_increase_K(time_slot, energy_kWh))
 
