@@ -24,7 +24,6 @@ class ForecastSCMLoadStrategy(SCMForecastExternalMixin, SCMLoadProfileStrategy):
 
     # def _update_energy_requirement(self, _area):
     #     """Overwrite method that sets the energy requirement in the state."""
-    #
 
     def update_energy_forecast(self) -> None:
         """Set energy forecast for future markets."""

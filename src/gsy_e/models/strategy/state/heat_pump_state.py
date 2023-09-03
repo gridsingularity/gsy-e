@@ -40,6 +40,7 @@ class HeatPumpState(StateInterface):
         # buffers for increase and  decrease of storage
         self._temp_decrease_K: Dict[DateTime, float] = defaultdict(lambda: 0)
         self._temp_increase_K: Dict[DateTime, float] = defaultdict(lambda: 0)
+        self._energy_consumption_kWh: Dict[DateTime, float] = defaultdict(lambda: 0)
         self._slot_length = slot_length
 
     def get_storage_temp_C(self, time_slot: DateTime) -> float:
@@ -71,6 +72,10 @@ class HeatPumpState(StateInterface):
             temp_decrease = self._storage_temp_C[time_slot]
         self._temp_decrease_K[time_slot] = temp_decrease
 
+    def set_energy_consumption_kWh(self, time_slot: DateTime, energy_kWh: float):
+        """Set the energy consumption of the heatpump for a given time slot."""
+        self._energy_consumption_kWh[time_slot] = energy_kWh
+
     def update_temp_increase_K(self, time_slot: DateTime, temp_diff_K: float):
         """Set the temperature increase for a given time slot."""
         self._temp_increase_K[time_slot] += temp_diff_K
@@ -82,6 +87,10 @@ class HeatPumpState(StateInterface):
     def get_max_energy_demand_kWh(self, time_slot: DateTime) -> float:
         """Return the maximal energy demanded for a given time slot."""
         return self._max_energy_demand_kWh.get(time_slot, 0)
+
+    def get_energy_consumption_kWh(self, time_slot: DateTime) -> float:
+        """Return the temperature increase for a given time slot."""
+        return self._energy_consumption_kWh.get(time_slot, 0)
 
     def get_temp_decrease_K(self, time_slot: DateTime) -> float:
         """Return the temperature decrease for a given time slot."""
@@ -96,6 +105,8 @@ class HeatPumpState(StateInterface):
             "storage_temp_C": convert_pendulum_to_str_in_dict(self._storage_temp_C),
             "temp_decrease_K": convert_pendulum_to_str_in_dict(self._temp_decrease_K),
             "temp_increase_K": convert_pendulum_to_str_in_dict(self._temp_increase_K),
+            "energy_consumption_kWh": convert_pendulum_to_str_in_dict(
+                self._energy_consumption_kWh),
             "min_energy_demand_kWh": convert_pendulum_to_str_in_dict(self._min_energy_demand_kWh),
             "max_energy_demand_kWh": convert_pendulum_to_str_in_dict(self._max_energy_demand_kWh),
         }
@@ -104,6 +115,8 @@ class HeatPumpState(StateInterface):
         self._storage_temp_C = convert_pendulum_to_str_in_dict(state_dict["storage_temp_C"])
         self._temp_decrease_K = convert_pendulum_to_str_in_dict(state_dict["temp_decrease_K"])
         self._temp_increase_K = convert_pendulum_to_str_in_dict(state_dict["temp_increase_K"])
+        self._energy_consumption_kWh = convert_pendulum_to_str_in_dict(
+            state_dict["energy_consumption_kWh"])
         self._min_energy_demand_kWh = convert_pendulum_to_str_in_dict(
             state_dict["min_energy_demand_kWh"])
         self._max_energy_demand_kWh = convert_pendulum_to_str_in_dict(
@@ -116,6 +129,8 @@ class HeatPumpState(StateInterface):
                                 self._last_time_slot(current_time_slot))
         self._delete_time_slots(self._max_energy_demand_kWh,
                                 self._last_time_slot(current_time_slot))
+        self._delete_time_slots(self._energy_consumption_kWh,
+                                self._last_time_slot(current_time_slot))
         self._delete_time_slots(self._storage_temp_C,
                                 self._last_time_slot(current_time_slot))
         self._delete_time_slots(self._temp_increase_K,
@@ -127,7 +142,10 @@ class HeatPumpState(StateInterface):
         return {
             "storage_temp_C": self.get_storage_temp_C(current_time_slot),
             "temp_decrease_K": self.get_temp_decrease_K(current_time_slot),
-            "temp_increase_K": self.get_temp_increase_K(current_time_slot)
+            "temp_increase_K": self.get_temp_increase_K(current_time_slot),
+            "energy_consumption_kWh": self.get_energy_consumption_kWh(current_time_slot),
+            "max_energy_demand_kWh": self.get_max_energy_demand_kWh(current_time_slot),
+            "min_energy_demand_kWh": self.get_min_energy_demand_kWh(current_time_slot),
         }
 
     def _last_time_slot(self, current_market_slot: DateTime) -> DateTime:
