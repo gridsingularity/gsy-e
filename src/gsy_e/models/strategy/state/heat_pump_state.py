@@ -76,6 +76,10 @@ class HeatPumpState(StateInterface):
         """Set the energy consumption of the heatpump for a given time slot."""
         self._energy_consumption_kWh[time_slot] = energy_kWh
 
+    def update_energy_consumption_kWh(self, time_slot: DateTime, energy_kWh: float):
+        """Set the energy consumption of the heatpump for a given time slot."""
+        self._energy_consumption_kWh[time_slot] += energy_kWh
+
     def update_temp_increase_K(self, time_slot: DateTime, temp_diff_K: float):
         """Set the temperature increase for a given time slot."""
         self._temp_increase_K[time_slot] += temp_diff_K
