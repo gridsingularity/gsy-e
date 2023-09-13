@@ -15,7 +15,6 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import unittest
 from unittest.mock import MagicMock
 
 from pendulum import duration, today
@@ -32,9 +31,10 @@ from gsy_e.models.strategy.external_strategies.pv import PVExternalStrategy
 from gsy_e.models.strategy.external_strategies.storage import StorageExternalStrategy
 
 
-class TestGlobalObjects(unittest.TestCase):
+class TestGlobalObjects:
 
-    def setUp(self):
+    def setup_method(self):
+        # pylint: disable=attribute-defined-outside-init
         ConstSettings.MASettings.MARKET_TYPE = SpotMarketTypeEnum.ONE_SIDED.value
         self.config = MagicMock(spec=SimulationConfig)
         self.config.slot_length = duration(minutes=15)

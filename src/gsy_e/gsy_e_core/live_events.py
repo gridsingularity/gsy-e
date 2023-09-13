@@ -47,7 +47,7 @@ class CreateAreaEvent:
 
 
 class CreateAreaEventCoefficient(CreateAreaEvent):
-    """Event that creates a new area on the area representation tree."""
+    """Event that creates a new area on the area representation tree for SCM simulations."""
 
     def apply(self, area):
         """Trigger the area creation."""
@@ -114,7 +114,7 @@ class UpdateAreaEvent:
 
 
 class UpdateAreaEventCoefficient(UpdateAreaEvent):
-    """Handle update live event for SCM simulations"""
+    """Handle update live event for SCM simulations."""
 
     def apply(self, area):
         """Trigger the area update."""
