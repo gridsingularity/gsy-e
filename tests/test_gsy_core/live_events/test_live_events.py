@@ -2,7 +2,8 @@ from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
-from gsy_framework.constants_limits import GlobalConfig
+from gsy_framework.constants_limits import GlobalConfig, ConstSettings
+from gsy_framework.enums import SpotMarketTypeEnum
 from pendulum import duration
 
 from gsy_e.gsy_e_core.live_events import CreateAreaEvent, UpdateAreaEvent, LiveEvents
@@ -20,6 +21,7 @@ from gsy_e.models.strategy.storage import StorageStrategy
 class TestLiveEvents:
 
     def setup_method(self):
+        ConstSettings.MASettings.MARKET_TYPE = SpotMarketTypeEnum.ONE_SIDED.value
         GlobalConfig.FEED_IN_TARIFF = 20
         self.config = SimulationConfig(
             sim_duration=duration(hours=12),

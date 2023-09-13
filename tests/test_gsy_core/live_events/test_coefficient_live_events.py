@@ -1,7 +1,7 @@
 from unittest.mock import patch
 
 import pytest
-from gsy_framework.constants_limits import ConstSettings, SpotMarketTypeEnum
+from gsy_framework.constants_limits import ConstSettings, SpotMarketTypeEnum, GlobalConfig
 from pendulum import duration
 
 from gsy_e.gsy_e_core.live_events import (
@@ -33,10 +33,14 @@ def fixture_coefficient_community():
                                  grid_fee_constant=0)
     community_area = CoefficientArea("House 1", children=[house_area], config=config,
                                      grid_fee_constant=0)
-    return community_area, config
+    yield community_area, config
+    ConstSettings.MASettings.MARKET_TYPE = SpotMarketTypeEnum.ONE_SIDED.value
+    GlobalConfig.sim_duration = duration(days=GlobalConfig.DURATION_D)
+    GlobalConfig.slot_length = duration(minutes=GlobalConfig.SLOT_LENGTH_M)
+    GlobalConfig.tick_length = duration(seconds=GlobalConfig.TICK_LENGTH_S)
 
 
-class TestCoefficientLIveEvents:
+class TestCoefficientLiveEvents:
     @staticmethod
     def test_create_area_event_coefficient(coefficient_community):
         community, config = coefficient_community

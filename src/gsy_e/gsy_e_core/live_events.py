@@ -128,6 +128,7 @@ class UpdateAreaEventCoefficient(UpdateAreaEvent):
             area.area_reconfigure_event(**self.area_params)
         except Exception as ex:
             raise LiveEventException(ex) from ex
+        return True
 
 
 class DeleteAreaEvent:
@@ -169,12 +170,14 @@ class ForwardMarketsEvent:
 
 
 def create_area_live_event_factory():
+    """Factory method for the create area live event."""
     return (CreateAreaEventCoefficient
             if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value
             else CreateAreaEvent)
 
 
 def update_area_live_event_factory():
+    """Factory method for the update area live event."""
     return (UpdateAreaEventCoefficient
             if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value
             else UpdateAreaEvent)
@@ -238,12 +241,14 @@ class LiveEvents:
 
     def handle_all_events(self, root_area):
         """Handle all events that arrived during the past market slot."""
-        global_objects.profiles_handler.update_time_and_buffer_profiles(
-            root_area.current_market_time_slot, root_area)
+        if self._event_buffer:
+            global_objects.profiles_handler.update_time_and_buffer_profiles(
+                root_area.current_market_time_slot, root_area)
         self._handle_events(root_area, self._event_buffer)
 
     def handle_tick_events(self, root_area):
         """Handle all events that arrived during the past tick."""
-        global_objects.profiles_handler.update_time_and_buffer_profiles(
-            root_area.current_market_time_slot, root_area)
+        if self._tick_event_buffer:
+            global_objects.profiles_handler.update_time_and_buffer_profiles(
+                root_area.current_market_time_slot, root_area)
         self._handle_events(root_area, self._tick_event_buffer)
