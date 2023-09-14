@@ -94,6 +94,9 @@ class HomeAfterMeterData:
 
     def set_production_for_community(self, unassigned_energy_production_kWh: float):
         """Assign the energy surplus of the home to be consumed by the community."""
+        if gsy_e.constants.SCM_NO_COMMUNITY_SELF_CONSUMPTION:
+            self._self_production_for_community_kWh = 0
+            return 0.
         if self.energy_surplus_kWh <= unassigned_energy_production_kWh:
             self._self_production_for_community_kWh = self.energy_surplus_kWh
             return unassigned_energy_production_kWh - self.energy_surplus_kWh
@@ -210,6 +213,7 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
     marketplace_fee: float = 0.
     assistance_fee: float = 0.
     fixed_fee: float = 0.
+    self_consumed_savings: float = 0.
     _min_community_savings_percent: float = 0.
     _max_community_savings_percent: float = 0.
 
@@ -275,6 +279,8 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
         # will be negative, and the producer will not have "savings". For a more realistic case
         # the revenue should be omitted from the calculation of the savings, however this needs
         # to be discussed.
+        if gsy_e.constants.SCM_NO_COMMUNITY_SELF_CONSUMPTION:
+            return self.self_consumed_savings
         savings_absolute = KPICalculationHelper().saving_absolute(
             self.base_energy_bill_excl_revenue, self.gsy_energy_bill_excl_revenue)
         assert savings_absolute > -FLOATING_POINT_TOLERANCE
@@ -320,15 +326,22 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
             self, home_data: HomeAfterMeterData, market_maker_rate_normal_fees: float,
             feed_in_tariff: float):
         """Calculate the base (not with GSy improvements) energy bill for the home."""
-        base_energy_bill = (
-                home_data.energy_need_kWh * market_maker_rate_normal_fees +
-                self.marketplace_fee + self.fixed_fee + self.assistance_fee -
-                home_data.energy_surplus_kWh * feed_in_tariff)
-        self.base_energy_bill = base_energy_bill
-        self.base_energy_bill_revenue = home_data.energy_surplus_kWh * feed_in_tariff
-        self.base_energy_bill_excl_revenue = (
-                home_data.energy_need_kWh * market_maker_rate_normal_fees + self.marketplace_fee
-                + self.fixed_fee + self.assistance_fee)
+        if gsy_e.constants.SCM_NO_COMMUNITY_SELF_CONSUMPTION:
+            self.base_energy_bill_excl_revenue = (
+                    home_data.consumption_kWh * market_maker_rate_normal_fees)
+            self.base_energy_bill_revenue = home_data.production_kWh * feed_in_tariff
+            self.base_energy_bill = (
+                    self.base_energy_bill_excl_revenue - self.base_energy_bill_revenue)
+        else:
+            base_energy_bill = (
+                    home_data.energy_need_kWh * market_maker_rate_normal_fees +
+                    self.marketplace_fee + self.fixed_fee + self.assistance_fee -
+                    home_data.energy_surplus_kWh * feed_in_tariff)
+            self.base_energy_bill = base_energy_bill
+            self.base_energy_bill_revenue = home_data.energy_surplus_kWh * feed_in_tariff
+            self.base_energy_bill_excl_revenue = (
+                    home_data.energy_need_kWh * market_maker_rate_normal_fees +
+                    self.marketplace_fee + self.fixed_fee + self.assistance_fee)
 
 
 class SCMManager:
@@ -437,7 +450,8 @@ class SCMManager:
 
         home_bill = AreaEnergyBills(
             marketplace_fee=marketplace_fee, fixed_fee=fixed_fee, assistance_fee=assistance_fee,
-            gsy_energy_bill=marketplace_fee + fixed_fee + assistance_fee)
+            gsy_energy_bill=marketplace_fee + fixed_fee + assistance_fee,
+            self_consumed_savings=home_data.self_consumed_energy_kWh * home_data.market_maker_rate)
         home_bill.calculate_base_energy_bill(
             home_data, market_maker_rate_normal_fees, feed_in_tariff)
 
@@ -579,6 +593,7 @@ class SCMManager:
             community_bills.marketplace_fee += data.marketplace_fee
             community_bills.assistance_fee += data.assistance_fee
             community_bills.fixed_fee += data.fixed_fee
+            community_bills.self_consumed_savings += data.self_consumed_savings
 
         return community_bills.to_dict()
 
