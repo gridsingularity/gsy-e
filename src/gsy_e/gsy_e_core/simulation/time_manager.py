@@ -23,6 +23,7 @@ from logging import getLogger
 from time import mktime, sleep, time
 from typing import TYPE_CHECKING, Tuple
 
+import pendulum
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.enums import SpotMarketTypeEnum
 from pendulum import DateTime, duration, now
@@ -102,7 +103,7 @@ class SimulationTimeManager:
             sleep_time_s = config.tick_length.seconds - tick_runtime_s
         elif self.slot_length_realtime:
             current_expected_tick_time = self.tick_time_counter + self.tick_length_realtime_s
-            sleep_time_s = current_expected_tick_time - now().timestamp()
+            sleep_time_s = current_expected_tick_time - now(tz=TIME_ZONE).timestamp()
         else:
             return
 
@@ -154,7 +155,7 @@ class SimulationTimeManagerScm:
             sleep_time_s = config.slot_length.total_seconds() - slot_runtime_s
         elif slot_length_realtime_s:
             current_expected_slot_time = self.slot_time_counter + slot_length_realtime_s
-            sleep_time_s = current_expected_slot_time - now().timestamp()
+            sleep_time_s = current_expected_slot_time - now(tz=TIME_ZONE).timestamp()
         else:
             return
 
@@ -174,8 +175,8 @@ class SimulationTimeManagerScm:
         if gsy_e.constants.RUN_IN_REALTIME:
             slot_count = sys.maxsize
 
-            today = datetime.date.today()
-            seconds_since_midnight = time() - mktime(today.timetuple())
+            today = pendulum.today(tz=TIME_ZONE)
+            seconds_since_midnight = time() - today.int_timestamp
             slot_resume = int(seconds_since_midnight // config.slot_length.seconds) + 1
             seconds_elapsed_in_slot = seconds_since_midnight % config.slot_length.seconds
             sleep_time_s = config.slot_length.total_seconds() - seconds_elapsed_in_slot

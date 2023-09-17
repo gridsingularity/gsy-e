@@ -1,11 +1,10 @@
 import ast
-from copy import deepcopy
 import logging
 import traceback
+from copy import deepcopy
 from datetime import datetime, date
 from typing import Dict, Optional
 
-import pendulum
 from gsy_framework.constants_limits import GlobalConfig, ConstSettings
 from gsy_framework.enums import ConfigurationType, SpotMarketTypeEnum
 from gsy_framework.settings_validators import validate_global_settings
@@ -70,7 +69,9 @@ def launch_simulation_from_rq_job(scenario: Dict,
             scenario, settings, aggregator_device_mapping)
         if GlobalConfig.IS_CANARY_NETWORK:
             config.start_date = (
-                instance((datetime.combine(date.today(), datetime.min.time()))))
+                instance(
+                    datetime.combine(date.today(), datetime.min.time()),
+                    tz=gsy_e.constants.TIME_ZONE))
             if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
                 # For SCM CNs, run with SCM_CN_DAYS_OF_DELAY in order to be able to get results.
                 config.start_date = config.start_date.subtract(
@@ -155,7 +156,8 @@ def _create_config_settings_object(
 ) -> SimulationConfig:
     config_settings = {
         "start_date":
-            instance(datetime.combine(settings.get("start_date"), datetime.min.time()))
+            instance(datetime.combine(settings.get("start_date"), datetime.min.time()),
+                     tz=gsy_e.constants.TIME_ZONE)
             if "start_date" in settings else GlobalConfig.start_date,
         "sim_duration":
             duration(days=settings["duration"].days)
@@ -207,8 +209,8 @@ def _handle_scm_past_slots_simulation_run(
 
     config = _create_config_settings_object(
         scenario_copy, settings_copy, aggregator_device_mapping)
-    config.end_date = now(tz=pendulum.UTC).subtract(
-        days=gsy_e.constants.SCM_CN_DAYS_OF_DELAY)
+    config.end_date = now(tz=gsy_e.constants.TIME_ZONE).subtract(
+        days=gsy_e.constants.SCM_CN_DAYS_OF_DELAY).add(hours=4)
     config.sim_duration = config.end_date - config.start_date
     GlobalConfig.sim_duration = config.sim_duration
     GlobalConfig.IS_CANARY_NETWORK = False
