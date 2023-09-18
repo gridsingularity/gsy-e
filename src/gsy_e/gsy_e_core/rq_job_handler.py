@@ -209,6 +209,11 @@ def _handle_scm_past_slots_simulation_run(
 
     config = _create_config_settings_object(
         scenario_copy, settings_copy, aggregator_device_mapping)
+    # We are running SCM Canary Networks with some days of delay compared to realtime in order to
+    # compensate for delays in transmission of the asset measurements.
+    # Adding 4 hours of extra time to the SCM past slots simulation duration, in order to
+    # compensate for the runtime of the SCM past slots simulation and to not have any results gaps
+    # after this simulation run and the following Canary Network launch.
     config.end_date = now(tz=gsy_e.constants.TIME_ZONE).subtract(
         days=gsy_e.constants.SCM_CN_DAYS_OF_DELAY).add(hours=4)
     config.sim_duration = config.end_date - config.start_date
