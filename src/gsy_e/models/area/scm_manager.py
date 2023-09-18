@@ -228,7 +228,10 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
             "home_balance": self.home_balance,
             "gsy_energy_bill_excl_revenue": self.gsy_energy_bill_excl_revenue,
             "gsy_energy_bill_excl_revenue_without_fees":
-                self.gsy_energy_bill_excl_revenue_without_fees
+                self.gsy_energy_bill_excl_revenue_without_fees,
+            "gsy_energy_bill_excl_fees": self.gsy_energy_bill_excl_fees,
+            "gsy_energy_bill_revenue": self.gsy_energy_bill_revenue,
+            "gsy_total_benefit": self.gsy_total_benefit
         })
         return output_dict
 
@@ -280,7 +283,7 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
         # the revenue should be omitted from the calculation of the savings, however this needs
         # to be discussed.
         if gsy_e.constants.SCM_NO_COMMUNITY_SELF_CONSUMPTION:
-            return self.self_consumed_savings
+            return self.self_consumed_savings + self.gsy_energy_bill_revenue
         savings_absolute = KPICalculationHelper().saving_absolute(
             self.base_energy_bill_excl_revenue, self.gsy_energy_bill_excl_revenue)
         assert savings_absolute > -FLOATING_POINT_TOLERANCE
@@ -309,6 +312,22 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
         """Energy bill of the home excluding revenue and excluding all fees."""
         return (self.gsy_energy_bill_excl_revenue - self.grid_fees - self.tax_surcharges
                 - self.fixed_fee - self.marketplace_fee - self.assistance_fee)
+
+    @property
+    def gsy_energy_bill_revenue(self):
+        """Total revenue from grid and community."""
+        return self.earned_from_grid + self.earned_from_community
+
+    @property
+    def gsy_energy_bill_excl_fees(self):
+        """Energy bill of the home excluding fees."""
+        return (self.gsy_energy_bill - self.grid_fees - self.tax_surcharges
+                - self.fixed_fee - self.marketplace_fee - self.assistance_fee)
+
+    @property
+    def gsy_total_benefit(self):
+        """Calculate the total savings of the home, minus the monthly fees."""
+        return self.savings - self.fixed_fee - self.marketplace_fee - self.assistance_fee
 
     @property
     def home_balance_kWh(self):
@@ -575,8 +594,8 @@ class SCMManager:
         for data in self._bills.values():
             community_bills.base_energy_bill += data.base_energy_bill
             community_bills.base_energy_bill_revenue += data.base_energy_bill_revenue
-            community_bills.gsy_energy_bill += data.gsy_energy_bill
             community_bills.base_energy_bill_excl_revenue += data.base_energy_bill_excl_revenue
+            community_bills.gsy_energy_bill += data.gsy_energy_bill
 
             community_bills.bought_from_community += data.bought_from_community
             community_bills.spent_to_community += data.spent_to_community
@@ -593,7 +612,6 @@ class SCMManager:
             community_bills.marketplace_fee += data.marketplace_fee
             community_bills.assistance_fee += data.assistance_fee
             community_bills.fixed_fee += data.fixed_fee
-            community_bills.self_consumed_savings += data.self_consumed_savings
 
         return community_bills.to_dict()
 
