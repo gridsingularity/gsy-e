@@ -315,12 +315,12 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
 
     @property
     def gsy_energy_bill_revenue(self):
-        """Energy bill of the home excluding revenue."""
+        """Total revenue from grid and community."""
         return self.earned_from_grid + self.earned_from_community
 
     @property
     def gsy_energy_bill_excl_fees(self):
-        """Energy bill of the home excluding revenue."""
+        """Energy bill of the home excluding fees."""
         return (self.gsy_energy_bill - self.grid_fees - self.tax_surcharges
                 - self.fixed_fee - self.marketplace_fee - self.assistance_fee)
 
