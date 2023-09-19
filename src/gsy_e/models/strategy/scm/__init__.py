@@ -60,6 +60,12 @@ class SCMStrategy(ABC):
     def deactivate(self):
         """Should be called when the simulation is ended."""
 
+    def area_reconfigure_event(self, **kwargs):
+        """Needed for live events."""
+
+    def activate_energy_parameters(self, current_time_slot: DateTime) -> None:
+        """Needed for live events."""
+
     @staticmethod
     def deserialize_args(constructor_args: Dict) -> Dict:
         """Deserialize the constructor arguments."""

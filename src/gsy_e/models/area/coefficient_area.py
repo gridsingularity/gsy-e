@@ -20,6 +20,7 @@ from logging import getLogger
 from typing import TYPE_CHECKING, List, Optional
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.utils import key_in_dict_and_not_none
 from numpy.random import random
 from pendulum import DateTime
 
@@ -106,6 +107,31 @@ class CoefficientArea(AreaBase):
             raise CoefficientAreaException(
                 f"In SCM simulations {setting_name} can not be None.")
         return setting
+
+    def area_reconfigure_event(self, **kwargs):
+        """Reconfigure the device properties at runtime using the provided arguments."""
+        if self.strategy is not None:
+            self.strategy.area_reconfigure_event(**kwargs)
+            return True
+
+        if key_in_dict_and_not_none(kwargs, "coefficient_percentage"):
+            self.coefficient_percentage = self.validate_coefficient_area_setting(
+                kwargs["coefficient_percentage"], "coefficient_percentage")
+        if key_in_dict_and_not_none(kwargs, "taxes_surcharges"):
+            self._taxes_surcharges = self.validate_coefficient_area_setting(
+                kwargs["taxes_surcharges"], "taxes_surcharges")
+        if key_in_dict_and_not_none(kwargs, "fixed_monthly_fee"):
+            self._fixed_monthly_fee = self.validate_coefficient_area_setting(
+                kwargs["fixed_monthly_fee"], "fixed_monthly_fee")
+        if key_in_dict_and_not_none(kwargs, "marketplace_monthly_fee"):
+            self._marketplace_monthly_fee = self.validate_coefficient_area_setting(
+                kwargs["marketplace_monthly_fee"], "marketplace_monthly_fee")
+        if key_in_dict_and_not_none(kwargs, "market_maker_rate"):
+            self._market_maker_rate = self.validate_coefficient_area_setting(
+                kwargs["market_maker_rate"], "market_maker_rate")
+        if key_in_dict_and_not_none(kwargs, "feed_in_tariff"):
+            self._feed_in_tariff = self.validate_coefficient_area_setting(
+                kwargs["feed_in_tariff"], "feed_in_tariff")
 
     def _is_home_area(self):
         return self.children and all(child.strategy for child in self.children)
