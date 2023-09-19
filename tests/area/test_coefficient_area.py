@@ -51,10 +51,12 @@ class TestCoefficientArea:
 
     @staticmethod
     def setup_method():
+        constants.SCM_NO_COMMUNITY_SELF_CONSUMPTION = False
         ConstSettings.MASettings.MARKET_TYPE = SpotMarketTypeEnum.COEFFICIENTS.value
 
     @staticmethod
     def teardown_method():
+        constants.SCM_NO_COMMUNITY_SELF_CONSUMPTION = True
         ConstSettings.MASettings.MARKET_TYPE = SpotMarketTypeEnum.ONE_SIDED.value
 
     @staticmethod
