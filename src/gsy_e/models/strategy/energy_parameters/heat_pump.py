@@ -81,7 +81,6 @@ class HeatPumpEnergyParametersBase(ABC):
     def _rotate_profiles(self, current_time_slot: Optional[DateTime] = None):
         self.state.delete_past_state_values(current_time_slot)
 
-    @abstractmethod
     def _populate_state(self, time_slot: DateTime):
         # order matters here
         self.state.update_storage_temp(time_slot)
