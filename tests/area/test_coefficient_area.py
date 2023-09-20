@@ -331,4 +331,29 @@ class TestCoefficientArea:
 
         # check does not fail for non-House areas
         house = CoefficientArea(name="House 1", children=[load], grid_fee_constant=0.)
-        CoefficientArea(name="Community", children=[house], grid_fee_constant=0.)
+        CoefficientArea(name="Community", children=[house], grid_fee_constant=0., **scm_settings)
+
+    @staticmethod
+    def test_area_reconfigure_event_changes_attributes():
+        area = CoefficientArea(name="House")
+        setting_name_attr_mapping = {
+            "coefficient_percentage": "coefficient_percentage",
+            "taxes_surcharges": "_taxes_surcharges",
+            "fixed_monthly_fee": "_fixed_monthly_fee",
+            "marketplace_monthly_fee": "_marketplace_monthly_fee",
+            "market_maker_rate": "_market_maker_rate",
+            "feed_in_tariff": "_feed_in_tariff"
+        }
+        for setting_name, attr_name in setting_name_attr_mapping.items():
+            kwargs = {setting_name: "test"}
+            area.area_reconfigure_event(**kwargs)
+            assert getattr(area, attr_name) == "test"
+
+    @staticmethod
+    def test_area_reconfigure_event_triggers_strategy_rea_reconfigure_event():
+        strategy = MagicMock(spec=SCMLoadHoursStrategy)
+        strategy.get_energy_to_sell_kWh = MagicMock(return_value=0.0)
+        strategy.get_energy_to_buy_kWh = MagicMock(return_value=0.7)
+        load = CoefficientArea(name="load", strategy=strategy)
+        load.area_reconfigure_event()
+        load.strategy.area_reconfigure_event.assert_called_once()

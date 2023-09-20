@@ -1,26 +1,29 @@
-import unittest
 from pathlib import Path
 from unittest.mock import Mock
 
-from gsy_framework.constants_limits import GlobalConfig
+import pytest
+from gsy_framework.constants_limits import GlobalConfig, ConstSettings
+from gsy_framework.enums import SpotMarketTypeEnum
 from pendulum import duration
 
-from gsy_e.gsy_e_core.live_events import CreateAreaEvent, UpdateAreaEvent
-from gsy_e.gsy_e_core.live_events import LiveEvents
+from gsy_e.gsy_e_core.exceptions import GSyException
+from gsy_e.gsy_e_core.live_events import CreateAreaEvent, UpdateAreaEvent, LiveEvents
 from gsy_e.gsy_e_core.util import gsye_root_path
 from gsy_e.models.area import Area
 from gsy_e.models.config import SimulationConfig
-from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
 from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_e.models.strategy.market_maker_strategy import MarketMakerStrategy
 from gsy_e.models.strategy.pv import PVStrategy
+from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
 from gsy_e.models.strategy.storage import StorageStrategy
 
 
-class TestLiveEvents(unittest.TestCase):
-
-    def setUp(self):
+class TestLiveEvents:
+    # pylint: disable=too-many-instance-attributes,protected-access
+    def setup_method(self):
+        # pylint: disable=attribute-defined-outside-init
+        ConstSettings.MASettings.MARKET_TYPE = SpotMarketTypeEnum.ONE_SIDED.value
         GlobalConfig.FEED_IN_TARIFF = 20
         self.config = SimulationConfig(
             sim_duration=duration(hours=12),
@@ -67,7 +70,8 @@ class TestLiveEvents(unittest.TestCase):
                               config=self.config)
         self.area_grid.activate()
 
-    def tearDown(self) -> None:
+    @staticmethod
+    def teardown_method() -> None:
         GlobalConfig.sim_duration = duration(days=GlobalConfig.DURATION_D)
         GlobalConfig.FEED_IN_TARIFF = 20
 
@@ -119,7 +123,7 @@ class TestLiveEvents(unittest.TestCase):
                 "type": "Wrong Device", "name": "wrong", "some_attribute": 24}
         }
 
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
             CreateAreaEvent(
                 parent_uuid=event_dict["parent_uuid"],
                 area_representation=event_dict["area_representation"],
@@ -258,9 +262,9 @@ class TestLiveEvents(unittest.TestCase):
             "eventType": "update_area",
             "area_uuid": self.area_house1.uuid,
             "area_representation": {
-                'grid_fee_constant': 12, 'baseline_peak_energy_import_kWh': 123,
-                'baseline_peak_energy_export_kWh': 456, 'import_capacity_kVA': 987,
-                'export_capacity_kVA': 765
+                "grid_fee_constant": 12, "baseline_peak_energy_import_kWh": 123,
+                "baseline_peak_energy_export_kWh": 456, "import_capacity_kVA": 987,
+                "export_capacity_kVA": 765
             }
         }
 
@@ -277,60 +281,60 @@ class TestLiveEvents(unittest.TestCase):
             765 * self.config.slot_length.total_minutes() / 60.0
 
     def test_update_area_event_can_switch_strategy_from_market_maker_to_infinite_bus(self):
-        self.strategy_mmr = MarketMakerStrategy(energy_rate=30)
-        self.area_mmr = Area("mmr", None, None, self.strategy_mmr,
-                             self.config, None, grid_fee_percentage=0)
-        self.area_mmr.parent = self.area_grid
-        self.area_grid.children.append(self.area_mmr)
+        strategy_mmr = MarketMakerStrategy(energy_rate=30)
+        area_mmr = Area("mmr", None, None, strategy_mmr,
+                        self.config, None, grid_fee_percentage=0)
+        area_mmr.parent = self.area_grid
+        self.area_grid.children.append(area_mmr)
 
         event_dict = {
             "eventType": "update_area",
-            "area_uuid": self.area_mmr.uuid,
-            "area_representation": {'type': 'InfiniteBus'}
+            "area_uuid": area_mmr.uuid,
+            "area_representation": {"type": "InfiniteBus"}
         }
 
         self.area_grid.activate()
 
         self.live_events.add_event(event_dict)
         self.live_events.handle_all_events(self.area_grid)
-        assert type(self.area_mmr.strategy) == InfiniteBusStrategy
+        assert isinstance(area_mmr.strategy, InfiniteBusStrategy)
 
     def test_update_area_event_can_switch_strategy_from_infinite_bus_to_market_maker(self):
-        self.strategy_mmr = InfiniteBusStrategy(energy_sell_rate=30, energy_buy_rate=25)
-        self.area_mmr = Area("mmr", None, None, self.strategy_mmr,
-                             self.config, None, grid_fee_percentage=0)
-        self.area_mmr.parent = self.area_grid
-        self.area_grid.children.append(self.area_mmr)
+        strategy_mmr = InfiniteBusStrategy(energy_sell_rate=30, energy_buy_rate=25)
+        area_mmr = Area("mmr", None, None, strategy_mmr,
+                        self.config, None, grid_fee_percentage=0)
+        area_mmr.parent = self.area_grid
+        self.area_grid.children.append(area_mmr)
 
         event_dict = {
             "eventType": "update_area",
-            "area_uuid": self.area_mmr.uuid,
-            "area_representation": {'type': 'MarketMaker'}
+            "area_uuid": area_mmr.uuid,
+            "area_representation": {"type": "MarketMaker"}
         }
 
         self.area_grid.activate()
 
         self.live_events.add_event(event_dict)
         self.live_events.handle_all_events(self.area_grid)
-        assert type(self.area_mmr.strategy) == MarketMakerStrategy
+        assert isinstance(area_mmr.strategy, MarketMakerStrategy)
 
     def test_update_area_event_cannot_switch_non_strategy_area_to_any_strategy(self):
-        self.area_mmr = Area("mmr", None, None, None,
-                             self.config, None, grid_fee_percentage=0)
-        self.area_mmr.parent = self.area_grid
-        self.area_grid.children.append(self.area_mmr)
+        area_mmr = Area("mmr", None, None, None,
+                        self.config, None, grid_fee_percentage=0)
+        area_mmr.parent = self.area_grid
+        self.area_grid.children.append(area_mmr)
 
         event_dict = {
             "eventType": "update_area",
-            "area_uuid": self.area_mmr.uuid,
-            "area_representation": {'type': 'MarketMaker'}
+            "area_uuid": area_mmr.uuid,
+            "area_representation": {"type": "MarketMaker"}
         }
 
         self.area_grid.activate()
 
         self.live_events.add_event(event_dict)
         self.live_events.handle_all_events(self.area_grid)
-        assert self.area_mmr.strategy is None
+        assert area_mmr.strategy is None
 
     def test_create_area_event_failing_due_to_wrong_parameter_settings_no_exception_raised(self):
         event_dict = {
@@ -344,6 +348,6 @@ class TestLiveEvents(unittest.TestCase):
         try:
             self.live_events.add_event(event_dict)
             self.live_events.handle_all_events(self.area_grid)
-        except Exception:
+        except GSyException:
             assert False
         assert self.area_house1.children == [self.area1, self.area2]

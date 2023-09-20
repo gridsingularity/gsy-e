@@ -20,7 +20,7 @@ import gc
 import os
 from logging import getLogger
 from time import sleep, time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict
 
 import psutil
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
@@ -528,12 +528,12 @@ def simulation_class_factory():
     )
 
 
-def run_simulation(setup_module_name: str = "", simulation_config: SimulationConfig = None,
-                   simulation_events: str = None,
-                   redis_job_id: str = None, saved_sim_state: dict = None,
-                   slot_length_realtime: Duration = None, kwargs: dict = None) -> None:
+def run_simulation(
+        setup_module_name: str = "", simulation_config: SimulationConfig = None,
+        simulation_events: str = None, redis_job_id: str = None, saved_sim_state: dict = None,
+        slot_length_realtime: Duration = None, kwargs: dict = None) -> Dict:
     """Initiate simulation class and start simulation."""
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments,protected-access
     try:
         redis_job_id = (
             redis_job_id if not saved_sim_state
@@ -548,7 +548,7 @@ def run_simulation(setup_module_name: str = "", simulation_config: SimulationCon
         )
     except SimulationException as ex:
         log.error(ex)
-        return
+        return {}
 
     if (saved_sim_state and
             saved_sim_state["areas"] != {} and
@@ -558,3 +558,5 @@ def run_simulation(setup_module_name: str = "", simulation_config: SimulationCon
         simulation.run(initial_slot=saved_sim_state["general"]["slot_number"])
     else:
         simulation.run()
+
+    return simulation._results._endpoint_buffer.simulation_state
