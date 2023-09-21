@@ -59,6 +59,7 @@ class SimulationResultValidator:
                 "simulation_raw_data")
         self.simulation_configuration_tree_validator = get_schema_validator(
             "results_configuration_tree")
+        self.simulation_state_validator = get_schema_validator("simulation_state")
 
     def validate_simulation_raw_data(self, data: Dict):
         """Validate flattened_area_core_stats_dict."""
@@ -67,6 +68,10 @@ class SimulationResultValidator:
     def validate_configuration_tree(self, data: Dict):
         """Validate configuration_tree dict."""
         self.simulation_configuration_tree_validator.validate(data=data, raise_exception=True)
+
+    def validate_simulation_state(self, data: Dict):
+        """Validate simulation state."""
+        self.simulation_state_validator.validate(data, raise_exception=True)
 
 
 # pylint: disable=too-many-instance-attributes
@@ -158,6 +163,7 @@ class SimulationEndpointBuffer:
         """Validate updated stats and raise exceptions if they are not valid."""
         self.results_validator.validate_simulation_raw_data(self.flattened_area_core_stats_dict)
         self.results_validator.validate_configuration_tree(self.area_result_dict)
+        self.results_validator.validate_simulation_state(self.simulation_state)
 
     def _create_results_validator(self):
         self.results_validator = SimulationResultValidator(is_scm=False)
