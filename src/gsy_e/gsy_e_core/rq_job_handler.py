@@ -1,10 +1,10 @@
 import ast
 import logging
 import traceback
+from copy import deepcopy
 from datetime import datetime, date
 from typing import Dict, Optional
 
-import pendulum
 from gsy_framework.constants_limits import GlobalConfig, ConstSettings
 from gsy_framework.enums import ConfigurationType, SpotMarketTypeEnum
 from gsy_framework.settings_validators import validate_global_settings
@@ -55,15 +55,23 @@ def launch_simulation_from_rq_job(scenario: Dict,
         kwargs = {"no_export": True,
                   "seed": settings.get("random_seed", 0)}
 
-        _handle_scm_past_slots_simulation_run(
+        past_slots_sim_state = _handle_scm_past_slots_simulation_run(
             scenario, settings, events, aggregator_device_mapping, saved_state, job_id,
             scenario_name, slot_length_realtime, kwargs)
+
+        if past_slots_sim_state is not None:
+            saved_state = past_slots_sim_state
+            # Fake that the simulation is not in finished, but in running state in order to
+            # facilitate the state resume.
+            saved_state["general"]["sim_status"] = "running"
 
         config = _create_config_settings_object(
             scenario, settings, aggregator_device_mapping)
         if GlobalConfig.IS_CANARY_NETWORK:
             config.start_date = (
-                instance((datetime.combine(date.today(), datetime.min.time()))))
+                instance(
+                    datetime.combine(date.today(), datetime.min.time()),
+                    tz=gsy_e.constants.TIME_ZONE))
             if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
                 # For SCM CNs, run with SCM_CN_DAYS_OF_DELAY in order to be able to get results.
                 config.start_date = config.start_date.subtract(
@@ -148,7 +156,8 @@ def _create_config_settings_object(
 ) -> SimulationConfig:
     config_settings = {
         "start_date":
-            instance(datetime.combine(settings.get("start_date"), datetime.min.time()))
+            instance(datetime.combine(settings.get("start_date"), datetime.min.time()),
+                     tz=gsy_e.constants.TIME_ZONE)
             if "start_date" in settings else GlobalConfig.start_date,
         "sim_duration":
             duration(days=settings["duration"].days)
@@ -182,28 +191,43 @@ def _handle_scm_past_slots_simulation_run(
     aggregator_device_mapping: Dict, saved_state: Dict, job_id: str,
     scenario_name: str, slot_length_realtime: Optional[duration],
     kwargs: Dict
-):
+) -> Optional[Dict]:
     # pylint: disable=too-many-arguments
     """
     Run an extra simulation before running a CN, in case the scm_past_slots parameter is set.
     Used to pre-populate simulation results from past market slots before starting the CN.
     """
     scm_past_slots = saved_state.pop("scm_past_slots", False)
-    if GlobalConfig.IS_CANARY_NETWORK and scm_past_slots:
-        config = _create_config_settings_object(
-            scenario, settings, aggregator_device_mapping)
-        config.end_date = now(tz=pendulum.UTC).subtract(
-            days=gsy_e.constants.SCM_CN_DAYS_OF_DELAY)
-        config.sim_duration = config.end_date - config.start_date
-        GlobalConfig.sim_duration = config.sim_duration
-        GlobalConfig.IS_CANARY_NETWORK = False
-        gsy_e.constants.RUN_IN_REALTIME = False
-        run_simulation(setup_module_name=scenario_name,
-                       simulation_config=config,
-                       simulation_events=events,
-                       redis_job_id=job_id,
-                       saved_sim_state=saved_state,
-                       slot_length_realtime=slot_length_realtime,
-                       kwargs=kwargs)
-        GlobalConfig.IS_CANARY_NETWORK = True
-        gsy_e.constants.RUN_IN_REALTIME = True
+    if not (GlobalConfig.IS_CANARY_NETWORK and scm_past_slots):
+        return None
+
+    # Deepcopy the scenario and settings objects, because they are mutated by the
+    # run_simulation function, and we need the original versions for the subsequent
+    # Canary Network run.
+    scenario_copy = deepcopy(scenario)
+    settings_copy = deepcopy(settings)
+
+    config = _create_config_settings_object(
+        scenario_copy, settings_copy, aggregator_device_mapping)
+    # We are running SCM Canary Networks with some days of delay compared to realtime in order to
+    # compensate for delays in transmission of the asset measurements.
+    # Adding 4 hours of extra time to the SCM past slots simulation duration, in order to
+    # compensate for the runtime of the SCM past slots simulation and to not have any results gaps
+    # after this simulation run and the following Canary Network launch.
+    config.end_date = now(tz=gsy_e.constants.TIME_ZONE).subtract(
+        days=gsy_e.constants.SCM_CN_DAYS_OF_DELAY).add(hours=4)
+    config.sim_duration = config.end_date - config.start_date
+    GlobalConfig.sim_duration = config.sim_duration
+    GlobalConfig.IS_CANARY_NETWORK = False
+    gsy_e.constants.RUN_IN_REALTIME = False
+    simulation_state = run_simulation(
+        setup_module_name=scenario_name,
+        simulation_config=config,
+        simulation_events=events,
+        redis_job_id=job_id,
+        saved_sim_state=saved_state,
+        slot_length_realtime=slot_length_realtime,
+        kwargs=kwargs)
+    GlobalConfig.IS_CANARY_NETWORK = True
+    gsy_e.constants.RUN_IN_REALTIME = True
+    return simulation_state

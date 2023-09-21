@@ -190,8 +190,8 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
     def _calc_energy_to_buy_minimum(self, time_slot: DateTime) -> float:
         max_temp_decrease_allowed = (
                 self.state.get_storage_temp_C(time_slot) - self._min_temp_C)
-        temp_diff = self.state.get_temp_decrease_K(time_slot) - max_temp_decrease_allowed
-        if temp_diff < -FLOATING_POINT_TOLERANCE:
+        temp_diff = self.state.get_temp_decrease_K(time_slot)
+        if abs(temp_diff - max_temp_decrease_allowed) < -FLOATING_POINT_TOLERANCE:
             return 0
         min_energy_consumption = self._temp_diff_to_Q_kWh(temp_diff) / self._get_cop(time_slot)
         return min(self._max_energy_consumption_kWh, min_energy_consumption)
