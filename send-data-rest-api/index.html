@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../img/Profile.png">
-      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-4.0.2">
+      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-4.0.2">
     
     
       
@@ -2032,23 +2032,23 @@
                 <p>To send asset data without using the SDK Client or to set up a data pipeline in another programming language than the SDK Client, the raw REST API can be used instead. An additional authentication step has to be performed first.</p>
 <h2 id="authentication-with-json-web-token">Authentication with JSON Web Token<a class="headerlink" href="#authentication-with-json-web-token" title="Permanent link">&para;</a></h2>
 <p>Authentication is done via JSON Web Token (JWT). In order to retrieve the JWT, the following POST request has to be performed:</p>
-<div class="codehilite"><pre><span></span><code>POST https://gsyweb.gridsingularity.com/api-token-auth/
-</code></pre></div>
+<pre class="codehilite"><code>POST https://gsyweb.gridsingularity.com/api-token-auth/
+</code></pre>
 
 <p>The body of the request needs to contain the following information (JSON string):</p>
-<div class="codehilite"><pre><span></span><code>{&quot;username&quot;: &quot;&lt;your_username&gt;&quot;, &quot;password&quot;: &quot;&lt;your_password&gt;&quot;}
-</code></pre></div>
+<pre class="codehilite"><code>{&quot;username&quot;: &quot;&lt;your_username&gt;&quot;, &quot;password&quot;: &quot;&lt;your_password&gt;&quot;}
+</code></pre>
 
 <p>The returned JWT needs to be sent via the Authorization HTTP header when sending the forecast data. For that the user needs to add the following key value pair to the header of <strong>every</strong> POST command: <em>Authorization: JWT <your_token></em>.</p>
 <h2 id="send-energy-forecast">Send energy forecast<a class="headerlink" href="#send-energy-forecast" title="Permanent link">&para;</a></h2>
 <p>The POST to send the energy value is (please fill in <Canary Network UUID> and <Asset UUID>):</p>
-<div class="codehilite"><pre><span></span><code>POST https://gsyweb.gridsingularity.com/external-connection/api/
+<pre class="codehilite"><code>POST https://gsyweb.gridsingularity.com/external-connection/api/
 &lt;Canary Network_UUID&gt;/&lt;Asset UUID&gt;/set_energy_forecast/
-</code></pre></div>
+</code></pre>
 
 <p>The body of the request needs to contain the following information (JSON string):</p>
-<div class="codehilite"><pre><span></span><code>{&quot;energy_Wh&quot;: &lt;energy_value_for_asset&gt;}
-</code></pre></div>
+<pre class="codehilite"><code>{&quot;energy_Wh&quot;: &lt;energy_value_for_asset&gt;}
+</code></pre>
 
 <p>Once the connection with the Grid Singularity Canary Test Network is complete, we recommend to verify that the data are sent successfully to the Grid Singularity exchange,  by comparing the data visualized on the Grid Singularity user interface with the data in your local database to identify incoherences or mistakes during the connection. Iterate this process until each asset is successfully connected to send the correct data.</p>
 <p><strong><em>Warning: Ensure your Internet connection/server is stable and the script persists. Any connection issue/loss on your side will result in inaccurate data reporting and representation in the Grid Singularity Exchange.</em></strong></p>
@@ -2139,7 +2139,7 @@
     
       <script src="../assets/javascripts/application.05d1c8d6.js"></script>
       
-      <script>app.initialize({version:"1.4.2",url:{base:".."}})</script>
+      <script>app.initialize({version:"1.3.0",url:{base:".."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
       

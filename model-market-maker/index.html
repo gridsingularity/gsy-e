@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../img/Profile.png">
-      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-4.0.2">
+      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-4.0.2">
     
     
       
@@ -2007,13 +2007,13 @@
 <h2 id="backend-configuration">Backend Configuration<a class="headerlink" href="#backend-configuration" title="Permanent link">&para;</a></h2>
 <p>To implement a market maker in a backend simulation, two methods are available :</p>
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/market_maker_strategy.py" target="_blank">infinite power plant</a>:</p>
-<div class="codehilite"><pre><span></span><code><span class="n">Market</span> <span class="p">(</span><span class="s1">&#39;Market Maker&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">MarketMakerStrategy</span><span class="p">(</span><span class="n">energy_rate</span><span class="o">=</span><span class="n">selling_rate</span><span class="p">,</span>
-<span class="n">grid_connected</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
-</code></pre></div>
+<pre class="codehilite"><code class="language-python">Market ('Market Maker', strategy=MarketMakerStrategy(energy_rate=selling_rate,
+grid_connected=True))
+</code></pre>
 
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/infinite_bus.py" target="_blank">infinite bus </a>:</p>
-<div class="codehilite"><pre><span></span><code><span class="n">Market</span> <span class="p">(</span><span class="s1">&#39;Market Maker&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">InfiniteBusStrategy</span><span class="p">(</span><span class="n">energy_buy_rate</span><span class="o">=</span><span class="mi">22</span><span class="p">,</span> <span class="n">energy_sell_rate</span><span class="o">=</span><span class="mi">22</span><span class="p">))</span>
-</code></pre></div>
+<pre class="codehilite"><code class="language-python">Market ('Market Maker', strategy=InfiniteBusStrategy(energy_buy_rate=22, energy_sell_rate=22))
+</code></pre>
                 
                   
                 
@@ -2066,7 +2066,7 @@
     
       <script src="../assets/javascripts/application.05d1c8d6.js"></script>
       
-      <script>app.initialize({version:"1.4.2",url:{base:".."}})</script>
+      <script>app.initialize({version:"1.3.0",url:{base:".."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
       

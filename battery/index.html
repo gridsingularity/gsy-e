@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../img/Profile.png">
-      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-4.0.2">
+      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-4.0.2">
     
     
       
@@ -2054,8 +2054,8 @@
 <li>Update interval - Users can choose the frequency at which the rate is updated.</li>
 <li>Capacity based method - If activated, energy will be sold at lower prices during high state of charge - SOC (when the battery has more energy stored) and at higher prices during low SOC (when the battery can afford to sell its stored energy for less). If chosen, the offer price for the storage is calculated according to:</li>
 </ol>
-<div class="codehilite"><pre><span></span><code>offer_rate = initial_selling_rate - ((initial_selling_rate - final_selling_rate)\*soc/100)
-</code></pre></div>
+<pre class="codehilite"><code>offer_rate = initial_selling_rate - ((initial_selling_rate - final_selling_rate)\*soc/100)
+</code></pre>
 
 <p>As an example, considering an initial_selling_rate of 30 cents/kWh and a final_selling_rate of 20 cents/kWh, a storage with an SOC of 1% would sell its energy at 29.9 cents/kWh, and a battery at 100% SOC would sell its energy at 20 cents/kWh.</p>
 <p><em>Note: The current default setting of  the battery component is 100% energy conversion efficiency.  It is not possible to change this setting at the moment but it may be in the future versions of the software. Interested contributors may propose such additions to our open source code on <a href="https://github.com/gridsingularity/gsy-e" target="_blank">GitHub</a>.</em></p>
@@ -2157,7 +2157,7 @@
     
       <script src="../assets/javascripts/application.05d1c8d6.js"></script>
       
-      <script>app.initialize({version:"1.4.2",url:{base:".."}})</script>
+      <script>app.initialize({version:"1.3.0",url:{base:".."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
       

@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../img/Profile.png">
-      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-4.0.2">
+      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-4.0.2">
     
     
       
@@ -1948,9 +1948,9 @@
 <p>The energy peak imports/exports is the maximum value of the aggregate imports/exports of each asset inside a market. The user has the possibility to set a <code>baseline_peak_energy_import_kWh</code> and a <code>baseline_peak_energy_export_kWh</code> that they may have gotten from another simulation in order to calculate the energy peak percentage, a tool used to measure how much the peak imports or exports have changed between a defined baseline and the current simulation.</p>
 <p>The user may be interested in the Energy Peak Percentage value to assess the impact of applied <a href="../grid-fees/">grid fees</a> or different energy <a href="../model-storage/">storage</a> strategies on the <strong>peak imports</strong> and <strong>exports</strong> of a market.</p>
 <p>The Energy Peak Percentage can be calculated as follows :</p>
-<div class="codehilite"><pre><span></span><code>Import_peak_percentage = import_peak_energy_kWh / import_baseline_peak_energy_kWh * 100
+<pre class="codehilite"><code>Import_peak_percentage = import_peak_energy_kWh / import_baseline_peak_energy_kWh * 100
 Export_peak_percentage = export_peak_energy_kWh / export_baseline_peak_energy_kWh * 100
-</code></pre></div>
+</code></pre>
 
 <p>If the energy peak percentage is <strong>below 100%</strong>, the peak was <strong>reduced</strong> vs. the baseline. The energy peak was <strong>increased</strong> if the energy peak percentage value is <strong>above 100%</strong>. </p>
                 
@@ -2005,7 +2005,7 @@ Export_peak_percentage = export_peak_energy_kWh / export_baseline_peak_energy_kW
     
       <script src="../assets/javascripts/application.05d1c8d6.js"></script>
       
-      <script>app.initialize({version:"1.4.2",url:{base:".."}})</script>
+      <script>app.initialize({version:"1.3.0",url:{base:".."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
       

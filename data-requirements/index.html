@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../img/Profile.png">
-      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-4.0.2">
+      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-4.0.2">
     
     
       
@@ -2053,75 +2053,77 @@
                 
                   <h1>Data Requirements and File Upload Format</h1>
                 
-                <p>Users who would like to create an energy community in Grid Singularity Exchange using their own data instead of the template data need to collect the following information:</p>
-<ol>
-<li>
-<p><strong>Grid topology</strong>: a description of the location of energy assets and groups of the assets.</p>
-</li>
-<li>
-<p><strong>Energy assets specifications</strong>: Disaggregated data (not net meter) is recommended to efficiently connect and measure performance, provided as csv files in the following upload format for each of the assets:</p>
+                <p>Users who would like to model a local energy market (an energy community participating in peer-to-peer trading) in the Grid Singularity Exchange using their own data instead of the template (synthetic) data need to collect the following information, usually for at least one-month or one-week period in at least two seasons:</p>
 <ul>
+<li><strong>Grid topology</strong>: a diagram or a brief description of the location of community members and their energy assets and/or any other available assets for community supply like wind turbines and community PV</li>
+<li><strong>Energy assets specifications</strong>: Disaggregated data (not net metre) is recommended to efficiently connect and measure performance, provided ideally at 15-minute interval, as csv files (upload format described below) for each of the assets (if not available, home/building metre data can be provided) together with complementary information, as follows:<ul>
 <li><strong>Consumption (Load Profile)</strong><ul>
-<li>Name (can be anonymous) and location</li>
-<li>energy consumed over the last 15 minutes by each house in kWh</li>
-<li>and/or if houses have more granularity and have data for specific loads within a house, it is possible to either aggregate them or simulate different assets inside the house using their average power (kW) and the number of hours of use per day.</li>
+<li>Name (can be anonymous, e.g. Load1) and location</li>
+<li>Energy consumed per time interval by each asset/home in kWh</li>
 </ul>
 </li>
 <li><strong>PV (Solar panel)</strong><ul>
-<li>Name (can be anonymous) and location</li>
-<li>energy produced over the last 15 minutes by each PV plant in kWh and/or</li>
-<li>peak production of PV panels in Wh in order for the software to generate the Gaussian profile automatically and/or</li>
-<li>capacity in kW, including tilt and azimuth of the PV</li>
+<li>Name (can be anonymous, e.g. PV1) and location</li>
+<li>Energy produced per time interval by each PV in kWh and/or</li>
+<li>PV capacity in kW, including tilt and azimuth</li>
 </ul>
 </li>
 <li><strong>Wind</strong><ul>
-<li>Name (can be anonymous) and location</li>
-<li>Energy produced over the last 15 minutes by each wind turbine in kWh</li>
+<li>Name (can be anonymous, e.g. Wind1) and location</li>
+<li>Energy produced per time interval by each wind turbine in kWh</li>
 </ul>
 </li>
 <li><strong>Storage (Battery)</strong><ul>
-<li>Name (can be anonymous) and location</li>
-<li>capacity in kWh</li>
-<li>power delivery in kW</li>
-<li>Minimum SOC in % and/or</li>
-<li>actual SOC (sent each 15 minutes) (optional) and</li>
-<li>actual charge/discharge rate (sent each 15 minutes) (optional)</li>
+<li>Name (can be anonymous, e.g. Battery1) and location</li>
+<li>Capacity in kWh</li>
+<li>Power delivery in kW</li>
+<li>Maximum charge/discharge rate per time interval in kW </li>
+<li>Minimum SOC in % and/or actual SOC per time interval (optional)</li>
+</ul>
+</li>
+<li><strong>Heat Pumps</strong><ul>
+<li>Name (can be anonymous, e.g. HP1) and location</li>
+<li>Maximum power rating (based on nameplate)</li>
+<li>Volume of thermal storage tank if applicable (based on nameplate)</li>
+<li>Minimum and maximum comfort temperature</li>
+<li>Heat demand of the homes/building in kWh per time interval</li>
+<li>Heat pump water tank temperature (time series profile)</li>
+<li>Ambient temperature profile to configure the heat pump performance</li>
 </ul>
 </li>
 </ul>
 </li>
-<li><strong>Grid pricing information</strong><ul>
-<li>Feed-in structures</li>
-<li>Conventional (utility) energy price (profile)</li>
+<li><strong>Grid Market Pricing Information</strong><ul>
+<li>Feed-in-tariff</li>
+<li>Conventional (utility) energy price (profile) per community member</li>
 <li>Grid tariffs (fixed value or profile)</li>
 </ul>
 </li>
-</ol>
-<p>To use a custom data profile into energy assets, users can upload their own file as long as they follow the requirements.</p>
-<p>Grid Singularity Exchange currently only supports Comma Separated Values files (.csv). The separation can be done by comma <code>,</code> or semicolon <code>;</code>. Two time formats are supported, see below. All entered csv data values need to be positive.</p>
+<li><strong>Market Mechanism Data:</strong> User, simulating the role of community manager, selects preferred buying and selling prices (default setting to buy at the best available price between utility and fee-in-tariff rate) based on a pay-as-bid mechanism (other mechanisms in development). </li>
+</ul>
+<p>For the upload format, Grid Singularity Exchange currently only supports Comma Separated Values files (.csv). </p>
 <h2 id="comma-separated-values-csv">Comma Separated Values (.csv)<a class="headerlink" href="#comma-separated-values-csv" title="Permanent link">&para;</a></h2>
-<p>The separation can be done by comma <code>,</code> or semicolon <code>;</code>. Two time formats are supported, see below. All entered csv data values need to be positive</p>
+<p>The separation can be done by comma <code>,</code> or semicolon <code>;</code>. </p>
+<p>Two time formats are supported, see below. All entered csv data values need to be positive</p>
 <h3 id="hhmm">hh:mm<a class="headerlink" href="#hhmm" title="Permanent link">&para;</a></h3>
 <p><strong>Example:</strong></p>
-<div class="codehilite"><pre><span></span><code>INTERVAL;ENERGY(kWh):
+<pre class="codehilite"><code>INTERVAL;ENERGY(kWh):
 00:00;10
 00:15;10
 00:30;10
 00:45;10
 01:00;10
-</code></pre></div>
+</code></pre>
 
 <h3 id="yyyy-mm-ddthhmm">YYYY-MM-DDThh:mm<a class="headerlink" href="#yyyy-mm-ddthhmm" title="Permanent link">&para;</a></h3>
 <p><strong>Example:</strong></p>
-<div class="codehilite"><pre><span></span><code>INTERVAL,ENERGY(kWh)
+<pre class="codehilite"><code>INTERVAL,ENERGY(kWh)
 2019-01-01T00:00,10.0
 2019-01-01T00:15,10.0
 2019-01-01T00:30,10.0
 2019-01-01T00:45,10.0
 2019-01-01T01:00,10.0
-</code></pre></div>
-
-<p>Note: If you upload csv files with date information, the <strong>start-date</strong> of the simulation should be identical in the csv files and simulation settings.</p>
+</code></pre>
                 
                   
                 
@@ -2209,7 +2211,7 @@
     
       <script src="../assets/javascripts/application.05d1c8d6.js"></script>
       
-      <script>app.initialize({version:"1.4.2",url:{base:".."}})</script>
+      <script>app.initialize({version:"1.3.0",url:{base:".."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
       
