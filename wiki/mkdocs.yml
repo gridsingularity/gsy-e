@@ -21,7 +21,7 @@ nav:
           - 'Power Plant': 'power-plant.md'
         - 'Community Settings': 'community-settings.md'
         - 'Grid Market Settings': 'grid-market-settings.md'
-        - 'Events (Adding Assets, Communities, etc.)': 'events.md'
+        - 'Events (Adding, Removing Assets, etc.)': 'events.md'
     - 'Instructions for researchers on backend code':
         - 'Backend Installation Instructions':
             - 'Linux Installation Instructions': 'linux-installation-instructions.md'
