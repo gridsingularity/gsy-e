@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from gsy_e.models.area import Area
+from gsy_e.models.area import Market, Asset
 from gsy_e.models.area.event_types import ConfigEvents
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_e.models.strategy.predefined_pv import PVPredefinedStrategy
@@ -23,27 +23,27 @@ from gsy_e.models.strategy.predefined_pv import PVPredefinedStrategy
 
 def get_setup(config):
     config.cloud_coverage = 0
-    area = Area(
+    area = Market(
         "Grid",
         [
-            Area(
+            Market(
                 "House 1",
                 event_list=[ConfigEvents(12, {"cloud_coverage": 1})],
                 children=[
-                    Area("H1 PV", strategy=PVPredefinedStrategy(capacity_kW=0.25),
+                    Asset("H1 PV", strategy=PVPredefinedStrategy(capacity_kW=0.25),
                          ),
                 ]
             ),
-            Area(
+            Market(
                 "House 2",
                 event_list=[ConfigEvents(12, {"cloud_coverage": 2})],
                 children=[
-                    Area("H2 PV", strategy=PVPredefinedStrategy(capacity_kW=0.25),
+                    Asset("H2 PV", strategy=PVPredefinedStrategy(capacity_kW=0.25),
                          ),
 
                 ]
             ),
-            Area("Grid Load", strategy=LoadHoursStrategy(avg_power_W=100000,
+            Asset("Grid Load", strategy=LoadHoursStrategy(avg_power_W=100000,
                                                          hrs_per_day=24,
                                                          hrs_of_day=list(
                                                              range(0, 24)),

@@ -15,20 +15,20 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from gsy_e.models.area import Area
+from gsy_e.models.area import Market, Asset
 from gsy_e.models.area.events import StrategyEvents
 from gsy_e.models.strategy.predefined_pv import PVUserProfileStrategy
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 
 
 def get_setup(config):
-    area = Area(
+    area = Market(
         "Grid",
         children=[
-            Area(
+            Market(
                 "House 1",
                 children=[
-                    Area("H2 PV", strategy=PVUserProfileStrategy(panel_count=1,
+                    Asset("H2 PV", strategy=PVUserProfileStrategy(panel_count=1,
                                                                  initial_selling_rate=80,
                                                                  power_profile={0: 200,
                                                                                 12: 400,
@@ -38,7 +38,7 @@ def get_setup(config):
                                                                            19: 0}})])
                 ]
             ),
-            Area("Grid Load", strategy=LoadHoursStrategy(avg_power_W=10000,
+            Asset("Grid Load", strategy=LoadHoursStrategy(avg_power_W=10000,
                                                          hrs_per_day=24,
                                                          hrs_of_day=list(
                                                              range(0, 24)),

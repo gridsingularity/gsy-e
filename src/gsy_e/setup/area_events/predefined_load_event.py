@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from gsy_e.models.area import Area
+from gsy_e.models.area import Market, Asset
 from gsy_e.models.area.events import StrategyEvents
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
 from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy
@@ -24,13 +24,13 @@ from gsy_framework.constants_limits import ConstSettings
 
 def get_setup(config):
     ConstSettings.MASettings.MARKET_TYPE = 2
-    area = Area(
+    area = Market(
         "Grid",
         children=[
-            Area(
+            Market(
                 "House 1",
                 children=[
-                    Area("H1 General Load",
+                    Asset("H1 General Load",
                          strategy=DefinedLoadStrategy(daily_load_profile={0: 200, 12: 200},
                                                       initial_buying_rate=1,
                                                       final_buying_rate=37),
@@ -42,7 +42,7 @@ def get_setup(config):
                          )
                 ]
             ),
-            Area("Commercial Energy Producer",
+            Asset("Commercial Energy Producer",
                  strategy=CommercialStrategy(energy_rate=30)
                  ),
 
