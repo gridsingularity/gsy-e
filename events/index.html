@@ -520,47 +520,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#events-in-simulations-run-using-the-backend" title="Events in Simulations run using the Backend" class="md-nav__link">
-    Events in Simulations run using the Backend
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#addremove-market-events" title="Add/Remove Market Events" class="md-nav__link">
-    Add/Remove Market Events
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#connectdisconnect-market-events" title="Connect/Disconnect Market Events" class="md-nav__link">
-    Connect/Disconnect Market Events
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#strategy-events" title="Strategy Events" class="md-nav__link">
-    Strategy Events
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#configuration-events" title="Configuration Events" class="md-nav__link">
-    Configuration Events
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
       
       
       
@@ -731,6 +690,18 @@
   <li class="md-nav__item">
     <a href="../assets-installation/" title="Assets Installation" class="md-nav__link">
       Assets Installation
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../backend_events/" title="Configuration of Events" class="md-nav__link">
+      Configuration of Events
     </a>
   </li>
 
@@ -2035,47 +2006,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#events-in-simulations-run-using-the-backend" title="Events in Simulations run using the Backend" class="md-nav__link">
-    Events in Simulations run using the Backend
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#addremove-market-events" title="Add/Remove Market Events" class="md-nav__link">
-    Add/Remove Market Events
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#connectdisconnect-market-events" title="Connect/Disconnect Market Events" class="md-nav__link">
-    Connect/Disconnect Market Events
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#strategy-events" title="Strategy Events" class="md-nav__link">
-    Strategy Events
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#configuration-events" title="Configuration Events" class="md-nav__link">
-    Configuration Events
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
       
       
       
@@ -2106,56 +2036,7 @@
 <li><strong>Change market configuration</strong> settings (except names)</li>
 </ul>
 <h2 id="events-in-simulations-run-using-the-user-interface">Events in Simulations run using the User Interface<a class="headerlink" href="#events-in-simulations-run-using-the-user-interface" title="Permanent link">&para;</a></h2>
-<p>Once an event is set, the user can track it on the timeline displayed at the top of the simulation. If the user clicks on the event on the Modelling page, the grid setup at that specific time is viewed. If the user clicks on an event in the Results page, the results of the specific markets and energy assets are viewed.</p>
-<p><img alt="alt_text" src="../img/events-1.png" /></p>
-<p><img alt="alt_text" src="../img/events-2.png" style="height:50px;width:50px" />
- whenever a market or energy asset was added</p>
-<p><img alt="alt_text" src="../img/events-3.png" style="height:50px;width:50px" />
- whenever a market or energy asset parameter was modified</p>
-<p><img alt="alt_text" src="../img/events-4.png" style="height:50px;width:50px" />
- whenever a market or energy asset was removed</p>
-<p><img alt="alt_text" src="../img/events-5.png" style="height:50px;width:50px" />
- whenever multiple events have been executed at the same time</p>
-<h2 id="events-in-simulations-run-using-the-backend">Events in Simulations run using the Backend<a class="headerlink" href="#events-in-simulations-run-using-the-backend" title="Permanent link">&para;</a></h2>
-<p>In a <a href="https://github.com/gridsingularity/gsy-e" target="_blank">backend</a> simulation, events need to be defined by the user in the setup files before the start of the simulation, and they are associated with a specific point in time (or duration), at which the event is triggered. An event has to be associated with a market by using the <code>event_list</code> constructor parameter for that market.</p>
-<p>There are four different event types, described in further detail below:</p>
-<ul>
-<li>Add/Remove Market Events</li>
-<li>Connect/Disconnect Market Events</li>
-<li>Strategy Events</li>
-<li>Configuration Events</li>
-</ul>
-<h3 id="addremove-market-events">Add/Remove Market Events<a class="headerlink" href="#addremove-market-events" title="Permanent link">&para;</a></h3>
-<p>This event is associated with a market, and dictates that this market (and its submarkets and assets) will be added or removed from the grid at a specific point in time. There are two ways to configure this operation, either via individual events (<code>EnableMarketEvent</code> and <code>DisableMarketEvent</code>) or by disabling this market for a time interval (<code>DisableIntervalMarketEvent</code>).</p>
-<p><code>EnableMarketEvent</code> / <code>DisableMarketEvent</code> commands each accept one argument, which is the hour at which this event is triggered (hourly resolution is supported in the current implementation), and this area will be enabled/disabled at this specific point in time no matter its current state. <code>DisableIntervalMarketEvent</code> accepts two arguments, denoting the <strong>start hour</strong> and the <strong>end hour</strong> at which the Market is disabled.</p>
-<p>The term <em>disabled market</em> means that the relevant markets and submarkets are not performing any trading, and are hence inactive in the simulation for the time that the market is disabled. Once enabled, the relevant market and its submarkets will start to operate.</p>
-<p>Examples for these events are available on the Grid Singularity GitHub:</p>
-<ul>
-<li>EnableMarketEvent: <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/isolated_enable_event.py" target="_blank">isolated_enable_event.py</a></li>
-<li>DisableMarketEvent: <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/isolated_disable_event.py" target="_blank">isolated_disable_event.py</a></li>
-<li>DisableIntervalMarketEvent: <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/disable_interval_event.py" target="_blank">disable_interval_event.py</a></li>
-</ul>
-<h3 id="connectdisconnect-market-events">Connect/Disconnect Market Events<a class="headerlink" href="#connectdisconnect-market-events" title="Permanent link">&para;</a></h3>
-<p>These events are similar to the enable/disable event; both have a similar API and both are used for removing a market from the grid. The difference is that the Connect/Disconnect events are decoupling the relevant submarkets and assets from the main grid. When the event is enabled, there will be two independent grids trading energy internally, but not with each other. This is contrary to enable/disable events, where the subtree is not performing any trades. This can simulate grids that are abruptly decoupled from the main grid, but manage to self-sustain their assets by continuing to trade energy even after they are disconnected from the main grid.</p>
-<p>You can find examples for these events on Grid Singularity GitHub:</p>
-<ul>
-<li>ConnectMarketEvent: <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/isolated_connect_event.py" target="_blank">isolated_connect_event.py</a></li>
-<li>DisconnectMarketEvent: <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/isolated_disconnect_event.py" target="_blank">isolated_disconnect_event.py</a></li>
-<li>DisconnectIntervalMarketEvent: <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/disconnect_interval_event.py" target="_blank">disconnect_interval_event.py</a></li>
-</ul>
-<h3 id="strategy-events">Strategy Events<a class="headerlink" href="#strategy-events" title="Permanent link">&para;</a></h3>
-<p>These events are used to change an asset’s trading strategy during the simulation runtime. These are distinct events with no interval event provided.</p>
-<ul>
-<li>Load StrategyEvent: <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/load_event.py" target="_blank">load_event.py</a></li>
-<li>PV StrategyEvent: <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/pv_event.py" target="_blank">pv_event.py</a></li>
-<li>Storage StrategyEvent: <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/storage_event.py" target="_blank">storage_event.py</a></li>
-</ul>
-<h3 id="configuration-events">Configuration Events<a class="headerlink" href="#configuration-events" title="Permanent link">&para;</a></h3>
-<p>These events are used to change the market configuration (including submarkets and assets) during runtime. A useful application for this event is to set different weather conditions for a subset of the grid. Configuration events are distinct and no interval event is provided. There are currently two configuration events:</p>
-<ul>
-<li>Cloud Coverage Event: <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/cloud_coverage_event.py" target="_blank">cloud_coverage_event.py</a></li>
-<li>PV User Profile Event : <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/userprofile_pv_event.py" target="_blank">userprofile_pv_event.py</a></li>
-</ul>
+<p>This feature is currently only available for simulations using the backend code and it will soon be available in the new interface, when this documentation will be updated. For backend modelling instructions please see <a href="../backend_events/">this section</a>.</p>
                 
                   
                 

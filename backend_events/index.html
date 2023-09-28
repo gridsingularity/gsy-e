@@ -13,7 +13,7 @@
         <meta name="description" content="Documentation for the Grid Singularity Exchange">
       
       
-        <link rel="canonical" href="https://gridsingularity.github.io/gsy-e/documentation/registration-matching-api-user-interface/">
+        <link rel="canonical" href="https://gridsingularity.github.io/gsy-e/documentation/backend_events/">
       
       
         <meta name="author" content="Grid Singularity">
@@ -42,7 +42,7 @@
     
     
       
-        <title>Registration - Simulations run on the User-Interface - Grid Singularity Wiki</title>
+        <title>Configuration of Events - Grid Singularity Wiki</title>
       
     
     
@@ -110,6 +110,10 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
+      <a href="#scheduled-events" tabindex="1" class="md-skip">
+        Skip to content
+      </a>
+    
     
       <header class="md-header" data-md-component="header">
   <nav class="md-header-nav md-grid">
@@ -131,7 +135,7 @@
               Grid Singularity Wiki
             </span>
             <span class="md-header-nav__topic">
-              Registration - Simulations run on the User-Interface
+              Configuration of Events
             </span>
           
         </div>
@@ -311,10 +315,12 @@
       
       
 
+  
 
-  <li class="md-nav__item md-nav__item--nested">
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2" checked>
     
     <label class="md-nav__link" for="nav-2">
       Set up a simulation of an active local energy market
@@ -498,10 +504,12 @@
           
           
 
+  
 
-  <li class="md-nav__item md-nav__item--nested">
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-2" type="checkbox" id="nav-2-2">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-2" type="checkbox" id="nav-2-2" checked>
     
     <label class="md-nav__link" for="nav-2-2">
       Instructions for researchers on backend code
@@ -589,10 +597,12 @@
           
           
 
+  
 
-  <li class="md-nav__item md-nav__item--nested">
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-2-2" type="checkbox" id="nav-2-2-2">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-2-2" type="checkbox" id="nav-2-2-2" checked>
     
     <label class="md-nav__link" for="nav-2-2-2">
       Backend Simulation Configuration
@@ -656,11 +666,72 @@
           
           
 
+  
 
-  <li class="md-nav__item">
-    <a href="../backend_events/" title="Configuration of Events" class="md-nav__link">
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Configuration of Events
+      </label>
+    
+    <a href="./" title="Configuration of Events" class="md-nav__link md-nav__link--active">
       Configuration of Events
     </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#scheduled-events" title="Scheduled Events" class="md-nav__link">
+    Scheduled Events
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#addremove-market-events" title="Add/Remove Market Events" class="md-nav__link">
+    Add/Remove Market Events
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#connectdisconnect-market-events" title="Connect/Disconnect Market Events" class="md-nav__link">
+    Connect/Disconnect Market Events
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#strategy-events" title="Strategy Events" class="md-nav__link">
+    Strategy Events
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
   </li>
 
         
@@ -1247,12 +1318,10 @@
       
       
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+  <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5" type="checkbox" id="nav-5" checked>
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5" type="checkbox" id="nav-5">
     
     <label class="md-nav__link" for="nav-5">
       Collaborations and APIs
@@ -1280,12 +1349,10 @@
           
           
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+  <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2" type="checkbox" id="nav-5-2" checked>
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2" type="checkbox" id="nav-5-2">
     
     <label class="md-nav__link" for="nav-5-2">
       Connect to the Grid Singularity APIs
@@ -1601,12 +1668,10 @@
           
           
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+  <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-4" type="checkbox" id="nav-5-2-4" checked>
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-4" type="checkbox" id="nav-5-2-4">
     
     <label class="md-nav__link" for="nav-5-2-4">
       Customise the clearing algorithm through the Grid Singularity Matching API
@@ -1694,12 +1759,10 @@
           
           
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+  <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-4-3" type="checkbox" id="nav-5-2-4-3" checked>
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-4-3" type="checkbox" id="nav-5-2-4-3">
     
     <label class="md-nav__link" for="nav-5-2-4-3">
       Launch the Matching API
@@ -1715,18 +1778,11 @@
           
           
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active">
-    
-    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-    
-    
-    <a href="./" title="Registration - Simulations run on the User-Interface" class="md-nav__link md-nav__link--active">
+  <li class="md-nav__item">
+    <a href="../registration-matching-api-user-interface/" title="Registration - Simulations run on the User-Interface" class="md-nav__link">
       Registration - Simulations run on the User-Interface
     </a>
-    
   </li>
 
         
@@ -1961,17 +2017,105 @@
               </div>
             
             
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary">
+  
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#scheduled-events" title="Scheduled Events" class="md-nav__link">
+    Scheduled Events
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#addremove-market-events" title="Add/Remove Market Events" class="md-nav__link">
+    Add/Remove Market Events
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#connectdisconnect-market-events" title="Connect/Disconnect Market Events" class="md-nav__link">
+    Connect/Disconnect Market Events
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#strategy-events" title="Strategy Events" class="md-nav__link">
+    Strategy Events
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
           
           <div class="md-content">
             <article class="md-content__inner md-typeset">
               
                 
-                  <a href="https://github.com/gridsingularity/gsy-e/wiki/edit/master/docs/registration-matching-api-user-interface.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                  <a href="https://github.com/gridsingularity/gsy-e/wiki/edit/master/docs/backend_events.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
                 
                 
-                  <h1>Registration - Simulations run on the User-Interface</h1>
+                  <h1>Configuration of Events</h1>
                 
-                <p>Currently, it is not possible to connect to the Matching API through the <a href="https://gridsingularity.com/singularity-map" target="_blank">User-Interface</a>.</p>
+                <h2 id="scheduled-events">Scheduled Events<a class="headerlink" href="#scheduled-events" title="Permanent link">&para;</a></h2>
+<p>Events need to be defined by the user in the setup files before the start of the simulation, and they are associated with a specific point in time (or duration), at which the event is triggered. An event has to be associated with a market or an asset by using the <code>event_list</code> constructor parameter for that Market or Asset class.</p>
+<p>There are four different event types, described in further detail below:</p>
+<ul>
+<li>Add/Remove Market Events</li>
+<li>Connect/Disconnect Market Events</li>
+<li>Strategy Events</li>
+</ul>
+<h3 id="addremove-market-events">Add/Remove Market Events<a class="headerlink" href="#addremove-market-events" title="Permanent link">&para;</a></h3>
+<p>This event is associated with a market, and dictates that this market (and its submarkets and assets) will be added or removed from the grid at a specific point in time. There are two ways to configure this operation, either via individual events (<code>EnableMarketEvent</code> and <code>DisableMarketEvent</code>) or by disabling this market for a selected time interval (<code>DisableIntervalMarketEvent</code>).</p>
+<p><code>EnableMarketEvent</code> / <code>DisableMarketEvent</code> commands each accept one argument, which is the hour at which this event is triggered (hourly resolution is supported in the current implementation), and this area will be enabled/disabled at this specific point in time no matter its current state. <code>DisableIntervalMarketEvent</code> accepts two arguments, denoting the <strong>start hour</strong> and the <strong>end hour</strong> at which the Market is disabled.</p>
+<p>The term <em>disabled market</em> means that the relevant markets and submarkets are not performing any trading, and are hence inactive in the simulation for the time that the market is disabled. Once enabled, the relevant market and its submarkets will start to operate.</p>
+<p>Examples for these events are available on the Grid Singularity GitHub:</p>
+<ul>
+<li>EnableMarketEvent: <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/isolated_enable_event.py" target="_blank">isolated_enable_event.py</a></li>
+<li>DisableMarketEvent: <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/isolated_disable_event.py" target="_blank">isolated_disable_event.py</a></li>
+<li>DisableIntervalMarketEvent: <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/disable_interval_event.py" target="_blank">disable_interval_event.py</a></li>
+</ul>
+<h3 id="connectdisconnect-market-events">Connect/Disconnect Market Events<a class="headerlink" href="#connectdisconnect-market-events" title="Permanent link">&para;</a></h3>
+<p>These events are similar to the enable/disable event; both have a similar API and both are used for removing a market from the grid. The difference is that the Connect/Disconnect events are decoupling the relevant submarkets and assets from the main grid. When the event is enabled, there will be two independent grids trading energy internally, but not with each other. This is contrary to enable/disable events, where the subtree is not performing any trades. This can simulate grids that are abruptly decoupled from the main grid, but manage to self-sustain their assets by continuing to trade energy even after they are disconnected from the main grid.</p>
+<p>You can find examples for these events on Grid Singularity GitHub:</p>
+<ul>
+<li>ConnectMarketEvent: <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/isolated_connect_event.py" target="_blank">isolated_connect_event.py</a></li>
+<li>DisconnectMarketEvent: <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/isolated_disconnect_event.py" target="_blank">isolated_disconnect_event.py</a></li>
+<li>DisconnectIntervalMarketEvent: <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/disconnect_interval_event.py" target="_blank">disconnect_interval_event.py</a></li>
+</ul>
+<h3 id="strategy-events">Strategy Events<a class="headerlink" href="#strategy-events" title="Permanent link">&para;</a></h3>
+<p>These events are used to change an asset’s trading strategy during the simulation runtime. These are distinct events with no interval event provided.</p>
+<ul>
+<li>Load StrategyEvent: <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/load_event.py" target="_blank">load_event.py</a></li>
+<li>PV StrategyEvent: <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/pv_event.py" target="_blank">pv_event.py</a></li>
+<li>Storage StrategyEvent: <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/area_events/storage_event.py" target="_blank">storage_event.py</a></li>
+</ul>
                 
                   
                 
@@ -1992,7 +2136,7 @@
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../matching-api-template-script/" title="Matching API Template Script" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../assets-installation/" title="Assets Installation" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -2001,19 +2145,19 @@
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Matching API Template Script
+                Assets Installation
               </span>
             </div>
           </a>
         
         
-          <a href="../registration-matching-api-backend/" title="Registration - Simulations run on the Backend" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../backend-results-overview/" title="Overview" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                Registration - Simulations run on the Backend
+                Overview
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">
