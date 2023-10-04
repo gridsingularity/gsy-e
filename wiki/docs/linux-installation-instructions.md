@@ -1,6 +1,5 @@
-##Installing Grid Singularity Exchange on Linux Ubuntu 18.04:
-
-###Step 1: In case you have not already installed git, python3.8 and pip (otherwise please go directly to step 2):
+##Installing Grid Singularity Exchange on Linux Ubuntu 18.04
+###Step 1: In case you have not already installed git, Python 3.8 and pip (otherwise please go directly to step 2):
 
 ```
 sudo apt-get update
@@ -13,7 +12,7 @@ sudo apt-get install python3-pip -y
 ```
 
 
-###Step 2: Install virtualenv and create a python virtual environment
+###Step 2: Install virtualenv and create a Python virtual environment
 ```
 pip3 install virtualenv
 mkdir envs
@@ -66,9 +65,7 @@ pip install -e.
 Now, if you run `gsy-e run -–help` , the help of gsy-e should be shown.
 
 
-##Installing Grid Singularity Exchange on Linux Ubuntu 20.04:
-
-
+##Installing Grid Singularity Exchange on Linux Ubuntu 20.04
 Please follow the installation instructions for Ubuntu 18.04.
 
 In case  you encounter the following error:

@@ -33,7 +33,8 @@ nav:
             - 'Setting General Configuration Parameters': 'setting-configuration-parameters.md'
             - 'Market Backend Configuration': 'market-backend-configuration.md'
             - 'Assets Installation': 'assets-installation.md'
-            - 'Configuration of Events': 'backend_events.md'
+            - 'Configuring Events': 'backend_events.md'
+            - 'Launching Simulation': 'launch_simulation.md'
         - 'Backend Results':
             - 'Overview': 'backend-results-overview.md'
             - 'Energy bills': 'backend-results-energy-bills.md'
