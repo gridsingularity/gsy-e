@@ -62,22 +62,7 @@ class HeatPumpStrategy(TradingStrategyBase):
         assert ConstSettings.MASettings.MARKET_TYPE != 1, (
                 "Heatpump has not been implemented for the OneSidedMarket")
 
-        self.use_default_updater_params: bool = not order_updater_parameters
-        if self.use_default_updater_params:
-            order_updater_parameters = {
-                AvailableMarketTypes.SPOT: HeatPumpOrderUpdaterParameters()}
-        else:
-            for market_type in AvailableMarketTypes:
-                if not order_updater_parameters.get(market_type):
-                    continue
-                HeatPumpValidator.validate_rate(
-                    initial_buying_rate=order_updater_parameters[market_type].initial_rate,
-                    final_buying_rate=order_updater_parameters[market_type].final_rate,
-                    update_interval=order_updater_parameters[market_type].update_interval,
-                    preferred_buying_rate=preferred_buying_rate
-                )
-
-        super().__init__(order_updater_parameters=order_updater_parameters)
+        self._init_price_params(order_updater_parameters, preferred_buying_rate)
 
         self._energy_params = HeatPumpEnergyParameters(
             maximum_power_rating_kW=maximum_power_rating_kW,
@@ -103,11 +88,29 @@ class HeatPumpStrategy(TradingStrategyBase):
             consumption_kWh_profile_uuid=consumption_kWh_profile_uuid,
             source_type=source_type)
 
-        self.preferred_buying_rate = preferred_buying_rate
-
         # needed for profile_handler
         self.external_temp_C_profile_uuid = external_temp_C_profile_uuid
         self.consumption_kWh_profile_uuid = consumption_kWh_profile_uuid
+
+    def _init_price_params(self, order_updater_parameters, preferred_buying_rate):
+        self.use_default_updater_params: bool = not order_updater_parameters
+        if self.use_default_updater_params:
+            order_updater_parameters = {
+                AvailableMarketTypes.SPOT: HeatPumpOrderUpdaterParameters()}
+        else:
+            for market_type in AvailableMarketTypes:
+                if not order_updater_parameters.get(market_type):
+                    continue
+                HeatPumpValidator.validate_rate(
+                    initial_buying_rate=order_updater_parameters[market_type].initial_rate,
+                    final_buying_rate=order_updater_parameters[market_type].final_rate,
+                    update_interval=order_updater_parameters[market_type].update_interval,
+                    preferred_buying_rate=preferred_buying_rate
+                )
+
+        super().__init__(order_updater_parameters=order_updater_parameters)
+
+        self.preferred_buying_rate = preferred_buying_rate
 
     @staticmethod
     def deserialize_args(constructor_args: Dict) -> Dict:
@@ -140,15 +143,19 @@ class HeatPumpStrategy(TradingStrategyBase):
 
     def event_activate(self, **kwargs):
         self._energy_params.event_activate()
+        super().event_activate(**kwargs)
 
     def event_market_cycle(self) -> None:
-        super().event_market_cycle()
-        spot_market = self.area.spot_market
+
+        spot_market = self.area.current_market
         if not spot_market:
             return
 
-        # Order matters: First update the energy state and then post orders
         self._energy_params.event_market_cycle(spot_market.time_slot)
+
+        super().event_market_cycle()
+
+        # Order matters: First update the energy state and then post orders
 
         self._post_orders_to_new_markets()
 

@@ -352,12 +352,14 @@ class ProfilesHandler:
 
         """
         if profile_uuid is None and self.should_create_profile(profile):
+            print("READ ARBITRARY")
             return read_arbitrary_profile(profile_type,
                                           profile, current_timestamp=self.current_timestamp)
         if self.time_to_rotate_profile(profile):
+            print(f"READ NEW DATAPOINTS {self.current_timestamp}")
             return self._read_new_datapoints_from_buffer_or_rotate_profile(
                 profile, profile_uuid, profile_type)
-
+        print(f"NOTHING {self.current_timestamp}")
         return profile
 
     def time_to_rotate_profile(self, profile):
