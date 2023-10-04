@@ -174,9 +174,9 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
         return energy_kWh / self._Q_specific
 
     def _rotate_profiles(self, current_time_slot: Optional[DateTime] = None):
+        super()._rotate_profiles(current_time_slot)
         self._consumption_kWh.read_or_rotate_profiles()
         self._ext_temp_C.read_or_rotate_profiles()
-        super()._rotate_profiles(current_time_slot)
 
     def _calc_energy_to_buy_maximum(self, time_slot: DateTime) -> float:
         max_energy_consumption = self._temp_diff_to_Q_kWh(
