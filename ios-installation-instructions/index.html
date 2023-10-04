@@ -631,8 +631,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-6-install-python-36-and-set-as-default" title="Step 6: Install python 3.6 and set as default:" class="md-nav__link">
-    Step 6: Install python 3.6 and set as default:
+  <a href="#step-6-install-python-36-and-set-as-default" title="Step 6: Install Python 3.6 and set as default:" class="md-nav__link">
+    Step 6: Install Python 3.6 and set as default:
   </a>
   
 </li>
@@ -645,8 +645,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-8-setup-paths-for-compiling-python-libraries" title="Step 8: Setup paths for compiling python libraries:" class="md-nav__link">
-    Step 8: Setup paths for compiling python libraries:
+  <a href="#step-8-setup-paths-for-compiling-python-libraries" title="Step 8: Setup paths for compiling Python libraries:" class="md-nav__link">
+    Step 8: Setup paths for compiling Python libraries:
   </a>
   
 </li>
@@ -785,8 +785,20 @@
 
 
   <li class="md-nav__item">
-    <a href="../backend_events/" title="Configuration of Events" class="md-nav__link">
-      Configuration of Events
+    <a href="../backend_events/" title="Configuring Events" class="md-nav__link">
+      Configuring Events
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../launch_simulation/" title="Launching Simulation" class="md-nav__link">
+      Launching Simulation
     </a>
   </li>
 
@@ -2133,8 +2145,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-6-install-python-36-and-set-as-default" title="Step 6: Install python 3.6 and set as default:" class="md-nav__link">
-    Step 6: Install python 3.6 and set as default:
+  <a href="#step-6-install-python-36-and-set-as-default" title="Step 6: Install Python 3.6 and set as default:" class="md-nav__link">
+    Step 6: Install Python 3.6 and set as default:
   </a>
   
 </li>
@@ -2147,8 +2159,8 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#step-8-setup-paths-for-compiling-python-libraries" title="Step 8: Setup paths for compiling python libraries:" class="md-nav__link">
-    Step 8: Setup paths for compiling python libraries:
+  <a href="#step-8-setup-paths-for-compiling-python-libraries" title="Step 8: Setup paths for compiling Python libraries:" class="md-nav__link">
+    Step 8: Setup paths for compiling Python libraries:
   </a>
   
 </li>
@@ -2202,7 +2214,7 @@
 
 <p>(Select <code>Install</code> in the window that opens)</p>
 <h3 id="step-2-install-homebrew">Step 2: Install homebrew<a class="headerlink" href="#step-2-install-homebrew" title="Permanent link">&para;</a></h3>
-<pre class="codehilite"><code>/usr/bin/ruby -e &quot;$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)&quot;
+<pre class="codehilite"><code>/bin/bash -c &quot;$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)&quot;
 </code></pre>
 
 <h3 id="step-3-install-other-required-libraries">Step 3: Install other required libraries:<a class="headerlink" href="#step-3-install-other-required-libraries" title="Permanent link">&para;</a></h3>
@@ -2215,17 +2227,17 @@ echo -e 'if command -v pyenv 1&gt;/dev/null 2&gt;&amp;1; then\n eval &quot;$(pye
 </code></pre>
 
 <h3 id="step-5-close-and-re-open-the-terminal">Step 5: Close and re-open the terminal<a class="headerlink" href="#step-5-close-and-re-open-the-terminal" title="Permanent link">&para;</a></h3>
-<h3 id="step-6-install-python-36-and-set-as-default">Step 6: Install python 3.6 and set as default:<a class="headerlink" href="#step-6-install-python-36-and-set-as-default" title="Permanent link">&para;</a></h3>
+<h3 id="step-6-install-python-36-and-set-as-default">Step 6: Install Python 3.6 and set as default:<a class="headerlink" href="#step-6-install-python-36-and-set-as-default" title="Permanent link">&para;</a></h3>
 <pre class="codehilite"><code>pyenv install 3.8.6
 pyenv global 3.8.6
 </code></pre>
 
 <h3 id="step-7-install-virtualenvwrapper">Step 7: Install virtualenvwrapper:<a class="headerlink" href="#step-7-install-virtualenvwrapper" title="Permanent link">&para;</a></h3>
-<pre class="codehilite"><code>pip install virtualenvwrapper
+<pre class="codehilite"><code>pip3 install virtualenvwrapper
 echo -e 'export WORKON_HOME=~/Envs\nsource ~/.pyenv/versions/3.8.6/bin/virtualenvwrapper.sh' &gt;&gt; ~/.bash_profile
 </code></pre>
 
-<h3 id="step-8-setup-paths-for-compiling-python-libraries">Step 8: Setup paths for compiling python libraries:<a class="headerlink" href="#step-8-setup-paths-for-compiling-python-libraries" title="Permanent link">&para;</a></h3>
+<h3 id="step-8-setup-paths-for-compiling-python-libraries">Step 8: Setup paths for compiling Python libraries:<a class="headerlink" href="#step-8-setup-paths-for-compiling-python-libraries" title="Permanent link">&para;</a></h3>
 <pre class="codehilite"><code>echo -e 'BREW_PREFIX=&quot;$(brew --prefix openssl)&quot;\nexport CFLAGS=&quot;-I${BREW_PREFIX}/include&quot;\nexport LDFLAGS=&quot;-L${BREW_PREFIX}/lib&quot;' &gt;&gt; ~/.bash_profile
 </code></pre>
 
@@ -2239,8 +2251,8 @@ cd gsy-e
 <pre class="codehilite"><code>brew install npm
 npm install --global ganache-cli
 mkvirtualenv gsy-e
-pip install pendulum pip-tools
-pip install -e .
+pip3 install pendulum pip-tools
+pip3 install -e .
 </code></pre>
 
 <p>You now should have a working gsy-e setup.</p>

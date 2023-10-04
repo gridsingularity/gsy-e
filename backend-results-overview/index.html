@@ -662,8 +662,20 @@
 
 
   <li class="md-nav__item">
-    <a href="../backend_events/" title="Configuration of Events" class="md-nav__link">
-      Configuration of Events
+    <a href="../backend_events/" title="Configuring Events" class="md-nav__link">
+      Configuring Events
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../launch_simulation/" title="Launching Simulation" class="md-nav__link">
+      Launching Simulation
     </a>
   </li>
 
@@ -1970,13 +1982,13 @@
                   <h1>Overview</h1>
                 
                 <p>After running a simulation in the backend, the user can export simulation results. This functionality is enabled by default. If you want to disable the export of simulation results, use the --no-export flag for the simulation run. Another useful parameter is: <code>--export-path</code>, used to change the output path of the simulation results. The default path is <code>$HOME/gsy-e-simulation/</code>.</p>
-<p>The simulation results include analytical information about the bids, offers and trades that took place in the course of the simulation. Information about energy characteristics of each asset and market are also included (eg. battery state of charge, energy traded/requested/deficit). A detailed description of these files is available on the data download page.</p>
-<p>In addition to text files, some graphs that display aggregated market information during the course of the simulation are also exposed. These can be found under the plot directory and are very similar to the ones available in the UI:</p>
-<pre class="codehilite"><code class="language-json">- **unmatched_loads_*.html**: Plots the volume of energy that loads have not been able to purchase (power outage)
-- **energy_profile_*.html**: Similar plot to energy trade profile
-- **average_trade_price_*.html**: Similar plot to energy pricing
-- **asset_profile_*.html**: each energy asset within the simulation has its own plot showing its profile (consumption, generation, State of Charge), the actual energy traded and energy rates.
-</code></pre>
+<p>The simulation results include analytical information about the bids, offers and trades that took place in the course of the simulation. Information about energy characteristics of each asset and market are also included (eg. battery state of charge, energy traded/requested/deficit). A detailed description of these files is available on the <a href="../results-download/">result download page</a>.</p>
+<p>In addition to text files, some graphs that display aggregated market information during the course of the simulation are also exposed. These can be found under the <code>plot/</code> directory and are very similar to the ones available in the UI:</p>
+<ul>
+<li><strong>energy_profile_*.html</strong>: Similar plot to energy trade profile</li>
+<li><strong>average_trade_price_*.html</strong>: Similar plot to energy pricing</li>
+<li><strong>asset_profile_*.html</strong>: each energy asset within the simulation has its own plot showing its profile (consumption, generation, State of Charge), the actual energy traded and energy rates.</li>
+</ul>
                 
                   
                 
@@ -1997,7 +2009,7 @@
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../backend_events/" title="Configuration of Events" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../launch_simulation/" title="Launching Simulation" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -2006,7 +2018,7 @@
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Configuration of Events
+                Launching Simulation
               </span>
             </div>
           </a>

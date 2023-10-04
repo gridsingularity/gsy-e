@@ -722,8 +722,20 @@
 
 
   <li class="md-nav__item">
-    <a href="../backend_events/" title="Configuration of Events" class="md-nav__link">
-      Configuration of Events
+    <a href="../backend_events/" title="Configuring Events" class="md-nav__link">
+      Configuring Events
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../launch_simulation/" title="Launching Simulation" class="md-nav__link">
+      Launching Simulation
     </a>
   </li>
 
@@ -2070,7 +2082,7 @@
                   <h1>Setup Configuration</h1>
                 
                 <h2 id="backend-simulation-configuration">Backend Simulation Configuration<a class="headerlink" href="#backend-simulation-configuration" title="Permanent link">&para;</a></h2>
-<p>In the backend, the simulation process is slightly different. There is no need to login to set up a simulation. The user first needs to download the code from our Github Repository (Installation Instructions for <a href="../linux-installation-instructions/">Linux</a>, <a href="../ios-installation-instructions/">Mac</a> and <a href="../vm-installation-instructions/">Windows</a>). In the setup-file (in Python programming language), general and <a href="../default-trading-strategy/">trading strategy</a> settings can be defined. Examples can be found in the relevant <a href="https://github.com/gridsingularity/gsy-e/tree/master/src/gsy_e/setup" target="_blank">Grid Singularity GitHub</a> folder.</p>
+<p>In the backend, the simulation process is slightly different compared to the user interface simulations. There is no need to login to set up a simulation. The user first needs to download the code from our Github Repository (Installation Instructions for <a href="../linux-installation-instructions/">Linux</a>, <a href="../ios-installation-instructions/">Mac</a> and <a href="../vm-installation-instructions/">Windows</a>). In the setup-file (in Python programming language), general and <a href="../default-trading-strategy/">trading strategy</a> settings can be defined. Examples can be found in the relevant <a href="https://github.com/gridsingularity/gsy-e/tree/master/src/gsy_e/setup" target="_blank">Grid Singularity GitHub</a> folder.</p>
 <p>This is the most basic skeleton for a setup-file:</p>
 <pre class="codehilite"><code class="language-python">```python
 from gsy_e.models.area import Market
@@ -2079,16 +2091,16 @@ def get_setup(config):
     return Market
 </code></pre>
 
-<p>The user can add more nested submarkets recursively by adding more instances of <code>Market</code> to the second parameter (list) of the <code>Market</code> class. To define the strategy of an asset, please use the <strong>Asset</strong> class and its <strong>strategy</strong> parameter. The following grid architecture is given:</p>
+<p>The user can add more nested submarkets recursively by adding more instances of <code>Market</code> to the second parameter (list) of the <code>Market</code> class. To define the strategy of an asset, please use the <code>Asset</code> class and its strategy parameter. The following grid architecture is given:</p>
 <ul>
 <li>Grid<ul>
-<li>House 1<ul>
+<li>Home 1<ul>
 <li>H1 General Load</li>
 <li>H1 Storage 1</li>
 <li>H1 Storage 2</li>
 </ul>
 </li>
-<li>House 2<ul>
+<li>Home 2<ul>
 <li>H2 General Load</li>
 </ul>
 </li>
@@ -2154,7 +2166,6 @@ def get_setup(config):
 <li>gsy-e-setting.json</li>
 </ol>
 <h3 id="setup-file-best-option">Setup file (best option):<a class="headerlink" href="#setup-file-best-option" title="Permanent link">&para;</a></h3>
-<p>For a description of each grid component please see the <strong>Modelling</strong> section.</p>
 <p>The user can overwrite the configuration settings by changing variables of the <a href="https://github.com/gridsingularity/gsy-framework/blob/master/gsy_framework/constants_limits.py" target="_blank">ConstSettings</a> class in the setup-file. This class defines the default values for various parameters (general simulation settings, market settings and energy asset configuration). For instance, the user can define multiple configuration parameters in the get_setup function by overwriting the<a href="https://github.com/gridsingularity/gsy-framework/blob/master/gsy_framework/constants_limits.py" target="_blank"> ConstSettings</a> default values. For example, the following parameters can be set :</p>
 <ul>
 <li>Market_type (if equal to 1: <a href="../one-sided-pay-as-offer/">One-Sided Pay-as-Offer</a>, if equal to 2 : <a href="../two-sided-pay-as-bid/">Two-Sided Pay-as-Bid</a>, if equal to 3 : <a href="../two-sided-pay-as-clear/">Two-Sided Pay-as-Clear</a>)</li>
@@ -2163,10 +2174,10 @@ def get_setup(config):
 <p>Here is an example to setup a simulation with the Two-Sided Pay-as-Bid market type, constant grid fee and default min (0cts/kWh) and max to (35cts/kWh) energy rate for all <a href="../model-load/">loads</a>:</p>
 <pre class="codehilite"><code class="language-python">from gsy_framework.constants_limits import ConstSettings
 def get_setup(config):
-    ConstSettings.IAASettings.MARKET_TYPE = 2
+    ConstSettings.MASettings.MARKET_TYPE = 2
     ConstSettings.LoadSettings.MIN_ENERGY_RATE = 0
     ConstSettings.LoadSettings.MAX_ENERGY_RATE = 35
-    ConstSettings.IAASettings.GRID_FEE_TYPE = 1
+    ConstSettings.MASettings.GRID_FEE_TYPE = 1
 </code></pre>
 
 <h3 id="gsy-e-settingsjson">gsy-e-settings.json<a class="headerlink" href="#gsy-e-settingsjson" title="Permanent link">&para;</a></h3>
