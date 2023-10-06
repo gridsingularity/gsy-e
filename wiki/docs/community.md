@@ -1,11 +1,12 @@
-The Singularity Map is an interactive Grid Singularity exchange simulation platform where users can model and simulate digital twins (digital representations) of their communities. Users add household (or buildings) energy assets such as, consumption profiles, solar panels (PVs), and / or storages (batteries), which are represented by trading agents, trading energy according to  user preferences. The purpose of the simulation is to configure and optimise the local energy market structure digitally before bringing the energy communities to reality through a physical deployment.
+The Singularity Map is an interactive Grid Singularity Exchange simulation platform where users can model and simulate digital twins (digital representations) of local energy markets (LEM or energy communities). Modelling is performed by adding homes, representing households or other LEM participants, and the respective energy assets, such as consumption load profiles, solar panels (PVs), heat pumps and / or storages (batteries), which are digitally represented by trading agents. For more, see [Grid Singularity’s Technical Approach] (https://gridsingularity.github.io/gsy-e/technical-approach/).
 
-![alt_text](img/community.png)
-
-***Figure 2.1***. *The Singularity Map - Grid Singularity Exchange web-based interface at [https://map.gridsingularity.com/singularity-map](https://gridsingularity.com/singularity-map){target=_blank}.*
+<figure markdown>
+  ![alt_text](img/community.png){:text-align:center"}
+  <figcaption><b>Figure 2.1</b>: The Singularity Map - Grid Singularity Exchange web-based interface at https://map.gridsingularity.com/singularity-map.
+</figcaption>
+</figure>
 
 The map includes a search bar in the top left corner, a list of simulations in the extendable panel below the search bar, user icons on the right hand side of the screen (explained below) and coloured dots representing different simulations on the map.
-
 **Icons**
 
 ![alt_text](img/icon-1.png) This icon allows the user to reorient their view of the map to the standard north-facing direction.
@@ -18,54 +19,70 @@ The map includes a search bar in the top left corner, a list of simulations in t
 
 ![alt_text](img/icon-7.png) This icon allows the user to see their assets in a list view and to click on the items in the list in order to navigate the map and results views
 
-![alt_text](img/icon-6.png) This icon allows the user to request upgrading their simulation to the Canary Network
+![alt_text](img/icon-6.png) This icon allows the user to request upgrading their simulation to Grid Singularity’s [Canary Test Network](canary-network.md), which is a paid service.
 
 **Legend**
 
-![alt_text](img/community1.png)
+<figure markdown>
+  ![alt_text](img/community1.png){:text-align:center"}
+  <figcaption><b>Figure 2.2</b>: Legend explaining colouring indicating net energy import / export of simulated energy communities in the Singularity Map, Grid Singularity Exchange simulation interface.
+</figcaption>
+</figure>
 
-***Figure 2.2***. *Legend explaining colouring for the energy import / export*
 
-The coloured dots on the map represent energy community simulations. A legend on the top right
+The coloured dots on the map represent energy community simulations. The legend is found in the top right corner of the page.
 
-🟢 Green dots are communities that have a net export of energy.
+🟢 Green dots are communities that have a net export of energy;
 
-🔴 Red dots are communities that have a net import of energy.
+🔴 Red dots are communities that have a net import of energy;
 
-🔵 Blue dots are communities that have a neutral energy balance (neither net import/export) or haven’t been simulated yet.
+🔵 Blue dots are communities that have a neutral energy balance (neither net import/export) or communities that have been configured but not yet simulated.
 
-**Profile configuration**
+**User Profile Configuration**
 
 By clicking on the icon in the top right corner next to “Run Simulation”, users can see their profile, edit their password, and change their profile picture by clicking on the image and uploading a file from their computer (as shown in the picture below).
 
-![alt_text](img/icon-8.png)
+<figure markdown>
+  ![alt_text](img/icon-8.png){:text-align:center"}
+  <figcaption><b>Figure 2.3</b>: User profile in the Singularity Map, Grid Singularity Exchange simulation interface
+</figcaption>
+</figure>
 
-***Figure2.3.*** *User profile in the Singularity Map*
 
-***Building a Community to simulate***
+***Configuring an Energy Community***
 
-To build a community, the user should take the following steps:
+To configure an energy community to perform a simulation, the user should take the following steps:
 
-1. Choose location - The first step is to choose the location for the community. Users can find their location by manually navigating the map or by typing their location in the search bar.
-
+1. elect location for the simulated community, either by manually navigating the map or by typing the location in the search bar;
 ![alt_text](img/search-bar.png)
 
-2. Add homes (or other buildings) and energy assets - Once a location has been selected, users can start building their community by adding homes and energy assets. A community must have at least two homes before it can be saved and local energy trading simulated.
+2. Add homes (representing households or other community members) and the relevant information relating to their energy assets (described in more detail below under [Community Assets Configuration](configuration.md)).
 
-3. Log in or register an account.
+3. Register or log in to your account, making sure that you understand and accept the [Terms of Service](https://gridsingularity.com/terms-of-service).
 
-4. Name the community, set the simulation period and save it.
+4. Name the community, set the currency and the simulation period, as well as relevant market settings, such as pricing, the trading mechanism and grid market settings (described in more detail below under [Community Market Settings](community-settings.md)) and save the configured information.
 
-5. Run the simulation and view the results.
+5. Run the simulation for each selected period and analyse the results (note: a community must have at least two homes before it can be saved and local energy trading simulated).
 
-A guided onboarding of this process launches automatically on the top right hand side of the screen for new users.
+A guided onboarding of the community configuration process launches automatically in the top right-hand side of the screen when the user clicks on the Build Community icon in the top right corner.
 
-![alt_text](img/onboarding.png)
+<figure markdown>
+  ![alt_text](img/build_community_button.png){:text-align:center"}
+  <figcaption><b>Figure 2.4</b>: Build Community icon in the Grid Singularity Exchange web-based interface (Singularity Map).
+</figcaption>
+</figure>
 
-***Figure 2.4***: *Guided Onboarding Feature*
+<figure markdown>
+  ![alt_text](img/onboarding.png){:text-align:center"}
+  <figcaption><b>Figure 2.5</b>: Guided onboarding feature in the Grid Singularity Exchange web-based interface (Singularity Map).
+</figcaption>
+</figure>
 
-Users can show/hide this feature by clicking on the ![alt_text](img/icon-5.png) icon at the top of the icon list on the right hand side of the screen. This icon and feature only appear after a user has chosen their location and selected the first button to start building their community.
+This feature can be shown/hidden by clicking on the interrogation green icon at the top of the icon list on the right-hand side of the screen: ![alt_text](img/icon-5.png) This icon and feature only appear after a user has selected the community location and clicked on the first button to start building a community.
 
-![alt_text](img/first-button.png)
 
-***Figure 2.5***: *The first button a user selects to start building their community.*
+<figure markdown>
+  ![alt_text](img/first-button.png){:text-align:center"}
+  <figcaption><b>Figure 2.6</b>: The first button a user selects to start building a community in the Grid Singularity Exchange web-based interface (Singularity Map)
+</figcaption>
+</figure>
