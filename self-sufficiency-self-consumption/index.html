@@ -504,11 +504,11 @@
       <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-2" type="checkbox" id="nav-2-2">
     
     <label class="md-nav__link" for="nav-2-2">
-      Instructions for researchers on backend code
+      Instructions for running simulations using the Grid Singularity backend code
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
       <label class="md-nav__title" for="nav-2-2">
-        Instructions for researchers on backend code
+        Instructions for running simulations using the Grid Singularity backend code
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
@@ -790,20 +790,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../results-community" title="Community" class="md-nav__link">
-      Community
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../bills-traded-energy/" title="Bills and traded energy" class="md-nav__link">
-      Bills and traded energy
+    <a href="../bills_savings/" title="Net Energy Traded, Energy Cost (Bill) and Energy Cost Savings" class="md-nav__link">
+      Net Energy Traded, Energy Cost (Bill) and Energy Cost Savings
     </a>
   </li>
 
@@ -833,8 +821,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../trade-profile/" title="Trade profile" class="md-nav__link">
-      Trade profile
+    <a href="../trade-profile/" title="Trade Profile and Energy Peak Percentage" class="md-nav__link">
+      Trade Profile and Energy Peak Percentage
     </a>
   </li>
 
@@ -857,8 +845,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../price/" title="Price" class="md-nav__link">
-      Price
+    <a href="../price/" title="Price Graph" class="md-nav__link">
+      Price Graph
     </a>
   </li>
 
@@ -869,8 +857,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../trades/" title="Trades" class="md-nav__link">
-      Trades
+    <a href="../trades/" title="Cumulative trades chart and bids and offers graph" class="md-nav__link">
+      Cumulative trades chart and bids and offers graph
     </a>
   </li>
 
@@ -1977,16 +1965,24 @@
                 
                   <h1>Self-Sufficiency and Self-Consumption</h1>
                 
-                <p>This indicator shows the self-sufficiency and self-consumption percentage of the community.
-Self-Sufficiency refers to the amount of a community’s energy demand that is produced locally. It is calculated as follow:</p>
+                <p>Self-sufficiency rate refers to the share (expressed in percentage terms) of a home’s or community’s energy demand produced (and self-consumed) locally calculated over a defined time frame (weekly or monthly). Self-sufficiency rate is calculated as follows:</p>
 <p><code>self_sufficiency(market) = self_consumed_energy / total_energy_demanded</code></p>
-<p>Self-Consumption refers to the % of energy in kWh that the community consumed from its own production. It is calculated as follow:</p>
+<p>Self-consumption rate refers to the share of energy (expressed in percentage terms) that  the home or the community consumes from its own production calculated over a defined time frame (weekly or monthly).  Self-consumption rate is calculated as follows:</p>
 <p><code>self_consumption(market) = self_consumed_energy / total_energy_produced</code></p>
-<p><img alt="alt_text" src="../img/self-sufficiency-self-consumption.png" /></p>
-<p><strong><em>Figure 2.22</em></strong>. <em>Self-Sufficiency and Self-Consumption Results.</em></p>
-<p>Here is an example of the self-sufficiency and self-consumption calculation:</p>
-<p><img alt="alt_text" src="../img/self-sufficiency-consumption-1.png" /></p>
-<p><strong><em>Figure 2.23</em></strong>. <em>Example grid setup showing an energy community consisting of two homes.</em></p>
+<figure>
+<p><img alt="alt_text" src="../img/self-sufficiency-self-consumption.png" text-align:center_="text-align:center&quot;" />
+  </p>
+<figcaption><b>Figure 21</b>: Example of Self-Sufficiency and Self-Consumption Results in Grid Singularity’s interface (Singularity Map)
+</figcaption>
+</figure>
+<p>Here is an example of the self sufficiency and self consumption rate calculation:</p>
+<figure>
+<p><img alt="alt_text" src="../img/self-sufficiency-consumption-1.png" text-align:center_="text-align:center&quot;" />
+  </p>
+<figcaption><b>Figure 22</b>: Example setup showing an energy community consisting of two home markets with diverse assets
+
+</figcaption>
+</figure>
 <ul>
 <li><code>total_house1_pv_production</code> = 10kWh</li>
 <li><code>house1_pv</code> → <code>house1_load</code> = 1kWh</li>
@@ -2030,7 +2026,7 @@ Self-Sufficiency refers to the amount of a community’s energy demand that is p
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../bills-traded-energy/" title="Bills and traded energy" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../bills_savings/" title="Net Energy Traded, Energy Cost (Bill) and Energy Cost Savings" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -2039,19 +2035,19 @@ Self-Sufficiency refers to the amount of a community’s energy demand that is p
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Bills and traded energy
+                Net Energy Traded, Energy Cost (Bill) and Energy Cost Savings
               </span>
             </div>
           </a>
         
         
-          <a href="../trade-profile/" title="Trade profile" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../trade-profile/" title="Trade Profile and Energy Peak Percentage" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                Trade profile
+                Trade Profile and Energy Peak Percentage
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">

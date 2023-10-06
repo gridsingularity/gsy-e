@@ -42,7 +42,7 @@
     
     
       
-        <title>Trades - Grid Singularity Wiki</title>
+        <title>Cumulative trades chart and bids and offers graph - Grid Singularity Wiki</title>
       
     
     
@@ -131,7 +131,7 @@
               Grid Singularity Wiki
             </span>
             <span class="md-header-nav__topic">
-              Trades
+              Cumulative trades chart and bids and offers graph
             </span>
           
         </div>
@@ -504,11 +504,11 @@
       <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-2" type="checkbox" id="nav-2-2">
     
     <label class="md-nav__link" for="nav-2-2">
-      Instructions for researchers on backend code
+      Instructions for running simulations using the Grid Singularity backend code
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
       <label class="md-nav__title" for="nav-2-2">
-        Instructions for researchers on backend code
+        Instructions for running simulations using the Grid Singularity backend code
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
@@ -790,20 +790,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../results-community" title="Community" class="md-nav__link">
-      Community
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../bills-traded-energy/" title="Bills and traded energy" class="md-nav__link">
-      Bills and traded energy
+    <a href="../bills_savings/" title="Net Energy Traded, Energy Cost (Bill) and Energy Cost Savings" class="md-nav__link">
+      Net Energy Traded, Energy Cost (Bill) and Energy Cost Savings
     </a>
   </li>
 
@@ -826,8 +814,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../trade-profile/" title="Trade profile" class="md-nav__link">
-      Trade profile
+    <a href="../trade-profile/" title="Trade Profile and Energy Peak Percentage" class="md-nav__link">
+      Trade Profile and Energy Peak Percentage
     </a>
   </li>
 
@@ -850,8 +838,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../price/" title="Price" class="md-nav__link">
-      Price
+    <a href="../price/" title="Price Graph" class="md-nav__link">
+      Price Graph
     </a>
   </li>
 
@@ -868,8 +856,8 @@
     <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
     
     
-    <a href="./" title="Trades" class="md-nav__link md-nav__link--active">
-      Trades
+    <a href="./" title="Cumulative trades chart and bids and offers graph" class="md-nav__link md-nav__link--active">
+      Cumulative trades chart and bids and offers graph
     </a>
     
   </li>
@@ -1975,12 +1963,16 @@
                   <a href="https://github.com/gridsingularity/gsy-e/wiki/edit/master/docs/trades.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
                 
                 
-                  <h1>Trades</h1>
+                  <h1>Cumulative trades chart and bids and offers graph</h1>
                 
-                <p>The chart on the left in the figure below shows the amount of energy which was traded between each of the homes and the grid market in kWh participating in this market. The trades can be filtered by cumulative or per market slot or by clicking to view an individual home in the chart.</p>
-<p>In the graph on the right, each bid, offer and trade posted/cleared in the selected market is shown according to its posting/clearing times, allowing the user to analyse how specific offers/bids were or were not matched and validate or further investigate their trading strategy. The x-axis of this graph is the market slot length (15 minutes by default), and the y-axis shows the bid and offer price. Each market slot of the simulation can be selected and viewed with the drop down (days) and the slider (hours &amp; minutes).</p>
-<p><img alt="alt_text" src="../img/trades.png" /></p>
-<p><strong><em>Figure 2.29</em></strong>. <em>Trades shown in cumulative form (left) and in Market Slots (right).</em></p>
+                <p>The cumulative trades chart on the left in the figure below shows the amount of energy which was traded between each of the homes (representing households and other energy community participants) and the external suppliers (grid market) in kWh. The trades can be filtered by cumulative or per market slot or by clicking to view an individual home in the chart. </p>
+<p>In the graph on the right, each bid, offer and trade posted/cleared in the selected market is shown according to its posting/clearing times, allowing the user to analyse how specific offers/bids were or were not matched and validate or further investigate their trading strategy. The x-axis of this graph is the market slot length (15 minutes by default), and the y-axis shows the bid and the offer price. Each market slot of the simulation can be selected and viewed with the drop down function (days) and the slider (hours &amp; minutes).</p>
+<figure>
+<p><img alt="alt_text" src="../img/trades_graph.png" text-align:center_="text-align:center&quot;" />
+  </p>
+<figcaption><b>Figure 31</b>: Trades shown in cumulative form (left) and per market slot (right) in the Grid Singularity’s simulation interface (Singularity Map)
+</figcaption>
+</figure>
                 
                   
                 
@@ -2001,7 +1993,7 @@
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../price/" title="Price" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../price/" title="Price Graph" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -2010,7 +2002,7 @@
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Price
+                Price Graph
               </span>
             </div>
           </a>

@@ -13,7 +13,7 @@
         <meta name="description" content="Documentation for the Grid Singularity Exchange">
       
       
-        <link rel="canonical" href="https://gridsingularity.github.io/gsy-e/documentation/registration-matching-api-user-interface/">
+        <link rel="canonical" href="https://gridsingularity.github.io/gsy-e/documentation/bills_savings/">
       
       
         <meta name="author" content="Grid Singularity">
@@ -42,7 +42,7 @@
     
     
       
-        <title>Registration - Simulations run on the User-Interface - Grid Singularity Wiki</title>
+        <title>Net Energy Traded, Energy Cost (Bill) and Energy Cost Savings - Grid Singularity Wiki</title>
       
     
     
@@ -131,7 +131,7 @@
               Grid Singularity Wiki
             </span>
             <span class="md-header-nav__topic">
-              Registration - Simulations run on the User-Interface
+              Net Energy Traded, Energy Cost (Bill) and Energy Cost Savings
             </span>
           
         </div>
@@ -755,10 +755,12 @@
       
       
 
+  
 
-  <li class="md-nav__item md-nav__item--nested">
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-3" type="checkbox" id="nav-3" checked>
     
     <label class="md-nav__link" for="nav-3">
       Results and Analysis
@@ -786,11 +788,18 @@
           
           
 
+  
 
-  <li class="md-nav__item">
-    <a href="../bills_savings/" title="Net Energy Traded, Energy Cost (Bill) and Energy Cost Savings" class="md-nav__link">
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+    
+    <a href="./" title="Net Energy Traded, Energy Cost (Bill) and Energy Cost Savings" class="md-nav__link md-nav__link--active">
       Net Energy Traded, Energy Cost (Bill) and Energy Cost Savings
     </a>
+    
   </li>
 
         
@@ -1247,12 +1256,10 @@
       
       
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+  <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5" type="checkbox" id="nav-5" checked>
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5" type="checkbox" id="nav-5">
     
     <label class="md-nav__link" for="nav-5">
       Collaborations and APIs
@@ -1280,12 +1287,10 @@
           
           
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+  <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2" type="checkbox" id="nav-5-2" checked>
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2" type="checkbox" id="nav-5-2">
     
     <label class="md-nav__link" for="nav-5-2">
       Connect to the Grid Singularity APIs
@@ -1601,12 +1606,10 @@
           
           
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+  <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-4" type="checkbox" id="nav-5-2-4" checked>
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-4" type="checkbox" id="nav-5-2-4">
     
     <label class="md-nav__link" for="nav-5-2-4">
       Customise the clearing algorithm through the Grid Singularity Matching API
@@ -1694,12 +1697,10 @@
           
           
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+  <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-4-3" type="checkbox" id="nav-5-2-4-3" checked>
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-4-3" type="checkbox" id="nav-5-2-4-3">
     
     <label class="md-nav__link" for="nav-5-2-4-3">
       Launch the Matching API
@@ -1715,18 +1716,11 @@
           
           
 
-  
 
-
-  <li class="md-nav__item md-nav__item--active">
-    
-    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-    
-    
-    <a href="./" title="Registration - Simulations run on the User-Interface" class="md-nav__link md-nav__link--active">
+  <li class="md-nav__item">
+    <a href="../registration-matching-api-user-interface/" title="Registration - Simulations run on the User-Interface" class="md-nav__link">
       Registration - Simulations run on the User-Interface
     </a>
-    
   </li>
 
         
@@ -1966,12 +1960,30 @@
             <article class="md-content__inner md-typeset">
               
                 
-                  <a href="https://github.com/gridsingularity/gsy-e/wiki/edit/master/docs/registration-matching-api-user-interface.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                  <a href="https://github.com/gridsingularity/gsy-e/wiki/edit/master/docs/bills_savings.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
                 
                 
-                  <h1>Registration - Simulations run on the User-Interface</h1>
+                  <h1>Net Energy Traded, Energy Cost (Bill) and Energy Cost Savings</h1>
                 
-                <p>Currently, it is not possible to connect to the Matching API through the <a href="https://gridsingularity.com/singularity-map" target="_blank">User-Interface</a>.</p>
+                <p>The net energy traded (energy bought minus energy sold) traded in the local energy market (LEM) is calculated over a defined time frame (weekly or monthly) and expressed in kilowatt hours (kWh) for each participant and the LEM (energy community), respectively.</p>
+<p>The energy cost (bill) is calculated over a defined time frame (weekly or monthly) and expressed in Euros (€). The energy bills and net energy traded table is divided into three columns showing energy bought, sold and the resulting balance. The energy values marked in green indicate a net export of energy, while those marked in red indicate a net import of energy. Bills show the net amount paid or revenue generated, marked in red and green, respectively. For example, in the table below, the utility as an external LEM supplier (also termed the grid market) has sold more energy to the LEM (community) than it has bought from the community (net export), thereby showing revenue for the utility in the "total balance" column.</p>
+<p>When the grid charges are included in the simulation configuration,  a market grid fee row appears in the table as shown in the table below.</p>
+<figure>
+<p><img alt="alt_text" src="../img/ui_bills.png" text-align:center_="text-align:center&quot;" />
+  </p>
+<figcaption><b>Figure 19</b>: Example of energy bills and net energy traded table in the Results Dashboard, Grid Singularity’s simulation interface (Singularity Map)
+</figcaption>
+</figure>
+<p>The energy cost savings indicator shows the financial savings from participating in local energy trading over a defined time frame (weekly or monthly).</p>
+<p>The energy cost savings value is calculated as follows: </p>
+<p>Energy cost savings (€) = Energy bill prior to local trading (total energy demand supplied by external supplier (kWh) * (energy price set by external supplier + applicable grid fees) € - energy bill with activated local energy trading (€) (LEM Bill)</p>
+<p>There are two ways in which the energy cost savings are illustrated on the Grid Singularity Exchange simulation interface (Singularity Map): as an absolute value for the selected period and as a bar chart that plots daily savings for the selected home (energy community member), comparing the cost with and without participation in local energy trading i.e. LEM Bill vs. Utility Bill. Both of these figures are shown below.</p>
+<figure>
+<p><img alt="alt_text" src="../img/ui_savings.png" text-align:center_="text-align:center&quot;" />
+  </p>
+<figcaption><b>Figure 20</b>: Weekly cost savings for a home with three assets over a period of one week in the Grid Singularity’s simulation interface (Singularity Map). The top value shows the absolute values while the bar chart at the bottom represents daily savings
+</figcaption>
+</figure>
                 
                   
                 
@@ -1992,7 +2004,7 @@
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../matching-api-template-script/" title="Matching API Template Script" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../data-requirements/" title="Data Requirements and File Upload Format" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -2001,19 +2013,19 @@
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Matching API Template Script
+                Data Requirements and File Upload Format
               </span>
             </div>
           </a>
         
         
-          <a href="../registration-matching-api-backend/" title="Registration - Simulations run on the Backend" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../self-sufficiency-self-consumption/" title="Self-Sufficiency and Self-Consumption" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                Registration - Simulations run on the Backend
+                Self-Sufficiency and Self-Consumption
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">

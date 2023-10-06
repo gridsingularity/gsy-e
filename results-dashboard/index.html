@@ -504,11 +504,11 @@
       <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-2" type="checkbox" id="nav-2-2">
     
     <label class="md-nav__link" for="nav-2-2">
-      Instructions for researchers on backend code
+      Instructions for running simulations using the Grid Singularity backend code
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
       <label class="md-nav__title" for="nav-2-2">
-        Instructions for researchers on backend code
+        Instructions for running simulations using the Grid Singularity backend code
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
@@ -788,20 +788,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../results-community" title="Community" class="md-nav__link">
-      Community
-    </a>
-  </li>
-
-        
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../bills-traded-energy/" title="Bills and traded energy" class="md-nav__link">
-      Bills and traded energy
+    <a href="../bills_savings/" title="Net Energy Traded, Energy Cost (Bill) and Energy Cost Savings" class="md-nav__link">
+      Net Energy Traded, Energy Cost (Bill) and Energy Cost Savings
     </a>
   </li>
 
@@ -824,8 +812,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../trade-profile/" title="Trade profile" class="md-nav__link">
-      Trade profile
+    <a href="../trade-profile/" title="Trade Profile and Energy Peak Percentage" class="md-nav__link">
+      Trade Profile and Energy Peak Percentage
     </a>
   </li>
 
@@ -848,8 +836,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../price/" title="Price" class="md-nav__link">
-      Price
+    <a href="../price/" title="Price Graph" class="md-nav__link">
+      Price Graph
     </a>
   </li>
 
@@ -860,8 +848,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../trades/" title="Trades" class="md-nav__link">
-      Trades
+    <a href="../trades/" title="Cumulative trades chart and bids and offers graph" class="md-nav__link">
+      Cumulative trades chart and bids and offers graph
     </a>
   </li>
 
@@ -1968,32 +1956,42 @@
                 
                   <h1>Results Dashboard (Key Performance Indicators)</h1>
                 
-                <p>The Results Dashboard illustrates the results of a simulated energy community. It updates while the simulation is running and it is stored for up to 90 days or until the user decides to delete or to rerun the simulation.</p>
-<p>The following results (key performance indicators) are currently available for the local energy market simulations:</p>
+                <p>The Results Dashboard illustrates the key performance indicators of a simulated local energy market (LEM or energy community). It updates while the simulation is running and the final outcomes are stored for up to 90 days or until the user decides to delete or to rerun the simulation. </p>
+<p>The following results (key performance indicators) are currently available for the LEM simulations in Grid Singularity’s user interface Singularity Map:  </p>
 <ul>
 <li>
-<p><strong><a href="../bills-traded-energy/">Bills (energy cost) and traded energy volume</a></strong></p>
+<p><strong><a href="../bills_savings/">Net Energy Traded, Energy Cost (Bill) and Energy Cost Savings</a></strong></p>
 </li>
 <li>
-<p><strong><a href="../self-sufficiency-self-consumption/">Self-sufficiency and Self-consumption</a></strong></p>
+<p><strong><a href="../self-sufficiency-self-consumption/">Self-Sufficiency and Self-Consumption</a></strong></p>
 </li>
 <li>
-<p><strong><a href="../trade-profile/">Trade profile(s)</a></strong></p>
+<p><strong><a href="../trade-profile/">Trade Profile and Energy Peak Percentage</a></strong></p>
 </li>
 <li>
-<p><strong><a href="../aggregate-market-summary/">Aggregate market summary</a></strong></p>
+<p><strong><a href="../aggregate-market-summary/">Aggregate Market Summary</a></strong></p>
 </li>
 <li>
-<p><strong><a href="../price/">Price graphs</a></strong></p>
+<p><strong><a href="../price/">Price Graph</a></strong></p>
 </li>
 <li>
-<p><strong><a href="../trades/">Cumulative trades charts and bids and offers graph</a></strong></p>
+<p><strong><a href="../trades/">Cumulative trades chart and bids and offers graph</a></strong></p>
 </li>
 </ul>
-<p>The user is able to view results for each market or asset in the grid configuration. The results load automatically for the community as a whole, but home-specific results can also be viewed by clicking on a select home. The home and asset results can also be retrieved by clicking on the list icon in the bottom right corner and then on the community asset icon that will appear, generating a list of all the homes and assets in that community (see picture below).</p>
-<p><img alt="alt_text" src="../img/results-dashboard-3.png" style="height:350px;width:400px" /></p>
-<p>The user can also download the results of the simulation for a deeper analysis of the community trading patterns by clicking on the download results icon under the settings tab, as shown in the picture below. For more information about this option, see <a href="../results-download/">Results Download</a></p>
-<p><img alt="alt_text" src="../img/results-dashboard-4.png" style="height:550px;width:280px" /></p>
+<p>Results are generated for the simulated LEM (energy community), its participants (home/building) and all available energy assets. The results load automatically for the community as a whole, while member-specific results can be viewed by clicking on a select home. The home and asset results can also be retrieved by clicking on the list icon in the bottom right corner and then on the community asset icon that will appear, generating a list of all the homes and assets in that community (see picture below). </p>
+<figure>
+<p><img _text-align:center_=";text-align:center&quot;" alt="alt_text" src="../img/results-dashboard-3.png" style="height:350px;width:400px" />
+  </p>
+<figcaption><b>Figure 17</b>: Position of button that shows a list of homes and assets in Grid Singularity’s simulation interface (Singularity Map)
+</figcaption>
+</figure>
+<p>The user can also download the results of the simulation for a deeper analysis of the community trading patterns by clicking on the download results icon under the settings tab, as shown in the picture below. For more information about this option, see <a href="../results-download/">Results Download</a>.</p>
+<figure>
+<p><img _text-align:center_=";text-align:center&quot;" alt="alt_text" src="../img/results-dashboard-4.png" style="height:550px;width:300px" />
+  </p>
+<figcaption><b>Figure 18</b>: Position of button for downloading results in Grid Singularity’s simulation interface (Singularity Map)
+</figcaption>
+</figure>
                 
                   
                 
