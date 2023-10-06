@@ -53,7 +53,7 @@ class VirtualHeatpumpStrategy(HeatPumpStrategy):
             water_return_temp_C_profile=water_return_temp_C_profile,
             water_return_temp_C_profile_uuid=water_return_temp_C_profile_uuid,
             dh_water_flow_m3_profile=dh_water_flow_m3_profile,
-            dh_water_flow_m3_profile_uuid=dh_water_flow_m3_profile_uuid
+            dh_water_flow_m3_profile_uuid=dh_water_flow_m3_profile_uuid,
         )
 
         self.water_supply_temp_C_profile_uuid = water_supply_temp_C_profile_uuid
