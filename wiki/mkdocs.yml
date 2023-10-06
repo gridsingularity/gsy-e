@@ -22,7 +22,7 @@ nav:
         - 'Community Settings': 'community-settings.md'
         - 'Grid Market Settings': 'grid-market-settings.md'
         - 'Events (Adding, Removing Assets, etc.)': 'events.md'
-    - 'Instructions for researchers on backend code':
+    - 'Instructions for running simulations using the Grid Singularity backend code':
         - 'Backend Installation Instructions':
             - 'Linux Installation Instructions': 'linux-installation-instructions.md'
             - 'Mac Installation Instructions': 'ios-installation-instructions.md'
@@ -41,13 +41,12 @@ nav:
     - 'Data Requirements and File Upload Format': 'data-requirements.md'
 - 'Results and Analysis':
     - 'Results dashboard': 'results-dashboard'
-    - 'Community': 'results-community'
-    - 'Bills and traded energy': 'bills-traded-energy.md'
+    - 'Net Energy Traded, Energy Cost (Bill) and Energy Cost Savings': 'bills_savings.md'
     - 'Self-Sufficiency and Self-Consumption': 'self-sufficiency-self-consumption.md'
-    - 'Trade profile': 'trade-profile.md'
+    - 'Trade Profile and Energy Peak Percentage': 'trade-profile.md'
     - 'Aggregate Market Summary': 'aggregate-market-summary.md'
-    - 'Price': 'price.md'
-    - 'Trades': 'trades.md'
+    - 'Price Graph': 'price.md'
+    - 'Cumulative trades chart and bids and offers graph': 'trades.md'
     - 'Results Download': 'results-download.md'
     - 'Duplicating simulations': 'duplicating-simulations'
 - 'Market Mechanisms':

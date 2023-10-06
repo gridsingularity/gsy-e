@@ -66,3 +66,12 @@ To change the size of an image, use the following size modifier:
 ```bash
 ![img](img/image-name.png){:style="height:300px;width:200px"}
 ```
+
+Add figure caption
+```html
+<figure markdown>
+  ![alt_text](img/ui_savings.png){:text-align:center"}
+  <figcaption><b>Figure 20</b>: fill in caption here
+</figcaption>
+</figure>
+```
