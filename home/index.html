@@ -110,7 +110,7 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
-      <a href="#configuration-options" tabindex="1" class="md-skip">
+      <a href="#home-configuration-options" tabindex="1" class="md-skip">
         Skip to content
       </a>
     
@@ -344,11 +344,11 @@
       <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-1" type="checkbox" id="nav-2-1" checked>
     
     <label class="md-nav__link" for="nav-2-1">
-      Introduction to the Grid Singularity Exchange Interface: Singularity Map
+      Introduction to the Grid Singularity Exchange Simulation Interface: Singularity Map
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="2">
       <label class="md-nav__title" for="nav-2-1">
-        Introduction to the Grid Singularity Exchange Interface: Singularity Map
+        Introduction to the Grid Singularity Exchange Simulation Interface: Singularity Map
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
@@ -427,9 +427,29 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#configuration-options" title="Configuration options" class="md-nav__link">
-    Configuration options
+  <a href="#home-configuration-options" title="Home Configuration Options:" class="md-nav__link">
+    Home Configuration Options:
   </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#express-mode" title="Express Mode" class="md-nav__link">
+    Express Mode
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#advanced-mode" title="Advanced Mode" class="md-nav__link">
+    Advanced Mode
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -2002,9 +2022,29 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#configuration-options" title="Configuration options" class="md-nav__link">
-    Configuration options
+  <a href="#home-configuration-options" title="Home Configuration Options:" class="md-nav__link">
+    Home Configuration Options:
   </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#express-mode" title="Express Mode" class="md-nav__link">
+    Express Mode
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#advanced-mode" title="Advanced Mode" class="md-nav__link">
+    Advanced Mode
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -2029,28 +2069,36 @@
                 
                   <h1>Home</h1>
                 
-                <p>Users can add homes/buildings to their community by selecting the custom home or one of the template home types. For the custom home the user has to manually add all assets, while the template home types have diverse assets included. The number of assets included in template homes can be seen in the individual listings. All template homes have at least one consumption profile by default, while some others also have PV generation profiles or batteries. For example, the template of a retired couple's home has 1 asset included, as shown in the Figure below. The 6-apartments building + PV template has 7 assets, including consumption profiles representing a 6-apartment building and a PV generation profile.</p>
-<p><img alt="alt_text" src="../img/home-types.png" style="height:500px;width:300px" /></p>
-<p><strong><em>Figure 2.6</em></strong>. <em>A selection of template home types</em></p>
-<p>A home functions as a market, where multiple assets can trade with each other or trade together as a single entity. The custom home has no assets included initially and it is suited for users who would prefer to configure the  energy assets manually or upload their own energy data.
-The template homes are suitable for users who are interested in quickly building a prototype of an energy community using template data to represent the homes and assets. They can still add, remove or edit assets to assess the impact of different configurations.</p>
-<p>The template homes have been created using data from <a href="https://www.loadprofilegenerator.de/" target="_blank">Load Profile Generator</a> and <a href="https://energydatamap.com/" target="_blank">Energy Data Map</a> to represent the typical consumption and generation behaviour for different types of homes in an active energy community.</p>
-<h2 id="configuration-options">Configuration options<a class="headerlink" href="#configuration-options" title="Permanent link">&para;</a></h2>
-<p>Homes can be configured using the express and advanced mode:</p>
-<p><strong>Express Mode</strong></p>
+                <p>After clicking on the “Add a Home” button, users can add homes to represent households or other local energy market (LEM) participants /  community members by selecting one of the available template home types, or a custom home. </p>
+<figure>
+<p><img _=";" alt="alt_text" src="../img/home-types.png" style="height:500px;width:300px" text-align:center_="text-align:center&quot;" />
+  </p>
+<figcaption><b>Figure 2.7</b>: Build Community icon in the Grid Singularity Exchange web-based interface (Singularity Map).
+</figcaption>
+</figure>
+<p>The custom home has no assets included initially and it is suited for users who prefer to configure the home’s energy assets manually and/or upload their own energy data. The trading preferences for assets within the custom home can also be edited. The template homes, in turn, have preconfigured assets whose type and number can be seen in the individual listings. All template homes have at least one consumption (load) profile by default, while some others also have PV generation profiles (solar panels) or batteries (storage). For example, a “Retired couple” template home has one asset included (consumption profile), as shown in the figure below. The “6-apartments building + PV” template home has seven assets, including consumption profiles for each of the apartments and a shared PV generation profile. While template homes serve to quickly model an energy community, users can still add, remove or edit assets and their trade pricing preferences in the templates to assess the impact of different configurations.</p>
+<p>The template homes have been created using data from <a href="https://www.loadprofilegenerator.de/" target="_blank">Load Profile Generator</a> and <a href="https://energydatamap.com/" target="_blank">Energy Data Map</a> to represent the typical consumption and generation for different types of LEM participants. Please note that while the energy production profiles generated from <a href="https://mapped.energy/">Energy Data Map</a> are location-specific, the consumption profiles are randomly generated. </p>
+<p>As a default setting, a home functions as a market, where multiple assets can trade with each other, as well as with assets in other homes.  An additional feature available in the backend is to group homes together to form a community which can trade with other communities. </p>
+<h2 id="home-configuration-options">Home Configuration Options:<a class="headerlink" href="#home-configuration-options" title="Permanent link">&para;</a></h2>
+<h3 id="express-mode">Express Mode<a class="headerlink" href="#express-mode" title="Permanent link">&para;</a></h3>
 <ol>
-<li>Name - Must be unique</li>
-<li>Geo-tag - This automatically uploads the location a user selects</li>
+<li>Name: select a unique name for the home; </li>
+<li>Location: the location selected by the user is automatically uploaded; </li>
+<li>Preconfigured homes can be added from the template home library and then further edited based on user preferences (e.g. a shared battery can be added to a pre-configured 6-apartment building with one PV).</li>
 </ol>
-<p><strong>Advanced Mode</strong></p>
+<h3 id="advanced-mode">Advanced Mode<a class="headerlink" href="#advanced-mode" title="Permanent link">&para;</a></h3>
+<p>In the advanced mode, the following settings are available</p>
 <ol>
-<li>Exchange Information; Users can choose between different <a href="../market-types/">market types</a> where the market can clear bids and offers. At the moment only the spot market is available.</li>
-<li>Grid Fees - Users can choose to switch this on ✅ or off 🆇. If switched on, users can enter a <a href="../constant-fees/">constant grid fee</a> value expressed in cents/kWh. This value will then function as a fee that will be applied to each trade that passes through or is cleared in this market.</li>
-<li>Transformer Capacity -  Users can choose to switch this on ✅ or off 🆇. If switched on, users can choose import and export limits of the transformer in kVA. In the current implementation these limits are purely visual indicators and do not limit actual import/export of the market.</li>
-<li>Energy Peak Percentage - The energy peak imports/exports is the maximum value of the aggregate imports/exports of each asset inside a market. The user has the possibility to set a baseline_peak_energy_import_kWh and a baseline_peak_energy_export_kWh that they may have gotten from another simulation in order to calculate the energy peak percentage. The peak percentage is a tool used to measure how much the peak imports or exports have changed between a defined baseline and the current simulation. Users can choose to switch this on ✅ or off 🆇. If switched on, users can choose baseline peak import and export. These two values will be used for the calculation of the <a href="../trade-profile/">peak percentage</a>.</li>
+<li>Exchange mechanism: select a <a href="../market-types/">market types</a> for clearing bids and offers (note: at the moment only the spot market is available)</li>
+<li>Grid fees: choose to switch on ✅ or off 🆇. If switched on, users can enter a <a href="../constant-fees/">constant grid fee</a> value expressed in cents/kWh (note: this value will then function as a fee that will be applied to each trade that passes through or is cleared in this market to account for grid cost)</li>
+<li>Energy peak percentage: choose to switch on ✅ or off 🆇.  if switched on, set baseline peak import and export rates to calculate the <a href="../trade-profile/">peak percentage</a></li>
 </ol>
-<p><img alt="alt_text" src="../img/home-advanced.png" /></p>
-<p><strong><em>Figure 2.7</em></strong>. <em>Advanced Home Configuration Options</em></p>
+<figure>
+<p><img alt="alt_text" src="../img/home-advanced.png" text-align:center_="text-align:center&quot;" />
+  </p>
+<figcaption><b>Figure 2.8</b>: Advanced Home Configuration Options in the Grid Singularity Exchange web-based interface (Singularity Map)
+</figcaption>
+</figure>
                 
                   
                 
