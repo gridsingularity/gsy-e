@@ -426,8 +426,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../consumption/" title="Consumption (Load Profiles)" class="md-nav__link">
-      Consumption (Load Profiles)
+    <a href="../consumption/" title="Consumption (Load) Profiles" class="md-nav__link">
+      Consumption (Load) Profiles
     </a>
   </li>
 
@@ -502,9 +502,29 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#grid-market-configuration-options" title="Grid Market Configuration Options" class="md-nav__link">
-    Grid Market Configuration Options
+  <a href="#grid-market-configuration-options" title="Grid Market configuration options" class="md-nav__link">
+    Grid Market configuration options
   </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#grid-market" title="Grid Market" class="md-nav__link">
+    Grid Market
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#grid-agent" title="Grid Agent" class="md-nav__link">
+    Grid Agent
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -2000,9 +2020,29 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#grid-market-configuration-options" title="Grid Market Configuration Options" class="md-nav__link">
-    Grid Market Configuration Options
+  <a href="#grid-market-configuration-options" title="Grid Market configuration options" class="md-nav__link">
+    Grid Market configuration options
   </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#grid-market" title="Grid Market" class="md-nav__link">
+    Grid Market
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#grid-agent" title="Grid Agent" class="md-nav__link">
+    Grid Agent
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -2027,25 +2067,37 @@
                 
                   <h1>Grid Market Settings</h1>
                 
-                <p>Energy markets are regulated exchange systems in which energy assets can buy, sell and trade energy. In the Grid Singularity Exchange, as a user builds an energy community, that community by default exists in one market. Its participants include the homes in the community and the grid market, if configured, which mimics the behaviour of a typical energy utility and can be used as a price reference point. Energy can be exchanged between the assets in this market, and this market can contain submarkets. For example, if the energy assets within a home in a community exchange energy (e.g. a solar panel supplying a fridge and a battery, the battery supplying a television…) then this home can be considered a market in and of itself, with trading strategies implemented if the user/asset owner chooses to do so. Energy assets can trade by posting bids and offers in the market(s) in which they exist, the details of which can be configured in the advanced settings of each asset in a community on the Singularity Map. Markets are modelled following a hierarchical structure and are interconnected, allowing bids and offers to pass between markets until they are matched, following a select market clearing mechanism.
-Only one Grid Market can be set per simulation in the User Interface. The grid can be configured to sell an infinite amount of energy and/or to buy an infinite amount of energy, which can simulate a Feed-in Tariff scheme. By connecting through the <a href="../asset-api-template-script/">Asset API</a>, more than one grid market can be configured representing an example of a single energy community supplied by more than one energy retailer.</p>
-<p>Users can configure the grid market settings by selecting the black dot on the circle surrounding their energy community on the Singularity Map.</p>
-<p><img alt="alt_text" src="../img/market-settings-map.png" /></p>
-<p><strong><em>Figure 2.15</em></strong>. <em>Map view of the grid market settings.</em></p>
-<h2 id="grid-market-configuration-options">Grid Market Configuration Options<a class="headerlink" href="#grid-market-configuration-options" title="Permanent link">&para;</a></h2>
-<p><strong>Express Mode</strong>
-1. Name - Must be unique</p>
-<p><strong>Advanced Mode</strong>
-1. Mode - Users can choose either infinite power plant or infinite bus.
-   - Infinite power plant mode has the ability to meet the infinite energy demand of consumers at the highest energy rate possible in that grid.
-   - Infinite bus mode has both the ability to meet the infinite energy demand of consumers but also absorbs the infinite generation surplus of prosumers/producers at the lowest rate possible in that grid.
-2. Role - If users select infinite bus mode, this option is set to grid connected, whereby the energy demanded of any consumer can be fulfilled and surplus generation can be absorbed. If users select infinite power plant mode, they can choose either Grid connected or Islanded, whereby the Market Maker would only be used as a reference point for the highest possible energy rate in that grid.
-3. Selling Rate Type - Either select User Input to define a fixed selling rate or upload their custom selling rate profile.
-4. Selling Rate - Users can enter a value in cents/kWh to represent the rate at which it will sell their energy.
-5. Buying Rate Type (infinite bus mode only) - Users can select either User Input to define a fixed buying rate or upload their custom buying rate.
-6. Buying Rate (infinite bus mode only) - Users can enter a value in cents/kWh to represent the Feed-in Tariff scheme</p>
-<p><img alt="alt_text" src="../img/grid-market-settings.png" /></p>
-<p><strong><em>Figure 2.16</em></strong>. <em>Advanced Configuration Options of the Grid Market.</em></p>
+                <p>Energy markets are regulated exchange systems in which energy assets can buy, sell and trade energy. In the Grid Singularity Exchange, as a user models an energy community, that community by default exists in one, local energy market (LEM). LEM participants include the community assets and the external suppliers (the grid market). A LEM can contain submarkets, such as a home market where a solar panel is supplying a fridge and a battery, and the battery is supplying a television, etc. Markets follow a hierarchical structure and are interconnected, allowing bids and offers to pass between markets until they are matched, following a select market clearing mechanism and accounting for network costs.</p>
+<p>Only one grid market can be set per simulation in the Grid Singularity web-based simulation interface, integrating the energy community with external suppliers that are able to sell an infinite amount of energy, thereby matching  any demand that cannot be supplied locally, and/or to buy an infinite amount of energy as with a feed-in-tariff scheme. By connecting through the <a href="../asset-api-template-script/">Asset API</a>, more than one grid market can be configured in backend code to represent an energy community supplied by more than one energy retailer. </p>
+<p>Users can configure the grid market settings by selecting the black dot on the circle surrounding their energy community on the Singularity Map, the Grid Singularity Exchange simulation interface.</p>
+<figure>
+<p><img alt="alt_text" src="../img/market-settings-map.png" text-align:center_="text-align:center&quot;" />
+  </p>
+<figcaption><b>Figure 2.16</b>: Map view of the grid market settings in the Grid Singularity web-based simulation interface
+</figcaption>
+</figure>
+<h2 id="grid-market-configuration-options">Grid Market configuration options<a class="headerlink" href="#grid-market-configuration-options" title="Permanent link">&para;</a></h2>
+<h3 id="grid-market">Grid Market<a class="headerlink" href="#grid-market" title="Permanent link">&para;</a></h3>
+<p>Under the Grid Market tab, the user will provide the following information:</p>
+<ol>
+<li>Name: select a unique name for the grid market;</li>
+<li>Location:  the location selected by the user is automatically uploaded</li>
+</ol>
+<h3 id="grid-agent">Grid Agent<a class="headerlink" href="#grid-agent" title="Permanent link">&para;</a></h3>
+<p>Under the Grid Agent tab, the following settings are available as shown in the figure and explained below:</p>
+<figure>
+<p><img _text-align:center_=";text-align:center&quot;" alt="alt_text" src="../img/grid-market-settings-advanced.png" style="height:600px;width:300px" />
+  </p>
+<figcaption><b>Figure 2.17</b>: Grid Agent Configuration Options of the Grid Market in the Grid Singularity web-based simulation interface
+</figcaption>
+</figure>
+<ol>
+<li>Role: select the option to either be grid connected or Islanded. The default role is set to grid connected, whereby the energy demanded of any consumer can be fulfilled and surplus generation can be absorbed. </li>
+<li>Selling rate type: select the user input option to define a fixed selling rate or upload a custom selling rate profile with which the external grid sells deficit electricity to the community</li>
+<li>Selling rate: enter a value in cents/kWh to set the rate at which external suppliers will sell their energy.</li>
+<li>Buying rate type: select the user input option to define a fixed buying rate or upload a custom buying rate profile (dynamic prices) with which the external grid buys surplus energy from the community</li>
+<li>Buying rate: enter a value in cents/kWh to represent the feed-in-tariff scheme</li>
+</ol>
                 
                   
                 

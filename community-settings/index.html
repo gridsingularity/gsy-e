@@ -426,8 +426,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../consumption/" title="Consumption (Load Profiles)" class="md-nav__link">
-      Consumption (Load Profiles)
+    <a href="../consumption/" title="Consumption (Load) Profiles" class="md-nav__link">
+      Consumption (Load) Profiles
     </a>
   </li>
 
@@ -493,6 +493,26 @@
   <a href="#community-configuration-options" title="Community Configuration Options" class="md-nav__link">
     Community Configuration Options
   </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#express-mode" title="Express Mode" class="md-nav__link">
+    Express Mode
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#advanced-mode" title="Advanced Mode" class="md-nav__link">
+    Advanced Mode
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -2004,6 +2024,26 @@
     Community Configuration Options
   </a>
   
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#express-mode" title="Express Mode" class="md-nav__link">
+    Express Mode
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#advanced-mode" title="Advanced Mode" class="md-nav__link">
+    Advanced Mode
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
       
@@ -2028,30 +2068,49 @@
                   <h1>Community Settings</h1>
                 
                 <p>Users can configure the overall settings for their communities by selecting the blue dot on the circle surrounding their energy community on the Singularity Map.</p>
-<p><img alt="alt_text" src="../img/community-settings-1.png" /></p>
-<p><strong><em>Figure 2.13</em></strong>. <em>Map view of community settings.</em></p>
+<figure>
+<p><img alt="alt_text" src="../img/community-settings-1.png" text-align:center_="text-align:center&quot;" />
+  </p>
+<figcaption><b>Figure 2.14</b>: Map view of community settings.
+</figcaption>
+</figure>
 <h2 id="community-configuration-options">Community Configuration Options<a class="headerlink" href="#community-configuration-options" title="Permanent link">&para;</a></h2>
+<h3 id="express-mode">Express Mode<a class="headerlink" href="#express-mode" title="Permanent link">&para;</a></h3>
+<p>The express tab includes basic settings of the simulated local energy community: name, currency and simulation length, as shown in the figure and explained in more detail below.</p>
+<figure>
+<p><img _text-align:center_=";text-align:center&quot;" alt="alt_text" src="../img/community-settings-express.png" style="height:600px;width:300px" />
+  </p>
+<figcaption><b>Figure 2.15</b>: Community market express mode settings in the Grid Singularity Exchange web-based interface (Singularity Map)
+</figcaption>
+</figure>
 <ol>
-<li>Name: Must be unique.</li>
-<li>Currency: Choose the currency used by the community.</li>
-<li>Simulation Length: Users can choose the length of time of their simulation, as well as corresponding dates. By default, simulations are set to run for one week starting from the current date. If users upload their own data, they should set the simulation length, start date and end date according to the used profile.</li>
-<li>Show community on the Map: Users can choose whether or not their community will be publicly visible on the Singularity Map. If visible, the name, approximate location (circle outline) and simulation results will be available for anyone to see. This information will be kept private to the user if the user selects otherwise.</li>
-<li>Description: Users can add an optional description of their community.</li>
-<li>Solar profile: Users can choose between the template solar profiles of either sunny, partially cloudy, cloudy, Gaussian (each profile generated with a 250W panel), or upload their own custom generation profile (<a href="../data-requirements/">see format required</a>).</li>
-<li>Spot market type - Users can select either the one-sided or two-sided market type.<ul>
-<li>In the <a href="../one-sided-pay-as-offer/">One-Sided Pay-as-Offer spot market</a>, agents representing energy producers, including prosumers (sellers), post offers in the market with an energy price determined by the assets' <a href="../default-trading-strategy/">trading strategy</a>.</li>
-<li>In the Two-Sided spot market, where buyers are able to place bids in the market alongside the offers placed by sellers, users can choose between the <a href="../two-sided-pay-as-bid/">Two-Sided Pay-as-Bid Market</a> or the <a href="../two-sided-pay-as-clear/">Two-Sided Pay-as-Clear Market</a>.</li>
+<li>Name: select a unique name for the community</li>
+<li>Currency: select the currency used by the community</li>
+<li>Simulation Length: select the length of time for the simulation, as well as corresponding dates; by default, simulations are set to run for one week starting from the current date. If uploading own data, set the simulation length, start date and end date according to the used profile</li>
+<li>Show community on the Grid Singularity web-based interface (Singularity Map): choose whether the simulated community will be publicly visible. If visible, the name, approximate location (circle outline) and simulation results will be available for anyone to see. This information will be kept private to the user if the user selects otherwise</li>
+</ol>
+<h3 id="advanced-mode">Advanced Mode<a class="headerlink" href="#advanced-mode" title="Permanent link">&para;</a></h3>
+<p>In the advanced tab, there are settings referring to the market type information as shown in the figure and explained in more detail below.</p>
+<figure>
+<p><img _text-align:center_=";text-align:center&quot;" alt="alt_text" src="../img/community-settings-advanced.png" style="height:600px;width:300px" />
+  </p>
+<figcaption><b>Figure 2.15</b>: Community market advanced mode settings in the Grid Singularity Exchange web-based interface (Singularity Map)
+</figcaption>
+</figure>
+<ol>
+<li>Description: add an optional description of the simulated community</li>
+<li>Spot market type: select either the one-sided or the two-sided market type<ul>
+<li>In the <a href="../one-sided-pay-as-offer/">One-Sided Pay-as-Offer spot market</a>, agents representing energy producers, including prosumers (sellers), post offers in the market with an energy price determined by the assets' <a href="../default-trading-strategy/">trading strategy</a></li>
+<li>In the two-sided spot market, where buyers are able to place bids in the market alongside the offers placed by sellers, users can choose the <a href="../two-sided-pay-as-bid/">Two-Sided Pay-as-Bid Market</a> or the <a href="../two-sided-pay-as-clear/">Two-Sided Pay-as-Clear Market</a></li>
 </ul>
 </li>
-<li>Bid offer match algorithm - Users can choose if they would like to have a Pay as Bid, Pay as Clear or External Matching <a href="../default-trading-strategy/">trading algorithm</a>.</li>
-<li>Number of spot markets - Number of future spot markets where the energy assets and agents can trade.</li>
-<li>Length of spot market - Users can choose the <a href="../market-types/#market-slots">length of the spot market</a> in minutes.</li>
-<li>Tick Length - Users can choose the <a href="../market-types/#market-ticks">length of ticks</a> in seconds.</li>
-<li>Grid Fees -  If switched on, users can select one of two types: <a href="../constant-fees/">Constant grid fee</a> or <a href="../percentage-fees/">Percentage grid fee</a>. Constant grid fee allows users to enter a value in cents/kWh that will represent a fee applied to each trade that occurs in this market, while percentage grid fee allows users to enter a value in %.</li>
-<li>Market slot real time duration - Desired duration of a market slot in real time (default is 0s)</li>
+<li>Matching algorithm: select pay-as-bid, pay-as-clear or an external <a href="../default-trading-strategy/">trading algorithm</a></li>
+<li>Spot markets number: set the number of active spot markets where the energy assets represented by trading agents can trade </li>
+<li>Spot market length: set the <a href="../market-types/#market-slots">length of the spot market</a> in minutes</li>
+<li>Tick length: set the <a href="../market-types/#market-ticks">length of ticks</a> in seconds </li>
+<li>Grid fees: if switched on, select one of two grid fee types: <a href="../constant-fees/">Constant grid fee</a> or <a href="../percentage-fees/">Percentage grid fee</a> and enter a value in cents/kWh or % depending on the selected option </li>
+<li>Market slot real time duration: set the desired market slot duration (default is 0s)</li>
 </ol>
-<p><img alt="alt_text" src="../img/community-settings-2.png" /></p>
-<p><strong><em>Figure 2.14</em></strong>. <em>Community Settings Configuration Options</em></p>
                 
                   
                 
