@@ -16,7 +16,7 @@ nav:
           - 'Overview' : 'configuration.md'
           - 'Home': 'home.md'
           - 'Solar Panels (PVs)': 'solar-panels.md'
-          - 'Consumption (Load Profiles)': 'consumption.md'
+          - 'Consumption (Load) Profiles': 'consumption.md'
           - 'Battery (Storage)': 'battery.md'
           - 'Power Plant': 'power-plant.md'
         - 'Community Settings': 'community-settings.md'

@@ -75,3 +75,8 @@ Add figure caption
 </figcaption>
 </figure>
 ```
+
+Add links that open in a new tab
+```markdown
+[link text](link){target=_blank}
+```

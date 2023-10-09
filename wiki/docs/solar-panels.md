@@ -1,7 +1,7 @@
 A photovoltaic (PV) module  or  a solar panel is an energy asset that converts solar irradiation into electricity. In the Grid Singularity Exchange, the PV digital twin has been preconfigured to include the DC to AC conversion and represent either a single module, an array of modules or an entire solar park (total capacity can be selected in the advanced PV settings). When modelling energy communities, PVs can be added to homes or, in the case of a shared resource, a community. PVs produce electricity to be self-consumed by the asset owners, sold to another member of the community, sold back to the grid, or stored in a battery for use at a later time, depending on what options are available to the owner in a select market. In the Grid Singularity Exchange user interface (Singularity Map), there are three options to model PV generation. The first option is the Custom PV tool, which allows users to quickly simulate PV generation at a specific location and orientation if an actual PV generation profile is not available. This tool uses the backend code of the [Energy Data Map](https://energydatamap.com/){target=_blank} provided by [rebase.energy](https://www.rebase.energy/){target=_blank}. If an exact address-based generation is unavailable, a second option which uses the same tool can be used to upload the city-based synthetic PV profile for that city. The third and most accurate option is for users that have the actual  PV data to upload it by using the ‘upload profile’ option in the custom PV advanced settings.
 
 <figure markdown>
-  ![alt_text](img/PV-options.png){:text-align:center"}
+  ![alt_text](img/PV-options.png){:style="height:600px;width:300px";text-align:center"}
   <figcaption><b>Figure 2.9</b>: Express Mode PV Options in the Grid Singularity Exchange web-based interface (Singularity Map)
 </figcaption>
 </figure>
@@ -44,7 +44,7 @@ In the advanced PV configuration mode, there are settings referring to the Capac
 
 <figure markdown>
   ![alt_text](img/PV-advanced1.png){:text-align:center"}
-  ![alt_text](img/PV-basic.png){style="height:480px;width:290px"; :text-align:center"}
+  ![alt_text](img/PV-basic.png){style="height:470px;width:280px"; :text-align:center"}
   <figcaption><b>Figure 2.11</b>: Selection of PV orientation in the Grid Singularity Exchange web-based interface (Singularity Map)
 </figcaption>
 </figure>

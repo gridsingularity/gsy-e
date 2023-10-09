@@ -1,27 +1,34 @@
-Energy markets are regulated exchange systems in which energy assets can buy, sell and trade energy. In the Grid Singularity Exchange, as a user builds an energy community, that community by default exists in one market. Its participants include the homes in the community and the grid market, if configured, which mimics the behaviour of a typical energy utility and can be used as a price reference point. Energy can be exchanged between the assets in this market, and this market can contain submarkets. For example, if the energy assets within a home in a community exchange energy (e.g. a solar panel supplying a fridge and a battery, the battery supplying a television…) then this home can be considered a market in and of itself, with trading strategies implemented if the user/asset owner chooses to do so. Energy assets can trade by posting bids and offers in the market(s) in which they exist, the details of which can be configured in the advanced settings of each asset in a community on the Singularity Map. Markets are modelled following a hierarchical structure and are interconnected, allowing bids and offers to pass between markets until they are matched, following a select market clearing mechanism.
-Only one Grid Market can be set per simulation in the User Interface. The grid can be configured to sell an infinite amount of energy and/or to buy an infinite amount of energy, which can simulate a Feed-in Tariff scheme. By connecting through the [Asset API](asset-api-template-script.md), more than one grid market can be configured representing an example of a single energy community supplied by more than one energy retailer.
+Energy markets are regulated exchange systems in which energy assets can buy, sell and trade energy. In the Grid Singularity Exchange, as a user models an energy community, that community by default exists in one, local energy market (LEM). LEM participants include the community assets and the external suppliers (the grid market). A LEM can contain submarkets, such as a home market where a solar panel is supplying a fridge and a battery, and the battery is supplying a television, etc. Markets follow a hierarchical structure and are interconnected, allowing bids and offers to pass between markets until they are matched, following a select market clearing mechanism and accounting for network costs.
 
-Users can configure the grid market settings by selecting the black dot on the circle surrounding their energy community on the Singularity Map.
+Only one grid market can be set per simulation in the Grid Singularity web-based simulation interface, integrating the energy community with external suppliers that are able to sell an infinite amount of energy, thereby matching  any demand that cannot be supplied locally, and/or to buy an infinite amount of energy as with a feed-in-tariff scheme. By connecting through the [Asset API](asset-api-template-script.md), more than one grid market can be configured in backend code to represent an energy community supplied by more than one energy retailer.
 
-![alt_text](img/market-settings-map.png)
+Users can configure the grid market settings by selecting the black dot on the circle surrounding their energy community on the Singularity Map, the Grid Singularity Exchange simulation interface.
 
-***Figure 2.15***. *Map view of the grid market settings.*
+<figure markdown>
+  ![alt_text](img/market-settings-map.png){:text-align:center"}
+  <figcaption><b>Figure 2.16</b>: Map view of the grid market settings in the Grid Singularity web-based simulation interface
+</figcaption>
+</figure>
 
 
-##Grid Market Configuration Options
-**Express Mode**
-1. Name - Must be unique
+##Grid Market configuration options
+###Grid Market
+Under the Grid Market tab, the user will provide the following information:
 
-**Advanced Mode**
-1. Mode - Users can choose either infinite power plant or infinite bus.
-   - Infinite power plant mode has the ability to meet the infinite energy demand of consumers at the highest energy rate possible in that grid.
-   - Infinite bus mode has both the ability to meet the infinite energy demand of consumers but also absorbs the infinite generation surplus of prosumers/producers at the lowest rate possible in that grid.
-2. Role - If users select infinite bus mode, this option is set to grid connected, whereby the energy demanded of any consumer can be fulfilled and surplus generation can be absorbed. If users select infinite power plant mode, they can choose either Grid connected or Islanded, whereby the Market Maker would only be used as a reference point for the highest possible energy rate in that grid.
-3. Selling Rate Type - Either select User Input to define a fixed selling rate or upload their custom selling rate profile.
-4. Selling Rate - Users can enter a value in cents/kWh to represent the rate at which it will sell their energy.
-5. Buying Rate Type (infinite bus mode only) - Users can select either User Input to define a fixed buying rate or upload their custom buying rate.
-6. Buying Rate (infinite bus mode only) - Users can enter a value in cents/kWh to represent the Feed-in Tariff scheme
+1. Name: select a unique name for the grid market;
+2. Location:  the location selected by the user is automatically uploaded
 
-![alt_text](img/grid-market-settings.png)
+###Grid Agent
+Under the Grid Agent tab, the following settings are available as shown in the figure and explained below:
 
-***Figure 2.16***. *Advanced Configuration Options of the Grid Market.*
+<figure markdown>
+  ![alt_text](img/grid-market-settings-advanced.png){:style="height:600px;width:300px";text-align:center"}
+  <figcaption><b>Figure 2.17</b>: Grid Agent Configuration Options of the Grid Market in the Grid Singularity web-based simulation interface
+</figcaption>
+</figure>
+
+1. Role: select the option to either be grid connected or Islanded. The default role is set to grid connected, whereby the energy demanded of any consumer can be fulfilled and surplus generation can be absorbed.
+2. Selling rate type: select the user input option to define a fixed selling rate or upload a custom selling rate profile with which the external grid sells deficit electricity to the community
+3. Selling rate: enter a value in cents/kWh to set the rate at which external suppliers will sell their energy.
+4. Buying rate type: select the user input option to define a fixed buying rate or upload a custom buying rate profile (dynamic prices) with which the external grid buys surplus energy from the community
+5. Buying rate: enter a value in cents/kWh to represent the feed-in-tariff scheme
