@@ -357,6 +357,7 @@ class ProfilesHandler:
         if self.time_to_rotate_profile(profile):
             return self._read_new_datapoints_from_buffer_or_rotate_profile(
                 profile, profile_uuid, profile_type)
+
         return profile
 
     def time_to_rotate_profile(self, profile):

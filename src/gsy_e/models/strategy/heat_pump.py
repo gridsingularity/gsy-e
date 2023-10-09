@@ -40,7 +40,7 @@ class HeatPumpOrderUpdaterParameters(OrderUpdaterParameters):
 class HeatPumpStrategy(TradingStrategyBase):
     """Strategy for heat pumps with storages."""
 
-    # pylint: disable=too-many-arguments)
+    # pylint: disable=too-many-arguments,super-init-not-called
     def __init__(self,
                  maximum_power_rating_kW: float =
                  ConstSettings.HeatPumpSettings.MAX_POWER_RATING_KW,
@@ -143,19 +143,15 @@ class HeatPumpStrategy(TradingStrategyBase):
 
     def event_activate(self, **kwargs):
         self._energy_params.event_activate()
-        super().event_activate(**kwargs)
 
     def event_market_cycle(self) -> None:
-
-        spot_market = self.area.current_market
+        super().event_market_cycle()
+        spot_market = self.area.spot_market
         if not spot_market:
             return
 
-        self._energy_params.event_market_cycle(spot_market.time_slot)
-
-        super().event_market_cycle()
-
         # Order matters: First update the energy state and then post orders
+        self._energy_params.event_market_cycle(spot_market.time_slot)
 
         self._post_orders_to_new_markets()
 

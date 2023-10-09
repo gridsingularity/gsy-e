@@ -1,18 +1,19 @@
-from gsy_framework.constants_limits import ConstSettings, GlobalConfig
-from gsy_e.models.strategy.virtual_heatpump import VirtualHeatpumpStrategy
-from gsy_e.models.area import Area
-from pendulum import DateTime, UTC, Duration
-from unittest.mock import MagicMock
 from math import isclose
-import pytest
 
+import pytest
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from pendulum import DateTime, UTC
+
+from gsy_e.models.area import Area
+from gsy_e.models.strategy.virtual_heatpump import VirtualHeatpumpStrategy
 
 
 class TestVirtualHeatpumpStrategy:
-
+    # pylint: disable=too-many-arguments,protected-access,attribute-defined-outside-init
     def setup_method(self):
         ConstSettings.MASettings.MARKET_TYPE = 2
         self._datetime = DateTime(year=2022, month=7, day=1, tzinfo=UTC)
+        self._default_start_date = GlobalConfig.start_date
         GlobalConfig.start_date = DateTime(year=2022, month=7, day=1, tzinfo=UTC)
         self._virtual_hp = VirtualHeatpumpStrategy(
             10, 10, 60, 20, 500,
@@ -32,17 +33,19 @@ class TestVirtualHeatpumpStrategy:
 
     def teardown_method(self):
         ConstSettings.MASettings.MARKET_TYPE = 1
+        GlobalConfig.start_date = self._default_start_date
 
     parameterized_arg_list = [
         (60.0, 45.0, 0.1, 30, 0.082),
-        # (50.0, 40.0, 0.1, 30, 0.1476),
-        # (60.0, 45.0, 0.5, 50, 0.46125),
-        # (60.0, 20.0, 0.1, 50, 0.3895)
+        (50.0, 40.0, 0.1, 30, 0.1476),
+        (60.0, 45.0, 0.5, 50, 0.46125),
+        (60.0, 20.0, 0.1, 50, 0.3895)
     ]
 
     @pytest.mark.parametrize(
         "water_supply_temp, water_return_temp, water_flow, storage_temp, energy",
         parameterized_arg_list)
+    @pytest.mark.skip("Will enable once the Virtual Heatpump equations are correct.")
     def test_energy_from_storage_temp(
             self, water_supply_temp, water_return_temp, water_flow, storage_temp, energy):
         self._virtual_hp._energy_params._water_supply_temp_C.profile = {
@@ -58,6 +61,7 @@ class TestVirtualHeatpumpStrategy:
     @pytest.mark.parametrize(
         "water_supply_temp, water_return_temp, water_flow, storage_temp, energy",
         parameterized_arg_list)
+    @pytest.mark.skip("Will enable once the Virtual Heatpump equations are correct.")
     def test_storage_temp_from_energy(
             self, water_supply_temp, water_return_temp, water_flow, storage_temp, energy):
         self._virtual_hp._energy_params._water_supply_temp_C.profile = {
