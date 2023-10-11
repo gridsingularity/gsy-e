@@ -4,6 +4,7 @@ import pytest
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from pendulum import DateTime, UTC
 
+from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.virtual_heatpump import VirtualHeatpumpStrategy
 
@@ -36,18 +37,18 @@ class TestVirtualHeatpumpStrategy:
         GlobalConfig.start_date = self._default_start_date
 
     parameterized_arg_list = [
-        (60.0, 45.0, 0.1, 30, 0.082),
-        (50.0, 40.0, 0.1, 30, 0.1476),
-        (60.0, 45.0, 0.5, 50, 0.46125),
-        (60.0, 20.0, 0.1, 50, 0.3895)
+        (60.0, 45.0, 0.1, 30, 6.98603741, 0.75),
+        (50.0, 40.0, 0.1, 30, 6.81625000, 0.5),
+        (60.0, 45.0, 0.5, 50, 21.5665540, 3.75),
+        (60.0, 20.0, 0.1, 50, 21.4863768, 2.0)
     ]
 
     @pytest.mark.parametrize(
-        "water_supply_temp, water_return_temp, water_flow, storage_temp, energy",
+        "water_supply_temp, water_return_temp, water_flow, storage_temp, energy, _temp_decrease",
         parameterized_arg_list)
-    @pytest.mark.skip("Will enable once the Virtual Heatpump equations are correct.")
     def test_energy_from_storage_temp(
-            self, water_supply_temp, water_return_temp, water_flow, storage_temp, energy):
+            self, water_supply_temp, water_return_temp, water_flow,
+            storage_temp, energy, _temp_decrease):
         self._virtual_hp._energy_params._water_supply_temp_C.profile = {
             self._datetime: water_supply_temp}
         self._virtual_hp._energy_params._water_return_temp_C.profile = {
@@ -56,14 +57,14 @@ class TestVirtualHeatpumpStrategy:
             self._datetime: water_flow}
         calculated_energy = self._virtual_hp._energy_params._storage_temp_to_energy(
             storage_temp, self._datetime)
-        assert isclose(calculated_energy, energy)
+        assert isclose(calculated_energy, energy, abs_tol=FLOATING_POINT_TOLERANCE)
 
     @pytest.mark.parametrize(
-        "water_supply_temp, water_return_temp, water_flow, storage_temp, energy",
+        "water_supply_temp, water_return_temp, water_flow, storage_temp, energy, _temp_decrease",
         parameterized_arg_list)
-    @pytest.mark.skip("Will enable once the Virtual Heatpump equations are correct.")
     def test_storage_temp_from_energy(
-            self, water_supply_temp, water_return_temp, water_flow, storage_temp, energy):
+            self, water_supply_temp, water_return_temp, water_flow,
+            storage_temp, energy, _temp_decrease):
         self._virtual_hp._energy_params._water_supply_temp_C.profile = {
             self._datetime: water_supply_temp}
         self._virtual_hp._energy_params._water_return_temp_C.profile = {
@@ -72,4 +73,20 @@ class TestVirtualHeatpumpStrategy:
             self._datetime: water_flow}
         calculated_storage_temp = self._virtual_hp._energy_params._energy_to_storage_temp(
             energy, self._datetime)
-        assert isclose(calculated_storage_temp, storage_temp)
+        assert isclose(calculated_storage_temp, storage_temp, abs_tol=FLOATING_POINT_TOLERANCE)
+
+    @pytest.mark.parametrize(
+        "water_supply_temp, water_return_temp, water_flow, _storage_temp, _energy, temp_decrease",
+        parameterized_arg_list)
+    def test_storage_temp_decrease(
+            self, water_supply_temp, water_return_temp, water_flow,
+            _storage_temp, _energy, temp_decrease):
+        self._virtual_hp._energy_params._water_supply_temp_C.profile = {
+            self._datetime: water_supply_temp}
+        self._virtual_hp._energy_params._water_return_temp_C.profile = {
+            self._datetime: water_return_temp}
+        self._virtual_hp._energy_params._dh_water_flow_m3.profile = {
+            self._datetime: water_flow}
+        calculated_temp_decrease = self._virtual_hp._energy_params._calc_temp_decrease_K(
+            self._datetime)
+        assert isclose(calculated_temp_decrease, temp_decrease, abs_tol=FLOATING_POINT_TOLERANCE)
