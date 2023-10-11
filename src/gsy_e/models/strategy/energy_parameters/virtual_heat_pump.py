@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 CALIBRATION_COEFFICIENT = 0.85
 WATER_SPECIFIC_TEMPERATURE = 4182
+GROUND_WATER_TEMPERATURE_C = 12
 
 
 class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
@@ -80,11 +81,16 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
         return min(self._max_energy_consumption_kWh, max_energy_consumption)
 
     def _calc_temp_decrease_K(self, time_slot: DateTime) -> float:
-        storage_temp = self._energy_to_storage_temp(0.0, time_slot)
-        current_storage_temp = self.state.get_storage_temp_C(time_slot)
-        if storage_temp <= current_storage_temp:
-            return 0
-        return storage_temp - current_storage_temp
+        dh_supply_temp = self._water_supply_temp_C.profile[time_slot]
+        dh_return_temp = self._water_return_temp_C.profile[time_slot]
+        m_m3 = self._dh_water_flow_m3.profile[time_slot]
+        m_kg_per_sec = m_m3 * 1000 / 3600
+        q_out = m_kg_per_sec * WATER_SPECIFIC_TEMPERATURE * (dh_supply_temp - dh_return_temp)
+        temp_differential_per_sec = -q_out / (
+                WATER_DENSITY * WATER_SPECIFIC_TEMPERATURE * self._tank_volume_l)
+        temp_decrease = temp_differential_per_sec * GlobalConfig.slot_length.total_seconds()
+        assert temp_decrease <= 0.0
+        return abs(temp_decrease)
 
     def _calc_temp_increase_K(self, time_slot: DateTime, energy_kWh: float) -> float:
         storage_temp = self._energy_to_storage_temp(energy_kWh, time_slot)
@@ -107,39 +113,43 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
         m_kg_per_sec = m_m3 * 1000 / 3600
         q_out = m_kg_per_sec * WATER_SPECIFIC_TEMPERATURE * (dh_supply_temp - dh_return_temp)
 
+        if m_kg_per_sec <= FLOATING_POINT_TOLERANCE:
+            return 0.
+
         temp_differential_per_sec = (
                 (storage_temp - current_storage_temp) /
                 GlobalConfig.slot_length.total_seconds())
         q_in = (WATER_DENSITY * WATER_SPECIFIC_TEMPERATURE *
                 self._tank_volume_l * temp_differential_per_sec + q_out)
         condenser_temp = (q_in / (m_kg_per_sec * WATER_SPECIFIC_TEMPERATURE)) + storage_temp
-        condenser_temp = min(condenser_temp, dh_supply_temp - 0.001)
-        cop = CALIBRATION_COEFFICIENT * (dh_supply_temp / (dh_supply_temp - condenser_temp))
+        cop = CALIBRATION_COEFFICIENT * (condenser_temp /
+                                         (condenser_temp - GROUND_WATER_TEMPERATURE_C))
         p_el = q_in / cop
         energy_kWh = convert_W_to_kWh(p_el, GlobalConfig.slot_length)
-        logger.info("Calculated maximum electricity demand for heatpump. \n"
-                    "Target Storage Temperature: %s C. \n"
-                    "Current Storage Temperature: %s C. \n"
-                    "District Heating Supply Temperature: %s C. \n"
-                    "District Heating Return Temperature: %s C. \n"
-                    "District Heating Water Flow: %s m3/hour. \n"
-                    "Temperature Differential: %s C/sec. \n"
-                    "Q Out: %s W. Q In: %s W. \n"
-                    "Condenser Temperature: %s C. COP: %s.\n"
-                    "Heatpump Power: %s W.\n"
-                    "Heatpump Energy Consumption %s kWh.",
-                    storage_temp, current_storage_temp, dh_supply_temp, dh_return_temp, m_m3,
-                    temp_differential_per_sec, q_out, q_in, condenser_temp, cop, p_el, energy_kWh)
+        logger.debug("Calculated maximum electricity demand for heatpump. \n"
+                     "Target Storage Temperature: %s C. \n"
+                     "Current Storage Temperature: %s C. \n"
+                     "District Heating Supply Temperature: %s C. \n"
+                     "District Heating Return Temperature: %s C. \n"
+                     "District Heating Water Flow: %s m3/hour. \n"
+                     "Temperature Differential: %s C/sec. \n"
+                     "Q Out: %s W. Q In: %s W. \n"
+                     "Condenser Temperature: %s C. COP: %s.\n"
+                     "Heatpump Power: %s W.\n"
+                     "Heatpump Energy Consumption %s kWh.",
+                     storage_temp, current_storage_temp, dh_supply_temp, dh_return_temp, m_m3,
+                     temp_differential_per_sec, q_out, q_in, condenser_temp, cop, p_el, energy_kWh)
         return energy_kWh
 
     def _energy_to_storage_temp(
-            self, energy_kWh: float, time_slot: DateTime, is_decrease: bool = False) -> float:
+            self, energy_kWh: float, time_slot: DateTime) -> float:
         # pylint: disable=too-many-locals
         dh_supply_temp = self._water_supply_temp_C.profile[time_slot]
         dh_return_temp = self._water_return_temp_C.profile[time_slot]
         current_storage_temp = self.state.get_storage_temp_C(time_slot)
-        m_kg = self._dh_water_flow_m3.profile[time_slot] * 1000
-        q_out = m_kg * WATER_SPECIFIC_TEMPERATURE * (dh_supply_temp - dh_return_temp)
+        m_m3 = self._dh_water_flow_m3.profile[time_slot]
+        m_kg_per_sec = m_m3 * 1000 / 3600
+        q_out = m_kg_per_sec * WATER_SPECIFIC_TEMPERATURE * (dh_supply_temp - dh_return_temp)
         p_el = convert_kWh_to_W(energy_kWh, GlobalConfig.slot_length)
 
         (q_in_sym, cop_sym, storage_temp_sym,
@@ -147,42 +157,38 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
             "q_in, cop, storage_temp, temp_differential, condenser_temp")
 
         ans = sp.solve([
-            sp.Eq(storage_temp_sym - current_storage_temp,
+            sp.Eq((storage_temp_sym - current_storage_temp) /
+                  GlobalConfig.slot_length.total_seconds(),
                   temp_differential_sym),
             sp.Eq(WATER_DENSITY * WATER_SPECIFIC_TEMPERATURE *
                   self._tank_volume_l * temp_differential_sym + q_out,
                   q_in_sym),
-            sp.Eq((q_in_sym / (m_kg * WATER_SPECIFIC_TEMPERATURE)) + storage_temp_sym,
+            sp.Eq((q_in_sym / (m_kg_per_sec * WATER_SPECIFIC_TEMPERATURE)) + storage_temp_sym,
                   condenser_temp_sym),
-            sp.Eq(CALIBRATION_COEFFICIENT * (dh_supply_temp /
-                                             (dh_supply_temp - condenser_temp_sym)),
+            sp.Eq(CALIBRATION_COEFFICIENT * (condenser_temp_sym /
+                                             (condenser_temp_sym - GROUND_WATER_TEMPERATURE_C)),
                   cop_sym),
             sp.Eq(q_in_sym / cop_sym,
                   p_el)
         ])
+        solution = max(ans, key=lambda result: result.get(temp_differential_sym))
+        logger.debug(
+            "Calculated maximum electricity demand for heatpump. \n"
+            "Target Storage Temperature: %s C. \n"
+            "Current Storage Temperature: %s C. \n"
+            "District Heating Supply Temperature: %s C. \n"
+            "District Heating Return Temperature: %s C. \n"
+            "District Heating Water Flow: %s kg/sec. \n"
+            "Temperature Differential: %s C. \n"
+            "Q Out: %s J. Q In: %s J. \n"
+            "Condenser Temperature: %s C. COP: %s.\n"
+            "Heatpump Power: %s W",
+            solution.get(storage_temp_sym), current_storage_temp, dh_supply_temp,
+            dh_return_temp, m_kg_per_sec, solution.get(temp_differential_sym), q_out,
+            solution.get(q_in_sym), solution.get(condenser_temp_sym), solution.get(cop_sym),
+            p_el)
 
-        for solution in ans:
-            if not is_decrease and solution.get(temp_differential_sym) < 0.0:
-                continue
-            if is_decrease and solution.get(temp_differential_sym) > 0.0:
-                continue
-            logger.info(
-                "Calculated maximum electricity demand for heatpump. \n"
-                "Target Storage Temperature: %s C. \n"
-                "Current Storage Temperature: %s C. \n"
-                "District Heating Supply Temperature: %s C. \n"
-                "District Heating Return Temperature: %s C. \n"
-                "District Heating Water Flow: %s kg. \n"
-                "Temperature Differential: %s C. \n"
-                "Q Out: %s J. Q In: %s J. \n"
-                "Condenser Temperature: %s C. COP: %s.\n"
-                "Heatpump Power: %s W",
-                solution.get(storage_temp_sym), current_storage_temp, dh_supply_temp,
-                dh_return_temp, m_kg, solution.get(temp_differential_sym), q_out,
-                solution.get(q_in_sym), solution.get(condenser_temp_sym), solution.get(cop_sym),
-                p_el)
-
-            return solution.get(storage_temp_sym)
+        return float(solution.get(storage_temp_sym))
 
     def event_traded_energy(self, time_slot: DateTime, energy_kWh: float):
         """React to an event_traded_energy."""
