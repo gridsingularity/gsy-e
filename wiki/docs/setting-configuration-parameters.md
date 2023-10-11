@@ -3,12 +3,9 @@ The following parameters are part of [Simulation Config](https://github.com/grid
 *   sim_duration
 *   slot_length
 *   tick_length
-*   cloud_coverage*
 *   market_maker_rate*
 *   grid_fee_pct*
 *   grid_fee_const*
-*   pv_user_profile*
-*   max_panel_power_W
 
 In order to update some of these parameters (starred in list above), please use `update_config_parameters` method to update the general configuration parameters in the setup file:
 
@@ -18,8 +15,6 @@ def get_setup(config):
     ConstSettings.MASettings.MARKET_TYPE = 2
     config.update_config_parameters(grid_fee_pct=5,
                                     grid_fee_const=35,
-                                    cloud_coverage=2,
-                                    pv_user_profile="<path>/<profile_name>",
                                     market_maker_rate=30)
     market = Market(
         'Grid',
