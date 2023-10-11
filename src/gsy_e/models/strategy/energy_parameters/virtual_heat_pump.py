@@ -15,7 +15,7 @@ from gsy_e.models.strategy.profile import EnergyProfile
 logger = logging.getLogger(__name__)
 
 CALIBRATION_COEFFICIENT = 0.85
-WATER_SPECIFIC_TEMPERATURE = 4182
+WATER_SPECIFIC_HEAT_CAPACITY = 4182  # [J/kg°C]
 GROUND_WATER_TEMPERATURE_C = 12
 
 
@@ -70,58 +70,65 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
         self.state.delete_past_state_values(current_time_slot)
 
     def _calc_energy_to_buy_maximum(self, time_slot: DateTime) -> float:
-        max_energy_consumption = self._storage_temp_to_energy(self._max_temp_C, time_slot)
+        max_energy_consumption = self._target_storage_temp_to_energy(self._max_temp_C, time_slot)
         assert max_energy_consumption > -FLOATING_POINT_TOLERANCE
         return min(self._max_energy_consumption_kWh, max_energy_consumption)
 
     def _calc_energy_to_buy_minimum(self, time_slot: DateTime) -> float:
-        max_energy_consumption = self._storage_temp_to_energy(
+        min_energy_consumption = self._target_storage_temp_to_energy(
             self.state.get_storage_temp_C(time_slot), time_slot)
-        assert max_energy_consumption > -FLOATING_POINT_TOLERANCE
-        return min(self._max_energy_consumption_kWh, max_energy_consumption)
+        assert min_energy_consumption > -FLOATING_POINT_TOLERANCE
+        return min(self._max_energy_consumption_kWh, min_energy_consumption)
 
     def _calc_temp_decrease_K(self, time_slot: DateTime) -> float:
         dh_supply_temp = self._water_supply_temp_C.profile[time_slot]
         dh_return_temp = self._water_return_temp_C.profile[time_slot]
         m_m3 = self._dh_water_flow_m3.profile[time_slot]
         m_kg_per_sec = m_m3 * 1000 / 3600
-        q_out = m_kg_per_sec * WATER_SPECIFIC_TEMPERATURE * (dh_supply_temp - dh_return_temp)
+        q_out = m_kg_per_sec * WATER_SPECIFIC_HEAT_CAPACITY * (dh_supply_temp - dh_return_temp)
         temp_differential_per_sec = -q_out / (
-                WATER_DENSITY * WATER_SPECIFIC_TEMPERATURE * self._tank_volume_l)
+                WATER_DENSITY * WATER_SPECIFIC_HEAT_CAPACITY * self._tank_volume_l)
         temp_decrease = temp_differential_per_sec * GlobalConfig.slot_length.total_seconds()
         assert temp_decrease <= 0.0
         return abs(temp_decrease)
 
-    def _calc_temp_increase_K(self, time_slot: DateTime, energy_kWh: float) -> float:
-        storage_temp = self._energy_to_storage_temp(energy_kWh, time_slot)
+    def _calc_temp_increase_K(self, time_slot: DateTime, traded_energy_kWh: float) -> float:
+        storage_temp = self._energy_to_storage_temp(traded_energy_kWh, time_slot)
         current_storage_temp = self.state.get_storage_temp_C(time_slot)
         if storage_temp <= current_storage_temp:
             return 0
         return storage_temp - current_storage_temp
 
-    def _storage_temp_to_energy(self, storage_temp: float, time_slot: DateTime) -> float:
-        if not self._min_temp_C < storage_temp < self._max_temp_C:
+    def _target_storage_temp_to_energy(
+            self, target_storage_temp_C: float, time_slot: DateTime) -> float:
+        """
+        Return the energy needed to be consumed by the heatpump in order to generate enough heat
+        to warm the water tank to storage_temp degrees C.
+         """
+        if not self._min_temp_C < target_storage_temp_C < self._max_temp_C:
             logger.info(
                 "Storage temp %s cannot exceed min (%s) / max (%s) tank temperatures.",
-                storage_temp, self._min_temp_C, self._max_temp_C)
-            storage_temp = max(min(storage_temp, self._max_temp_C), self._min_temp_C)
+                target_storage_temp_C, self._min_temp_C, self._max_temp_C)
+            target_storage_temp_C = max(
+                min(target_storage_temp_C, self._max_temp_C), self._min_temp_C)
+
+        m_m3 = self._dh_water_flow_m3.profile[time_slot]
+        m_kg_per_sec = m_m3 * 1000 / 3600
+        if m_kg_per_sec <= FLOATING_POINT_TOLERANCE:
+            return 0.
 
         dh_supply_temp = self._water_supply_temp_C.profile[time_slot]
         dh_return_temp = self._water_return_temp_C.profile[time_slot]
         current_storage_temp = self.state.get_storage_temp_C(time_slot)
-        m_m3 = self._dh_water_flow_m3.profile[time_slot]
-        m_kg_per_sec = m_m3 * 1000 / 3600
-        q_out = m_kg_per_sec * WATER_SPECIFIC_TEMPERATURE * (dh_supply_temp - dh_return_temp)
-
-        if m_kg_per_sec <= FLOATING_POINT_TOLERANCE:
-            return 0.
+        q_out = m_kg_per_sec * WATER_SPECIFIC_HEAT_CAPACITY * (dh_supply_temp - dh_return_temp)
 
         temp_differential_per_sec = (
-                (storage_temp - current_storage_temp) /
+                (target_storage_temp_C - current_storage_temp) /
                 GlobalConfig.slot_length.total_seconds())
-        q_in = (WATER_DENSITY * WATER_SPECIFIC_TEMPERATURE *
+        q_in = (WATER_DENSITY * WATER_SPECIFIC_HEAT_CAPACITY *
                 self._tank_volume_l * temp_differential_per_sec + q_out)
-        condenser_temp = (q_in / (m_kg_per_sec * WATER_SPECIFIC_TEMPERATURE)) + storage_temp
+        condenser_temp = (q_in /
+                          (m_kg_per_sec * WATER_SPECIFIC_HEAT_CAPACITY)) + target_storage_temp_C
         cop = CALIBRATION_COEFFICIENT * (condenser_temp /
                                          (condenser_temp - GROUND_WATER_TEMPERATURE_C))
         p_el = q_in / cop
@@ -137,19 +144,24 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
                      "Condenser Temperature: %s C. COP: %s.\n"
                      "Heatpump Power: %s W.\n"
                      "Heatpump Energy Consumption %s kWh.",
-                     storage_temp, current_storage_temp, dh_supply_temp, dh_return_temp, m_m3,
-                     temp_differential_per_sec, q_out, q_in, condenser_temp, cop, p_el, energy_kWh)
+                     target_storage_temp_C, current_storage_temp, dh_supply_temp, dh_return_temp,
+                     m_m3, temp_differential_per_sec, q_out, q_in, condenser_temp, cop, p_el,
+                     energy_kWh)
         return energy_kWh
 
     def _energy_to_storage_temp(
             self, energy_kWh: float, time_slot: DateTime) -> float:
+        """
+        Return the water storage temperature after the heatpump has consumed energy_kWh energy and
+        produced heat with it.
+         """
         # pylint: disable=too-many-locals
         dh_supply_temp = self._water_supply_temp_C.profile[time_slot]
         dh_return_temp = self._water_return_temp_C.profile[time_slot]
         current_storage_temp = self.state.get_storage_temp_C(time_slot)
         m_m3 = self._dh_water_flow_m3.profile[time_slot]
         m_kg_per_sec = m_m3 * 1000 / 3600
-        q_out = m_kg_per_sec * WATER_SPECIFIC_TEMPERATURE * (dh_supply_temp - dh_return_temp)
+        q_out = m_kg_per_sec * WATER_SPECIFIC_HEAT_CAPACITY * (dh_supply_temp - dh_return_temp)
         p_el = convert_kWh_to_W(energy_kWh, GlobalConfig.slot_length)
 
         (q_in_sym, cop_sym, storage_temp_sym,
@@ -160,10 +172,10 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
             sp.Eq((storage_temp_sym - current_storage_temp) /
                   GlobalConfig.slot_length.total_seconds(),
                   temp_differential_sym),
-            sp.Eq(WATER_DENSITY * WATER_SPECIFIC_TEMPERATURE *
+            sp.Eq(WATER_DENSITY * WATER_SPECIFIC_HEAT_CAPACITY *
                   self._tank_volume_l * temp_differential_sym + q_out,
                   q_in_sym),
-            sp.Eq((q_in_sym / (m_kg_per_sec * WATER_SPECIFIC_TEMPERATURE)) + storage_temp_sym,
+            sp.Eq((q_in_sym / (m_kg_per_sec * WATER_SPECIFIC_HEAT_CAPACITY)) + storage_temp_sym,
                   condenser_temp_sym),
             sp.Eq(CALIBRATION_COEFFICIENT * (condenser_temp_sym /
                                              (condenser_temp_sym - GROUND_WATER_TEMPERATURE_C)),
@@ -194,3 +206,12 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
         """React to an event_traded_energy."""
         super().event_traded_energy(time_slot, energy_kWh)
         self.state.update_energy_consumption_kWh(time_slot, energy_kWh)
+
+    def event_market_cycle(self, current_time_slot):
+        """To be called at the start of the market slot. """
+        self._rotate_profiles(current_time_slot)
+        self._populate_state(current_time_slot)
+        supply_temp = self._water_supply_temp_C.profile[current_time_slot]
+        return_temp = self._water_return_temp_C.profile[current_time_slot]
+        assert supply_temp >= return_temp, f"Supply temperature {supply_temp} has to be greater " \
+                                           f"than {return_temp}, timeslot {current_time_slot}"

@@ -28,8 +28,8 @@ class HeatPumpEnergyParametersException(Exception):
 
 class HeatPumpEnergyParametersBase(ABC):
     """
-    Base class for common functionality across all heatpump strategies / models. Does not depend
-    on a specific heatpump model, and cannot be instantiated on its own.
+    Base class for common functionality across all heatpump strategies / models that include heat
+    storage. Does not depend on a specific heatpump model, and cannot be instantiated on its own.
     """
 
     # pylint: disable=too-many-arguments
@@ -82,7 +82,6 @@ class HeatPumpEnergyParametersBase(ABC):
         self.state.delete_past_state_values(current_time_slot)
 
     def _populate_state(self, time_slot: DateTime):
-        # order matters here
         self.state.update_storage_temp(time_slot)
 
         self.state.set_temp_decrease_K(
@@ -92,19 +91,19 @@ class HeatPumpEnergyParametersBase(ABC):
 
     @abstractmethod
     def _calc_energy_to_buy_maximum(self, time_slot: DateTime) -> float:
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     def _calc_energy_to_buy_minimum(self, time_slot: DateTime) -> float:
-        raise NotImplementedError
+        pass
 
     @abstractmethod
     def _calc_temp_decrease_K(self, time_slot: DateTime) -> float:
-        raise NotImplementedError
+        pass
 
     @abstractmethod
-    def _calc_temp_increase_K(self, time_slot: DateTime, energy_kWh: float) -> float:
-        raise NotImplementedError
+    def _calc_temp_increase_K(self, time_slot: DateTime, traded_energy_kWh: float) -> float:
+        pass
 
     def _calc_energy_demand(self, time_slot: DateTime):
         self.state.set_min_energy_demand_kWh(
@@ -204,8 +203,8 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
 
         return temp_decrease_K
 
-    def _calc_temp_increase_K(self, time_slot: DateTime, energy_kWh: float) -> float:
-        return self._Q_kWh_to_temp_diff(self._calc_Q_from_energy_kWh(time_slot, energy_kWh))
+    def _calc_temp_increase_K(self, time_slot: DateTime, traded_energy_kWh: float) -> float:
+        return self._Q_kWh_to_temp_diff(self._calc_Q_from_energy_kWh(time_slot, traded_energy_kWh))
 
     def _populate_state(self, time_slot: DateTime):
         # order matters here
