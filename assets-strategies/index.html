@@ -2144,8 +2144,12 @@
 <h3 id="energy-measurement-and-forecasts">Energy Measurement and Forecasts<a class="headerlink" href="#energy-measurement-and-forecasts" title="Permanent link">&para;</a></h3>
 <p>Aggregator users can post the forecasted and measured energy to the Grid Singularity exchange for each <a href="../market-types/#market-slots">market slot</a> via the <a href="../configure-trading-strategies-walkthrough/">Asset API</a> with the batch commands <em>set_energy_forecast</em> and <em>set_energy_measurement</em>. To enable these batch commands the asset must have either <em>PVForecastExternalStrategy</em> or <em>LoadForecastExternalStrategy</em> set as a strategy in the Grid Singularity Exchange setup file.</p>
 <p>Measurements should be set in the current market cycle for the unsettled deviation to be calculated.</p>
-<p><img alt="alt_text" src="../img/assets-strategies-1.png" /></p>
-<p><strong>Figure 3.10</strong>. <em>Settlement market posting energy deviations mechanism with external asset strategies.</em></p>
+<figure>
+<p><img alt="alt_text" src="../img/assets-strategies-1.png" text-align:center_="text-align:center&quot;" />
+  </p>
+<figcaption><b>Figure 4.10</b>: Settlement market posting energy deviations mechanism with external asset strategies.
+</figcaption>
+</figure>
 <h3 id="posting-of-orders">Posting of Orders<a class="headerlink" href="#posting-of-orders" title="Permanent link">&para;</a></h3>
 <p>Posting and updating bids and offers works the same as in the <a href="../spot-market-types/">spot markets</a>. If the provided <em>time_slot</em> is a settlement market already, the order is placed or updated in the settlement market. The external client can only post maximally the amount of energy of the deviation to the settlement market.</p>
 <h3 id="unsettled-deviation">Unsettled Deviation<a class="headerlink" href="#unsettled-deviation" title="Permanent link">&para;</a></h3>
@@ -2188,8 +2192,12 @@
 <p>For the template strategies, the forecasted energy is provided by the user, either by uploading a profile or setting up a predefined PV or Load. The forecasted energy is used to post bids or offers to the spot markets.</p>
 <p>The actual measured energy is calculated by a random deviation of the forecasted value. A gaussian random error is simulated (positive and negative deviances around the forecasted energy value possible). The intensity of this random deviation can be controlled by the following setting that represents the relative standard deviation, so the width of the random deviation around the energy forecast:</p>
 <p><a href="https://github.com/gridsingularity/gsy-framework/blob/175a9c3c3295b78e3b5d7610e221b6f2ea72f6ec/gsy_framework/constants_limits.py#L71" target="_blank"><code>ConstSettings.SettlementMarketSettings.RELATIVE_STD_FROM_FORECAST_FLOAT</code></a>.</p>
-<p><img alt="alt_text" src="../img/assets-strategies-2.png" /></p>
-<p><strong>Figure 3.11</strong>. <em>Settlement market posting energy deviations mechanism with template asset strategies.</em></p>
+<figure>
+<p><img alt="alt_text" src="../img/assets-strategies-2.png" text-align:center_="text-align:center&quot;" />
+  </p>
+<figcaption><b>Figure 4.11</b>: Settlement market posting energy deviations mechanism with template asset strategies.
+</figcaption>
+</figure>
 <h2 id="posting-of-orders_1">Posting of Orders<a class="headerlink" href="#posting-of-orders_1" title="Permanent link">&para;</a></h2>
 <p>The template strategies will post orders (bids / offers) with energy values equal to the energy deviations for each market. For example, if a PV forecasted to produce 5kWh of energy for the 12:00 market, but the simulated measured energy reveals that it only produced 4kWh for that time slot, the template strategy will post a bid to the 12:00 settlement market with the energy 1kWh. The behavior for the price increase of this bid is the same as in the spot market: the energy rate of the bid is increased during the market until the final selling rate is reached.</p>
 <p>As the settlement market will stay available for longer than the normal spot market (configurable by <a href="https://github.com/gridsingularity/gsy-framework/blob/175a9c3c3295b78e3b5d7610e221b6f2ea72f6ec/gsy_framework/constants_limits.py#L69" target="_blank"><code>Const.Settings.SettlementMarketSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS</code></a>, please also see <a href="../markets-rotation/">here</a>), the template strategy will not update the orders as frequent as in the normal spot market, but in the interval that can be set by the parameter <a href="https://github.com/gridsingularity/gsy-e/blob/7f5d2866cfd8b8327e590a1377db2d9bd2909746/src/gsy_e/constants.py#L72"><code>SettlementTemplateStrategiesConstants.UPDATE_INTERVAL_MIN</code></a>.</p>

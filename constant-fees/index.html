@@ -2042,12 +2042,20 @@
                   <h1>Constant Grid Fee Calculation</h1>
                 
                 <p>The constant grid fee is a market based fee, defined in <strong>€/kWh</strong> and added to each trade that is cleared, as shown in the figure below.</p>
-<p><img alt="alt_text" src="../img/grid-fee-constant-1.png" /></p>
-<p><strong><em>Figure 3.15</em></strong>. <em>Constant grid fee calculation in the Grid Singularity Exchange.</em></p>
+<figure>
+<p><img alt="alt_text" src="../img/grid-fee-constant-1.png" text-align:center_="text-align:center&quot;" />
+  </p>
+<figcaption><b>Figure 4.15</b>: Constant grid fee calculation in the Grid Singularity Exchange.
+</figcaption>
+</figure>
 <p>The rate of a bid or offer changes as that bid or offer is propagated into different markets. The offer rate increases to account for the added fees for the relevant market, ensuring that the seller receives a revenue equal or greater than the original offer. The bid rate decreases for the same reason.</p>
 <h2 id="example-calculation-in-one-sided-pay-as-offer-market">Example Calculation in One-Sided Pay-as-Offer Market<a class="headerlink" href="#example-calculation-in-one-sided-pay-as-offer-market" title="Permanent link">&para;</a></h2>
-<p><img alt="alt_text" src="../img/grid-fee-constant-2.png" /></p>
-<p><strong><em>Figure 3.16</em></strong>. <em>Constant Grid Fee Example Calculation in One-Sided Pay-as-Offer Market.</em></p>
+<figure>
+<p><img alt="alt_text" src="../img/grid-fee-constant-2.png" text-align:center_="text-align:center&quot;" />
+  </p>
+<figcaption><b>Figure 4.16</b>: Constant Grid Fee Example Calculation in One-Sided Pay-as-Offer Market.
+</figcaption>
+</figure>
 <p>In an <a href="../one-sided-pay-as-offer/">One-Sided Pay-as-Offer</a> market, there are no bids, only offers. Offers are propagated throughout the markets in the hierarchy shown in the figure above. Grid fees are accounted for when an offer is forwarded to the higher market, adding that market’s grid fees to any previously accumulated fees. The formula to calculate the new offer rate when placing an offer to a higher market is the following:</p>
 <pre class="codehilite"><code>offer_rate_after_fees (€/kWh) = offer_rate (€/kWh) + grid_fee (€/kWh)
 </code></pre>
@@ -2072,8 +2080,12 @@ House 2 Market = (0.10 + 0)*1 = 0.10
 </code></pre>
 
 <h2 id="example-calculation-in-two-sided-pay-as-bid-market">Example Calculation in Two-Sided Pay-as-Bid Market<a class="headerlink" href="#example-calculation-in-two-sided-pay-as-bid-market" title="Permanent link">&para;</a></h2>
-<p><img alt="alt_text" src="../img/grid-fee-constant-3.png" /></p>
-<p><strong><em>Figure 3.17</em></strong>. <em>Constant Grid Fee Example Calculation in Two-Sided Pay-as-Bid Market.</em></p>
+<figure>
+<p><img alt="alt_text" src="../img/grid-fee-constant-3.png" text-align:center_="text-align:center&quot;" />
+  </p>
+<figcaption><b>Figure 4.17</b>: Constant Grid Fee Example Calculation in Two-Sided Pay-as-Bid Market.
+</figcaption>
+</figure>
 <p>In the <a href="../two-sided-pay-as-bid/">Two-Sided Pay-as-Bid</a> market, there are both bids and offers, and both are propagated through the markets in the hierarchy. If a bid or offer is not matched after two <a href="../markets/#market-ticks">ticks</a>, it is moved into the next market. In order to prevent the double accounting of a market's grid fee when a bid and an offer are matched in that market, market fees are added to offers when they enter a new market (target market), and they are subtracted from bids when they leave a market (source market) and enter another one. The formula for propagating the offers is the same as for the one-sided market :</p>
 <pre class="codehilite"><code>offer_rate_after_fees (€/kWh) = offer_rate (€/kWh) + grid_fee (€/kWh)
 </code></pre>

@@ -1974,12 +1974,9 @@
 <li>sim_duration</li>
 <li>slot_length</li>
 <li>tick_length</li>
-<li>cloud_coverage*</li>
 <li>market_maker_rate*</li>
 <li>grid_fee_pct*</li>
 <li>grid_fee_const*</li>
-<li>pv_user_profile*</li>
-<li>max_panel_power_W</li>
 </ul>
 <p>In order to update some of these parameters (starred in list above), please use <code>update_config_parameters</code> method to update the general configuration parameters in the setup file:</p>
 <pre class="codehilite"><code class="language-python">from gsy_framework.constants_limits import ConstSettings
@@ -1987,8 +1984,6 @@ def get_setup(config):
     ConstSettings.MASettings.MARKET_TYPE = 2
     config.update_config_parameters(grid_fee_pct=5,
                                     grid_fee_const=35,
-                                    cloud_coverage=2,
-                                    pv_user_profile=&quot;&lt;path&gt;/&lt;profile_name&gt;&quot;,
                                     market_maker_rate=30)
     market = Market(
         'Grid',

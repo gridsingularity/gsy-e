@@ -2074,8 +2074,12 @@
                   <h1>Asset API Events</h1>
                 
                 <p>Each market cycle lasts 15 minutes and is divided into 10 ticks until it ends. The bids and offers are posted within the market cycle at each tick until the cycle ends.</p>
-<p><img alt="alt_text" src="../img/asset-API-events.png" /></p>
-<p><strong><em>Figure 4.2</em></strong>. <em>Market slot overall structure and Asset API events.</em></p>
+<figure>
+<p><img alt="alt_text" src="../img/asset-API-events.png" text-align:center_="text-align:center&quot;" />
+  </p>
+<figcaption><b>Figure 5.4</b>: Market slot overall structure and Asset API events.
+</figcaption>
+</figure>
 <p>At the beginning of each market slot, the <a href="../asset-api-template-script/">Asset API</a> receives markets and assets information structured in a nested dictionary according to the grid hierarchy. Each market provides statistics such as minimum, median and maximum trade rates, total energy volume traded, grid fees and each asset returns the last bills and energy volume traded in the previous market slot.</p>
 <p>At each tick of the market slot, the Asset API receives updated asset information (e.g. remaining energy to buy/sell) and can post/update/delete bids and offers.</p>
 <p>When the trade occurs, trade details are sent by the Asset API. If there are unmatched bids or offers, they are not carried to the next market cycle.</p>
