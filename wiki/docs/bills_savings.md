@@ -6,7 +6,7 @@ When the grid charges are included in the simulation configuration,  a market gr
 
 <figure markdown>
   ![alt_text](img/ui_bills.png){:text-align:center"}
-  <figcaption><b>Figure 19</b>: Example of energy bills and net energy traded table in the Results Dashboard, Grid Singularity’s simulation interface (Singularity Map)
+  <figcaption><b>Figure 3.3</b>: Example of energy bills and net energy traded table in the Results Dashboard, Grid Singularity’s simulation interface (Singularity Map)
 </figcaption>
 </figure>
 
@@ -20,6 +20,6 @@ There are two ways in which the energy cost savings are illustrated on the Grid 
 
 <figure markdown>
   ![alt_text](img/ui_savings.png){:text-align:center"}
-  <figcaption><b>Figure 20</b>: Weekly cost savings for a home with three assets over a period of one week in the Grid Singularity’s simulation interface (Singularity Map). The top value shows the absolute values while the bar chart at the bottom represents daily savings
+  <figcaption><b>Figure 3.4</b>: Weekly cost savings for a home with three assets over a period of one week in the Grid Singularity’s simulation interface (Singularity Map). The top value shows the absolute values while the bar chart at the bottom represents daily savings
 </figcaption>
 </figure>

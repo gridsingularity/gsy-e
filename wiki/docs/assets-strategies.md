@@ -7,9 +7,11 @@ Aggregator users can post the forecasted and measured energy to the Grid Singula
 
 Measurements should be set in the current market cycle for the unsettled deviation to be calculated.
 
-![alt_text](img/assets-strategies-1.png)
-
-**Figure 3.10**. *Settlement market posting energy deviations mechanism with external asset strategies.*
+<figure markdown>
+  ![alt_text](img/assets-strategies-1.png){:text-align:center"}
+  <figcaption><b>Figure 4.10</b>: Settlement market posting energy deviations mechanism with external asset strategies.
+</figcaption>
+</figure>
 
 ###Posting of Orders
 
@@ -70,9 +72,11 @@ The actual measured energy is calculated by a random deviation of the forecasted
 
 [`ConstSettings.SettlementMarketSettings.RELATIVE_STD_FROM_FORECAST_FLOAT`](https://github.com/gridsingularity/gsy-framework/blob/175a9c3c3295b78e3b5d7610e221b6f2ea72f6ec/gsy_framework/constants_limits.py#L71){target=_blank}.
 
-![alt_text](img/assets-strategies-2.png)
-
-**Figure 3.11**. *Settlement market posting energy deviations mechanism with template asset strategies.*
+<figure markdown>
+  ![alt_text](img/assets-strategies-2.png){:text-align:center"}
+  <figcaption><b>Figure 4.11</b>: Settlement market posting energy deviations mechanism with template asset strategies.
+</figcaption>
+</figure>
 
 ##Posting of Orders
 

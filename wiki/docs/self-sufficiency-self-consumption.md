@@ -10,7 +10,7 @@ Self-consumption rate refers to the share of energy (expressed in percentage ter
 
 <figure markdown>
   ![alt_text](img/self-sufficiency-self-consumption.png){:text-align:center"}
-  <figcaption><b>Figure 21</b>: Example of Self-Sufficiency and Self-Consumption Results in Grid Singularity’s interface (Singularity Map)
+  <figcaption><b>Figure 3.5</b>: Example of Self-Sufficiency and Self-Consumption Results in Grid Singularity’s interface (Singularity Map)
 </figcaption>
 </figure>
 
@@ -18,7 +18,7 @@ Here is an example of the self sufficiency and self consumption rate calculation
 
 <figure markdown>
   ![alt_text](img/self-sufficiency-consumption-1.png){:text-align:center"}
-  <figcaption><b>Figure 22</b>: Example setup showing an energy community consisting of two home markets with diverse assets
+  <figcaption><b>Figure 3.6</b>: Example setup showing an energy community consisting of two home markets with diverse assets
 
 </figcaption>
 </figure>

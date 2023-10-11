@@ -4,5 +4,5 @@ To duplicate a simulation, click the three dots on the ‘my communities’ list
 
 <figure markdown>
   ![alt_text](img/duplicate_sim.png){:text-align:center"}
-  <figcaption><b>Figure 33</b>: Duplicating simulations in the Grid Singularity’s simulation interface (Singularity Map)</figcaption>
+  <figcaption><b>Figure 3.16</b>: Duplicating simulations in the Grid Singularity’s simulation interface (Singularity Map)</figcaption>
 </figure>

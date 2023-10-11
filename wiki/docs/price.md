@@ -3,6 +3,6 @@ The price graph shows the minimum, the maximum and the average price of energy i
 
 <figure markdown>
   ![alt_text](img/price.png){:text-align:center"}
-  <figcaption><b>Figure 30</b>: Graph showing the evolution of the prices during the simulation period in the Grid Singularity’s simulation interface (Singularity Map)
+  <figcaption><b>Figure 3.13</b>: Graph showing the evolution of the prices during the simulation period in the Grid Singularity’s simulation interface (Singularity Map)
 </figcaption>
 </figure>

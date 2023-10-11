@@ -1,8 +1,10 @@
 Each market cycle lasts 15 minutes and is divided into 10 ticks until it ends. The bids and offers are posted within the market cycle at each tick until the cycle ends.
 
-![alt_text](img/asset-API-events.png)
-
-***Figure 4.2***. *Market slot overall structure and Asset API events.*
+<figure markdown>
+  ![alt_text](img/asset-API-events.png){:text-align:center"}
+  <figcaption><b>Figure 5.4</b>: Market slot overall structure and Asset API events.
+</figcaption>
+</figure>
 
 At the beginning of each market slot, the [Asset API](asset-api-template-script.md) receives markets and assets information structured in a nested dictionary according to the grid hierarchy. Each market provides statistics such as minimum, median and maximum trade rates, total energy volume traded, grid fees and each asset returns the last bills and energy volume traded in the previous market slot.
 

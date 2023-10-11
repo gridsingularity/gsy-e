@@ -23,7 +23,7 @@ Results are generated for the simulated LEM (energy community), its participants
 
 <figure markdown>
   ![alt_text](img/results-dashboard-3.png){:style="height:350px;width:400px";text-align:center"}
-  <figcaption><b>Figure 17</b>: Position of button that shows a list of homes and assets in Grid Singularity’s simulation interface (Singularity Map)
+  <figcaption><b>Figure 3.1</b>: Position of button that shows a list of homes and assets in Grid Singularity’s simulation interface (Singularity Map)
 </figcaption>
 </figure>
 
@@ -31,6 +31,6 @@ The user can also download the results of the simulation for a deeper analysis o
 
 <figure markdown>
   ![alt_text](img/results-dashboard-4.png){:style="height:550px;width:300px";text-align:center"}
-  <figcaption><b>Figure 18</b>: Position of button for downloading results in Grid Singularity’s simulation interface (Singularity Map)
+  <figcaption><b>Figure 3.2</b>: Position of button for downloading results in Grid Singularity’s simulation interface (Singularity Map)
 </figcaption>
 </figure>

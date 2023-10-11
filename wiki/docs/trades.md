@@ -4,6 +4,6 @@ In the graph on the right, each bid, offer and trade posted/cleared in the selec
 
 <figure markdown>
   ![alt_text](img/trades_graph.png){:text-align:center"}
-  <figcaption><b>Figure 31</b>: Trades shown in cumulative form (left) and per market slot (right) in the Grid Singularity’s simulation interface (Singularity Map)
+  <figcaption><b>Figure 3.14</b>: Trades shown in cumulative form (left) and per market slot (right) in the Grid Singularity’s simulation interface (Singularity Map)
 </figcaption>
 </figure>

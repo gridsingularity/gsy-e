@@ -2,7 +2,7 @@ The trade profile shows the energy traded in kilowatt hours (kWh) in the respect
 
 <figure markdown>
   ![alt_text](img/trade-profile-1.png){:text-align:center"}
-  <figcaption><b>Figure 24</b>: Trade profile chart example showing energy traded for all local energy market participants and the external energy supplier (the grid market) in the Grid Singularity’s simulation interface (Singularity Map).
+  <figcaption><b>Figure 3.7</b>: Trade profile chart example showing energy traded for all local energy market participants and the external energy supplier (the grid market) in the Grid Singularity’s simulation interface (Singularity Map).
 </figcaption>
 </figure>
 
@@ -10,7 +10,7 @@ The energy peak percentage calculation is a tool that compares the current energ
 
 <figure markdown>
   ![alt_text](img/enable_peak_percentage.png){:text-align:center"}
-  <figcaption><b>Figure 25</b>: Enabling energy peak percentage metric in the advanced community settings tab in the Grid Singularity’s simulation interface (Singularity Map)
+  <figcaption><b>Figure 3.8</b>: Enabling energy peak percentage metric in the advanced community settings tab in the Grid Singularity’s simulation interface (Singularity Map)
 </figcaption>
 </figure>
 
@@ -18,7 +18,7 @@ The energy peak imports/exports is the maximum value of the aggregate imports/ex
 
 <figure markdown>
   ![alt_text](img/enable_peak_percentage.png){:text-align:center"}
-  <figcaption><b>Figure 26</b>: Configuring community’s baseline peak imports and exports in the Grid Singularity’s simulation interface (Singularity Map)
+  <figcaption><b>Figure 3.9</b>: Configuring community’s baseline peak imports and exports in the Grid Singularity’s simulation interface (Singularity Map)
 </figcaption>
 </figure>
 
@@ -28,7 +28,7 @@ Once the simulation has finished running, the energy peak percentage calculation
 
 <figure markdown>
   ![alt_text](img/trade_profile_without_peak_analysis.png){:text-align:center"}
-  <figcaption><b>Figure 27</b>: Trade profile chart example without energy peak percentage visualisation in the Grid Singularity’s simulation interface (Singularity Map)
+  <figcaption><b>Figure 3.10</b>: Trade profile chart example without energy peak percentage visualisation in the Grid Singularity’s simulation interface (Singularity Map)
 </figcaption>
 </figure>
 
@@ -36,7 +36,7 @@ When activated, only the net external trades of each participant are displayed. 
 
 <figure markdown>
   ![alt_text](img/trade_profile_with_peak_analysis.png){:text-align:center"}
-  <figcaption><b>Figure 28</b>: Trade profile chart example with energy peak percentage visualisation in the Grid Singularity’s simulation interface (Singularity Map)
+  <figcaption><b>Figure 3.11</b>: Trade profile chart example with energy peak percentage visualisation in the Grid Singularity’s simulation interface (Singularity Map)
 </figcaption>
 </figure>
 
