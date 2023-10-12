@@ -77,7 +77,7 @@ nav:
     - 'Connect to the Grid Singularity APIs':
         - 'Introduction': 'APIs-introduction.md'
         - 'Configure trading strategies through the Grid Singularity Asset API':
-            - 'Walkthrough': 'configure-trading-strategies-walkthrough.md'
+            - 'Grid Singularity Asset API Overview': 'configure-trading-strategies-walkthrough.md'
             - 'Asset API':
                 - 'Asset API Events': 'asset-api-events.md'
                 - 'Asset API Commands': 'asset-api-commands.md'
@@ -86,7 +86,7 @@ nav:
                 - 'Registration - Simulations run on the User-Interface': 'registration-asset-api-user-interface.md'
                 - 'Registration - Simulations run on the Backend': 'registration-asset-api-backend.md'
         - 'Implement dynamic grid fees through the Grid Singularity Grid Operator API':
-            - 'Walkthrough': 'implement-grid-fees-walkthrough.md'
+            - 'Grid Singularity Grid Operator API Overview': 'implement-grid-fees-walkthrough.md'
             - 'Grid Operator API.':
                 - 'Grid Operator API Events': 'grid-operator-api-events.md'
                 - 'Grid Operator API Commands': 'grid-operator-api-commands.md'
