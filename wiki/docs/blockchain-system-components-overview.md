@@ -9,10 +9,11 @@ The [Substrate](https://substrate.io/){target=_blank}-based GSy Node is the back
 For more, please see the section on [GSy Node Installation, Operation and Development](blockchain-installation.md).
 
 
-
-![alt_text](img/blockchain-system-components-overview-1.png)
-
-***Figure 1***. *GSY DEX On-Chain Operations via GSY Node (Note: Order Book is where bids and offers are stored, to be then matched based on the applicable trading mechanism for price verification and executed based on energy delivery verification).*
+<figure markdown>
+  ![alt_text](img/blockchain-system-components-overview-1.png){:text-align:center"}
+  <figcaption><b>Figure 1</b>: GSY DEX On-Chain Operations via GSY Node (Note: Order Book is where bids and offers are stored, to be then matched based on the applicable trading mechanism for price verification and executed based on energy delivery verification).
+</figcaption>
+</figure>
 
 
 ### GSy DEX Matching Engine
