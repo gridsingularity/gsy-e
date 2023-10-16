@@ -37,7 +37,14 @@ def fixture_heatpump_strategy(request) -> Tuple["TradingStrategyBase", "Area"]:
                 gsye_root_path, "resources", "hp_external_temp_C.csv"),
             **strategy_params)
     else:
-        strategy = VirtualHeatpumpStrategy(**strategy_params)
+        strategy = VirtualHeatpumpStrategy(
+            water_supply_temp_C_profile=os.path.join(
+                gsye_root_path, "resources", "hp_supply_temp_C.csv"),
+            water_return_temp_C_profile=os.path.join(
+                gsye_root_path, "resources", "hp_return_temp_C.csv"),
+            dh_water_flow_m3_profile=os.path.join(
+                gsye_root_path, "resources", "hp_water_flow.csv"),
+            **strategy_params)
     strategy._energy_params = Mock()
     strategy_area = Area("asset", strategy=strategy)
     area = Area("grid", children=[strategy_area])

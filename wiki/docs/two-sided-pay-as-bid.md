@@ -6,6 +6,8 @@ The auction is **continuous**, meaning that once an offer or bid is posted, it c
 
 The market constantly triggers the matching between bids and offers according to the matching algorithm as illustrated in the figure below.
 
-![alt_text](img/pay-as-bid-1.png)
-
-***Figure 3.2***. *Two-Sided Pay-as-Bid Market mechanism.*
+<figure markdown>
+  ![alt_text](img/pay-as-bid-1.png){:text-align:center"}
+  <figcaption><b>Figure 4.2</b>: Two-Sided Pay-as-Bid Market mechanism.
+</figcaption>
+</figure>

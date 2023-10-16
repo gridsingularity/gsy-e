@@ -2,6 +2,8 @@ If [`ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS`](https://
 
 In contrast to a normal simulation run, the past slot markets are also kept in memory for the same amount of time in order to generate live results including past markets and the settlement markets. Only one past settlement market is kept in memory. This is also only for keeping track of the statistics, no offers and bids can be placed there.
 
-![alt_text](img/market-rotation.png)
-
-**Figure 3.9**. *Example of settlement markets available for each market slot and their rotation.*
+<figure markdown>
+  ![alt_text](img/market-rotation.png){:text-align:center"}
+  <figcaption><b>Figure 4.9</b>: Example of settlement markets available for each market slot and their rotation.
+</figcaption>
+</figure>

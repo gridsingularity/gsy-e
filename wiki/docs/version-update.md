@@ -1,7 +1,6 @@
 
 ##Grid Singularity [Exchange](https://github.com/gridsingularity/gsy-e){target=_blank} Update
-
-Please start by opening a terminal and activating the Grid Singularity D3A virtual environment as described in the Installation Instructions. Then type:
+Please start by opening a terminal and activating the 'gsy-e' virtual environment as described in the Installation Instructions. Then type:
 ```
 git pull origin/master
 fab sync

@@ -1,39 +1,44 @@
-Users who would like to create an energy community in Grid Singularity Exchange using their own data instead of the template data need to collect the following information:
+Users who would like to model a local energy market (an energy community participating in peer-to-peer trading) in the Grid Singularity Exchange using their own data instead of the template (synthetic) data need to collect the following information, usually for at least one-month or one-week period in at least two seasons:
 
-1. **Grid topology**: a description of the location of energy assets and groups of the assets.
+* **Grid topology**: a diagram or a brief description of the location of community members and their energy assets and/or any other available assets for community supply like wind turbines and community PV
+* **Energy assets specifications**: Disaggregated data (not net metre) is recommended to efficiently connect and measure performance, provided ideally at 15-minute interval, as csv files (upload format described below) for each of the assets (if not available, home/building metre data can be provided) together with complementary information, as follows:
+    * **Consumption (Load Profile)**
+        * Name (can be anonymous, e.g. Load1) and location
+        * Energy consumed per time interval by each asset/home in kWh
+    * **PV (Solar panel)**
+        * Name (can be anonymous, e.g. PV1) and location
+        * Energy produced per time interval by each PV in kWh and/or
+        * PV capacity in kW, including tilt and azimuth
+    * **Wind**
+        * Name (can be anonymous, e.g. Wind1) and location
+        * Energy produced per time interval by each wind turbine in kWh
+    * **Storage (Battery)**
+        * Name (can be anonymous, e.g. Battery1) and location
+        * Capacity in kWh
+        * Power delivery in kW
+        * Maximum charge/discharge rate per time interval in kW
+        * Minimum SOC in % and/or actual SOC per time interval (optional)
+    * **Heat Pumps**
+        * Name (can be anonymous, e.g. HP1) and location
+        * Maximum power rating (based on nameplate)
+        * Volume of thermal storage tank if applicable (based on nameplate)
+        * Minimum and maximum comfort temperature
+        * Heat demand of the homes/building in kWh per time interval
+        * Heat pump water tank temperature (time series profile)
+        * Ambient temperature profile to configure the heat pump performance
+* **Grid Market Pricing Information**
+    * Feed-in-tariff
+    * Conventional (utility) energy price (profile) per community member
+    * Grid tariffs (fixed value or profile)
+- **Market Mechanism Data:** User, simulating the role of community manager, selects preferred buying and selling prices (default setting to buy at the best available price between utility and fee-in-tariff rate) based on a [pay-as-bid mechanism](two-sided-pay-as-bid.md) (other mechanisms in development).
 
-2. **Energy assets specifications**: Disaggregated data (not net meter) is recommended to efficiently connect and measure performance, provided as csv files in the following upload format for each of the assets:
-    - **Consumption (Load Profile)**
-        - Name (can be anonymous) and location
-        - energy consumed over the last 15 minutes by each house in kWh
-        - and/or if houses have more granularity and have data for specific loads within a house, it is possible to either aggregate them or simulate different assets inside the house using their average power (kW) and the number of hours of use per day.
-    - **PV (Solar panel)**
-        - Name (can be anonymous) and location
-        - energy produced over the last 15 minutes by each PV plant in kWh and/or
-        - peak production of PV panels in Wh in order for the software to generate the Gaussian profile automatically and/or
-        - capacity in kW, including tilt and azimuth of the PV
-    - **Wind**
-        - Name (can be anonymous) and location
-        - Energy produced over the last 15 minutes by each wind turbine in kWh
-    - **Storage (Battery)**
-        - Name (can be anonymous) and location
-        - capacity in kWh
-        - power delivery in kW
-        - Minimum SOC in % and/or
-        - actual SOC (sent each 15 minutes) (optional) and
-        - actual charge/discharge rate (sent each 15 minutes) (optional)
-3. **Grid pricing information**
-    - Feed-in structures
-    - Conventional (utility) energy price (profile)
-    - Grid tariffs (fixed value or profile)
-
-To use a custom data profile into energy assets, users can upload their own file as long as they follow the requirements.
-
-Grid Singularity Exchange currently only supports Comma Separated Values files (.csv). The separation can be done by comma `,` or semicolon `;`. Two time formats are supported, see below. All entered csv data values need to be positive.
+For the upload format, Grid Singularity Exchange currently only supports Comma Separated Values files (.csv).
 
 ##Comma Separated Values (.csv)
 
-The separation can be done by comma `,` or semicolon `;`. Two time formats are supported, see below. All entered csv data values need to be positive
+The separation can be done by comma `,` or semicolon `;`.
+
+Two time formats are supported, see below. All entered csv data values need to be positive
 
 ###hh:mm
 
@@ -60,5 +65,3 @@ INTERVAL,ENERGY(kWh)
 2019-01-01T00:45,10.0
 2019-01-01T01:00,10.0
 ```
-
-Note: If you upload csv files with date information, the **start-date** of the simulation should be identical in the csv files and simulation settings.

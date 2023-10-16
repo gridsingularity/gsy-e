@@ -15,36 +15,36 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from gsy_e.models.area import Area
+from gsy_e.models.area import Market, Asset
 from gsy_e.models.area.event_types import StrategyEvents
 from gsy_e.models.strategy.storage import StorageStrategy
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 
 
 def get_setup(config):
-    area = Area(
+    area = Market(
         "Grid",
         children=[
-            Area(
+            Market(
                 "House 1",
                 children=[
-                    Area("H1 Storage1", strategy=StorageStrategy(initial_soc=50),
-                         event_list=[StrategyEvents(0, {"initial_selling_rate": 31}),
-                                     StrategyEvents(12, {"initial_selling_rate": 33}),
-                                     StrategyEvents(15, {"initial_selling_rate": 40,
-                                                         "update_interval": 5,
-                                                         "fit_to_limit": False,
-                                                         "energy_rate_decrease_per_update": 1,
-                                                         "energy_rate_increase_per_update": 1})]),
+                    Asset("H1 Storage1", strategy=StorageStrategy(initial_soc=50),
+                          event_list=[StrategyEvents(0, {"initial_selling_rate": 31}),
+                                      StrategyEvents(12, {"initial_selling_rate": 33}),
+                                      StrategyEvents(15, {"initial_selling_rate": 40,
+                                                          "update_interval": 5,
+                                                          "fit_to_limit": False,
+                                                          "energy_rate_decrease_per_update": 1,
+                                                          "energy_rate_increase_per_update": 1})]),
                 ]
             ),
-            Area("Grid Load", strategy=LoadHoursStrategy(avg_power_W=10,
-                                                         hrs_per_day=24,
-                                                         hrs_of_day=list(
-                                                             range(0, 24)),
-                                                         initial_buying_rate=35,
-                                                         final_buying_rate=35),
-                 )
+            Asset("Grid Load", strategy=LoadHoursStrategy(avg_power_W=10,
+                                                          hrs_per_day=24,
+                                                          hrs_of_day=list(
+                                                              range(0, 24)),
+                                                          initial_buying_rate=35,
+                                                          final_buying_rate=35),
+                  )
         ],
         config=config
     )

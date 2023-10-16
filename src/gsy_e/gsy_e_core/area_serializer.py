@@ -40,6 +40,7 @@ from gsy_e.models.leaves import (
     Leaf, scm_leaf_mapping, CoefficientLeaf, forward_leaf_mapping,
     forecast_scm_leaf_mapping) # NOQA
 from gsy_e.models.leaves import *  # NOQA  # pylint: disable=wildcard-import
+from gsy_e.models.strategy.trading_strategy_base import TradingStrategyBase
 
 logger = getLogger(__name__)
 
@@ -55,8 +56,10 @@ class AreaEncoder(json.JSONEncoder):
             return self._encode_leaf(o)
         if isinstance(o, BaseStrategy):
             return self._encode_subobject(o)
+        if isinstance(o, TradingStrategyBase):
+            return self._encode_subobject(o)
         if isinstance(o, Duration):
-            return None
+            return o.seconds
         return super().default(o)
 
     @staticmethod

@@ -2,11 +2,10 @@ After successfully running a simulation in Grid Singularity’s User Interface, 
 
 <figure markdown>
   ![alt_text](img/settings_tab.png){:style="height:390px;width:500px;text-align:center"}
-  <figcaption>Fig1: Settings tab for Grid singularity Maps interface</figcaption>
+  <figcaption><b>Figure 3.15</b>: Settings tab for Grid Singularity’s simulation interface (Singularity Map)</figcaption>
 </figure>
 
 An email with a download link is sent to the user's inbox once the results have been compiled in the backend. When the user clicks on the link, they are redirected to the simulation where they click on the “Download” button again to download the results, which are then saved locally on the user's computer. The downloaded folder is organised into two subfolders with relevant files, as follows:
-
 
 *   **aggregated_results** :
     *   **area_throughput.json** : Imported/exported energy for each market slot :

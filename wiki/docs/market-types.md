@@ -5,9 +5,11 @@ The main goal of an electricity market exchange is to balance the grid in terms 
 3. **[Settlement market](settlement-market-structure.md)**: post-delivery trades of deviations between energy physically produced/consumed and energy purchased in the spot or futures market to settle imbalances locally before BRP billing.
 4. **Futures market**: Trades for the longer term future consumption and production of energy are agreed in advance. This market is currently in development of Grid Singularity energy exchange implementation.
 
-![alt_text](img/market-types.png)
-
-***Figure 3.1***. *Market Types implemented in Grid Singularity Exchange.*
+<figure markdown>
+  ![alt_text](img/market-types.png){:text-align:center"}
+  <figcaption><b>Figure 4.1</b>: Market Types implemented in Grid Singularity Exchange.
+</figcaption>
+</figure>
 
 ### Market Slots
 
