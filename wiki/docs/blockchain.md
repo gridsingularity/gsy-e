@@ -22,7 +22,7 @@ The [Energy Web Chain](https://www.energyweb.org/){target=_blank} is the blockch
 
 <figure markdown>
   ![alt_text](img/blockchain-1.png){:text-align:center"}
-  <figcaption><b>Figure 1</b>: Decentralised Peer-to-Peer Energy Exchange (GSY DEX) Architecture (Note: GSY DEX system components, designated in green, interact with the GSy Node for on-chain operations via Energy Web Data Hub that provides a secure and interoperable data exchange service. Grid and asset management services are provided through interoperable API interfaces, as are third party services such as billing and payments).
+  <figcaption><b>Figure 6.1</b>: Decentralised Peer-to-Peer Energy Exchange (GSY DEX) Architecture (Note: GSY DEX system components, designated in green, interact with the GSy Node for on-chain operations via Energy Web Data Hub that provides a secure and interoperable data exchange service. Grid and asset management services are provided through interoperable API interfaces, as are third party services such as billing and payments).
 </figcaption>
 </figure>
 

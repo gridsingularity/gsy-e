@@ -11,7 +11,7 @@ For more, please see the section on [GSy Node Installation, Operation and Develo
 
 <figure markdown>
   ![alt_text](img/blockchain-system-components-overview-1.png){:text-align:center"}
-  <figcaption><b>Figure 1</b>: GSY DEX On-Chain Operations via GSY Node (Note: Order Book is where bids and offers are stored, to be then matched based on the applicable trading mechanism for price verification and executed based on energy delivery verification).
+  <figcaption><b>Figure 6.2</b>: GSY DEX On-Chain Operations via GSY Node (Note: Order Book is where bids and offers are stored, to be then matched based on the applicable trading mechanism for price verification and executed based on energy delivery verification).
 </figcaption>
 </figure>
 
