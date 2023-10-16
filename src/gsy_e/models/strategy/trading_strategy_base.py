@@ -25,6 +25,11 @@ class TradingStrategyBase(EventMixin, AreaBehaviorBase, ABC):
         self._order_updaters: Dict["MarketBase", Dict[DateTime, OrderUpdater]] = {}
 
     @staticmethod
+    def serialize():
+        """Serialize strategy parameters."""
+        return {}
+
+    @staticmethod
     def deserialize_args(constructor_args: Dict) -> Dict:
         """Deserialize the constructor arguments for the OrderUpdaterParameters."""
         if "order_updater_params" in constructor_args:
