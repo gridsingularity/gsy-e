@@ -36,6 +36,13 @@ class HeatPumpOrderUpdaterParameters(OrderUpdaterParameters):
         if use_default or self.initial_rate is None:
             self.initial_rate = get_feed_in_tariff_rate_from_config(market)
 
+    def serialize(self):
+        return {
+            "update_interval": self.update_interval,
+            "initial_buying_rate": self.initial_rate,
+            "final_buying_rate": self.final_rate
+        }
+
 
 class HeatPumpStrategy(TradingStrategyBase):
     """Strategy for heat pumps with storages."""
@@ -64,20 +71,21 @@ class HeatPumpStrategy(TradingStrategyBase):
 
         self.use_default_updater_params: bool = not order_updater_parameters
         if self.use_default_updater_params:
-            order_updater_parameters = {
+            self.order_updater_parameters = {
                 AvailableMarketTypes.SPOT: HeatPumpOrderUpdaterParameters()}
         else:
+            self.order_updater_parameters = order_updater_parameters
             for market_type in AvailableMarketTypes:
-                if not order_updater_parameters.get(market_type):
+                if not self.order_updater_parameters.get(market_type):
                     continue
                 HeatPumpValidator.validate_rate(
-                    initial_buying_rate=order_updater_parameters[market_type].initial_rate,
-                    final_buying_rate=order_updater_parameters[market_type].final_rate,
-                    update_interval=order_updater_parameters[market_type].update_interval,
+                    initial_buying_rate=self.order_updater_parameters[market_type].initial_rate,
+                    final_buying_rate=self.order_updater_parameters[market_type].final_rate,
+                    update_interval=self.order_updater_parameters[market_type].update_interval,
                     preferred_buying_rate=preferred_buying_rate
                 )
 
-        super().__init__(order_updater_parameters=order_updater_parameters)
+        super().__init__(order_updater_parameters=self.order_updater_parameters)
 
         self._energy_params = HeatPumpEnergyParameters(
             maximum_power_rating_kW=maximum_power_rating_kW,
@@ -109,6 +117,14 @@ class HeatPumpStrategy(TradingStrategyBase):
         self.external_temp_C_profile_uuid = external_temp_C_profile_uuid
         self.consumption_kWh_profile_uuid = consumption_kWh_profile_uuid
 
+    def serialize(self):
+        """Serialize strategy parameters."""
+        return {
+            "preferred_buying_rate": self.preferred_buying_rate,
+            **self._energy_params.serialize(),
+            **self.order_updater_parameters.get(AvailableMarketTypes.SPOT).serialize()
+        }
+
     @staticmethod
     def deserialize_args(constructor_args: Dict) -> Dict:
         """Deserialize the constructor arguments for the HeatPump strategy."""
@@ -129,10 +145,6 @@ class HeatPumpStrategy(TradingStrategyBase):
                         ))
             }
         return constructor_args
-
-    def serialize(self):
-        """Return serialised energy params."""
-        return {**self._energy_params.serialize()}
 
     @property
     def state(self) -> HeatPumpState:
