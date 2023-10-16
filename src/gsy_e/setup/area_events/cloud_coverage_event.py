@@ -31,7 +31,7 @@ def get_setup(config):
                 event_list=[ConfigEvents(12, {"cloud_coverage": 1})],
                 children=[
                     Asset("H1 PV", strategy=PVPredefinedStrategy(capacity_kW=0.25),
-                         ),
+                          ),
                 ]
             ),
             Market(
@@ -39,16 +39,16 @@ def get_setup(config):
                 event_list=[ConfigEvents(12, {"cloud_coverage": 2})],
                 children=[
                     Asset("H2 PV", strategy=PVPredefinedStrategy(capacity_kW=0.25),
-                         ),
+                          ),
 
                 ]
             ),
             Asset("Grid Load", strategy=LoadHoursStrategy(avg_power_W=100000,
-                                                         hrs_per_day=24,
-                                                         hrs_of_day=list(
-                                                             range(0, 24)),
-                                                         final_buying_rate=35)
-                 ),
+                                                          hrs_per_day=24,
+                                                          hrs_of_day=list(
+                                                              range(0, 24)),
+                                                          final_buying_rate=35)
+                  ),
         ],
         config=config
     )

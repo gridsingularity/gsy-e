@@ -29,19 +29,19 @@ def get_setup(config):
                 "House 1",
                 children=[
                     Asset("H2 PV", strategy=PVPredefinedStrategy(panel_count=1,
-                                                                capacity_kW=0.25,
-                                                                initial_selling_rate=80,
-                                                                update_interval=10,
-                                                                cloud_coverage=0),
-                         event_list=[StrategyEvents(14, {"cloud_coverage": 2})])
+                                                                 capacity_kW=0.25,
+                                                                 initial_selling_rate=80,
+                                                                 update_interval=10,
+                                                                 cloud_coverage=0),
+                          event_list=[StrategyEvents(14, {"cloud_coverage": 2})])
                 ]
             ),
             Asset("Grid Load", strategy=LoadHoursStrategy(avg_power_W=10000,
-                                                         hrs_per_day=24,
-                                                         hrs_of_day=list(
-                                                             range(0, 24)),
-                                                         final_buying_rate=35),
-                 )
+                                                          hrs_per_day=24,
+                                                          hrs_of_day=list(
+                                                              range(0, 24)),
+                                                          final_buying_rate=35),
+                  )
         ],
         config=config
     )

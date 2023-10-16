@@ -29,21 +29,21 @@ def get_setup(config):
                 "House 1",
                 children=[
                     Asset("H2 PV", strategy=PVUserProfileStrategy(panel_count=1,
-                                                                 initial_selling_rate=80,
-                                                                 power_profile={0: 200,
-                                                                                12: 400,
-                                                                                19: 0}),
-                         event_list=[StrategyEvents(14, {"power_profile": {0: 200,
-                                                                           14: 600,
-                                                                           19: 0}})])
+                                                                  initial_selling_rate=80,
+                                                                  power_profile={0: 200,
+                                                                                 12: 400,
+                                                                                 19: 0}),
+                          event_list=[StrategyEvents(14, {"power_profile": {0: 200,
+                                                                            14: 600,
+                                                                            19: 0}})])
                 ]
             ),
             Asset("Grid Load", strategy=LoadHoursStrategy(avg_power_W=10000,
-                                                         hrs_per_day=24,
-                                                         hrs_of_day=list(
-                                                             range(0, 24)),
-                                                         final_buying_rate=35)
-                 )
+                                                          hrs_per_day=24,
+                                                          hrs_of_day=list(
+                                                              range(0, 24)),
+                                                          final_buying_rate=35)
+                  )
         ],
         config=config
     )
