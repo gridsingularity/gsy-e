@@ -1,5 +1,9 @@
-![alt_text](img/balancing-market-implementation-1.png)
-***Figure 3.1***. *Structure of Balancing Market in Grid Singularity exchange*
+
+<figure markdown>
+  ![alt_text](img/balancing-market-implementation-1.png){:text-align:center"}
+  <figcaption><b>Figure 4.7</b>: Structure of Balancing Market in Grid Singularity exchange
+</figcaption>
+</figure>
 
 Grid Singularity energy exchange bottom-up market design allows participants to engage in Local Energy Market (LEM) for energy trading, providing energy balance at a local level. Grid Singularity Exchange flexibility trading also facilitates the procurement of flexibility locally from participants to assist distribution grid operation in balancing the grid.
 

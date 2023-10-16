@@ -19,11 +19,20 @@ pip install git+https://github.com/gridsingularity/gsy-e-sdk.git
 
 - Go to the *Registry* section of the Collaboration of your interest and apply for each *asset* you wish to connect to manage their trading strategies by clicking on the asset or home. Then click on the green *Apply* button. If you have not already created a Collaboration / Canary Test Network or users are not yet registered for their assets, please follow instructions respectively [here](collaboration.md) or [here](connect-ctn.md) first.
 
-![alt_text](img/configure-trading-strategies-1.png)
+<figure markdown>
+  ![alt_text](img/configure-trading-strategies-1.png){:style="height:500px;width:300px";text-align:center"}
+  <figcaption><b>Figure 5.2</b>: View of the connection overview.
+</figcaption>
+</figure>
+
 
 - Notify Grid Singularity administration by sending an email to [contact@gridsingularity.com](mailto:contact@gridsingularity.com) to accept your applications (note: this action will be automated in the future).
 
-![alt_text](img/configure-trading-strategies-2.png)
+<figure markdown>
+  ![alt_text](img/configure-trading-strategies-2.png){:style="height:400px;width:370px";text-align:center"}
+  <figcaption><b>Figure 5.3</b>: View of the connection overview for the admin
+</figcaption>
+</figure>
 
 - Edit the [Asset SDK Script template](asset-api-template-script.md) developed by Grid Singularity to customize the trading strategies.
 - [Launch the Asset SDK Script](registration-grid-operator-api-user-interface.md) to connect with the Grid Singularity Collaboration / Canary Test Network. A video tutorial is also available [here](https://www.youtube.com/watch?v=oCcQ6pYFd5w&feature=youtu.be){target=_blank}.

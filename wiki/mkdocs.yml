@@ -10,19 +10,19 @@ nav:
     - 'Grid Singularity Development Path': 'development-path.md'
     - 'Licensing and Open Source Ethos': 'licensing.md'
 - 'Set up a simulation of an active local energy market':
-    - 'Introduction to the Grid Singularity Exchange Interface: Singularity Map':
+    - 'Introduction to the Grid Singularity Exchange Simulation Interface: Singularity Map':
         - 'Build a community': 'community.md'
         - 'Assets configuration':
           - 'Overview' : 'configuration.md'
           - 'Home': 'home.md'
           - 'Solar Panels (PVs)': 'solar-panels.md'
-          - 'Consumption (Load Profiles)': 'consumption.md'
+          - 'Consumption (Load) Profiles': 'consumption.md'
           - 'Battery (Storage)': 'battery.md'
           - 'Power Plant': 'power-plant.md'
         - 'Community Settings': 'community-settings.md'
         - 'Grid Market Settings': 'grid-market-settings.md'
-        - 'Events (Adding Assets, Communities, etc.)': 'events.md'
-    - 'Instructions for researchers on backend code':
+        - 'Events (Adding, Removing Assets, etc.)': 'events.md'
+    - 'Instructions for running simulations using the Grid Singularity backend code':
         - 'Backend Installation Instructions':
             - 'Linux Installation Instructions': 'linux-installation-instructions.md'
             - 'Mac Installation Instructions': 'ios-installation-instructions.md'
@@ -33,19 +33,20 @@ nav:
             - 'Setting General Configuration Parameters': 'setting-configuration-parameters.md'
             - 'Market Backend Configuration': 'market-backend-configuration.md'
             - 'Assets Installation': 'assets-installation.md'
+            - 'Configuring Events': 'backend_events.md'
+            - 'Launching Simulation': 'launch_simulation.md'
         - 'Backend Results':
             - 'Overview': 'backend-results-overview.md'
             - 'Energy bills': 'backend-results-energy-bills.md'
     - 'Data Requirements and File Upload Format': 'data-requirements.md'
 - 'Results and Analysis':
     - 'Results dashboard': 'results-dashboard'
-    - 'Community': 'results-community'
-    - 'Bills and traded energy': 'bills-traded-energy.md'
+    - 'Net Energy Traded, Energy Cost (Bill) and Energy Cost Savings': 'bills_savings.md'
     - 'Self-Sufficiency and Self-Consumption': 'self-sufficiency-self-consumption.md'
-    - 'Trade profile': 'trade-profile.md'
+    - 'Trade Profile and Energy Peak Percentage': 'trade-profile.md'
     - 'Aggregate Market Summary': 'aggregate-market-summary.md'
-    - 'Price': 'price.md'
-    - 'Trades': 'trades.md'
+    - 'Price Graph': 'price.md'
+    - 'Cumulative trades chart and bids and offers graph': 'trades.md'
     - 'Results Download': 'results-download.md'
     - 'Duplicating simulations': 'duplicating-simulations'
 - 'Market Mechanisms':
@@ -76,7 +77,7 @@ nav:
     - 'Connect to the Grid Singularity APIs':
         - 'Introduction': 'APIs-introduction.md'
         - 'Configure trading strategies through the Grid Singularity Asset API':
-            - 'Walkthrough': 'configure-trading-strategies-walkthrough.md'
+            - 'Grid Singularity Asset API Overview': 'configure-trading-strategies-walkthrough.md'
             - 'Asset API':
                 - 'Asset API Events': 'asset-api-events.md'
                 - 'Asset API Commands': 'asset-api-commands.md'
@@ -85,7 +86,7 @@ nav:
                 - 'Registration - Simulations run on the User-Interface': 'registration-asset-api-user-interface.md'
                 - 'Registration - Simulations run on the Backend': 'registration-asset-api-backend.md'
         - 'Implement dynamic grid fees through the Grid Singularity Grid Operator API':
-            - 'Walkthrough': 'implement-grid-fees-walkthrough.md'
+            - 'Grid Singularity Grid Operator API Overview': 'implement-grid-fees-walkthrough.md'
             - 'Grid Operator API.':
                 - 'Grid Operator API Events': 'grid-operator-api-events.md'
                 - 'Grid Operator API Commands': 'grid-operator-api-commands.md'

@@ -1,21 +1,27 @@
-This indicator shows the self-sufficiency and self-consumption percentage of the community.
-Self-Sufficiency refers to the amount of a community’s energy demand that is produced locally. It is calculated as follow:
+Self-sufficiency rate refers to the share (expressed in percentage terms) of a home’s or community’s energy demand produced (and self-consumed) locally calculated over a defined time frame (weekly or monthly). Self-sufficiency rate is calculated as follows:
+
 
 `self_sufficiency(market) = self_consumed_energy / total_energy_demanded`
 
-Self-Consumption refers to the % of energy in kWh that the community consumed from its own production. It is calculated as follow:
+Self-consumption rate refers to the share of energy (expressed in percentage terms) that  the home or the community consumes from its own production calculated over a defined time frame (weekly or monthly).  Self-consumption rate is calculated as follows:
+
 
 `self_consumption(market) = self_consumed_energy / total_energy_produced`
 
-![alt_text](img/self-sufficiency-self-consumption.png)
+<figure markdown>
+  ![alt_text](img/self-sufficiency-self-consumption.png){:text-align:center"}
+  <figcaption><b>Figure 3.5</b>: Example of Self-Sufficiency and Self-Consumption Results in Grid Singularity’s interface (Singularity Map)
+</figcaption>
+</figure>
 
-***Figure 2.22***. *Self-Sufficiency and Self-Consumption Results.*
+Here is an example of the self sufficiency and self consumption rate calculation:
 
-Here is an example of the self-sufficiency and self-consumption calculation:
+<figure markdown>
+  ![alt_text](img/self-sufficiency-consumption-1.png){:text-align:center"}
+  <figcaption><b>Figure 3.6</b>: Example setup showing an energy community consisting of two home markets with diverse assets
 
-![alt_text](img/self-sufficiency-consumption-1.png)
-
-***Figure 2.23***. *Example grid setup showing an energy community consisting of two homes.*
+</figcaption>
+</figure>
 
 
 *   `total_house1_pv_production` = 10kWh

@@ -1,27 +1,23 @@
-The load is an energy asset that consumes energy over time. It is possible to use a single load to represent an entire building’s consumption, as well as to configure multiple loads to represent different assets within a building (e.g. washing machine, air-conditioner, etc.).. Users are provided with template consumption load profiles from which they can choose those that are most suitable for the homes in their communities. The template consumption profiles are modelled using data from [Load Profile Generator](https://www.loadprofilegenerator.de/){target=_blank}. Users who want to upload their own consumption profile data can do so in the ‘upload profile’ section in the PV advanced settings, after initially selecting a template consumption profile.
+The load is an energy asset that consumes energy over time which is represented by a consumption profile. It is possible to use a single load digital twin to represent an entire building’s consumption, as well as to configure multiple loads to represent different assets within a building (e.g. washing machine, air-conditioner, etc.). Singularity Map express mode users are provided with a selection of template (synthetic) consumption load profiles, modelled using data from [Load Profile Generator](https://www.loadprofilegenerator.de/){target=_blank}. Users who want to upload their own consumption profile data can do so in the ‘upload profile’ section in the Custom Load advanced settings.
+##Load Configuration Options:
 
-##Asset Configuration Options
+###Express Mode
+In the express load configuration mode, the user is provided with a template (synthetic) custom load to include as an asset at a select location in the simulated local energy market by naming the asset and setting its location:
 
-***Express Mode***
+1. Name: select a unique name for the load;
+2. Location: the location selected by the user is automatically uploaded;
 
-1. Name - Must be unique
-2. Geo-tag - This automatically uploads the location a user selects
+###Advanced Mode
+In the advanced load configuration mode, the following settings are available as shown in the figure and explained below:
+<figure markdown>
+  ![alt_text](img/consumption-advanced.png){:style="height:600px;width:300px";text-align:center"}
+  <figcaption><b>Figure 2.12</b>: Consumption Load Profile Advanced Configuration Options in the Grid Singularity Exchange web-based interface (Singularity Map)
+</figcaption>
+</figure>
 
-***Advanced Mode***
-
-1. Load profile - Users can choose between user upload profile and user configure profile. User upload profile automatically loads as the template consumption profile selected, however this option also allows users to upload the data from their own consumption profile. User configure profile allows users to manually create a consumption profile by editing the load average power (W), the hours per day and the hours of day. The last option notably allows users to model disaggregated consuming devices such as a TV, Washing Machine, Boiler etc.
-2. a) Upload Profile - This option appears if a user selects ‘user upload profile’. The template consumption profile selected automatically loads, or users can upload their own consumption load profile data here in a csv file (respecting the [required format](data-requirements.md).
-
-   b) Average Power, Hours per day, Hours of day - These options appear if a user selects ‘user configure profile’.
-      - Average power: Users can select the average consuming power of the load profile in Watts.
-      - Hours per day: Users can select the  number of hours the load operates per day.
-      - Hours of day: The time range in which the load operates.
-3. Initial buying rate - Users can choose the initial energy buying rate for the beginning of each market slot in cents/kWh.
-4. Final buying rate: Users can choose the final energy buying rate at the end of each market slot in cents/kWh. Users can enter a custom value or choose the Market Maker rate.
-5. Rate increase - Explicit rate increase increment per update interval in cents/kWh
-6. Fit to limits: If activated, a rate decrease per time is calculated, starting at initial buying rate and ending at final buying rate while updating the rate at each Update Interval. The bidding behaviour is derived from a linear fitted curve of a buying rate between initial_buying_rate and final_buying_rate within the bidding interval. If activated, energy rate_increase = (final_buying_rate - initial_buying_rate) / max(int((slot_length / update_interval) -1), 1)
-7.Update interval - Users can choose the frequency at which the rate is updated.
-
-![alt_text](img/consumption-advanced.png)
-
-***Figure 2.11***. *Consumption Load Profile Advanced Configuration Options*
+1. Load profile type: select the user upload profile or the user configure profile: User upload profile allows users to upload data from their own consumption profile in the form of a [csv file](data-requirements.md). User configure profile allows users to manually create a consumption profile by setting the load average consuming power in Watts, the number of hours the load operates per day and the time range in which the load operates (hours of day). The latter is used to model disaggregated consuming devices such as a TV, washing machine, boiler etc.
+2. Initial buying rate: set the initial energy buying rate for the beginning of each market slot in cents/kWh
+3. Final buying rate: set the final energy buying rate at the end of each market slot in cents/kWh by entering a custom value or the Market Maker rate
+4. Rate increase: enter a value for the explicit rate increase increment per update interval in cents/kWh
+5. Linear price increase: If activated, the rate increase per amount of time (update interval) is calculated automatically in a way that the price increases linearly over the market slot time. The rate is calculated starting at the Initial buying rate at the start of the market slot and ending at the Final buying rate at the end of the market slot, while updating the rate at each Update Interval: `energy rate_increase = (final_buying_rate - initial_buying_rate) / max(int((slot_length / update_interval) -1), 1)`
+6. Update interval: set the frequency at which the rate is updated.

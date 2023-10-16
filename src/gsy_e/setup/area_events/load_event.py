@@ -15,40 +15,41 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from gsy_e.models.area import Area
+from gsy_framework.constants_limits import ConstSettings
+
+from gsy_e.models.area import Market, Asset
 from gsy_e.models.area.events import StrategyEvents
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
-from gsy_framework.constants_limits import ConstSettings
 
 
 def get_setup(config):
     ConstSettings.MASettings.MARKET_TYPE = 2
-    area = Area(
+    area = Market(
         "Grid",
         children=[
-            Area(
+            Market(
                 "House 1",
                 children=[
-                    Area("H1 General Load", strategy=LoadHoursStrategy(avg_power_W=200,
-                                                                       hrs_per_day=24,
-                                                                       hrs_of_day=list(
-                                                                           range(0, 24)),
-                                                                       initial_buying_rate=1,
-                                                                       final_buying_rate=37),
-                         event_list=[StrategyEvents(12, {"avg_power_W": 400,
-                                                         "hrs_per_day": 22,
-                                                         "hrs_of_day": range(0, 22)}),
-                                     StrategyEvents(15, {"initial_buying_rate": 24,
-                                                         "fit_to_limit": False,
-                                                         "update_interval": 10,
-                                                         "energy_rate_increase_per_update": 1})]
-                         )
+                    Asset("H1 General Load", strategy=LoadHoursStrategy(avg_power_W=200,
+                                                                        hrs_per_day=24,
+                                                                        hrs_of_day=list(
+                                                                            range(0, 24)),
+                                                                        initial_buying_rate=1,
+                                                                        final_buying_rate=37),
+                          event_list=[StrategyEvents(12, {"avg_power_W": 400,
+                                                          "hrs_per_day": 22,
+                                                          "hrs_of_day": range(0, 22)}),
+                                      StrategyEvents(15, {"initial_buying_rate": 24,
+                                                          "fit_to_limit": False,
+                                                          "update_interval": 10,
+                                                          "energy_rate_increase_per_update": 1})]
+                          )
                 ]
             ),
-            Area("Commercial Energy Producer",
-                 strategy=CommercialStrategy(energy_rate=30)
-                 ),
+            Asset("Commercial Energy Producer",
+                  strategy=CommercialStrategy(energy_rate=30)
+                  ),
 
         ],
         config=config
