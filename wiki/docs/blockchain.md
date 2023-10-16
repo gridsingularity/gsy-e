@@ -19,6 +19,12 @@ Full blockchain deployment will be enabled once the following [GSy DEX System Co
 
 The [Energy Web Chain](https://www.energyweb.org/){target=_blank} is the blockchain of choice for the Grid Singularity Exchange decentralised implementation, anchored upon [Polkadot’s](https://polkadot.network/){target=_blank} scaling solution. Grid Singularity, an energy technology startup, and the Rocky Mountain Institute, a nonprofit clean technology organisation, jointly founded the Energy Web Foundation (EWF) in January 2017 as a non-profit entrepreneurial foundation building web3 applications for the energy transition. Having significantly contributed to EWF development and the launch of the Energy Web Chain, Grid Singularity’s role today in the Energy Web is supervisory and advisory via Foundation Council.
 
+
+![alt_text](img/blockchain-1.png)
+
+***Figure 1***. *Decentralised Peer-to-Peer Energy Exchange (GSY DEX) Architecture (Note: GSY DEX system components, designated in green, interact with the GSy Node for on-chain operations via Energy Web Data Hub that provides a secure and interoperable data exchange service. Grid and asset management services are provided through interoperable API interfaces, as are third party services such as billing and payments).*
+
+
 **The GSy DEX Design Principles**
 
 The GSy DEX is designed around a set of key principles that guide its development and ensure that it meets the requirements of a modern, efficient, and secure energy trading platform. These design principles are aligned with the use of the Substrate framework for the development of the distributed ledger combined with the definition of a set of complementary ancillary services.
