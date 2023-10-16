@@ -47,7 +47,7 @@ class HeatPumpOrderUpdaterParameters(OrderUpdaterParameters):
 class HeatPumpStrategy(TradingStrategyBase):
     """Strategy for heat pumps with storages."""
 
-    # pylint: disable=too-many-arguments)
+    # pylint: disable=too-many-arguments,super-init-not-called
     def __init__(self,
                  maximum_power_rating_kW: float =
                  ConstSettings.HeatPumpSettings.MAX_POWER_RATING_KW,
@@ -69,23 +69,7 @@ class HeatPumpStrategy(TradingStrategyBase):
         assert ConstSettings.MASettings.MARKET_TYPE != 1, (
                 "Heatpump has not been implemented for the OneSidedMarket")
 
-        self.use_default_updater_params: bool = not order_updater_parameters
-        if self.use_default_updater_params:
-            self.order_updater_parameters = {
-                AvailableMarketTypes.SPOT: HeatPumpOrderUpdaterParameters()}
-        else:
-            self.order_updater_parameters = order_updater_parameters
-            for market_type in AvailableMarketTypes:
-                if not self.order_updater_parameters.get(market_type):
-                    continue
-                HeatPumpValidator.validate_rate(
-                    initial_buying_rate=self.order_updater_parameters[market_type].initial_rate,
-                    final_buying_rate=self.order_updater_parameters[market_type].final_rate,
-                    update_interval=self.order_updater_parameters[market_type].update_interval,
-                    preferred_buying_rate=preferred_buying_rate
-                )
-
-        super().__init__(order_updater_parameters=self.order_updater_parameters)
+        self._init_price_params(order_updater_parameters, preferred_buying_rate)
 
         self._energy_params = HeatPumpEnergyParameters(
             maximum_power_rating_kW=maximum_power_rating_kW,
@@ -111,18 +95,36 @@ class HeatPumpStrategy(TradingStrategyBase):
             consumption_kWh_profile_uuid=consumption_kWh_profile_uuid,
             source_type=source_type)
 
-        self.preferred_buying_rate = preferred_buying_rate
-
         # needed for profile_handler
         self.external_temp_C_profile_uuid = external_temp_C_profile_uuid
         self.consumption_kWh_profile_uuid = consumption_kWh_profile_uuid
+
+    def _init_price_params(self, order_updater_parameters, preferred_buying_rate):
+        self.use_default_updater_params: bool = not order_updater_parameters
+        if self.use_default_updater_params:
+            order_updater_parameters = {
+                AvailableMarketTypes.SPOT: HeatPumpOrderUpdaterParameters()}
+        else:
+            for market_type in AvailableMarketTypes:
+                if not order_updater_parameters.get(market_type):
+                    continue
+                HeatPumpValidator.validate_rate(
+                    initial_buying_rate=order_updater_parameters[market_type].initial_rate,
+                    final_buying_rate=order_updater_parameters[market_type].final_rate,
+                    update_interval=order_updater_parameters[market_type].update_interval,
+                    preferred_buying_rate=preferred_buying_rate
+                )
+
+        super().__init__(order_updater_parameters=order_updater_parameters)
+
+        self.preferred_buying_rate = preferred_buying_rate
 
     def serialize(self):
         """Serialize strategy parameters."""
         return {
             "preferred_buying_rate": self.preferred_buying_rate,
             **self._energy_params.serialize(),
-            **self.order_updater_parameters.get(AvailableMarketTypes.SPOT).serialize()
+            **self._order_updater_params.get(AvailableMarketTypes.SPOT).serialize()
         }
 
     @staticmethod
