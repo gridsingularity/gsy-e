@@ -36,6 +36,13 @@ class HeatPumpOrderUpdaterParameters(OrderUpdaterParameters):
         if use_default or self.initial_rate is None:
             self.initial_rate = get_feed_in_tariff_rate_from_config(market)
 
+    def serialize(self):
+        return {
+            "update_interval": self.update_interval,
+            "initial_buying_rate": self.initial_rate,
+            "final_buying_rate": self.final_rate
+        }
+
 
 class HeatPumpStrategy(TradingStrategyBase):
     """Strategy for heat pumps with storages."""
@@ -112,6 +119,14 @@ class HeatPumpStrategy(TradingStrategyBase):
 
         self.preferred_buying_rate = preferred_buying_rate
 
+    def serialize(self):
+        """Serialize strategy parameters."""
+        return {
+            "preferred_buying_rate": self.preferred_buying_rate,
+            **self._energy_params.serialize(),
+            **self._order_updater_params.get(AvailableMarketTypes.SPOT).serialize()
+        }
+
     @staticmethod
     def deserialize_args(constructor_args: Dict) -> Dict:
         """Deserialize the constructor arguments for the HeatPump strategy."""
@@ -132,10 +147,6 @@ class HeatPumpStrategy(TradingStrategyBase):
                         ))
             }
         return constructor_args
-
-    def serialize(self):
-        """Return serialised energy params."""
-        return {**self._energy_params.serialize()}
 
     @property
     def state(self) -> HeatPumpState:

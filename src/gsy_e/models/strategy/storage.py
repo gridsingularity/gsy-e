@@ -60,7 +60,7 @@ class StorageStrategy(BidEnabledStrategy):
             "battery_capacity_kWh": self.state.capacity,
             "max_abs_battery_power_kW": self.state.max_abs_battery_power_kW,
             "cap_price_strategy": self.cap_price_strategy,
-            "initial_energy_origin": self.state.initial_energy_origin,
+            "initial_energy_origin": self.state.initial_energy_origin.value,
             "balancing_energy_ratio": self.balancing_energy_ratio,
             **self.bid_update.serialize(),
             **self.offer_update.serialize(),

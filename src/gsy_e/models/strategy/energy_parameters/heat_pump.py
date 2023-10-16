@@ -47,6 +47,7 @@ class HeatPumpEnergyParametersBase(ABC):
         self._tank_volume_l = tank_volume_l
         self._Q_specific = SPECIFIC_HEAT_CONST_WATER * tank_volume_l * WATER_DENSITY  # [kWh / K]
         self._slot_length = GlobalConfig.slot_length
+        self._maximum_power_rating_kW = maximum_power_rating_kW
         self._max_energy_consumption_kWh = (
                 maximum_power_rating_kW * self._slot_length.total_hours())
         self.state = HeatPumpState(initial_temp_C, self._slot_length)
@@ -74,6 +75,7 @@ class HeatPumpEnergyParametersBase(ABC):
             "max_temp_C": self._max_temp_C,
             "min_temp_C": self._min_temp_C,
             "max_energy_consumption_kWh": self._max_energy_consumption_kWh,
+            "maximum_power_rating_kW": self._maximum_power_rating_kW,
             "tank_volume_l": self._tank_volume_l
         }
 
@@ -163,7 +165,7 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
             "consumption_profile_uuid": self._consumption_kWh.input_profile_uuid,
             "external_temp_C": self._ext_temp_C.input_profile,
             "external_temp_profile_uuid": self._ext_temp_C.input_profile_uuid,
-            "source_type": self._source_type
+            "source_type": self._source_type,
         }
 
     def _temp_diff_to_Q_kWh(self, diff_temp_K: float) -> float:

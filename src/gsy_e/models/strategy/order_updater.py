@@ -17,6 +17,14 @@ class OrderUpdaterParameters:
     initial_rate: float
     final_rate: float
 
+    def serialize(self):
+        """Serialize parameters."""
+        return {
+            "update_interval": self.update_interval,
+            "initial_rate": self.initial_rate,
+            "final_rate": self.final_rate
+        }
+
 
 class OrderUpdater:
     """
