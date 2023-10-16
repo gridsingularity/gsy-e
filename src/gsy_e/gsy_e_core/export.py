@@ -31,6 +31,7 @@ from gsy_framework.utils import mkdir_from_str
 from pendulum import DateTime
 
 import gsy_e.constants
+from gsy_e.gsy_e_core.area_serializer import area_to_string
 from gsy_e.gsy_e_core.enums import PAST_MARKET_TYPE_FILE_SUFFIX_MAPPING
 from gsy_e.gsy_e_core.matching_engine_singleton import bid_offer_matcher
 from gsy_e.gsy_e_core.sim_results.file_export_endpoints import file_export_endpoints_factory
@@ -105,9 +106,9 @@ class ExportAndPlot:
 
         self.plot_dir = os.path.join(self.directory, "plot")
 
-    def export_json_data(self, directory: dir) -> None:
+    def _export_json_data(self) -> None:
         """Write aggregated results into JSON files."""
-        json_dir = os.path.join(directory, "aggregated_results")
+        json_dir = os.path.join(self.directory, "aggregated_results")
         mkdir_from_str(json_dir)
         settings_file = os.path.join(json_dir, "const_settings.json")
         with open(settings_file, "w", encoding="utf-8") as outfile:
@@ -117,6 +118,13 @@ class ExportAndPlot:
             json_file = os.path.join(json_dir, out_key + ".json")
             with open(json_file, "w", encoding="utf-8") as outfile:
                 json.dump(value, outfile, indent=2)
+
+    def _export_setup_json(self) -> None:
+
+        setup_json_file = os.path.join(self.directory, "setup_file.json")
+        setup_json = json.loads(area_to_string(self.area))
+        with open(setup_json_file, "w", encoding="utf-8") as outfile:
+            json.dump(setup_json, outfile, indent=2)
 
     @staticmethod
     def _file_path(directory: dir, area_slug: str) -> dir:
@@ -132,7 +140,8 @@ class ExportAndPlot:
         if not os.path.exists(self.plot_dir):
             os.makedirs(self.plot_dir)
 
-        self.export_json_data(self.directory)
+        self._export_json_data()
+        self._export_setup_json()
 
         PlotEnergyProfile(self.endpoint_buffer, self.plot_dir).plot(self.area)
         PlotUnmatchedLoads(self.area, self.file_stats_endpoint, self.plot_dir).plot()
