@@ -15,7 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from gsy_e.models.area import Area
+from gsy_e.models.area import Market, Asset
 from gsy_e.models.area.events import DisconnectIntervalMarketEvent
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
 from gsy_e.models.strategy.storage import StorageStrategy
@@ -23,29 +23,29 @@ from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 
 
 def get_setup(config):
-    area = Area(
+    area = Market(
         "Grid",
         children=[
-            Area(
+            Market(
                 "House 1",
                 event_list=[DisconnectIntervalMarketEvent(6, 16)],
                 children=[
-                    Area("H1 General Load", strategy=LoadHoursStrategy(avg_power_W=200,
-                                                                       hrs_per_day=24,
-                                                                       hrs_of_day=list(
-                                                                           range(0, 24)),
-                                                                       final_buying_rate=27)
-                         ),
-                    Area("H1 Storage1", strategy=StorageStrategy(initial_soc=50,
-                                                                 battery_capacity_kWh=30,
-                                                                 max_abs_battery_power_kW=1)
-                         ),
+                    Asset("H1 General Load", strategy=LoadHoursStrategy(avg_power_W=200,
+                                                                        hrs_per_day=24,
+                                                                        hrs_of_day=list(
+                                                                            range(0, 24)),
+                                                                        final_buying_rate=27)
+                          ),
+                    Asset("H1 Storage1", strategy=StorageStrategy(initial_soc=50,
+                                                                  battery_capacity_kWh=30,
+                                                                  max_abs_battery_power_kW=1)
+                          ),
                 ]
             ),
-            Area("Commercial Energy Producer",
-                 strategy=CommercialStrategy(energy_rate=22),
+            Asset("Commercial Energy Producer",
+                  strategy=CommercialStrategy(energy_rate=22),
 
-                 ),
+                  ),
 
         ],
         config=config

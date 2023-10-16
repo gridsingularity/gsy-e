@@ -10,7 +10,7 @@ xcode-select --install
 ###Step 2: Install homebrew
 
 ```
-/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
 ###Step 3: Install other required libraries:
@@ -28,7 +28,7 @@ echo -e 'if command -v pyenv 1>/dev/null 2>&1; then\n eval "$(pyenv init -)"\nfi
 
 ###Step 5: Close and re-open the terminal
 
-###Step 6: Install python 3.6 and set as default:
+###Step 6: Install Python 3.6 and set as default:
 
 ```
 pyenv install 3.8.6
@@ -38,11 +38,11 @@ pyenv global 3.8.6
 ###Step 7: Install virtualenvwrapper:
 
 ```
-pip install virtualenvwrapper
+pip3 install virtualenvwrapper
 echo -e 'export WORKON_HOME=~/Envs\nsource ~/.pyenv/versions/3.8.6/bin/virtualenvwrapper.sh' >> ~/.bash_profile
 ```
 
-###Step 8: Setup paths for compiling python libraries:
+###Step 8: Setup paths for compiling Python libraries:
 
 ```
 echo -e 'BREW_PREFIX="$(brew --prefix openssl)"\nexport CFLAGS="-I${BREW_PREFIX}/include"\nexport LDFLAGS="-L${BREW_PREFIX}/lib"' >> ~/.bash_profile
@@ -63,8 +63,8 @@ cd gsy-e
 brew install npm
 npm install --global ganache-cli
 mkvirtualenv gsy-e
-pip install pendulum pip-tools
-pip install -e .
+pip3 install pendulum pip-tools
+pip3 install -e .
 ```
 
 You now should have a working gsy-e setup.

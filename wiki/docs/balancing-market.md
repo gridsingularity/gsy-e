@@ -7,17 +7,22 @@ Each control strategy has specific purposes and features and can be categorized 
 2. **Secondary Control** (Automatic Frequency Restoration Reserves - aFRR)
 3. **Tertiary Control** (Manual Frequency Restoration Reserves - mFRR)
 
-![alt_text](img/balancing-market-structure-1.png)
-
-***Figure 3.4***. *[The three tiers of grid control and its activation structure](http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.126.3675){target=_blank}*
+<figure markdown>
+  ![alt_text](img/balancing-market-structure-1.png){:text-align:center"}
+  <figcaption><b>Figure 4.4</b>: <a href="http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.126.3675">The three tiers of grid control and its activation structure</a>
+</figcaption>
+</figure>
 
 ##In conventional grid structures
 
 **Primary control** is an automatic function that is almost instantaneously activated to stabilise the frequency drops/spikes. It is the fastest type of frequency control with a response time of a few seconds and operates using a joint process involving all TSOs of the synchronous area. This is shown in the figure below. For example, if there is an increase in demand, the energy used to compensate for this demand comes from the kinetic energy stored in large rotating synchronous generators that start decreasing its velocity. This is referred to as [Inertial response](https://eepower.com/technical-articles/frequency-control-in-a-power-system/#){target=_blank}. For the generators to recover the speed, the speed controller of each generator acts to increase the generator power to clear the imbalance. Within a period of 30 seconds, each generating unit is able to generate the required power and stabilise this production for at least 15 minutes or depending on the requirements of the TSO within the synchronous region. Primary control is done using generation plants that are connected to the high voltage power supply with the exception of renewable energy sources which are non-schedulable due to its intermittent nature.
 
-![alt_text](img/balancing-market-structure-2.png)
+<figure markdown>
+  ![alt_text](img/balancing-market-structure-2.png){:text-align:center"}
+  <figcaption><b>Figure 4.5</b>: <a href="https://www.nrel.gov/news/program/2020/inertia-and-the-power-grid-a-guide-without-the-spin.html">Recovery of the system from a contingency event and action by primary frequency control (PFR)</a>
+</figcaption>
+</figure>
 
-***Figure 3.5***. *[Recovery of the system from a contingency event and action by primary frequency control (PFR)](https://www.nrel.gov/news/program/2020/inertia-and-the-power-grid-a-guide-without-the-spin.html){target=_blank}*
 
 **Secondary control** is performed automatically by all the generators to restore the nominal frequency, the power exchanges and reserve of the generators used in primary control. The generators involved in this regulation function through dedicated reserve power that are set in conjunction with central controllers. The reserve control power is negotiated in a contract conjunction with the TSO and is a percentage of the maximum available power with a predefined minimum value to ensure that it can be dispatched whenever needed. This service is remunerated according to the set contracts.
 
@@ -78,14 +83,15 @@ The differences between the primary, secondary and tertiary frequency control is
   </tr>
 </table>
 
-***Table 3.1***: *[Main features of frequency control strategies](https://eepower.com/technical-articles/frequency-control-in-a-power-system/#){target=_blank}*
+***Table 4.1***: *[Main features of frequency control strategies](https://eepower.com/technical-articles/frequency-control-in-a-power-system/#){target=_blank}*
 
 In our **transactive energy low voltage grid structure** primary, secondary and tertiary control are controlled by an area controller called the balancing agent.
 
-
-![alt_text](img/balancing-market-structure-3.png)
-
-***Figure 3.6***. *Area control structure of market consisting of all three tiers of control (source: Martin Fornage, A generalized transactive energy-based framework: Enphase Energy. Powerpoint presentation 2015)*
+<figure markdown>
+  ![alt_text](img/balancing-market-structure-3.png){:text-align:center"}
+  <figcaption><b>Figure 4.6</b>: Area control structure of market consisting of all three tiers of control (source: Martin Fornage, A generalized transactive energy-based framework: Enphase Energy. Powerpoint presentation 2015)
+</figcaption>
+</figure>
 
 The balancing agent monitors the health of the system and is in control of all its allocated resources. It also had the ability to control the physical connect and disconnect from upstream and downstream resources according to the type of control required.
 

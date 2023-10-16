@@ -18,9 +18,11 @@ In this case, the second condition is fulfilled by the offer, thus the two order
 - The energy to be traded results in 0.8 kWh;
 - The trading price can range between 21 and 25 cents and will be determined by the matching algorithm in place.
 
-![alt_text](img/degrees-of-freedom.png)
-
-***Figure 3.22***. *Example of a bid and offer with attributes and requirements.*
+<figure markdown>
+  ![alt_text](img/degrees-of-freedom.png){:text-align:center"}
+  <figcaption><b>Figure 4.21</b>: Example of a bid and offer with attributes and requirements.
+</figcaption>
+</figure>
 
 The [GSy Matching Engine](blockchain-system-components-overview.md) parses the order book and submits proposed bids and offers matches to the Grid Singularity Exchange via the Matching API. A verification function, integrated into the [exchange](blockchain.md), confirms that the attributes of the proposed bid and offer match satisfies each other’s respective requirements. The verification function accepts a bid / offer pair as input and, if the requirements are met, a trade is created. Otherwise, the trade is rejected.
 

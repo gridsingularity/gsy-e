@@ -6,6 +6,8 @@ To enable users to run a collaboration, Grid Singularity has developed a **Softw
 
 Examples of template agent scripts (flexible Python scripts) to connect to the Grid Singularity Exchange through the [Software Development Kit](https://github.com/gridsingularity/gsy-e-sdk){target=_blank} are available in the Grid Singularity’s GitHub repository for the [Asset API](https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/asset_api_template.py) and [Grid Operator API](https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/grid_operator_api_template.py){target=_blank} and are explained in sections below (respectively [here](asset-api-template-script.md) and [here](grid-operator-api-template-script.md)).
 
-![alt_text](img/asset-api-grid-operator-api.png)
-
-***Figure 4.1***. *Asset API and Grid Operator API interfacing with energy assets and markets in the Grid Singularity Exchange.*
+<figure markdown>
+  ![alt_text](img/asset-api-grid-operator-api.png){:text-align:center"}
+  <figcaption><b>Figure 5.1</b>: Asset API and Grid Operator API interfacing with energy assets and markets in the Grid Singularity Exchange.
+</figcaption>
+</figure>

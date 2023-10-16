@@ -1,17 +1,20 @@
 The percentage grid fee is a market based fee, defined as a **ratio (%)** of the clearing price that is added to each trade that is cleared, as shown in the figure below.
 
-![alt_text](img/grid-fee-percentage-1.png)
-
-***Figure 3.18***. *Percentage grid fee calculation in the Grid Singularity Exchange.*
+<figure markdown>
+  ![alt_text](img/grid-fee-percentage-1.png){:text-align:center"}
+  <figcaption><b>Figure 4.18</b>: Percentage grid fee calculation in the Grid Singularity Exchange.
+</figcaption>
+</figure>
 
 The price of a bid or offer changes as it is propagated into different markets to account for market fees. This way, a trading agent posting an offer will never receive less than offered and an agent making a bid will never pay more than bid.
 
 ##Example Calculation in One-Sided Pay-as-Offer Market
 
-
-![alt_text](img/grid-fee-percentage-2.png)
-
-***Figure 3.19***. *Percentage Grid Fee Example Calculation in One-Sided Pay-as-Offer Market.*
+<figure markdown>
+  ![alt_text](img/grid-fee-percentage-2.png){:text-align:center"}
+  <figcaption><b>Figure 4.19</b>: Percentage Grid Fee Example Calculation in One-Sided Pay-as-Offer Market.
+</figcaption>
+</figure>
 
 In the [One-Sided Pay-as-Offer market](one-sided-pay-as-offer.md), there are no bids, only offers. The offers are propagated throughout the markets in the hierarchy. The grid fees are taken into account when an offer is forwarded to the higher market, by the higher market itself. Therefore the agent is not responsible for adapting the offer price to include the grid fees. The grid fees' unit is a ratio of the original offer price, therefore the formula to calculate the new offer price when placing an offer to a market is the following:
 
@@ -33,10 +36,11 @@ trade_price = energy * trade_rate
 
 ##Example Calculation in Two-Sided Pay-as-Bid Market
 
-![alt_text](img/grid-fee-percentage-3.png)
-
-***Figure 3.20***. *Percentage Grid Fee Example Calculation in Two-Sided Pay-as-Bid Market.*
-
+<figure markdown>
+  ![alt_text](img/grid-fee-percentage-3.png){:text-align:center"}
+  <figcaption><b>Figure 4.20</b>: Percentage Grid Fee Example Calculation in Two-Sided Pay-as-Bid Market.
+</figcaption>
+</figure>
 
 In the [Two-Sided Pay-as-Bid market](two-sided-pay-as-bid.md), both bids and offers are propagated through the markets in the hierarchy. If a bid or offer is not purchased after two [ticks](market-types.md#market-ticks), it propagates into the next market. In order to prevent double accounting of a market's grid fee when a bid and an offer are matched in that market, market fees are added to offers when they enter that market (target market) and subtracted from bids when they leave that market and enter another (source market). The formula for propagating the offers is the same as for the one-sided market:
 

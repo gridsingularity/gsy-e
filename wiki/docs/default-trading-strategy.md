@@ -10,10 +10,11 @@ Grid Singularity’s exchange engine has a built-in template trading agent. The 
 
 The following plot shows the changing energy rate in a [spot market slot](spot-market-types.md)  (slot_length = 15min) for four different trading settings.
 
-![alt_text](img/default-trading-2.png)
-
-**Figure 3.13**. *Four different generation trading settings in a spot market slot (slot_length = 15 min).*
-
+<figure markdown>
+  ![alt_text](img/default-trading-2.png){:text-align:center"}
+  <figcaption><b>Figure 4.13</b>: Four different generation trading settings in a spot market slot (slot_length = 15 min).
+</figcaption>
+</figure>
 
 If `fit_to_limit` is set to `True`, `energy_rate_decrease_per_update` is ignored and a rate decrease per time is calculated, starting at `initial_selling_rate` and ending at `final_selling_rate` while updating the rate at each `update_interval`.
 
@@ -27,9 +28,11 @@ If `fit_to_limit` is set to `True`, `energy_rate_decrease_per_update` is ignored
 
 The following plot shows the energy rate change in a spot market slot (slot_length = 15min) for different trading settings. If `fit_to_limit` is set to `True`, `energy_rate_increase_per_update` is ignored and a rate increase per time is calculated that starts at `initial_buying_rate` and ends at `final_buying_rate` while updating the rate at each `update_interval`.
 
-![alt_text](img/default-trading-1.png)
-
-**Figure 3.14**. *Four different load trading settings in a spot market slot (slot_length = 15 min).*
+<figure markdown>
+  ![alt_text](img/default-trading-1.png){:text-align:center"}
+  <figcaption><b>Figure 4.14</b>: Four different load trading settings in a spot market slot (slot_length = 15 min).
+</figcaption>
+</figure>
 
 Assets can also deploy more intelligent trading strategies, as demonstrated in the 2020 Energy Singularity Challenge, described in the following two articles:
 
