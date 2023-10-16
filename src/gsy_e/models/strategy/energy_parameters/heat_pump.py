@@ -207,7 +207,6 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
         return self._Q_kWh_to_temp_diff(self._calc_Q_from_energy_kWh(time_slot, traded_energy_kWh))
 
     def _populate_state(self, time_slot: DateTime):
-        # order matters here
         super()._populate_state(time_slot)
         self.state.set_energy_consumption_kWh(time_slot, self._consumption_kWh.profile[time_slot])
 
