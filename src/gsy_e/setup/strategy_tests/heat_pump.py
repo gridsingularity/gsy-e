@@ -38,6 +38,9 @@ def get_setup(config):
                     Area(
                         "H1 Heat Pump",
                         strategy=HeatPumpStrategy(
+                            maximum_power_rating_kW=6,
+                            tank_volume_l=1000,
+                            # initial_temp_C=55,
                             consumption_kWh_profile=os.path.join(
                                 gsye_root_path, "resources", "hp_consumption_kWh.csv"),
                             external_temp_C_profile=os.path.join(

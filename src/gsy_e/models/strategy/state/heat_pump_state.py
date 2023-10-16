@@ -41,6 +41,7 @@ class HeatPumpState(StateInterface):
         self._temp_decrease_K: Dict[DateTime, float] = defaultdict(lambda: 0)
         self._temp_increase_K: Dict[DateTime, float] = defaultdict(lambda: 0)
         self._energy_consumption_kWh: Dict[DateTime, float] = defaultdict(lambda: 0)
+        self._unmatched_demand: Dict[DateTime, float] = defaultdict(lambda: 0)
         self._slot_length = slot_length
 
     def get_storage_temp_C(self, time_slot: DateTime) -> float:
@@ -55,6 +56,11 @@ class HeatPumpState(StateInterface):
         if new_temp < -FLOATING_POINT_TOLERANCE:
             raise UnexpectedStateException("Storage of heat pump should not drop below zero.")
         self._storage_temp_C[current_time_slot] = new_temp
+
+    def update_unmatched_demand(self, current_time_slot: DateTime, energy_kWh: float):
+        """Update unmatched demand while ensuring always positive numbers."""
+        updated_unmatched_demand = self._unmatched_demand[current_time_slot] + energy_kWh
+        self._unmatched_demand[current_time_slot] = max(0., updated_unmatched_demand)
 
     def set_min_energy_demand_kWh(self, time_slot: DateTime, energy_kWh: float):
         """Set the minimal energy demanded for a given time slot."""
@@ -103,6 +109,10 @@ class HeatPumpState(StateInterface):
     def get_temp_increase_K(self, time_slot: DateTime) -> float:
         """Return the temperature increase for a given time slot."""
         return self._temp_increase_K.get(time_slot, 0)
+
+    def get_unmatched_demand_kWh(self, time_slot: DateTime) -> float:
+        """Return the unmatched demanded energy for a given time slot."""
+        return self._unmatched_demand.get(time_slot, 0)
 
     def get_state(self) -> Dict:
         return {

@@ -198,15 +198,21 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
         return min(self._max_energy_consumption_kWh, min_energy_consumption)
 
     def _calc_temp_decrease_K(self, time_slot: DateTime) -> float:
-        temp_decrease_K = self._Q_kWh_to_temp_diff(self._calc_Q_from_energy_kWh(
+        demanded_temp_decrease_K = self._Q_kWh_to_temp_diff(self._calc_Q_from_energy_kWh(
             time_slot, self._consumption_kWh.profile[time_slot]))
-        if self.state.get_storage_temp_C(time_slot) - temp_decrease_K < self._min_temp_C:
-            temp_decrease_K = self.state.get_storage_temp_C(time_slot) - self._min_temp_C
+        if self.state.get_storage_temp_C(time_slot) - demanded_temp_decrease_K < self._min_temp_C:
+            actual_temp_decrease = self.state.get_storage_temp_C(time_slot) - self._min_temp_C
+            unmatched_demand_kWh = self._temp_diff_to_Q_kWh(
+                demanded_temp_decrease_K - actual_temp_decrease) / self._get_cop(time_slot)
+            self.state.update_unmatched_demand(time_slot, unmatched_demand_kWh)
+        else:
+            actual_temp_decrease = demanded_temp_decrease_K
 
-        return temp_decrease_K
+        return actual_temp_decrease
 
-    def _calc_temp_increase_K(self, time_slot: DateTime, traded_energy_kWh: float) -> float:
-        return self._Q_kWh_to_temp_diff(self._calc_Q_from_energy_kWh(time_slot, traded_energy_kWh))
+    def _calc_temp_increase_K(self, time_slot: DateTime, energy_kWh: float) -> float:
+        self.state.update_unmatched_demand(time_slot, -energy_kWh)
+        return self._Q_kWh_to_temp_diff(self._calc_Q_from_energy_kWh(time_slot, energy_kWh))
 
     def _populate_state(self, time_slot: DateTime):
         super()._populate_state(time_slot)

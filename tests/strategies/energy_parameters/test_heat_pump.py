@@ -77,8 +77,6 @@ class TestHeatPumpEnergyParameters:
         original_min_demand = energy_params.state._min_energy_demand_kWh[CURRENT_MARKET_SLOT]
         original_max_demand = energy_params.state._max_energy_demand_kWh[CURRENT_MARKET_SLOT]
         energy_params.event_traded_energy(CURRENT_MARKET_SLOT, traded_energy)
-        print(original_max_demand)
-        print(original_min_demand)
         assert (energy_params.state._min_energy_demand_kWh[CURRENT_MARKET_SLOT] ==
                 original_min_demand - traded_energy)
         assert (energy_params.state._max_energy_demand_kWh[CURRENT_MARKET_SLOT] ==
@@ -105,3 +103,11 @@ class TestHeatPumpEnergyParameters:
         energy_params.get_max_energy_demand_kWh(CURRENT_MARKET_SLOT)
         assert (energy_params.get_max_energy_demand_kWh(CURRENT_MARKET_SLOT) ==
                 3.0)
+
+    @staticmethod
+    def test_calc_temp_decrease_K_sets_unmatched_demand(energy_params):
+        pass
+
+    @staticmethod
+    def test__calc_temp_increase_K_sets_unmatched_demand(energy_params):
+        pass
