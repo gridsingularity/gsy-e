@@ -13,7 +13,7 @@ nav:
     - 'Introduction to the Grid Singularity Exchange Simulation Interface: Singularity Map':
         - 'Build a community': 'community.md'
         - 'Assets configuration':
-          - 'Overview' : 'configuration.md'
+          - 'Assets Configuration Overview' : 'configuration.md'
           - 'Home': 'home.md'
           - 'Solar Panels (PVs)': 'solar-panels.md'
           - 'Consumption (Load) Profiles': 'consumption.md'
@@ -36,7 +36,7 @@ nav:
             - 'Configuring Events': 'backend_events.md'
             - 'Launching Simulation': 'launch_simulation.md'
         - 'Backend Results':
-            - 'Overview': 'backend-results-overview.md'
+            - 'Backend Results Overview': 'backend-results-overview.md'
             - 'Energy bills': 'backend-results-energy-bills.md'
     - 'Data Requirements and File Upload Format': 'data-requirements.md'
 - 'Results and Analysis':
@@ -51,7 +51,7 @@ nav:
     - 'Duplicating simulations': 'duplicating-simulations'
 - 'Market Mechanisms':
     - 'Market Types':
-      - 'Overview': 'market-types.md'
+      - 'Market Types Overview': 'market-types.md'
       - 'Spot Market':
           - 'Spot Market Types': 'spot-market-types.md'
           - 'One-Sided Pay-as-Offer Market': 'one-sided-pay-as-offer.md'
