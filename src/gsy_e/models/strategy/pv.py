@@ -25,23 +25,23 @@ from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfile
 from gsy_framework.utils import (
     find_object_of_same_weekday_and_time, key_in_dict_and_not_none)
 from gsy_framework.validators import PVValidator
-from pendulum import duration  # noqa
+from pendulum import duration
 
 from gsy_e import constants
 from gsy_e.gsy_e_core.exceptions import MarketException
-from gsy_e.gsy_e_core.util import get_market_maker_rate_from_config
 from gsy_e.models.base import AssetType
-from gsy_e.models.strategy.state import PVState
 from gsy_e.models.strategy import BidEnabledStrategy
 from gsy_e.models.strategy.energy_parameters.pv import PVEnergyParameters
 from gsy_e.models.strategy.future.strategy import future_market_strategy_factory
+from gsy_e.models.strategy.mixins import UseMarketMakerMixin
 from gsy_e.models.strategy.settlement.strategy import settlement_market_strategy_factory
+from gsy_e.models.strategy.state import PVState
 from gsy_e.models.strategy.update_frequency import TemplateStrategyOfferUpdater
 
 log = getLogger(__name__)
 
 
-class PVStrategy(BidEnabledStrategy):
+class PVStrategy(BidEnabledStrategy, UseMarketMakerMixin):
     """PV Strategy class for gaussian generation profile."""
 
     # pylint: disable=too-many-arguments
@@ -192,11 +192,8 @@ class PVStrategy(BidEnabledStrategy):
         self._future_market_strategy.update_and_populate_price_settings(self)
 
     def event_activate_price(self):
-        # If use_market_maker_rate is true, overwrite initial_selling_rate to market maker rate
         if self.use_market_maker_rate:
-            self._area_reconfigure_prices(
-                initial_selling_rate=get_market_maker_rate_from_config(
-                    self.area.spot_market, 0) - self.owner.get_path_to_root_fees(), validate=False)
+            self._replace_rates_with_market_maker_rates()
 
         self._validate_rates(self.offer_update.initial_rate_profile_buffer,
                              self.offer_update.final_rate_profile_buffer,
