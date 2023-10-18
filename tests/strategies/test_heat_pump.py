@@ -8,7 +8,7 @@ import pytest
 from gsy_framework.constants_limits import GlobalConfig, ConstSettings, TIME_ZONE
 from gsy_framework.data_classes import Trade, TraderDetails
 from gsy_framework.enums import AvailableMarketTypes
-from pendulum import today
+from pendulum import today, duration
 
 from gsy_e.gsy_e_core.util import gsye_root_path
 from gsy_e.models.area import Area
@@ -205,3 +205,20 @@ class TestHeatPumpStrategy:
         strategy.event_bid_traded(market_id=area.spot_market.id, bid_trade=trade)
         strategy._energy_params.event_traded_energy.assert_called_once_with(
             CURRENT_MARKET_SLOT, traded_energy)
+
+    @staticmethod
+    def test_deserialize_args_sets_price_settings_to_none_if_not_provided(heatpump_fixture):
+        constructor_args = heatpump_fixture[0].deserialize_args({})
+        assert constructor_args == {
+            "order_updater_parameters": {
+                AvailableMarketTypes.SPOT: HeatPumpOrderUpdaterParameters(
+                    update_interval=None, initial_rate=None, final_rate=None)}}
+
+        constructor_args = heatpump_fixture[0].deserialize_args({
+                "initial_buying_rate": 2,
+                "update_interval": 5
+        })
+        assert constructor_args == {
+            "order_updater_parameters": {
+                AvailableMarketTypes.SPOT: HeatPumpOrderUpdaterParameters(
+                    update_interval=duration(minutes=5), initial_rate=2, final_rate=None)}}
