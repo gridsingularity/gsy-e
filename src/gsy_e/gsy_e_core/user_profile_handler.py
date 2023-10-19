@@ -24,7 +24,7 @@ from typing import Dict, TYPE_CHECKING, List, Optional
 import pytz
 from gsy_framework.constants_limits import GlobalConfig
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
-from gsy_framework.utils import generate_market_slot_list
+from gsy_framework.utils import generate_market_slot_list, is_canary_network
 from pendulum import DateTime, instance, duration
 from pony.orm import Database, Required, db_session, select
 from pony.orm.core import Query
@@ -246,7 +246,7 @@ class ProfileDBConnectionHandler:
             log.error(
                 "Empty market slot list. Current timestamp %s, duration %s, is canary %s, "
                 "slot length %s", current_timestamp, GlobalConfig.sim_duration,
-                GlobalConfig.IS_CANARY_NETWORK, GlobalConfig.slot_length)
+                is_canary_network(), GlobalConfig.slot_length)
         return min(time_stamps), max(time_stamps)
 
     def _should_buffer_profiles(self, current_timestamp: DateTime):

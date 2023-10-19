@@ -25,7 +25,7 @@ from typing import TYPE_CHECKING, Dict
 import psutil
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.enums import CoefficientAlgorithm, SpotMarketTypeEnum
-from gsy_framework.utils import format_datetime, str_to_pendulum_datetime
+from gsy_framework.utils import format_datetime, str_to_pendulum_datetime, is_canary_network
 from pendulum import DateTime, Duration, duration
 
 import gsy_e.constants
@@ -170,7 +170,7 @@ class Simulation:
 
     def _get_current_market_time_slot(self, slot_number: int) -> DateTime:
         return (self.area.config.start_date + (slot_number * self.area.config.slot_length)
-                if GlobalConfig.IS_CANARY_NETWORK else self.area.now)
+                if is_canary_network() else self.area.now)
 
     def _execute_simulation(
             self, slot_resume: int, tick_resume: int, console: NonBlockingConsole = None) -> None:

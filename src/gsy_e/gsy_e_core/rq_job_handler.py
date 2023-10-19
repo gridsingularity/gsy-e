@@ -67,7 +67,7 @@ def launch_simulation_from_rq_job(scenario: Dict,
 
         config = _create_config_settings_object(
             scenario, settings, aggregator_device_mapping)
-        if GlobalConfig.IS_CANARY_NETWORK:
+        if settings.get("type") == ConfigurationType.CANARY_NETWORK.value:
             config.start_date = (
                 instance(
                     datetime.combine(date.today(), datetime.min.time()),
@@ -116,11 +116,12 @@ def _adapt_settings(settings: Dict) -> Dict:
 def _configure_constants_constsettings(
         scenario: Dict, settings: Dict, connect_to_profiles_db: bool):
     assert isinstance(scenario, dict)
-    if "collaboration_uuid" in scenario or settings.get("type") in [
-            ConfigurationType.CANARY_NETWORK.value, ConfigurationType.B2B.value]:
+    if settings.get("type") in [ConfigurationType.COLLABORATION.value,
+                                ConfigurationType.CANARY_NETWORK.value,
+                                ConfigurationType.B2B.value]:
         gsy_e.constants.EXTERNAL_CONNECTION_WEB = True
-        GlobalConfig.IS_CANARY_NETWORK = scenario.pop("is_canary_network", False)
-        gsy_e.constants.RUN_IN_REALTIME = GlobalConfig.IS_CANARY_NETWORK
+        gsy_e.constants.RUN_IN_REALTIME = (
+                settings.get("type") == ConfigurationType.CANARY_NETWORK.value)
 
         if settings.get("type") == ConfigurationType.B2B.value:
             ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS = True
@@ -198,7 +199,7 @@ def _handle_scm_past_slots_simulation_run(
     Used to pre-populate simulation results from past market slots before starting the CN.
     """
     scm_past_slots = saved_state.pop("scm_past_slots", False)
-    if not (GlobalConfig.IS_CANARY_NETWORK and scm_past_slots):
+    if not (settings["type"] == ConfigurationType.CANARY_NETWORK.value and scm_past_slots):
         return None
 
     # Deepcopy the scenario and settings objects, because they are mutated by the
@@ -218,7 +219,6 @@ def _handle_scm_past_slots_simulation_run(
         days=gsy_e.constants.SCM_CN_DAYS_OF_DELAY).add(hours=4)
     config.sim_duration = config.end_date - config.start_date
     GlobalConfig.sim_duration = config.sim_duration
-    GlobalConfig.IS_CANARY_NETWORK = False
     gsy_e.constants.RUN_IN_REALTIME = False
     simulation_state = run_simulation(
         setup_module_name=scenario_name,
@@ -228,6 +228,5 @@ def _handle_scm_past_slots_simulation_run(
         saved_sim_state=saved_state,
         slot_length_realtime=slot_length_realtime,
         kwargs=kwargs)
-    GlobalConfig.IS_CANARY_NETWORK = True
     gsy_e.constants.RUN_IN_REALTIME = True
     return simulation_state
