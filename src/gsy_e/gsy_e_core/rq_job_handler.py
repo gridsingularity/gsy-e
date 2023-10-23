@@ -116,8 +116,11 @@ def _adapt_settings(settings: Dict) -> Dict:
 def _configure_constants_constsettings(
         scenario: Dict, settings: Dict, connect_to_profiles_db: bool):
     assert isinstance(scenario, dict)
-    if settings.get("type") in [ConfigurationType.COLLABORATION.value,
-                                ConfigurationType.CANARY_NETWORK.value,
+
+    if settings.get("type") == ConfigurationType.COLLABORATION.value:
+        gsy_e.constants.EXTERNAL_CONNECTION_WEB = True
+
+    if settings.get("type") in [ConfigurationType.CANARY_NETWORK.value,
                                 ConfigurationType.B2B.value]:
         gsy_e.constants.EXTERNAL_CONNECTION_WEB = True
         gsy_e.constants.RUN_IN_REALTIME = (
