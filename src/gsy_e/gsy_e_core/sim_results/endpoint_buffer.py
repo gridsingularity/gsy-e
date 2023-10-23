@@ -19,11 +19,12 @@ import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING, Dict, Iterable, List
 
-from gsy_framework.constants_limits import DATE_TIME_FORMAT, DATE_TIME_UI_FORMAT, ConstSettings
+from gsy_framework.constants_limits import (
+    DATE_TIME_FORMAT, DATE_TIME_UI_FORMAT, ConstSettings, GlobalConfig)
 from gsy_framework.enums import AvailableMarketTypes
 from gsy_framework.schema.validators import get_schema_validator
 from gsy_framework.sim_results.all_results import ResultsHandler
-from gsy_framework.utils import get_json_dict_memory_allocation_size, is_canary_network
+from gsy_framework.utils import get_json_dict_memory_allocation_size
 from pendulum import DateTime
 
 from gsy_e.gsy_e_core.sim_results.offer_bids_trades_hr_stats import OfferBidTradeGraphStats
@@ -373,7 +374,7 @@ class SimulationEndpointBuffer:
 
     def _calculate_and_update_last_market_time_slot(self, area: "Area"):
         is_initial_current_market_on_cn = (
-                is_canary_network() and
+                GlobalConfig.is_canary_network() and
                 (area.spot_market is None or
                  (area.current_market and
                   area.spot_market.time_slot -

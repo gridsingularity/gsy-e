@@ -27,7 +27,7 @@ from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.data_classes import Offer, TraderDetails
 from gsy_framework.exceptions import GSyDeviceException
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
-from gsy_framework.utils import generate_market_slot_list, is_canary_network
+from gsy_framework.utils import generate_market_slot_list
 from gsy_framework.enums import ConfigurationType
 from pendulum import DateTime, duration, datetime
 
@@ -436,7 +436,7 @@ def test_profile_with_date_and_seconds_can_be_parsed(is_canary):
     profile = read_arbitrary_profile(InputProfileTypes.POWER_W, str(profile_path))
     # After the 6th element the rest of the entries are populated with the last value
     expected_energy_values = [1.5, 1.25, 1.0, 0.75, 0.5, 0.25]
-    if is_canary_network():
+    if GlobalConfig.is_canary_network():
         energy_values_profile = []
         energy_values_after_profile = []
         end_time = profile_date.add(minutes=GlobalConfig.slot_length.minutes * 6)
