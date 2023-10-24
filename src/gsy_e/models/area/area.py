@@ -91,17 +91,15 @@ class Area(AreaBase):
     def get_state(self):
         """Get the current state of the area."""
         state = super().get_state()
-
-        state.update(**{
-            "current_tick": self.current_tick,
-            "area_stats": self.stats.get_state()
-        })
+        state.update({"current_tick": self.current_tick})
+        if not self.strategy:
+            state.update(**self.stats.get_state())
         return state
 
     def restore_state(self, saved_state):
         """Restore a previously-saved state."""
         self.current_tick = saved_state["current_tick"]
-        self.stats.restore_state(saved_state["area_stats"])
+        self.stats.restore_state(saved_state)
         super().restore_state(saved_state)
 
     def area_reconfigure_event(self, **kwargs):
