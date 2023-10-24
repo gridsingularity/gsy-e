@@ -5,11 +5,12 @@ from typing import TYPE_CHECKING, Tuple
 from unittest.mock import patch, PropertyMock, MagicMock, Mock
 
 import pytest
+from pendulum import today, duration
 from gsy_framework.constants_limits import GlobalConfig, ConstSettings, TIME_ZONE
 from gsy_framework.data_classes import Trade, TraderDetails
 from gsy_framework.enums import AvailableMarketTypes
-from pendulum import today, duration
 
+import gsy_e.models.strategy.heat_pump
 from gsy_e.gsy_e_core.util import gsye_root_path
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.heat_pump import HeatPumpStrategy, HeatPumpOrderUpdaterParameters
@@ -24,6 +25,7 @@ RATE_PROFILE = {CURRENT_MARKET_SLOT: 0, CURRENT_MARKET_SLOT.add(minutes=15): 2}
 
 @pytest.fixture(name="heatpump_fixture")
 def fixture_heatpump_strategy(request) -> Tuple["TradingStrategyBase", "Area"]:
+    gsy_e.models.strategy.heat_pump.HeatPumpValidator = Mock()
     original_market_type = ConstSettings.MASettings.MARKET_TYPE
     ConstSettings.MASettings.MARKET_TYPE = 2
     orig_start_date = GlobalConfig.start_date
@@ -37,6 +39,7 @@ def fixture_heatpump_strategy(request) -> Tuple["TradingStrategyBase", "Area"]:
                 gsye_root_path, "resources", "hp_external_temp_C.csv"),
             **strategy_params)
     else:
+        print(strategy_params)
         strategy = VirtualHeatpumpStrategy(
             water_supply_temp_C_profile=os.path.join(
                 gsye_root_path, "resources", "hp_supply_temp_C.csv"),
