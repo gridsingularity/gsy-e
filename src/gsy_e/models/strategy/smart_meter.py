@@ -138,8 +138,7 @@ class SmartMeterStrategy(BidEnabledStrategy, UseMarketMakerMixin):
     def event_activate_price(self):
         """Configure all the rates for the device (both consumption and production)."""
         # If we want to use the Market Maker rate, we must overwrite the existing rates with it.
-        if self.use_market_maker_rate:
-            self._replace_rates_with_market_maker_rates()
+        self._replace_rates_with_market_maker_rates()
 
         self._validate_consumption_rates(
             initial_rate=self.bid_update.initial_rate_profile_buffer,

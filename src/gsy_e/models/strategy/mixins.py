@@ -17,6 +17,7 @@ class UseMarketMakerMixin:
     owner: "Area"
     offer_update: "TemplateStrategyOfferUpdater"
     bid_update: "TemplateStrategyBidUpdater"
+    use_market_maker_rate: bool
 
     def _reconfigure_initial_selling_rate(self, initial_selling_rate: float):
         """validation is not needed"""
@@ -30,6 +31,8 @@ class UseMarketMakerMixin:
         self.bid_update.set_parameters(final_rate=final_buying_rate)
 
     def _replace_rates_with_market_maker_rates(self):
+        if not self.use_market_maker_rate:
+            return
         if hasattr(self, "bid_update"):
             self._reconfigure_final_buying_rate(
                 final_buying_rate=get_market_maker_rate_from_config(

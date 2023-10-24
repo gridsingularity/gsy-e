@@ -192,8 +192,7 @@ class PVStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         self._future_market_strategy.update_and_populate_price_settings(self)
 
     def event_activate_price(self):
-        if self.use_market_maker_rate:
-            self._replace_rates_with_market_maker_rates()
+        self._replace_rates_with_market_maker_rates()
 
         self._validate_rates(self.offer_update.initial_rate_profile_buffer,
                              self.offer_update.final_rate_profile_buffer,

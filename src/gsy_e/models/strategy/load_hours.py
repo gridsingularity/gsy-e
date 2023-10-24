@@ -254,8 +254,7 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
 
     def event_activate_price(self):
         """Update the strategy prices upon the activation and validate them afterwards."""
-        if self.use_market_maker_rate:
-            self._replace_rates_with_market_maker_rates()
+        self._replace_rates_with_market_maker_rates()
 
         self._validate_rates(self.bid_update.initial_rate_profile_buffer,
                              self.bid_update.final_rate_profile_buffer,
