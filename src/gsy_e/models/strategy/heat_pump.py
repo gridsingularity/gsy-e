@@ -135,8 +135,8 @@ class HeatPumpStrategy(TradingStrategyBase):
                 AvailableMarketTypes.SPOT:
                     HeatPumpOrderUpdaterParameters(
                         update_interval=(duration(
-                            minutes=constructor_args.get("update_interval"))
-                                    if constructor_args.get("update_interval") else None),
+                            minutes=constructor_args.get("update_interval")
+                        ) if constructor_args.get("update_interval") is not None else None),
                         initial_rate=constructor_args.get("initial_buying_rate", None),
                         final_rate=constructor_args.get("final_buying_rate", None))
             }
