@@ -19,8 +19,8 @@ import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING, Dict, Iterable, List
 
-from gsy_framework.constants_limits import (DATE_TIME_FORMAT, DATE_TIME_UI_FORMAT, ConstSettings,
-                                            GlobalConfig)
+from gsy_framework.constants_limits import (
+    DATE_TIME_FORMAT, DATE_TIME_UI_FORMAT, ConstSettings, GlobalConfig)
 from gsy_framework.enums import AvailableMarketTypes
 from gsy_framework.schema.validators import get_schema_validator
 from gsy_framework.sim_results.all_results import ResultsHandler
@@ -374,7 +374,7 @@ class SimulationEndpointBuffer:
 
     def _calculate_and_update_last_market_time_slot(self, area: "Area"):
         is_initial_current_market_on_cn = (
-                GlobalConfig.IS_CANARY_NETWORK and
+                GlobalConfig.is_canary_network() and
                 (area.spot_market is None or
                  (area.current_market and
                   area.spot_market.time_slot -
