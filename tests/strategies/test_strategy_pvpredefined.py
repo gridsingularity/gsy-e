@@ -28,7 +28,8 @@ from gsy_framework.data_classes import Offer, TraderDetails
 from gsy_framework.exceptions import GSyDeviceException
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from gsy_framework.utils import generate_market_slot_list
-from pendulum import DateTime, duration, today, datetime
+from gsy_framework.enums import ConfigurationType
+from pendulum import DateTime, duration, datetime
 
 from gsy_e.constants import TIME_ZONE, TIME_FORMAT
 from gsy_e.gsy_e_core.util import gsye_root_path, change_global_config
@@ -421,7 +422,13 @@ def test_pv_user_profile_constructor_rejects_incorrect_parameters():
                               fit_to_limit=False, energy_rate_decrease_per_update=-1)
 
 
-def test_profile_with_date_and_seconds_can_be_parsed():
+@pytest.mark.parametrize("is_canary", [False, True])
+def test_profile_with_date_and_seconds_can_be_parsed(is_canary):
+    original_start_date = GlobalConfig.start_date
+    original_config_type = GlobalConfig.CONFIG_TYPE
+    original_slot_length = GlobalConfig.slot_length
+    if is_canary:
+        GlobalConfig.CONFIG_TYPE = ConfigurationType.CANARY_NETWORK.value
     GlobalConfig.slot_length = duration(minutes=15)
     profile_date = datetime(year=2019, month=3, day=2)
     GlobalConfig.start_date = profile_date
@@ -429,7 +436,7 @@ def test_profile_with_date_and_seconds_can_be_parsed():
     profile = read_arbitrary_profile(InputProfileTypes.POWER_W, str(profile_path))
     # After the 6th element the rest of the entries are populated with the last value
     expected_energy_values = [1.5, 1.25, 1.0, 0.75, 0.5, 0.25]
-    if GlobalConfig.IS_CANARY_NETWORK:
+    if GlobalConfig.is_canary_network():
         energy_values_profile = []
         energy_values_after_profile = []
         end_time = profile_date.add(minutes=GlobalConfig.slot_length.minutes * 6)
@@ -445,4 +452,6 @@ def test_profile_with_date_and_seconds_can_be_parsed():
         assert list(profile.values())[:6] == expected_energy_values
         assert all(x == 0.25 for x in list(profile.values())[6:])
 
-    GlobalConfig.start_date = today(tz=TIME_ZONE)
+    GlobalConfig.start_date = original_start_date
+    GlobalConfig.CONFIG_TYPE = original_config_type
+    GlobalConfig.slot_length = original_slot_length
