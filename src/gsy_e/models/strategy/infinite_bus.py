@@ -44,7 +44,7 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
         # buy
         if all(arg is None for arg in [
                buying_rate_profile, buying_rate_profile_uuid, energy_buy_rate]):
-            energy_buy_rate = GlobalConfig.FEED_IN_TARIFF
+            energy_buy_rate = ConstSettings.GeneralSettings.DEFAULT_FEED_IN_TARIFF
         self._buy_energy_profile = EnergyProfile(
             buying_rate_profile, buying_rate_profile_uuid, energy_buy_rate,
             profile_type=InputProfileTypes.IDENTITY)
@@ -52,7 +52,7 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
         # sell
         if all(arg is None for arg in [
                energy_rate_profile, energy_rate_profile_uuid, energy_sell_rate]):
-            energy_sell_rate = GlobalConfig.MARKET_MAKER_RATE
+            energy_sell_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
         self._sell_energy_profile = EnergyProfile(
             energy_rate_profile, energy_rate_profile_uuid, energy_sell_rate,
             profile_type=InputProfileTypes.IDENTITY)

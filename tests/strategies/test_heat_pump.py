@@ -39,7 +39,6 @@ def fixture_heatpump_strategy(request) -> Tuple["TradingStrategyBase", "Area"]:
                 gsye_root_path, "resources", "hp_external_temp_C.csv"),
             **strategy_params)
     else:
-        print(strategy_params)
         strategy = VirtualHeatpumpStrategy(
             water_supply_temp_C_profile=os.path.join(
                 gsye_root_path, "resources", "hp_supply_temp_C.csv"),
