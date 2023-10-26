@@ -10,11 +10,11 @@ from gsy_framework.constants_limits import GlobalConfig, ConstSettings, TIME_ZON
 from gsy_framework.data_classes import Trade, TraderDetails
 from gsy_framework.enums import AvailableMarketTypes
 
-import gsy_e.models.strategy.heat_pump
 from gsy_e.gsy_e_core.util import gsye_root_path
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.heat_pump import HeatPumpStrategy, HeatPumpOrderUpdaterParameters
 from gsy_e.models.strategy.virtual_heatpump import VirtualHeatpumpStrategy
+import gsy_e.models.strategy.heat_pump
 
 if TYPE_CHECKING:
     from gsy_e.models.strategy.trading_strategy_base import TradingStrategyBase
