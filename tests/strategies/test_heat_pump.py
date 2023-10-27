@@ -5,16 +5,16 @@ from typing import TYPE_CHECKING, Tuple
 from unittest.mock import patch, PropertyMock, MagicMock, Mock
 
 import pytest
-from pendulum import today, duration
 from gsy_framework.constants_limits import GlobalConfig, ConstSettings, TIME_ZONE
 from gsy_framework.data_classes import Trade, TraderDetails
 from gsy_framework.enums import AvailableMarketTypes
+from pendulum import today, duration
 
+import gsy_e.models.strategy.heat_pump
 from gsy_e.gsy_e_core.util import gsye_root_path
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.heat_pump import HeatPumpStrategy, HeatPumpOrderUpdaterParameters
 from gsy_e.models.strategy.virtual_heatpump import VirtualHeatpumpStrategy
-import gsy_e.models.strategy.heat_pump
 
 if TYPE_CHECKING:
     from gsy_e.models.strategy.trading_strategy_base import TradingStrategyBase
@@ -217,10 +217,44 @@ class TestHeatPumpStrategy:
                     update_interval=None, initial_rate=None, final_rate=None)}}
 
         constructor_args = heatpump_fixture[0].deserialize_args({
-                "initial_buying_rate": 2,
-                "update_interval": 5
+            "initial_buying_rate": 2,
+            "update_interval": 5
         })
         assert constructor_args == {
             "order_updater_parameters": {
                 AvailableMarketTypes.SPOT: HeatPumpOrderUpdaterParameters(
                     update_interval=duration(minutes=5), initial_rate=2, final_rate=None)}}
+
+    @staticmethod
+    @pytest.mark.parametrize("heatpump_fixture", [
+        {"is_virtual": True, "order_updater_parameters": {
+            AvailableMarketTypes.SPOT: HeatPumpOrderUpdaterParameters(
+                initial_rate=0, final_rate=15, use_market_maker_rate=True)}},
+        {"is_virtual": False, "order_updater_parameters": {
+            AvailableMarketTypes.SPOT: HeatPumpOrderUpdaterParameters(
+                initial_rate=0, final_rate=15, use_market_maker_rate=True)}}
+    ], indirect=True)
+    def test_order_updater_respects_use_market_maker_rate(heatpump_fixture):
+        assert heatpump_fixture[0]._order_updater_params == {
+            AvailableMarketTypes.SPOT: HeatPumpOrderUpdaterParameters(
+                update_interval=None, initial_rate=0, final_rate=15, use_market_maker_rate=True)}
+        with patch("gsy_e.models.strategy.heat_pump.HeatPumpStrategy.post_order", Mock()):
+            heatpump_fixture[0].event_market_cycle()
+        assert heatpump_fixture[0]._order_updater_params == {
+            AvailableMarketTypes.SPOT: HeatPumpOrderUpdaterParameters(
+                update_interval=duration(minutes=1), initial_rate=0, final_rate=30,
+                use_market_maker_rate=True)}
+
+    @staticmethod
+    def test_deserialize_args_respects_use_market_maker_rate(heatpump_fixture):
+        constructor_args = heatpump_fixture[0].deserialize_args({
+            "initial_buying_rate": 2,
+            "update_interval": 5,
+            "final_buying_rate": 25,
+            "use_market_maker_rate": True
+        })
+        assert constructor_args == {
+            "order_updater_parameters": {
+                AvailableMarketTypes.SPOT: HeatPumpOrderUpdaterParameters(
+                    update_interval=duration(minutes=5), initial_rate=2,
+                    final_rate=25, use_market_maker_rate=True)}}
