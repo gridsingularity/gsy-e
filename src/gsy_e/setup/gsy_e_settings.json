@@ -4,7 +4,7 @@
     "slot_length": "15m",
     "tick_length": "15s",
     "cloud_coverage": 0,
-    "start_date": "2023-10-09"
+    "start_date": "2023-10-26"
   },
   "advanced_settings": {
     "GeneralSettings": {
@@ -218,8 +218,8 @@
         9223372036854775807
       ],
       "TEMP_C_LIMIT": [
-        -273.15,
-        6000
+        0.0,
+        200.0
       ],
       "TANK_VOLUME_L_LIMIT": [
         0,
