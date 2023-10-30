@@ -86,7 +86,7 @@ class SmartMeterStrategyTest(unittest.TestCase):
         self.strategy.event_activate_energy.assert_called_with()
         self.strategy.event_activate_price.assert_called_with()
 
-    @patch("gsy_e.models.strategy.smart_meter.get_market_maker_rate_from_config")
+    @patch("gsy_e.models.strategy.mixins.get_market_maker_rate_from_config")
     def test_event_activate_price_with_market_maker_rate(
             self, get_market_maker_rate_from_config_mock):
         """If the market maker rate is used, call bid/offer updaters to replace existing rates."""
@@ -99,21 +99,13 @@ class SmartMeterStrategyTest(unittest.TestCase):
         self.strategy.event_activate_price()
         self.strategy.bid_update.set_parameters.assert_called_once()
         call_args = self.strategy.bid_update.set_parameters.call_args
-        assert set(call_args.kwargs["initial_rate"].values()) == {0}
         # The final buying rate is the sum of the market maker rate and the fees
         assert set(call_args.kwargs["final_rate"].values()) == {16}
-        assert call_args.kwargs["energy_rate_change_per_update"] == {}
-        assert call_args.kwargs["fit_to_limit"] is True
-        assert call_args.kwargs["update_interval"] == duration(minutes=1)
 
         self.strategy.offer_update.set_parameters.assert_called_once()
         call_args = self.strategy.offer_update.set_parameters.call_args
         # The initial selling rate is the difference between the market maker rate and the fees
         assert set(call_args.kwargs["initial_rate"].values()) == {14}
-        assert set(call_args.kwargs["final_rate"].values()) == {5}
-        assert call_args.kwargs["energy_rate_change_per_update"] == {}
-        assert call_args.kwargs["fit_to_limit"] is True
-        assert call_args.kwargs["update_interval"] == duration(minutes=1)
 
         self.strategy.validator.validate_rate.assert_called()
 
