@@ -29,7 +29,6 @@ class HeatPumpOrderUpdaterParameters(OrderUpdaterParameters):
 
     def update(self, market: "MarketBase", use_default: bool = False):
         """Update class members if set to None or if global default values should be used."""
-        print("before", self.use_market_maker_rate, self.final_rate, use_default)
         if use_default or self.update_interval is None:
             self.update_interval = duration(
                 minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
@@ -37,7 +36,6 @@ class HeatPumpOrderUpdaterParameters(OrderUpdaterParameters):
             self.final_rate = get_market_maker_rate_from_config(market)
         if use_default or self.initial_rate is None:
             self.initial_rate = get_feed_in_tariff_rate_from_config(market)
-        print("after", self.use_market_maker_rate, self.final_rate)
 
     def serialize(self):
         return {
