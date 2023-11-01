@@ -29,19 +29,19 @@ from pendulum import duration
 from gsy_e import constants
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.exceptions import GSyException, MarketException
-from gsy_e.gsy_e_core.util import get_market_maker_rate_from_config
 from gsy_e.models.base import AssetType
 from gsy_e.models.market import MarketBase
-from gsy_e.models.strategy.state import SmartMeterState
 from gsy_e.models.strategy import BidEnabledStrategy
 from gsy_e.models.strategy.energy_parameters.smart_meter import SmartMeterEnergyParameters
+from gsy_e.models.strategy.mixins import UseMarketMakerMixin
+from gsy_e.models.strategy.state import SmartMeterState
 from gsy_e.models.strategy.update_frequency import (TemplateStrategyBidUpdater,
                                                     TemplateStrategyOfferUpdater)
 
 log = getLogger(__name__)
 
 
-class SmartMeterStrategy(BidEnabledStrategy):
+class SmartMeterStrategy(BidEnabledStrategy, UseMarketMakerMixin):
     """Class defining a strategy for Smart Meter devices."""
 
     def serialize(self):
@@ -138,8 +138,7 @@ class SmartMeterStrategy(BidEnabledStrategy):
     def event_activate_price(self):
         """Configure all the rates for the device (both consumption and production)."""
         # If we want to use the Market Maker rate, we must overwrite the existing rates with it.
-        if self.use_market_maker_rate:
-            self._replace_rates_with_market_maker_rates()
+        self._replace_rates_with_market_maker_rates()
 
         self._validate_consumption_rates(
             initial_rate=self.bid_update.initial_rate_profile_buffer,
@@ -428,17 +427,6 @@ class SmartMeterStrategy(BidEnabledStrategy):
         # Delete the state of the current slot from the future market cache
         self._future_market_strategy.delete_past_state_values(
             self.area.current_market.time_slot)
-
-    def _replace_rates_with_market_maker_rates(self):
-        # Reconfigure the final buying rate (for energy consumption)
-        self._area_reconfigure_consumption_prices(
-            final_buying_rate=get_market_maker_rate_from_config(
-                self.area.spot_market, 0) + self.owner.get_path_to_root_fees(), validate=False)
-
-        # Reconfigure the initial selling rate (for energy production)
-        self._area_reconfigure_production_prices(
-            initial_selling_rate=get_market_maker_rate_from_config(
-                self.area.spot_market, 0) - self.owner.get_path_to_root_fees(), validate=False)
 
     def _validate_consumption_rates(
             self, initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit):

@@ -67,6 +67,7 @@ def launch_simulation_from_rq_job(scenario: Dict,
 
         config = _create_config_settings_object(
             scenario, settings, aggregator_device_mapping)
+
         if settings.get("type") == ConfigurationType.CANARY_NETWORK.value:
             config.start_date = (
                 instance(
@@ -116,6 +117,8 @@ def _adapt_settings(settings: Dict) -> Dict:
 def _configure_constants_constsettings(
         scenario: Dict, settings: Dict, connect_to_profiles_db: bool):
     assert isinstance(scenario, dict)
+
+    GlobalConfig.CONFIG_TYPE = settings.get("type")
 
     if settings.get("type") == ConfigurationType.COLLABORATION.value:
         gsy_e.constants.EXTERNAL_CONNECTION_WEB = True

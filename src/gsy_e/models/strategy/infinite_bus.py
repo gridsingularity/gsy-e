@@ -44,7 +44,7 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
         # buy
         if all(arg is None for arg in [
                buying_rate_profile, buying_rate_profile_uuid, energy_buy_rate]):
-            energy_buy_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
+            energy_buy_rate = ConstSettings.GeneralSettings.DEFAULT_FEED_IN_TARIFF
         self._buy_energy_profile = EnergyProfile(
             buying_rate_profile, buying_rate_profile_uuid, energy_buy_rate,
             profile_type=InputProfileTypes.IDENTITY)
