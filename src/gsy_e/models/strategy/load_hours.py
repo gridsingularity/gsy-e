@@ -34,7 +34,6 @@ from gsy_e import constants
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.exceptions import MarketException
-from gsy_e.gsy_e_core.util import get_market_maker_rate_from_config
 from gsy_e.models.base import AssetType
 from gsy_e.models.market import MarketBase
 from gsy_e.models.strategy.state import LoadState
@@ -43,12 +42,13 @@ from gsy_e.models.strategy.energy_parameters.load import LoadHoursPerDayEnergyPa
 from gsy_e.models.strategy.future.strategy import future_market_strategy_factory
 from gsy_e.models.strategy.settlement.strategy import settlement_market_strategy_factory
 from gsy_e.models.strategy.update_frequency import TemplateStrategyBidUpdater
+from gsy_e.models.strategy.mixins import UseMarketMakerMixin
 
 BalancingRatio = namedtuple("BalancingRatio", ("demand", "supply"))
 
 
 # pylint: disable=too-many-instance-attributes
-class LoadHoursStrategy(BidEnabledStrategy):
+class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
     """Strategy for the load assets that can consume energy in predefined hrs of day."""
 
     def serialize(self):
@@ -167,11 +167,6 @@ class LoadHoursStrategy(BidEnabledStrategy):
         self.update_state()
 
     def event_market_cycle(self):
-        if self.use_market_maker_rate:
-            self._area_reconfigure_prices(
-                final_buying_rate=get_market_maker_rate_from_config(
-                    self.area.spot_market, 0) + self.owner.get_path_to_root_fees(), validate=False)
-
         super().event_market_cycle()
         self._cycle_energy_parameters()
         self.bid_update.update_and_populate_price_settings(self.area)
@@ -259,11 +254,7 @@ class LoadHoursStrategy(BidEnabledStrategy):
 
     def event_activate_price(self):
         """Update the strategy prices upon the activation and validate them afterwards."""
-        # If use_market_maker_rate is true, overwrite final_buying_rate to market maker rate
-        if self.use_market_maker_rate:
-            self._area_reconfigure_prices(
-                final_buying_rate=get_market_maker_rate_from_config(
-                    self.area.spot_market, 0) + self.owner.get_path_to_root_fees(), validate=False)
+        self._replace_rates_with_market_maker_rates()
 
         self._validate_rates(self.bid_update.initial_rate_profile_buffer,
                              self.bid_update.final_rate_profile_buffer,

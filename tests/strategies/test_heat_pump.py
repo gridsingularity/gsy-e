@@ -5,15 +5,16 @@ from typing import TYPE_CHECKING, Tuple
 from unittest.mock import patch, PropertyMock, MagicMock, Mock
 
 import pytest
+from pendulum import today, duration
 from gsy_framework.constants_limits import GlobalConfig, ConstSettings, TIME_ZONE
 from gsy_framework.data_classes import Trade, TraderDetails
 from gsy_framework.enums import AvailableMarketTypes
-from pendulum import today
 
 from gsy_e.gsy_e_core.util import gsye_root_path
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.heat_pump import HeatPumpStrategy, HeatPumpOrderUpdaterParameters
 from gsy_e.models.strategy.virtual_heatpump import VirtualHeatpumpStrategy
+import gsy_e.models.strategy.heat_pump
 
 if TYPE_CHECKING:
     from gsy_e.models.strategy.trading_strategy_base import TradingStrategyBase
@@ -24,6 +25,7 @@ RATE_PROFILE = {CURRENT_MARKET_SLOT: 0, CURRENT_MARKET_SLOT.add(minutes=15): 2}
 
 @pytest.fixture(name="heatpump_fixture")
 def fixture_heatpump_strategy(request) -> Tuple["TradingStrategyBase", "Area"]:
+    gsy_e.models.strategy.heat_pump.HeatPumpValidator = Mock()
     original_market_type = ConstSettings.MASettings.MARKET_TYPE
     ConstSettings.MASettings.MARKET_TYPE = 2
     orig_start_date = GlobalConfig.start_date
@@ -205,3 +207,20 @@ class TestHeatPumpStrategy:
         strategy.event_bid_traded(market_id=area.spot_market.id, bid_trade=trade)
         strategy._energy_params.event_traded_energy.assert_called_once_with(
             CURRENT_MARKET_SLOT, traded_energy)
+
+    @staticmethod
+    def test_deserialize_args_sets_price_settings_to_none_if_not_provided(heatpump_fixture):
+        constructor_args = heatpump_fixture[0].deserialize_args({})
+        assert constructor_args == {
+            "order_updater_parameters": {
+                AvailableMarketTypes.SPOT: HeatPumpOrderUpdaterParameters(
+                    update_interval=None, initial_rate=None, final_rate=None)}}
+
+        constructor_args = heatpump_fixture[0].deserialize_args({
+                "initial_buying_rate": 2,
+                "update_interval": 5
+        })
+        assert constructor_args == {
+            "order_updater_parameters": {
+                AvailableMarketTypes.SPOT: HeatPumpOrderUpdaterParameters(
+                    update_interval=duration(minutes=5), initial_rate=2, final_rate=None)}}
