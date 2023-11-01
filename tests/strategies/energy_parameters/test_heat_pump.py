@@ -107,9 +107,9 @@ class TestHeatPumpEnergyParameters:
 
     @staticmethod
     def test__calc_temp_decrease_K_sets_unmatched_demand(energy_params):
-        energy_params.state.update_unmatched_demand = Mock()
+        energy_params.state.update_unmatched_demand_kWh = Mock()
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
-        energy_params.state.update_unmatched_demand.assert_called_once_with(
+        energy_params.state.update_unmatched_demand_kWh.assert_called_once_with(
             CURRENT_MARKET_SLOT, 4.113488727550631)
 
     @staticmethod
@@ -117,4 +117,10 @@ class TestHeatPumpEnergyParameters:
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
         energy_params.event_traded_energy(CURRENT_MARKET_SLOT, 2)
         assert isclose(
-            energy_params.state._unmatched_demand[CURRENT_MARKET_SLOT], 2.113, abs_tol=1e-3)
+            energy_params.state._unmatched_demand_kWh[CURRENT_MARKET_SLOT], 2.113, abs_tol=1e-3)
+
+    @staticmethod
+    def test_event_market_cycle_calculates_and_sets_cop(energy_params):
+        assert energy_params.state._cop[CURRENT_MARKET_SLOT] == 0
+        energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
+        assert energy_params.state._cop[CURRENT_MARKET_SLOT] == 6.5425
