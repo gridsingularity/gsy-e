@@ -114,6 +114,8 @@ class HeatPumpStrategy(TradingStrategyBase):
                     initial_buying_rate=order_updater_parameters[market_type].initial_rate,
                     final_buying_rate=order_updater_parameters[market_type].final_rate,
                     update_interval=order_updater_parameters[market_type].update_interval,
+                    use_market_maker_rate=(
+                        order_updater_parameters[market_type].use_market_maker_rate),
                     preferred_buying_rate=preferred_buying_rate
                 )
 
