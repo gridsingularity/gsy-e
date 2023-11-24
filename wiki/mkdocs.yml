@@ -10,7 +10,7 @@ nav:
     - 'Grid Singularity Development Path': 'development-path.md'
     - 'Licensing and Open Source Ethos': 'licensing.md'
 - 'Set up a simulation of an active local energy market':
-    - 'Introduction to the Grid Singularity Exchange Simulation Interface: Singularity Map':
+    - 'Instructions for running simulations using the Grid Singularity interface: Singularity Map':
         - 'Build a community': 'community.md'
         - 'Assets configuration':
           - 'Assets Configuration Overview' : 'configuration.md'

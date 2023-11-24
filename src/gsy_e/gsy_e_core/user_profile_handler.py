@@ -246,7 +246,7 @@ class ProfileDBConnectionHandler:
             log.error(
                 "Empty market slot list. Current timestamp %s, duration %s, is canary %s, "
                 "slot length %s", current_timestamp, GlobalConfig.sim_duration,
-                GlobalConfig.IS_CANARY_NETWORK, GlobalConfig.slot_length)
+                GlobalConfig.is_canary_network(), GlobalConfig.slot_length)
         return min(time_stamps), max(time_stamps)
 
     def _should_buffer_profiles(self, current_timestamp: DateTime):
