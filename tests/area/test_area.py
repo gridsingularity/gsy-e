@@ -72,7 +72,7 @@ class TestArea:
     def test_respective_area_grid_fee_is_applied(config):
         config.grid_fee_type = 2
         area = Area(name="Street", children=[Area(name="House")],
-                         grid_fee_percentage=5, config=config)
+                    grid_fee_percentage=5, config=config)
         area.parent = Area(name="GRID", config=config)
         area.activate()
         assert area.spot_market.fee_class.grid_fee_rate == 0.05
@@ -83,7 +83,7 @@ class TestArea:
     def test_delete_past_markets_instead_of_last(config):
         constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = False
         area = Area(name="Street", children=[Area(name="House")],
-                         config=config, grid_fee_percentage=5)
+                    config=config, grid_fee_percentage=5)
         area.activate()
         area._bc = None
 
@@ -96,7 +96,7 @@ class TestArea:
 
         area._markets.create_new_spot_market(
             current_time, AvailableMarketTypes.SPOT, area)
-        current_time = today(tz=constants.TIME_ZONE).add(minutes=2*config.slot_length.minutes)
+        current_time = today(tz=constants.TIME_ZONE).add(minutes=2 * config.slot_length.minutes)
         area._markets.rotate_markets(current_time)
         assert len(area.past_markets) == 1
         assert (list(area.past_markets)[-1].time_slot ==
@@ -106,7 +106,7 @@ class TestArea:
     def test_keep_past_markets(config):
         constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = True
         area = Area(name="Street", children=[Area(name="House")],
-                         config=config, grid_fee_percentage=5)
+                    config=config, grid_fee_percentage=5)
         area.activate()
         area._bc = None
 
@@ -121,7 +121,7 @@ class TestArea:
         area._markets.create_new_spot_market(
             current_time, AvailableMarketTypes.SPOT, area)
         current_time = today(tz=constants.TIME_ZONE).add(
-            minutes=2*config.slot_length.total_minutes())
+            minutes=2 * config.slot_length.total_minutes())
         area._markets.rotate_markets(current_time)
         assert len(area.past_markets) == 2
 
@@ -140,18 +140,42 @@ class TestArea:
 
         area.get_state()
         area.stats.get_state.assert_called_once()
-        area.restore_state({"current_tick": 200, "area_stats": None})
+        area.restore_state({"current_tick": 200})
         area.stats.restore_state.assert_called_once()
         assert area.current_tick == 200
 
         house.get_state()
         house.stats.get_state.assert_called_once()
-        house.restore_state({"current_tick": 2432, "area_stats": None})
+        house.restore_state({"current_tick": 2432})
         house.stats.restore_state.assert_called_once()
         assert house.current_tick == 2432
 
         bat.get_state()
         strategy.get_state.assert_called_once()
+
+    @staticmethod
+    def test_get_state_returns_correct_values():
+        # strategy = MagicMock(spec=StorageStrategy())
+        bat = Area(name="battery", strategy=StorageStrategy())
+
+        house = Area(name="House", children=[bat])
+        assert house.get_state() == {"current_tick": 0,
+                                     "exported_energy": {},
+                                     "imported_energy": {},
+                                     "rate_stats_market": {}}
+        assert bat.get_state() == {"battery_energy_per_slot": 0.0,
+                                   "charge_history": {},
+                                   "charge_history_kWh": {},
+                                   "current_tick": 0,
+                                   "energy_to_buy_dict": {},
+                                   "energy_to_sell_dict": {},
+                                   "offered_buy_kWh": {},
+                                   "offered_history": {},
+                                   "offered_sell_kWh": {},
+                                   "pledged_buy_kWh": {},
+                                   "pledged_sell_kWh": {},
+                                   "used_history": {},
+                                   "used_storage": 0.12}
 
     @staticmethod
     @patch("gsy_e.models.area.Area._consume_commands_from_aggregator", Mock())
@@ -256,13 +280,13 @@ class TestEventDispatcher:
 
     @staticmethod
     @pytest.mark.parametrize("event_type", [
-        (MarketEvent.OFFER, ),
+        (MarketEvent.OFFER,),
         (MarketEvent.BID,),
         (MarketEvent.OFFER_TRADED,),
-        (MarketEvent.OFFER_SPLIT, ),
-        (MarketEvent.BID_TRADED, ),
-        (MarketEvent.BID_DELETED, ),
-        (MarketEvent.OFFER_DELETED, )])
+        (MarketEvent.OFFER_SPLIT,),
+        (MarketEvent.BID_TRADED,),
+        (MarketEvent.BID_DELETED,),
+        (MarketEvent.OFFER_DELETED,)])
     def test_event_listener_dispatches_to_strategy_if_enabled_connected(event_type, strategy_mock):
         area = strategy_mock
         area.events.is_enabled = True
@@ -272,13 +296,13 @@ class TestEventDispatcher:
 
     @staticmethod
     @pytest.mark.parametrize("event_type", [
-        (MarketEvent.OFFER, ),
+        (MarketEvent.OFFER,),
         (MarketEvent.BID,),
         (MarketEvent.OFFER_TRADED,),
-        (MarketEvent.OFFER_SPLIT, ),
-        (MarketEvent.BID_TRADED, ),
-        (MarketEvent.BID_DELETED, ),
-        (MarketEvent.OFFER_DELETED, )])
+        (MarketEvent.OFFER_SPLIT,),
+        (MarketEvent.BID_TRADED,),
+        (MarketEvent.BID_DELETED,),
+        (MarketEvent.OFFER_DELETED,)])
     def test_event_listener_doesnt_dispatch_to_strategy_if_not_enabled(event_type, strategy_mock):
         area = strategy_mock
         area.events.is_enabled = False
@@ -288,13 +312,13 @@ class TestEventDispatcher:
 
     @staticmethod
     @pytest.mark.parametrize("event_type", [
-        (MarketEvent.OFFER, ),
+        (MarketEvent.OFFER,),
         (MarketEvent.BID,),
         (MarketEvent.OFFER_TRADED,),
-        (MarketEvent.OFFER_SPLIT, ),
-        (MarketEvent.BID_TRADED, ),
-        (MarketEvent.BID_DELETED, ),
-        (MarketEvent.OFFER_DELETED, )])
+        (MarketEvent.OFFER_SPLIT,),
+        (MarketEvent.BID_TRADED,),
+        (MarketEvent.BID_DELETED,),
+        (MarketEvent.OFFER_DELETED,)])
     def test_event_listener_doesnt_dispatch_to_strategy_if_not_connected(
             event_type, strategy_mock):
         area = strategy_mock
@@ -329,6 +353,7 @@ class TestEventDispatcher:
 
 class TestFunctions:
     """Test utility functions in the area module."""
+
     @staticmethod
     def test_check_area_name_exists_in_parent_area():
         area = Area(name="Street", children=[Area(name="House")], )

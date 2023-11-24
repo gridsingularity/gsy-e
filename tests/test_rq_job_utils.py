@@ -3,6 +3,7 @@
 from multiprocessing import Process, Queue
 
 import pytest
+from gsy_framework.enums import ConfigurationType
 from pendulum import duration
 
 from gsy_e.gsy_e_core.rq_job_handler import launch_simulation_from_rq_job
@@ -43,7 +44,8 @@ class TestRQJobUtils:
             "settings": {
                "duration": duration(days=1),
                "slot_length": duration(hours=1),
-               "tick_length": duration(minutes=6)
+               "tick_length": duration(minutes=6),
+               "type": ConfigurationType.SIMULATION.value
             },
             "events": None,
             "aggregator_device_mapping": {},

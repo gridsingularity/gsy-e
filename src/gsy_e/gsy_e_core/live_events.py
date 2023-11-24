@@ -57,7 +57,7 @@ class CreateAreaEventCoefficient(CreateAreaEvent):
             self.created_area.parent = area
             area.children.append(self.created_area)
             if self.created_area.strategy:
-                self.created_area.strategy.event_activate()
+                self.created_area.strategy.activate()
             else:
                 self.created_area.activate_energy_parameters(
                     current_time_slot=area.current_market_time_slot)

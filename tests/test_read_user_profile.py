@@ -1,21 +1,25 @@
 import pathlib
-import unittest
 
 from gsy_framework.constants_limits import GlobalConfig, PROFILE_EXPANSION_DAYS, ConstSettings
 from gsy_framework.read_user_profile import _copy_profile_to_multiple_days, \
     _read_from_different_sources_todict, _hour_time_str
+from gsy_framework.enums import ConfigurationType
 
 from gsy_e.gsy_e_core.util import gsye_root_path
 
 
-class TestReadUserProfile(unittest.TestCase):
+class TestReadUserProfile:
+    # pylint: disable=attribute-defined-outside-init
 
-    def tearDown(self):
-        GlobalConfig.IS_CANARY_NETWORK = False
+    def setup_method(self):
+        self.original_config_type = GlobalConfig.CONFIG_TYPE
+
+    def teardown_method(self):
+        GlobalConfig.CONFIG_TYPE = self.original_config_type
 
     @staticmethod
     def test_copy_profile_to_multiple_days_correctly_expands_for_CNs():
-        GlobalConfig.IS_CANARY_NETWORK = True
+        GlobalConfig.CONFIG_TYPE = ConfigurationType.CANARY_NETWORK.value
         profile_path = pathlib.Path(gsye_root_path + "/resources/Solar_Curve_W_cloudy.csv")
         in_profile = _read_from_different_sources_todict(profile_path)
         out_profile = _copy_profile_to_multiple_days(in_profile)
