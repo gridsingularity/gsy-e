@@ -2364,7 +2364,7 @@
 <h3 id="b-bid-rate-preferred-buying-rate">b. Bid rate &gt; Preferred buying rate<a class="headerlink" href="#b-bid-rate-preferred-buying-rate" title="Permanent link">&para;</a></h3>
 <p>In this situation, the heat pump strategy is to consume the least possible amount of energy in order to keep the temperature at the same level, since the prices are relatively high. Two different situations can arise:</p>
 <ul>
-<li><span class="arithmatex">\(T_{curr} &gt; T_{min} + T_{decrease}\)</span>: In this case, the heat pump does not consume any energy (it’s not commanded to function because the temperature will be within the temperature limits even if some heat is consumed in the market slot). Therefore, <code>energy_to_buy</code> = 0</li>
+<li><span class="arithmatex">\(T_{curr} &gt; T_{min} + T_{decrease}\)</span>: In this case, the heat pump does not consume any energy (it’s not commanded to function because the temperature will be within the temperature limits even if some heat is consumed in the market slot). Therefore, <span class="arithmatex">\(E_{tobuy} = 0\)</span></li>
 <li><span class="arithmatex">\(T_{curr} &lt;= T_{min} + T_{decrease}\)</span>: In this case the heat pump is forced to function, and it consumes the energy to maintain the temperature at the minimum, taking into account the energy consumption of the user’s premise.</li>
 </ul>
 <p>In all cases, the maximum power rating is respected, meaning that not more energy is requested than the energy equivalent of the Maximum Power Rating.</p>
