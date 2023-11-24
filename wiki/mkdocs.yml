@@ -19,7 +19,7 @@ nav:
           - 'Consumption (Load) Profiles': 'consumption.md'
           - 'Battery (Storage)': 'battery.md'
           - 'Power Plant': 'power-plant.md'
-          - 'Heat Pumps':
+          - 'Heat Pumps and District Heating':
             - 'Introduction': 'heat-pumps-general.md'
             - 'Heat Pump': 'heat-pump.md'
             - 'Virtual Heat Pump': 'virtual-heat-pump.md'

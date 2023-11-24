@@ -70,25 +70,32 @@ Under the Trading Strategy tab, the following parameters can be defined, describ
 ## Heat Pump Asset Trading Strategy
 The heat hump places bids for electrical energy ranging from an initial to final buying rate, with prices increasing incrementally within the market slot upon the update interval. Asset owners (or managers) can either set the final rate as a default preferred buying rate or select a preferred buying rate based on a smart trading algorithm.
 
-When the heat pump bids are below the preferred buying rate, the heat pump tries to consume as much energy as possible to satisfy the demand, while also charging the thermal storage for future use, thus maximising the benefit from lower electricity prices. On the other hand, if the electricity price is higher than the specified buying price, the heat pump only consumes the required energy to maintain the storage at the same temperature level as the one before the energy trade occurs (i.e. consumes only the energy required to satisfy the asset owner’s heat demand), aiming to minimise the costs incurred by the increased energy prices.
+When the heat pump bids are below the preferred buying rate, the heat pump tries to consume as much energy as possible to satisfy the demand, while also charging the thermal storage for future use, thus maximising the benefit from lower electricity prices ([case a](#a-bid-rate-preferred-buying-rate)). On the other hand, if the electricity price is higher than the specified buying price, the heat pump only consumes the required energy to maintain the storage at the same temperature level as the one before the energy trade occurs (i.e. consumes only the energy required to satisfy the asset owner’s heat demand), aiming to minimise the costs incurred by the increased energy prices ([case b](#b-bid-rate-preferred-buying-rate)).
 
-### Bid rate <= Preferred buying rate
+### a. Bid rate <= Preferred buying rate
 
 If the bid price is below the preferred buying rate, the heat pump strategy is to consume the maximum amount of energy. The maximum energy that the heat pump can buy at any point in time is calculated based on the following equation:
 
-```
-energy_to_buy = min( max_power_rate * slot_length, (temperature_max - temperature_curr + temperature_decrease) * (0.00116 * tank_volume * water_density) / COP)
-```
-where COP (coefficient of performance) depends on the heat pump type, and
+$$ E_{to buy} = min(P_{max} * t_{slot}, (T_{max} - T_{curr} + T_{decrease}) * (0.00116 * V_{tank} * \rho_{water}) / COP) $$
 
-```ΔT = Temperature_curr-Temperature_ambient ```
+where
 
-### Bid rate > Preferred buying rate
+  * $P_{max}$ is the maximum power rating
+  * $t_{slot}$ is the slot length
+  * $T_{max}$ is the maximum temperature of the storage tank
+  * $T_{curr}$ is the current temperature of the storage tank
+  * $T_{decrease}$ is the temperature decrease of the storage tank due to heat consumption
+  * $V_{tank}$ is the volume of the storage tank
+  * $\rho_{water}$ is the density of water
+  * $COP$ is the coefficient of performance of the heat pump; depends on the heat pump type, and $\Delta T = T_{curr} - T_{ambient}$
+
+
+### b. Bid rate > Preferred buying rate
 
 In this situation, the heat pump strategy is to consume the least possible amount of energy in order to keep the temperature at the same level, since the prices are relatively high. Two different situations can arise:
 
-  * `Temperature_curr > Temperature_min + Temperature_decrease`: In this case, the heat pump does not consume any energy (it’s not commanded to function because the temperature will be within the temperature limits even if some heat is consumed in the market slot). Therefore, `energy_to_buy` = 0
-  * `Temperature_curr <= Temperature_min + Temperature_decrease`: In this case the heat pump is forced to function, and it consumes the energy to maintain the temperature at the minimum, taking into account the energy consumption of the user’s premise.
+  * $T_{curr} > T_{min} + T_{decrease}$: In this case, the heat pump does not consume any energy (it’s not commanded to function because the temperature will be within the temperature limits even if some heat is consumed in the market slot). Therefore, `energy_to_buy` = 0
+  * $T_{curr} <= T_{min} + T_{decrease}$: In this case the heat pump is forced to function, and it consumes the energy to maintain the temperature at the minimum, taking into account the energy consumption of the user’s premise.
 
 In all cases, the maximum power rating is respected, meaning that not more energy is requested than the energy equivalent of the Maximum Power Rating.
 
