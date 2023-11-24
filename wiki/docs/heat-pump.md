@@ -94,7 +94,7 @@ where
 
 In this situation, the heat pump strategy is to consume the least possible amount of energy in order to keep the temperature at the same level, since the prices are relatively high. Two different situations can arise:
 
-  * $T_{curr} > T_{min} + T_{decrease}$: In this case, the heat pump does not consume any energy (it’s not commanded to function because the temperature will be within the temperature limits even if some heat is consumed in the market slot). Therefore, `energy_to_buy` = 0
+  * $T_{curr} > T_{min} + T_{decrease}$: In this case, the heat pump does not consume any energy (it’s not commanded to function because the temperature will be within the temperature limits even if some heat is consumed in the market slot). Therefore, $E_{tobuy} = 0$
   * $T_{curr} <= T_{min} + T_{decrease}$: In this case the heat pump is forced to function, and it consumes the energy to maintain the temperature at the minimum, taking into account the energy consumption of the user’s premise.
 
 In all cases, the maximum power rating is respected, meaning that not more energy is requested than the energy equivalent of the Maximum Power Rating.
