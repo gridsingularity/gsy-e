@@ -20,7 +20,7 @@ nav:
           - 'Battery (Storage)': 'battery.md'
           - 'Power Plant': 'power-plant.md'
           - 'Heat Pumps and District Heating':
-            - 'Introduction': 'heat-pumps-general.md'
+            - 'Heat Pump & Virtual Heat Pump Overview': 'heat-pumps-general.md'
             - 'Heat Pump': 'heat-pump.md'
             - 'Virtual Heat Pump': 'virtual-heat-pump.md'
         - 'Community Settings': 'community-settings.md'
