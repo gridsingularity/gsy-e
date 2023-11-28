@@ -4,11 +4,12 @@
     "slot_length": "15m",
     "tick_length": "15s",
     "cloud_coverage": 0,
-    "start_date": "2023-10-09"
+    "start_date": "2023-11-28"
   },
   "advanced_settings": {
     "GeneralSettings": {
       "DEFAULT_MARKET_MAKER_RATE": 30,
+      "DEFAULT_FEED_IN_TARIFF": 0,
       "DEFAULT_UPDATE_INTERVAL": 1,
       "MIN_UPDATE_INTERVAL": 1,
       "MARKET_CLEARING_FREQUENCY_PER_SLOT": 3,
@@ -218,8 +219,8 @@
         9223372036854775807
       ],
       "TEMP_C_LIMIT": [
-        -273.15,
-        6000
+        0.0,
+        200.0
       ],
       "TANK_VOLUME_L_LIMIT": [
         0,
