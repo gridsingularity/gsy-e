@@ -15,6 +15,7 @@ from gsy_e.constants import (DEFAULT_SCM_COMMUNITY_NAME, DEFAULT_SCM_GRID_NAME,
                              FLOATING_POINT_TOLERANCE)
 from gsy_e.models.strategy.scm import SCMStrategy
 
+
 if TYPE_CHECKING:
     from gsy_e.models.area import CoefficientArea
 
@@ -94,7 +95,8 @@ class HomeAfterMeterData:
 
     def set_production_for_community(self, unassigned_energy_production_kWh: float):
         """Assign the energy surplus of the home to be consumed by the community."""
-        if gsy_e.constants.SCM_NO_COMMUNITY_SELF_CONSUMPTION:
+
+        if ConstSettings.SCMSettings.is_no_community_self_consumption():
             self._self_production_for_community_kWh = 0
             return 0.
         if self.energy_surplus_kWh <= unassigned_energy_production_kWh:
@@ -282,7 +284,7 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
         # will be negative, and the producer will not have "savings". For a more realistic case
         # the revenue should be omitted from the calculation of the savings, however this needs
         # to be discussed.
-        if gsy_e.constants.SCM_NO_COMMUNITY_SELF_CONSUMPTION:
+        if ConstSettings.SCMSettings.is_no_community_self_consumption():
             return self.self_consumed_savings + self.gsy_energy_bill_revenue
         savings_absolute = KPICalculationHelper().saving_absolute(
             self.base_energy_bill_excl_revenue, self.gsy_energy_bill_excl_revenue)
@@ -345,7 +347,7 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
             self, home_data: HomeAfterMeterData, market_maker_rate_normal_fees: float,
             feed_in_tariff: float):
         """Calculate the base (not with GSy improvements) energy bill for the home."""
-        if gsy_e.constants.SCM_NO_COMMUNITY_SELF_CONSUMPTION:
+        if ConstSettings.SCMSettings.is_no_community_self_consumption():
             self.base_energy_bill_excl_revenue = (
                     home_data.consumption_kWh * market_maker_rate_normal_fees)
             self.base_energy_bill_revenue = home_data.production_kWh * feed_in_tariff
