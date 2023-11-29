@@ -25,13 +25,14 @@ class HeatPumpOrderUpdaterParameters(OrderUpdaterParameters):
     update_interval: Optional[duration] = None
     initial_rate: Optional[float] = None
     final_rate: Optional[float] = None
+    use_market_maker_rate: bool = False
 
     def update(self, market: "MarketBase", use_default: bool = False):
         """Update class members if set to None or if global default values should be used."""
         if use_default or self.update_interval is None:
             self.update_interval = duration(
                 minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
-        if use_default or self.final_rate is None:
+        if use_default or self.final_rate is None or self.use_market_maker_rate:
             self.final_rate = get_market_maker_rate_from_config(market)
         if use_default or self.initial_rate is None:
             self.initial_rate = get_feed_in_tariff_rate_from_config(market)
@@ -40,7 +41,8 @@ class HeatPumpOrderUpdaterParameters(OrderUpdaterParameters):
         return {
             "update_interval": self.update_interval,
             "initial_buying_rate": self.initial_rate,
-            "final_buying_rate": self.final_rate
+            "final_buying_rate": self.final_rate,
+            "use_market_maker_rate": self.use_market_maker_rate
         }
 
 
@@ -112,6 +114,8 @@ class HeatPumpStrategy(TradingStrategyBase):
                     initial_buying_rate=order_updater_parameters[market_type].initial_rate,
                     final_buying_rate=order_updater_parameters[market_type].final_rate,
                     update_interval=order_updater_parameters[market_type].update_interval,
+                    use_market_maker_rate=(
+                        order_updater_parameters[market_type].use_market_maker_rate),
                     preferred_buying_rate=preferred_buying_rate
                 )
 
@@ -138,12 +142,14 @@ class HeatPumpStrategy(TradingStrategyBase):
                             minutes=constructor_args.get("update_interval")
                         ) if constructor_args.get("update_interval") is not None else None),
                         initial_rate=constructor_args.get("initial_buying_rate", None),
-                        final_rate=constructor_args.get("final_buying_rate", None))
+                        final_rate=constructor_args.get("final_buying_rate", None),
+                        use_market_maker_rate=constructor_args.get("use_market_maker_rate", False)
+                    )
             }
             constructor_args.pop("initial_buying_rate", None)
             constructor_args.pop("final_buying_rate", None)
             constructor_args.pop("update_interval", None)
-
+            constructor_args.pop("use_market_maker_rate", None)
         return constructor_args
 
     @property
