@@ -34,7 +34,7 @@ The following plot shows the energy rate change in a spot market slot (slot_leng
 </figcaption>
 </figure>
 
-Assets can also deploy more intelligent trading strategies, as demonstrated in the 2020 Energy Singularity Challenge, described in the following two articles:
+Assets can also deploy more intelligent trading strategies, as shown in the example [Heat Pump Trading Strategy](heat-pump.md#heat-pump-asset-trading-strategy) and further demonstrated in the 2020 Energy Singularity Challenge, described in the following two articles:
 
 * Grid Singularity. (September 10, 2020). _[En Route to Energy Singularity Odyssey Momentum: Learnings from the 2020 Chaos Experiment](https://gridsingularity.medium.com/en-route-to-energy-singularity-odyssey-momentum-learnings-from-the-2020-chaos-experiment-8dc38ff26869 ){target=_blank}_
 * Grid Singularity. (November 25, 2020). _[Energy Singularity Challenge 2020: Social Energy Networks](https://gridsingularity.medium.com/energy-singularity-challenge-2020-social-energy-networks-157b390e5f39 ){target=_blank}_
