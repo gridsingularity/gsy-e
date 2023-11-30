@@ -154,7 +154,9 @@ class LeafDataExporter(BaseDataExporter):
         if isinstance(self.area.strategy, PVStrategy):
             return ["produced [kWh]", "not sold [kWh]"]
         if isinstance(self.area.strategy, HeatPumpStrategy):
-            return ["storage temperature C", "temp decrease K", "temp_increase K"]
+            return [
+                "unmatched demand [kWh]", "storage temperature C", "temp decrease K",
+                "temp increase K", "COP"]
         return []
 
     @property
@@ -186,9 +188,12 @@ class LeafDataExporter(BaseDataExporter):
             produced = self.area.strategy.state.get_energy_production_forecast_kWh(slot, 0.0)
             return [produced, not_sold]
         if isinstance(self.area.strategy, HeatPumpStrategy):
-            return [round(self.area.strategy.state.get_storage_temp_C(slot), ROUND_TOLERANCE),
+            return [round(self.area.strategy.state.get_unmatched_demand_kWh(slot),
+                          ROUND_TOLERANCE),
+                    round(self.area.strategy.state.get_storage_temp_C(slot), ROUND_TOLERANCE),
                     round(self.area.strategy.state.get_temp_decrease_K(slot), ROUND_TOLERANCE),
-                    round(self.area.strategy.state.get_temp_increase_K(slot), ROUND_TOLERANCE)
+                    round(self.area.strategy.state.get_temp_increase_K(slot), ROUND_TOLERANCE),
+                    round(self.area.strategy.state.get_cop(slot), ROUND_TOLERANCE)
                     ]
         return []
 
