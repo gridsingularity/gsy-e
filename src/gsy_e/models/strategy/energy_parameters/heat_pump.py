@@ -85,11 +85,15 @@ class HeatPumpEnergyParametersBase(ABC):
 
     def _populate_state(self, time_slot: DateTime):
         self.state.update_storage_temp(time_slot)
+        self.state.set_cop(time_slot, self._calc_cop(time_slot))
 
         self.state.set_temp_decrease_K(
             time_slot, self._calc_temp_decrease_K(time_slot))
 
         self._calc_energy_demand(time_slot)
+
+    def _calc_cop(self, time_slot: DateTime) -> float:
+        pass
 
     @abstractmethod
     def _calc_energy_to_buy_maximum(self, time_slot: DateTime) -> float:
@@ -216,8 +220,6 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
         return self._Q_kWh_to_temp_diff(self._calc_Q_from_energy_kWh(time_slot, traded_energy_kWh))
 
     def _populate_state(self, time_slot: DateTime):
-        # order matters here. For the calculation, cop has to be determined before all other
-        self.state.set_cop(time_slot, self._calc_cop(time_slot))
         super()._populate_state(time_slot)
         self.state.set_energy_consumption_kWh(time_slot, self._consumption_kWh.profile[time_slot])
 

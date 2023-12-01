@@ -171,7 +171,7 @@ class HeatPumpState(StateInterface):
             "energy_consumption_kWh": self.get_energy_consumption_kWh(current_time_slot),
             "max_energy_demand_kWh": self.get_max_energy_demand_kWh(current_time_slot),
             "min_energy_demand_kWh": self.get_min_energy_demand_kWh(current_time_slot),
-            "unmatched_loads_kWh": self.get_unmatched_demand_kWh(current_time_slot),
+            "unmatched_demand_kWh": self.get_unmatched_demand_kWh(current_time_slot),
             "cop": self.get_cop(current_time_slot)
         }
 
