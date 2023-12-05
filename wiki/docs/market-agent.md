@@ -2,9 +2,11 @@ The MarketAgent (MA) plays a crucial role in the communication architecture of G
 
 The following illustration shows a sample grid setup and the role of the MarketAgent in the market hierarchy during one time slot:
 
-![alt_text](img/interareaagent-1.png)
-
-**Figure 3.12**. *The MarketAgent and bids / offers propagation in the Grid Singularity Exchange.*
+<figure markdown>
+  ![alt_text](img/interareaagent-1.png){:text-align:center"}
+  <figcaption><b>Figure 4.12</b>: The MarketAgent and bids / offers propagation in the Grid Singularity Exchange.
+</figcaption>
+</figure>
 
 The MA is responsible for modelling hierarchical market operations, as follows:
 

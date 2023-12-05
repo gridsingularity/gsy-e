@@ -12,5 +12,6 @@ redis
 rq
 pytz
 sortedcontainers
+sympy
 pony
 -e git+https://github.com/gridsingularity/gsy-framework@master#egg=gsy_framework

@@ -8,11 +8,13 @@ import pytest
 from gsy_framework.constants_limits import GlobalConfig, ConstSettings, TIME_ZONE
 from gsy_framework.data_classes import Trade, TraderDetails
 from gsy_framework.enums import AvailableMarketTypes
-from pendulum import today
+from pendulum import today, duration
 
+import gsy_e.models.strategy.heat_pump
 from gsy_e.gsy_e_core.util import gsye_root_path
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.heat_pump import HeatPumpStrategy, HeatPumpOrderUpdaterParameters
+from gsy_e.models.strategy.virtual_heatpump import VirtualHeatpumpStrategy
 
 if TYPE_CHECKING:
     from gsy_e.models.strategy.trading_strategy_base import TradingStrategyBase
@@ -23,16 +25,28 @@ RATE_PROFILE = {CURRENT_MARKET_SLOT: 0, CURRENT_MARKET_SLOT.add(minutes=15): 2}
 
 @pytest.fixture(name="heatpump_fixture")
 def fixture_heatpump_strategy(request) -> Tuple["TradingStrategyBase", "Area"]:
+    gsy_e.models.strategy.heat_pump.HeatPumpValidator = Mock()
     original_market_type = ConstSettings.MASettings.MARKET_TYPE
     ConstSettings.MASettings.MARKET_TYPE = 2
     orig_start_date = GlobalConfig.start_date
     strategy_params = request.param if hasattr(request, "param") else {}
-    strategy = HeatPumpStrategy(
-        consumption_kWh_profile=os.path.join(
-            gsye_root_path, "resources", "hp_consumption_kWh.csv"),
-        external_temp_C_profile=os.path.join(
-            gsye_root_path, "resources", "hp_external_temp_C.csv"),
-        **strategy_params)
+    is_virtual_heatpump = strategy_params.pop("is_virtual", False)
+    if not is_virtual_heatpump:
+        strategy = HeatPumpStrategy(
+            consumption_kWh_profile=os.path.join(
+                gsye_root_path, "resources", "hp_consumption_kWh.csv"),
+            external_temp_C_profile=os.path.join(
+                gsye_root_path, "resources", "hp_external_temp_C.csv"),
+            **strategy_params)
+    else:
+        strategy = VirtualHeatpumpStrategy(
+            water_supply_temp_C_profile=os.path.join(
+                gsye_root_path, "resources", "hp_supply_temp_C.csv"),
+            water_return_temp_C_profile=os.path.join(
+                gsye_root_path, "resources", "hp_return_temp_C.csv"),
+            dh_water_flow_m3_profile=os.path.join(
+                gsye_root_path, "resources", "hp_water_flow.csv"),
+            **strategy_params)
     strategy._energy_params = Mock()
     strategy_area = Area("asset", strategy=strategy)
     area = Area("grid", children=[strategy_area])
@@ -56,6 +70,8 @@ class TestHeatPumpStrategy:
         assert order.buyer.uuid == order.buyer.origin_uuid == strategy.owner.uuid
 
     @staticmethod
+    @pytest.mark.parametrize("heatpump_fixture", [
+        {"is_virtual": True}, {"is_virtual": False}], indirect=True)
     def test_heatpump_creates_order_updater_on_spot_on_market_cycle(heatpump_fixture):
         strategy = heatpump_fixture[0]
         area = heatpump_fixture[1]
@@ -64,6 +80,8 @@ class TestHeatPumpStrategy:
         market_object = area.spot_market
         assert len(strategy._order_updaters[market_object].keys()) == 1
 
+    @pytest.mark.parametrize("heatpump_fixture", [
+        {"is_virtual": True}, {"is_virtual": False}], indirect=True)
     def test_heatpump_posts_order_on_spot_on_market_cycle(self, heatpump_fixture):
         strategy = heatpump_fixture[0]
         area = heatpump_fixture[1]
@@ -73,6 +91,8 @@ class TestHeatPumpStrategy:
         self._assert_bid(list(area.spot_market.bids.values()), strategy, energy_to_buy,
                          GlobalConfig.FEED_IN_TARIFF)
 
+    @pytest.mark.parametrize("heatpump_fixture", [
+        {"is_virtual": True}, {"is_virtual": False}], indirect=True)
     @patch("gsy_framework.constants_limits.GlobalConfig.FEED_IN_TARIFF", 0)
     @patch("gsy_framework.constants_limits.GlobalConfig.market_maker_rate", 15)
     def test_orders_are_updated_correctly_on_spot_on_tick(self, heatpump_fixture):
@@ -94,6 +114,8 @@ class TestHeatPumpStrategy:
             self._assert_bid(list(market_object.bids.values()), strategy, energy_to_buy, 1)
 
     @staticmethod
+    @pytest.mark.parametrize("heatpump_fixture", [
+        {"is_virtual": True}, {"is_virtual": False}], indirect=True)
     def test_remove_open_orders_removes_all_orders_on_spot(heatpump_fixture):
         strategy = heatpump_fixture[0]
         area = heatpump_fixture[1]
@@ -107,7 +129,9 @@ class TestHeatPumpStrategy:
         assert len(orders) == 0
 
     @staticmethod
-    @pytest.mark.parametrize("heatpump_fixture", [{"order_updater_parameters": {}}], indirect=True)
+    @pytest.mark.parametrize("heatpump_fixture", [
+        {"is_virtual": True, "order_updater_parameters": {}},
+        {"is_virtual": False, "order_updater_parameters": {}}], indirect=True)
     @patch("gsy_framework.constants_limits.GlobalConfig.FEED_IN_TARIFF", 20)
     @patch("gsy_framework.constants_limits.GlobalConfig.market_maker_rate", 30)
     def test_order_updater_parameters_get_initiated_with_default_values(heatpump_fixture):
@@ -120,7 +144,9 @@ class TestHeatPumpStrategy:
     @staticmethod
     @patch("gsy_framework.constants_limits.GlobalConfig.FEED_IN_TARIFF", RATE_PROFILE)
     @patch("gsy_framework.constants_limits.GlobalConfig.market_maker_rate", RATE_PROFILE)
-    @pytest.mark.parametrize("heatpump_fixture", [{"order_updater_parameters": {}}], indirect=True)
+    @pytest.mark.parametrize("heatpump_fixture", [
+        {"is_virtual": True, "order_updater_parameters": {}},
+        {"is_virtual": False, "order_updater_parameters": {}}], indirect=True)
     def test_order_updater_parameters_get_initiated_with_default_profile(heatpump_fixture):
         strategy = heatpump_fixture[0]
         area = heatpump_fixture[1]
@@ -139,7 +165,10 @@ class TestHeatPumpStrategy:
 
     @staticmethod
     @pytest.mark.parametrize("heatpump_fixture", [
-        {"order_updater_parameters": {
+        {"is_virtual": True, "order_updater_parameters": {
+            AvailableMarketTypes.SPOT: HeatPumpOrderUpdaterParameters(initial_rate=0,
+                                                                      final_rate=15)}},
+        {"is_virtual": False, "order_updater_parameters": {
             AvailableMarketTypes.SPOT: HeatPumpOrderUpdaterParameters(initial_rate=0,
                                                                       final_rate=15)}}
     ], indirect=True)
@@ -151,6 +180,8 @@ class TestHeatPumpStrategy:
         assert strategy._order_updater_params[AvailableMarketTypes.SPOT].final_rate == 15
 
     @staticmethod
+    @pytest.mark.parametrize("heatpump_fixture", [
+        {"is_virtual": True}, {"is_virtual": False}], indirect=True)
     def test_get_energy_buy_energy_returns_correct_value(heatpump_fixture):
         strategy = heatpump_fixture[0]
         strategy.preferred_buying_rate = 15
@@ -161,6 +192,8 @@ class TestHeatPumpStrategy:
         assert strategy._get_energy_buy_energy(16, CURRENT_MARKET_SLOT) == 1
 
     @staticmethod
+    @pytest.mark.parametrize("heatpump_fixture", [
+        {"is_virtual": True}, {"is_virtual": False}], indirect=True)
     def test_event_bid_traded_calls_ep_event_traded_energy(heatpump_fixture):
         strategy = heatpump_fixture[0]
         area = heatpump_fixture[1]
@@ -174,3 +207,54 @@ class TestHeatPumpStrategy:
         strategy.event_bid_traded(market_id=area.spot_market.id, bid_trade=trade)
         strategy._energy_params.event_traded_energy.assert_called_once_with(
             CURRENT_MARKET_SLOT, traded_energy)
+
+    @staticmethod
+    def test_deserialize_args_sets_price_settings_to_none_if_not_provided(heatpump_fixture):
+        constructor_args = heatpump_fixture[0].deserialize_args({})
+        assert constructor_args == {
+            "order_updater_parameters": {
+                AvailableMarketTypes.SPOT: HeatPumpOrderUpdaterParameters(
+                    update_interval=None, initial_rate=None, final_rate=None)}}
+
+        constructor_args = heatpump_fixture[0].deserialize_args({
+            "initial_buying_rate": 2,
+            "update_interval": 5
+        })
+        assert constructor_args == {
+            "order_updater_parameters": {
+                AvailableMarketTypes.SPOT: HeatPumpOrderUpdaterParameters(
+                    update_interval=duration(minutes=5), initial_rate=2, final_rate=None)}}
+
+    @staticmethod
+    @pytest.mark.parametrize("heatpump_fixture", [
+        {"is_virtual": True, "order_updater_parameters": {
+            AvailableMarketTypes.SPOT: HeatPumpOrderUpdaterParameters(
+                initial_rate=0, final_rate=15, use_market_maker_rate=True)}},
+        {"is_virtual": False, "order_updater_parameters": {
+            AvailableMarketTypes.SPOT: HeatPumpOrderUpdaterParameters(
+                initial_rate=0, final_rate=15, use_market_maker_rate=True)}}
+    ], indirect=True)
+    def test_order_updater_respects_use_market_maker_rate(heatpump_fixture):
+        assert heatpump_fixture[0]._order_updater_params == {
+            AvailableMarketTypes.SPOT: HeatPumpOrderUpdaterParameters(
+                update_interval=None, initial_rate=0, final_rate=15, use_market_maker_rate=True)}
+        with patch("gsy_e.models.strategy.heat_pump.HeatPumpStrategy.post_order", Mock()):
+            heatpump_fixture[0].event_market_cycle()
+        assert heatpump_fixture[0]._order_updater_params == {
+            AvailableMarketTypes.SPOT: HeatPumpOrderUpdaterParameters(
+                update_interval=duration(minutes=1), initial_rate=0, final_rate=30,
+                use_market_maker_rate=True)}
+
+    @staticmethod
+    def test_deserialize_args_respects_use_market_maker_rate(heatpump_fixture):
+        constructor_args = heatpump_fixture[0].deserialize_args({
+            "initial_buying_rate": 2,
+            "update_interval": 5,
+            "final_buying_rate": 25,
+            "use_market_maker_rate": True
+        })
+        assert constructor_args == {
+            "order_updater_parameters": {
+                AvailableMarketTypes.SPOT: HeatPumpOrderUpdaterParameters(
+                    update_interval=duration(minutes=5), initial_rate=2,
+                    final_rate=25, use_market_maker_rate=True)}}

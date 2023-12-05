@@ -1,7 +1,10 @@
 # pylint: disable=protected-access
+from math import isclose
+from unittest.mock import Mock
 
 import pytest
 from gsy_framework.constants_limits import GlobalConfig, TIME_ZONE
+from gsy_framework.utils import generate_market_slot_list
 from pendulum import duration, today
 
 from gsy_e.models.strategy.energy_parameters.heat_pump import HeatPumpEnergyParameters
@@ -17,7 +20,24 @@ def fixture_heatpump_energy_params() -> HeatPumpEnergyParameters:
     GlobalConfig.start_date = CURRENT_MARKET_SLOT
     GlobalConfig.sim_duration = duration(days=1)
     GlobalConfig.slot_length = duration(minutes=60)
-    yield HeatPumpEnergyParameters()
+
+    external_temp_profile = {
+        timestamp: 25
+        for timestamp in generate_market_slot_list(CURRENT_MARKET_SLOT)
+    }
+    consumption_profile = {
+        timestamp: 5
+        for timestamp in generate_market_slot_list(CURRENT_MARKET_SLOT)
+    }
+    energy_params = HeatPumpEnergyParameters(
+        min_temp_C=10,
+        max_temp_C=60,
+        initial_temp_C=20,
+        tank_volume_l=500,
+        external_temp_C_profile=external_temp_profile,
+        consumption_kWh_profile=consumption_profile,
+    )
+    yield energy_params
     GlobalConfig.start_date = original_start_date
     GlobalConfig.sim_duration = original_sim_duration
     GlobalConfig.slot_length = original_slot_length
@@ -44,11 +64,12 @@ class TestHeatPumpEnergyParameters:
         assert CURRENT_MARKET_SLOT not in energy_params.state._min_energy_demand_kWh
         assert CURRENT_MARKET_SLOT not in energy_params.state._max_energy_demand_kWh
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
-        assert energy_params.state._temp_decrease_K[CURRENT_MARKET_SLOT] == 28.27586206896552
-        assert energy_params.state._storage_temp_C[CURRENT_MARKET_SLOT] == 50
-        assert energy_params.state._min_energy_demand_kWh[CURRENT_MARKET_SLOT] == 0.5
-        assert (energy_params.state._max_energy_demand_kWh[CURRENT_MARKET_SLOT] ==
-                0.7652439024390245)
+        assert energy_params.state._temp_decrease_K[CURRENT_MARKET_SLOT] == 10.0
+        assert energy_params.state._storage_temp_C[CURRENT_MARKET_SLOT] == 20
+        assert isclose(energy_params.state._min_energy_demand_kWh[CURRENT_MARKET_SLOT],
+                       0.8865112724493694)
+        assert isclose(energy_params.state._max_energy_demand_kWh[CURRENT_MARKET_SLOT],
+                       3.0)
 
     @staticmethod
     def test_event_traded_energy_decrements_posted_energy(energy_params):
@@ -67,17 +88,39 @@ class TestHeatPumpEnergyParameters:
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
         traded_energy = 0.1
         energy_params.event_traded_energy(CURRENT_MARKET_SLOT, traded_energy)
-        assert energy_params.state._temp_increase_K[CURRENT_MARKET_SLOT] == 5.655172413793104
+        assert isclose(energy_params.state._temp_increase_K[CURRENT_MARKET_SLOT],
+                       1.1280172413793106)
 
     @staticmethod
     def test_get_min_energy_demand_kWh_returns_correct_value(energy_params):
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
         energy_params.get_min_energy_demand_kWh(CURRENT_MARKET_SLOT)
-        assert energy_params.get_min_energy_demand_kWh(CURRENT_MARKET_SLOT) == 0.5
+        assert isclose(energy_params.get_min_energy_demand_kWh(CURRENT_MARKET_SLOT),
+                       0.8865112724493694)
 
     @staticmethod
     def test_get_max_energy_demand_kWh_returns_correct_value(energy_params):
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
         energy_params.get_max_energy_demand_kWh(CURRENT_MARKET_SLOT)
         assert (energy_params.get_max_energy_demand_kWh(CURRENT_MARKET_SLOT) ==
-                0.7652439024390245)
+                3.0)
+
+    @staticmethod
+    def test__calc_temp_decrease_K_sets_unmatched_demand(energy_params):
+        energy_params.state.update_unmatched_demand_kWh = Mock()
+        energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
+        energy_params.state.update_unmatched_demand_kWh.assert_called_once_with(
+            CURRENT_MARKET_SLOT, 4.113488727550631)
+
+    @staticmethod
+    def test__calc_temp_increase_K_sets_unmatched_demand(energy_params):
+        energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
+        energy_params.event_traded_energy(CURRENT_MARKET_SLOT, 2)
+        assert isclose(
+            energy_params.state._unmatched_demand_kWh[CURRENT_MARKET_SLOT], 2.113, abs_tol=1e-3)
+
+    @staticmethod
+    def test_event_market_cycle_calculates_and_sets_cop(energy_params):
+        assert energy_params.state._cop[CURRENT_MARKET_SLOT] == 0
+        energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
+        assert energy_params.state._cop[CURRENT_MARKET_SLOT] == 6.5425

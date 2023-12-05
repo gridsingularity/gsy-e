@@ -4,7 +4,7 @@
     "slot_length": "15m",
     "tick_length": "15s",
     "cloud_coverage": 0,
-    "start_date": "2023-06-14"
+    "start_date": "2023-10-09"
   },
   "advanced_settings": {
     "GeneralSettings": {
@@ -241,7 +241,7 @@
         0,
         30
       ],
-      "PREFERRED_BUYING_RATE": 15
+      "PREFERRED_BUYING_RATE": 30
     },
     "MASettings": {
       "GRID_FEE_TYPE": 1,

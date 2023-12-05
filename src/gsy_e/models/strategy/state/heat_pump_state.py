@@ -28,7 +28,7 @@ from gsy_e.models.strategy.state.base_states import StateInterface, UnexpectedSt
 
 
 class HeatPumpState(StateInterface):
-    # pylint: disable=too-many-instance-attributes
+    # pylint: disable=too-many-instance-attributes, too-many-public-methods
     """State for the heat pump strategy."""
 
     def __init__(
@@ -41,6 +41,8 @@ class HeatPumpState(StateInterface):
         self._temp_decrease_K: Dict[DateTime, float] = defaultdict(lambda: 0)
         self._temp_increase_K: Dict[DateTime, float] = defaultdict(lambda: 0)
         self._energy_consumption_kWh: Dict[DateTime, float] = defaultdict(lambda: 0)
+        self._unmatched_demand_kWh: Dict[DateTime, float] = defaultdict(lambda: 0)
+        self._cop: Dict[DateTime, float] = defaultdict(lambda: 0)
         self._slot_length = slot_length
 
     def get_storage_temp_C(self, time_slot: DateTime) -> float:
@@ -55,6 +57,11 @@ class HeatPumpState(StateInterface):
         if new_temp < -FLOATING_POINT_TOLERANCE:
             raise UnexpectedStateException("Storage of heat pump should not drop below zero.")
         self._storage_temp_C[current_time_slot] = new_temp
+
+    def update_unmatched_demand_kWh(self, current_time_slot: DateTime, energy_kWh: float):
+        """Update unmatched demand while ensuring always positive numbers."""
+        updated_unmatched_demand = self._unmatched_demand_kWh[current_time_slot] + energy_kWh
+        self._unmatched_demand_kWh[current_time_slot] = max(0., updated_unmatched_demand)
 
     def set_min_energy_demand_kWh(self, time_slot: DateTime, energy_kWh: float):
         """Set the minimal energy demanded for a given time slot."""
@@ -75,6 +82,14 @@ class HeatPumpState(StateInterface):
     def set_energy_consumption_kWh(self, time_slot: DateTime, energy_kWh: float):
         """Set the energy consumption of the heatpump for a given time slot."""
         self._energy_consumption_kWh[time_slot] = energy_kWh
+
+    def set_cop(self, time_slot: DateTime, cop: float):
+        """Set cop for the given time slot."""
+        self._cop[time_slot] = cop
+
+    def update_energy_consumption_kWh(self, time_slot: DateTime, energy_kWh: float):
+        """Update the energy consumption of the heatpump for a given time slot."""
+        self._energy_consumption_kWh[time_slot] += energy_kWh
 
     def update_temp_increase_K(self, time_slot: DateTime, temp_diff_K: float):
         """Set the temperature increase for a given time slot."""
@@ -100,6 +115,14 @@ class HeatPumpState(StateInterface):
         """Return the temperature increase for a given time slot."""
         return self._temp_increase_K.get(time_slot, 0)
 
+    def get_unmatched_demand_kWh(self, time_slot: DateTime) -> float:
+        """Return the unmatched demanded energy for a given time slot."""
+        return self._unmatched_demand_kWh.get(time_slot, 0)
+
+    def get_cop(self, time_slot: DateTime) -> float:
+        """Return the cop for a given time slot."""
+        return self._cop.get(time_slot, 0)
+
     def get_state(self) -> Dict:
         return {
             "storage_temp_C": convert_pendulum_to_str_in_dict(self._storage_temp_C),
@@ -109,6 +132,8 @@ class HeatPumpState(StateInterface):
                 self._energy_consumption_kWh),
             "min_energy_demand_kWh": convert_pendulum_to_str_in_dict(self._min_energy_demand_kWh),
             "max_energy_demand_kWh": convert_pendulum_to_str_in_dict(self._max_energy_demand_kWh),
+            "unmatched_demand_kWh": convert_pendulum_to_str_in_dict(self._unmatched_demand_kWh),
+            "cop": convert_pendulum_to_str_in_dict(self._cop)
         }
 
     def restore_state(self, state_dict: Dict):
@@ -121,22 +146,22 @@ class HeatPumpState(StateInterface):
             state_dict["min_energy_demand_kWh"])
         self._max_energy_demand_kWh = convert_pendulum_to_str_in_dict(
             state_dict["max_energy_demand_kWh"])
+        self._unmatched_demand_kWh = convert_pendulum_to_str_in_dict(
+            state_dict["unmatched_demand_kWh"])
+        self._cop = convert_pendulum_to_str_in_dict(state_dict["cop"])
 
     def delete_past_state_values(self, current_time_slot: DateTime):
         if not current_time_slot or constants.RETAIN_PAST_MARKET_STRATEGIES_STATE:
             return
-        self._delete_time_slots(self._min_energy_demand_kWh,
-                                self._last_time_slot(current_time_slot))
-        self._delete_time_slots(self._max_energy_demand_kWh,
-                                self._last_time_slot(current_time_slot))
-        self._delete_time_slots(self._energy_consumption_kWh,
-                                self._last_time_slot(current_time_slot))
-        self._delete_time_slots(self._storage_temp_C,
-                                self._last_time_slot(current_time_slot))
-        self._delete_time_slots(self._temp_increase_K,
-                                self._last_time_slot(current_time_slot))
-        self._delete_time_slots(self._temp_decrease_K,
-                                self._last_time_slot(current_time_slot))
+        last_time_slot = self._last_time_slot(current_time_slot)
+        self._delete_time_slots(self._min_energy_demand_kWh, last_time_slot)
+        self._delete_time_slots(self._max_energy_demand_kWh, last_time_slot)
+        self._delete_time_slots(self._energy_consumption_kWh, last_time_slot)
+        self._delete_time_slots(self._storage_temp_C, last_time_slot)
+        self._delete_time_slots(self._temp_increase_K, last_time_slot)
+        self._delete_time_slots(self._temp_decrease_K, last_time_slot)
+        self._delete_time_slots(self._unmatched_demand_kWh, last_time_slot)
+        self._delete_time_slots(self._cop, last_time_slot)
 
     def get_results_dict(self, current_time_slot: DateTime) -> Dict:
         return {
@@ -146,6 +171,8 @@ class HeatPumpState(StateInterface):
             "energy_consumption_kWh": self.get_energy_consumption_kWh(current_time_slot),
             "max_energy_demand_kWh": self.get_max_energy_demand_kWh(current_time_slot),
             "min_energy_demand_kWh": self.get_min_energy_demand_kWh(current_time_slot),
+            "unmatched_demand_kWh": self.get_unmatched_demand_kWh(current_time_slot),
+            "cop": self.get_cop(current_time_slot)
         }
 
     def _last_time_slot(self, current_market_slot: DateTime) -> DateTime:
