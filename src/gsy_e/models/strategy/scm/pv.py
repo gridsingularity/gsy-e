@@ -24,7 +24,7 @@ from gsy_e.models.strategy.energy_parameters.pv import PVUserProfileEnergyParame
 from gsy_e.models.strategy.scm import SCMStrategy
 
 if TYPE_CHECKING:
-    from gsy_e.models.area import AreaBase, CoefficientArea
+    from gsy_e.models.area import AreaBase
     from gsy_e.models.strategy.state import StateInterface
 
 
@@ -42,17 +42,13 @@ class SCMPVUserProfile(SCMStrategy):
 
     @property
     def state(self) -> "StateInterface":
+        """Return state of the strategy."""
         # pylint: disable=protected-access
         return self._energy_params._state
 
     def get_energy_to_sell_kWh(self, time_slot: DateTime) -> float:
         """Get the available energy for production for the specified time slot."""
         return self.state.get_available_energy_kWh(time_slot)
-
-    def decrease_energy_to_sell(
-            self, traded_energy_kWh: float, time_slot: DateTime, area: "CoefficientArea"):
-        """Decrease traded energy from the state and the strategy parameters."""
-        self.state.decrement_available_energy(traded_energy_kWh, time_slot, area.name)
 
     def _update_forecast_in_state(self, area):
         self._energy_params.read_predefined_profile_for_pv()

@@ -13,7 +13,7 @@ StorageSettings = ConstSettings.StorageSettings
 
 
 if TYPE_CHECKING:
-    from gsy_e.models.area import AreaBase, CoefficientArea
+    from gsy_e.models.area import AreaBase
 
 
 class SCMStorageStrategy(SCMStrategy):
@@ -69,16 +69,6 @@ class SCMStorageStrategy(SCMStrategy):
     def get_energy_to_buy_kWh(self, time_slot: DateTime) -> float:
         """Get the available energy for consumption for the specified time slot."""
         return self._state.get_available_energy_to_buy_kWh(time_slot)
-
-    def decrease_energy_to_sell(
-            self, traded_energy_kWh: float, time_slot: DateTime, area: "CoefficientArea"):
-        """Decrease traded energy from the state and the strategy parameters."""
-        self._state.register_energy_from_offer_trade(traded_energy_kWh, time_slot)
-
-    def decrease_energy_to_buy(
-            self, traded_energy_kWh: float, time_slot: DateTime, area: "CoefficientArea"):
-        """Decrease traded energy from the state and the strategy parameters."""
-        self._state.register_energy_from_bid_trade(traded_energy_kWh, time_slot)
 
     def area_reconfigure_event(self, **kwargs):
         altered = False
