@@ -12,6 +12,11 @@ if TYPE_CHECKING:
 class SCMStrategy(ABC):
     """Abstract base class for all SCM strategies."""
 
+    @property
+    @abstractmethod
+    def state(self):
+        """Return state of the strategy."""
+
     @abstractmethod
     def activate(self, area: "CoefficientArea"):
         """Trigger strategy actions at the start of the simulation, when the area is activated."""
@@ -20,6 +25,11 @@ class SCMStrategy(ABC):
     @abstractmethod
     def market_cycle(self, area: "CoefficientArea"):
         """Trigger strategy actions on every market cycle."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def serialize(self):
+        """Serialize SCMStrategy object"""
         raise NotImplementedError
 
     def get_state(self) -> Dict:

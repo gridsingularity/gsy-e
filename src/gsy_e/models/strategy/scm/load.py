@@ -52,6 +52,9 @@ class SCMLoadHoursStrategy(SCMStrategy):
         """Get the available energy for consumption for the specified time slot."""
         return self._energy_params.state.get_energy_requirement_Wh(time_slot) / 1000.0
 
+    def serialize(self):
+        return {**self._energy_params.serialize()}
+
 
 class SCMLoadProfileStrategy(SCMStrategy):
     """Load SCM strategy with power production dictated by a profile."""
