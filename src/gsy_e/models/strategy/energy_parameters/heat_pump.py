@@ -207,7 +207,6 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
                 self._temp_diff_to_Q_kWh(temp_diff) / self.state.get_cop(time_slot))
 
         if min_energy_consumption > self._max_energy_consumption_kWh:
-            print("min")
             # demand is higher than max_power_rating
             self.state.update_unmatched_demand_kWh(
                 time_slot, min_energy_consumption - self._max_energy_consumption_kWh)
