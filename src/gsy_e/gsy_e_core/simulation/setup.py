@@ -64,7 +64,7 @@ class SimulationSetup:
             random.seed(random_seed)
             seed = random_seed
             log.info("Random seed: %s", random_seed)
-        self.seed = seed
+        self.seed = int(seed)
 
     def _log_traversal_length(self, area: "Area") -> None:
         no_of_levels = self._get_setup_levels(area) + 1
