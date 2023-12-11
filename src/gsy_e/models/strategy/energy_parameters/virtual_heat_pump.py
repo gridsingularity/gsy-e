@@ -23,16 +23,16 @@ class HeatpumpStorageEnergySolver:
     # pylint: disable=too-many-instance-attributes,too-many-arguments
     """Solver that calculates heatpump storage temperature and energy."""
     def __init__(
-            self, tank_volume_l: float, current_storage_temp: float, dh_supply_temp: float,
-            dh_return_temp: float, dh_flow_m3_per_hour: float,
+            self, tank_volume_l: float, current_storage_temp_C: float, dh_supply_temp_C: float,
+            dh_return_temp_C: float, dh_flow_m3_per_hour: float,
             target_storage_temp_C: Optional[float] = None, energy_kWh: Optional[float] = None):
         # Optional inputs
         self.energy_kWh = energy_kWh
         self.target_storage_temp_C = target_storage_temp_C
         # Inputs
-        self.current_storage_temp = current_storage_temp
-        self.dh_supply_temp = dh_supply_temp
-        self.dh_return_temp = dh_return_temp
+        self.current_storage_temp_C = current_storage_temp_C
+        self.dh_supply_temp_C = dh_supply_temp_C
+        self.dh_return_temp_C = dh_return_temp_C
         self.dh_flow_kg_per_sec = dh_flow_m3_per_hour * 1000 / 3600
         if self.dh_flow_kg_per_sec < FLOATING_POINT_TOLERANCE:
             self.dh_flow_kg_per_sec = 0
@@ -49,9 +49,9 @@ class HeatpumpStorageEnergySolver:
         return (
             "Calculated maximum electricity demand for heatpump. \n"
             f"Target Storage Temperature: {self.target_storage_temp_C} C. \n"
-            f"Current Storage Temperature: {self.current_storage_temp} C. \n"
-            f"District Heating Supply Temperature: {self.dh_supply_temp} C. \n"
-            f"District Heating Return Temperature: {self.dh_return_temp} C. \n"
+            f"Current Storage Temperature: {self.current_storage_temp_C} C. \n"
+            f"District Heating Supply Temperature: {self.dh_supply_temp_C} C. \n"
+            f"District Heating Return Temperature: {self.dh_return_temp_C} C. \n"
             f"District Heating Water Flow: {self.dh_flow_kg_per_sec} kg/sec. \n"
             f"Temperature Differential: {self.temp_differential_per_sec} C/sec. \n"
             f"Q Out: {self.q_out_J} W. Q In: {self.q_in_J} W. \n"
@@ -61,7 +61,7 @@ class HeatpumpStorageEnergySolver:
 
     def _calculate_q_out(self):
         self.q_out_J = self.dh_flow_kg_per_sec * WATER_SPECIFIC_HEAT_CAPACITY * (
-                self.dh_supply_temp - self.dh_return_temp)
+                self.dh_supply_temp_C - self.dh_return_temp_C)
 
     def calculate_energy_from_storage_temp(self):
         """Calculate energy based on target storage temp and other parameters."""
@@ -69,7 +69,7 @@ class HeatpumpStorageEnergySolver:
         self._calculate_q_out()
 
         self.temp_differential_per_sec = (
-                (self.target_storage_temp_C - self.current_storage_temp) /
+                (self.target_storage_temp_C - self.current_storage_temp_C) /
                 GlobalConfig.slot_length.total_seconds())
         self.q_in_J = (WATER_DENSITY * WATER_SPECIFIC_HEAT_CAPACITY *
                        self._tank_volume_l * self.temp_differential_per_sec + self.q_out_J)
@@ -98,7 +98,7 @@ class HeatpumpStorageEnergySolver:
             "q_in, cop, storage_temp, temp_differential, condenser_temp")
 
         ans = sp.solve([
-            sp.Eq((storage_temp_sym - self.current_storage_temp) /
+            sp.Eq((storage_temp_sym - self.current_storage_temp_C) /
                   GlobalConfig.slot_length.total_seconds(),
                   temp_differential_sym),
             sp.Eq(WATER_DENSITY * WATER_SPECIFIC_HEAT_CAPACITY *
@@ -214,9 +214,9 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
 
         solver = HeatpumpStorageEnergySolver(
             tank_volume_l=self._tank_volume_l,
-            current_storage_temp=self.state.get_storage_temp_C(time_slot),
-            dh_supply_temp=self._water_supply_temp_C.profile[time_slot],
-            dh_return_temp=self._water_return_temp_C.profile[time_slot],
+            current_storage_temp_C=self.state.get_storage_temp_C(time_slot),
+            dh_supply_temp_C=self._water_supply_temp_C.profile[time_slot],
+            dh_return_temp_C=self._water_return_temp_C.profile[time_slot],
             dh_flow_m3_per_hour=self._dh_water_flow_m3.profile[time_slot],
             target_storage_temp_C=target_storage_temp_C)
         solver.calculate_energy_from_storage_temp()
@@ -233,9 +233,9 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
         # pylint: disable=too-many-locals
         solver = HeatpumpStorageEnergySolver(
             tank_volume_l=self._tank_volume_l,
-            current_storage_temp=self.state.get_storage_temp_C(time_slot),
-            dh_supply_temp=self._water_supply_temp_C.profile[time_slot],
-            dh_return_temp=self._water_return_temp_C.profile[time_slot],
+            current_storage_temp_C=self.state.get_storage_temp_C(time_slot),
+            dh_supply_temp_C=self._water_supply_temp_C.profile[time_slot],
+            dh_return_temp_C=self._water_return_temp_C.profile[time_slot],
             dh_flow_m3_per_hour=self._dh_water_flow_m3.profile[time_slot],
             energy_kWh=energy_kWh)
         solver.calculate_storage_temp_from_energy()
@@ -259,9 +259,9 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
             target_storage_temp_C = self.state.get_storage_temp_C(time_slot)
             solver = HeatpumpStorageEnergySolver(
                 tank_volume_l=self._tank_volume_l,
-                current_storage_temp=self.state.get_storage_temp_C(last_time_slot),
-                dh_supply_temp=self._water_supply_temp_C.profile[last_time_slot],
-                dh_return_temp=self._water_return_temp_C.profile[last_time_slot],
+                current_storage_temp_C=self.state.get_storage_temp_C(last_time_slot),
+                dh_supply_temp_C=self._water_supply_temp_C.profile[last_time_slot],
+                dh_return_temp_C=self._water_return_temp_C.profile[last_time_slot],
                 dh_flow_m3_per_hour=self._dh_water_flow_m3.profile[last_time_slot],
                 target_storage_temp_C=target_storage_temp_C)
             solver.calculate_energy_from_storage_temp()
