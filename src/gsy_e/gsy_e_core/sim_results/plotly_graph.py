@@ -36,6 +36,7 @@ from gsy_e.models.strategy.scm.load import SCMLoadProfileStrategy, SCMLoadHoursS
 from gsy_e.models.strategy.scm.pv import SCMPVUserProfile
 from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
 from gsy_e.models.strategy.scm.smart_meter import SCMSmartMeterStrategy
+from gsy_e.models.strategy.heat_pump import HeatPumpStrategy
 
 green = 'rgba(20,150,20, alpha)'
 purple = 'rgba(156, 110, 177, alpha)'
@@ -50,6 +51,8 @@ DEVICE_YAXIS = {"trade_energy_kWh": 'Traded [kWh]',
                 "sold_trade_energy_kWh": 'Supply/Traded [kWh]',
                 "bought_trade_energy_kWh": 'Demand/Traded [kWh]',
                 "pv_production_kWh": 'PV Production [kWh]',
+                "energy_consumption_kWh": 'Energy Consumption [kWh]',
+                "storage_temp_C": 'Heatpump Storage Temperature [C]',
                 "energy_buffer_kWh": 'Energy Buffer [kWh]',
                 "production_kWh": 'Power Production [kWh]',
                 "load_profile_kWh": 'Load Profile [kWh]',
@@ -310,7 +313,6 @@ class PlotlyGraph:
         time_traded, energy_traded, min_energy_traded, max_energy_traded = (
             cls.prepare_input(device_dict, traded_varname, invert_y))
 
-        yaxis = yaxis
         time_series_traded = go.Bar(
             x=time_traded,
             y=energy_traded,
@@ -437,7 +439,7 @@ class PlotlyGraph:
             showlegend=False,
             yaxis=yaxis
         )
-        hoverinfo_loacl_min = go.Scatter(
+        hoverinfo_local_min = go.Scatter(
             x=plot_time,
             y=plot_local_min_trade_rate,
             mode="none",
@@ -448,7 +450,7 @@ class PlotlyGraph:
             yaxis=yaxis
         )
 
-        return [candle_stick, hoverinfo_local_max, hoverinfo_loacl_min] + cls._hoverinfo(
+        return [candle_stick, hoverinfo_local_max, hoverinfo_local_min] + cls._hoverinfo(
             plot_time, plot_longterm_min_trade_rate, plot_longterm_max_trade_rate, yaxis)
 
     @classmethod
@@ -536,6 +538,21 @@ class PlotlyGraph:
             data += cls._plot_bar_time_series_traded(
                 device_dict, y2axis_key, "y2", expected_varname=y3axis_key, invert_y=True
             )
+            data += cls._plot_line_time_series(device_dict, y3axis_key)
+
+            layout = cls._device_plot_layout("overlay", f"{device_name}",
+                                             'Time', yaxis_caption_list)
+
+        elif isinstance(device_strategy, HeatPumpStrategy):
+            y1axis_key = "trade_price_eur"
+            y2axis_key = trade_energy_var_name
+            y3axis_key = "storage_temp_C"
+            yaxis_caption_list = [DEVICE_YAXIS[y1axis_key], DEVICE_YAXIS[y2axis_key],
+                                  DEVICE_YAXIS[y3axis_key]]
+
+            data += cls._plot_candlestick_time_series_price(device_dict, y1axis_key, "y1")
+            data += cls._plot_bar_time_series_traded(
+                device_dict, y2axis_key, "y2", expected_varname=y2axis_key)
             data += cls._plot_line_time_series(device_dict, y3axis_key)
 
             layout = cls._device_plot_layout("overlay", f"{device_name}",
