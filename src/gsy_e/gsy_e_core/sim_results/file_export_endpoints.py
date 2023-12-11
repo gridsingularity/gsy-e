@@ -29,7 +29,6 @@ from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_e.models.strategy.pv import PVStrategy
 from gsy_e.models.strategy.scm.load import SCMLoadHoursStrategy, SCMLoadProfileStrategy
 from gsy_e.models.strategy.scm.pv import SCMPVUserProfile
-from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
 from gsy_e.models.strategy.storage import StorageStrategy
 from gsy_e.models.strategy.heat_pump import HeatPumpStrategy
 
@@ -378,8 +377,6 @@ class CoefficientLeafDataExporter(BaseDataExporter):
 
     @property
     def labels(self) -> List:
-        if isinstance(self._area.strategy, SCMStorageStrategy):
-            return ["slot", "charge [kWh]", "offered [kWh]", "charge [%]"]
         if isinstance(self._area.strategy, (SCMLoadHoursStrategy, SCMLoadProfileStrategy)):
             return ["slot", "desired energy [kWh]", "deficit [kWh]"]
         if isinstance(self._area.strategy, SCMPVUserProfile):
@@ -391,12 +388,6 @@ class CoefficientLeafDataExporter(BaseDataExporter):
         slot = self._area.current_market_time_slot
         if slot is None:
             return []
-        if isinstance(self._area.strategy, SCMStorageStrategy):
-            s = self._area.strategy.state
-            return [[slot,
-                    s.charge_history_kWh[slot],
-                    s.offered_history[slot],
-                    s.charge_history[slot]]]
         if isinstance(self._area.strategy, (SCMLoadHoursStrategy, SCMLoadProfileStrategy)):
             desired = self._area.strategy.state.get_desired_energy_Wh(slot) / 1000
             # All energy is traded in SCM
