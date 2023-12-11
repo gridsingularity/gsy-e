@@ -50,7 +50,7 @@ PROFILE_UUID_NAMES = [
     "buying_rate_profile_uuid",
     "consumption_kWh_profile_uuid",
     "external_temp_C_profile_uuid",
-    "storage_profile_uuid"
+    "prosumption_kWh_profile_uuid"
 ]
 
 

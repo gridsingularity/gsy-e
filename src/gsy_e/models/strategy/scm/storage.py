@@ -13,11 +13,11 @@ class SCMStorageStrategy(SCMStrategy):
     """Storage SCM strategy."""
 
     def __init__(
-            self, storage_profile: Union[str, Dict[int, float], Dict[str, float]] = None,
-            storage_profile_uuid: str = None):
+            self, prosumption_kWh_profile: Union[str, Dict[int, float], Dict[str, float]] = None,
+            prosumption_kWh_profile_uuid: str = None):
         self._energy_params = StorageProfileEnergyParameters(
-            storage_profile, storage_profile_uuid)
-        self.storage_profile_uuid = storage_profile_uuid
+            prosumption_kWh_profile, prosumption_kWh_profile_uuid)
+        self.prosumption_kWh_profile_uuid = prosumption_kWh_profile_uuid
 
         self._state = ScmStorageState()
 

@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
 
+from pendulum import today
 from gsy_framework.constants_limits import ConstSettings, SpotMarketTypeEnum
 
 from gsy_e.constants import DEFAULT_SCM_COMMUNITY_NAME
@@ -31,12 +32,9 @@ from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
 ConstSettings.MASettings.MARKET_TYPE = SpotMarketTypeEnum.COEFFICIENTS.value
 
 pv_profile = os.path.join(gsye_root_path, "resources", "Solar_Curve_W_sunny.csv")
-storage_profile = {
-    1: 1,
-    2: -2,
-    4: 4,
-    12: -0.12,
-    18: 0.23
+
+prosumption_kWh_profile = {
+    today(tz="UTC").set(hour=hour): 1 if hour < 12 else -1 for hour in range(0, 24)
 }
 
 
@@ -54,9 +52,9 @@ def get_setup(config):
                     CoefficientArea("H1 PV", strategy=SCMPVUserProfile(
                         power_profile=pv_profile)),
                     CoefficientArea("H1 Storage1", strategy=SCMStorageStrategy(
-                        storage_profile=storage_profile)),
+                        prosumption_kWh_profile=prosumption_kWh_profile)),
                     CoefficientArea("H1 Storage2", strategy=SCMStorageStrategy(
-                        storage_profile=storage_profile)),
+                        prosumption_kWh_profile=prosumption_kWh_profile)),
                 ],
                 grid_fee_percentage=0, grid_fee_constant=0, coefficient_percentage=0.6
             ),
