@@ -5,6 +5,6 @@ from gsy_e.models.strategy.scm.heat_pump import ScmHeatPumpStrategy
 class ForecastScmHeatPumpStrategy(SCMForecastExternalMixin, ScmHeatPumpStrategy):
     """External SCM heat pump strategy"""
 
-    def __init__(self, heat_pump_profile=None, heat_pump_profile_uuid=None):
-        super().__init__(heat_pump_profile, heat_pump_profile_uuid)
-        self.heat_pump_profile_uuid = heat_pump_profile_uuid
+    def __init__(self, consumption_kWh_profile=None, consumption_kWh_profile_uuid=None):
+        super().__init__(consumption_kWh_profile, consumption_kWh_profile_uuid)
+        self.consumption_kWh_profile_uuid = consumption_kWh_profile_uuid
