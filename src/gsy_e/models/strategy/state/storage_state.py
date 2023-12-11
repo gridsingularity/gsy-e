@@ -453,3 +453,19 @@ class StorageState(StateInterface):
         return {
             "soc_history_%": self.charge_history.get(current_time_slot, 0)
         }
+
+
+class ScmStorageState(StateInterface):
+    """Sate class for SCM storages. Currently empty as nothing needs to tracked in state."""
+
+    def get_state(self) -> Dict:
+        return {}
+
+    def restore_state(self, state_dict: Dict):
+        return {}
+
+    def delete_past_state_values(self, current_time_slot: DateTime):
+        return None
+
+    def get_results_dict(self, current_time_slot: DateTime) -> dict:
+        return {}

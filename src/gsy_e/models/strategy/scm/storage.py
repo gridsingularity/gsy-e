@@ -1,96 +1,50 @@
-from enum import Enum
-from typing import Dict, TYPE_CHECKING
+from typing import Dict, Union
 
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.validators import StorageValidator
-from gsy_framework.utils import key_in_dict_and_not_none
 from pendulum import DateTime
 
-from gsy_e.models.strategy.state import ESSEnergyOrigin, StorageState
+from gsy_e.models.strategy.energy_parameters.storage_profile import StorageProfileEnergyParameters
 from gsy_e.models.strategy.scm import SCMStrategy
-
+from gsy_e.models.strategy.state import ScmStorageState
 StorageSettings = ConstSettings.StorageSettings
-
-
-if TYPE_CHECKING:
-    from gsy_e.models.area import AreaBase
 
 
 class SCMStorageStrategy(SCMStrategy):
     """Storage SCM strategy."""
-    # pylint: disable=too-many-arguments
+
     def __init__(
-            self, initial_soc: float = StorageSettings.MIN_ALLOWED_SOC,
-            min_allowed_soc=StorageSettings.MIN_ALLOWED_SOC,
-            battery_capacity_kWh: float = StorageSettings.CAPACITY,
-            max_abs_battery_power_kW: float = StorageSettings.MAX_ABS_POWER,
-            initial_energy_origin: Enum = ESSEnergyOrigin.EXTERNAL):
-        self._initial_soc = initial_soc
-        self._min_allowed_soc = min_allowed_soc
-        self._battery_capacity_kWh = battery_capacity_kWh
-        self._max_abs_battery_power_kW = max_abs_battery_power_kW
-        self._initial_energy_origin = initial_energy_origin
+            self, storage_profile: Union[str, Dict[int, float], Dict[str, float]] = None,
+            storage_profile_uuid: str = None):
+        self._energy_params = StorageProfileEnergyParameters(
+            storage_profile, storage_profile_uuid)
+        self.storage_profile_uuid = storage_profile_uuid
 
-        self._validate_and_init_state()
-
-    @property
-    def state(self):
-        return self._state
+        self._state = ScmStorageState()
 
     def serialize(self) -> Dict:
         """Serialize the strategy parameters."""
-        return {
-            "initial_soc": self._state.initial_soc,
-            "min_allowed_soc": self._state.min_allowed_soc_ratio * 100.0,
-            "battery_capacity_kWh": self._state.capacity,
-            "max_abs_battery_power_kW": self._state.max_abs_battery_power_kW,
-            "initial_energy_origin": self._state.initial_energy_origin,
-        }
+        return {**self._energy_params.serialize()}
 
-    def activate(self, area: "AreaBase") -> None:
-        """Activate the strategy."""
-        self._state.add_default_values_to_state_profiles([area.current_market_time_slot])
-        self._state.activate(
-            area.config.slot_length,
-            area.current_market_time_slot
-            if area.current_market_time_slot else area.config.start_date)
+    def activate(self, _area):
+        """Overwriting Base method because there is nothing to be done when activating"""
 
-    def market_cycle(self, area: "AreaBase") -> None:
-        """Update the storage state for the next time slot."""
-        self._state.add_default_values_to_state_profiles([area.current_market_time_slot])
-        self._state.market_cycle(area.past_market_time_slot, area.current_market_time_slot, [])
-        self._state.delete_past_state_values(area.past_market_time_slot)
-        self._state.check_state(area.current_market_time_slot)
+    def market_cycle(self, _area):
+        self._energy_params.market_cycle()
+
+    def _get_from_profile(self, time_slot: DateTime) -> float:
+        return self._energy_params.energy_profile.profile.get(time_slot)
 
     def get_energy_to_sell_kWh(self, time_slot: DateTime) -> float:
         """Get the available energy for production for the specified time slot."""
-        return self._state.get_available_energy_to_sell_kWh(time_slot)
+        energy_value = self._get_from_profile(time_slot)
+        return abs(energy_value) if energy_value < 0 else 0
 
     def get_energy_to_buy_kWh(self, time_slot: DateTime) -> float:
         """Get the available energy for consumption for the specified time slot."""
-        return self._state.get_available_energy_to_buy_kWh(time_slot)
+        energy_value = self._get_from_profile(time_slot)
+        return energy_value if energy_value > 0 else 0
 
-    def area_reconfigure_event(self, **kwargs):
-        altered = False
-        if key_in_dict_and_not_none(kwargs, "battery_capacity_kWh"):
-            self._battery_capacity_kWh = kwargs["battery_capacity_kWh"]
-            altered = True
-        if key_in_dict_and_not_none(kwargs, "min_allowed_soc"):
-            self._min_allowed_soc = kwargs["min_allowed_soc"]
-            altered = True
-        if key_in_dict_and_not_none(kwargs, "max_abs_battery_power_kW"):
-            self._max_abs_battery_power_kW = kwargs["max_abs_battery_power_kW"]
-            altered = True
-        if altered:
-            self._validate_and_init_state()
-
-    def _validate_and_init_state(self):
-        StorageValidator.validate(
-            initial_soc=self._initial_soc, min_allowed_soc=self._min_allowed_soc,
-            battery_capacity_kWh=self._battery_capacity_kWh,
-            max_abs_battery_power_kW=self._max_abs_battery_power_kW)
-        self._state = StorageState(
-            initial_soc=self._initial_soc, initial_energy_origin=self._initial_energy_origin,
-            capacity=self._battery_capacity_kWh,
-            max_abs_battery_power_kW=self._max_abs_battery_power_kW,
-            min_allowed_soc=self._min_allowed_soc)
+    @property
+    def state(self) -> "ScmStorageState":
+        """Return empty state."""
+        return self._state
