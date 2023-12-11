@@ -30,8 +30,14 @@ from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
 
 ConstSettings.MASettings.MARKET_TYPE = SpotMarketTypeEnum.COEFFICIENTS.value
 
-
 pv_profile = os.path.join(gsye_root_path, "resources", "Solar_Curve_W_sunny.csv")
+storage_profile = {
+    1: 1,
+    2: -2,
+    4: 4,
+    12: -0.12,
+    18: 0.23
+}
 
 
 def get_setup(config):
@@ -44,10 +50,13 @@ def get_setup(config):
                     CoefficientArea("H1 General Load",
                                     strategy=SCMLoadHoursStrategy(avg_power_W=200,
                                                                   hrs_of_day=list(
-                                                                    range(12, 18)))),
-                    CoefficientArea("H1 PV", strategy=SCMPVUserProfile(power_profile=pv_profile)),
-                    CoefficientArea("H1 Storage1", strategy=SCMStorageStrategy(initial_soc=50)),
-                    CoefficientArea("H1 Storage2", strategy=SCMStorageStrategy(initial_soc=50)),
+                                                                      range(12, 18)))),
+                    CoefficientArea("H1 PV", strategy=SCMPVUserProfile(
+                        power_profile=pv_profile)),
+                    CoefficientArea("H1 Storage1", strategy=SCMStorageStrategy(
+                        storage_profile=storage_profile)),
+                    CoefficientArea("H1 Storage2", strategy=SCMStorageStrategy(
+                        storage_profile=storage_profile)),
                 ],
                 grid_fee_percentage=0, grid_fee_constant=0, coefficient_percentage=0.6
             ),
@@ -58,7 +67,8 @@ def get_setup(config):
                                     strategy=SCMLoadHoursStrategy(avg_power_W=200,
                                                                   hrs_of_day=list(
                                                                       range(12, 16)))),
-                    CoefficientArea("H2 PV", strategy=SCMPVUserProfile(power_profile=pv_profile)),
+                    CoefficientArea("H2 PV", strategy=SCMPVUserProfile(
+                        power_profile=pv_profile)),
                     CoefficientArea("H2 Smart Meter",
                                     strategy=SCMSmartMeterStrategy(smart_meter_profile={0: 100})),
                 ],
