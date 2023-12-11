@@ -49,7 +49,8 @@ PROFILE_UUID_NAMES = [
     "smart_meter_profile_uuid",
     "buying_rate_profile_uuid",
     "consumption_kWh_profile_uuid",
-    "external_temp_C_profile_uuid"
+    "external_temp_C_profile_uuid",
+    "storage_profile_uuid"
 ]
 
 
