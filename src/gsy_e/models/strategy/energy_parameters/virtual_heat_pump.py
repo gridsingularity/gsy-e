@@ -197,9 +197,7 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
     def _calc_temp_increase_K(self, time_slot: DateTime, traded_energy_kWh: float) -> float:
         storage_temp = self._energy_to_storage_temp(traded_energy_kWh, time_slot)
         current_storage_temp = self.state.get_storage_temp_C(time_slot)
-        if storage_temp <= current_storage_temp:
-            return 0
-        return storage_temp - current_storage_temp
+        return storage_temp - current_storage_temp + self.state.get_temp_decrease_K(time_slot)
 
     def _target_storage_temp_to_energy(
             self, target_storage_temp_C: float, time_slot: DateTime) -> float:
@@ -247,13 +245,17 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
 
     def event_traded_energy(self, time_slot: DateTime, energy_kWh: float):
         """React to an event_traded_energy."""
-        super().event_traded_energy(time_slot, energy_kWh)
+        self._decrement_posted_energy(time_slot, energy_kWh)
         self.state.update_energy_consumption_kWh(time_slot, energy_kWh)
 
     def _populate_state(self, time_slot: DateTime):
-        self.state.update_storage_temp(time_slot)
         last_time_slot = self.last_time_slot(time_slot)
         if last_time_slot in self._water_supply_temp_C.profile:
+            energy_kWh = self.state.get_energy_consumption_kWh(last_time_slot)
+            if energy_kWh > FLOATING_POINT_TOLERANCE:
+                self.state.update_temp_increase_K(
+                    last_time_slot, self._calc_temp_increase_K(last_time_slot, energy_kWh))
+
             target_storage_temp_C = self.state.get_storage_temp_C(time_slot)
             solver = HeatpumpStorageEnergySolver(
                 tank_volume_l=self._tank_volume_l,
@@ -266,6 +268,8 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
             self.state.set_cop(last_time_slot, solver.cop)
             self.state.set_condenser_temp(last_time_slot, solver.condenser_temp_C)
             self.state.set_heat_demand(last_time_slot, solver.q_out_J)
+
+        self.state.update_storage_temp(time_slot)
 
         self.state.set_temp_decrease_K(
             time_slot, self._calc_temp_decrease_K(time_slot))
