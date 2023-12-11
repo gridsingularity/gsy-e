@@ -45,9 +45,11 @@ from gsy_e.models.strategy.predefined_wind import WindUserProfileStrategy
 from gsy_e.models.strategy.pv import PVStrategy
 from gsy_e.models.strategy.scm.external.load import ForecastSCMLoadStrategy
 from gsy_e.models.strategy.scm.external.pv import ForecastSCMPVStrategy
+from gsy_e.models.strategy.scm.external.heat_pump import ForecastScmHeatPumpStrategy
 from gsy_e.models.strategy.scm.load import SCMLoadHoursStrategy, SCMLoadProfileStrategy
 from gsy_e.models.strategy.scm.pv import SCMPVUserProfile
 from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
+from gsy_e.models.strategy.scm.heat_pump import ScmHeatPumpStrategy
 from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
 from gsy_e.models.strategy.storage import StorageStrategy
 
@@ -216,6 +218,10 @@ class SCMLoadProfile(CoefficientLeaf):
     strategy_type = SCMLoadProfileStrategy
 
 
+class SCMHeatPump(CoefficientLeaf):
+    strategy_type = ScmHeatPumpStrategy
+
+
 class SCMLoadHours(CoefficientLeaf):
     strategy_type = SCMLoadHoursStrategy
 
@@ -232,19 +238,25 @@ class ForecastSCMPV(CoefficientLeaf):
     strategy_type = ForecastSCMPVStrategy
 
 
+class ForecastSCMHeatPump(CoefficientLeaf):
+    strategy_type = ForecastScmHeatPumpStrategy
+
+
 scm_leaf_mapping = {
     "LoadHours": SCMLoadHours,
     "LoadProfile": SCMLoadProfile,
     "Storage": SCMStorage,
     "PV": SCMPVProfile,
-    "PVProfile": SCMPVProfile
+    "PVProfile": SCMPVProfile,
+    "HeatPump": SCMHeatPump
 }
 
 forecast_scm_leaf_mapping = {
     "LoadHours": ForecastSCMLoad,
     "LoadProfile": ForecastSCMLoad,
     "PV": ForecastSCMPV,
-    "PVProfile": ForecastSCMPV
+    "PVProfile": ForecastSCMPV,
+    "HeatPump": ForecastSCMHeatPump
 }
 
 forward_leaf_mapping = {
