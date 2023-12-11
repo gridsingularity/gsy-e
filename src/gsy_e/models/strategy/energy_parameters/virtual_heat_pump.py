@@ -190,12 +190,28 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
         q_out = m_kg_per_sec * WATER_SPECIFIC_HEAT_CAPACITY * (dh_supply_temp - dh_return_temp)
         temp_differential_per_sec = -q_out / (
                 WATER_DENSITY * WATER_SPECIFIC_HEAT_CAPACITY * self._tank_volume_l)
-        temp_decrease = temp_differential_per_sec * GlobalConfig.slot_length.total_seconds()
-        assert temp_decrease <= 0.0
-        return abs(temp_decrease)
+        temp_decrease_C = temp_differential_per_sec * GlobalConfig.slot_length.total_seconds()
+        new_temperature_without_operation_C = (
+                self.state.get_storage_temp_C(time_slot) - temp_decrease_C)
+        if new_temperature_without_operation_C < self._min_temp_C:
+            temp_decrease_C = 0.0
+            self._calculate_unmatched_demand(time_slot)
+        assert temp_decrease_C <= 0.0
+        return abs(temp_decrease_C)
+
+    def _calculate_unmatched_demand(self, time_slot: DateTime):
+        solver = HeatpumpStorageEnergySolver(
+            tank_volume_l=self._tank_volume_l,
+            current_storage_temp_C=self.state.get_storage_temp_C(time_slot),
+            dh_supply_temp_C=self._water_supply_temp_C.profile[time_slot],
+            dh_return_temp_C=self._water_return_temp_C.profile[time_slot],
+            dh_flow_m3_per_hour=self._dh_water_flow_m3.profile[time_slot],
+            target_storage_temp_C=self.state.get_storage_temp_C(time_slot))
+        solver.calculate_energy_from_storage_temp()
+        self.state.update_unmatched_demand_kWh(time_slot, solver.energy_kWh)
 
     def _calc_temp_increase_K(self, time_slot: DateTime, traded_energy_kWh: float) -> float:
-        storage_temp = self._energy_to_storage_temp(traded_energy_kWh, time_slot)
+        storage_temp = self._energy_to_target_storage_temp(traded_energy_kWh, time_slot)
         current_storage_temp = self.state.get_storage_temp_C(time_slot)
         return storage_temp - current_storage_temp + self.state.get_temp_decrease_K(time_slot)
 
@@ -224,7 +240,7 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
         logger.debug(solver)
         return solver.energy_kWh
 
-    def _energy_to_storage_temp(
+    def _energy_to_target_storage_temp(
             self, energy_kWh: float, time_slot: DateTime) -> float:
         """
         Return the water storage temperature after the heatpump has consumed energy_kWh energy and
@@ -251,11 +267,13 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
     def _populate_state(self, time_slot: DateTime):
         last_time_slot = self.last_time_slot(time_slot)
         if last_time_slot in self._water_supply_temp_C.profile:
+            # Update temp increase
             energy_kWh = self.state.get_energy_consumption_kWh(last_time_slot)
             if energy_kWh > FLOATING_POINT_TOLERANCE:
                 self.state.update_temp_increase_K(
                     last_time_slot, self._calc_temp_increase_K(last_time_slot, energy_kWh))
 
+            # Update last slot statistics (COP, heat demand, condenser temp)
             target_storage_temp_C = self.state.get_storage_temp_C(time_slot)
             solver = HeatpumpStorageEnergySolver(
                 tank_volume_l=self._tank_volume_l,
