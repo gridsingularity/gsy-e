@@ -52,6 +52,10 @@ class HeatPumpEnergyParametersBase(ABC):
                 maximum_power_rating_kW * self._slot_length.total_hours())
         self.state = HeatPumpState(initial_temp_C, self._slot_length)
 
+    def last_time_slot(self, current_market_slot: DateTime) -> DateTime:
+        """Calculate the previous time slot from the current one."""
+        return current_market_slot - self._slot_length
+
     def event_activate(self):
         """Runs on activate event."""
         self._rotate_profiles()
