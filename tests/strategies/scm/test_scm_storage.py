@@ -8,11 +8,14 @@ from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
 
 TIME_SLOT_BUY = today(tz="UTC").set(hour=11)
 TIME_SLOT_SELL = today(tz="UTC").set(hour=12)
+PROSUMPTION_KWH_PROFILE = {
+    today(tz="UTC").set(hour=hour): 1 if hour < 12 else -1 for hour in range(0, 24)
+}
 
 
 @pytest.fixture(name="scm_storage")
 def fixture_scm_storage():
-    return SCMStorageStrategy(storage_profile={0: 1, 12: -1})
+    return SCMStorageStrategy(prosumption_kWh_profile=PROSUMPTION_KWH_PROFILE)
 
 
 class TestScmStorage:
@@ -23,15 +26,15 @@ class TestScmStorage:
         area = MagicMock(spec=CoefficientArea)
         assert scm_storage._energy_params.energy_profile.profile == {}
         scm_storage.market_cycle(area)
-        assert len(list(scm_storage._energy_params.energy_profile.profile.keys())) == 24 * 4
+        assert len(list(scm_storage._energy_params.energy_profile.profile.keys())) == 24
         assert all(
-            abs(v) == 0.00025 for v in scm_storage._energy_params.energy_profile.profile.values())
+            abs(v) == 1 for v in scm_storage._energy_params.energy_profile.profile.values())
 
     @staticmethod
     def test_get_energy_to_sell_kWh_returns_correctly(scm_storage):
         area = MagicMock(spec=CoefficientArea)
         scm_storage.market_cycle(area)
-        assert scm_storage.get_energy_to_sell_kWh(TIME_SLOT_SELL) == 0.00025
+        assert scm_storage.get_energy_to_sell_kWh(TIME_SLOT_SELL) == 1
         assert scm_storage.get_energy_to_sell_kWh(TIME_SLOT_BUY) == 0
 
     @staticmethod
@@ -39,4 +42,4 @@ class TestScmStorage:
         area = MagicMock(spec=CoefficientArea)
         scm_storage.market_cycle(area)
         assert scm_storage.get_energy_to_buy_kWh(TIME_SLOT_SELL) == 0
-        assert scm_storage.get_energy_to_buy_kWh(TIME_SLOT_BUY) == 0.00025
+        assert scm_storage.get_energy_to_buy_kWh(TIME_SLOT_BUY) == 1
