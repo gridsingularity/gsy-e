@@ -71,7 +71,7 @@ class TestVirtualHeatpumpStrategy:
             self._datetime: water_return_temp}
         self._virtual_hp._energy_params._dh_water_flow_m3.profile = {
             self._datetime: water_flow}
-        calculated_storage_temp = self._virtual_hp._energy_params._energy_to_storage_temp(
+        calculated_storage_temp = self._virtual_hp._energy_params._energy_to_target_storage_temp(
             energy, self._datetime)
         assert isclose(calculated_storage_temp, storage_temp, abs_tol=FLOATING_POINT_TOLERANCE)
 
