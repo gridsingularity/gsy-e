@@ -19,6 +19,10 @@ nav:
           - 'Consumption (Load) Profiles': 'consumption.md'
           - 'Battery (Storage)': 'battery.md'
           - 'Power Plant': 'power-plant.md'
+          - 'Heat Pumps and District Heating':
+            - 'Heat Pump & Virtual Heat Pump Overview': 'heat-pumps-general.md'
+            - 'Heat Pump': 'heat-pump.md'
+            - 'Virtual Heat Pump': 'virtual-heat-pump.md'
         - 'Community Settings': 'community-settings.md'
         - 'Grid Market Settings': 'grid-market-settings.md'
         - 'Events (Adding, Removing Assets, etc.)': 'events.md'
@@ -166,6 +170,9 @@ extra_css:
 extra_javascript:
   - https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML
   - https://research.web3.foundation/en/latest/mathjax-config.js
+  - javascripts/mathjax.js
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
 
 # Repository that houses the source code for this site. This
 # is needed to render the nice GH link on the top right.
@@ -199,6 +206,8 @@ markdown_extensions:
     - mdtooltips
     - attr_list
     - md_in_html
+    - pymdownx.arithmatex:
+        generic: true
 
 plugins:
     - search:
