@@ -85,6 +85,7 @@ class DummyState(StateInterface):
 
     def get_results_dict(self, current_time_slot: DateTime) -> dict:
         """Return a dict with the state values that can be used in results."""
+        return {}
 
 
 class ProsumptionInterface(StateInterface, ABC):
