@@ -4,7 +4,6 @@ from pendulum import DateTime
 
 from gsy_e.models.strategy.energy_parameters.storage_profile import StorageProfileEnergyParameters
 from gsy_e.models.strategy.scm import SCMStrategy
-from gsy_e.models.strategy.state.base_states import DummyState
 
 
 class SCMStorageStrategy(SCMStrategy):
@@ -16,8 +15,6 @@ class SCMStorageStrategy(SCMStrategy):
         self._energy_params = StorageProfileEnergyParameters(
             prosumption_kWh_profile, prosumption_kWh_profile_uuid)
         self.prosumption_kWh_profile_uuid = prosumption_kWh_profile_uuid
-
-        self._state = DummyState()
 
     def serialize(self) -> Dict:
         """Serialize the strategy parameters."""
@@ -43,6 +40,6 @@ class SCMStorageStrategy(SCMStrategy):
         return energy_value if energy_value > 0 else 0
 
     @property
-    def state(self) -> "DummyState":
+    def state(self):
         """Return empty state."""
-        return self._state
+        return self._energy_params.state

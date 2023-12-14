@@ -3,6 +3,7 @@ from typing import Dict, Union
 from gsy_framework.read_user_profile import InputProfileTypes
 
 from gsy_e.models.strategy.profile import EnergyProfile
+from gsy_e.models.strategy.state.base_states import DummyState
 
 
 class StorageProfileEnergyParameters:
@@ -16,6 +17,7 @@ class StorageProfileEnergyParameters:
 
         self.energy_profile = EnergyProfile(prosumption_kWh_profile, prosumption_kWh_profile_uuid,
                                             profile_type=InputProfileTypes.ENERGY_KWH)
+        self.state = DummyState()
 
     def serialize(self):
         """Serialize class parameters."""
