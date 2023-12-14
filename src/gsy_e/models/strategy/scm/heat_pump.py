@@ -2,9 +2,7 @@ from gsy_framework.read_user_profile import InputProfileTypes
 from pendulum import DateTime
 
 from gsy_e.models.strategy.energy_parameters.load import DefinedLoadEnergyParameters
-from gsy_e.models.strategy.profile import EnergyProfile
 from gsy_e.models.strategy.scm.load import SCMLoadProfileStrategy
-from gsy_e.models.strategy.state import LoadState
 
 
 class ScmHeatPumpEnergyParameters(DefinedLoadEnergyParameters):
@@ -14,12 +12,8 @@ class ScmHeatPumpEnergyParameters(DefinedLoadEnergyParameters):
     """
 
     def __init__(self, consumption_kWh_profile=None, consumption_kWh_profile_uuid: str = None):
-        # pylint: disable= super-init-not-called
-        """super() should not be called"""
-        self.energy_profile = EnergyProfile(
-            consumption_kWh_profile, consumption_kWh_profile_uuid,
-            profile_type=InputProfileTypes.ENERGY_KWH)
-        self.state = LoadState()
+        super().__init__(consumption_kWh_profile, consumption_kWh_profile_uuid)
+        self.energy_profile.profile_type = InputProfileTypes.ENERGY_KWH
 
     def serialize(self):
         return {
