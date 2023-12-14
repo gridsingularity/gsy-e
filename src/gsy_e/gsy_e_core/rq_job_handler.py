@@ -6,7 +6,7 @@ from datetime import datetime, date
 from typing import Dict, Optional
 
 from gsy_framework.constants_limits import GlobalConfig, ConstSettings
-from gsy_framework.enums import ConfigurationType, SpotMarketTypeEnum
+from gsy_framework.enums import ConfigurationType, SpotMarketTypeEnum, CoefficientAlgorithm
 from gsy_framework.settings_validators import validate_global_settings
 from pendulum import duration, instance, now
 
@@ -156,6 +156,9 @@ def _configure_constants_constsettings(
         ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS
     )
     gsy_e.constants.CONNECT_TO_PROFILES_DB = connect_to_profiles_db
+
+    ConstSettings.SCMSettings.MARKET_ALGORITHM = CoefficientAlgorithm(
+        settings.get("scm_coefficient_algorithm", 1)).value
 
 
 def _create_config_settings_object(
