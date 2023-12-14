@@ -1,6 +1,6 @@
 # pylint: disable=protected-access
 from math import isclose
-from unittest.mock import Mock
+from unittest.mock import Mock, call
 
 import pytest
 from gsy_framework.constants_limits import GlobalConfig, TIME_ZONE
@@ -109,15 +109,24 @@ class TestHeatPumpEnergyParameters:
     def test__calc_temp_decrease_K_sets_unmatched_demand(energy_params):
         energy_params.state.update_unmatched_demand_kWh = Mock()
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
-        energy_params.state.update_unmatched_demand_kWh.assert_called_once_with(
-            CURRENT_MARKET_SLOT, 4.113488727550631)
+        assert energy_params.state.update_unmatched_demand_kWh.call_count == 2
+        assert energy_params.state.update_unmatched_demand_kWh.call_args_list == [
+            call(CURRENT_MARKET_SLOT, 4.113488727550631),
+            call(CURRENT_MARKET_SLOT, 1.4325563622468467)
+        ]
 
     @staticmethod
-    def test__calc_temp_increase_K_sets_unmatched_demand(energy_params):
+    @pytest.mark.parametrize("maximum_power_rating_kW, expected_unmatched_demand",
+                             [[3, 3.5460],
+                              [5, 2.113]])
+    def test__calc_temp_increase_K_sets_unmatched_demand(
+            energy_params, maximum_power_rating_kW, expected_unmatched_demand):
+        energy_params._max_energy_consumption_kWh = maximum_power_rating_kW
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
         energy_params.event_traded_energy(CURRENT_MARKET_SLOT, 2)
         assert isclose(
-            energy_params.state._unmatched_demand_kWh[CURRENT_MARKET_SLOT], 2.113, abs_tol=1e-3)
+            energy_params.state._unmatched_demand_kWh[CURRENT_MARKET_SLOT],
+            expected_unmatched_demand, abs_tol=1e-3)
 
     @staticmethod
     def test_event_market_cycle_calculates_and_sets_cop(energy_params):

@@ -70,10 +70,6 @@ FORWARD_MARKET_MAX_DURATION_YEARS = 6
 
 SCM_CN_DAYS_OF_DELAY = 3
 
-# Disable SCM home energy consumption from other homes in the community.
-# Only allow self consumption in the home level, not in the community level.
-SCM_NO_COMMUNITY_SELF_CONSUMPTION = True
-
 
 class SettlementTemplateStrategiesConstants:
     """Constants related to the configuration of settlement template strategies"""

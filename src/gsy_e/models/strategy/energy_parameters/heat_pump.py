@@ -52,6 +52,10 @@ class HeatPumpEnergyParametersBase(ABC):
                 maximum_power_rating_kW * self._slot_length.total_hours())
         self.state = HeatPumpState(initial_temp_C, self._slot_length)
 
+    def last_time_slot(self, current_market_slot: DateTime) -> DateTime:
+        """Calculate the previous time slot from the current one."""
+        return current_market_slot - self._slot_length
+
     def event_activate(self):
         """Runs on activate event."""
         self._rotate_profiles()
@@ -190,7 +194,12 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
             self.state.get_temp_decrease_K(time_slot)) / self.state.get_cop(time_slot)
 
         assert max_energy_consumption > -FLOATING_POINT_TOLERANCE
-        return min(self._max_energy_consumption_kWh, max_energy_consumption)
+        if max_energy_consumption > self._max_energy_consumption_kWh:
+            # demand is higher than max_power_rating
+            self.state.update_unmatched_demand_kWh(
+                time_slot, max_energy_consumption - self._max_energy_consumption_kWh)
+            return self._max_energy_consumption_kWh
+        return max_energy_consumption
 
     def _calc_energy_to_buy_minimum(self, time_slot: DateTime) -> float:
         max_temp_decrease_allowed = (
@@ -200,7 +209,13 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
             return 0
         min_energy_consumption = (
                 self._temp_diff_to_Q_kWh(temp_diff) / self.state.get_cop(time_slot))
-        return min(self._max_energy_consumption_kWh, min_energy_consumption)
+
+        if min_energy_consumption > self._max_energy_consumption_kWh:
+            # demand is higher than max_power_rating
+            self.state.update_unmatched_demand_kWh(
+                time_slot, min_energy_consumption - self._max_energy_consumption_kWh)
+            return self._max_energy_consumption_kWh
+        return min_energy_consumption
 
     def _calc_temp_decrease_K(self, time_slot: DateTime) -> float:
         demanded_temp_decrease_K = self._Q_kWh_to_temp_diff(self._calc_Q_from_energy_kWh(

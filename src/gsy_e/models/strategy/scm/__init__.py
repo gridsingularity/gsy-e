@@ -12,6 +12,11 @@ if TYPE_CHECKING:
 class SCMStrategy(ABC):
     """Abstract base class for all SCM strategies."""
 
+    @property
+    @abstractmethod
+    def state(self):
+        """Return state of the strategy."""
+
     @abstractmethod
     def activate(self, area: "CoefficientArea"):
         """Trigger strategy actions at the start of the simulation, when the area is activated."""
@@ -20,6 +25,11 @@ class SCMStrategy(ABC):
     @abstractmethod
     def market_cycle(self, area: "CoefficientArea"):
         """Trigger strategy actions on every market cycle."""
+        raise NotImplementedError
+
+    @abstractmethod
+    def serialize(self):
+        """Serialize SCMStrategy object"""
         raise NotImplementedError
 
     def get_state(self) -> Dict:
@@ -48,14 +58,6 @@ class SCMStrategy(ABC):
     def get_energy_to_buy_kWh(self, time_slot: DateTime) -> float:
         """Get the available energy for consumption for the specified time slot."""
         return 0.
-
-    def decrease_energy_to_buy(
-            self, traded_energy_kWh: float, time_slot: DateTime, area: "CoefficientArea"):
-        """Decrease traded energy from the state and the strategy parameters."""
-
-    def decrease_energy_to_sell(
-            self, traded_energy_kWh: float, time_slot: DateTime, area: "CoefficientArea"):
-        """Decrease traded energy from the state and the strategy parameters."""
 
     def deactivate(self):
         """Should be called when the simulation is ended."""
