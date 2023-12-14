@@ -1,12 +1,10 @@
 from typing import Dict, Union
 
-from gsy_framework.constants_limits import ConstSettings
 from pendulum import DateTime
 
 from gsy_e.models.strategy.energy_parameters.storage_profile import StorageProfileEnergyParameters
 from gsy_e.models.strategy.scm import SCMStrategy
-from gsy_e.models.strategy.state import ScmStorageState
-StorageSettings = ConstSettings.StorageSettings
+from gsy_e.models.strategy.state.base_states import DummyState
 
 
 class SCMStorageStrategy(SCMStrategy):
@@ -19,7 +17,7 @@ class SCMStorageStrategy(SCMStrategy):
             prosumption_kWh_profile, prosumption_kWh_profile_uuid)
         self.prosumption_kWh_profile_uuid = prosumption_kWh_profile_uuid
 
-        self._state = ScmStorageState()
+        self._state = DummyState()
 
     def serialize(self) -> Dict:
         """Serialize the strategy parameters."""
@@ -45,6 +43,6 @@ class SCMStorageStrategy(SCMStrategy):
         return energy_value if energy_value > 0 else 0
 
     @property
-    def state(self) -> "ScmStorageState":
+    def state(self) -> "DummyState":
         """Return empty state."""
         return self._state
