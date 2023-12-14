@@ -31,6 +31,7 @@ from gsy_e.models.strategy.scm.load import SCMLoadHoursStrategy, SCMLoadProfileS
 from gsy_e.models.strategy.scm.pv import SCMPVUserProfile
 from gsy_e.models.strategy.storage import StorageStrategy
 from gsy_e.models.strategy.heat_pump import HeatPumpStrategy
+from gsy_e.models.strategy.virtual_heatpump import VirtualHeatpumpStrategy
 
 if TYPE_CHECKING:
     from gsy_e.models.area import CoefficientArea
@@ -152,10 +153,16 @@ class LeafDataExporter(BaseDataExporter):
             return ["desired energy [kWh]", "deficit [kWh]"]
         if isinstance(self.area.strategy, PVStrategy):
             return ["produced [kWh]", "not sold [kWh]"]
-        if isinstance(self.area.strategy, HeatPumpStrategy):
+        # pylint: disable=unidiomatic-typecheck
+        if type(self.area.strategy) == HeatPumpStrategy:
             return [
                 "unmatched demand [kWh]", "storage temperature C", "temp decrease K",
                 "temp increase K", "COP"]
+        # pylint: disable=unidiomatic-typecheck
+        if type(self.area.strategy) == VirtualHeatpumpStrategy:
+            return [
+                "unmatched demand [kWh]", "storage temperature C", "temp decrease K",
+                "temp increase K", "COP", "heat demand J", "condenser temperature C"]
         return []
 
     @property
@@ -186,13 +193,25 @@ class LeafDataExporter(BaseDataExporter):
             not_sold = self.area.strategy.state.get_available_energy_kWh(slot)
             produced = self.area.strategy.state.get_energy_production_forecast_kWh(slot, 0.0)
             return [produced, not_sold]
-        if isinstance(self.area.strategy, HeatPumpStrategy):
+        # pylint: disable=unidiomatic-typecheck
+        if type(self.area.strategy) == HeatPumpStrategy:
             return [round(self.area.strategy.state.get_unmatched_demand_kWh(slot),
                           ROUND_TOLERANCE),
                     round(self.area.strategy.state.get_storage_temp_C(slot), ROUND_TOLERANCE),
                     round(self.area.strategy.state.get_temp_decrease_K(slot), ROUND_TOLERANCE),
                     round(self.area.strategy.state.get_temp_increase_K(slot), ROUND_TOLERANCE),
                     round(self.area.strategy.state.get_cop(slot), ROUND_TOLERANCE)
+                    ]
+        # pylint: disable=unidiomatic-typecheck
+        if type(self.area.strategy) == VirtualHeatpumpStrategy:
+            return [round(self.area.strategy.state.get_unmatched_demand_kWh(slot),
+                          ROUND_TOLERANCE),
+                    round(self.area.strategy.state.get_storage_temp_C(slot), ROUND_TOLERANCE),
+                    round(self.area.strategy.state.get_temp_decrease_K(slot), ROUND_TOLERANCE),
+                    round(self.area.strategy.state.get_temp_increase_K(slot), ROUND_TOLERANCE),
+                    round(self.area.strategy.state.get_cop(slot), ROUND_TOLERANCE),
+                    round(self.area.strategy.state.get_heat_demand(slot), ROUND_TOLERANCE),
+                    round(self.area.strategy.state.get_condenser_temp(slot), ROUND_TOLERANCE),
                     ]
         return []
 
