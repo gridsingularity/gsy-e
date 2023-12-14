@@ -29,9 +29,10 @@ from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_e.models.strategy.pv import PVStrategy
 from gsy_e.models.strategy.scm.load import SCMLoadHoursStrategy, SCMLoadProfileStrategy
 from gsy_e.models.strategy.scm.pv import SCMPVUserProfile
-from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
 from gsy_e.models.strategy.storage import StorageStrategy
 from gsy_e.models.strategy.heat_pump import HeatPumpStrategy
+from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
+from gsy_e.models.strategy.virtual_heatpump import VirtualHeatpumpStrategy
 
 if TYPE_CHECKING:
     from gsy_e.models.area import CoefficientArea
@@ -153,10 +154,16 @@ class LeafDataExporter(BaseDataExporter):
             return ["desired energy [kWh]", "deficit [kWh]"]
         if isinstance(self.area.strategy, PVStrategy):
             return ["produced [kWh]", "not sold [kWh]"]
-        if isinstance(self.area.strategy, HeatPumpStrategy):
+        # pylint: disable=unidiomatic-typecheck
+        if type(self.area.strategy) == HeatPumpStrategy:
             return [
                 "unmatched demand [kWh]", "storage temperature C", "temp decrease K",
                 "temp increase K", "COP"]
+        # pylint: disable=unidiomatic-typecheck
+        if type(self.area.strategy) == VirtualHeatpumpStrategy:
+            return [
+                "unmatched demand [kWh]", "storage temperature C", "temp decrease K",
+                "temp increase K", "COP", "heat demand J", "condenser temperature C"]
         return []
 
     @property
@@ -187,13 +194,25 @@ class LeafDataExporter(BaseDataExporter):
             not_sold = self.area.strategy.state.get_available_energy_kWh(slot)
             produced = self.area.strategy.state.get_energy_production_forecast_kWh(slot, 0.0)
             return [produced, not_sold]
-        if isinstance(self.area.strategy, HeatPumpStrategy):
+        # pylint: disable=unidiomatic-typecheck
+        if type(self.area.strategy) == HeatPumpStrategy:
             return [round(self.area.strategy.state.get_unmatched_demand_kWh(slot),
                           ROUND_TOLERANCE),
                     round(self.area.strategy.state.get_storage_temp_C(slot), ROUND_TOLERANCE),
                     round(self.area.strategy.state.get_temp_decrease_K(slot), ROUND_TOLERANCE),
                     round(self.area.strategy.state.get_temp_increase_K(slot), ROUND_TOLERANCE),
                     round(self.area.strategy.state.get_cop(slot), ROUND_TOLERANCE)
+                    ]
+        # pylint: disable=unidiomatic-typecheck
+        if type(self.area.strategy) == VirtualHeatpumpStrategy:
+            return [round(self.area.strategy.state.get_unmatched_demand_kWh(slot),
+                          ROUND_TOLERANCE),
+                    round(self.area.strategy.state.get_storage_temp_C(slot), ROUND_TOLERANCE),
+                    round(self.area.strategy.state.get_temp_decrease_K(slot), ROUND_TOLERANCE),
+                    round(self.area.strategy.state.get_temp_increase_K(slot), ROUND_TOLERANCE),
+                    round(self.area.strategy.state.get_cop(slot), ROUND_TOLERANCE),
+                    round(self.area.strategy.state.get_heat_demand(slot), ROUND_TOLERANCE),
+                    round(self.area.strategy.state.get_condenser_temp(slot), ROUND_TOLERANCE),
                     ]
         return []
 
@@ -371,6 +390,7 @@ class CoefficientDataExporter(BaseDataExporter):
 
 
 class CoefficientLeafDataExporter(BaseDataExporter):
+    # pylint: disable=protected-access
     """LeafDataExporter for SCM simulations."""
 
     def __init__(self, area: "CoefficientArea"):
@@ -379,7 +399,7 @@ class CoefficientLeafDataExporter(BaseDataExporter):
     @property
     def labels(self) -> List:
         if isinstance(self._area.strategy, SCMStorageStrategy):
-            return ["slot", "charge [kWh]", "offered [kWh]", "charge [%]"]
+            return ["slot", "traded energy [kWh]"]
         if isinstance(self._area.strategy, (SCMLoadHoursStrategy, SCMLoadProfileStrategy)):
             return ["slot", "desired energy [kWh]", "deficit [kWh]"]
         if isinstance(self._area.strategy, SCMPVUserProfile):
@@ -392,11 +412,8 @@ class CoefficientLeafDataExporter(BaseDataExporter):
         if slot is None:
             return []
         if isinstance(self._area.strategy, SCMStorageStrategy):
-            s = self._area.strategy.state
-            return [[slot,
-                    s.charge_history_kWh[slot],
-                    s.offered_history[slot],
-                    s.charge_history[slot]]]
+            traded = self._area.strategy._energy_params.energy_profile.profile[slot]
+            return [[slot, traded]]
         if isinstance(self._area.strategy, (SCMLoadHoursStrategy, SCMLoadProfileStrategy)):
             desired = self._area.strategy.state.get_desired_energy_Wh(slot) / 1000
             # All energy is traded in SCM

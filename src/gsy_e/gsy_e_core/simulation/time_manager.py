@@ -147,8 +147,8 @@ class SimulationTimeManagerScm:
         Handle simulation slowdown and simulation realtime mode, and sleep the simulation
         accordingly for SCM simulations.
         """
-
-        slot_length_realtime_s = self.slot_length_realtime.total_seconds()
+        slot_length_realtime_s = (
+            self.slot_length_realtime.total_seconds() if self.slot_length_realtime else None)
 
         if gsy_e.constants.RUN_IN_REALTIME:
             slot_runtime_s = time() - self.slot_time_counter
