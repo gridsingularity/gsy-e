@@ -28,6 +28,7 @@ from gsy_e.models.area import Area
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_e.models.strategy.pv import PVStrategy
 from gsy_e.models.strategy.scm.load import SCMLoadHoursStrategy, SCMLoadProfileStrategy
+from gsy_e.models.strategy.scm.heat_pump import ScmHeatPumpStrategy
 from gsy_e.models.strategy.scm.pv import SCMPVUserProfile
 from gsy_e.models.strategy.storage import StorageStrategy
 from gsy_e.models.strategy.heat_pump import HeatPumpStrategy
@@ -414,7 +415,8 @@ class CoefficientLeafDataExporter(BaseDataExporter):
         if isinstance(self._area.strategy, SCMStorageStrategy):
             traded = self._area.strategy._energy_params.energy_profile.profile[slot]
             return [[slot, traded]]
-        if isinstance(self._area.strategy, (SCMLoadHoursStrategy, SCMLoadProfileStrategy)):
+        if isinstance(self._area.strategy,
+                      (SCMLoadHoursStrategy, SCMLoadProfileStrategy, ScmHeatPumpStrategy)):
             desired = self._area.strategy.state.get_desired_energy_Wh(slot) / 1000
             # All energy is traded in SCM
             return [[slot, desired, 0.]]
