@@ -35,6 +35,7 @@ from gsy_e.models.strategy.load_hours import LoadHoursStrategy # NOQA
 from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy # NOQA
 from gsy_e.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy  # NOQA
 from gsy_e.models.strategy.finite_power_plant import FinitePowerPlant # NOQA
+from gsy_e.models.strategy.scm import SCMStrategy
 
 from gsy_e.models.leaves import (
     Leaf, scm_leaf_mapping, CoefficientLeaf, forward_leaf_mapping,
@@ -54,7 +55,7 @@ class AreaEncoder(json.JSONEncoder):
             return self._encode_area(o)
         if isinstance(o, Leaf):
             return self._encode_leaf(o)
-        if isinstance(o, BaseStrategy):
+        if isinstance(o, (BaseStrategy, SCMStrategy)):
             return self._encode_subobject(o)
         if isinstance(o, TradingStrategyBase):
             return self._encode_subobject(o)

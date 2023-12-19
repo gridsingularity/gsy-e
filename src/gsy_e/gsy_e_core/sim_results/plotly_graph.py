@@ -34,7 +34,6 @@ from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
 from gsy_e.models.strategy.storage import StorageStrategy
 from gsy_e.models.strategy.scm.load import SCMLoadProfileStrategy, SCMLoadHoursStrategy
 from gsy_e.models.strategy.scm.pv import SCMPVUserProfile
-from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
 from gsy_e.models.strategy.scm.smart_meter import SCMSmartMeterStrategy
 from gsy_e.models.strategy.heat_pump import HeatPumpStrategy
 
@@ -470,7 +469,7 @@ class PlotlyGraph:
         sold_trade_energy_var_name = "sold_trade_energy_kWh"
         bought_trade_energy_var_name = "bought_trade_energy_kWh"
         data = []
-        if isinstance(device_strategy, (StorageStrategy, SCMStorageStrategy)):
+        if isinstance(device_strategy, (StorageStrategy)):
             y1axis_key = "trade_price_eur"
             y2axis_key = trade_energy_var_name
             y3axis_key = "soc_history_%"
