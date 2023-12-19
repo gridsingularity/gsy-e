@@ -1,6 +1,6 @@
-The off-chain storage component of the [GSY DEX](blockchain.md) is designed to store various types of data that are crucial to the platform's operation but do not need to be recorded on the blockchain, thereby enhancing scalability and efficiency. The off-chain storage can be accessed by both off-chain workers and on-chain logic. A computational reference (hash) is allocated to each bid and offer to ensure minimal transaction throughput on the blockchain and maximal data privacy for participants in the energy exchange (e.g. members of a local energy community), while providing full transparency and functionality of matching and execution for each trade transacted via the on-chain Order Book (part of [GSY DEX Node](blockchain-system-components-overview.md#gsy-node)). Importantly, final price and energy verification for each trade is performed on-chain. The GSY DEX Off-Chain Storage implementation is grounded in Grid Singularity’s concept of [Symbiotic Energy Markets](https://gridsingularity.medium.com/discussion-paper-grid-singularitys-implementation-of-symbiotic-energy-markets-bd3954af43c8), inspired by mycorrhizal networks. Importantly, while intended for the energy sector, the GSY DEX Off-Chain Storage can also support other industry applications, contributing to both the [Energy Web](https://www.energyweb.org/) and the wider [Polkadot](https://polkadot.network/) innovation ecosystem.
+The off-chain storage component of the [GSY DEX](blockchain.md) is designed to store various types of data that are crucial to the platform's operation but do not need to be recorded on the blockchain, thereby enhancing scalability and efficiency. The off-chain storage can be accessed by both off-chain workers and on-chain logic. A computational reference (hash) is allocated to each bid and offer to ensure minimal transaction throughput on the blockchain and maximal data privacy for participants in the energy exchange (e.g. members of a local energy community), while providing full transparency and functionality of matching and execution for each trade transacted via the on-chain Order Book (part of [GSY DEX Node](blockchain-system-components-overview.md#gsy-node)). Importantly, final price and energy verification for each trade is performed on-chain. The GSY DEX Off-Chain Storage implementation is grounded in Grid Singularity’s concept of [Symbiotic Energy Markets](https://gridsingularity.medium.com/discussion-paper-grid-singularitys-implementation-of-symbiotic-energy-markets-bd3954af43c8){target=_blank}, inspired by mycorrhizal networks. Importantly, while intended for the energy sector, the GSY DEX Off-Chain Storage can also support other industry applications, contributing to both the [Energy Web](https://www.energyweb.org/){target=_blank} and the wider [Polkadot](https://polkadot.network/){target=_blank} innovation ecosystem.
 
-Off-chain workers (also termed mycos in the GSY DEX architecture design) are an integral part of the node (in this case the GSY Node), which execute long-running and possibly non-deterministic tasks, such as encryption, decryption, and signing of data, CPU-intensive computations or enumeration or aggregation of on-chain data (for more see the related [Substrate wiki page](https://docs.substrate.io/learn/offchain-operations/)). They are automatically created when a blockchain node is deployed, running operations at the end of each block that this node validates. The difference compared to a smart contract or a pallet, is that the off-chain worker has its own runtime, synchronised with the node runtime. Since the code is shared, off-chain workers can immediately access the blockchain, without HTTP or any other protocol.   This is a safer and more efficient way to interact with the blockchain compared to Oracles, which is the conventional way of integrating off-chain with on-chain data. Notably, Oracles are not part of the blockchain but an external service that continuously performs actions based on new blocks that the blockchain generates, potentially compromising blockchain security by making it dependent on Oracle security. As a separate service, Oracles also need dedicated scaling if the number of blockchain validators increases which is not the case with off-chain workers.
+Off-chain workers (also termed mycos in the GSY DEX architecture design) are an integral part of the node (in this case the GSY Node), which execute long-running and possibly non-deterministic tasks, such as encryption, decryption, and signing of data, CPU-intensive computations or enumeration or aggregation of on-chain data (for more see the related [Substrate wiki page](https://docs.substrate.io/learn/offchain-operations/){target=_blank}). They are automatically created when a blockchain node is deployed, running operations at the end of each block that this node validates. The difference compared to a smart contract or a pallet, is that the off-chain worker has its own runtime, synchronised with the node runtime. Since the code is shared, off-chain workers can immediately access the blockchain, without HTTP or any other protocol.   This is a safer and more efficient way to interact with the blockchain compared to Oracles, which is the conventional way of integrating off-chain with on-chain data. Notably, Oracles are not part of the blockchain but an external service that continuously performs actions based on new blocks that the blockchain generates, potentially compromising blockchain security by making it dependent on Oracle security. As a separate service, Oracles also need dedicated scaling if the number of blockchain validators increases which is not the case with off-chain workers.
 
 The off-chain storage comprises four distinct components (substorages):
 
@@ -10,7 +10,7 @@ The off-chain storage comprises four distinct components (substorages):
 - **GSY DEX Order Book Storage**: This storage component holds all the orders inserted in the respective market, including bids and offers issued by participants, along with metadata generated for each order.
 
 
-Each of the off-chain storage components is associated with proprietary, component-specific  database tables, and exposed to other GSY DEX system components via HTTP REST endpoints to facilitate common operations and streamline access to data. This approach ensures that other GSY DEX system components can read, update and save information related to each storage component. Furthermore, separating the data in different components restricts data dependencies and thereby optimises data management, including by enabling efficient database migration and other operations on the database tables’ schema.   Data storage segmentation also facilitates partial data transfer to other data storages in the future system upgrades. Off-chain storage workers’ role is to ensure that off-chain storage subcomponents, namely the GSY DEX Grid Topology Storage and the GSY DEX Measurements Storage, securely receive the required data such as asset-level generation and consumption, and that the GSY DEX Trades Storage and the GSY DEX Order Book Storage can support and improve performance of the matching operation based on a set of preferred energy attributes.
+Each of the off-chain storage components is associated with proprietary, component-specific  database tables, and exposed to other [GSY DEX system components](blockchain-system-components-overview.md) via HTTP REST endpoints to facilitate common operations and streamline access to data. This approach ensures that other GSY DEX system components can read, update and save information related to each storage component. Furthermore, separating the data in different components restricts data dependencies and thereby optimises data management, including by enabling efficient database migration and other operations on the database tables’ schema.   Data storage segmentation also facilitates partial data transfer to other data storages in the future system upgrades. Off-chain storage workers’ role is to ensure that off-chain storage subcomponents, namely the GSY DEX Grid Topology Storage and the GSY DEX Measurements Storage, securely receive the required data such as asset-level generation and consumption, and that the GSY DEX Trades Storage and the GSY DEX Order Book Storage can support and improve performance of the matching operation based on a set of preferred energy attributes.
 
 
 <figure markdown>
@@ -20,11 +20,11 @@ Each of the off-chain storage components is associated with proprietary, compone
 
 
 ### GSY DEX Off-Chain Storage Communication Protocol
-The GSY Node stores the order and trade information in the GSY DEX Off-Chain Storage by leveraging off-chain workers as described above, which perform HTTP requests on behalf of the Node. Notably, the GSY Node saves the bids and offers in the GSY DEX Orderbook Storage and the trades in the GSY DEX Trades Storage in order to make them available for other system services, namely those performed by the GSY Analytics Engine and the GSY Matching Engine. These other GSY DEX system components all leverage the same HTTP REST API as the GSY Node to access the GSY DEX Off-Chain Storage.
+The GSY Node stores the order and trade information in the GSY DEX Off-Chain Storage by leveraging off-chain workers as described above, which perform HTTP requests on behalf of the Node. Notably, the GSY Node saves the bids and offers in the GSY DEX Order Book Storage and the trades in the GSY DEX Trades Storage in order to make them available for other system services, namely those performed by the GSY DEX Analytics Engine and the GSY DEX Matching Engine. These other GSY DEX system components all leverage the same HTTP REST API as the GSY Node to access the GSY DEX Off-Chain Storage.
 
-The [GSY Analytics Engine](blockchain-system-components-overview.md#gsy-dex-analytics-engine) requires access specifically to the GSY DEX Grid Topology Storage and the GSY DEX Trades Storage to retrieve data to calculate the [select performance indicators](results-dashboard.md) to monitor individual and aggregate performance of energy assets in the exchange.
+The [GSY DEX Analytics Engine](blockchain-system-components-overview.md#gsy-dex-analytics-engine) requires access specifically to the GSY DEX Grid Topology Storage and the GSY DEX Trades Storage to retrieve data to calculate the [select performance indicators](results-dashboard.md) to monitor individual and aggregate performance of energy assets in the exchange.
 
-The GSY Matching Engine, in turn requires access specifically to the GSY DEX Orderbook Storage to retrieve the open offers and bids in order to perform the market supply and demand matching operation.
+The GSY DEX Matching Engine, in turn requires access specifically to the GSY DEX Order Book Storage to retrieve the open offers and bids in order to perform the market supply and demand matching operation.
 
 
 <figure markdown>
@@ -50,7 +50,7 @@ Measurements are also required for the GSY DEX Execution Engine operation, in or
 The GSY DEX Trades Storage is responsible for storing the successful energy trades for all assets that participate in the energy exchange, along with the associated metadata. It streamlines access to the trade information for:
 
 - Asset aggregators or trading agents that are responsible for managing one or multiple assets, enabling them to reconfigure the asset trading strategy based on historical information relating to the past energy trades for these assets
-- The GSY Analytics Engine, which needs the information related to the energy trades to generate more elaborate analytics to monitor the performance of the exchange overall and the trading assets individually.
+- The GSY DEX Analytics Engine, which needs the information related to the energy trades to generate more elaborate analytics to monitor the performance of the exchange overall and the trading assets individually.
 - Payment services, which require access to the energy trades in order to modify the token balances of the seller and the buyer of energy, thereby performing the financial settlement for the energy trades.
 
 ### GSY DEX Order Book Storage
@@ -59,17 +59,17 @@ The GSY DEX Order Book Storage is responsible for storing all offers and bids po
 The main purposes for persisting the offers and bids are the following:
 
 - Report historical offers and bids to all exchange participants, along with all the associated information and the final status (open, traded, deleted);
-- Enable the operation of the GSY Matching Engine by providing a list of open offers and open bids, which represent the energy demand that is currently requested, and the energy supply that is currently offered in the exchange, respectively.
+- Enable the operation of the GSY DEX Matching Engine by providing a list of open offers and open bids, which represent the energy demand that is currently requested, and the energy supply that is currently offered in the exchange, respectively.
 
 ### GSY DEX Off-Chain Storage Database
 The GSY DEX Off-Chain Storage Database is the off-chain storage component responsible for persisting the off-chain data required for the correct operation of the GSY DEX. This operation presents a consequential challenge due to the volume of required data points and the requirement to persist and report these data for long periods of time. Furthermore, significant computation will need to be performed on these data, which in turn contribute to the computational effort required by the blockchain nodes for data processing. To circumvent these limitations, these data points are not saved in the blockchain, but in the off-chain database, facilitating storage of data of arbitrary size, and the related performance of more computationally intensive operations.
 
-To ensure optimal performance, stability and scalability of the GSY DEX, the off-chain storage database type of choice is MongoDB, a NoSQL document-oriented database, capable of storing and fetching large data volumes. One of its main advantages is horizontal scaling, enabled by [sharding](https://www.mongodb.com/docs/manual/sharding/), which is a method of distributing data across multiple servers, with each server containing a subset of the data (shard). That way, the total workload capacity of the database is not limited by the resources of a single server. Whenever the server resources become exhausted, a new server can be added to the sharded cluster to extend the total capacity and balance the database load, ensuring efficient computation of increased data volumes.  Redundancy and high availability to ensure data security are facilitated by the use of replica sets, which copies part of the data to different database servers, thus providing a level of fault tolerance against the loss of a single database server.
+To ensure optimal performance, stability and scalability of the GSY DEX, the off-chain storage database type of choice is MongoDB, a NoSQL document-oriented database, capable of storing and fetching large data volumes. One of its main advantages is horizontal scaling, enabled by [sharding](https://www.mongodb.com/docs/manual/sharding/){target=_blank}, which is a method of distributing data across multiple servers, with each server containing a subset of the data (shard). That way, the total workload capacity of the database is not limited by the resources of a single server. Whenever the server resources become exhausted, a new server can be added to the sharded cluster to extend the total capacity and balance the database load, ensuring efficient computation of increased data volumes.  Redundancy and high availability to ensure data security are facilitated by the use of replica sets, which copies part of the data to different database servers, thus providing a level of fault tolerance against the loss of a single database server.
 
 ### GSY DEX Off-Chain Database Schema
 Each data type required for the operation of the GSY DEX is modelled and structured as a MongoDB Document, both to correctly organise the data and to facilitate and accelerate the expected queries that will be executed on the data. The data types that are persisted in the database for each storage subcomponent are listed below.
 
-###### Grid Topology Storage Database Schema
+#### Grid Topology Storage Database Schema
 The Grid Topology Storage will store all assets using the same data type, with optional arguments applied to differentiate the asset type and position, creating and persisting a hierarchical layered representation of the electrical grid. Different topology types will support different arguments, accommodating generation, consumption and storage assets (namely PVs, Heat Pumps, Loads and Batteries), as well as electrical devices that form the electrical grid (Smart Metres, Voltage Transformers and Circuit Breakers), along with the Area type that is used in order to group different assets. Topology connections are modelled using the “children” argument, which is available only for Area type (also termed Market or Submarket), Voltage Transformer and Circuit Breaker types, and accept a list of asset uuids.
 
 
@@ -109,7 +109,7 @@ The Grid Topology Storage will store all assets using the same data type, with o
 </figure>
 
 
-###### Measurements Storage Database Schema
+#### Measurements Storage Database Schema
 
 The Measurements Storage will persist forecasts and measurements, using the same data type. The `type` data entry attribute is used to differentiate between forecasts and measurements, thereby allowing the database to select only forecasts or measurements, depending on the user interest. Furthermore, `type`, `asset_uuid` and `time_slot` data entries are indexed, in order to accelerate queries that select forecasts or measurements for a select asset and period of time.
 
@@ -148,7 +148,7 @@ The Measurements Storage will persist forecasts and measurements, using the same
 </figure>
 
 
-###### Order Book Storage Database Schema
+#### Order Book Storage Database Schema
 Bids and offers are saved using the same data type. Similar to the other storage subcomponents, `type` data entry attribute in the JSON document is used in order to differentiate between offers and bids, thus allowing the user to filter for either one. Moreover, `type`, `asset_uuid`, `market_uuid` and `time_slot` data entries are indexed, in order to accelerate queries that select bids or offers for a select asset, market and time slot.
 
 
@@ -192,7 +192,7 @@ Bids and offers are saved using the same data type. Similar to the other storage
 </figure>
 
 
-###### Trades Storage Database Schema
+#### Trades Storage Database Schema
 Trades are also saved using JSON documents in a similar format as the Order. The same fields as for the Order Book Storage will need to be indexed, namely asset_uuid, market_uuid and time_slot, thus speeding up the selection of the trades for one asset / market / time slot.
 
 
@@ -226,7 +226,7 @@ Trades are also saved using JSON documents in a similar format as the Order. The
 ### HTTP REST API Schema
 Each storage subcomponent is exposed via separate REST endpoints for operations that are most commonly required by the users of the GSY DEX Off-Chain Storage API. GET and POST requests are supported to facilitate reading of database entries, as well as the creation of new database entries.
 
-###### Grid Topology Storage API Schema
+#### Grid Topology Storage API Schema
 The Grid Topology Storage uses the dedicated endpoint
 ```commandline
 /grid-topology
@@ -260,7 +260,7 @@ POST /grid-topology
 </figure>
 
 
-###### Measurements Storage API Schema
+#### Measurements Storage API Schema
 The Measurements Storage uses one dedicated endpoint for forecasts:
 ```commandline
 /forecasts
@@ -299,7 +299,7 @@ POST /measurements
 </figure>
 
 
-###### Order Book Storage API Schema
+#### Order Book Storage API Schema
 The Order Book Storage uses the dedicated endpoint
 ```commandline
 /orders
@@ -332,7 +332,7 @@ POST /orders/
    "time_slot": 1,
    "creation_time": 1546300800,
    "offer_component": {
-"seller": "bbcd",
+       "seller": "bbcd",
        "energy": 10,
        "energy_rate": 1
    }
@@ -342,12 +342,12 @@ POST /orders/
 </figure>
 
 
-###### Trades Storage API Schema
-The Trade Storage uses the dedicated endpoint
+#### Trades Storage API Schema
+The Trades Storage uses the dedicated endpoint
 ```commandline
 /trades
 ```
-In order to both fetch and create new entries. The endpoint supports both GET and POST HTTP request, and the accepted input data format is similar to the database schema:
+in order to both fetch and create new entries. The endpoint supports both GET and POST HTTP request, and the accepted input data format is similar to the database schema:
 
 
 <figure markdown>
