@@ -1682,8 +1682,8 @@
 
 
   <li class="md-nav__item">
-    <a href="../matching-api-walkthrough/" title="Walkthrough" class="md-nav__link">
-      Walkthrough
+    <a href="../matching-api-walkthrough/" title="Grid Singularity Matching API Overview" class="md-nav__link">
+      Grid Singularity Matching API Overview
     </a>
   </li>
 
@@ -1988,6 +1988,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#gsy-dex-off-chain-storage" title="GSy DEX Off-Chain Storage" class="md-nav__link">
+    GSy DEX Off-Chain Storage
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#gsy-dex-matching-engine" title="GSy DEX Matching Engine" class="md-nav__link">
     GSy DEX Matching Engine
   </a>
@@ -2011,13 +2018,6 @@
         <li class="md-nav__item">
   <a href="#gsy-dex-api-gateway" title="GSy DEX API Gateway" class="md-nav__link">
     GSy DEX API Gateway
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#gsy-dex-off-chain-storage" title="GSy DEX Off-Chain Storage" class="md-nav__link">
-    GSy DEX Off-Chain Storage
   </a>
   
 </li>
@@ -2119,6 +2119,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#gsy-dex-off-chain-storage" title="GSy DEX Off-Chain Storage" class="md-nav__link">
+    GSy DEX Off-Chain Storage
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#gsy-dex-matching-engine" title="GSy DEX Matching Engine" class="md-nav__link">
     GSy DEX Matching Engine
   </a>
@@ -2142,13 +2149,6 @@
         <li class="md-nav__item">
   <a href="#gsy-dex-api-gateway" title="GSy DEX API Gateway" class="md-nav__link">
     GSy DEX API Gateway
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#gsy-dex-off-chain-storage" title="GSy DEX Off-Chain Storage" class="md-nav__link">
-    GSy DEX Off-Chain Storage
   </a>
   
 </li>
@@ -2183,7 +2183,7 @@
                 
                 <p>The <a href="../blockchain/">GSy DEX</a> is composed of several components that work together to provide a secure, scalable, and efficient platform for energy trading. The core of the GSy DEX is built using the <a href="https://substrate.io/" target="_blank">Substrate</a> framework, which provides the distributed ledger and custom runtime for implementing the state transition functions required for the energy exchange. Additionally, the system includes a set of ancillary services that enable further scalability and security.</p>
 <h3 id="gsy-node">GSy Node<a class="headerlink" href="#gsy-node" title="Permanent link">&para;</a></h3>
-<p>The <a href="https://substrate.io/" target="_blank">Substrate</a>-based GSy Node is the backbone of the exchange, consisting of two main parts:</p>
+<p>The <a href="https://substrate.io/" target="_blank">Substrate</a>-based GSy Node, responsible for network activities and executing blockchain state transitions, is the backbone of the exchange, consisting of two main parts:</p>
 <ol>
 <li>Client with external node services: This component handles network activities such as peer discovery, managing transaction requests, reaching consensus with peers, and responding to remote procedure calls (<a href="https://docs.substrate.io/build/remote-procedure-calls/" target="_blank">RPC</a>).</li>
 <li>Custom runtime: This component contains all the business logic for executing the state transition functions of the blockchain. The custom runtime is designed to improve scalability and security, avoiding and mitigating multiple blockchain attack types more  effectively than by using smart contracts or a generalised virtual machine.</li>
@@ -2194,9 +2194,18 @@
   <figcaption><b>Figure 6.2</b>: GSY DEX On-Chain Operations via GSY Node (Note: Order Book is where bids and offers are stored, to be then matched based on the applicable trading mechanism for price verification and executed based on energy delivery verification).
 </figcaption></p>
 </figure>
+<h3 id="gsy-dex-off-chain-storage">GSy DEX Off-Chain Storage<a class="headerlink" href="#gsy-dex-off-chain-storage" title="Permanent link">&para;</a></h3>
+<p>The off-chain storage component of the <a href="../blockchain/">GSy DEX</a> is designed to store various types of data that are crucial to the platform's operation but do not need to be recorded on the blockchain. This approach enhances scalability and efficiency by reducing the amount of data stored on-chain (importantly, final price and energy verification for each trade is performed on-chain). The off-chain storage comprises four distinct components:</p>
+<ol>
+<li>GSy DEX Grid Topology Storage: contains information about the physical grid structure, such as the location and configuration of nodes, as well as the interconnections between energy assets, which enable the GSy DEX to both verify the eligibility of the assets for trading, and to facilitate <a href="../results-dashboard/">performance analytics</a> that involve the topology of the grid.</li>
+<li>GSy DEX Measurements Storage: stores the energy consumption and generation data from energy assets. Accurate measurement data is essential for validating and executing energy trades, managing grid stability, and optimising energy consumption and generation patterns.</li>
+<li>GSy DEX Trades Storage: stores all <a href="../trades/">energy trades</a> of the GSy DEX, which are required in order to maintain and update the trade status to facilitate trade execution, as well as for analytics, auditing the trading behaviour of the user energy assets, and historical market analysis.</li>
+<li>GSy DEX Order Book Storage: This storage component holds all the orders inserted in the respective market, including bids and offers issued by  participants. The Order Book Storage facilitates the efficient operation of the <a href="#gsy-dex-matching-engine">GSy DEX Matching Engine</a> by providing it with the necessary data to match supply to demand according to participants' preferences and market conditions.</li>
+</ol>
+<p>For more, please see the section on the <a href="../blockchain-off-chain-storage/">GSy DEX Off-Chain Storage</a>.</p>
 <h3 id="gsy-dex-matching-engine">GSy DEX Matching Engine<a class="headerlink" href="#gsy-dex-matching-engine" title="Permanent link">&para;</a></h3>
 <p>The GSy DEX Matching Engine is responsible for identifying suitable matches for energy supply and demand based on the participants' preferences and market conditions. By efficiently matching bids and offers, the engine facilitates a seamless and optimised exchange clearance.</p>
-<p>Multi-attribute auctions, which account for the participants’ preferences and varied market conditions, require more advanced clearing algorithms than single attribute auctions, such as those based on price alone. The optimal approach is to engage (potentially untrusted) off-chain workers to run matching algorithms and then require either the use of trusted execution environments (enclaves) or an on-chain verification to determine whether the matching algorithm ran correctly. To enable this approach, the matching process is decoupled from the exchange, and moved to a dedicated component, namely the Matching Engine. The GSy DEX Matching Engine will operate as (one or multiple) individual autonomous service(s), responsible for identifying suitable matches for multiple open order books. Grid Singularity will serve as the Matching Engine Operator for the <a href="../blockchain/">GSy DEX</a>.</p>
+<p>Multi-attribute auctions, which account for the participants’ preferences and varied market conditions, require more advanced clearing algorithms than single attribute auctions, such as those based on price alone. The optimal approach is to engage <a href="../blockchain-off-chain-storage/">off-chain workers</a> to run matching algorithms and then require either the use of trusted execution environments (enclaves) or on-chain verification to determine whether the matching algorithm ran correctly. To enable this approach, the matching process is decoupled from the exchange, and moved to a dedicated component, namely the Matching Engine. The GSy DEX Matching Engine will operate as (one or multiple) individual autonomous service(s), responsible for identifying suitable matches for multiple open order books. Grid Singularity will serve as the Matching Engine Operator for the <a href="../blockchain/">GSy DEX</a>.</p>
 <p>The GSy DEX Matching Engine reads open bids and offers through the <a href="../matching-api-walkthrough/">GSy Matching API</a> and submits matches for validation. Since the exchange’s verification function only checks the validity of each match rather than the result of a specific matching algorithm, there is no longer a need for an agreed matching algorithm, arbitration technique, or redundant off-chain worker computation.</p>
 <p>For more, please see the <a href="../matching-api-walkthrough/">GSy Matching API</a> section.  The GSy DEX Matching Engine system component is currently in development.</p>
 <h3 id="gsy-dex-execution-engine">GSy DEX Execution Engine<a class="headerlink" href="#gsy-dex-execution-engine" title="Permanent link">&para;</a></h3>
@@ -2219,15 +2228,6 @@
 <p>Clients of the API Gateway vary from user interfaces (that intend to facilitate exchange access to the user) to automated scripts that execute automated trading scripts to optimise trading behaviour for client-owned assets. The API Gateway will also support different client roles, in order to tailor and manage access for Community Managers, Community Members, Grid Operators, Utilities and other customer types.</p>
 <p>Secure and privacy-embedded access rights management will be enabled by the <a href="https://energy-web-foundation.gitbook.io/energy-web/solutions-2023/data-exchange/use-cases-and-reference-implementations/digital-spine-for-electricity-markets" target="_blank">Energy Web</a>’s open-source tool for decentralised identity and access management. The objective is for each participating energy asset to have a decentralised identifier (DID) created by the manufacturer and transferred to the owner upon purchase, allowing the participant to trade in the energy market and perform other operations with a verified energy asset. Utilities, grid operators, aggregators, energy community managers and members, as well as other energy market participants can also be validated through this mechanism, facilitating unhindered onboarding and interoperability of many different asset types and participants at varied technology levels.</p>
 <p><em>The GSy DEX API Gateway system component is in development.</em></p>
-<h3 id="gsy-dex-off-chain-storage">GSy DEX Off-Chain Storage<a class="headerlink" href="#gsy-dex-off-chain-storage" title="Permanent link">&para;</a></h3>
-<p>The off-chain storage component of the <a href="../blockchain/">GSy DEX</a> is designed to store various types of data that are crucial to the platform's operation but do not need to be recorded on the blockchain. This approach enhances scalability and efficiency by reducing the amount of data stored on-chain. The off-chain storage comprises four distinct components:</p>
-<ol>
-<li>GSy DEX Grid Topology Storage: contains information about the physical grid structure, such as the location and configuration of nodes, as well as the interconnections between energy assets, which enable the GSy DEX to both verify the eligibility of the assets for trading, and to facilitate <a href="../results-dashboard/">performance analytics</a> that involve the topology of the grid.</li>
-<li>GSy DEX Measurement Storage: stores the energy consumption and generation data from energy assets. Accurate measurement data is essential for validating and executing energy trades, managing grid stability, and optimising energy consumption and generation patterns.</li>
-<li>GSy DEX Trades Storage: stores all <a href="../trades/">energy trades</a> of the GSy DEX, which are required in order to maintain and update the trade status to facilitate trade execution, as well as for analytics, auditing the trading behaviour of the user energy assets, and historical market analysis.</li>
-<li>GSy DEX Order Book Storage: This storage component holds all the orders inserted in the respective market, including bids and offers issued by  participants. The Order Book Storage facilitates the efficient operation of the <a href="#gsy-dex-matching-engine">GSy DEX Matching Engine</a> by providing it with the necessary data to match supply to demand according to participants' preferences and market conditions.</li>
-</ol>
-<p><em>The GSy DEX Off-Chain Storage system component is in development.</em></p>
 <p><u><strong>Complementary open-source service integration:</strong></u></p>
 <h3 id="energy-web-green-proofs">Energy Web Green Proofs<a class="headerlink" href="#energy-web-green-proofs" title="Permanent link">&para;</a></h3>
 <p>The <a href="https://energy-web-foundation.gitbook.io/energy-web/solutions-2023/green-proofs" target="_blank">Energy Web Green Proofs</a> are a customisable, open-source, blockchain-based solution for registering and tracking low-carbon products and their attributes throughout complex supply chains.</p>
