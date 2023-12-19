@@ -2046,6 +2046,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../blockchain-off-chain-storage/" title="GSY DEX Off-Chain Storage" class="md-nav__link">
+      GSY DEX Off-Chain Storage
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -2224,8 +2236,8 @@ domain = &quot;https://gsyweb.gridsingularity.com&quot;
 simulation_id = &quot;990abe5e-3126-4b8b-9978-66ca07824d3c&quot;
 market_uuid = &quot;a245cff8-d90a-44d9-82e5-d37999b62e04&quot;
 start_date = &quot;2021-09-25T00:00&quot;
-end_date = &quot;2021-10-01T00:00&quot;
-</code></pre>
+end_date = &quot;2021-10-01T00:00&quot;</code></pre>
+
 
 <ol>
 <li>Generate your JWT token</li>
@@ -2233,8 +2245,8 @@ end_date = &quot;2021-10-01T00:00&quot;
 <pre class="codehilite"><code class="language-python">response = requests.post(url=domain + &quot;/api-token-auth/&quot;,
                          json={&quot;username&quot;: username, &quot;password&quot;: password})
 
-token = response.json()[&quot;token&quot;]
-</code></pre>
+token = response.json()[&quot;token&quot;]</code></pre>
+
 
 <ol>
 <li>Create a URL and send the request:</li>
@@ -2245,8 +2257,7 @@ headers = {&quot;Authorization&quot;: f&quot;JWT {token}&quot;}
 response = requests.get(url=historical_data_url,
                         headers=headers)
 
-profile = response.json()
-</code></pre>
+profile = response.json()</code></pre>
                 
                   
                 

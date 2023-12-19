@@ -2023,6 +2023,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../blockchain-off-chain-storage/" title="GSY DEX Off-Chain Storage" class="md-nav__link">
+      GSY DEX Off-Chain Storage
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -2110,18 +2122,18 @@
 <h3 id="last_market_dso_stats">last_market_dso_stats()<a class="headerlink" href="#last_market_dso_stats" title="Permanent link">&para;</a></h3>
 <p>This command is used to <strong>request information</strong> from different markets for the last market slot.</p>
 <p>This batch command receives one argument : <strong>area_uuid</strong>. This latter is the Universal Unique Identifier of the requested market statistic. Here is an example:</p>
-<pre class="codehilite"><code>self.add_to_batch_commands.last_market_dso_stats(area_uuid = &quot;62f827ec-ef86-4782-b5c3-88327751d97d&quot;)
-</code></pre>
+<pre class="codehilite"><code>self.add_to_batch_commands.last_market_dso_stats(area_uuid = &quot;62f827ec-ef86-4782-b5c3-88327751d97d&quot;)</code></pre>
+
 
 <h3 id="grid_fees">grid_fees()<a class="headerlink" href="#grid_fees" title="Permanent link">&para;</a></h3>
 <p>This command is used to <strong>send the new grid fee</strong> for a specific market. The grid fee needs to be set as a positive value and the unit is cents/kWh.</p>
 <p>This batch command receives two arguments: <strong>area_uuid</strong> and <strong>fee_cents_kwh</strong>. Here is an example:</p>
-<pre class="codehilite"><code>self.add_to_batch_commands.grid_fees(area_uuid=62f827ec-ef86-4782-b5c3-88327751d97d&quot;, fee_cents_kwh=3.2)
-</code></pre>
+<pre class="codehilite"><code>self.add_to_batch_commands.grid_fees(area_uuid=62f827ec-ef86-4782-b5c3-88327751d97d&quot;, fee_cents_kwh=3.2)</code></pre>
+
 
 <p>After adding all the wanted commands in the batch, the API can execute it with the following command:</p>
-<pre class="codehilite"><code>response = self.execute_batch_commands()
-</code></pre>
+<pre class="codehilite"><code>response = self.execute_batch_commands()</code></pre>
+
 
 <p>In return the simulation will provide a response for all commands submitted.</p>
                 

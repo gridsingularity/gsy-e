@@ -2037,6 +2037,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../blockchain-off-chain-storage/" title="GSY DEX Off-Chain Storage" class="md-nav__link">
+      GSY DEX Off-Chain Storage
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -2136,17 +2148,16 @@
                 <p>Each market cycle lasts 15 minutes and is divided into 10 ticks until it ends. The bids and offers are posted within the market cycle at each tick until the cycle ends.</p>
 <figure>
 <p><img alt="alt_text" src="../img/asset-API-events.png" text-align:center_="text-align:center&quot;" />
-  </p>
-<figcaption><b>Figure 5.4</b>: Market slot overall structure and Asset API events.
-</figcaption>
+  <figcaption><b>Figure 5.4</b>: Market slot overall structure and Asset API events.
+</figcaption></p>
 </figure>
 <p>At the beginning of each market slot, the <a href="../asset-api-template-script/">Asset API</a> receives markets and assets information structured in a nested dictionary according to the grid hierarchy. Each market provides statistics such as minimum, median and maximum trade rates, total energy volume traded, grid fees and each asset returns the last bills and energy volume traded in the previous market slot.</p>
 <p>At each tick of the market slot, the Asset API receives updated asset information (e.g. remaining energy to buy/sell) and can post/update/delete bids and offers.</p>
 <p>When the trade occurs, trade details are sent by the Asset API. If there are unmatched bids or offers, they are not carried to the next market cycle.</p>
 <p>In order to facilitate bid and offer management and scheduling, a python file with the <a href="https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/asset_api_template.py" target="_blank">class Oracle</a> is provided. The Oracle class acts as an information aggregator for all of the energy assets (e.g. loads, PVs and storage) managed by the user, and allows the user to post bids and offers on their behalf. Several functions are triggered for different types of <a href="../events/">events</a>, and can be overridden.</p>
 <h3 id="each-new-market-slot">Each new market slot<a class="headerlink" href="#each-new-market-slot" title="Permanent link">&para;</a></h3>
-<pre class="codehilite"><code>def on_market_cycle(self, market_info):
-</code></pre>
+<pre class="codehilite"><code>def on_market_cycle(self, market_info):</code></pre>
+
 
 <p>When a new market slot is available the client will get notified via an event. It is possible to capture this event and perform operations after it by overriding the on_market_cycle method, used to gather aggregated information about the assets and last market slot statistics, define the trading strategy and place the first bids/offers.</p>
 <p>In the variable market_info the user will get a dictionary with information on the market and assets. The user receives information for each asset he/she manages. The return values have the following structure:</p>
@@ -2180,22 +2191,22 @@
 'market_maker_rate': 22,
 'event': 'market', 'num_ticks': 10.0,
 'simulation_id': None
-}
-</code></pre>
+}</code></pre>
+
 
 <h3 id="on-of-market-completion">On % of market completion<a class="headerlink" href="#on-of-market-completion" title="Permanent link">&para;</a></h3>
-<pre class="codehilite"><code>def on_tick(self, tick_info):
-</code></pre>
+<pre class="codehilite"><code>def on_tick(self, tick_info):</code></pre>
+
 
 <p>At each 10% of market slot completion (e.g. 10%, 20%, 30%, …), the same information as market_info will be passed, with updated asset energy requirements based on trades. This can be used to update the user’s bid or offer price at these milestones.</p>
 <h3 id="on-event-or-response">On event or response<a class="headerlink" href="#on-event-or-response" title="Permanent link">&para;</a></h3>
-<pre class="codehilite"><code>def on_event_or_response(self, message):
-</code></pre>
+<pre class="codehilite"><code>def on_event_or_response(self, message):</code></pre>
+
 
 <p>Each time the managed assets are triggered with an event or get any responses (from sending the batch commands such as trades confirmations), this information is repassed through on_event_or_response. This information can be stored locally or acted upon.</p>
 <h3 id="on-finish">On finish<a class="headerlink" href="#on-finish" title="Permanent link">&para;</a></h3>
-<pre class="codehilite"><code>def on_finish(self, finish_info):
-</code></pre>
+<pre class="codehilite"><code>def on_finish(self, finish_info):</code></pre>
+
 
 <p>This executes when the simulation finishes, and can be used to trigger exporting data, training a model or exiting the code.</p>
                 

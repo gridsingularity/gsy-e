@@ -1985,6 +1985,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../blockchain-off-chain-storage/" title="GSY DEX Off-Chain Storage" class="md-nav__link">
+      GSY DEX Off-Chain Storage
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -2045,16 +2057,16 @@
         for market in market_list:
             for market_id, name in data[&quot;area_mapping&quot;].items():
                 if name == market:
-                    self.id_list.append(market_id)
-</code></pre>
+                    self.id_list.append(market_id)</code></pre>
+
 
 <p>Right after, the <a href="../matching-api-events/#each-new-market-slot">on_market_cycle</a> and the <a href="../matching-api-events/#on--of-market-completion">on_tick</a> methods are triggered. In the latter, the user requests bids / offers from the market.</p>
 <pre class="codehilite"><code class="language-python">    def on_market_cycle(self, data):
         pass
 
     def on_tick(self, data):
-        self.request_offers_bids(filters={})
-</code></pre>
+        self.request_offers_bids(filters={})</code></pre>
+
 
 <p>In the next section, the bids/offers that had been previously requested from the market are stored in the <code>matching_data</code> variable. The matching algorithm (<a href="https://github.com/gridsingularity/gsy-matching-engine-sdk/blob/master/gsy_matching_engine_sdk/matching_algorithms/attributed_matching_algorithm.py" target="_blank">AttributedMatchingAlgorithm</a> in the example here) takes those data as input and outputs a list of recommendations. Each recommendation is a nested dictionary with the following structure:</p>
 <pre class="codehilite"><code class="language-json">[{'market_id': '0fd481d9-98af-43cd-9e98-196c1fe9877f',
@@ -2087,13 +2099,13 @@
     'seller_id': '0fd481d9-98af-43cd-9e98-196c1fe9877f'}],
   'selected_energy': 0.05,
   'trade_rate': 22.5,
-  'matching_requirements': None}]
-</code></pre>
+  'matching_requirements': None}]</code></pre>
+
 
 <p>The matching algorithm can be written as a separate class file and can be referenced in the <a href="../matching-api-events/#on-offers-bids-response">on_offers_bids_response</a> function as:</p>
 <pre class="codehilite"><code class="language-python">    recommendations = YourMatchingAlgorithm.get_matches_recommendations(
-            matching_data)
-</code></pre>
+            matching_data)</code></pre>
+
 
 <p>At the moment, there are 3 default matching algorithms available to use and to build upon:</p>
 <ol>
@@ -2113,21 +2125,20 @@
             matching_data)
         if recommendations:
             logging.info(&quot;Submitting %s recommendations.&quot;, len(recommendations))
-            self.submit_matches(recommendations)
-</code></pre>
+            self.submit_matches(recommendations)</code></pre>
+
 
 <p>Later in the script, the <a href="../matching-api-events/#on-matched-recommendations-response">on_matched_recommendations_response</a> is triggered and useful information about the recommendation posted, such as seller, buyer, trading price and energy as well as the status, if successful or not, are printed in the terminal window of the user. Later, the <a href="../matching-api-events/#on-event-or-response">on_event_or_response</a> is overwritten. By default we do not perform any operation in this event but the user could add some if needed.</p>
 <pre class="codehilite"><code class="language-python">def on_matched_recommendations_response(self, data):
         pass
 
 def on_event_or_response(self, data):
-        logging.debug(&quot;Event arrived %s&quot;, data)
-</code></pre>
+        logging.debug(&quot;Event arrived %s&quot;, data)</code></pre>
+
 
 <p>Lastly, the Matching API Script overwrites the <a href="../matching-api-events/#on-finish">on_finish</a> event so that whenever the function is triggered the script stops. If the user wishes to save some information recorded within the Matching Engine SDK this would be the opportunity to export them to external files.</p>
 <pre class="codehilite"><code class="language-python">def on_finish(self, data):
-        self.is_finished = True
-</code></pre>
+        self.is_finished = True</code></pre>
                 
                   
                 

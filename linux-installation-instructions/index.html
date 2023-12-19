@@ -2109,6 +2109,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../blockchain-off-chain-storage/" title="GSY DEX Off-Chain Storage" class="md-nav__link">
+      GSY DEX Off-Chain Storage
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -2287,56 +2299,55 @@ sudo add-apt-repository ppa:deadsnakes/ppa
 sudo apt-get update
 sudo apt-get install python3.8 -y
 sudo apt-get install git-core -y
-sudo apt-get install python3-pip -y
-</code></pre>
+sudo apt-get install python3-pip -y</code></pre>
+
 
 <h3 id="step-2-install-virtualenv-and-create-a-python-virtual-environment">Step 2: Install virtualenv and create a Python virtual environment<a class="headerlink" href="#step-2-install-virtualenv-and-create-a-python-virtual-environment" title="Permanent link">&para;</a></h3>
 <pre class="codehilite"><code>pip3 install virtualenv
 mkdir envs
 cd envs
-virtualenv -p /usr/bin/python3.8 gsy-e
-</code></pre>
+virtualenv -p /usr/bin/python3.8 gsy-e</code></pre>
+
 
 <h4 id="how-to-activate-the-environment">How to activate the environment:<a class="headerlink" href="#how-to-activate-the-environment" title="Permanent link">&para;</a></h4>
-<pre class="codehilite"><code>source gsy-e/bin/activate
-</code></pre>
+<pre class="codehilite"><code>source gsy-e/bin/activate</code></pre>
+
 
 <h4 id="how-to-deactivate-the-environment">How to deactivate the environment:<a class="headerlink" href="#how-to-deactivate-the-environment" title="Permanent link">&para;</a></h4>
-<pre class="codehilite"><code>deactivate
-</code></pre>
+<pre class="codehilite"><code>deactivate</code></pre>
+
 
 <h3 id="step-3-please-add-the-following-lines-to-your-bashrc-and-reopen-the-shell">Step 3: Please add the following lines to your .bashrc and reopen the shell:<a class="headerlink" href="#step-3-please-add-the-following-lines-to-your-bashrc-and-reopen-the-shell" title="Permanent link">&para;</a></h3>
 <pre class="codehilite"><code>export LC_ALL=C.UTF-8
-export LANG=C.UTF-8
-</code></pre>
+export LANG=C.UTF-8</code></pre>
+
 
 <h3 id="step-4-clone-the-grid-singularity-exchange-repository-gsy-e-to-a-directory-of-your-choice">Step 4: Clone the Grid Singularity Exchange repository, gsy-e, to a directory of your choice:<a class="headerlink" href="#step-4-clone-the-grid-singularity-exchange-repository-gsy-e-to-a-directory-of-your-choice" title="Permanent link">&para;</a></h3>
-<pre class="codehilite"><code>git clone https://github.com/gridsingularity/gsy-e.git
-</code></pre>
+<pre class="codehilite"><code>git clone https://github.com/gridsingularity/gsy-e.git</code></pre>
+
 
 <h3 id="step-5-install">Step 5: Install<a class="headerlink" href="#step-5-install" title="Permanent link">&para;</a></h3>
 <h4 id="activate-your-virtual-environment-and-go-into-the-d3a-repository">Activate your virtual environment and go into the d3a repository<a class="headerlink" href="#activate-your-virtual-environment-and-go-into-the-d3a-repository" title="Permanent link">&para;</a></h4>
-<pre class="codehilite"><code>source gsy-e/bin/activate
-</code></pre>
+<pre class="codehilite"><code>source gsy-e/bin/activate</code></pre>
+
 
 <h4 id="install-pip-tools">Install pip-tools<a class="headerlink" href="#install-pip-tools" title="Permanent link">&para;</a></h4>
-<pre class="codehilite"><code>pip3 install pendulum pip-tools
-</code></pre>
+<pre class="codehilite"><code>pip3 install pendulum pip-tools</code></pre>
+
 
 <h4 id="install-dependencies">Install dependencies<a class="headerlink" href="#install-dependencies" title="Permanent link">&para;</a></h4>
-<pre class="codehilite"><code>pip install -e.
-</code></pre>
+<pre class="codehilite"><code>pip install -e.</code></pre>
+
 
 <p>Now, if you run <code>gsy-e run -–help</code> , the help of gsy-e should be shown.</p>
 <h2 id="installing-grid-singularity-exchange-on-linux-ubuntu-2004">Installing Grid Singularity Exchange on Linux Ubuntu 20.04<a class="headerlink" href="#installing-grid-singularity-exchange-on-linux-ubuntu-2004" title="Permanent link">&para;</a></h2>
 <p>Please follow the installation instructions for Ubuntu 18.04.</p>
 <p>In case  you encounter the following error:</p>
-<pre class="codehilite"><code>error: command 'x86_64-linux-gnu-gcc' failed with exit status 1
-</code></pre>
+<pre class="codehilite"><code>error: command 'x86_64-linux-gnu-gcc' failed with exit status 1</code></pre>
+
 
 <p>please install the following package:</p>
-<pre class="codehilite"><code>sudo apt-get install build-essential python3.8-dev -y
-</code></pre>
+<pre class="codehilite"><code>sudo apt-get install build-essential python3.8-dev -y</code></pre>
                 
                   
                 
