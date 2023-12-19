@@ -99,7 +99,7 @@ nav:
                 - 'Registration - Simulations run on the User-Interface': 'registration-grid-operator-api-user-interface.md'
                 - 'Registration - Simulations run on the Backend': 'registration-grid-operator-api-backend.md'
         - 'Customise the clearing algorithm through the Grid Singularity Matching API':
-            - 'Walkthrough': 'matching-api-walkthrough.md'
+            - 'Grid Singularity Matching API Overview': 'matching-api-walkthrough.md'
             - 'Matching API':
                 - 'Matching API Events': 'matching-api-events.md'
                 - 'Matching API Commands': 'matching-api-commands.md'
