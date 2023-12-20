@@ -1,19 +1,19 @@
 In the following section you will learn how to:
 
 - [Setup your computer for Substrate development](#setup-your-computer-for-substrate-development)
-- [Run the GSy DEX code](#run-the-gsy-dex-code)
-- [Co-develop the GSy DEX](#co-develop-the-gsy-dex)
-- [Connect external UI to the GSy DEX](#connect-external-ui-to-the-gsy-dex)
-- [Run the GSy DEX code using docker-compose](#run-the-gsy-dex-code-using-docker-compose)
+- [Run the GSY DEX code](#run-the-gsy-dex-code)
+- [Co-develop the GSY DEX](#co-develop-the-gsy-dex)
+- [Connect external UI to the GSY DEX](#connect-external-ui-to-the-gsy-dex)
+- [Run the GSY DEX code using docker-compose](#run-the-gsy-dex-code-using-docker-compose)
 
 
-You will also be provided with information on [select pallets](#pallets) and choice of [primitives/data structures](#gsy-dex-primitives) to help you explore the [GSy DEX](blockchain.md) codebase.
+You will also be provided with information on [select pallets](#pallets) and choice of [primitives/data structures](#gsy-dex-primitives) to help you explore the [GSY DEX](blockchain.md) codebase.
 
 ### Setup your computer for Substrate development
 
 Please install Rust toolchain and the Developer Tools following the instructions from Substrate [here](https://docs.substrate.io/main-docs/install/){target=_blank}.
 
-### Run the GSy DEX code
+### Run the GSY DEX code
 
 The `cargo run` command will perform an initial build. Use the following command to build the node without launching it:
 
@@ -44,12 +44,12 @@ Start the development chain with detailed logging:
 ```commandline
 RUST_BACKTRACE=1 ./target/release/gsy-node -ldebug --dev
 ```
-Integration with the current version of the [GSy Energy Exchange](https://github.com/gridsingularity/gsy-e){target=_blank} is also possible, with the objective of modelling, simulation and optimisation of energy marketplaces. To install, please refer to these [installation instructions](https://github.com/gridsingularity/gsy-e#basic-setup).
+Integration with the current version of the [GSY Energy Exchange](https://github.com/gridsingularity/gsy-e){target=_blank} is also possible, with the objective of modelling, simulation and optimisation of energy marketplaces. To install, please refer to these [installation instructions](https://github.com/gridsingularity/gsy-e#basic-setup).
 
-Once installation is completed, a new energy marketplace can be modelled following the instructions [here](general-settings.md#backend-simulation-configuration). The same marketplace can also be simulated using the GSy DEX as the exchange engine.  In order to switch to the GSy DEX and enable blockchain operations, the command-line flag `--enable-bc` should be used. The mnemonic of the GSy DEX account should also be provided, in order to authorise the exchange engine to restore your key when needed and interact as bids and offers’ aggregator on your behalf with the blockchain. Finally, the `ENABLE_SUBSTRATE` parameter should be set to True.
+Once installation is completed, a new energy marketplace can be modelled following the instructions [here](general-settings.md#backend-simulation-configuration). The same marketplace can also be simulated using the GSY DEX as the exchange engine.  In order to switch to the GSY DEX and enable blockchain operations, the command-line flag `--enable-bc` should be used. The mnemonic of the GSY DEX account should also be provided, in order to authorise the exchange engine to restore your key when needed and interact as bids and offers’ aggregator on your behalf with the blockchain. Finally, the `ENABLE_SUBSTRATE` parameter should be set to True.
 
-### Co-develop the GSy DEX
-To develop and extend the GSy DEX features and applications please follow this guide, which is based on the [rustup](https://rustup.rs){target=_blank} installer tool for Rust toolchain management.
+### Co-develop the GSY DEX
+To develop and extend the GSY DEX features and applications please follow this guide, which is based on the [rustup](https://rustup.rs){target=_blank} installer tool for Rust toolchain management.
 
 First install and configure `rustup`:
 ```commandline
@@ -65,9 +65,9 @@ rustup update
 rustup update nightly
 rustup target add wasm32-unknown-unknown --toolchain nightly
 ```
-In order to test your setup, the best way to ensure that you have successfully prepared a computer for the [GSy Node](blockchain-system-components-overview.md#gsy-node) development is to follow the steps in the [first Substrate tutorial](https://docs.substrate.io/tutorials/).
+In order to test your setup, the best way to ensure that you have successfully prepared a computer for the [GSY Node](blockchain-system-components-overview.md#gsy-node) development is to follow the steps in the [first Substrate tutorial](https://docs.substrate.io/tutorials/).
 
-In order to run the code in developer mode, use Rust's native `cargo` command to build and launch the [GSy Node](blockchain-system-components-overview.md#gsy-node):
+In order to run the code in developer mode, use Rust's native `cargo` command to build and launch the [GSY Node](blockchain-system-components-overview.md#gsy-node):
 ```commandline
 cd gsy-node
 cargo run --release -- --dev --tmp
@@ -104,13 +104,13 @@ The terminal should display output similar to this:
 2022-08-16 13:54:26 💤 Idle (0 peers), best: #3 (0xcdac…26e5), finalized #1 (0x107c…9bae), ⬇ 0 ⬆ 0
 ```
 
-If the block number, denoted by the logs that include the string `finalized #<block-number>`, is increasing, the [GSy Node](blockchain-system-components-overview.md#gsy-node) is producing new blocks and its consensus algorithm is operating correctly.
+If the block number, denoted by the logs that include the string `finalized #<block-number>`, is increasing, the [GSY Node](blockchain-system-components-overview.md#gsy-node) is producing new blocks and its consensus algorithm is operating correctly.
 
-### Connect external UI to the GSy DEX
+### Connect external UI to the GSY DEX
 
 Once the node is running locally, you can connect it with the Polkadot-JS Apps User Interface to interact with the running node [here](https://polkadot.js.org/apps/#/explorer){target=_blank}.
 
-### Run the GSy DEX code using Docker Compose
+### Run the GSY DEX code using Docker Compose
 
 First, install [Docker](https://docs.docker.com/get-docker/){target=_blank} and [Docker Compose](https://docs.docker.com/compose/install/){target=_blank}.
 
@@ -126,7 +126,7 @@ and start docker-compose:
 docker-compose up
 ```
 
-### Explore the GSy DEX code
+### Explore the GSY DEX code
 
 A blockchain node is an application that allows users to participate in a blockchain network. Substrate-based blockchain nodes ensure a number of capabilities:
 
@@ -224,16 +224,16 @@ The pallet provides several key components:
 - `is_order_registered`: Check if an order is registered.
 - `is_registered_matching_engine_operator`: Check if an account is a registered matching engine operator.
 
-#### GSy DEX Primitives
+#### GSY DEX Primitives
 
-The implemented Rust code defines the primitive data structures used in the GSy DEX, such as types for block numbers, moments, signatures, public keys, account IDs, account indices, chain IDs, hashes, nonces, balances, headers, blocks, and extrinsics. Additionally, it exports the OrderReference and OrderStatus types from the [orders module](#the-orders-module).
+The implemented Rust code defines the primitive data structures used in the GSY DEX, such as types for block numbers, moments, signatures, public keys, account IDs, account indices, chain IDs, hashes, nonces, balances, headers, blocks, and extrinsics. Additionally, it exports the OrderReference and OrderStatus types from the [orders module](#the-orders-module).
 
-Here is an overview of the input data types for the GSy DEX:
+Here is an overview of the input data types for the GSY DEX:
 
 - `BlockNumber`: a type alias for a 64-bit unsigned integer used to represent block numbers
 - `Moment`: a type alias for a 64-bit unsigned integer used to represent an instant or duration in time
 - `Signature`: <a name="bc-primitive-signature"></a>a type alias for the `MultiSignature` type from the `sp_runtime` module. This type is used to represent a signature for a transaction. It allows one of several underlying cryptographic algorithms to be used, so it isn't a fixed size when encoded.
-- `AccountPublic`: a type alias for the `Signer` associated type of the `Verify` trait implemented for [Signature](#bc-primitive-signature). This type represents the public key used for the [GSy Node](blockchain-system-components-overview.md#gsy-node) and is actually a `MultiSigner`. Like the signature, this type also isn't a fixed size when encoded, as different cryptographic algorithms have different size public keys.
+- `AccountPublic`: a type alias for the `Signer` associated type of the `Verify` trait implemented for [Signature](#bc-primitive-signature). This type represents the public key used for the [GSY Node](blockchain-system-components-overview.md#gsy-node) and is actually a `MultiSigner`. Like the signature, this type also isn't a fixed size when encoded, as different cryptographic algorithms have different size public keys.
 - `AccountId`: a type alias for the `AccountId32` type associated with the IdentifyAccount trait implemented for `AccountPublic`. This type is an opaque account ID type and is always 32 bytes.
 - `AccountIndex`: a type alias for a 32-bit unsigned integer used to represent the type for looking up accounts.
 - `ChainId`: a type alias for a 32-bit unsigned integer used to represent the identifier for a chain.
@@ -251,21 +251,21 @@ Here is an overview of the input data types for the GSy DEX:
 #### The Orders Module
 The orders module defines several types:
 
-- `Order`: <a name="bc-order"></a>An enum representing the order in the GSy DEX, with two variants:
+- `Order`: <a name="bc-order"></a>An enum representing the order in the GSY DEX, with two variants:
     - `Bid`: <a name="bc-bid"></a>A struct representing a bid order, including the buyer, nonce and the bid components.
     - `Offer`: <a name="bc-offer"></a>A struct representing an offer (ask) order, including the seller, nonce, and the offer components.
 - `OrderStatus`: <a name="bc-order-status"></a>An enum that represents the status of an [Order](#bc-order), with three variants:
     - `Open`: The default status.
     - `Executed`: The order has been executed.
     - `Deleted`: The order has been cancelled.
-- `OrderReference`: <a name="bc-order-reference"></a>A struct that represents a reference to an [Order](#bc-order) in the GSy DEX, with two fields:
+- `OrderReference`: <a name="bc-order-reference"></a>A struct that represents a reference to an [Order](#bc-order) in the GSY DEX, with two fields:
     - `user_id`: The account ID of the user who created the order.
     - `hash`: The hash of the order struct which represents a unique reference of the [Order](#bc-order) object.
-- `InputOrder`: An enum representing the input format of the order of the GSy DEX. It has two variants:
+- `InputOrder`: An enum representing the input format of the order of the GSY DEX. It has two variants:
     - `InputBid`: A struct representing an input bid order, including the buyer and the bid components.
     - `InputOffer`: A struct representing an input offer (ask) order, including the seller and the offer components.
 - `OrderComponent`: A struct representing the common components of an order, including area UUID, market UUID, time slot, creation time, energy, and energy rate.
-- `OrderSchema`: A struct representing the schema of the order. It is needed in order to enforce the order book storage and other ancillary services to use the same schema/protocol for the [Order](#bc-order) struct as the [GSy Node](blockchain-system-components-overview.md#gsy-node).
+- `OrderSchema`: A struct representing the schema of the order. It is needed in order to enforce the order book storage and other ancillary services to use the same schema/protocol for the [Order](#bc-order) struct as the [GSY Node](blockchain-system-components-overview.md#gsy-node).
 
 
 #### The Trades Module
