@@ -69,6 +69,25 @@ class StateInterface(ABC):
         return self.__class__.__name__
 
 
+class DummyState(StateInterface):
+    """Empty state for usage in strategies that do not need state but to enable the
+    endpoint_buffer to be access the state methods."""
+
+    def get_state(self) -> Dict:
+        """Return the current state of the device."""
+        return {}
+
+    def restore_state(self, state_dict: Dict):
+        """Update the state of the device using the provided dictionary."""
+
+    def delete_past_state_values(self, current_time_slot: DateTime):
+        """Delete the state of the device before the given time slot."""
+
+    def get_results_dict(self, current_time_slot: DateTime) -> dict:
+        """Return a dict with the state values that can be used in results."""
+        return {}
+
+
 class ProsumptionInterface(StateInterface, ABC):
     """Interface with common methods/variables shared by consumption and production devices."""
 

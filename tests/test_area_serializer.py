@@ -243,7 +243,6 @@ def test_leaf_deserialization_scm():
 
     assert isinstance(recovered.children[3], SCMStorage)
     assert isinstance(recovered.children[3].strategy, SCMStorageStrategy)
-    assert recovered.children[3].strategy._state.initial_soc == 34
 
 
 @pytest.fixture

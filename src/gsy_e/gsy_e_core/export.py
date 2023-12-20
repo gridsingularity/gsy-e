@@ -72,10 +72,6 @@ results_field_to_json_filename_mapping = {
     "trade_profile": "trade_profile"
 }
 
-EXPORT_DEVICE_VARIABLES = ["trade_energy_kWh", "sold_trade_energy_kWh", "bought_trade_energy_kWh",
-                           "trade_price_eur", "pv_production_kWh", "soc_history_%",
-                           "load_profile_kWh"]
-
 
 # pylint: disable=too-many-instance-attributes
 class ExportAndPlot:
