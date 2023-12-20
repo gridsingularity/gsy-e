@@ -176,7 +176,7 @@ class Simulation:
             self, slot_resume: int, tick_resume: int, console: NonBlockingConsole = None) -> None:
         slot_count, slot_resume, tick_resume = (
             self._time.calculate_total_initial_ticks_slots(
-                self.config, slot_resume, tick_resume, self.area))
+                self.config, slot_resume, tick_resume, self.area, self.status))
 
         self.config.external_redis_communicator.activate()
 
@@ -228,7 +228,7 @@ class Simulation:
                 self.config.external_redis_communicator.\
                     publish_aggregator_commands_responses_events()
 
-                self._time.handle_slowdown_and_realtime(tick_no, self.config)
+                self._time.handle_slowdown_and_realtime(tick_no, self.config, self.status)
 
                 if self.status.stopped:
                     log.error("Received stop command for configuration id %s and job id %s.",
@@ -449,7 +449,7 @@ class CoefficientSimulation(Simulation):
             self, slot_resume: int, _tick_resume: int, console: NonBlockingConsole = None) -> None:
         slot_count, slot_resume = (
             self._time.calc_resume_slot_and_count_realtime(
-                self.config, slot_resume))
+                self.config, slot_resume, self.status))
 
         self.config.external_redis_communicator.activate()
 
@@ -488,7 +488,8 @@ class CoefficientSimulation(Simulation):
 
             # self._compute_memory_info()
 
-            self._time.handle_slowdown_and_realtime_scm(slot_no, slot_count, self.config)
+            self._time.handle_slowdown_and_realtime_scm(
+                slot_no, slot_count, self.config, self.status)
 
             if self.status.stopped:
                 log.error("Received stop command for configuration id %s and job id %s.",
