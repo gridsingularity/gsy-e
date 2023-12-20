@@ -115,9 +115,9 @@ nav:
         - 'Send live data streams via the Exchange SDK': 'send-data-exchange-sdk.md'
         - 'Send live data streams via the REST API': 'send-data-rest-api.md'
 - 'Blockchain Integration':
-  - 'GSy DEX Overview': 'blockchain.md'
-  - 'GSy DEX System Components Overview': 'blockchain-system-components-overview.md'
-  - 'GSy DEX Node Installation, Operation and Development': 'blockchain-installation.md'
+  - 'GSY DEX Overview': 'blockchain.md'
+  - 'GSY DEX System Components Overview': 'blockchain-system-components-overview.md'
+  - 'GSY DEX Node Installation, Operation and Development': 'blockchain-installation.md'
   - 'GSY DEX Off-Chain Storage': 'blockchain-off-chain-storage.md'
 - 'References': 'references.md'
 - 'Releases Archive': 'releases.md'
