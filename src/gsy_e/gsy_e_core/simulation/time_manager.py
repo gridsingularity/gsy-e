@@ -41,17 +41,25 @@ log = getLogger(__name__)
 
 class TimeManagerBase:
     """Base class for the Simulation/Canary Network time managers."""
+
     @staticmethod
     def _sleep_and_wake_up_if_stopped(
-            sleep_time_s: int, status: "SimulationStatusManager") -> None:
-        start_time = time()
-        while time() - start_time < sleep_time_s and not status.stopped:
-            sleep(5)
+            sleep_time_s: float, status: "SimulationStatusManager") -> None:
+        if sleep_time_s > 0:
+            start_time = time()
+            while time() - start_time < sleep_time_s and not status.stopped:
+                sleep(5)
+
+    @staticmethod
+    def _sleep_no_realtime(sleep_time_s: float):
+        if sleep_time_s > 0:
+            sleep(sleep_time_s)
 
 
 @dataclass
 class SimulationTimeManager(TimeManagerBase):
     """Handles simulation time management."""
+
     start_time: DateTime = now(tz=TIME_ZONE)
     tick_time_counter: float = time()
     slot_length_realtime: duration = None
@@ -77,6 +85,7 @@ class SimulationTimeManager(TimeManagerBase):
             self, config: "SimulationConfig", slot_resume: int, tick_resume: int, area: "AreaBase",
             status: "SimulationStatusManager"
     ) -> Tuple[int, int, int]:
+        # pylint: disable = too-many-arguments
         """Calculate the initial slot and tick of the simulation, and the total slot count."""
         slot_count = int(config.sim_duration / config.slot_length)
 
@@ -115,14 +124,15 @@ class SimulationTimeManager(TimeManagerBase):
         if gsy_e.constants.RUN_IN_REALTIME:
             tick_runtime_s = time() - self.tick_time_counter
             sleep_time_s = config.tick_length.seconds - tick_runtime_s
+            self._sleep_and_wake_up_if_stopped(sleep_time_s, status)
         elif self.slot_length_realtime:
             current_expected_tick_time = self.tick_time_counter + self.tick_length_realtime_s
             sleep_time_s = current_expected_tick_time - now(tz=TIME_ZONE).timestamp()
+            self._sleep_no_realtime(sleep_time_s)
         else:
             return
 
         if sleep_time_s > 0:
-            self._sleep_and_wake_up_if_stopped(sleep_time_s, status)
             log.debug("Tick %s/%s: Sleep time of %s s was applied",
                       tick_no + 1, config.ticks_per_slot, sleep_time_s)
 
@@ -168,14 +178,15 @@ class SimulationTimeManagerScm(TimeManagerBase):
         if gsy_e.constants.RUN_IN_REALTIME:
             slot_runtime_s = time() - self.slot_time_counter
             sleep_time_s = config.slot_length.total_seconds() - slot_runtime_s
+            self._sleep_and_wake_up_if_stopped(sleep_time_s, status)
         elif slot_length_realtime_s:
             current_expected_slot_time = self.slot_time_counter + slot_length_realtime_s
             sleep_time_s = current_expected_slot_time - now(tz=TIME_ZONE).timestamp()
+            self._sleep_no_realtime(sleep_time_s)
         else:
             return
 
         if sleep_time_s > 0:
-            self._sleep_and_wake_up_if_stopped(sleep_time_s, status)
             log.debug("Slot %s/%s: Sleep time of %s s was applied",
                       slot_no, slot_count, sleep_time_s)
 
