@@ -172,6 +172,14 @@ class Simulation:
         return (self.area.config.start_date + (slot_number * self.area.config.slot_length)
                 if GlobalConfig.is_canary_network() else self.area.now)
 
+    def _cycle_markets(self, slot_no: int) -> None:
+        # order matters here;
+        # update of ProfilesHandler has to be called before cycle_markets
+        global_objects.profiles_handler.update_time_and_buffer_profiles(
+            self._get_current_market_time_slot(slot_no), area=self.area)
+
+        self.area.cycle_markets()
+
     def _execute_simulation(
             self, slot_resume: int, tick_resume: int, console: NonBlockingConsole = None) -> None:
         slot_count, slot_resume, tick_resume = (
@@ -184,10 +192,7 @@ class Simulation:
             self.progress_info.update(
                 slot_no, slot_count, self._time, self.config)
 
-            self.area.cycle_markets()
-
-            global_objects.profiles_handler.update_time_and_buffer_profiles(
-                self._get_current_market_time_slot(slot_no), area=self.area)
+            self._cycle_markets(slot_no)
 
             if self.config.external_connection_enabled:
                 global_objects.external_global_stats.update(market_cycle=True)
@@ -445,6 +450,14 @@ class CoefficientSimulation(Simulation):
         self.config.external_redis_communicator. \
             publish_aggregator_commands_responses_events()
 
+    def _cycle_markets(self, slot_no: int) -> None:
+        # order matters here;
+        # update of ProfilesHandler has to be called before cycle_coefficients_trading
+        global_objects.profiles_handler.update_time_and_buffer_profiles(
+            self._get_current_market_time_slot(slot_no), area=self.area)
+
+        self.area.cycle_coefficients_trading(self.progress_info.current_slot_time)
+
     def _execute_simulation(
             self, slot_resume: int, _tick_resume: int, console: NonBlockingConsole = None) -> None:
         slot_count, slot_resume = (
@@ -460,10 +473,7 @@ class CoefficientSimulation(Simulation):
 
             self.progress_info.update(slot_no, slot_count, self._time, self.config)
 
-            self.area.cycle_coefficients_trading(self.progress_info.current_slot_time)
-
-            global_objects.profiles_handler.update_time_and_buffer_profiles(
-                self._get_current_market_time_slot(slot_no), area=self.area)
+            self._cycle_markets(slot_no)
 
             self._handle_external_communication()
 
