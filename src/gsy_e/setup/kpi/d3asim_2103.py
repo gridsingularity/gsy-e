@@ -84,6 +84,7 @@ def get_setup(config):
 
 
                 ], grid_fee_percentage=1, grid_fee_constant=0,
+                min_offer_age=1, min_bid_age=1
             ),
             Area("DSO", strategy=InfiniteBusStrategy(energy_buy_rate=20, energy_sell_rate=30),
                  )
