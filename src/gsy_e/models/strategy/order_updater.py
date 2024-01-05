@@ -36,7 +36,7 @@ class OrderUpdater:
         self._parameters = parameters
         self._market_params = market_params
         self._update_times: List[DateTime] = self._calculate_update_timepoints(
-            self._market_params.opening_time,
+            self._market_params.opening_time + self._parameters.update_interval,
             self._market_params.closing_time - GlobalConfig.tick_length,
             self._parameters.update_interval)
 
@@ -51,10 +51,9 @@ class OrderUpdater:
         timepoints.append(end_time)
         return timepoints
 
-    def is_time_for_update(
-            self, current_time_slot: DateTime) -> bool:
+    def is_time_for_update(self, current_time: DateTime) -> bool:
         """Check if the orders need to be updated."""
-        return current_time_slot in self._update_times
+        return current_time in self._update_times
 
     def get_energy_rate(self, current_time_slot: DateTime) -> float:
         """Calculate energy rate for the current time slot."""
