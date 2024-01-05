@@ -4,11 +4,12 @@
     "slot_length": "15m",
     "tick_length": "15s",
     "cloud_coverage": 0,
-    "start_date": "2023-10-26"
+    "start_date": "2023-11-28"
   },
   "advanced_settings": {
     "GeneralSettings": {
       "DEFAULT_MARKET_MAKER_RATE": 30,
+      "DEFAULT_FEED_IN_TARIFF": 0,
       "DEFAULT_UPDATE_INTERVAL": 1,
       "MIN_UPDATE_INTERVAL": 1,
       "MARKET_CLEARING_FREQUENCY_PER_SLOT": 3,
