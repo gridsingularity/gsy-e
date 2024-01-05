@@ -30,6 +30,7 @@ def get_setup(config):
                 children=[
                     Asset("H2 PV", strategy=PVUserProfileStrategy(panel_count=1,
                                                                   initial_selling_rate=80,
+                                                                  update_interval=5,
                                                                   power_profile={0: 200,
                                                                                  12: 400,
                                                                                  19: 0}),
@@ -42,7 +43,8 @@ def get_setup(config):
                                                           hrs_per_day=24,
                                                           hrs_of_day=list(
                                                               range(0, 24)),
-                                                          final_buying_rate=35)
+                                                          final_buying_rate=35,
+                                                          update_interval=5)
                   )
         ],
         config=config

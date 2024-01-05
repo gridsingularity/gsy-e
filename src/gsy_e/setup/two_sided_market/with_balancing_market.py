@@ -15,12 +15,12 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from gsy_e.models.area import Area
-from gsy_e.models.strategy.storage import StorageStrategy
-from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_framework.constants_limits import ConstSettings
-from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 
+from gsy_e.gsy_e_core.device_registry import DeviceRegistry
+from gsy_e.models.area import Area
+from gsy_e.models.strategy.load_hours import LoadHoursStrategy
+from gsy_e.models.strategy.storage import StorageStrategy
 
 device_registry_dict = {
     "H1 Storage": (32, 35),
@@ -36,8 +36,6 @@ def get_setup(config):
     ConstSettings.MASettings.MARKET_TYPE = 2
     ConstSettings.LoadSettings.INITIAL_BUYING_RATE = 0
     ConstSettings.LoadSettings.FINAL_BUYING_RATE = 35
-    ConstSettings.MASettings.MIN_BID_AGE = 0
-    ConstSettings.MASettings.MIN_OFFER_AGE = 0
 
     area = Area(
         "Grid",
@@ -49,7 +47,9 @@ def get_setup(config):
                          strategy=StorageStrategy(initial_soc=83.33,
                                                   battery_capacity_kWh=12)
                          ),
-                ]
+                ],
+                min_offer_age=0,
+                min_bid_age=0
             ),
             Area(
                 "House 2",
@@ -59,9 +59,11 @@ def get_setup(config):
                         hrs_per_day=24,
                         hrs_of_day=list(range(0, 24)),
                         initial_buying_rate=ConstSettings.LoadSettings.INITIAL_BUYING_RATE,
-                        final_buying_rate=ConstSettings.LoadSettings.FINAL_BUYING_RATE
+                        final_buying_rate=ConstSettings.LoadSettings.FINAL_BUYING_RATE,
                     ))
-                ]
+                ],
+                min_offer_age=0,
+                min_bid_age=0
             ),
         ],
         config=config
