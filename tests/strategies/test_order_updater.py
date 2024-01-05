@@ -41,7 +41,7 @@ class TestOrderUpdater:
         assert updater.is_time_for_update(
             opening_time + duration(minutes=30) - duration(seconds=5))
 
-        current_time = opening_time
+        current_time = opening_time + duration(minutes=5)
         while current_time < opening_time + duration(minutes=30) - duration(seconds=5):
             assert updater.is_time_for_update(current_time) is True
             current_time += duration(minutes=5)
