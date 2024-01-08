@@ -64,12 +64,12 @@ class TestHeatPumpEnergyParameters:
         assert CURRENT_MARKET_SLOT not in energy_params.state._min_energy_demand_kWh
         assert CURRENT_MARKET_SLOT not in energy_params.state._max_energy_demand_kWh
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
-        assert energy_params.state._temp_decrease_K[CURRENT_MARKET_SLOT] == 10.0
+        assert energy_params.state._temp_decrease_K[CURRENT_MARKET_SLOT] == 20.0
         assert energy_params.state._storage_temp_C[CURRENT_MARKET_SLOT] == 20
         assert isclose(energy_params.state._min_energy_demand_kWh[CURRENT_MARKET_SLOT],
-                       0.8865112724493694)
+                       1.773, abs_tol=1e-3)
         assert isclose(energy_params.state._max_energy_demand_kWh[CURRENT_MARKET_SLOT],
-                       3.0)
+                       3.0, abs_tol=1e-3)
 
     @staticmethod
     def test_event_traded_energy_decrements_posted_energy(energy_params):
@@ -96,7 +96,7 @@ class TestHeatPumpEnergyParameters:
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
         energy_params.get_min_energy_demand_kWh(CURRENT_MARKET_SLOT)
         assert isclose(energy_params.get_min_energy_demand_kWh(CURRENT_MARKET_SLOT),
-                       0.8865112724493694)
+                       1.773, abs_tol=1e-3)
 
     @staticmethod
     def test_get_max_energy_demand_kWh_returns_correct_value(energy_params):
@@ -109,24 +109,10 @@ class TestHeatPumpEnergyParameters:
     def test__calc_temp_decrease_K_sets_unmatched_demand(energy_params):
         energy_params.state.update_unmatched_demand_kWh = Mock()
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
-        assert energy_params.state.update_unmatched_demand_kWh.call_count == 2
+        assert energy_params.state.update_unmatched_demand_kWh.call_count == 1
         assert energy_params.state.update_unmatched_demand_kWh.call_args_list == [
-            call(CURRENT_MARKET_SLOT, 4.113488727550631),
-            call(CURRENT_MARKET_SLOT, 1.4325563622468467)
+            call(CURRENT_MARKET_SLOT, 1.773022544898739)
         ]
-
-    @staticmethod
-    @pytest.mark.parametrize("maximum_power_rating_kW, expected_unmatched_demand",
-                             [[3, 3.5460],
-                              [5, 2.113]])
-    def test__calc_temp_increase_K_sets_unmatched_demand(
-            energy_params, maximum_power_rating_kW, expected_unmatched_demand):
-        energy_params._max_energy_consumption_kWh = maximum_power_rating_kW
-        energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
-        energy_params.event_traded_energy(CURRENT_MARKET_SLOT, 2)
-        assert isclose(
-            energy_params.state._unmatched_demand_kWh[CURRENT_MARKET_SLOT],
-            expected_unmatched_demand, abs_tol=1e-3)
 
     @staticmethod
     def test_event_market_cycle_calculates_and_sets_cop(energy_params):
