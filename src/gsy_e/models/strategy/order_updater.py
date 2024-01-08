@@ -37,7 +37,7 @@ class OrderUpdater:
         self._market_params = market_params
         self._update_times: List[DateTime] = self._calculate_update_timepoints(
             self._market_params.opening_time,
-            self._market_params.closing_time - GlobalConfig.tick_length,
+            self._market_params.closing_time - self._parameters.update_interval,
             self._parameters.update_interval)
 
     @staticmethod
