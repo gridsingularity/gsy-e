@@ -219,7 +219,7 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
     @property
     def _calculate_number_of_available_updates_per_slot(self) -> int:
         number_of_available_updates = \
-            max(int((self._time_slot_duration_in_seconds / self.update_interval.seconds)), 1)
+            max(int((self._time_slot_duration_in_seconds / self.update_interval.seconds) - 1), 1)
         return number_of_available_updates
 
     def update_and_populate_price_settings(self, area: "Area") -> None:
@@ -239,10 +239,8 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
 
     def get_updated_rate(self, time_slot: DateTime) -> float:
         """Compute the rate for offers/bids at a specific time slot."""
-        first_updated_rate = (
-                self.initial_rate[time_slot] - self.energy_rate_change_per_update[time_slot])
         calculated_rate = (
-            first_updated_rate -
+            self.initial_rate[time_slot] -
             self.energy_rate_change_per_update[time_slot] * self.update_counter[time_slot])
         updated_rate = self.rate_limit_object(calculated_rate, self.final_rate[time_slot])
         return updated_rate
@@ -271,6 +269,7 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
             self.update_counter[time_slot] += 1
 
     def time_for_price_update(self, strategy: "BaseStrategy", time_slot: DateTime) -> bool:
+
         """Check if the prices of bids/offers should be updated."""
         return self._elapsed_seconds_per_slot(strategy.area) >= (
             self.update_interval.seconds * self.update_counter[time_slot])
