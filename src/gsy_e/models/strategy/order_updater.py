@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from typing import List
 
-from gsy_framework.constants_limits import GlobalConfig
 from pendulum import duration, DateTime, Duration
 
 from gsy_e.models.market import MarketSlotParams
@@ -59,13 +58,16 @@ class OrderUpdater:
     def get_energy_rate(self, current_time_slot: DateTime) -> float:
         """Calculate energy rate for the current time slot."""
         assert current_time_slot >= self._market_params.opening_time
-        if current_time_slot == self._market_params.closing_time - GlobalConfig.tick_length:
+        if (current_time_slot ==
+                self._market_params.closing_time - self._parameters.update_interval):
             return self._parameters.final_rate
         time_elapsed_since_start = current_time_slot - self._market_params.opening_time
         total_slot_length = (
                 self._market_params.closing_time - self._market_params.opening_time)
         rate_range = abs(self._parameters.final_rate - self._parameters.initial_rate)
-        rate_diff_from_initial = (time_elapsed_since_start / total_slot_length) * rate_range
+        rate_diff_from_initial = (
+                (time_elapsed_since_start / (total_slot_length - self._parameters.update_interval)
+                 ) * rate_range)
         if self._parameters.initial_rate < self._parameters.final_rate:
             return self._parameters.initial_rate + rate_diff_from_initial
 
