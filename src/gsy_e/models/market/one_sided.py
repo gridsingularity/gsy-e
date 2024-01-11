@@ -292,9 +292,10 @@ class OneSidedMarket(MarketBase):
                 fee_price, trade_price = self._determine_offer_price(
                     1, energy, trade_rate, trade_bid_info, orig_offer_price)
                 offer.update_price(trade_price)
-        except Exception:
+        except Exception as ex:
             # Exception happened - restore offer
             self.offers[offer.id] = offer
+            log.error("Accept offer (%s) failed due to: %s", offer, ex)
             raise
 
         trade_id, residual_offer = self.bc_interface.handle_blockchain_trade_event(

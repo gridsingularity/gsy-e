@@ -332,7 +332,7 @@ class TwoSidedMarket(OneSidedMarket):
             # by seller / buyer.
             if not market_offer:
                 market_offer = self._get_offer_from_seller_origin_id(
-                    recommended_pair.offer["seller_origin_id"])
+                    recommended_pair.offer["seller"]["origin_uuid"])
                 if market_offer is None:
                     raise InvalidBidOfferPairException("Offer does not exist in the market")
             recommended_pair.offer = market_offer.serializable_dict()
@@ -340,7 +340,7 @@ class TwoSidedMarket(OneSidedMarket):
             market_bid = self.bids.get(recommended_pair.bid["id"])
             if not market_bid:
                 market_bid = self._get_bid_from_buyer_origin_id(
-                    recommended_pair.bid["buyer_origin_id"])
+                    recommended_pair.bid["buyer"]["origin_uuid"])
                 if market_bid is None:
                     raise InvalidBidOfferPairException("Bid does not exist in the market")
             recommended_pair.bid = market_bid.serializable_dict()
