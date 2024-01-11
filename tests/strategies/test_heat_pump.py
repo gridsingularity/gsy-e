@@ -110,8 +110,14 @@ class TestHeatPumpStrategy:
             now_mock.return_value = (
                     CURRENT_MARKET_SLOT + updater_params.update_interval)
             strategy.event_tick()
-            # 15 minutes / 15 cts --> 1 ct/kWh after 1 minute
-            self._assert_bid(list(market_object.bids.values()), strategy, energy_to_buy, 1)
+            update_interval = duration(
+                minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
+            initial_rate = GlobalConfig.FEED_IN_TARIFF
+            final_rate = GlobalConfig.market_maker_rate
+            expected_rate = (final_rate - initial_rate) / (
+                    (duration(minutes=15)-update_interval) / update_interval)
+            self._assert_bid(
+                list(market_object.bids.values()), strategy, energy_to_buy, expected_rate)
 
     @staticmethod
     @pytest.mark.parametrize("heatpump_fixture", [
