@@ -95,9 +95,9 @@ class HeatPumpEnergyParametersBase(ABC):
             time_slot, self._calc_temp_decrease_K(time_slot))
 
         self._calc_energy_demand(time_slot)
-        self._calculate_unmatched_demand(time_slot)
+        self._calculate_and_set_unmatched_demand(time_slot)
 
-    def _calculate_unmatched_demand(self, time_slot: DateTime):
+    def _calculate_and_set_unmatched_demand(self, time_slot: DateTime):
         pass
 
     def _calc_cop(self, time_slot: DateTime) -> float:
@@ -131,6 +131,8 @@ class HeatPumpEnergyParametersBase(ABC):
 
         self.state.update_temp_increase_K(
             time_slot, self._calc_temp_increase_K(time_slot, energy_kWh))
+
+        self._calculate_and_set_unmatched_demand(time_slot)
 
     def _decrement_posted_energy(self, time_slot: DateTime, energy_kWh: float):
         updated_min_energy_demand_kWh = max(
@@ -170,6 +172,8 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
         self._ext_temp_C: [DateTime, float] = EnergyProfile(
             external_temp_C_profile, external_temp_C_profile_uuid,
             profile_type=InputProfileTypes.IDENTITY)
+
+        self.min_temp_C = min_temp_C  # for usage in the strategy
 
     def serialize(self):
         """Return dict with the current energy parameter values."""
@@ -248,11 +252,11 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
 
         raise HeatPumpEnergyParametersException("HeatPumpSourceType not supported")
 
-    def _calculate_unmatched_demand(self, time_slot: DateTime) -> None:
+    def _calculate_and_set_unmatched_demand(self, time_slot: DateTime) -> None:
         temp_balance = (
                 self.state.get_temp_increase_K(time_slot) -
                 self.state.get_temp_decrease_K(time_slot))
         if temp_balance < FLOATING_POINT_TOLERANCE:
             unmatched_energy_demand = self._temp_diff_to_Q_kWh(
                 abs(temp_balance)) / self.state.get_cop(time_slot)
-            self.state.update_unmatched_demand_kWh(time_slot, unmatched_energy_demand)
+            self.state.set_unmatched_demand_kWh(time_slot, unmatched_energy_demand)

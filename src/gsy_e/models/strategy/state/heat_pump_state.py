@@ -24,7 +24,6 @@ from gsy_framework.utils import (
 from pendulum import DateTime, duration
 
 from gsy_e import constants
-from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.models.strategy.state.base_states import StateInterface
 
 log = getLogger(__name__)
@@ -71,6 +70,10 @@ class HeatPumpState(StateInterface):
         updated_unmatched_demand = self._unmatched_demand_kWh[current_time_slot] + energy_kWh
         self._unmatched_demand_kWh[current_time_slot] = max(0., updated_unmatched_demand)
 
+    def set_unmatched_demand_kWh(self, current_time_slot: DateTime, energy_kWh: float):
+        """Set unmatched demand while ensuring always positive numbers."""
+        self._unmatched_demand_kWh[current_time_slot] = max(0., energy_kWh)
+
     def set_min_energy_demand_kWh(self, time_slot: DateTime, energy_kWh: float):
         """Set the minimal energy demanded for a given time slot."""
         self._min_energy_demand_kWh[time_slot] = energy_kWh
@@ -85,11 +88,7 @@ class HeatPumpState(StateInterface):
 
     def set_temp_decrease_K(self, time_slot: DateTime, temp_diff_K: float):
         """Set the temperature decrease for a given time slot."""
-        temp_decrease = temp_diff_K
-        # Do not allow temperature to go below zero
-        if self._storage_temp_C[time_slot] - temp_diff_K < -FLOATING_POINT_TOLERANCE:
-            temp_decrease = self._storage_temp_C[time_slot]
-        self._temp_decrease_K[time_slot] = temp_decrease
+        self._temp_decrease_K[time_slot] = temp_diff_K
 
     def set_energy_consumption_kWh(self, time_slot: DateTime, energy_kWh: float):
         """Set the energy consumption of the heatpump for a given time slot."""
