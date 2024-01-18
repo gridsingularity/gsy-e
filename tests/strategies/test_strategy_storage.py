@@ -241,12 +241,12 @@ def test_if_storage_doesnt_buy_above_break_even_point(storage_strategy_test2, ar
     storage_strategy_test2.break_even_buy = 10.0
     area_test2.current_market.offers = {"id": Offer("id", now(), 10.1, 1,
                                                     TraderDetails("FakeArea", ""),
-                                                    area_test2.current_market)}
+                                                    10.1)}
     storage_strategy_test2.event_tick()
     assert len(storage_strategy_test2.accept_offer.calls) == 0
     area_test2.current_market.offers = {"id": Offer("id", now(), 9.9, 1,
                                                     TraderDetails("FakeArea", ""),
-                                                    area_test2.current_market)}
+                                                    9.9)}
     storage_strategy_test2.event_tick()
     assert len(storage_strategy_test2.accept_offer.calls) == 0
 
