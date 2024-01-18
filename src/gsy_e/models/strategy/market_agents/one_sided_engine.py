@@ -21,6 +21,7 @@ from typing import Dict, Optional  # noqa
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Offer, TraderDetails, TradeBidOfferInfo
 from gsy_framework.enums import SpotMarketTypeEnum
+from gsy_framework.utils import limit_float_precision
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.exceptions import MarketException, OfferNotFoundException
@@ -67,8 +68,9 @@ class MAEngine:
         return requirements
 
     def _offer_in_market(self, offer):
-        updated_price = self.markets.target.fee_class.update_forwarded_offer_with_fee(
-            offer.energy_rate, offer.original_price / offer.energy) * offer.energy
+        updated_price = limit_float_precision(
+            self.markets.target.fee_class.update_forwarded_offer_with_fee(
+                offer.energy_rate, offer.original_energy_rate) * offer.energy)
 
         kwargs = {
             "price": updated_price,
