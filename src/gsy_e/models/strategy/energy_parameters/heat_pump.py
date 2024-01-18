@@ -135,7 +135,7 @@ class HeatPumpEnergyParametersBase(ABC):
             0., self.get_max_energy_demand_kWh(time_slot) - energy_kWh)
         self.state.set_min_energy_demand_kWh(time_slot, updated_min_energy_demand_kWh)
         self.state.set_max_energy_demand_kWh(time_slot, updated_max_energy_demand_kWh)
-        self.state.increase_total_traded_energy_kWh(time_slot, energy_kWh)
+        self.state.increase_total_traded_energy_kWh(energy_kWh)
 
 
 class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
