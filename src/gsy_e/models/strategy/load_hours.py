@@ -155,7 +155,6 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         self._calculate_active_markets()
         self.event_activate_price()
         self.bid_update.update_and_populate_price_settings(self.area)
-        self._update_energy_requirement_in_state()
         self._future_market_strategy.update_and_populate_price_settings(self)
 
     def _cycle_energy_parameters(self):
