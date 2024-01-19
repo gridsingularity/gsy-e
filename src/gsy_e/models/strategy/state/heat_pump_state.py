@@ -45,7 +45,7 @@ class HeatPumpState(StateInterface):
         self._cop: Dict[DateTime, float] = defaultdict(lambda: 0)
         self._condenser_temp_C: Dict[DateTime, float] = defaultdict(lambda: 0)
         self._heat_demand_J: Dict[DateTime, float] = defaultdict(lambda: 0)
-        self._total_traded_energy_kWh: Dict[DateTime, float] = defaultdict(lambda: 0)
+        self._total_traded_energy_kWh: float = 0.0
         self._slot_length = slot_length
 
     def get_storage_temp_C(self, time_slot: DateTime) -> float:
@@ -74,9 +74,9 @@ class HeatPumpState(StateInterface):
         """Set the maximal energy demanded for a given time slot."""
         self._max_energy_demand_kWh[time_slot] = energy_kWh
 
-    def increase_total_traded_energy_kWh(self, time_slot: DateTime, energy_kWh: float):
+    def increase_total_traded_energy_kWh(self, energy_kWh: float):
         """Add to the total traded energy of the heatpump for a given time slot."""
-        self._total_traded_energy_kWh[time_slot] += energy_kWh
+        self._total_traded_energy_kWh += energy_kWh
 
     def set_temp_decrease_K(self, time_slot: DateTime, temp_diff_K: float):
         """Set the temperature decrease for a given time slot."""
@@ -159,8 +159,7 @@ class HeatPumpState(StateInterface):
             "cop": convert_pendulum_to_str_in_dict(self._cop),
             "condenser_temp_C": convert_pendulum_to_str_in_dict(self._condenser_temp_C),
             "heat_demand_J": convert_pendulum_to_str_in_dict(self._heat_demand_J),
-            "total_traded_energy_kWh": convert_pendulum_to_str_in_dict(
-                self._total_traded_energy_kWh),
+            "total_traded_energy_kWh": self._total_traded_energy_kWh,
         }
 
     def restore_state(self, state_dict: Dict):
@@ -178,8 +177,7 @@ class HeatPumpState(StateInterface):
         self._cop = convert_str_to_pendulum_in_dict(state_dict["cop"])
         self._condenser_temp_C = convert_str_to_pendulum_in_dict(state_dict["condenser_temp_C"])
         self._heat_demand_J = convert_str_to_pendulum_in_dict(state_dict["heat_demand_J"])
-        self._total_traded_energy_kWh = convert_str_to_pendulum_in_dict(
-            state_dict["total_traded_energy_kWh"])
+        self._total_traded_energy_kWh = state_dict["total_traded_energy_kWh"]
 
     def delete_past_state_values(self, current_time_slot: DateTime):
         if not current_time_slot or constants.RETAIN_PAST_MARKET_STRATEGIES_STATE:
@@ -208,7 +206,7 @@ class HeatPumpState(StateInterface):
             "cop": self.get_cop(current_time_slot),
             "condenser_temp_C": self.get_condenser_temp(current_time_slot),
             "heat_demand_J": self.get_heat_demand(current_time_slot),
-            "total_traded_energy_kWh": self._total_traded_energy_kWh[current_time_slot],
+            "total_traded_energy_kWh": self._total_traded_energy_kWh,
         }
         return retval
 
