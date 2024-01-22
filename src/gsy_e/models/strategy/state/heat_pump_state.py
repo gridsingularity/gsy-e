@@ -120,7 +120,6 @@ class HeatPumpState(StateInterface):
 
     def get_max_energy_demand_kWh(self, time_slot: DateTime) -> float:
         """Return the maximal energy demanded for a given time slot."""
-        print(self._max_energy_demand_kWh)
         return self._max_energy_demand_kWh.get(time_slot, 0)
 
     def get_energy_consumption_kWh(self, time_slot: DateTime) -> float:

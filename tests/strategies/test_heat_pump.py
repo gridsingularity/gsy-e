@@ -62,7 +62,6 @@ class TestHeatPumpStrategy:
     def _assert_bid(orders, strategy, energy_to_buy, energy_rate):
         assert len(orders) == 1
         order = orders[0]
-        print(order.energy_rate, energy_rate)
         assert isclose(order.energy_rate, energy_rate, abs_tol=1e-5)
         assert order.energy == energy_to_buy
         assert order.buyer.name == order.buyer.origin == strategy.owner.name
