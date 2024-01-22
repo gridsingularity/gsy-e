@@ -15,10 +15,14 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from gsy_framework.constants_limits import ConstSettings
+
 from gsy_e.models.area import Market, Asset
 from gsy_e.models.area.events import StrategyEvents
-from gsy_e.models.strategy.pv import PVStrategy
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
+from gsy_e.models.strategy.pv import PVStrategy
+
+ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL = 5
 
 
 def get_setup(config):

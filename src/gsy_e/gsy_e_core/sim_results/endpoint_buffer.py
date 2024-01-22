@@ -162,6 +162,7 @@ class SimulationEndpointBuffer:
     def validate_results(self):
         """Validate updated stats and raise exceptions if they are not valid."""
         self.results_validator.validate_simulation_raw_data(self.flattened_area_core_stats_dict)
+
         self.results_validator.validate_configuration_tree(self.area_result_dict)
         self.results_validator.validate_simulation_state(self.simulation_state)
 

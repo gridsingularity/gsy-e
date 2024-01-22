@@ -21,6 +21,7 @@ from typing import Dict, TYPE_CHECKING
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Bid, TraderDetails
 from gsy_framework.enums import SpotMarketTypeEnum
+from gsy_framework.utils import limit_float_precision
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.exceptions import BidNotFoundException, MarketException
@@ -71,9 +72,12 @@ class TwoSidedEngine(MAEngine):
             self.owner.log.debug("Bid is not forwarded because price < 0")
             return None
         try:
+            updated_price = limit_float_precision((
+                self.markets.source.fee_class.update_forwarded_bid_with_fee(
+                    bid.energy_rate, bid.original_energy_rate)) * bid.energy)
+
             forwarded_bid = self.markets.target.bid(
-                price=(self.markets.source.fee_class.update_forwarded_bid_with_fee(
-                    bid.energy_rate, bid.original_price / bid.energy)) * bid.energy,
+                price=updated_price,
                 energy=bid.energy,
                 buyer=TraderDetails(
                     self.owner.name, self.owner.uuid, bid.buyer.origin, bid.buyer.origin_uuid),

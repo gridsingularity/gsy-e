@@ -109,6 +109,7 @@ def get_setup(config):
 
 
                 ], grid_fee_percentage=0, grid_fee_constant=0,
+                min_offer_age=1, min_bid_age=1
             ),
             Area("Feed In Tariff", strategy=InfiniteBusStrategy(
                 energy_buy_rate=15.2,
