@@ -53,6 +53,8 @@ PROFILE_UUID_NAMES = [
     "prosumption_kWh_profile_uuid"
 ]
 
+NUMBER_OF_TIMESTAMPS_TO_KEEP = 2
+
 
 class ProfileDBConnectionHandler:
     """
@@ -242,13 +244,15 @@ class ProfileDBConnectionHandler:
         Returns: tuple of timestamps
 
         """
-        time_stamps = generate_market_slot_list(current_timestamp)
+        time_stamps = generate_market_slot_list(
+            current_timestamp - NUMBER_OF_TIMESTAMPS_TO_KEEP * GlobalConfig.slot_length)
         if not time_stamps:
             log.error(
                 "Empty market slot list. Current timestamp %s, duration %s, is canary %s, "
                 "slot length %s", current_timestamp, GlobalConfig.sim_duration,
                 GlobalConfig.is_canary_network(), GlobalConfig.slot_length)
-        return min(time_stamps), max(time_stamps)
+        return (min(time_stamps),
+                max(time_stamps) + NUMBER_OF_TIMESTAMPS_TO_KEEP * GlobalConfig.slot_length)
 
     def _should_buffer_profiles(self, current_timestamp: DateTime):
         return (self._profile_uuids is None or
@@ -289,6 +293,7 @@ class ProfilesHandler:
     """
     Handles profiles rotation of all profiles (stored in DB and in memory)
     """
+
     def __init__(self):
         self.db = None
         self._current_timestamp = GlobalConfig.start_date
@@ -336,6 +341,28 @@ class ProfilesHandler:
                                       profile,
                                       current_timestamp=self.current_timestamp)
 
+    def _should_add_tail_to_profile_roration(self, profile):
+        return (profile is not None and
+                isinstance(profile, dict) and
+                isinstance(next(iter(profile)), DateTime) and
+                self.current_timestamp
+                )
+
+    def _get_time_stamps_to_keep(self, profile):
+        if not self._should_add_tail_to_profile_roration(profile):
+            return []
+        return [self.current_timestamp - ((n+1) * GlobalConfig.slot_length)
+                for n in range(NUMBER_OF_TIMESTAMPS_TO_KEEP)]
+
+    def _get_profile_tail(self, profile):
+        profile_tail = {}
+        try:
+            for ts in self._get_time_stamps_to_keep(profile):
+                profile_tail[ts] = profile[ts]
+        except KeyError:
+            pass
+        return profile_tail
+
     def rotate_profile(self, profile_type: InputProfileTypes,
                        profile,
                        profile_uuid: str = None) -> Dict[DateTime, float]:
@@ -353,8 +380,9 @@ class ProfilesHandler:
 
         """
         if profile_uuid is None and self.should_create_profile(profile):
-            return read_arbitrary_profile(profile_type,
-                                          profile, current_timestamp=self.current_timestamp)
+            return {**self._get_profile_tail(profile),
+                    **read_arbitrary_profile(profile_type,
+                                             profile, current_timestamp=self.current_timestamp)}
         if self.time_to_rotate_profile(profile):
             return self._read_new_datapoints_from_buffer_or_rotate_profile(
                 profile, profile_uuid, profile_type)

@@ -30,6 +30,7 @@ from gsy_framework.data_classes import Offer, Trade, BalancingOffer, Bid, Trader
 from gsy_e import constants
 from gsy_e.constants import TIME_ZONE
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
+from gsy_e.gsy_e_core.user_profile_handler import NUMBER_OF_TIMESTAMPS_TO_KEEP
 from gsy_e.gsy_e_core.util import gsye_root_path
 from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
 
@@ -370,7 +371,7 @@ def test_global_market_maker_rate_profile_and_infinite_bus_selling_rate_profile(
     assert list(GlobalConfig.market_maker_rate.values())[0] == 516.0
     assert list(GlobalConfig.market_maker_rate.values())[-1] == 595.0
     bus_test5.event_activate()
-    assert list(bus_test5.energy_rate.values())[0] == 516.0
+    assert list(bus_test5.energy_rate.values())[NUMBER_OF_TIMESTAMPS_TO_KEEP - 1] == 516.0
     assert list(bus_test5.energy_rate.values())[-1] == 595.0
 
 
