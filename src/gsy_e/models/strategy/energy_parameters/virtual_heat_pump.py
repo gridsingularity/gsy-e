@@ -195,11 +195,11 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
                 self.state.get_storage_temp_C(time_slot) - temp_decrease_C)
         if new_temperature_without_operation_C < self._min_temp_C:
             temp_decrease_C = 0.0
-            self._calculate_unmatched_demand(time_slot)
+            self._calculate_and_set_unmatched_demand(time_slot)
         assert temp_decrease_C <= 0.0
         return abs(temp_decrease_C)
 
-    def _calculate_unmatched_demand(self, time_slot: DateTime):
+    def _calculate_and_set_unmatched_demand(self, time_slot: DateTime):
         solver = HeatpumpStorageEnergySolver(
             tank_volume_l=self._tank_volume_l,
             current_storage_temp_C=self.state.get_storage_temp_C(time_slot),
