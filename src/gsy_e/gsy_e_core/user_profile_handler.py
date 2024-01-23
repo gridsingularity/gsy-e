@@ -53,6 +53,8 @@ PROFILE_UUID_NAMES = [
     "prosumption_kWh_profile_uuid"
 ]
 
+NUMBER_OF_TIMESTAMPS_TO_KEEP = 2
+
 
 class ProfileDBConnectionHandler:
     """
@@ -242,13 +244,15 @@ class ProfileDBConnectionHandler:
         Returns: tuple of timestamps
 
         """
-        time_stamps = generate_market_slot_list(current_timestamp)
+        time_stamps = generate_market_slot_list(
+            current_timestamp - NUMBER_OF_TIMESTAMPS_TO_KEEP * GlobalConfig.slot_length)
         if not time_stamps:
             log.error(
                 "Empty market slot list. Current timestamp %s, duration %s, is canary %s, "
                 "slot length %s", current_timestamp, GlobalConfig.sim_duration,
                 GlobalConfig.is_canary_network(), GlobalConfig.slot_length)
-        return min(time_stamps), max(time_stamps)
+        return (min(time_stamps),
+                max(time_stamps) + NUMBER_OF_TIMESTAMPS_TO_KEEP * GlobalConfig.slot_length)
 
     def _should_buffer_profiles(self, current_timestamp: DateTime):
         return (self._profile_uuids is None or
@@ -289,6 +293,7 @@ class ProfilesHandler:
     """
     Handles profiles rotation of all profiles (stored in DB and in memory)
     """
+
     def __init__(self):
         self.db = None
         self._current_timestamp = GlobalConfig.start_date
@@ -353,8 +358,14 @@ class ProfilesHandler:
 
         """
         if profile_uuid is None and self.should_create_profile(profile):
-            return read_arbitrary_profile(profile_type,
-                                          profile, current_timestamp=self.current_timestamp)
+            new_profile = read_arbitrary_profile(profile_type,
+                                                 profile, current_timestamp=self.current_timestamp)
+            if isinstance(profile, dict):
+                profile_tail = {
+                    p[0]: p[1] for p in list(profile.items())[-NUMBER_OF_TIMESTAMPS_TO_KEEP:]}
+            else:
+                profile_tail = {}
+            return {**profile_tail, **new_profile}
         if self.time_to_rotate_profile(profile):
             return self._read_new_datapoints_from_buffer_or_rotate_profile(
                 profile, profile_uuid, profile_type)
