@@ -341,6 +341,28 @@ class ProfilesHandler:
                                       profile,
                                       current_timestamp=self.current_timestamp)
 
+    def _should_add_tail_to_profile_roration(self, profile):
+        return (profile is not None and
+                isinstance(profile, dict) and
+                isinstance(next(iter(profile)), DateTime) and
+                self.current_timestamp
+                )
+
+    def _get_time_stamps_to_keep(self, profile):
+        if not self._should_add_tail_to_profile_roration(profile):
+            return []
+        return [self.current_timestamp - ((n+1) * GlobalConfig.slot_length)
+                for n in range(NUMBER_OF_TIMESTAMPS_TO_KEEP)]
+
+    def _get_profile_tail(self, profile):
+        profile_tail = {}
+        try:
+            for ts in self._get_time_stamps_to_keep(profile):
+                profile_tail[ts] = profile[ts]
+        except KeyError:
+            pass
+        return profile_tail
+
     def rotate_profile(self, profile_type: InputProfileTypes,
                        profile,
                        profile_uuid: str = None) -> Dict[DateTime, float]:
@@ -358,14 +380,9 @@ class ProfilesHandler:
 
         """
         if profile_uuid is None and self.should_create_profile(profile):
-            new_profile = read_arbitrary_profile(profile_type,
-                                                 profile, current_timestamp=self.current_timestamp)
-            if isinstance(profile, dict):
-                profile_tail = {
-                    p[0]: p[1] for p in list(profile.items())[-NUMBER_OF_TIMESTAMPS_TO_KEEP:]}
-            else:
-                profile_tail = {}
-            return {**profile_tail, **new_profile}
+            return {**self._get_profile_tail(profile),
+                    **read_arbitrary_profile(profile_type,
+                                             profile, current_timestamp=self.current_timestamp)}
         if self.time_to_rotate_profile(profile):
             return self._read_new_datapoints_from_buffer_or_rotate_profile(
                 profile, profile_uuid, profile_type)
