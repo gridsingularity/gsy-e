@@ -220,7 +220,12 @@ class HeatPumpStrategy(TradingStrategyBase):
             market.delete_bid(bid)
 
     def _get_energy_buy_energy(self, buy_rate: float, market_slot: DateTime) -> float:
+        TEMPERATURE_TOLERANCE_C = 2
         if buy_rate > self.preferred_buying_rate:
+            temp_decrease = self._energy_params.state.get_temp_decrease_K(market_slot)
+            if self.state.get_storage_temp_C(market_slot) - temp_decrease >= (
+                    self._energy_params.min_temp_C + TEMPERATURE_TOLERANCE_C):
+                return 0
             return self._energy_params.get_min_energy_demand_kWh(market_slot)
         return self._energy_params.get_max_energy_demand_kWh(market_slot)
 
