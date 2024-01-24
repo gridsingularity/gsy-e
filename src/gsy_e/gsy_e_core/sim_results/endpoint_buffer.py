@@ -82,10 +82,10 @@ class SimulationEndpointBuffer:
     def __init__(self, job_id, random_seed, area, should_export_plots):
         self.job_id = job_id
         self.result_area_uuids = set()
-        self.current_market_time_slot_str = ""
-        self.current_market_ui_time_slot_str = ""
-        self.current_market_time_slot_unix = None
-        self.current_market_time_slot = None
+        self.spot_market_time_slot_str = ""
+        self.spot_market_ui_time_slot_str = ""
+        self.spot_market_time_slot_unix = None
+        self.spot_market_time_slot = None
         self.random_seed = random_seed if random_seed is not None else ""
         self.status = ""
         self.area_result_dict = self._create_area_tree_dict(area)
@@ -148,7 +148,7 @@ class SimulationEndpointBuffer:
         if calculate_results:
             self.results_handler.update(
                 self.area_result_dict, self.flattened_area_core_stats_dict,
-                self.current_market_time_slot_str)
+                self.spot_market_time_slot_str)
 
             if (ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR or
                     ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR):
@@ -176,8 +176,8 @@ class SimulationEndpointBuffer:
         """Create dict that contains all statistics that are sent to the gsy-web."""
         return {
             "job_id": self.job_id,
-            "current_market": self.current_market_time_slot_str,
-            "current_market_ui_time_slot_str": self.current_market_ui_time_slot_str,
+            "current_market": self.spot_market_time_slot_str,
+            "current_market_ui_time_slot_str": self.spot_market_ui_time_slot_str,
             "random_seed": self.random_seed,
             "status": self.status,
             "progress_info": self.simulation_progress,
@@ -325,14 +325,14 @@ class SimulationEndpointBuffer:
         self.simulation_state."""
         if area.uuid not in self.flattened_area_core_stats_dict:
             self.flattened_area_core_stats_dict[area.uuid] = {}
-        if self.current_market_time_slot_str == "":
+        if self.spot_market_time_slot_str == "":
             return
         core_stats_dict = {"bids": [], "offers": [], "trades": [], "market_fee": 0.0}
 
-        if area.current_market:
+        if area.spot_market:
             if not ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS:
                 # Spot market cannot operate in parallel with the forward markets
-                core_stats_dict.update(self._read_market_stats_to_dict(area.current_market))
+                core_stats_dict.update(self._read_market_stats_to_dict(area.spot_market))
 
             if ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS:
                 core_stats_dict["settlement_market_stats"] = (
@@ -350,19 +350,19 @@ class SimulationEndpointBuffer:
                 ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS):
             if isinstance(area.strategy, FinitePowerPlant):
                 core_stats_dict["production_kWh"] = area.strategy.energy_per_slot_kWh
-                if area.parent.current_market is not None:
-                    for trade in area.strategy.trades[area.parent.current_market]:
+                if area.parent.spot_market is not None:
+                    for trade in area.strategy.trades[area.parent.spot_market]:
                         core_stats_dict["trades"].append(trade.serializable_dict())
             else:
-                if area.parent.current_market is not None:
+                if area.parent.spot_market is not None:
                     core_stats_dict["energy_rate"] = (
-                        area.strategy.energy_rate.get(area.parent.current_market.time_slot, None))
-                    for trade in area.strategy.trades[area.parent.current_market]:
+                        area.strategy.energy_rate.get(area.parent.spot_market.time_slot, None))
+                    for trade in area.strategy.trades[area.parent.spot_market]:
                         core_stats_dict["trades"].append(trade.serializable_dict())
         elif not ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS:
             core_stats_dict.update(area.get_results_dict())
-            if area.parent and area.parent.current_market and area.strategy:
-                for trade in area.strategy.trades[area.parent.current_market]:
+            if area.parent and area.parent.spot_market and area.strategy:
+                for trade in area.strategy.trades[area.parent.spot_market]:
                     core_stats_dict["trades"].append(trade.serializable_dict())
 
         self.flattened_area_core_stats_dict[area.uuid] = core_stats_dict
@@ -373,18 +373,18 @@ class SimulationEndpointBuffer:
             self._populate_core_stats_and_sim_state(child)
 
     def _calculate_and_update_last_market_time_slot(self, area: "Area"):
-        is_initial_current_market_on_cn = (
+        is_initial_spot_market_on_cn = (
                 GlobalConfig.is_canary_network() and
                 (area.spot_market is None or
-                 (area.current_market and
+                 (area.spot_market and
                   area.spot_market.time_slot -
                   area.current_market.time_slot > area.config.slot_length)))
-        if area.current_market is not None and not is_initial_current_market_on_cn:
-            self.current_market_time_slot_str = area.current_market.time_slot_str
-            self.current_market_ui_time_slot_str = (
-                area.current_market.time_slot.format(DATE_TIME_UI_FORMAT))
-            self.current_market_time_slot_unix = area.current_market.time_slot.timestamp()
-            self.current_market_time_slot = area.current_market.time_slot
+        if area.spot_market is not None and not is_initial_spot_market_on_cn:
+            self.spot_market_time_slot_str = area.spot_market.time_slot_str
+            self.spot_market_ui_time_slot_str = (
+                area.spot_market.time_slot.format(DATE_TIME_UI_FORMAT))
+            self.spot_market_time_slot_unix = area.spot_market.time_slot.timestamp()
+            self.spot_market_time_slot = area.spot_market.time_slot
 
     def _update_results_area_uuids(self, area: "AreaBase") -> None:
         """Populate a set of area uuids that contribute to the stats."""
@@ -417,10 +417,10 @@ class CoefficientEndpointBuffer(SimulationEndpointBuffer):
         """Update the stats of the SCM endpoint buffer."""
         self._scm_manager = scm_manager
 
-        self.current_market_time_slot_str = progress_info.current_slot_str
+        self.spot_market_time_slot_str = progress_info.current_slot_str
         if progress_info.current_slot_time:
-            self.current_market_time_slot = progress_info.current_slot_time
-            self.current_market_time_slot_unix = progress_info.current_slot_time.timestamp()
+            self.spot_market_time_slot = progress_info.current_slot_time
+            self.spot_market_time_slot_unix = progress_info.current_slot_time.timestamp()
 
         super().update_stats(
             area, simulation_status, progress_info, sim_state, calculate_results)
@@ -437,7 +437,7 @@ class CoefficientEndpointBuffer(SimulationEndpointBuffer):
     def _populate_core_stats_and_sim_state(self, area: "AreaBase"):
         if area.uuid not in self.flattened_area_core_stats_dict:
             self.flattened_area_core_stats_dict[area.uuid] = {}
-        if self.current_market_time_slot_str == "":
+        if self.spot_market_time_slot_str == "":
             return
 
         core_stats_dict = {}
@@ -446,7 +446,7 @@ class CoefficientEndpointBuffer(SimulationEndpointBuffer):
             if isinstance(area.strategy, FinitePowerPlant):
                 core_stats_dict["production_kWh"] = area.strategy.energy_per_slot_kWh
             else:
-                if area.parent.current_market is not None:
+                if area.parent.spot_market is not None:
                     core_stats_dict["energy_rate"] = (
                         area.strategy.energy_rate.get(area.now, None))
         elif not area.strategy and self._scm_manager is not None:

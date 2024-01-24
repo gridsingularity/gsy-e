@@ -580,7 +580,7 @@ def test_load_hour_strategy_increases_rate_when_fit_to_limit_is_false(market_tes
     load.owner = load.area
     load.event_activate()
     assert load.state._energy_requirement_Wh[TIME] == 25.0
-    offer = Offer('id', now(), 1, (MIN_BUY_ENERGY/500), TraderDetails("A", ""), market_test1)
+    offer = Offer('id', now(), 1, (MIN_BUY_ENERGY/500), TraderDetails("A", ""))
     load._one_sided_market_event_tick(market_test1, offer)
     assert load.bid_update.get_updated_rate(TIME) == 0
     assert load.state._energy_requirement_Wh[TIME] == 25.0

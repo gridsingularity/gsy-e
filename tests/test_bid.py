@@ -20,7 +20,7 @@ import pendulum
 
 
 def test_offer_id_stringified():
-    bid = Bid(object(), pendulum.now(), 10, 20, 'A', 'B')
+    bid = Bid(object(), pendulum.now(), 10, 20, "A", 2)
 
     assert isinstance(bid.id, str)
     assert "<object object at" in bid.id
