@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from collections import defaultdict
+from logging import getLogger
 from typing import Dict
 
 from gsy_framework.utils import (
@@ -23,8 +24,9 @@ from gsy_framework.utils import (
 from pendulum import DateTime, duration
 
 from gsy_e import constants
-from gsy_e.constants import FLOATING_POINT_TOLERANCE
-from gsy_e.models.strategy.state.base_states import StateInterface, UnexpectedStateException
+from gsy_e.models.strategy.state.base_states import StateInterface
+
+log = getLogger(__name__)
 
 
 class HeatPumpState(StateInterface):
@@ -32,7 +34,7 @@ class HeatPumpState(StateInterface):
     """State for the heat pump strategy."""
 
     def __init__(
-            self, initial_temp_C: float, slot_length: duration):
+            self, initial_temp_C: float, slot_length: duration, min_storage_temp_C: float):
         # the defaultdict was only selected for the initial slot
         self._storage_temp_C: Dict[DateTime, float] = defaultdict(lambda: initial_temp_C)
         self._min_energy_demand_kWh: Dict[DateTime, float] = {}
@@ -45,8 +47,9 @@ class HeatPumpState(StateInterface):
         self._cop: Dict[DateTime, float] = defaultdict(lambda: 0)
         self._condenser_temp_C: Dict[DateTime, float] = defaultdict(lambda: 0)
         self._heat_demand_J: Dict[DateTime, float] = defaultdict(lambda: 0)
-        self._total_traded_energy_kWh: float = 0.0
+        self._total_traded_energy_kWh: float = 0
         self._slot_length = slot_length
+        self._min_storage_temp_C = min_storage_temp_C
 
     def get_storage_temp_C(self, time_slot: DateTime) -> float:
         """Return temperature of storage for a time slot in degree celsius."""
@@ -57,14 +60,19 @@ class HeatPumpState(StateInterface):
         new_temp = (self.get_storage_temp_C(self._last_time_slot(current_time_slot))
                     - self.get_temp_decrease_K(self._last_time_slot(current_time_slot))
                     + self.get_temp_increase_K(self._last_time_slot(current_time_slot)))
-        if new_temp < -FLOATING_POINT_TOLERANCE:
-            raise UnexpectedStateException("Storage of heat pump should not drop below zero.")
+        if new_temp < self._min_storage_temp_C:
+            new_temp = self._min_storage_temp_C
+            log.warning("Storage tank temperature dropped below minimum, setting to minimum.")
         self._storage_temp_C[current_time_slot] = new_temp
 
     def update_unmatched_demand_kWh(self, current_time_slot: DateTime, energy_kWh: float):
         """Update unmatched demand while ensuring always positive numbers."""
         updated_unmatched_demand = self._unmatched_demand_kWh[current_time_slot] + energy_kWh
         self._unmatched_demand_kWh[current_time_slot] = max(0., updated_unmatched_demand)
+
+    def set_unmatched_demand_kWh(self, current_time_slot: DateTime, energy_kWh: float):
+        """Set unmatched demand while ensuring always positive numbers."""
+        self._unmatched_demand_kWh[current_time_slot] = max(0., energy_kWh)
 
     def set_min_energy_demand_kWh(self, time_slot: DateTime, energy_kWh: float):
         """Set the minimal energy demanded for a given time slot."""
@@ -80,11 +88,7 @@ class HeatPumpState(StateInterface):
 
     def set_temp_decrease_K(self, time_slot: DateTime, temp_diff_K: float):
         """Set the temperature decrease for a given time slot."""
-        temp_decrease = temp_diff_K
-        # Do not allow temperature to go below zero
-        if self._storage_temp_C[time_slot] - temp_diff_K < -FLOATING_POINT_TOLERANCE:
-            temp_decrease = self._storage_temp_C[time_slot]
-        self._temp_decrease_K[time_slot] = temp_decrease
+        self._temp_decrease_K[time_slot] = temp_diff_K
 
     def set_energy_consumption_kWh(self, time_slot: DateTime, energy_kWh: float):
         """Set the energy consumption of the heatpump for a given time slot."""
@@ -160,6 +164,8 @@ class HeatPumpState(StateInterface):
             "condenser_temp_C": convert_pendulum_to_str_in_dict(self._condenser_temp_C),
             "heat_demand_J": convert_pendulum_to_str_in_dict(self._heat_demand_J),
             "total_traded_energy_kWh": self._total_traded_energy_kWh,
+            "slot_length": self._slot_length.total_seconds(),
+            "min_storage_temp_C": self._min_storage_temp_C
         }
 
     def restore_state(self, state_dict: Dict):
@@ -178,6 +184,8 @@ class HeatPumpState(StateInterface):
         self._condenser_temp_C = convert_str_to_pendulum_in_dict(state_dict["condenser_temp_C"])
         self._heat_demand_J = convert_str_to_pendulum_in_dict(state_dict["heat_demand_J"])
         self._total_traded_energy_kWh = state_dict["total_traded_energy_kWh"]
+        self._slot_length = duration(seconds=state_dict["slot_length"])
+        self._min_storage_temp_C = state_dict["min_storage_temp_C"]
 
     def delete_past_state_values(self, current_time_slot: DateTime):
         if not current_time_slot or constants.RETAIN_PAST_MARKET_STRATEGIES_STATE:

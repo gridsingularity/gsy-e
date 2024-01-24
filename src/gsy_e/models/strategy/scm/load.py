@@ -78,7 +78,7 @@ class SCMLoadProfileStrategy(SCMStrategy):
 
     def _update_energy_requirement(self, area: "AreaBase") -> None:
         self._energy_params.energy_profile.read_or_rotate_profiles()
-        self._energy_params.update_energy_requirement(area.current_market_time_slot, area.name)
+        self._energy_params.update_energy_requirement(area.current_market_time_slot)
 
     def market_cycle(self, area: "AreaBase") -> None:
         """Update the load forecast and measurements for the next/previous market slot."""

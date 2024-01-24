@@ -71,7 +71,7 @@ class LoadHoursEnergyParameters:
 
         self.state.set_energy_measurement_kWh(simulated_measured_energy_kWh, time_slot)
 
-    def update_energy_requirement(self, time_slot, overwrite=False):
+    def update_energy_requirement(self, time_slot):
         """Update the energy requirement and desired energy from the state class."""
         self.energy_per_slot_Wh = convert_W_to_Wh(
             self.avg_power_W, self._area.config.slot_length)
@@ -79,7 +79,7 @@ class LoadHoursEnergyParameters:
             desired_energy_Wh = self.energy_per_slot_Wh
         else:
             desired_energy_Wh = 0.0
-        self.state.set_desired_energy(desired_energy_Wh, time_slot, overwrite)
+        self.state.set_desired_energy(desired_energy_Wh, time_slot)
 
     def allowed_operating_hours(self, time_slot):
         """Check if timeslot inside allowed operating hours."""
@@ -202,7 +202,7 @@ class DefinedLoadEnergyParameters(LoadHoursPerDayEnergyParameters):
             self.energy_profile.input_profile = kwargs["daily_load_profile"]
             self.energy_profile.read_or_rotate_profiles(reconfigure=True)
 
-    def update_energy_requirement(self, time_slot, overwrite=False):
+    def update_energy_requirement(self, time_slot):
         if not self.energy_profile.profile:
             raise GSyException(
                 "Load tries to set its energy forecasted requirement "

@@ -50,7 +50,7 @@ class HeatPumpEnergyParametersBase(ABC):
         self._maximum_power_rating_kW = maximum_power_rating_kW
         self._max_energy_consumption_kWh = (
                 maximum_power_rating_kW * self._slot_length.total_hours())
-        self.state = HeatPumpState(initial_temp_C, self._slot_length)
+        self.state = HeatPumpState(initial_temp_C, self._slot_length, min_temp_C)
 
     def last_time_slot(self, current_market_slot: DateTime) -> DateTime:
         """Calculate the previous time slot from the current one."""
@@ -95,6 +95,10 @@ class HeatPumpEnergyParametersBase(ABC):
             time_slot, self._calc_temp_decrease_K(time_slot))
 
         self._calc_energy_demand(time_slot)
+        self._calculate_and_set_unmatched_demand(time_slot)
+
+    def _calculate_and_set_unmatched_demand(self, time_slot: DateTime):
+        pass
 
     def _calc_cop(self, time_slot: DateTime) -> float:
         pass
@@ -128,6 +132,8 @@ class HeatPumpEnergyParametersBase(ABC):
         self.state.update_temp_increase_K(
             time_slot, self._calc_temp_increase_K(time_slot, energy_kWh))
 
+        self._calculate_and_set_unmatched_demand(time_slot)
+
     def _decrement_posted_energy(self, time_slot: DateTime, energy_kWh: float):
         updated_min_energy_demand_kWh = max(
             0., self.get_min_energy_demand_kWh(time_slot) - energy_kWh)
@@ -140,6 +146,7 @@ class HeatPumpEnergyParametersBase(ABC):
 
 class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
     """Energy Parameters for the heat pump."""
+
     # pylint: disable=too-many-instance-attributes, too-many-arguments
     def __init__(
             self,
@@ -165,6 +172,8 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
         self._ext_temp_C: [DateTime, float] = EnergyProfile(
             external_temp_C_profile, external_temp_C_profile_uuid,
             profile_type=InputProfileTypes.IDENTITY)
+
+        self.min_temp_C = min_temp_C  # for usage in the strategy
 
     def serialize(self):
         """Return dict with the current energy parameter values."""
@@ -196,43 +205,23 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
 
         assert max_energy_consumption > -FLOATING_POINT_TOLERANCE
         if max_energy_consumption > self._max_energy_consumption_kWh:
-            # demand is higher than max_power_rating
-            self.state.update_unmatched_demand_kWh(
-                time_slot, max_energy_consumption - self._max_energy_consumption_kWh)
             return self._max_energy_consumption_kWh
         return max_energy_consumption
 
     def _calc_energy_to_buy_minimum(self, time_slot: DateTime) -> float:
-        max_temp_decrease_allowed = (
-                self.state.get_storage_temp_C(time_slot) - self._min_temp_C)
         temp_diff = self.state.get_temp_decrease_K(time_slot)
-        if abs(temp_diff - max_temp_decrease_allowed) < -FLOATING_POINT_TOLERANCE:
-            return 0
         min_energy_consumption = (
                 self._temp_diff_to_Q_kWh(temp_diff) / self.state.get_cop(time_slot))
 
         if min_energy_consumption > self._max_energy_consumption_kWh:
-            # demand is higher than max_power_rating
-            self.state.update_unmatched_demand_kWh(
-                time_slot, min_energy_consumption - self._max_energy_consumption_kWh)
             return self._max_energy_consumption_kWh
         return min_energy_consumption
 
     def _calc_temp_decrease_K(self, time_slot: DateTime) -> float:
-        demanded_temp_decrease_K = self._Q_kWh_to_temp_diff(self._calc_Q_from_energy_kWh(
+        return self._Q_kWh_to_temp_diff(self._calc_Q_from_energy_kWh(
             time_slot, self._consumption_kWh.profile[time_slot]))
-        if self.state.get_storage_temp_C(time_slot) - demanded_temp_decrease_K < self._min_temp_C:
-            actual_temp_decrease = self.state.get_storage_temp_C(time_slot) - self._min_temp_C
-            unmatched_demand_kWh = self._temp_diff_to_Q_kWh(
-                demanded_temp_decrease_K - actual_temp_decrease) / self.state.get_cop(time_slot)
-            self.state.update_unmatched_demand_kWh(time_slot, unmatched_demand_kWh)
-        else:
-            actual_temp_decrease = demanded_temp_decrease_K
-
-        return actual_temp_decrease
 
     def _calc_temp_increase_K(self, time_slot: DateTime, traded_energy_kWh: float) -> float:
-        self.state.update_unmatched_demand_kWh(time_slot, -traded_energy_kWh)
         return self._Q_kWh_to_temp_diff(self._calc_Q_from_energy_kWh(time_slot, traded_energy_kWh))
 
     def _populate_state(self, time_slot: DateTime):
@@ -257,8 +246,17 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
         """COP model following https://www.nature.com/articles/s41597-019-0199-y"""
         delta_temp = temp_current - temp_ambient
         if self._source_type == HeatPumpSourceType.AIR.value:
-            return 6.08 - 0.09 * delta_temp + 0.0005 * delta_temp**2
+            return 6.08 - 0.09 * delta_temp + 0.0005 * delta_temp ** 2
         if self._source_type == HeatPumpSourceType.GROUND.value:
-            return 10.29 - 0.21 * delta_temp + 0.0012 * delta_temp**2
+            return 10.29 - 0.21 * delta_temp + 0.0012 * delta_temp ** 2
 
         raise HeatPumpEnergyParametersException("HeatPumpSourceType not supported")
+
+    def _calculate_and_set_unmatched_demand(self, time_slot: DateTime) -> None:
+        temp_balance = (
+                self.state.get_temp_increase_K(time_slot) -
+                self.state.get_temp_decrease_K(time_slot))
+        if temp_balance < FLOATING_POINT_TOLERANCE:
+            unmatched_energy_demand = self._temp_diff_to_Q_kWh(
+                abs(temp_balance)) / self.state.get_cop(time_slot)
+            self.state.set_unmatched_demand_kWh(time_slot, unmatched_energy_demand)
