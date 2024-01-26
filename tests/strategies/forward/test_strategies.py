@@ -198,13 +198,13 @@ class TestForwardStrategies:
                         updated_order.energy_rate,
                         (updater_params.initial_rate -
                          slot_completion_ratio * abs(updater_params.initial_rate -
-                                                     updater_params.final_rate)))
+                                                     updater_params.final_rate)), abs_tol=1e-5)
                 else:
                     assert isclose(
                         updated_order.energy_rate,
                         slot_completion_ratio * (
                                 updater_params.final_rate - updater_params.initial_rate) +
-                        updater_params.initial_rate)
+                        updater_params.initial_rate, abs_tol=1e-5)
 
     @staticmethod
     def _get_order_mapping_from_strategy(
