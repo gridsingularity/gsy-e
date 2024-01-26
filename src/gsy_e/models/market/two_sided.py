@@ -26,14 +26,15 @@ from gsy_framework.data_classes import (
     Bid, Offer, Trade, TradeBidOfferInfo, BidOfferMatch, TraderDetails)
 from gsy_framework.enums import BidOfferMatchAlgoEnum
 from gsy_framework.matching_algorithms.requirements_validators import RequirementsSatisfiedChecker
+from gsy_framework.utils import limit_float_precision
 from pendulum import DateTime
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
+from gsy_e.events.event_structures import MarketEvent
 from gsy_e.gsy_e_core.exceptions import (
     BidNotFoundException, InvalidBidOfferPairException, InvalidTrade,
     NegativePriceOrdersException, NegativeEnergyOrderException, NegativeEnergyTradeException)
 from gsy_e.gsy_e_core.util import short_offer_bid_log_str, is_external_matching_enabled
-from gsy_e.events.event_structures import MarketEvent
 from gsy_e.models.market import lock_market_action
 from gsy_e.models.market.one_sided import OneSidedMarket
 
@@ -247,6 +248,8 @@ class TwoSidedMarket(OneSidedMarket):
             pass
 
         fee_price, trade_price = self._determine_bid_price(trade_offer_info, energy)
+        fee_price = limit_float_precision(fee_price)
+        trade_price = limit_float_precision(trade_price)
         bid.update_price(trade_price)
 
         # Do not adapt grid fees when creating the bid_trade_info structure, to mimic
@@ -332,7 +335,7 @@ class TwoSidedMarket(OneSidedMarket):
             # by seller / buyer.
             if not market_offer:
                 market_offer = self._get_offer_from_seller_origin_id(
-                    recommended_pair.offer["seller_origin_id"])
+                    recommended_pair.offer["seller"]["origin_uuid"])
                 if market_offer is None:
                     raise InvalidBidOfferPairException("Offer does not exist in the market")
             recommended_pair.offer = market_offer.serializable_dict()
@@ -340,7 +343,7 @@ class TwoSidedMarket(OneSidedMarket):
             market_bid = self.bids.get(recommended_pair.bid["id"])
             if not market_bid:
                 market_bid = self._get_bid_from_buyer_origin_id(
-                    recommended_pair.bid["buyer_origin_id"])
+                    recommended_pair.bid["buyer"]["origin_uuid"])
                 if market_bid is None:
                     raise InvalidBidOfferPairException("Bid does not exist in the market")
             recommended_pair.bid = market_bid.serializable_dict()
@@ -369,7 +372,7 @@ class TwoSidedMarket(OneSidedMarket):
             trade_bid_info = TradeBidOfferInfo(
                 original_bid_rate=original_bid_rate,
                 propagated_bid_rate=recommended_pair.bid_energy_rate,
-                original_offer_rate=market_offer.original_price / market_offer.energy,
+                original_offer_rate=market_offer.original_energy_rate,
                 propagated_offer_rate=market_offer.energy_rate,
                 trade_rate=trade_rate,
             )

@@ -1,9 +1,10 @@
 import os
 
-from gsy_e.models.area import Area
-from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy
 from gsy_framework.constants_limits import ConstSettings
+
+from gsy_e.models.area import Area
 from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
+from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy
 from gsy_e.models.strategy.predefined_pv import PVUserProfileStrategy
 
 current_dir = os.path.dirname(__file__)
@@ -41,6 +42,7 @@ def get_setup(config):
                                 fit_to_limit=True)
                                  ),
                         ], grid_fee_percentage=0, grid_fee_constant=0,
+                        min_offer_age=1, min_bid_age=1
                     ),
                     Area(
                         "House 2",
@@ -60,6 +62,7 @@ def get_setup(config):
                                 fit_to_limit=True)
                                  ),
                         ], grid_fee_percentage=0, grid_fee_constant=0,
+                        min_offer_age=1, min_bid_age=1
                     ),
                     Area(
                         "House 3",
@@ -79,15 +82,17 @@ def get_setup(config):
                                 fit_to_limit=True)
                                  ),
                         ], grid_fee_percentage=0, grid_fee_constant=0,
+                        min_offer_age=1, min_bid_age=1
                     ),
 
 
 
                 ], grid_fee_percentage=1, grid_fee_constant=0,
+                min_offer_age=1, min_bid_age=1
             ),
             Area("DSO", strategy=InfiniteBusStrategy(energy_buy_rate=19.9, energy_sell_rate=30),
                  )
         ],
-        config=config, grid_fee_percentage=0, grid_fee_constant=0,
+        config=config, grid_fee_percentage=0, grid_fee_constant=0, min_offer_age=1, min_bid_age=1
     )
     return area

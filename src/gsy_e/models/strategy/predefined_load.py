@@ -85,14 +85,14 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         self._energy_params.energy_profile.read_or_rotate_profiles()
 
         slot_time = self.area.spot_market.time_slot
-        self._energy_params.update_energy_requirement(slot_time, self.owner.name)
+        self._energy_params.update_energy_requirement(slot_time)
 
         self._update_energy_requirement_future_markets()
 
     def _update_energy_requirement_future_markets(self):
         """Update energy requirements in the future markets."""
         for time_slot in self.area.future_market_time_slots:
-            self._energy_params.update_energy_requirement(time_slot, self.owner.name)
+            self._energy_params.update_energy_requirement(time_slot)
 
     def area_reconfigure_event(self, *args, **kwargs):
         """Reconfigure the device properties at runtime using the provided arguments."""

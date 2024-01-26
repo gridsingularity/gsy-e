@@ -302,6 +302,7 @@ def test_calculate_daily_energy_req(load_hours_strategy_test1):
 # Test if device accepts the most affordable offer
 def test_device_accepts_offer(load_hours_strategy_test1, market_test1):
     load_hours_strategy_test1.event_activate()
+    load_hours_strategy_test1.event_market_cycle()
     cheapest_offer = market_test1.most_affordable_offers[0]
     load_hours_strategy_test1.state._energy_requirement_Wh = \
         {market_test1.time_slot: cheapest_offer.energy * 1000 + 1}
@@ -320,6 +321,7 @@ def test_event_tick_updates_rates(load_hours_strategy_test1, market_test1):
     load_hours_strategy_test1.state.can_buy_more_energy = Mock()
     load_hours_strategy_test1.bid_update.update = Mock()
     load_hours_strategy_test1.event_activate()
+    load_hours_strategy_test1.event_market_cycle()
 
     number_of_markets = len(load_hours_strategy_test1.area.all_markets)
     # Test for all available market types (one-sided and two-sided markets)
@@ -331,6 +333,7 @@ def test_event_tick_updates_rates(load_hours_strategy_test1, market_test1):
         for market_type_id in available_market_types:
             ConstSettings.MASettings.MARKET_TYPE = market_type_id
             load_hours_strategy_test1.bid_update.update.reset_mock()
+
             load_hours_strategy_test1.event_tick()
             if market_type_id == 1:
                 # Bids' rates are not updated in one-sided markets
@@ -362,6 +365,7 @@ def test_event_tick_one_sided_market_energy_required(load_hours_strategy_test1, 
 
     load_hours_strategy_test1.event_activate()
     assert load_hours_strategy_test1._energy_params.hrs_per_day == {0: 4}
+    load_hours_strategy_test1.event_market_cycle()
     load_hours_strategy_test1.event_tick()
     load_hours_strategy_test1.accept_offer.assert_called()
     load_hours_strategy_test1.state.decrement_energy_requirement.assert_called()
@@ -579,8 +583,9 @@ def test_load_hour_strategy_increases_rate_when_fit_to_limit_is_false(market_tes
     load.area = FakeArea()
     load.owner = load.area
     load.event_activate()
+    load.event_market_cycle()
     assert load.state._energy_requirement_Wh[TIME] == 25.0
-    offer = Offer('id', now(), 1, (MIN_BUY_ENERGY/500), TraderDetails("A", ""))
+    offer = Offer('id', now(), 1, (MIN_BUY_ENERGY/500), TraderDetails("A", ""), 1)
     load._one_sided_market_event_tick(market_test1, offer)
     assert load.bid_update.get_updated_rate(TIME) == 0
     assert load.state._energy_requirement_Wh[TIME] == 25.0

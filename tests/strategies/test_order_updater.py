@@ -7,6 +7,8 @@ from pendulum import duration, datetime
 from gsy_e.models.market import MarketSlotParams
 from gsy_e.models.strategy.order_updater import OrderUpdater, OrderUpdaterParameters
 
+UPDATE_INTERVAL = duration(minutes=5)
+
 
 @pytest.fixture(name="order_updater_fixture")
 def fixture_order_updater():
@@ -15,7 +17,7 @@ def fixture_order_updater():
     opening_time = datetime(year=2022, month=1, day=1, hour=12, minute=30)
 
     updater = OrderUpdater(
-        OrderUpdaterParameters(duration(minutes=5), initial_rate=30, final_rate=70),
+        OrderUpdaterParameters(UPDATE_INTERVAL, initial_rate=30, final_rate=70),
         MarketSlotParams(
             opening_time=opening_time, closing_time=opening_time + duration(minutes=30),
             delivery_start_time=opening_time + duration(hours=2),
@@ -37,9 +39,6 @@ class TestOrderUpdater:
         assert not updater.is_time_for_update(opening_time - duration(minutes=1))
         # Returns False at the market close time
         assert not updater.is_time_for_update(opening_time + duration(minutes=30))
-        # Returns True at one tick before the market close time
-        assert updater.is_time_for_update(
-            opening_time + duration(minutes=30) - duration(seconds=5))
 
         current_time = opening_time
         while current_time < opening_time + duration(minutes=30) - duration(seconds=5):
@@ -52,11 +51,12 @@ class TestOrderUpdater:
         updater = order_updater_fixture[1]
         rate_range = 70 - 30
         update_time = duration(minutes=30)
-        closing_time = opening_time + update_time - duration(seconds=5)
+        closing_time = opening_time + update_time
         current_time = opening_time
         while current_time < closing_time:
-            expected_rate = 30 + rate_range * ((current_time - opening_time) / update_time)
+            expected_rate = 30 + rate_range * (
+                    (current_time - opening_time) / (update_time - UPDATE_INTERVAL))
             assert isclose(updater.get_energy_rate(current_time), expected_rate)
             current_time += duration(minutes=5)
 
-        assert updater.get_energy_rate(closing_time) == 70
+        assert updater.get_energy_rate(closing_time - UPDATE_INTERVAL) == 70

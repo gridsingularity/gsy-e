@@ -23,7 +23,7 @@ from gsy_framework.utils import convert_pendulum_to_str_in_dict, key_in_dict_and
 from gsy_framework.constants_limits import ConstSettings, SpotMarketTypeEnum, GlobalConfig
 from pendulum import Duration
 
-from gsy_e.models.area import CoefficientArea, Area # NOQA
+from gsy_e.models.area import CoefficientArea, Area, Market, Asset # NOQA
 from gsy_e.models.strategy import BaseStrategy
 from gsy_e.models.area.throughput_parameters import ThroughputParameters
 
@@ -51,7 +51,7 @@ class AreaEncoder(json.JSONEncoder):
     def default(self, o):
         # Leaf classes are Areas too, therefore the Area/AreaBase classes need to be handled
         # separately.
-        if type(o) in [Area, CoefficientArea]:
+        if type(o) in [Area, CoefficientArea, Market, Asset]:
             return self._encode_area(o)
         if isinstance(o, Leaf):
             return self._encode_leaf(o)
