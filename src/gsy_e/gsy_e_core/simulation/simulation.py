@@ -259,6 +259,7 @@ class Simulation:
                 slot_count - 1, slot_count, self._time, self.config)
             paused_duration = duration(seconds=self._time.paused_time)
             self.progress_info.log_simulation_finished(paused_duration, self.config)
+        self._results.update_and_send_results(simulation=self)
         self._results.save_csv_results(self.area)
 
     def _handle_input(self, console: NonBlockingConsole, sleep_period: float = 0) -> None:
