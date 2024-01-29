@@ -202,7 +202,6 @@ class Simulation:
                 slot_completion="0%",
                 market_slot=self.progress_info.current_slot_str)
 
-            self._results.update_and_send_results(simulation=self)
             self._external_events.update(self.area)
 
             self._compute_memory_info()
@@ -246,6 +245,8 @@ class Simulation:
 
             self._results.update_csv_on_market_cycle(slot_no, self.area)
             self.status.handle_incremental_mode()
+            self._results.update_and_send_results(simulation=self)
+
         self._simulation_stopped_finish_actions(slot_count)
 
     def _simulation_stopped_finish_actions(self, slot_count: int, status="finished") -> None:

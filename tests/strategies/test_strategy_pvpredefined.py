@@ -386,12 +386,14 @@ def pv_test_cloudy(area_test7):
 
 def test_correct_interpolation_power_profile():
     slot_length = 20
+    original_slot_length = GlobalConfig.slot_length
     GlobalConfig.slot_length = duration(minutes=slot_length)
     profile_path = pathlib.Path(gsye_root_path + "/resources/Solar_Curve_W_sunny.csv")
     profile = read_arbitrary_profile(InputProfileTypes.POWER_W, str(profile_path))
     times = list(profile)
     for ii in range(len(times)-1):
         assert abs((times[ii]-times[ii+1]).in_seconds()) == slot_length * 60
+    GlobalConfig.slot_length = original_slot_length
 
 
 def test_predefined_pv_constructor_rejects_incorrect_parameters():
