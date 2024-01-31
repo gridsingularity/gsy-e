@@ -378,6 +378,7 @@ class SCMManager:
         self._time_slot = time_slot
         self._bills: Dict[str, AreaEnergyBills] = {}
         self._grid_fees_reduction = ConstSettings.SCMSettings.GRID_FEES_REDUCTION
+        self._intracommunity_base_rate_eur = ConstSettings.SCMSettings.INTRACOMMUNITY_BASE_RATE_EUR
 
     @staticmethod
     def _get_community_uuid_from_area(area):
@@ -465,9 +466,14 @@ class SCMManager:
         assistance_fee = home_data.assistance_monthly_fee / slots_per_month
         fixed_fee = home_data.fixed_monthly_fee / slots_per_month
 
+        intracommunity_base_rate_eur = (
+            market_maker_rate
+            if self._intracommunity_base_rate_eur is None
+            else self._intracommunity_base_rate_eur)
         market_maker_rate_decreased_fees = (
-                market_maker_rate + grid_fees * (1.0 - self._grid_fees_reduction) +
-                taxes_surcharges)
+                intracommunity_base_rate_eur
+                + grid_fees * (1.0 - self._grid_fees_reduction)
+                + taxes_surcharges)
         market_maker_rate_normal_fees = market_maker_rate + grid_fees + taxes_surcharges
 
         home_bill = AreaEnergyBills(

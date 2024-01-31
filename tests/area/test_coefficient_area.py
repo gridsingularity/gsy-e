@@ -219,7 +219,9 @@ class TestCoefficientArea:
         assert isclose(scm._bills[house2.uuid].home_balance_kWh, -20.0)
 
     @staticmethod
-    def test_trigger_energy_trades(_create_2_house_grid):
+    @pytest.mark.parametrize("intracommunity_base_rate", (None, 0.3))
+    def test_trigger_energy_trades(_create_2_house_grid, intracommunity_base_rate):
+        ConstSettings.SCMSettings.INTRACOMMUNITY_BASE_RATE_EUR = intracommunity_base_rate
         grid_area = _create_2_house_grid
         house1 = grid_area.children[0]
         house2 = grid_area.children[1]
@@ -240,7 +242,10 @@ class TestCoefficientArea:
         assert isclose(scm._bills[house2.uuid].base_energy_bill, -0.005)
         assert isclose(scm._bills[house2.uuid].base_energy_bill_excl_revenue, 0.0)
         assert isclose(scm._bills[house2.uuid].base_energy_bill_revenue, 0.005)
-        assert isclose(scm._bills[house2.uuid].gsy_energy_bill, -0.0164)
+        if intracommunity_base_rate is None:
+            assert isclose(scm._bills[house2.uuid].gsy_energy_bill, -0.0164)
+        else:
+            assert isclose(scm._bills[house2.uuid].gsy_energy_bill, -0.02)
 
         assert isclose(scm._bills[house2.uuid].savings,
                        0.0, abs_tol=constants.FLOATING_POINT_TOLERANCE)
@@ -257,7 +262,10 @@ class TestCoefficientArea:
         assert trades[1].buyer.name == "House 1"
         assert len(scm._home_data[house2.uuid].trades) == 2
         trades = scm._home_data[house2.uuid].trades
-        assert isclose(trades[0].trade_rate, 0.24)
+        if intracommunity_base_rate is None:
+            assert isclose(trades[0].trade_rate, 0.24)
+        else:
+            assert isclose(trades[0].trade_rate, 0.3)
         assert isclose(trades[0].traded_energy, 0.06)
         assert trades[0].seller.name == "House 2"
         assert trades[0].buyer.name == "Community"
