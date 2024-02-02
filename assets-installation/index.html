@@ -2344,14 +2344,17 @@ Market(
 
 <h2 id="market-maker">Market Maker<a class="headerlink" href="#market-maker" title="Permanent link">&para;</a></h2>
 <p>To implement a market maker in a backend simulation, two methods are available :</p>
-<p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/market_maker_strategy.py" target="_blank">Infinite power plant</a></p>
-<pre class="codehilite"><code class="language-python">Market('Market Maker', strategy=MarketMakerStrategy(energy_rate=selling_rate, grid_connected=True))</code></pre>
+<p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/market_maker_strategy.py" target="_blank">Infinite power plant</a> (in this mode, the Market Maker has the ability to meet the infinite energy demand of consumers at the highest rate possible in the grid.
+The maker maker asset strategy is configured as follows:</p>
+<pre class="codehilite"><code class="language-python">Asset('Market Maker', strategy=MarketMakerStrategy(energy_rate, energy_rate_profile, grid_connected))</code></pre>
 
 
-<p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/infinite_bus.py" target="_blank">Infinite bus</a></p>
-<pre class="codehilite"><code class="language-python">Market('Market Maker', strategy=InfiniteBusStrategy(energy_buy_rate=22, energy_sell_rate=22))</code></pre>
+<p>Where <em>energy_rate</em> is the input for a constant buying rate and <em>energy_rate_profile</em> the input for a variable buying rate. With the <em>grid_connected</em> parameter the user can toggle if the asset is connected to the grid or if it should only dictate the highest energy rate in the grid (islanded mode). </p>
+<p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/infinite_bus.py" target="_blank">Infinite bus</a> (in this mode, the Market Maker has not only the ability to meet the infinite energy demand of the consumer but can also absorb the infinite generation surplus of prosumers/producers at the lowest rate possible in that grid):</p>
+<pre class="codehilite"><code class="language-python">Asset('Market Maker', strategy=InfiniteBusStrategy(energy_buy_rate, energy_rate_profile, energy_sell_rate, buying_rate_profile))</code></pre>
 
 
+<p>Where <em>energy_buy_rate</em> and <em>energy_sell_rate</em> are inputs for constant rates and <em>energy_rate_profile</em> and <em>buying_rate_profile</em> the inputs for variable rates.</p>
 <h3 id="addendum-storage-capacity-based-method">Addendum: Storage Capacity Based Method.<a class="headerlink" href="#addendum-storage-capacity-based-method" title="Permanent link">&para;</a></h3>
 <p>This method was created to sell energy at lower prices during high state of charge - SOC (when the battery has more energy stored) and at higher prices during low SOC (when the battery can afford to sell its stored energy for less).
 If the cap_price_strategy is True, the offer price for the storage is calculated according to:</p>
