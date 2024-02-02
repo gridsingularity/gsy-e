@@ -570,10 +570,10 @@ class Area(AreaBase):
         """
         if self.strategy is not None:
             current_time_slot = None
-            if self.current_market:
-                current_time_slot = self.current_market.time_slot
-            elif self.parent.current_market:
-                current_time_slot = self.parent.current_market.time_slot
+            if self.spot_market:
+                current_time_slot = self.spot_market.time_slot
+            elif self.parent.spot_market:
+                current_time_slot = self.parent.spot_market.time_slot
             return self.strategy.state.get_results_dict(current_time_slot)
         return {
             "area_throughput": {

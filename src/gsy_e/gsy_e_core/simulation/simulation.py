@@ -172,6 +172,14 @@ class Simulation:
         return (self.area.config.start_date + (slot_number * self.area.config.slot_length)
                 if GlobalConfig.is_canary_network() else self.area.now)
 
+    def _cycle_markets(self, slot_no: int) -> None:
+        # order matters here;
+        # update of ProfilesHandler has to be called before cycle_markets
+        global_objects.profiles_handler.update_time_and_buffer_profiles(
+            self._get_current_market_time_slot(slot_no), area=self.area)
+
+        self.area.cycle_markets()
+
     def _execute_simulation(
             self, slot_resume: int, tick_resume: int, console: NonBlockingConsole = None) -> None:
         slot_count, slot_resume, tick_resume = (
@@ -184,10 +192,7 @@ class Simulation:
             self.progress_info.update(
                 slot_no, slot_count, self._time, self.config)
 
-            self.area.cycle_markets()
-
-            global_objects.profiles_handler.update_time_and_buffer_profiles(
-                self._get_current_market_time_slot(slot_no), area=self.area)
+            self._cycle_markets(slot_no)
 
             if self.config.external_connection_enabled:
                 global_objects.external_global_stats.update(market_cycle=True)
@@ -197,7 +202,6 @@ class Simulation:
                 slot_completion="0%",
                 market_slot=self.progress_info.current_slot_str)
 
-            self._results.update_and_send_results(simulation=self)
             self._external_events.update(self.area)
 
             self._compute_memory_info()
@@ -241,6 +245,8 @@ class Simulation:
 
             self._results.update_csv_on_market_cycle(slot_no, self.area)
             self.status.handle_incremental_mode()
+            self._results.update_and_send_results(simulation=self)
+
         self._simulation_stopped_finish_actions(slot_count)
 
     def _simulation_stopped_finish_actions(self, slot_count: int, status="finished") -> None:
@@ -445,6 +451,14 @@ class CoefficientSimulation(Simulation):
         self.config.external_redis_communicator. \
             publish_aggregator_commands_responses_events()
 
+    def _cycle_markets(self, slot_no: int) -> None:
+        # order matters here;
+        # update of ProfilesHandler has to be called before cycle_coefficients_trading
+        global_objects.profiles_handler.update_time_and_buffer_profiles(
+            self._get_current_market_time_slot(slot_no), area=self.area)
+
+        self.area.cycle_coefficients_trading(self.progress_info.current_slot_time)
+
     def _execute_simulation(
             self, slot_resume: int, _tick_resume: int, console: NonBlockingConsole = None) -> None:
         slot_count, slot_resume = (
@@ -460,10 +474,7 @@ class CoefficientSimulation(Simulation):
 
             self.progress_info.update(slot_no, slot_count, self._time, self.config)
 
-            self.area.cycle_coefficients_trading(self.progress_info.current_slot_time)
-
-            global_objects.profiles_handler.update_time_and_buffer_profiles(
-                self._get_current_market_time_slot(slot_no), area=self.area)
+            self._cycle_markets(slot_no)
 
             self._handle_external_communication()
 

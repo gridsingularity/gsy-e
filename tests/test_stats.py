@@ -67,6 +67,11 @@ class FakeArea:
     def current_market(self):
         return self.past_markets[-1] if self.past_markets else None
 
+    @property
+    def spot_market(self):
+        return self.past_markets[-1] if self.past_markets else None
+        # return self.all_markets[-1]
+
     @staticmethod
     def get_state():
         return {}
@@ -177,11 +182,11 @@ def fixture_grid():
 
 def test_energy_bills(grid):
     epb = SimulationEndpointBuffer("1", {"seed": 0}, grid, True)
-    epb.current_market_time_slot_str = grid.current_market.time_slot_str
+    epb.spot_market_time_slot_str = grid.spot_market.time_slot_str
     epb._populate_core_stats_and_sim_state(grid)
     m_bills = MarketEnergyBills(should_export_plots=True)
     m_bills.update(epb.area_result_dict, epb.flattened_area_core_stats_dict,
-                   epb.current_market_time_slot_str)
+                   epb.spot_market_time_slot_str)
     result = m_bills.bills_results
 
     assert result["house2"]["Accumulated Trades"]["bought"] == result["commercial"]["sold"] == 1
@@ -198,10 +203,10 @@ def test_energy_bills(grid):
                                                 _trade(1, "e-car", 8, "ma"),
                                                 _trade(3, "ma", 5, "e-car")), "house2")]
     grid.past_markets = [FakeMarket((_trade(2, "house2", 12, "commercial"),), "grid")]
-    epb.current_market_time_slot_str = grid.current_market.time_slot_str
+    epb.spot_market_time_slot_str = grid.spot_market.time_slot_str
     epb._populate_core_stats_and_sim_state(grid)
     m_bills.update(epb.area_result_dict, epb.flattened_area_core_stats_dict,
-                   epb.current_market_time_slot_str)
+                   epb.spot_market_time_slot_str)
     result = m_bills.bills_results
 
     assert result["house2"]["Accumulated Trades"]["bought"] == result["commercial"]["sold"] == 13
@@ -216,11 +221,11 @@ def test_energy_bills(grid):
 
 def test_energy_bills_last_past_market(grid):
     epb = SimulationEndpointBuffer("1", {"seed": 0}, grid, True)
-    epb.current_market_time_slot_str = grid.current_market.time_slot_str
+    epb.spot_market_time_slot_str = grid.spot_market.time_slot_str
     epb._populate_core_stats_and_sim_state(grid)
     m_bills = MarketEnergyBills(should_export_plots=True)
     m_bills.update(epb.area_result_dict, epb.flattened_area_core_stats_dict,
-                   epb.current_market_time_slot_str)
+                   epb.spot_market_time_slot_str)
     result = m_bills.bills_results
     assert result["house2"]["Accumulated Trades"]["bought"] == result["commercial"]["sold"] == 1
     assert result["house2"]["Accumulated Trades"]["spent"] == \
@@ -237,11 +242,11 @@ def test_energy_bills_last_past_market(grid):
 
 def test_energy_bills_redis(grid):
     epb = SimulationEndpointBuffer("1", {"seed": 0}, grid, True)
-    epb.current_market_time_slot_str = grid.current_market.time_slot_str
+    epb.spot_market_time_slot_str = grid.spot_market.time_slot_str
     epb._populate_core_stats_and_sim_state(grid)
     m_bills = MarketEnergyBills(should_export_plots=True)
     m_bills.update(epb.area_result_dict, epb.flattened_area_core_stats_dict,
-                   epb.current_market_time_slot_str)
+                   epb.spot_market_time_slot_str)
     result = m_bills.bills_results
     result_redis = m_bills.bills_redis_results
     for house in grid.children:
@@ -252,7 +257,7 @@ def test_energy_bills_redis(grid):
 
 def test_calculate_raw_energy_bills(grid):
     epb = SimulationEndpointBuffer("1", {"seed": 0}, grid, True)
-    epb.current_market_time_slot_str = grid.current_market.time_slot_str
+    epb.spot_market_time_slot_str = grid.spot_market.time_slot_str
     epb._populate_core_stats_and_sim_state(grid)
     m_bills = MarketEnergyBills(should_export_plots=True)
     m_bills._update_market_fees(epb.area_result_dict, epb.flattened_area_core_stats_dict)
@@ -281,7 +286,7 @@ def _compare_bills(bill1, bill2):
 def test_flatten_energy_bills(grid):
     # pylint: disable=too-many-locals
     epb = SimulationEndpointBuffer("1", {"seed": 0}, grid, True)
-    epb.current_market_time_slot_str = grid.current_market.time_slot_str
+    epb.spot_market_time_slot_str = grid.spot_market.time_slot_str
     epb._populate_core_stats_and_sim_state(grid)
     m_bills = MarketEnergyBills(should_export_plots=True)
     m_bills._update_market_fees(epb.area_result_dict, epb.flattened_area_core_stats_dict)
@@ -327,22 +332,22 @@ def fixture_grid2():
 
 def test_energy_bills_finds_mas(grid2):
     epb = SimulationEndpointBuffer("1", {"seed": 0}, grid2, True)
-    epb.current_market_time_slot_str = grid2.current_market.time_slot_str
+    epb.spot_market_time_slot_str = grid2.spot_market.time_slot_str
     epb._populate_core_stats_and_sim_state(grid2)
     m_bills = MarketEnergyBills(should_export_plots=True)
     m_bills.update(epb.area_result_dict, epb.flattened_area_core_stats_dict,
-                   epb.current_market_time_slot_str)
+                   epb.spot_market_time_slot_str)
     result = m_bills.bills_results
     assert result["house1"]["bought"] == result["house2"]["sold"] == 3
 
 
 def test_energy_bills_ensure_device_types_are_populated(grid2):
     epb = SimulationEndpointBuffer("1", {"seed": 0}, grid2, True)
-    epb.current_market_time_slot_str = grid2.current_market.time_slot_str
+    epb.spot_market_time_slot_str = grid2.spot_market.time_slot_str
     epb._populate_core_stats_and_sim_state(grid2)
     m_bills = MarketEnergyBills(should_export_plots=True)
     m_bills.update(epb.area_result_dict, epb.flattened_area_core_stats_dict,
-                   epb.current_market_time_slot_str)
+                   epb.spot_market_time_slot_str)
     result = m_bills.bills_results
     assert result["house1"]["type"] == "Area"
     assert result["house2"]["type"] == "Area"
@@ -378,7 +383,7 @@ def fixture_grid_fees():
 def test_energy_bills_accumulate_fees(grid_fees):
     constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = True
     epb = SimulationEndpointBuffer("1", {"seed": 0}, grid_fees, True)
-    epb.current_market_time_slot_str = grid_fees.current_market.time_slot_str
+    epb.spot_market_time_slot_str = grid_fees.spot_market.time_slot_str
     epb._populate_core_stats_and_sim_state(grid_fees)
     m_bills = MarketEnergyBills(should_export_plots=True)
     m_bills._update_market_fees(epb.area_result_dict, epb.flattened_area_core_stats_dict)
@@ -387,7 +392,7 @@ def test_energy_bills_accumulate_fees(grid_fees):
     grid_fees.past_markets = [FakeMarket((_trade(2, grid_fees.children[0].name, 3,
                                                  grid_fees.children[0].name,
                                                  fee_price=4.0),), "street", fees=4.0)]
-    epb.current_market_time_slot_str = grid_fees.current_market.time_slot_str
+    epb.spot_market_time_slot_str = grid_fees.spot_market.time_slot_str
     epb._populate_core_stats_and_sim_state(grid_fees)
     m_bills._update_market_fees(epb.area_result_dict, epb.flattened_area_core_stats_dict)
     assert m_bills.market_fees[grid_fees.name_uuid_mapping["house2"]] == 0.03
@@ -399,7 +404,7 @@ def test_energy_bills_use_only_last_market_if_not_keep_past_markets(grid_fees):
     constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = False
 
     epb = SimulationEndpointBuffer("1", {"seed": 0}, grid_fees, True)
-    epb.current_market_time_slot_str = grid_fees.current_market.time_slot_str
+    epb.spot_market_time_slot_str = grid_fees.spot_market.time_slot_str
     epb._populate_core_stats_and_sim_state(grid_fees)
     m_bills = MarketEnergyBills(should_export_plots=True)
     m_bills._update_market_fees(epb.area_result_dict, epb.flattened_area_core_stats_dict)
@@ -411,20 +416,20 @@ def test_energy_bills_use_only_last_market_if_not_keep_past_markets(grid_fees):
 def test_energy_bills_report_correctly_market_fees(grid_fees):
     constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = True
     epb = SimulationEndpointBuffer("1", {"seed": 0}, grid_fees, True)
-    epb.current_market_time_slot_str = grid_fees.current_market.time_slot_str
+    epb.spot_market_time_slot_str = grid_fees.spot_market.time_slot_str
     epb._populate_core_stats_and_sim_state(grid_fees)
     m_bills = MarketEnergyBills(should_export_plots=True)
     m_bills.update(epb.area_result_dict, epb.flattened_area_core_stats_dict,
-                   epb.current_market_time_slot_str)
+                   epb.spot_market_time_slot_str)
     grid_fees.children[0].past_markets = [FakeMarket([], name="house1", fees=2.0)]
     grid_fees.children[1].past_markets = []
     grid_fees.past_markets = [FakeMarket((_trade(2, grid_fees.children[0].name, 3,
                                                  grid_fees.children[0].name,
                                                  fee_price=4.0),), "street", fees=4.0)]
-    epb.current_market_time_slot_str = grid_fees.current_market.time_slot_str
+    epb.spot_market_time_slot_str = grid_fees.spot_market.time_slot_str
     epb._populate_core_stats_and_sim_state(grid_fees)
     m_bills.update(epb.area_result_dict, epb.flattened_area_core_stats_dict,
-                   epb.current_market_time_slot_str)
+                   epb.spot_market_time_slot_str)
     result = m_bills.bills_results
     assert result["street"]["house1"]["market_fee"] == 0.04
     assert result["street"]["house2"]["market_fee"] == 0.01

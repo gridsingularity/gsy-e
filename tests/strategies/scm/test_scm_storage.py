@@ -1,7 +1,8 @@
 from unittest.mock import MagicMock
 
 import pytest
-from pendulum import today
+from gsy_framework.constants_limits import GlobalConfig
+from pendulum import today, duration
 
 from gsy_e.models.area.coefficient_area import CoefficientArea
 from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
@@ -15,7 +16,10 @@ PROSUMPTION_KWH_PROFILE = {
 
 @pytest.fixture(name="scm_storage")
 def fixture_scm_storage():
-    return SCMStorageStrategy(prosumption_kWh_profile=PROSUMPTION_KWH_PROFILE)
+    original_slot_length = GlobalConfig.slot_length
+    GlobalConfig.slot_length = duration(hours=1)
+    yield SCMStorageStrategy(prosumption_kWh_profile=PROSUMPTION_KWH_PROFILE)
+    GlobalConfig.slot_length = original_slot_length
 
 
 class TestScmStorage:
