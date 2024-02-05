@@ -83,15 +83,19 @@ Market(
 ## Market Maker
 To implement a market maker in a backend simulation, two methods are available :
 
-[Infinite power plant](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/market_maker_strategy.py){target=_blank}
+[Infinite power plant](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/market_maker_strategy.py){target=_blank} (in this mode, the Market Maker has the ability to meet the infinite energy demand of consumers at the highest rate possible in the grid.
+The maker maker asset strategy is configured as follows:
 ```python
-Market('Market Maker', strategy=MarketMakerStrategy(energy_rate=selling_rate, grid_connected=True))
+Asset('Market Maker', strategy=MarketMakerStrategy(energy_rate, energy_rate_profile, grid_connected))
 ```
+Where _energy_rate_ is the input for a constant buying rate and _energy_rate_profile_ the input for a variable buying rate. With the _grid_connected_ parameter the user can toggle if the asset is connected to the grid or if it should only dictate the highest energy rate in the grid (islanded mode).
 
-[Infinite bus](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/infinite_bus.py){target=_blank}
+[Infinite bus](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/infinite_bus.py){target=_blank} (in this mode, the Market Maker has not only the ability to meet the infinite energy demand of the consumer but can also absorb the infinite generation surplus of prosumers/producers at the lowest rate possible in that grid):
+
 ```python
-Market('Market Maker', strategy=InfiniteBusStrategy(energy_buy_rate=22, energy_sell_rate=22))
+Asset('Market Maker', strategy=InfiniteBusStrategy(energy_buy_rate, energy_rate_profile, energy_sell_rate, buying_rate_profile))
 ```
+Where _energy_buy_rate_ and _energy_sell_rate_ are inputs for constant rates and _energy_rate_profile_ and _buying_rate_profile_ the inputs for variable rates.
 
 ### Addendum: Storage Capacity Based Method.
 
