@@ -1,4 +1,4 @@
-#  Model market maker (utility pricing)
+#  Market Maker (utility pricing) Configuration
 
 The Market Maker mimics the behaviour of a typical energy utility and is used as a price reference point. Only one Market Maker can be set per simulation. The Market Maker can be configured to sell an infinite amount of energy as well as to buy an infinite amount of energy to simulate a Feed-in Tariff.
 
@@ -13,7 +13,7 @@ The following parameters can be set:
 *   **Selling rate type**: The user can either select `User Input` to define a fixed selling rate or upload their custom selling rate profile (the latter is currently only available in the backend)
 *   **Selling rate**: The fixed rate the Market Maker will enforce, if `User Input` is selected for the selling rate type.
 *   **Buying rate type (infinite bus only)**: The user can either select `User Input` to define a fixed buying rate or upload their custom buying rate profile (the latter is currently only available in the backend).
-*   **Buying rate (infinite bus only)**: The fixed rate the Market Maker will enforce, if User Input is selected for the buying rate type.
+*   **Buying rate (infinite bus only)**: The fixed rate the Market Maker will enforce, if `User Input` is selected for the buying rate type.
 
 The Market Maker configuration interface is shown below:
 

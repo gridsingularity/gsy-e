@@ -80,7 +80,7 @@ Market(
     strategy=FinitePowerPlant(energy_rate=31.3, max_available_power_kW=profile_kW))
 ```
 
-## Market Maker
+## Market Maker (Utility Pricing)
 To implement a market maker in a backend simulation, two methods are available :
 
 [Infinite power plant](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/market_maker_strategy.py){target=_blank} (in this mode, the Market Maker has the ability to meet the infinite energy demand of consumers at the highest rate possible in the grid.
