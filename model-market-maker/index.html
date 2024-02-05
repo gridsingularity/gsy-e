@@ -42,7 +42,7 @@
     
     
       
-        <title>Model market maker (utility pricing) - Grid Singularity Wiki</title>
+        <title>Market Maker (utility pricing) Configuration - Grid Singularity Wiki</title>
       
     
     
@@ -110,7 +110,7 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
-      <a href="#model-market-maker-utility-pricing" tabindex="1" class="md-skip">
+      <a href="#market-maker-utility-pricing-configuration" tabindex="1" class="md-skip">
         Skip to content
       </a>
     
@@ -135,7 +135,7 @@
               Grid Singularity Wiki
             </span>
             <span class="md-header-nav__topic">
-              Model market maker (utility pricing)
+              Market Maker (utility pricing) Configuration
             </span>
           
         </div>
@@ -2061,21 +2061,21 @@
                   <a href="https://github.com/gridsingularity/gsy-e/wiki/edit/master/docs/model-market-maker.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
                 
                 
-                <h1 id="model-market-maker-utility-pricing">Model market maker (utility pricing)<a class="headerlink" href="#model-market-maker-utility-pricing" title="Permanent link">&para;</a></h1>
+                <h1 id="market-maker-utility-pricing-configuration">Market Maker (utility pricing) Configuration<a class="headerlink" href="#market-maker-utility-pricing-configuration" title="Permanent link">&para;</a></h1>
 <p>The Market Maker mimics the behaviour of a typical energy utility and is used as a price reference point. Only one Market Maker can be set per simulation. The Market Maker can be configured to sell an infinite amount of energy as well as to buy an infinite amount of energy to simulate a Feed-in Tariff.</p>
 <h2 id="user-interface-configuration">User Interface Configuration<a class="headerlink" href="#user-interface-configuration" title="Permanent link">&para;</a></h2>
 <p>The following parameters can be set:</p>
 <ul>
 <li><strong>Name</strong>: The name of the Market Maker.</li>
 <li><strong>Role</strong>: The user has two options:<ul>
-<li><strong>Grid connected</strong>: In this mode, the Market Maker is connected to the grid and thus can fulfil the energy demand of any consumer and absorb surplus generation </li>
+<li><strong>Grid connected</strong>: In this mode, the Market Maker is connected to the grid and thus can fulfil the energy demand of any consumer and absorb surplus generation</li>
 <li><strong>Islanded</strong>: In this mode, the Market Maker would only be used as a reference point for the highest possible <code>energy_rate</code> in that grid (this mode is currently available only in the backend).</li>
 </ul>
 </li>
 <li><strong>Selling rate type</strong>: The user can either select <code>User Input</code> to define a fixed selling rate or upload their custom selling rate profile (the latter is currently only available in the backend)</li>
 <li><strong>Selling rate</strong>: The fixed rate the Market Maker will enforce, if <code>User Input</code> is selected for the selling rate type.</li>
 <li><strong>Buying rate type (infinite bus only)</strong>: The user can either select <code>User Input</code> to define a fixed buying rate or upload their custom buying rate profile (the latter is currently only available in the backend).</li>
-<li><strong>Buying rate (infinite bus only)</strong>: The fixed rate the Market Maker will enforce, if User Input is selected for the buying rate type.</li>
+<li><strong>Buying rate (infinite bus only)</strong>: The fixed rate the Market Maker will enforce, if <code>User Input</code> is selected for the buying rate type.</li>
 </ul>
 <p>The Market Maker configuration interface is shown below:</p>
 <p><img alt="alt_text" src="../img/market-maker-config.png" style="height:400px;width:200" /></p>
