@@ -1,4 +1,4 @@
-#  Market Maker (utility pricing) Configuration
+#  Market Maker (Utility Pricing) Configuration
 
 The Market Maker mimics the behaviour of a typical energy utility and is used as a price reference point. Only one Market Maker can be set per simulation. The Market Maker can be configured to sell an infinite amount of energy as well as to buy an infinite amount of energy to simulate a Feed-in Tariff.
 
@@ -19,4 +19,4 @@ The Market Maker configuration interface is shown below:
 
 ![alt_text](img/market-maker-config.png){:style="height:400px;width:200"}
 
-For more information on the backend configuration, please see the [backend documentation](assets-installation.md#market-maker).
+For more information on the backend configuration, please see the [backend documentation](assets-installation.md#market-maker-utility-pricing).
