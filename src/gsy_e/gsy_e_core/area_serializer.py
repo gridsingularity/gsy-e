@@ -38,8 +38,7 @@ from gsy_e.models.strategy.finite_power_plant import FinitePowerPlant # NOQA
 from gsy_e.models.strategy.scm import SCMStrategy
 
 from gsy_e.models.leaves import (
-    Leaf, scm_leaf_mapping, CoefficientLeaf, forward_leaf_mapping,
-    forecast_scm_leaf_mapping) # NOQA
+    Leaf, scm_leaf_mapping, CoefficientLeaf, forward_leaf_mapping) # NOQA
 from gsy_e.models.leaves import *  # NOQA  # pylint: disable=wildcard-import
 from gsy_e.models.strategy.trading_strategy_base import TradingStrategyBase
 
@@ -131,11 +130,7 @@ def _leaf_from_dict(description, config):
             raise ValueError(f"Unknown forward leaf type '{leaf_type}'")
     elif ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
         strategy_type = description.pop("type")
-        if (config.external_connection_enabled and
-                description.get("forecast_stream_enabled", False) is True):
-            leaf_type = forecast_scm_leaf_mapping.get(strategy_type)
-        else:
-            leaf_type = scm_leaf_mapping.get(strategy_type)
+        leaf_type = scm_leaf_mapping.get(strategy_type)
         if not leaf_type:
             return None
         if not issubclass(leaf_type, CoefficientLeaf):
