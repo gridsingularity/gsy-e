@@ -44,8 +44,6 @@ from gsy_e.models.strategy.external_strategies.pv import (
     PVUserProfileExternalStrategy)
 from gsy_e.models.strategy.external_strategies.storage import StorageExternalStrategy
 from gsy_e.models.strategy.scm import SCMStrategy
-from gsy_e.models.strategy.scm.external.load import ForecastSCMLoadStrategy
-from gsy_e.models.strategy.scm.external.pv import ForecastSCMPVStrategy
 
 transaction_id = str(uuid.uuid4())
 
@@ -553,8 +551,6 @@ class TestForecastRelatedFeatures:
 
     @staticmethod
     @pytest.mark.parametrize("ext_strategy_fixture", [
-        ForecastSCMPVStrategy(),
-        ForecastSCMLoadStrategy(),
         LoadHoursForecastExternalStrategy(),
         LoadProfileForecastExternalStrategy(),
         PVForecastExternalStrategy()], indirect=True)
@@ -571,8 +567,6 @@ class TestForecastRelatedFeatures:
 
     @staticmethod
     @pytest.mark.parametrize("ext_strategy_fixture", [
-        ForecastSCMPVStrategy(),
-        ForecastSCMLoadStrategy(),
         LoadHoursForecastExternalStrategy(),
         LoadProfileForecastExternalStrategy(),
         PVForecastExternalStrategy()], indirect=True)
@@ -591,8 +585,6 @@ class TestForecastRelatedFeatures:
 
     @staticmethod
     @pytest.mark.parametrize("ext_strategy_fixture", [
-        ForecastSCMPVStrategy(),
-        ForecastSCMLoadStrategy(),
         LoadHoursForecastExternalStrategy(),
         LoadProfileForecastExternalStrategy(),
         PVForecastExternalStrategy()], indirect=True)
@@ -608,8 +600,6 @@ class TestForecastRelatedFeatures:
                                        ext_strategy_fixture.channel_names.energy_measurement)]))
 
     @pytest.mark.parametrize("ext_strategy_fixture", [
-        ForecastSCMPVStrategy(),
-        ForecastSCMLoadStrategy(),
         LoadHoursForecastExternalStrategy(),
         LoadProfileForecastExternalStrategy(),
         PVForecastExternalStrategy()], indirect=True)
@@ -627,8 +617,6 @@ class TestForecastRelatedFeatures:
         assert len(ext_strategy_fixture.pending_requests) == 0
 
     @pytest.mark.parametrize("ext_strategy_fixture", [
-        ForecastSCMPVStrategy(),
-        ForecastSCMLoadStrategy(),
         LoadHoursForecastExternalStrategy(),
         LoadProfileForecastExternalStrategy(),
         PVForecastExternalStrategy()], indirect=True)
@@ -644,8 +632,6 @@ class TestForecastRelatedFeatures:
                                "transaction_id": arguments["transaction_id"]})
 
     @pytest.mark.parametrize("ext_strategy_fixture", [
-        ForecastSCMPVStrategy(),
-        ForecastSCMLoadStrategy(),
         LoadHoursForecastExternalStrategy(),
         LoadProfileForecastExternalStrategy(),
         PVForecastExternalStrategy()], indirect=True)
@@ -664,8 +650,6 @@ class TestForecastRelatedFeatures:
                                "error_message": error_message})
 
     @pytest.mark.parametrize("ext_strategy_fixture", [
-        ForecastSCMPVStrategy(),
-        ForecastSCMLoadStrategy(),
         LoadHoursForecastExternalStrategy(),
         LoadProfileForecastExternalStrategy(),
         PVForecastExternalStrategy()], indirect=True)
@@ -684,8 +668,6 @@ class TestForecastRelatedFeatures:
                                "error_message": error_message})
 
     @pytest.mark.parametrize("ext_strategy_fixture", [
-        ForecastSCMPVStrategy(),
-        ForecastSCMLoadStrategy(),
         LoadHoursForecastExternalStrategy(),
         LoadProfileForecastExternalStrategy(),
         PVForecastExternalStrategy()], indirect=True)
@@ -702,8 +684,6 @@ class TestForecastRelatedFeatures:
                                "transaction_id": arguments["transaction_id"]})
 
     @pytest.mark.parametrize("ext_strategy_fixture", [
-        ForecastSCMPVStrategy(),
-        ForecastSCMLoadStrategy(),
         LoadHoursForecastExternalStrategy(),
         LoadProfileForecastExternalStrategy(),
         PVForecastExternalStrategy()], indirect=True)
@@ -722,8 +702,6 @@ class TestForecastRelatedFeatures:
                                "error_message": error_message})
 
     @pytest.mark.parametrize("ext_strategy_fixture", [
-        ForecastSCMPVStrategy(),
-        ForecastSCMLoadStrategy(),
         LoadHoursForecastExternalStrategy(),
         LoadProfileForecastExternalStrategy(),
         PVForecastExternalStrategy()], indirect=True)
@@ -742,8 +720,6 @@ class TestForecastRelatedFeatures:
                                "error_message": error_message})
 
     @pytest.mark.parametrize("ext_strategy", [
-        ForecastSCMPVStrategy(),
-        ForecastSCMLoadStrategy(),
         LoadHoursForecastExternalStrategy(),
         LoadProfileForecastExternalStrategy(),
         PVForecastExternalStrategy()])
