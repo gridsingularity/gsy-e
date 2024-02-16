@@ -18,18 +18,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import logging
 from typing import Dict, List, Optional
 
-from gsy_framework.utils import (
-    convert_W_to_Wh)
-from gsy_framework.utils import find_object_of_same_weekday_and_time
+from gsy_framework.exceptions import GSyDeviceException, GSyException
+from gsy_framework.utils import find_object_of_same_weekday_and_time, convert_W_to_Wh
 from gsy_framework.validators.load_validator import LoadValidator
 from pendulum import DateTime, duration
 
 import gsy_e.constants
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
-from gsy_e.gsy_e_core.exceptions import GSyException
-from gsy_e.models.strategy.state import LoadState
 from gsy_e.models.strategy import utils
 from gsy_e.models.strategy.profile import EnergyProfile
+from gsy_e.models.strategy.state import LoadState
 
 log = logging.getLogger(__name__)
 
@@ -173,7 +171,8 @@ class LoadHoursPerDayEnergyParameters(LoadHoursEnergyParameters):
         self._initial_hrs_per_day = hrs_per_day
 
         if len(self.hrs_of_day) < hrs_per_day:
-            raise ValueError("Length of list 'hrs_of_day' must be greater equal 'hrs_per_day'")
+            raise GSyDeviceException(
+                "Length of list 'hrs_of_day' must be greater equal 'hrs_per_day'")
 
 
 class DefinedLoadEnergyParameters(LoadHoursPerDayEnergyParameters):
