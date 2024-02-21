@@ -16,10 +16,10 @@ PROSUMPTION_KWH_PROFILE = {
 
 @pytest.fixture(name="scm_storage")
 def fixture_scm_storage():
-    initial_slot_length = GlobalConfig.slot_length
-    GlobalConfig.slot_length = duration(minutes=60)
+    original_slot_length = GlobalConfig.slot_length
+    GlobalConfig.slot_length = duration(hours=1)
     yield SCMStorageStrategy(prosumption_kWh_profile=PROSUMPTION_KWH_PROFILE)
-    GlobalConfig.slot_length = initial_slot_length
+    GlobalConfig.slot_length = original_slot_length
 
 
 class TestScmStorage:

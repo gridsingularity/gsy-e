@@ -25,6 +25,8 @@ from gsy_e.models.strategy.market_agents.one_sided_engine import BalancingEngine
 
 
 class BalancingAgent(OneSidedAgent):
+    """Market agent for balancing market"""
+
     def __init__(self, owner, higher_market, lower_market,
                  min_offer_age=ConstSettings.MASettings.MIN_OFFER_AGE):
         self.balancing_spot_trade_ratio = owner.balancing_spot_trade_ratio
@@ -37,9 +39,9 @@ class BalancingAgent(OneSidedAgent):
 
     def _create_engines(self):
         self.engines = [
-            BalancingEngine('High -> Low', self.higher_market, self.lower_market,
+            BalancingEngine("High -> Low", self.higher_market, self.lower_market,
                             self.min_offer_age, self),
-            BalancingEngine('Low -> High', self.lower_market, self.higher_market,
+            BalancingEngine("Low -> High", self.lower_market, self.higher_market,
                             self.min_offer_age, self),
         ]
 
@@ -93,8 +95,7 @@ class BalancingAgent(OneSidedAgent):
                                                       positive_balancing_energy)
                 if balance_trade is not None:
                     positive_balancing_energy -= abs(balance_trade.traded_energy)
-            elif offer.energy < FLOATING_POINT_TOLERANCE and \
-                    negative_balancing_energy > FLOATING_POINT_TOLERANCE:
+            elif offer.energy < FLOATING_POINT_TOLERANCE < negative_balancing_energy:
                 balance_trade = self._balancing_trade(offer,
                                                       -negative_balancing_energy)
                 if balance_trade is not None:

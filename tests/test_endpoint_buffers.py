@@ -174,7 +174,7 @@ class TestSimulationEndpointBuffer:
     def test_update_stats_spot_markets_updates_successfully(self, general_setup):
         # pylint: disable=protected-access
         area, _ = general_setup
-        area.current_market = MagicMock(
+        area.spot_market = MagicMock(
             name="current-market",
             time_slot=pendulum.DateTime(2022, 10, 30),
             time_slot_str="2021-10-30T00:00:00+00:00")
@@ -239,9 +239,9 @@ class TestSimulationEndpointBuffer:
         assert endpoint_buffer.status == "some-state"
         assert endpoint_buffer.simulation_state["general"] == sim_state_mock
 
-        assert endpoint_buffer.current_market_time_slot_str == "2021-10-30T00:00:00+00:00"
-        assert endpoint_buffer.current_market_ui_time_slot_str == "October 30 2022, 00:00 h"
-        assert endpoint_buffer.current_market_time_slot == pendulum.DateTime(2022, 10, 30)
+        assert endpoint_buffer.spot_market_time_slot_str == "2021-10-30T00:00:00+00:00"
+        assert endpoint_buffer.spot_market_ui_time_slot_str == "October 30 2022, 00:00 h"
+        assert endpoint_buffer.spot_market_time_slot == pendulum.DateTime(2022, 10, 30)
 
         endpoint_buffer._populate_core_stats_and_sim_state.assert_called_once_with(area)
         assert endpoint_buffer.simulation_progress == {
@@ -404,7 +404,7 @@ class TestSimulationEndpointBufferForward:
     def test_update_stats_forward_markets_updated_successfully(self, forward_setup):
         # pylint: disable=protected-access
         area, _ = forward_setup
-        area.current_market = MagicMock(
+        area.spot_market = MagicMock(
             name="current-market",
             time_slot=pendulum.DateTime(2022, 10, 30),
             time_slot_str="2021-10-30T00:00:00+00:00")
@@ -473,9 +473,9 @@ class TestSimulationEndpointBufferForward:
         assert endpoint_buffer.status == "some-state"
         assert endpoint_buffer.simulation_state["general"] == sim_state_mock
 
-        assert endpoint_buffer.current_market_time_slot_str == "2021-10-30T00:00:00+00:00"
-        assert endpoint_buffer.current_market_ui_time_slot_str == "October 30 2022, 00:00 h"
-        assert endpoint_buffer.current_market_time_slot == pendulum.DateTime(2022, 10, 30)
+        assert endpoint_buffer.spot_market_time_slot_str == "2021-10-30T00:00:00+00:00"
+        assert endpoint_buffer.spot_market_ui_time_slot_str == "October 30 2022, 00:00 h"
+        assert endpoint_buffer.spot_market_time_slot == pendulum.DateTime(2022, 10, 30)
 
         endpoint_buffer._populate_core_stats_and_sim_state.assert_called_once_with(area)
         assert endpoint_buffer.simulation_progress == {
@@ -518,9 +518,9 @@ class TestCoefficientEndpointBuffer(TestSimulationEndpointBuffer):
             calculate_results=False)
 
         assert isinstance(endpoint_buffer._scm_manager, SCMManager)
-        assert (endpoint_buffer.current_market_time_slot_str ==
+        assert (endpoint_buffer.spot_market_time_slot_str ==
                progress_info_mock.current_slot_str)
-        assert (endpoint_buffer.current_market_time_slot ==
+        assert (endpoint_buffer.spot_market_time_slot ==
                progress_info_mock.current_slot_time)
-        assert (endpoint_buffer.current_market_time_slot_unix ==
+        assert (endpoint_buffer.spot_market_time_slot_unix ==
                progress_info_mock.current_slot_time.timestamp())
