@@ -1,6 +1,7 @@
 -r dev.txt
 
-behave
+behavex
+pytest-xdist
 coverage
 deepdiff
 hypothesis==4.38.0
