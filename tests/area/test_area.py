@@ -174,7 +174,6 @@ class TestArea:
                                    "offered_sell_kWh": {},
                                    "pledged_buy_kWh": {},
                                    "pledged_sell_kWh": {},
-                                   "used_history": {},
                                    "used_storage": 0.12}
 
     @staticmethod
