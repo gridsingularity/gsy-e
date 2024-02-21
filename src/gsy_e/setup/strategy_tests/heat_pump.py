@@ -26,6 +26,7 @@ from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
 from gsy_e.models.strategy.pv import PVStrategy
 
 ConstSettings.MASettings.MARKET_TYPE = 2
+ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL = 5
 
 
 def get_setup(config):
