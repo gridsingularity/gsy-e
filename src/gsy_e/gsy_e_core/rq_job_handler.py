@@ -157,8 +157,14 @@ def _configure_constants_constsettings(
     )
     gsy_e.constants.CONNECT_TO_PROFILES_DB = connect_to_profiles_db
 
-    ConstSettings.SCMSettings.MARKET_ALGORITHM = CoefficientAlgorithm(
-        settings.get("scm_coefficient_algorithm", 1)).value
+    if settings.get("scm"):
+        ConstSettings.SCMSettings.MARKET_ALGORITHM = CoefficientAlgorithm(
+            settings["scm"]["coefficient_algorithm"]).value
+        ConstSettings.SCMSettings.GRID_FEES_REDUCTION = settings["scm"]["grid_fees_reduction"]
+        ConstSettings.SCMSettings.INTRACOMMUNITY_BASE_RATE_EUR = (
+            settings["scm"]["intracommunity_rate_base_eur"])
+    else:
+        assert spot_market_type is not SpotMarketTypeEnum.COEFFICIENTS.value
 
 
 def _create_config_settings_object(
