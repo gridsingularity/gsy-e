@@ -72,8 +72,10 @@ colorlog==4.7.2
     # via -r requirements/dev.txt
 configobj==5.0.8
     # via behavex
-coverage==6.1.1
-    # via -r requirements/tests.in
+coverage[toml]==6.1.1
+    # via
+    #   -r requirements/tests.in
+    #   pytest-cov
 cryptography==35.0.0
     # via
     #   -r requirements/dev.txt
@@ -263,8 +265,11 @@ pyrsistent==0.18.0
 pytest==6.2.5
     # via
     #   -r requirements/tests.in
+    #   pytest-cov
     #   pytest-random-order
     #   pytest-xdist
+pytest-cov==4.1.0
+    # via -r requirements/tests.in
 pytest-random-order==1.0.4
     # via -r requirements/tests.in
 pytest-xdist==3.5.0
@@ -349,6 +354,8 @@ toml==0.10.2
     #   pylint
     #   pytest
     #   tox
+tomli==2.0.1
+    # via coverage
 tox==3.24.4
     # via
     #   -r requirements/dev.txt
