@@ -23,6 +23,7 @@ from typing import Union, Dict, Optional, Callable, Tuple
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Offer, Trade, TradeBidOfferInfo, TraderDetails, Bid
 from gsy_framework.enums import SpotMarketTypeEnum
+from gsy_framework.utils import limit_float_precision
 from pendulum import DateTime
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
@@ -81,7 +82,8 @@ class OneSidedMarket(MarketBase):
         :return: Updated price for the forwarded offer on this market, in cents
         """
         return self.fee_class.update_incoming_offer_with_fee(
-            price / energy, original_price / energy) * energy
+            limit_float_precision(price / energy),
+            limit_float_precision(original_price / energy)) * energy
 
     @lock_market_action
     def get_offers(self) -> Dict:
@@ -292,9 +294,10 @@ class OneSidedMarket(MarketBase):
                 fee_price, trade_price = self._determine_offer_price(
                     1, energy, trade_rate, trade_bid_info, orig_offer_price)
                 offer.update_price(trade_price)
-        except Exception:
+        except Exception as ex:
             # Exception happened - restore offer
             self.offers[offer.id] = offer
+            log.error("Accept offer (%s) failed due to: %s", offer, ex)
             raise
 
         trade_id, residual_offer = self.bc_interface.handle_blockchain_trade_event(

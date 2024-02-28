@@ -6,7 +6,7 @@ from datetime import datetime, date
 from typing import Dict, Optional
 
 from gsy_framework.constants_limits import GlobalConfig, ConstSettings
-from gsy_framework.enums import ConfigurationType, SpotMarketTypeEnum
+from gsy_framework.enums import ConfigurationType, SpotMarketTypeEnum, CoefficientAlgorithm
 from gsy_framework.settings_validators import validate_global_settings
 from pendulum import duration, instance, now
 
@@ -156,6 +156,15 @@ def _configure_constants_constsettings(
         ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS
     )
     gsy_e.constants.CONNECT_TO_PROFILES_DB = connect_to_profiles_db
+
+    if settings.get("scm"):
+        ConstSettings.SCMSettings.MARKET_ALGORITHM = CoefficientAlgorithm(
+            settings["scm"]["coefficient_algorithm"]).value
+        ConstSettings.SCMSettings.GRID_FEES_REDUCTION = settings["scm"]["grid_fees_reduction"]
+        ConstSettings.SCMSettings.INTRACOMMUNITY_BASE_RATE_EUR = (
+            settings["scm"]["intracommunity_rate_base_eur"])
+    else:
+        assert spot_market_type is not SpotMarketTypeEnum.COEFFICIENTS.value
 
 
 def _create_config_settings_object(

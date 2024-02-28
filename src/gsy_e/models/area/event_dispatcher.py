@@ -19,11 +19,13 @@ from logging import getLogger
 from typing import Union, Dict, TYPE_CHECKING, Optional
 
 from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.enums import AvailableMarketTypes
 from gsy_framework.enums import SpotMarketTypeEnum
 from numpy.random import random
 from pendulum import DateTime
 
 from gsy_e.events.event_structures import MarketEvent, AreaEvent
+from gsy_e.gsy_e_core.enums import FORWARD_MARKET_TYPES
 from gsy_e.gsy_e_core.exceptions import WrongMarketTypeException
 from gsy_e.gsy_e_core.redis_connections.area_market import RedisCommunicator
 from gsy_e.models.area.redis_dispatcher.area_event_dispatcher import RedisAreaEventDispatcher
@@ -33,13 +35,12 @@ from gsy_e.models.area.redis_dispatcher.market_event_dispatcher import (
 from gsy_e.models.area.redis_dispatcher.market_notify_event_subscriber import (
     MarketNotifyEventSubscriber)
 from gsy_e.models.market import MarketBase
-from gsy_e.gsy_e_core.enums import FORWARD_MARKET_TYPES
-from gsy_framework.enums import AvailableMarketTypes
 from gsy_e.models.strategy.market_agents.balancing_agent import BalancingAgent
 from gsy_e.models.strategy.market_agents.future_agent import FutureAgent
 from gsy_e.models.strategy.market_agents.one_sided_agent import OneSidedAgent
 from gsy_e.models.strategy.market_agents.settlement_agent import SettlementAgent
 from gsy_e.models.strategy.market_agents.two_sided_agent import TwoSidedAgent
+
 
 if TYPE_CHECKING:
     from gsy_e.models.area import Area
@@ -53,7 +54,7 @@ class AreaDispatcher:
     """
     Responsible for dispatching the area and market events to the area strategies, and,
     if the area has no strategy, to broadcast the events to the children of the area. Maintain
-    dicts with interarea agents for each market type.
+    dicts with market agents for each market type.
     """
     def __init__(self, area: "Area"):
         self._spot_agents: Dict[DateTime, OneSidedAgent] = {}
@@ -241,7 +242,7 @@ class AreaDispatcher:
             "owner": owner,
             "higher_market": higher_market,
             "lower_market": lower_market,
-            "min_offer_age": ConstSettings.MASettings.MIN_OFFER_AGE
+            "min_offer_age": owner._min_offer_age
         }
 
         if market_type == AvailableMarketTypes.SPOT:
@@ -250,7 +251,7 @@ class AreaDispatcher:
             if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value:
                 return TwoSidedAgent(
                     **agent_constructor_arguments,
-                    min_bid_age=ConstSettings.MASettings.MIN_BID_AGE
+                    min_bid_age=owner._min_bid_age
                 )
             raise WrongMarketTypeException("Wrong market type setting flag "
                                            f"{ConstSettings.MASettings.MARKET_TYPE}")

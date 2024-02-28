@@ -23,7 +23,7 @@ from gsy_framework.utils import convert_pendulum_to_str_in_dict, key_in_dict_and
 from gsy_framework.constants_limits import ConstSettings, SpotMarketTypeEnum, GlobalConfig
 from pendulum import Duration
 
-from gsy_e.models.area import CoefficientArea, Area # NOQA
+from gsy_e.models.area import CoefficientArea, Area, Market, Asset # NOQA
 from gsy_e.models.strategy import BaseStrategy
 from gsy_e.models.area.throughput_parameters import ThroughputParameters
 
@@ -35,10 +35,10 @@ from gsy_e.models.strategy.load_hours import LoadHoursStrategy # NOQA
 from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy # NOQA
 from gsy_e.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy  # NOQA
 from gsy_e.models.strategy.finite_power_plant import FinitePowerPlant # NOQA
+from gsy_e.models.strategy.scm import SCMStrategy
 
 from gsy_e.models.leaves import (
-    Leaf, scm_leaf_mapping, CoefficientLeaf, forward_leaf_mapping,
-    forecast_scm_leaf_mapping) # NOQA
+    Leaf, scm_leaf_mapping, CoefficientLeaf, forward_leaf_mapping) # NOQA
 from gsy_e.models.leaves import *  # NOQA  # pylint: disable=wildcard-import
 from gsy_e.models.strategy.trading_strategy_base import TradingStrategyBase
 
@@ -50,11 +50,11 @@ class AreaEncoder(json.JSONEncoder):
     def default(self, o):
         # Leaf classes are Areas too, therefore the Area/AreaBase classes need to be handled
         # separately.
-        if type(o) in [Area, CoefficientArea]:
+        if type(o) in [Area, CoefficientArea, Market, Asset]:
             return self._encode_area(o)
         if isinstance(o, Leaf):
             return self._encode_leaf(o)
-        if isinstance(o, BaseStrategy):
+        if isinstance(o, (BaseStrategy, SCMStrategy)):
             return self._encode_subobject(o)
         if isinstance(o, TradingStrategyBase):
             return self._encode_subobject(o)
@@ -130,11 +130,7 @@ def _leaf_from_dict(description, config):
             raise ValueError(f"Unknown forward leaf type '{leaf_type}'")
     elif ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
         strategy_type = description.pop("type")
-        if (config.external_connection_enabled and
-                description.get("forecast_stream_enabled", False) is True):
-            leaf_type = forecast_scm_leaf_mapping.get(strategy_type)
-        else:
-            leaf_type = scm_leaf_mapping.get(strategy_type)
+        leaf_type = scm_leaf_mapping.get(strategy_type)
         if not leaf_type:
             return None
         if not issubclass(leaf_type, CoefficientLeaf):

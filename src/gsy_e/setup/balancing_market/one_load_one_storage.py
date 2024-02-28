@@ -15,12 +15,12 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from gsy_e.models.area import Area
-from gsy_e.models.strategy.storage import StorageStrategy
-from gsy_e.models.strategy.load_hours import LoadHoursStrategy
-from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_framework.constants_limits import ConstSettings
 
+from gsy_e.gsy_e_core.device_registry import DeviceRegistry
+from gsy_e.models.area import Area
+from gsy_e.models.strategy.load_hours import LoadHoursStrategy
+from gsy_e.models.strategy.storage import StorageStrategy
 
 device_registry_dict = {
     "H2 Storage": (42, 45),
@@ -42,6 +42,7 @@ def get_setup(config):
                         avg_power_W=50,
                         hrs_per_day=24,
                         hrs_of_day=list(range(0, 24)),
+                        update_interval=7,
                     )),
                 ]
             ),
@@ -49,7 +50,8 @@ def get_setup(config):
                 "House 2",
                 [
                     Area("H2 Storage", strategy=StorageStrategy(initial_soc=98,
-                                                                battery_capacity_kWh=50.0),
+                                                                battery_capacity_kWh=50.0,
+                                                                update_interval=7),
                          ),
                 ]
             ),

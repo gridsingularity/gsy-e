@@ -105,11 +105,11 @@ class SimulationResultsManager:
 
             if self.export_results_on_finish:
                 assert self._export is not None
-                if (area.current_market is not None
+                if (area.spot_market is not None
                         and gsy_e.constants.RETAIN_PAST_MARKET_STRATEGIES_STATE):
                     # for integration tests:
                     self._export.raw_data_to_json(
-                        area.current_market.time_slot_str,
+                        area.spot_market.time_slot_str,
                         self._endpoint_buffer.flattened_area_core_stats_dict
                     )
 

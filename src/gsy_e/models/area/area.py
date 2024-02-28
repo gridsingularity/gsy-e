@@ -69,7 +69,9 @@ class Area(AreaBase):
                  grid_fee_percentage: float = None,
                  grid_fee_constant: float = None,
                  external_connection_available: bool = False,
-                 throughput: ThroughputParameters = ThroughputParameters()
+                 throughput: ThroughputParameters = ThroughputParameters(),
+                 min_offer_age: int = None,
+                 min_bid_age: int = None,
                  ):
         super().__init__(name, children, uuid, strategy, config, grid_fee_percentage,
                          grid_fee_constant)
@@ -87,6 +89,10 @@ class Area(AreaBase):
             if external_connection_available and self.strategy is None else None
         self.external_connection_available = external_connection_available
         self.balancing_spot_trade_ratio = balancing_spot_trade_ratio
+        self._min_offer_age = (
+            min_offer_age if min_offer_age is not None else ConstSettings.MASettings.MIN_OFFER_AGE)
+        self._min_bid_age = (
+            min_bid_age if min_bid_age is not None else ConstSettings.MASettings.MIN_BID_AGE)
 
     def get_state(self):
         """Get the current state of the area."""
@@ -564,10 +570,10 @@ class Area(AreaBase):
         """
         if self.strategy is not None:
             current_time_slot = None
-            if self.current_market:
-                current_time_slot = self.current_market.time_slot
-            elif self.parent.current_market:
-                current_time_slot = self.parent.current_market.time_slot
+            if self.spot_market:
+                current_time_slot = self.spot_market.time_slot
+            elif self.parent.spot_market:
+                current_time_slot = self.parent.spot_market.time_slot
             return self.strategy.state.get_results_dict(current_time_slot)
         return {
             "area_throughput": {

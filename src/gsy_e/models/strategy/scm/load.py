@@ -52,17 +52,12 @@ class SCMLoadHoursStrategy(SCMStrategy):
         """Get the available energy for consumption for the specified time slot."""
         return self._energy_params.state.get_energy_requirement_Wh(time_slot) / 1000.0
 
-    def decrease_energy_to_buy(
-            self, traded_energy_kWh: float, time_slot: DateTime, area: "AreaBase") -> None:
-        """Decrease the energy requirements of the asset."""
-        self._energy_params.decrement_energy_requirement(
-            energy_kWh=traded_energy_kWh,
-            time_slot=time_slot,
-            area_name=area.name)
+    def serialize(self):
+        return {**self._energy_params.serialize()}
 
 
 class SCMLoadProfileStrategy(SCMStrategy):
-    """Load SCM strategy with power production dictated by a profile."""
+    """Load SCM strategy with power consumption dictated by a profile."""
     def __init__(self, daily_load_profile=None, daily_load_profile_uuid=None):
         self._energy_params = DefinedLoadEnergyParameters(
             daily_load_profile, daily_load_profile_uuid)
@@ -83,7 +78,7 @@ class SCMLoadProfileStrategy(SCMStrategy):
 
     def _update_energy_requirement(self, area: "AreaBase") -> None:
         self._energy_params.energy_profile.read_or_rotate_profiles()
-        self._energy_params.update_energy_requirement(area.current_market_time_slot, area.name)
+        self._energy_params.update_energy_requirement(area.current_market_time_slot)
 
     def market_cycle(self, area: "AreaBase") -> None:
         """Update the load forecast and measurements for the next/previous market slot."""
@@ -92,14 +87,6 @@ class SCMLoadProfileStrategy(SCMStrategy):
     def get_available_energy_kWh(self, time_slot: DateTime) -> float:
         """Get the available energy for consumption for the specified time slot."""
         return self._energy_params.state.get_energy_requirement_Wh(time_slot) / 1000.0
-
-    def decrease_energy_to_buy(
-            self, traded_energy_kWh: float, time_slot: DateTime, area: "AreaBase") -> None:
-        """Decrease the amount of traded energy from the asset's state."""
-        self._energy_params.decrement_energy_requirement(
-            energy_kWh=traded_energy_kWh,
-            time_slot=time_slot,
-            area_name=area.name)
 
     def get_energy_to_buy_kWh(self, time_slot: DateTime) -> float:
         """Get the available energy for consumption for the specified time slot."""

@@ -5,7 +5,8 @@ from math import isclose
 from typing import TYPE_CHECKING, Dict, List, Optional
 from uuid import uuid4
 
-from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.constants_limits import (
+    ConstSettings, GlobalConfig, is_no_community_self_consumption)
 from gsy_framework.data_classes import Trade, TraderDetails
 from gsy_framework.sim_results.kpi_calculation_helper import KPICalculationHelper
 from pendulum import DateTime, duration
@@ -14,6 +15,7 @@ import gsy_e.constants
 from gsy_e.constants import (DEFAULT_SCM_COMMUNITY_NAME, DEFAULT_SCM_GRID_NAME,
                              FLOATING_POINT_TOLERANCE)
 from gsy_e.models.strategy.scm import SCMStrategy
+
 
 if TYPE_CHECKING:
     from gsy_e.models.area import CoefficientArea
@@ -94,7 +96,8 @@ class HomeAfterMeterData:
 
     def set_production_for_community(self, unassigned_energy_production_kWh: float):
         """Assign the energy surplus of the home to be consumed by the community."""
-        if gsy_e.constants.SCM_NO_COMMUNITY_SELF_CONSUMPTION:
+
+        if is_no_community_self_consumption():
             self._self_production_for_community_kWh = 0
             return 0.
         if self.energy_surplus_kWh <= unassigned_energy_production_kWh:
@@ -282,7 +285,7 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
         # will be negative, and the producer will not have "savings". For a more realistic case
         # the revenue should be omitted from the calculation of the savings, however this needs
         # to be discussed.
-        if gsy_e.constants.SCM_NO_COMMUNITY_SELF_CONSUMPTION:
+        if is_no_community_self_consumption():
             return self.self_consumed_savings + self.gsy_energy_bill_revenue
         savings_absolute = KPICalculationHelper().saving_absolute(
             self.base_energy_bill_excl_revenue, self.gsy_energy_bill_excl_revenue)
@@ -345,7 +348,7 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
             self, home_data: HomeAfterMeterData, market_maker_rate_normal_fees: float,
             feed_in_tariff: float):
         """Calculate the base (not with GSy improvements) energy bill for the home."""
-        if gsy_e.constants.SCM_NO_COMMUNITY_SELF_CONSUMPTION:
+        if is_no_community_self_consumption():
             self.base_energy_bill_excl_revenue = (
                     home_data.consumption_kWh * market_maker_rate_normal_fees)
             self.base_energy_bill_revenue = home_data.production_kWh * feed_in_tariff
@@ -375,6 +378,7 @@ class SCMManager:
         self._time_slot = time_slot
         self._bills: Dict[str, AreaEnergyBills] = {}
         self._grid_fees_reduction = ConstSettings.SCMSettings.GRID_FEES_REDUCTION
+        self._intracommunity_base_rate_eur = ConstSettings.SCMSettings.INTRACOMMUNITY_BASE_RATE_EUR
 
     @staticmethod
     def _get_community_uuid_from_area(area):
@@ -462,9 +466,14 @@ class SCMManager:
         assistance_fee = home_data.assistance_monthly_fee / slots_per_month
         fixed_fee = home_data.fixed_monthly_fee / slots_per_month
 
+        intracommunity_base_rate_eur = (
+            market_maker_rate
+            if self._intracommunity_base_rate_eur is None
+            else self._intracommunity_base_rate_eur)
         market_maker_rate_decreased_fees = (
-                market_maker_rate + grid_fees * (1.0 - self._grid_fees_reduction) +
-                taxes_surcharges)
+                intracommunity_base_rate_eur
+                + grid_fees * (1.0 - self._grid_fees_reduction)
+                + taxes_surcharges)
         market_maker_rate_normal_fees = market_maker_rate + grid_fees + taxes_surcharges
 
         home_bill = AreaEnergyBills(

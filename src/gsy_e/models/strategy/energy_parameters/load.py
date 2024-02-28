@@ -18,18 +18,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import logging
 from typing import Dict, List, Optional
 
-from gsy_framework.utils import (
-    convert_W_to_Wh)
-from gsy_framework.utils import find_object_of_same_weekday_and_time
+from gsy_framework.exceptions import GSyException, GSyDeviceException
+from gsy_framework.utils import find_object_of_same_weekday_and_time, convert_W_to_Wh
 from gsy_framework.validators.load_validator import LoadValidator
 from pendulum import DateTime, duration
 
 import gsy_e.constants
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
-from gsy_e.gsy_e_core.exceptions import GSyException
-from gsy_e.models.strategy.state import LoadState
 from gsy_e.models.strategy import utils
 from gsy_e.models.strategy.profile import EnergyProfile
+from gsy_e.models.strategy.state import LoadState
 
 log = logging.getLogger(__name__)
 
@@ -71,7 +69,7 @@ class LoadHoursEnergyParameters:
 
         self.state.set_energy_measurement_kWh(simulated_measured_energy_kWh, time_slot)
 
-    def update_energy_requirement(self, time_slot, overwrite=False):
+    def update_energy_requirement(self, time_slot):
         """Update the energy requirement and desired energy from the state class."""
         self.energy_per_slot_Wh = convert_W_to_Wh(
             self.avg_power_W, self._area.config.slot_length)
@@ -79,7 +77,7 @@ class LoadHoursEnergyParameters:
             desired_energy_Wh = self.energy_per_slot_Wh
         else:
             desired_energy_Wh = 0.0
-        self.state.set_desired_energy(desired_energy_Wh, time_slot, overwrite)
+        self.state.set_desired_energy(desired_energy_Wh, time_slot)
 
     def allowed_operating_hours(self, time_slot):
         """Check if timeslot inside allowed operating hours."""
@@ -173,7 +171,8 @@ class LoadHoursPerDayEnergyParameters(LoadHoursEnergyParameters):
         self._initial_hrs_per_day = hrs_per_day
 
         if len(self.hrs_of_day) < hrs_per_day:
-            raise ValueError("Length of list 'hrs_of_day' must be greater equal 'hrs_per_day'")
+            raise GSyDeviceException(
+                "Length of list 'hrs_of_day' must be greater equal 'hrs_per_day'")
 
 
 class DefinedLoadEnergyParameters(LoadHoursPerDayEnergyParameters):
@@ -202,7 +201,7 @@ class DefinedLoadEnergyParameters(LoadHoursPerDayEnergyParameters):
             self.energy_profile.input_profile = kwargs["daily_load_profile"]
             self.energy_profile.read_or_rotate_profiles(reconfigure=True)
 
-    def update_energy_requirement(self, time_slot, overwrite=False):
+    def update_energy_requirement(self, time_slot):
         if not self.energy_profile.profile:
             raise GSyException(
                 "Load tries to set its energy forecasted requirement "

@@ -110,3 +110,6 @@ Cargo.lock
 
 # iSort configuration
 .isort.cfg
+
+# Behavex output
+output/

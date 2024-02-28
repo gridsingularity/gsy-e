@@ -60,6 +60,15 @@ jobs:
         pip install tox==3.24.4
         tox -e $TOXENV --verbose
 
+    - name: Archive artifacts
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+          name: behave-output
+          path: |
+            output
+            coverage.xml
+
     - name: Check coverage with Codecov
       uses: codecov/codecov-action@v1
       with:

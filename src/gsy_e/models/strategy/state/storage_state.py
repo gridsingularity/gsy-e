@@ -75,7 +75,6 @@ class StorageState(StateInterface):
         self.charge_history = {}
         self.charge_history_kWh = {}
         self.offered_history = {}
-        self.used_history = {}  # type: Dict[DateTime, float]
         self.energy_to_buy_dict = {}
         self.energy_to_sell_dict = {}
 
@@ -94,7 +93,6 @@ class StorageState(StateInterface):
             "charge_history": convert_pendulum_to_str_in_dict(self.charge_history),
             "charge_history_kWh": convert_pendulum_to_str_in_dict(self.charge_history_kWh),
             "offered_history": convert_pendulum_to_str_in_dict(self.offered_history),
-            "used_history": convert_pendulum_to_str_in_dict(self.used_history),
             "energy_to_buy_dict": convert_pendulum_to_str_in_dict(self.energy_to_buy_dict),
             "energy_to_sell_dict": convert_pendulum_to_str_in_dict(self.energy_to_sell_dict),
             "used_storage": self._used_storage,
@@ -115,7 +113,6 @@ class StorageState(StateInterface):
             convert_str_to_pendulum_in_dict(state_dict["charge_history_kWh"]))
         self.offered_history.update(
             convert_str_to_pendulum_in_dict(state_dict["offered_history"]))
-        self.used_history.update(convert_str_to_pendulum_in_dict(state_dict["used_history"]))
         self.energy_to_buy_dict.update(
             convert_str_to_pendulum_in_dict(state_dict["energy_to_buy_dict"]))
         self.energy_to_sell_dict.update(convert_str_to_pendulum_in_dict(
@@ -273,7 +270,6 @@ class StorageState(StateInterface):
             write_default_to_dict(self.energy_to_buy_dict, time_slot, 0)
             write_default_to_dict(self.energy_to_sell_dict, time_slot, 0)
             write_default_to_dict(self.offered_history, time_slot, "-")
-            write_default_to_dict(self.used_history, time_slot, "-")
 
             write_default_to_dict(self.time_series_ess_share, time_slot,
                                   {ESSEnergyOrigin.UNKNOWN: 0.,
@@ -325,7 +321,6 @@ class StorageState(StateInterface):
             self.charge_history.pop(market_slot, None)
             self.charge_history_kWh.pop(market_slot, None)
             self.offered_history.pop(market_slot, None)
-            self.used_history.pop(market_slot, None)
             self.energy_to_buy_dict.pop(market_slot, None)
             self.energy_to_sell_dict.pop(market_slot, None)
 

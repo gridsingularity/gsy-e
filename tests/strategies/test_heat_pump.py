@@ -19,8 +19,9 @@ from gsy_e.models.strategy.virtual_heatpump import VirtualHeatpumpStrategy
 if TYPE_CHECKING:
     from gsy_e.models.strategy.trading_strategy_base import TradingStrategyBase
 
+SLOT_LENGTH = duration(hours=1)
 CURRENT_MARKET_SLOT = today(tz=TIME_ZONE)
-RATE_PROFILE = {CURRENT_MARKET_SLOT: 0, CURRENT_MARKET_SLOT.add(minutes=15): 2}
+RATE_PROFILE = {CURRENT_MARKET_SLOT: 0, CURRENT_MARKET_SLOT + SLOT_LENGTH: 2}
 
 
 @pytest.fixture(name="heatpump_fixture")
@@ -28,7 +29,6 @@ def fixture_heatpump_strategy(request) -> Tuple["TradingStrategyBase", "Area"]:
     gsy_e.models.strategy.heat_pump.HeatPumpValidator = Mock()
     original_market_type = ConstSettings.MASettings.MARKET_TYPE
     ConstSettings.MASettings.MARKET_TYPE = 2
-    orig_start_date = GlobalConfig.start_date
     strategy_params = request.param if hasattr(request, "param") else {}
     is_virtual_heatpump = strategy_params.pop("is_virtual", False)
     if not is_virtual_heatpump:
@@ -47,14 +47,12 @@ def fixture_heatpump_strategy(request) -> Tuple["TradingStrategyBase", "Area"]:
             dh_water_flow_m3_profile=os.path.join(
                 gsye_root_path, "resources", "hp_water_flow.csv"),
             **strategy_params)
-    strategy._energy_params = Mock()
     strategy_area = Area("asset", strategy=strategy)
     area = Area("grid", children=[strategy_area])
     area.config.start_date = CURRENT_MARKET_SLOT
     area.config.end_date = area.config.start_date.add(days=1)
     area.activate()
     yield strategy, area
-    GlobalConfig.start_date = orig_start_date
     ConstSettings.MASettings.MARKET_TYPE = original_market_type
 
 
@@ -110,8 +108,14 @@ class TestHeatPumpStrategy:
             now_mock.return_value = (
                     CURRENT_MARKET_SLOT + updater_params.update_interval)
             strategy.event_tick()
-            # 15 minutes / 15 cts --> 1 ct/kWh after 1 minute
-            self._assert_bid(list(market_object.bids.values()), strategy, energy_to_buy, 1)
+            update_interval = duration(
+                minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
+            initial_rate = GlobalConfig.FEED_IN_TARIFF
+            final_rate = GlobalConfig.market_maker_rate
+            expected_rate = (final_rate - initial_rate) / (
+                    (duration(minutes=15)-update_interval) / update_interval)
+            self._assert_bid(
+                list(market_object.bids.values()), strategy, energy_to_buy, expected_rate)
 
     @staticmethod
     @pytest.mark.parametrize("heatpump_fixture", [
@@ -155,7 +159,7 @@ class TestHeatPumpStrategy:
         assert strategy._order_updater_params[AvailableMarketTypes.SPOT].initial_rate == 0
         assert strategy._order_updater_params[
                    AvailableMarketTypes.SPOT].final_rate == 0
-        area.spot_market.time_slot = CURRENT_MARKET_SLOT.add(minutes=15)
+        area.spot_market.time_slot = CURRENT_MARKET_SLOT + SLOT_LENGTH
         area.spot_market.set_open_market_slot_parameters(CURRENT_MARKET_SLOT,
                                                          [area.spot_market.time_slot])
         strategy.event_market_cycle()
@@ -185,11 +189,17 @@ class TestHeatPumpStrategy:
     def test_get_energy_buy_energy_returns_correct_value(heatpump_fixture):
         strategy = heatpump_fixture[0]
         strategy.preferred_buying_rate = 15
+        strategy._energy_params.min_temp_C = 10
+        strategy.state.get_storage_temp_C = MagicMock(return_value=20)
+        strategy._energy_params.state.get_temp_decrease_K = MagicMock(return_value=10)
         strategy._energy_params.get_min_energy_demand_kWh = MagicMock(return_value=1)
         strategy._energy_params.get_max_energy_demand_kWh = MagicMock(return_value=2)
         assert strategy._get_energy_buy_energy(14, CURRENT_MARKET_SLOT) == 2
         assert strategy._get_energy_buy_energy(15, CURRENT_MARKET_SLOT) == 2
         assert strategy._get_energy_buy_energy(16, CURRENT_MARKET_SLOT) == 1
+        strategy.state.get_storage_temp_C = MagicMock(return_value=20)
+        strategy._energy_params.state.get_temp_decrease_K = MagicMock(return_value=1)
+        assert strategy._get_energy_buy_energy(16, CURRENT_MARKET_SLOT) == 0
 
     @staticmethod
     @pytest.mark.parametrize("heatpump_fixture", [
@@ -198,6 +208,7 @@ class TestHeatPumpStrategy:
         strategy = heatpump_fixture[0]
         area = heatpump_fixture[1]
         traded_energy = 2
+        strategy._energy_params.event_traded_energy = Mock()
         trade = Trade("id", CURRENT_MARKET_SLOT,
                       traded_energy=traded_energy, trade_price=1, time_slot=CURRENT_MARKET_SLOT,
                       buyer=TraderDetails(name=strategy.owner.name, uuid=strategy.owner.uuid,
