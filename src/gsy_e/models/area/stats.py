@@ -66,6 +66,8 @@ class AreaStats:
 
     def restore_state(self, saved_state: Dict) -> None:
         """Restoration of simulation from its last known state"""
+        if not saved_state.get("rate_stats_market"):
+            return
         self.rate_stats_market.update(
             convert_str_to_pendulum_in_dict(saved_state["rate_stats_market"]))
         self.exported_traded_energy_kwh.update(
