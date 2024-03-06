@@ -66,10 +66,14 @@ class ProfileDBConnectionHandler:
         time = Required(datetime)
         value = Required(float)
 
-    class Profile_Database_ConfigurationAreaProfileUuids(_db.Entity):
-        """Model for the information associated with each profile"""
-        configuration_uuid = Required(uuid.UUID)
+    class Profile_Database_ProfileConfiguration(_db.Entity):
+        """Bridge table between ConfigurationSettings and ProfileInformation"""
+        config_uuid = Required(uuid.UUID)
         area_uuid = Required(uuid.UUID)
+        profile_uuid = Required(uuid.UUID)
+
+    class Profile_Database_ProfileInformation(_db.Entity):
+        """Model for the information associated with each profile"""
         profile_uuid = Required(uuid.UUID)
         profile_type = Required(int)  # values of InputProfileTypes
 
@@ -171,8 +175,8 @@ class ProfileDBConnectionHandler:
     def _get_profile_uuids_from_db(self):
         profile_selection = select(
             datapoint.profile_uuid
-            for datapoint in self.Profile_Database_ConfigurationAreaProfileUuids
-            if datapoint.configuration_uuid == uuid.UUID(gsy_e.constants.CONFIGURATION_ID))
+            for datapoint in self.Profile_Database_ProfileConfiguration
+            if datapoint.config_uuid == uuid.UUID(gsy_e.constants.CONFIGURATION_ID))
         return list(profile_selection)
 
     def _buffer_profile_uuid_list(self, uuids_used_in_setup: List) -> None:
@@ -191,13 +195,10 @@ class ProfileDBConnectionHandler:
         """
         Buffers profile types for the profiles of this simulation.
         """
-        profile_selection = select(
-            (datapoint.profile_uuid, datapoint.profile_type)
-            for datapoint in self.Profile_Database_ConfigurationAreaProfileUuids
-            if datapoint.configuration_uuid == uuid.UUID(gsy_e.constants.CONFIGURATION_ID))
-
-        for profile in profile_selection:
-            self._profile_types[profile[0]] = InputProfileTypes(profile[1])
+        db_profile_uuids = self._get_profile_uuids_from_db()
+        for profile_uuid in db_profile_uuids:
+            datapoint = self.Profile_Database_ProfileInformation.get(profile_uuid=profile_uuid)
+            self._profile_types[profile_uuid] = InputProfileTypes(datapoint.profile_type)
 
     @db_session
     def _buffer_all_profiles(self, current_timestamp: DateTime):
