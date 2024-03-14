@@ -243,12 +243,12 @@ class LiveEvents:
         """Handle all events that arrived during the past market slot."""
         if self._event_buffer:
             global_objects.profiles_handler.update_time_and_buffer_profiles(
-                root_area.current_market_time_slot, root_area)
+                root_area.current_market_time_slot)
         self._handle_events(root_area, self._event_buffer)
 
     def handle_tick_events(self, root_area):
         """Handle all events that arrived during the past tick."""
         if self._tick_event_buffer:
             global_objects.profiles_handler.update_time_and_buffer_profiles(
-                root_area.current_market_time_slot, root_area)
+                root_area.current_market_time_slot)
         self._handle_events(root_area, self._tick_event_buffer)

@@ -19,39 +19,27 @@ import logging
 import os
 import uuid
 from datetime import datetime
-from typing import Dict, TYPE_CHECKING, List, Optional
+from typing import Dict, List, Tuple, Optional
 
 import pytz
 from gsy_framework.constants_limits import GlobalConfig
-from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from gsy_framework.read_user_profile import (
+    read_arbitrary_profile, InputProfileTypes, LiveProfileTypes)
 from gsy_framework.utils import generate_market_slot_list
 from pendulum import DateTime, instance, duration
 from pony.orm import Database, Required, db_session, select
+from pony.orm import Optional as DBOptional
 from pony.orm.core import Query
 
 import gsy_e.constants
 from gsy_e.gsy_e_core.util import should_read_profile_from_db
 
-if TYPE_CHECKING:
-    from gsy_e.models.area import Area
 
 log = logging.getLogger(__name__)
 
 
 class ProfileDBConnectionException(Exception):
     """Exception that is raised inside ProfileDBConnectionHandler."""
-
-
-PROFILE_UUID_NAMES = [
-    "daily_load_profile_uuid",
-    "power_profile_uuid",
-    "energy_rate_profile_uuid",
-    "smart_meter_profile_uuid",
-    "buying_rate_profile_uuid",
-    "consumption_kWh_profile_uuid",
-    "external_temp_C_profile_uuid",
-    "prosumption_kWh_profile_uuid"
-]
 
 
 class ProfileDBConnectionHandler:
@@ -65,23 +53,30 @@ class ProfileDBConnectionHandler:
         profile_uuid = Required(uuid.UUID)
         time = Required(datetime)
         value = Required(float)
+        # profile_info = Optional("Profile_Database_ProfileInformation")
 
     class Profile_Database_ProfileConfiguration(_db.Entity):
         """Bridge table between ConfigurationSettings and ProfileInformation"""
         config_uuid = Required(uuid.UUID)
         area_uuid = Required(uuid.UUID)
         profile_uuid = Required(uuid.UUID)
+        profile_info = DBOptional("Profile_Database_ProfileInformation")
 
     class Profile_Database_ProfileInformation(_db.Entity):
         """Model for the information associated with each profile"""
+        # TODO: add foreign key to Profile_information
         profile_uuid = Required(uuid.UUID)
         profile_type = Required(int)  # values of InputProfileTypes
+        live_profile_type = Required(int)  # values of LiveProfileTypes
+        profile_configuration = DBOptional("Profile_Database_ProfileConfiguration")
 
     def __init__(self):
         self._user_profiles: Dict[uuid.UUID, Dict[DateTime, float]] = {}
         self._profile_types: Dict[uuid.UUID, InputProfileTypes] = {}
         self._buffered_times: List[DateTime] = []
         self._profile_uuids: Optional[List[uuid.UUID]] = []
+        # area_uuid -> LiveProfileTypes -> profile_uuid
+        self.area_profile_uuid_mapping: Dict[uuid.UUID, Dict[LiveProfileTypes, uuid.UUID]] = {}
 
     @staticmethod
     def _convert_pendulum_to_datetime(time_stamp):
@@ -172,33 +167,64 @@ class ProfileDBConnectionHandler:
         return selection
 
     @db_session
-    def _get_profile_uuids_from_db(self):
-        profile_selection = select(
-            datapoint.profile_uuid
+    def _get_type_info_from_db(
+            self) -> List[Tuple[uuid.UUID, uuid.UUID, LiveProfileTypes, int, InputProfileTypes]]:
+        """Get all relevant information from DB for buffering of profile uuids and types."""
+        return select(
+            (datapoint.area_uuid, datapoint.profile_uuid,
+             datapoint.profile_info.live_profile_type, datapoint.profile_info.id,
+             datapoint.profile_info.profile_type)
             for datapoint in self.Profile_Database_ProfileConfiguration
-            if datapoint.config_uuid == uuid.UUID(gsy_e.constants.CONFIGURATION_ID))
-        return list(profile_selection)
+            if datapoint.config_uuid == uuid.UUID(gsy_e.constants.CONFIGURATION_ID))[:]
 
-    def _buffer_profile_uuid_list(self, uuids_used_in_setup: List) -> None:
-        """ Buffers list of the profile_uuids that correspond to this simulation into
-        self._profile_uuids"""
-        db_profile_uuids = self._get_profile_uuids_from_db()
-
-        for used_profile_uuid in uuids_used_in_setup:
-            if used_profile_uuid not in db_profile_uuids:
-                raise ProfileDBConnectionException(
-                    f"Did not find profile with uuid {str(used_profile_uuid)} in DB.")
-        self._profile_uuids = list(uuids_used_in_setup)
-
-    @db_session
-    def buffer_profile_types(self):
+    def _buffer_area_profile_uuid_mapping(
+            self, profile_type_info: List[Tuple[
+                uuid.UUID, uuid.UUID, LiveProfileTypes, int, InputProfileTypes]]) -> None:
         """
-        Buffers profile types for the profiles of this simulation.
+        Buffer self.area_profile_uuid_mapping that contains a mapping between area_uuid and
+        LiveProfileTypes -> profile_uuid mapping
+        Older profiles (with lower pk in ProfileConfiguration) will be overwritten.
+        self.area_profile_uuid_mapping is used in the strategies for getting the profiles uuids
+        Identity profiles are set to be of type LiveProfileTypes.FORECAST
         """
-        db_profile_uuids = self._get_profile_uuids_from_db()
-        for profile_uuid in db_profile_uuids:
-            datapoint = self.Profile_Database_ProfileInformation.get(profile_uuid=profile_uuid)
-            self._profile_types[profile_uuid] = InputProfileTypes(datapoint.profile_type)
+        profile_pk_mapping = {
+            profile_uuid: pk
+            for _, profile_uuid, _, pk, _ in profile_type_info
+        }
+        for area_uuid, profile_uuid, live_profile_type_int, pk, _ in profile_type_info:
+            live_profile_type = LiveProfileTypes(live_profile_type_int)
+            if (area_uuid in self.area_profile_uuid_mapping and
+                    live_profile_type in self.area_profile_uuid_mapping[area_uuid]):
+                existing_profile_uuid = self.area_profile_uuid_mapping[area_uuid][
+                    live_profile_type]
+                if profile_pk_mapping[existing_profile_uuid] < pk:
+                    # if age of existing profile is higher than the current, overwrite
+                    self.area_profile_uuid_mapping[area_uuid][live_profile_type] = profile_uuid
+            else:
+                if area_uuid not in self.area_profile_uuid_mapping:
+                    self.area_profile_uuid_mapping[area_uuid] = {}
+                self.area_profile_uuid_mapping[area_uuid][live_profile_type] = profile_uuid
+
+    def _buffer_input_profile_types(
+            self, profile_type_info: List[
+                Tuple[uuid.UUID, uuid.UUID, LiveProfileTypes, int, InputProfileTypes]]) -> None:
+        """
+        Buffer self._profile_types and self._profile_uuids
+        """
+        profile_uuid_type_mapping = {
+            profile_uuid: InputProfileTypes(profile_type_int)
+            for _, profile_uuid, _, _, profile_type_int in profile_type_info
+        }
+        for profile_info_dict in self.area_profile_uuid_mapping.values():
+            for profile_uuid in profile_info_dict.values():
+                self._profile_types[profile_uuid] = profile_uuid_type_mapping[profile_uuid]
+                self._profile_uuids.append(profile_uuid)
+
+    def buffer_profile_types(self) -> None:
+        """Buffer all uuid and type related lists and mappings."""
+        profile_type_info = self._get_type_info_from_db()
+        self._buffer_area_profile_uuid_mapping(profile_type_info)
+        self._buffer_input_profile_types(profile_type_info)
 
     @db_session
     def _buffer_all_profiles(self, current_timestamp: DateTime):
@@ -255,7 +281,7 @@ class ProfileDBConnectionHandler:
         return (self._profile_uuids is None or
                 (not self._buffered_times or (current_timestamp not in self._buffered_times)))
 
-    def buffer_profiles_from_db(self, current_timestamp: DateTime, uuids_used_in_setup: List):
+    def buffer_profiles_from_db(self, current_timestamp: DateTime):
         """ Public method for buffering profiles and all other information from DB into memory
 
         Args:
@@ -265,13 +291,16 @@ class ProfileDBConnectionHandler:
         """
         if self._should_buffer_profiles(current_timestamp):
             self.buffer_profile_types()
-            self._buffer_profile_uuid_list(uuids_used_in_setup)
             self._buffer_all_profiles(current_timestamp)
             self._buffer_time_slots()
 
     def get_profile_type_from_db_buffer(self, profile_uuid: str) -> InputProfileTypes:
         """Read type of profile."""
-        return self._profile_types[uuid.UUID(profile_uuid)]
+        try:
+            return self._profile_types[uuid.UUID(profile_uuid)]
+        except KeyError as ex:
+            raise ProfileDBConnectionException(
+                f"Did not find profile with uuid {profile_uuid} in DB.") from ex
 
     def get_profile_from_db_buffer(self, profile_uuid: str) -> Dict:
         """ Wrapper for acquiring a user profile for a specific profile_uuid
@@ -283,13 +312,18 @@ class ProfileDBConnectionHandler:
             user profile for dictionary
 
         """
-        return self._user_profiles[uuid.UUID(profile_uuid)]
+        try:
+            return self._user_profiles[uuid.UUID(profile_uuid)]
+        except KeyError as ex:
+            raise ProfileDBConnectionException(
+                f"Did not find profile with uuid {profile_uuid} in DB.") from ex
 
 
 class ProfilesHandler:
     """
     Handles profiles rotation of all profiles (stored in DB and in memory)
     """
+
     def __init__(self):
         self.db = None
         self._current_timestamp = GlobalConfig.start_date
@@ -316,12 +350,11 @@ class ProfilesHandler:
     def _update_current_time(self, timestamp: DateTime):
         self._current_timestamp = timestamp
 
-    def update_time_and_buffer_profiles(self, timestamp: DateTime, area: "Area") -> None:
+    def update_time_and_buffer_profiles(self, timestamp: DateTime) -> None:
         """ Update current timestamp and get the first chunk of data from the DB"""
         self._update_current_time(timestamp)
         if self.db:
-            uuids_used_in_setup = self._get_profile_uuids_from_setup(area)
-            self.db.buffer_profiles_from_db(timestamp, uuids_used_in_setup)
+            self.db.buffer_profiles_from_db(timestamp)
 
     def _read_new_datapoints_from_buffer_or_rotate_profile(
             self, profile, profile_uuid, profile_type):
@@ -377,15 +410,20 @@ class ProfilesHandler:
         """Read the profile type from a profile with the specified UUID."""
         return self.db.get_profile_type_from_db_buffer(profile_uuid)
 
-    def _get_profile_uuids_from_setup(self, area: "Area") -> List:
-        profile_uuids = []
-        for profile_uuid_name in PROFILE_UUID_NAMES:
-            profile_uuid = getattr(area.strategy, profile_uuid_name, None)
-            if profile_uuid:
-                profile_uuids.append(uuid.UUID(profile_uuid))
+    def get_profile_uuids_for_area(self, area_uuid: str) -> Dict[LiveProfileTypes, str]:
+        """Return dict of LiveProfileTypes->profile_uuid mapping for the provided area_uuid."""
+        area_uuid = uuid.UUID(area_uuid)
+        if self.db is None or area_uuid not in self.db.area_profile_uuid_mapping:
+            profile_uuids = {}
+        else:
+            p_uuids = self.db.area_profile_uuid_mapping[area_uuid]
+            profile_uuids = {
+                live_profile_type: str(p_uuids[live_profile_type])
+                if live_profile_type in p_uuids else None
+                for live_profile_type in LiveProfileTypes
+            }
 
-        if area.children:
-            for child in area.children:
-                profile_uuids.extend(self._get_profile_uuids_from_setup(child))
-
+        for live_profile_type in LiveProfileTypes:
+            if live_profile_type not in profile_uuids:
+                profile_uuids[live_profile_type] = None
         return profile_uuids

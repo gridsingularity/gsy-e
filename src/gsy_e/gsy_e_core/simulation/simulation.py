@@ -106,8 +106,7 @@ class Simulation:
         self.area = self._setup.load_setup_module()
 
         # has to be called after areas are initiated in order to retrieve the profile uuids
-        global_objects.profiles_handler.update_time_and_buffer_profiles(
-            GlobalConfig.start_date, area=self.area)
+        global_objects.profiles_handler.update_time_and_buffer_profiles(GlobalConfig.start_date)
 
         bid_offer_matcher.activate()
         global_objects.external_global_stats(self.area, self.config.ticks_per_slot)
@@ -176,7 +175,7 @@ class Simulation:
         # order matters here;
         # update of ProfilesHandler has to be called before cycle_markets
         global_objects.profiles_handler.update_time_and_buffer_profiles(
-            self._get_current_market_time_slot(slot_no), area=self.area)
+            self._get_current_market_time_slot(slot_no))
 
         self.area.cycle_markets()
 
@@ -407,8 +406,7 @@ class CoefficientSimulation(Simulation):
         self.area = self._setup.load_setup_module()
 
         # has to be called after areas are initiated in order to retrieve the profile uuids
-        global_objects.profiles_handler.update_time_and_buffer_profiles(
-            GlobalConfig.start_date, area=self.area)
+        global_objects.profiles_handler.update_time_and_buffer_profiles(GlobalConfig.start_date)
 
         self._results.init_results(self.simulation_id, self.area, self._setup)
         self._results.update_and_send_results(self)
@@ -455,7 +453,7 @@ class CoefficientSimulation(Simulation):
         # order matters here;
         # update of ProfilesHandler has to be called before cycle_coefficients_trading
         global_objects.profiles_handler.update_time_and_buffer_profiles(
-            self._get_current_market_time_slot(slot_no), area=self.area)
+            self._get_current_market_time_slot(slot_no))
 
         self.area.cycle_coefficients_trading(self.progress_info.current_slot_time)
 
