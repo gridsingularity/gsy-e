@@ -10,6 +10,7 @@ In the express battery configuration mode, the user is provided with a template 
 
 ###Advanced Mode
 In the advanced battery configuration mode, the following settings are available as shown in the figure and explained below:
+
 <figure markdown>
   ![alt_text](img/battery-advanced.png){:style="height:600px;width:300px";text-align:center"}
   <figcaption><b>Figure 2.13</b>: Battery (Storage) Advanced Configuration Options in the Grid Singularity Exchange web-based interface (Singularity Map)

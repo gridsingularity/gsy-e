@@ -9,6 +9,7 @@ In the express load configuration mode, the user is provided with a template (sy
 
 ###Advanced Mode
 In the advanced load configuration mode, the following settings are available as shown in the figure and explained below:
+
 <figure markdown>
   ![alt_text](img/consumption-advanced.png){:style="height:600px;width:300px";text-align:center"}
   <figcaption><b>Figure 2.12</b>: Consumption Load Profile Advanced Configuration Options in the Grid Singularity Exchange web-based interface (Singularity Map)
