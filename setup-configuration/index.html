@@ -2144,7 +2144,7 @@
                 <h2 id="backend-simulation-configuration">Backend Simulation Configuration<a class="headerlink" href="#backend-simulation-configuration" title="Permanent link">&para;</a></h2>
 <p>In the backend, the simulation process is slightly different compared to the user interface simulations. There is no need to login to set up a simulation. The user first needs to download the code from our Github Repository (Installation Instructions for <a href="../linux-installation-instructions/">Linux</a>, <a href="../ios-installation-instructions/">Mac</a> and <a href="../vm-installation-instructions/">Windows</a>). In the setup-file (in Python programming language), general and <a href="../default-trading-strategy/">trading strategy</a> settings can be defined. Examples can be found in the relevant <a href="https://github.com/gridsingularity/gsy-e/tree/master/src/gsy_e/setup" target="_blank">Grid Singularity GitHub</a> folder.</p>
 <p>This is the most basic skeleton for a setup-file:</p>
-<pre class="python codehilite"><code class="language-python">```python
+<pre class="codehilite"><code class="language-python">```python
 from gsy_e.models.area import Market
 def get_setup(config):
     area = Market(&quot;Grid&quot;, [])
@@ -2169,7 +2169,7 @@ def get_setup(config):
 </ul>
 <p>Bold instances in the outline above are markets. For each of these markets, a <a href="../market-agent/">market-agent</a> is created in the background to execute offer/bid forwarding and matching.</p>
 <p>In the following, the corresponding setup-file is shown.</p>
-<pre class="python codehilite"><code class="language-python">```python
+<pre class="codehilite"><code class="language-python">```python
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.storage import StorageStrategy
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
@@ -2232,7 +2232,7 @@ def get_setup(config):
 <li>Grid_fee_type (if equal to 1: <a href="../constant-fees/">Constant grid fee</a>, if equal to 2 : <a href="../percentage-fees/">Percentage grid fee</a>)</li>
 </ul>
 <p>Here is an example to setup a simulation with the Two-Sided Pay-as-Bid market type, constant grid fee and default min (0cts/kWh) and max to (35cts/kWh) energy rate for all <a href="../model-load/">loads</a>:</p>
-<pre class="python codehilite"><code class="language-python">from gsy_framework.constants_limits import ConstSettings
+<pre class="codehilite"><code class="language-python">from gsy_framework.constants_limits import ConstSettings
 def get_setup(config):
     ConstSettings.MASettings.MARKET_TYPE = 2
     ConstSettings.LoadSettings.MIN_ENERGY_RATE = 0

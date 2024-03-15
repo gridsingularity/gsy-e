@@ -2149,7 +2149,7 @@
 <figure>
 <p><img alt="alt_text" src="../img/asset-API-events.png" text-align:center_="text-align:center&quot;" />
   </p>
-<figcaption>&lt;b&gt;Figure 5.4&lt;/b&gt;: Market slot overall structure and Asset API events.
+<figcaption><b>Figure 5.4</b>: Market slot overall structure and Asset API events.
 </figcaption>
 </figure>
 <p>At the beginning of each market slot, the <a href="../asset-api-template-script/">Asset API</a> receives markets and assets information structured in a nested dictionary according to the grid hierarchy. Each market provides statistics such as minimum, median and maximum trade rates, total energy volume traded, grid fees and each asset returns the last bills and energy volume traded in the previous market slot.</p>
@@ -2162,7 +2162,7 @@
 
 <p>When a new market slot is available the client will get notified via an event. It is possible to capture this event and perform operations after it by overriding the on_market_cycle method, used to gather aggregated information about the assets and last market slot statistics, define the trading strategy and place the first bids/offers.</p>
 <p>In the variable market_info the user will get a dictionary with information on the market and assets. The user receives information for each asset he/she manages. The return values have the following structure:</p>
-<pre class="json codehilite"><code class="language-json">{'slot_completion': '0%',
+<pre class="codehilite"><code class="language-json">{'slot_completion': '0%',
  'market_slot': '2014-10-01T00:15',
  'grid_tree': {'477999f1-fd6e-4c68-8cc8-e8e52049de8e': {'last_market_bill': {'accumulated_trades': {}, 'external_trades': {}},
  'last_market_stats': {'min_trade_rate': 26.0, 'max_trade_rate': 26.0, 'avg_trade_rate': 26.0, 'median_trade_rate': 26.0, 'total_traded_energy_kWh': 7.5239405},

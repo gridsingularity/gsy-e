@@ -2143,7 +2143,7 @@
 <h2 id="backend-simulation-configuration">Backend Simulation Configuration<a class="headerlink" href="#backend-simulation-configuration" title="Permanent link">&para;</a></h2>
 <p>In the backend, the simulation process is slightly different. There is no need to login to set up a simulation. The user first needs to download the code from our Github Repository (Installation Instructions for <a href="../linux-installation-instructions/">Linux</a>, <a href="../ios-installation-instructions/">Mac</a> and <a href="../vm-installation-instructions/">Windows</a>). In the setup-file (in Python programming language), general and <a href="../default-trading-strategy/">trading strategy</a> settings can be defined. Examples can be found in the relevant <a href="https://github.com/gridsingularity/gsy-e/tree/master/src/gsy_e/setup" target="_blank">Grid Singularity GitHub</a> folder.</p>
 <p>This is the most basic skeleton for a setup-file:</p>
-<pre class="python codehilite"><code class="language-python">```python
+<pre class="codehilite"><code class="language-python">```python
 from gsy_e.models.area import Area
 def get_setup(config):
     area = Area('Grid', [])
@@ -2168,7 +2168,7 @@ def get_setup(config):
 </ul>
 <p>Bold instances in the outline above are markets (<code>Area</code> component). For each of these markets, an <a href="../market-agent/">inter-area-agent</a> is created in the background to execute offer/bid forwarding and matching.</p>
 <p>In the following, the corresponding setup-file is shown.</p>
-<pre class="python codehilite"><code class="language-python">```python
+<pre class="codehilite"><code class="language-python">```python
 from gsy_e.models.area import Area
 from d3a.models.strategy.storage import StorageStrategy
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
@@ -2232,7 +2232,7 @@ def get_setup(config):
 <li>Grid_fee_type (if equal to 1: <a href="../constant-fees/">Constant grid fee</a>, if equal to 2 : <a href="../percentage-fees/">Percentage grid fee</a>)</li>
 </ul>
 <p>Here is an example to setup a simulation with the Two-Sided Pay-as-Bid market type, constant grid fee and default min (0cts/kWh) and max to (35cts/kWh) energy rate for all <a href="../model-load/">loads</a>:</p>
-<pre class="python codehilite"><code class="language-python">from gsy_framework.constants_limits import ConstSettings
+<pre class="codehilite"><code class="language-python">from gsy_framework.constants_limits import ConstSettings
 def get_setup(config):
     ConstSettings.MASettings.MARKET_TYPE = 2
     ConstSettings.LoadSettings.MIN_ENERGY_RATE = 0
@@ -2256,7 +2256,7 @@ def get_setup(config):
 <li>max_panel_power_W</li>
 </ul>
 <p>In order to update some of these parameters (starred in list above), please use <code>update_config_parameters</code> method to update the general configuration parameters in the setup file:</p>
-<pre class="python codehilite"><code class="language-python">def get_setup(config):
+<pre class="codehilite"><code class="language-python">def get_setup(config):
     config.update_config_parameters(grid_fee_pct=5,
                                     grid_fee_const=35,
                                     cloud_coverage=2,
@@ -2288,11 +2288,11 @@ def get_setup(config):
 <li>--slot-length-realtime: Desired duration of slot in realtime [default: 0s]</li>
 </ul>
 <p>Example simulation call:</p>
-<pre class="commandline codehilite"><code class="language-commandline">d3a -l ERROR run --duration=1d --tick-length=1s --slot-length=15m --cloud-coverage=0 --setup default_2a
+<pre class="codehilite"><code class="language-commandline">d3a -l ERROR run --duration=1d --tick-length=1s --slot-length=15m --cloud-coverage=0 --setup default_2a
 </code></pre>
 
 <p>Getting help in the command line:</p>
-<pre class="commandline codehilite"><code class="language-commandline">d3a --help returns:
+<pre class="codehilite"><code class="language-commandline">d3a --help returns:
 </code></pre>
 
 <pre class="codehilite"><code>Usage: d3a [OPTIONS] COMMAND [ARGS]...

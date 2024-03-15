@@ -2099,11 +2099,11 @@
 <h2 id="backend-configuration">Backend Configuration<a class="headerlink" href="#backend-configuration" title="Permanent link">&para;</a></h2>
 <p>To implement the load in a backend simulation, two options are available :</p>
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/load_hours.py" target="_blank">User configure Profile</a></p>
-<pre class="python codehilite"><code class="language-python">Market('Load', strategy=LoadHoursStrategy(avg_power_W=200, hrs_per_day=6,hrs_of_day=list(range(12, 18)), initial_buying_rate=0, final_buying_rate=35))
+<pre class="codehilite"><code class="language-python">Market('Load', strategy=LoadHoursStrategy(avg_power_W=200, hrs_per_day=6,hrs_of_day=list(range(12, 18)), initial_buying_rate=0, final_buying_rate=35))
 </code></pre>
 
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/predefined_load.py" target="_blank">User upload Profile</a></p>
-<pre class="python codehilite"><code class="language-python">user_profile_path = os.path.join(gsye_root_path,&quot;assets/load.csv&quot;)
+<pre class="codehilite"><code class="language-python">user_profile_path = os.path.join(gsye_root_path,&quot;assets/load.csv&quot;)
 Market('Load', strategy=LoadProfileStrategy(daily_load_profile=user_profile_path, initial_buying_rate=0, final_buying_rate=35))
 </code></pre>
 

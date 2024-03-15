@@ -2136,7 +2136,7 @@
 <h2 id="implement-basic-grid-fees">Implement basic grid fees<a class="headerlink" href="#implement-basic-grid-fees" title="Permanent link">&para;</a></h2>
 <p>A template file for managing the market fees through the gsy-e-sdk API client is available <a href="https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/grid_operator_api_scripts/rest_grid_fees.py" target="_blank">here</a>. The script illustrates the most basic implementation of a Grid Operator API strategy: setting grid fees for different markets in the Grid Singularity Exchange.</p>
 <p>Initially, the user needs to list the markets to be managed via  the API.  For simulations launched via the user-interface (UI), the CONNECT_TO_ALL_ASSETS parameter is available. If this parameter is set to True, the Grid Operator API connects automatically to all the markets for which the user is <a href="../implement-grid-fees-walkthrough/">registered</a>.</p>
-<pre class="python codehilite"><code class="language-python"># List of markets' names to be connected with the API
+<pre class="codehilite"><code class="language-python"># List of markets' names to be connected with the API
 MARKET_NAMES = [
    &quot;Grid&quot;,
    &quot;Community&quot;,
@@ -2148,7 +2148,7 @@ CONNECT_TO_ALL_MARKETS = True
 </code></pre>
 
 <p>At the beginning of each <a href="../asset-api-events/#each-new-market-slot">market slot</a>, the script loops through the markets configured in the simulation. For each market, it reads the market fee for the current time slot and sets it for the next.  That information is logged in the terminal in a table format.</p>
-<pre class="python codehilite"><code class="language-python">def on_market_cycle(self, market_info):
+<pre class="codehilite"><code class="language-python">def on_market_cycle(self, market_info):
    current_market_fee = {}
    for area_uuid, area_dict in self.latest_grid_tree_flat.items():
        if area_dict[&quot;area_name&quot;] in MARKET_NAMES:
@@ -2161,7 +2161,7 @@ CONNECT_TO_ALL_MARKETS = True
 </code></pre>
 
 <p>Since there is no preconfigured pricing strategy in this script, the market fee is hardcoded in the <em>set_new_market_fee</em> function (in this example, it was assigned a value of 10). Then, the batch commands are executed.</p>
-<pre class="python codehilite"><code class="language-python">def _set_new_market_fee(self):
+<pre class="codehilite"><code class="language-python">def _set_new_market_fee(self):
    &quot;&quot;&quot;Return the market fees for each market for the next time slot.&quot;&quot;&quot;
    next_market_fee = {}
    for area_uuid, area_dict in self.latest_grid_tree_flat.items():
@@ -2177,7 +2177,7 @@ CONNECT_TO_ALL_MARKETS = True
 </code></pre>
 
 <p>Later in the script, the <em>on_event_or_response</em> is called. By default, the Asset API template does not perform any operation here but the user can add <a href="../asset-api-events/">events</a>. For instance, the user could record all the trades occurring in that event.  Lastly, the script overwrites the <em>on_finish event</em> so that the script stops whenever the function is triggered. If the user wishes to save any information reported in the logs, it can be done by exporting it to an external file.</p>
-<pre class="python codehilite"><code class="language-python">def on_event_or_response(self, message):
+<pre class="codehilite"><code class="language-python">def on_event_or_response(self, message):
    pass
 
 def on_finish(self, finish_info):
@@ -2185,7 +2185,7 @@ def on_finish(self, finish_info):
 </code></pre>
 
 <p>The rest of the script is used to connect to the energy assets of a running simulation/collaboration/Canary Test Network. These lines should work as is and no changes are required.</p>
-<pre class="python codehilite"><code class="language-python">market_args = {
+<pre class="codehilite"><code class="language-python">market_args = {
    &quot;simulation_id&quot;: os.environ[&quot;API_CLIENT_SIMULATION_ID&quot;],
    &quot;domain_name&quot;: os.environ[&quot;API_CLIENT_DOMAIN_NAME&quot;],
    &quot;websockets_domain_name&quot;: os.environ[&quot;API_CLIENT_WEBSOCKET_DOMAIN_NAME&quot;],
@@ -2220,9 +2220,9 @@ while not aggregator.is_finished:
 <p>In Time of Use (ToU) strategy, grid fees are applied depending on the time of the day (hours and minutes) regardless of the market conditions. After analyzing import and export patterns of their client, grid operators can create a time-based curve, increasing fees at peak predicted times (e.g. morning and dinner time). Below is an example of a ToU strategy used by the grid operators in one of the experiments at <a href="https://gridsingularity.medium.com/energy-singularity-challenge-2020-testing-novel-grid-fee-models-and-intelligent-peer-to-peer-6a0d715a9063" target="_blank">Odyssey hackathon</a>.</p>
 <p><img alt="alt_text" src="../img/grid-operator-api-2.png" /></p>
 <p>A template script can be found <a href="https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/grid_operator_api_scripts/rest_tou_strategy.py" target="_blank">here</a>. The ToU strategy is uploaded to the Grid Operator API script as a CSV file (an example can be found <a href="https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/grid_operator_api_scripts/resources/ToU.csv" target="_blank">here</a>), with the following structure:</p>
-<p><img alt="alt_text" src="img/grid-operator-api-7.png" style="height:221px;width:329px;text-align:center" /></p>
+<p><img alt="alt_text" src="../img/grid-operator-api-7.png" style="height:221px;width:329px;text-align:center" /></p>
 <p>As shown in the table above, for each market (in this case, the Community market and the Grid market), a value in ct€/kWh is assigned with a granularity of 15 min. The file is loaded through the read_fee_strategy function:</p>
-<pre class="python codehilite"><code class="language-python">def read_fee_strategy():
+<pre class="codehilite"><code class="language-python">def read_fee_strategy():
    &quot;Return a dictionary containing the Time of Use strategy loaded from the CSV input file.&quot;
    with open(
            os.path.join(module_dir, &quot;resources/ToU.csv&quot;), newline=&quot;&quot;, encoding=&quot;utf-8&quot;
@@ -2241,7 +2241,7 @@ while not aggregator.is_finished:
 </code></pre>
 
 <p>As explained in the previous section, here the script sets the market fee for each market for the next time slot and prints that information in the terminal. Note that in this case, the value is taken from the uploaded CSV file instead of being hardcoded (inserted in the code). The <em>calculate_next_slot_market_fee</em> function reads the scheduled fees from the spreadsheet and returns the corresponding grid fee value according to each  market and the current market slot.</p>
-<pre class="python codehilite"><code class="language-python">def calculate_next_slot_market_fee(market_time: DateTime, market_name:str) -&gt; float:
+<pre class="codehilite"><code class="language-python">def calculate_next_slot_market_fee(market_time: DateTime, market_name:str) -&gt; float:
    &quot;&quot;&quot;Return the market fee for the next time slot.&quot;&quot;&quot;
    slot_time = market_time.add(minutes=SLOT_LENGTH).format(TIME_FORMAT_SECONDS)
    if (slot_time, market_name) in fee_strategy:
@@ -2257,13 +2257,13 @@ while not aggregator.is_finished:
 <h2 id="implement-dynamic-grid-fees-with-aziiz-strategy">Implement dynamic grid fees with Aziiz strategy<a class="headerlink" href="#implement-dynamic-grid-fees-with-aziiz-strategy" title="Permanent link">&para;</a></h2>
 <p>The Aziiz strategy, named after the researcher who suggested this <a href="https://gridsingularity.medium.com/energy-singularity-challenge-2020-testing-novel-grid-fee-models-and-intelligent-peer-to-peer-6a0d715a9063" target="_blank">model</a>, is using past market information to determine the next grid fee. The model looks at past imports and exports on a specific market, applies a moving average and then based on this number sets the next grid fee for that market. This model has the advantage of integrating market conditions into its strategy. For instance, if past market slots experienced high imports, the model will increase fees in the relevant market to incentivise market participants to contain the energy within that market.</p>
 <p>A template script can be found <a href="https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/grid_operator_api_scripts/rest_aziiz_strategy.py" target="_blank">here</a>. With this strategy, two more parameters are available at the beginning of the script and can be tuned:</p>
-<pre class="python codehilite"><code class="language-python">MOVING_AVERAGE_PEAK = True
+<pre class="codehilite"><code class="language-python">MOVING_AVERAGE_PEAK = True
 LOOK_BACK_INDEX = 4
 </code></pre>
 
 <p>If MOVING_AVERAGE_PEAK is set to True, the Aziiz strategy will compare the average of the last markets’ (how many is defined by the LOOK_BACK_INDEX parameter) peak import/export to the threshold.</p>
 <p>The <em>on_market_slot</em> event is used to request market statistics from the simulation, based on which import / export balance can be calculated for each market. This is the criteria to determine which grid fees to apply in each market.</p>
-<pre class="python codehilite"><code class="language-python">def calculate_import_export_balance(self):
+<pre class="codehilite"><code class="language-python">def calculate_import_export_balance(self):
    &quot;&quot;&quot;Calculate the balance (import - export) for each market.&quot;&quot;&quot;
    self.dso_stats_response = self.execute_batch_commands()
    for market_event in self.dso_stats_response[&quot;responses&quot;].items():
@@ -2281,7 +2281,7 @@ LOOK_BACK_INDEX = 4
 </code></pre>
 
 <p>In the Aziiz strategy, grid fees can be set for every peak import/export threshold for each market. A JSON file containing this information is uploaded to the Grid Operator API script. An example can be found <a href="https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/grid_operator_api_scripts/resources/aziiz.json" target="_blank">here</a>.</p>
-<pre class="python codehilite"><code class="language-python">{
+<pre class="codehilite"><code class="language-python">{
    &quot;Grid&quot;: [
        {&quot;Import / Export threshold&quot;: 10, &quot;Grid fee&quot;: 0.9},
        {&quot;Import / Export threshold&quot;: 15, &quot;Grid fee&quot;: 2.1},
@@ -2303,7 +2303,7 @@ LOOK_BACK_INDEX = 4
 
 <p>If the average is lower than the threshold, the relevant grid fee will be applied; for instance in the figure above, if the average peak is equal to 22 kWh, the next grid fee will be 3 cents/KWh.</p>
 <p>Below is a snippet of the _set_new_market_fee adapted to the Aziiz strategy. All the fees are added to the batch command and then executed.</p>
-<pre class="python codehilite"><code class="language-python">def _set_new_market_fee(self):
+<pre class="codehilite"><code class="language-python">def _set_new_market_fee(self):
    &quot;&quot;&quot;Return the market fees for each market for the next time slot.&quot;&quot;&quot;
    next_market_fee = {}
    for area_uuid, area_dict in self.latest_grid_tree_flat.items():

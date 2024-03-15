@@ -2051,7 +2051,7 @@
 <li>grid_fee_const*</li>
 </ul>
 <p>In order to update some of these parameters (starred in list above), please use <code>update_config_parameters</code> method to update the general configuration parameters in the setup file:</p>
-<pre class="python codehilite"><code class="language-python">from gsy_framework.constants_limits import ConstSettings
+<pre class="codehilite"><code class="language-python">from gsy_framework.constants_limits import ConstSettings
 def get_setup(config):
     ConstSettings.MASettings.MARKET_TYPE = 2
     config.update_config_parameters(grid_fee_pct=5,

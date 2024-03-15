@@ -2227,7 +2227,7 @@ Figure 1: Screenshot of a simulation url, which includes the simulation_id and t
 <ol>
 <li>Import the library and set the parameters of your simulation</li>
 </ol>
-<pre class="python codehilite"><code class="language-python">import requests
+<pre class="codehilite"><code class="language-python">import requests
 
 username = &quot;&lt;your_user&gt;&quot;
 password = &quot;&lt;your_password&gt;&quot;
@@ -2242,7 +2242,7 @@ end_date = &quot;2021-10-01T00:00&quot;
 <ol>
 <li>Generate your JWT token</li>
 </ol>
-<pre class="python codehilite"><code class="language-python">response = requests.post(url=domain + &quot;/api-token-auth/&quot;,
+<pre class="codehilite"><code class="language-python">response = requests.post(url=domain + &quot;/api-token-auth/&quot;,
                          json={&quot;username&quot;: username, &quot;password&quot;: password})
 
 token = response.json()[&quot;token&quot;]
@@ -2251,7 +2251,7 @@ token = response.json()[&quot;token&quot;]
 <ol>
 <li>Create a URL and send the request:</li>
 </ol>
-<pre class="python codehilite"><code class="language-python">historical_data_url = f&quot;{domain}/historical-data/assets/{configuration_id}/{asset_id}/{start_date}/{end_date}&quot;
+<pre class="codehilite"><code class="language-python">historical_data_url = f&quot;{domain}/historical-data/assets/{configuration_id}/{asset_id}/{start_date}/{end_date}&quot;
 headers = {&quot;Authorization&quot;: f&quot;JWT {token}&quot;}
 
 response = requests.get(url=historical_data_url,

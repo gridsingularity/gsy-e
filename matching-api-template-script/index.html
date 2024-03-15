@@ -2045,7 +2045,7 @@
                 
                 <p>A Matching API template script is available <a href="https://github.com/gridsingularity/gsy-matching-engine-sdk/blob/master/gsy_matching_engine_sdk/setups/matching_engine_matcher.py" target="_blank">here</a>. See the TODO flags there connect to your preferred customized clearing algorithm and to request, if desired, bids and offers from specific markets.</p>
 <p>At the beginning of the Matching API script, the <code>MatchingEngineMatcher</code> class is defined as well as the <code>on_area_map_response</code> method, which allows the users to define the list of markets from which they want to request bids and offers from.</p>
-<pre class="python codehilite"><code class="language-python">class MatchingEngineMatcher(base_matcher):
+<pre class="codehilite"><code class="language-python">class MatchingEngineMatcher(base_matcher):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.is_finished = False
@@ -2061,7 +2061,7 @@
 </code></pre>
 
 <p>Right after, the <a href="../matching-api-events/#each-new-market-slot">on_market_cycle</a> and the <a href="../matching-api-events/#on--of-market-completion">on_tick</a> methods are triggered. In the latter, the user requests bids / offers from the market.</p>
-<pre class="python codehilite"><code class="language-python">    def on_market_cycle(self, data):
+<pre class="codehilite"><code class="language-python">    def on_market_cycle(self, data):
         pass
 
     def on_tick(self, data):
@@ -2069,7 +2069,7 @@
 </code></pre>
 
 <p>In the next section, the bids/offers that had been previously requested from the market are stored in the <code>matching_data</code> variable. The matching algorithm (<a href="https://github.com/gridsingularity/gsy-matching-engine-sdk/blob/master/gsy_matching_engine_sdk/matching_algorithms/attributed_matching_algorithm.py" target="_blank">AttributedMatchingAlgorithm</a> in the example here) takes those data as input and outputs a list of recommendations. Each recommendation is a nested dictionary with the following structure:</p>
-<pre class="json codehilite"><code class="language-json">[{'market_id': '0fd481d9-98af-43cd-9e98-196c1fe9877f',
+<pre class="codehilite"><code class="language-json">[{'market_id': '0fd481d9-98af-43cd-9e98-196c1fe9877f',
   'time_slot': '2021-12-20T00:15',
   'bids': [{'type': 'Bid',
     'id': '6d71f933-0474-4cd8-baa4-97a1f01553c5',
@@ -2103,7 +2103,7 @@
 </code></pre>
 
 <p>The matching algorithm can be written as a separate class file and can be referenced in the <a href="../matching-api-events/#on-offers-bids-response">on_offers_bids_response</a> function as:</p>
-<pre class="python codehilite"><code class="language-python">    recommendations = YourMatchingAlgorithm.get_matches_recommendations(
+<pre class="codehilite"><code class="language-python">    recommendations = YourMatchingAlgorithm.get_matches_recommendations(
             matching_data)
 </code></pre>
 
@@ -2117,7 +2117,7 @@
 </ul>
 </li>
 </ol>
-<pre class="python codehilite"><code class="language-python">def on_offers_bids_response(self, data):
+<pre class="codehilite"><code class="language-python">def on_offers_bids_response(self, data):
         matching_data = data.get(&quot;bids_offers&quot;)
         if not matching_data:
             return
@@ -2129,7 +2129,7 @@
 </code></pre>
 
 <p>Later in the script, the <a href="../matching-api-events/#on-matched-recommendations-response">on_matched_recommendations_response</a> is triggered and useful information about the recommendation posted, such as seller, buyer, trading price and energy as well as the status, if successful or not, are printed in the terminal window of the user. Later, the <a href="../matching-api-events/#on-event-or-response">on_event_or_response</a> is overwritten. By default we do not perform any operation in this event but the user could add some if needed.</p>
-<pre class="python codehilite"><code class="language-python">def on_matched_recommendations_response(self, data):
+<pre class="codehilite"><code class="language-python">def on_matched_recommendations_response(self, data):
         pass
 
 def on_event_or_response(self, data):
@@ -2137,7 +2137,7 @@ def on_event_or_response(self, data):
 </code></pre>
 
 <p>Lastly, the Matching API Script overwrites the <a href="../matching-api-events/#on-finish">on_finish</a> event so that whenever the function is triggered the script stops. If the user wishes to save some information recorded within the Matching Engine SDK this would be the opportunity to export them to external files.</p>
-<pre class="python codehilite"><code class="language-python">def on_finish(self, data):
+<pre class="codehilite"><code class="language-python">def on_finish(self, data):
         self.is_finished = True
 </code></pre>
                 

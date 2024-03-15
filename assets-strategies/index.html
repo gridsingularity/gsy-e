@@ -2219,14 +2219,14 @@
 <figure>
 <p><img alt="alt_text" src="../img/assets-strategies-1.png" text-align:center_="text-align:center&quot;" />
   </p>
-<figcaption>&lt;b&gt;Figure 4.10&lt;/b&gt;: Settlement market posting energy deviations mechanism with external asset strategies.
+<figcaption><b>Figure 4.10</b>: Settlement market posting energy deviations mechanism with external asset strategies.
 </figcaption>
 </figure>
 <h3 id="posting-of-orders">Posting of Orders<a class="headerlink" href="#posting-of-orders" title="Permanent link">&para;</a></h3>
 <p>Posting and updating bids and offers works the same as in the <a href="../spot-market-types/">spot markets</a>. If the provided <em>time_slot</em> is a settlement market already, the order is placed or updated in the settlement market. The external client can only post maximally the amount of energy of the deviation to the settlement market.</p>
 <h3 id="unsettled-deviation">Unsettled Deviation<a class="headerlink" href="#unsettled-deviation" title="Permanent link">&para;</a></h3>
 <p>To find out the amount of deviated energy, a key named <em>unsettled_deviation_kWh</em> is added on the <em>assets_info</em> dictionary. Its value is itself a dictionary with past time slots as keys and the unsettled energy as values. An example is shown below:</p>
-<pre class="python codehilite"><code class="language-python">{
+<pre class="codehilite"><code class="language-python">{
  'unsettled_deviation_kWh': {'2022-01-14T00:00': -8.3, '2022-01-14T01:00': -10.5},
  'available_energy_kWh': 10,
  'energy_active_in_offers': 0,
@@ -2241,7 +2241,7 @@
 <p>If a Load asset has a <em>negative</em> deviation, it implies that more energy was initially bid (and traded) than the one that was actually used, and can then be offered on the settlement market. To have a <em>positive</em> deviation would imply that more energy was consumed than it was traded, and the asset now has to make up for it by posting bids.</p>
 <p>In conclusion, regardless of wether the asset is a PV or a Load, if the unsettled deviation is negative, the energy should be offered, and if positive, bid.</p>
 <p>Example settlement market strategy:</p>
-<pre class="python codehilite"><code class="language-python">if self._can_place_in_settlement_market(asset_info):
+<pre class="codehilite"><code class="language-python">if self._can_place_in_settlement_market(asset_info):
     for market_slot, energy in asset_info[&quot;unsettled_deviation_kWh&quot;].items():
         if energy and energy &gt; 0:
             self.add_to_batch_commands.bid_energy(asset_uuid=area_uuid,
@@ -2254,7 +2254,7 @@
 </code></pre>
 
 <p>where the method <code>self._can_place_in_settlement_market()</code> is defined as follows:</p>
-<pre class="python codehilite"><code class="language-python">def _can_place_in_settlement_market(asset_info):
+<pre class="codehilite"><code class="language-python">def _can_place_in_settlement_market(asset_info):
     return &quot;unsettled_deviation_kWh&quot; in asset_info and (
             asset_info[&quot;unsettled_deviation_kWh&quot;] != 0)
 </code></pre>
@@ -2267,7 +2267,7 @@
 <figure>
 <p><img alt="alt_text" src="../img/assets-strategies-2.png" text-align:center_="text-align:center&quot;" />
   </p>
-<figcaption>&lt;b&gt;Figure 4.11&lt;/b&gt;: Settlement market posting energy deviations mechanism with template asset strategies.
+<figcaption><b>Figure 4.11</b>: Settlement market posting energy deviations mechanism with template asset strategies.
 </figcaption>
 </figure>
 <h2 id="posting-of-orders_1">Posting of Orders<a class="headerlink" href="#posting-of-orders_1" title="Permanent link">&para;</a></h2>

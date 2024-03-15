@@ -2312,7 +2312,7 @@ To start the redis instance, open a new terminal and run the following command:<
 
 <h3 id="enabling-external-connection-for-clearing-the-market">Enabling external connection for clearing the market<a class="headerlink" href="#enabling-external-connection-for-clearing-the-market" title="Permanent link">&para;</a></h3>
 <p>To register an asset through API and to use an external matching algorithm it is required to specify the following line in the exchange setup file:</p>
-<pre class="python codehilite"><code class="language-python">ConstSettings.MASettings.MARKET_TYPE = 2
+<pre class="codehilite"><code class="language-python">ConstSettings.MASettings.MARKET_TYPE = 2
 ConstSettings.MASettings.BID_OFFER_MATCH_TYPE = (BidOfferMatchAlgoEnum.EXTERNAL.value)
 </code></pre>
 
