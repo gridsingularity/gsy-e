@@ -17,8 +17,7 @@ class SCMSmartMeterStrategy(SCMStrategy):
     def __init__(
             self, smart_meter_profile: Union[Path, str, Dict[int, float], Dict[str, float]] = None,
             smart_meter_profile_uuid: str = None):
-        self._energy_params = SmartMeterEnergyParameters(
-            smart_meter_profile, smart_meter_profile_uuid)
+        self.smart_meter_profile = smart_meter_profile
         self.smart_meter_profile_uuid = smart_meter_profile_uuid
 
     @property
@@ -32,6 +31,7 @@ class SCMSmartMeterStrategy(SCMStrategy):
 
     def activate(self, area: "CoefficientArea") -> None:
         """Activate the strategy."""
+        self._energy_params = SmartMeterEnergyParameters(self.owner.uuid, self.smart_meter_profile)
         self._energy_params.activate(area)
         self._energy_params.set_energy_forecast_for_future_markets(
             [area.current_market_time_slot], reconfigure=True)

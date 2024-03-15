@@ -105,9 +105,10 @@ def test_strategy_roundtrip_with_params():
 def test_non_attr_param():
     area1 = Area("area1", [], None, PVStrategy())
     recovered1 = area_from_string(area_to_string(area1), _create_config())
-    assert recovered1.strategy._energy_params.capacity_kW is None
-    assert recovered1.strategy.offer_update.final_rate_profile_buffer[area1.config.start_date] == \
-        ConstSettings.PVSettings.SELLING_RATE_RANGE.final
+    assert (recovered1.strategy._energy_params.capacity_kW is
+            ConstSettings.PVSettings.DEFAULT_CAPACITY_KW)
+    assert (recovered1.strategy.offer_update.final_rate_profile_buffer[area1.config.start_date] ==
+        ConstSettings.PVSettings.SELLING_RATE_RANGE.final)
 
 
 def test_leaf_deserialization():
@@ -225,10 +226,7 @@ def test_leaf_deserialization_scm():
     assert isinstance(recovered.children[0], SCMPVProfile)
     assert isinstance(recovered.children[0].strategy, SCMPVUserProfile)
 
-    assert recovered.children[0].strategy._energy_params.\
-        energy_profile.input_profile == "test1.csv"
-    assert recovered.children[0].strategy._energy_params.\
-        energy_profile.input_profile_uuid is None
+    assert recovered.children[0].strategy._energy_params == None
 
     assert isinstance(recovered.children[1], SCMLoadHours)
     assert isinstance(recovered.children[1].strategy, SCMLoadHoursStrategy)
@@ -236,10 +234,6 @@ def test_leaf_deserialization_scm():
 
     assert isinstance(recovered.children[2], SCMLoadProfile)
     assert isinstance(recovered.children[2].strategy, SCMLoadProfileStrategy)
-    assert recovered.children[2].strategy._energy_params.\
-        energy_profile.input_profile == "test.csv"
-    assert recovered.children[2].strategy._energy_params.\
-        energy_profile.input_profile_uuid is None
 
     assert isinstance(recovered.children[3], SCMStorage)
     assert isinstance(recovered.children[3].strategy, SCMStorageStrategy)

@@ -19,14 +19,16 @@ import logging
 from typing import Dict, List, Optional
 
 from gsy_framework.exceptions import GSyException, GSyDeviceException
+from gsy_framework.read_user_profile import LiveProfileTypes
 from gsy_framework.utils import find_object_of_same_weekday_and_time, convert_W_to_Wh
 from gsy_framework.validators.load_validator import LoadValidator
 from pendulum import DateTime, duration
 
 import gsy_e.constants
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
+from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.models.strategy import utils
-from gsy_e.models.strategy.profile import EnergyProfile
+from gsy_e.models.strategy.profile import profile_factory
 from gsy_e.models.strategy.state import LoadState
 
 log = logging.getLogger(__name__)
@@ -177,9 +179,15 @@ class LoadHoursPerDayEnergyParameters(LoadHoursEnergyParameters):
 
 class DefinedLoadEnergyParameters(LoadHoursPerDayEnergyParameters):
     """Energy parameters for the defined load strategy class."""
-    def __init__(self, daily_load_profile=None, daily_load_profile_uuid: str = None):
+    def __init__(self, area_uuid: str, load_profile = None):
         super().__init__(avg_power_W=0, hrs_per_day=24, hrs_of_day=list(range(0, 24)))
-        self.energy_profile = EnergyProfile(daily_load_profile, daily_load_profile_uuid)
+
+        profile_uuids = global_objects.profiles_handler.get_profile_uuids_for_area(area_uuid)
+        self.energy_profile = profile_factory(
+            input_profile=load_profile,
+            input_profile_uuid=profile_uuids.get(LiveProfileTypes.FORECAST))
+        self.measurement_energy_profile = profile_factory(
+            input_profile_uuid=profile_uuids.get(LiveProfileTypes.MEASUREMENT))
         self.state = LoadState()
 
     def serialize(self):
@@ -215,6 +223,14 @@ class DefinedLoadEnergyParameters(LoadHoursPerDayEnergyParameters):
             load_energy_kwh = 0.0
         self.state.set_desired_energy(load_energy_kwh * 1000, time_slot, overwrite=False)
         self.state.update_total_demanded_energy(time_slot)
+
+    def set_energy_measurement_kWh(self, time_slot: DateTime) -> None:
+        if gsy_e.constants.CONNECT_TO_PROFILES_DB:
+            measurement_from_profile_kWh = self.measurement_energy_profile.profile.get(time_slot)
+            if measurement_from_profile_kWh is not None:
+                self.state.set_energy_measurement_kWh(measurement_from_profile_kWh, time_slot)
+        else:
+            super().set_energy_measurement_kWh(time_slot)
 
     def _operating_hours(self, energy_kWh):
         """

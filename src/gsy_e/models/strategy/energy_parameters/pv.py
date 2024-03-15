@@ -18,19 +18,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import logging
 import math
 import pathlib
+from typing import Optional
 
-import pendulum
-from gsy_framework.read_user_profile import InputProfileTypes, read_arbitrary_profile
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.read_user_profile import InputProfileTypes, read_arbitrary_profile, \
+    LiveProfileTypes
 from gsy_framework.utils import (convert_kW_to_kWh, find_object_of_same_weekday_and_time,
                                  key_in_dict_and_not_none)
 from gsy_framework.validators import PVValidator
-from pendulum.datetime import DateTime
+from pendulum import DateTime, datetime
 
 import gsy_e.constants
 from gsy_e.gsy_e_core.exceptions import GSyException
+from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.gsy_e_core.util import gsye_root_path
 from gsy_e.models.strategy import utils
-from gsy_e.models.strategy.profile import EnergyProfile
+from gsy_e.models.strategy.profile import profile_factory
 from gsy_e.models.strategy.state import PVState
 
 log = logging.getLogger(__name__)
@@ -38,11 +41,12 @@ log = logging.getLogger(__name__)
 
 class PVEnergyParameters:
     """Energy parameters for the PV strategy with gaussian generation profile."""
-    def __init__(self, panel_count: int = 1, capacity_kW: float = None):
+    def __init__(self, panel_count: int = 1, capacity_kW: Optional[float] = None):
         PVValidator.validate_energy(panel_count=panel_count, capacity_kW=capacity_kW)
 
         self.panel_count = panel_count
-        self.capacity_kW = capacity_kW
+        self.capacity_kW = (
+            ConstSettings.PVSettings.DEFAULT_CAPACITY_KW if not capacity_kW else capacity_kW)
         self._state = PVState()
 
     def serialize(self):
@@ -52,15 +56,10 @@ class PVEnergyParameters:
             "capacity_kW": self.capacity_kW
         }
 
-    def activate(self, simulation_config):
-        """Activate the energy parameters, called during the event_activate strategy event."""
-        if self.capacity_kW is None:
-            self.capacity_kW = simulation_config.capacity_kW
-
     def set_produced_energy_forecast(self, time_slot, slot_length, reconfigure=True):
         """Generate the energy forecast value for the specified timeslot."""
         difference_to_midnight_in_minutes = time_slot.diff(
-            pendulum.datetime(
+            datetime(
                 time_slot.year, time_slot.month, time_slot.day)).in_minutes() % (60 * 24)
         available_energy_kWh = self._gaussian_energy_forecast_kWh(
             slot_length, difference_to_midnight_in_minutes) * self.panel_count
@@ -177,10 +176,15 @@ class PVPredefinedEnergyParameters(PVEnergyParameters):
 
 class PVUserProfileEnergyParameters(PVEnergyParameters):
     """Energy-related parameters for the PVUserProfile Strategy class."""
-    def __init__(self, panel_count: int = 1, power_profile: str = None,
-                 power_profile_uuid: str = None):
-        super().__init__(panel_count, None)
-        self.energy_profile = EnergyProfile(power_profile, power_profile_uuid)
+    def __init__(self, area_uuid: str, power_profile: str = None,):
+        super().__init__()
+
+        profile_uuids = global_objects.profiles_handler.get_profile_uuids_for_area(area_uuid)
+        self.energy_profile = profile_factory(
+            input_profile=power_profile,
+            input_profile_uuid=profile_uuids.get(LiveProfileTypes.FORECAST))
+        self.measurement_energy_profile = profile_factory(
+            input_profile_uuid=profile_uuids.get(LiveProfileTypes.MEASUREMENT))
 
     def serialize(self):
         return {
@@ -210,12 +214,19 @@ class PVUserProfileEnergyParameters(PVEnergyParameters):
                 f"PV {owner_name} tries to set its available energy forecast without a "
                 "power profile.")
         for time_slot in time_slots:
-            energy_from_profile_kWh = find_object_of_same_weekday_and_time(
+            forecast_from_profile_kWh = find_object_of_same_weekday_and_time(
                 self.energy_profile.profile, time_slot)
-            if energy_from_profile_kWh is None:
+            if forecast_from_profile_kWh is None:
                 log.error("Could not read area %s profile on timeslot %s. Configuration %s.",
                           owner_name, time_slot, gsy_e.constants.CONFIGURATION_ID)
-                energy_from_profile_kWh = 0.0
+                forecast_from_profile_kWh = 0.0
 
-            available_energy_kWh = energy_from_profile_kWh * self.panel_count
-            self._state.set_available_energy(available_energy_kWh, time_slot, reconfigure)
+            self._state.set_available_energy(forecast_from_profile_kWh, time_slot, reconfigure)
+
+    def set_energy_measurement_kWh(self, time_slot: DateTime) -> None:
+        if gsy_e.constants.CONNECT_TO_PROFILES_DB:
+            measurement_from_profile_kWh = self.measurement_energy_profile.profile.get(time_slot)
+            if measurement_from_profile_kWh is not None:
+                self._state.set_energy_measurement_kWh(measurement_from_profile_kWh, time_slot)
+        else:
+            super().set_energy_measurement_kWh(time_slot)

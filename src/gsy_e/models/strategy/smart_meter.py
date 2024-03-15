@@ -45,6 +45,8 @@ class SmartMeterStrategy(BidEnabledStrategy, UseMarketMakerMixin):
     """Class defining a strategy for Smart Meter devices."""
 
     def serialize(self):
+        if not self._energy_params:
+            return {}
         return {
             # Energy parameters
             **self._energy_params.serialize(),
@@ -95,9 +97,9 @@ class SmartMeterStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         """
         super().__init__()
         self.smart_meter_profile_uuid = smart_meter_profile_uuid  # needed for profile_handler
-        self._energy_params = SmartMeterEnergyParameters(
-            smart_meter_profile, smart_meter_profile_uuid)
 
+        self._energy_params = None
+        self.smart_meter_profile = smart_meter_profile
         self.use_market_maker_rate = use_market_maker_rate
         update_interval = self._convert_update_interval_to_duration(update_interval)
 
@@ -130,6 +132,7 @@ class SmartMeterStrategy(BidEnabledStrategy, UseMarketMakerMixin):
 
     def event_activate(self, **kwargs):
         """Activate the device."""
+        self._energy_params = SmartMeterEnergyParameters(self.owner.uuid, self.smart_meter_profile)
         self.event_activate_price()
         self.event_activate_energy()
         self.bid_update.update_and_populate_price_settings(self.area)

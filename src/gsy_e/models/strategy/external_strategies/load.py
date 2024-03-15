@@ -459,8 +459,11 @@ class LoadProfileForecastExternalStrategy(
                          daily_load_profile_uuid=daily_load_profile_uuid,
                          )
 
+
+    def event_activate(self, **kwargs):
         self._energy_params = LoadProfileForecastEnergyParams(
-            daily_load_profile, daily_load_profile_uuid)
+            self.owner.uuid)
+        super().event_activate(**kwargs)
 
 
 class LoadHoursForecastExternalStrategy(
@@ -500,5 +503,9 @@ class LoadHoursForecastExternalStrategy(
                          balancing_energy_ratio=balancing_energy_ratio,
                          use_market_maker_rate=use_market_maker_rate)
 
-        self._energy_params = LoadHoursForecastEnergyParams(
-            avg_power_W, hrs_per_day, hrs_of_day)
+        # self._energy_params = LoadHoursForecastEnergyParams(
+        #     avg_power_W, hrs_per_day, hrs_of_day)
+    def event_activate(self, **kwargs):
+        self._energy_params = LoadProfileForecastEnergyParams(
+            self.owner.uuid)
+        super().event_activate(**kwargs)

@@ -11,6 +11,9 @@ if TYPE_CHECKING:
 
 class SCMStrategy(ABC):
     """Abstract base class for all SCM strategies."""
+    def __init__(self):
+        self.owner = None
+        self._energy_params = None
 
     @property
     @abstractmethod

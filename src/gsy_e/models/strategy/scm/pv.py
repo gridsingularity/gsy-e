@@ -32,9 +32,10 @@ class SCMPVUserProfile(SCMStrategy):
     """PV SCM strategy with user uploaded profile production."""
     def __init__(self, power_profile: Union[str, Dict] = None,
                  power_profile_uuid: str = None):
-        self._energy_params = PVUserProfileEnergyParameters(1, power_profile, power_profile_uuid)
         super().__init__()
+        self.power_profile = power_profile
         self.power_profile_uuid = power_profile_uuid
+        self._energy_params = None
 
     def serialize(self) -> Dict:
         """Serialize the strategy parameters."""
@@ -57,7 +58,7 @@ class SCMPVUserProfile(SCMStrategy):
         )
 
     def activate(self, area: "AreaBase") -> None:
-        self._energy_params.activate(area.config)
+        self._energy_params = PVUserProfileEnergyParameters(self.owner.uuid, self.power_profile)
         self._update_forecast_in_state(area)
 
     def market_cycle(self, area: "AreaBase") -> None:

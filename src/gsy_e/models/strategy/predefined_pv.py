@@ -131,8 +131,8 @@ class PVUserProfileStrategy(PVStrategy):
                          update_interval=update_interval,
                          energy_rate_decrease_per_update=energy_rate_decrease_per_update,
                          use_market_maker_rate=use_market_maker_rate)
-        self._energy_params = PVUserProfileEnergyParameters(
-            panel_count, power_profile, power_profile_uuid)
+
+        self.power_profile = power_profile
         self.power_profile_uuid = power_profile_uuid  # needed for profile_handler
 
     def set_produced_energy_forecast_in_state(self, reconfigure=True):
@@ -143,6 +143,10 @@ class PVUserProfileStrategy(PVStrategy):
         self._energy_params.set_produced_energy_forecast_in_state(
             self.owner.name, time_slots, reconfigure
         )
+
+    def _set_energy_measurement_of_last_market(self):
+        if self.area.current_market:
+            self._energy_params.set_energy_measurement_kWh(self.area.current_market.time_slot)
 
     def area_reconfigure_event(self, *args, **kwargs):
         """Reconfigure the device properties at runtime using the provided arguments."""
@@ -155,5 +159,6 @@ class PVUserProfileStrategy(PVStrategy):
         super().event_market_cycle()
 
     def event_activate_energy(self):
+        self._energy_params = PVUserProfileEnergyParameters(self.owner.uuid, self.power_profile)
         self._energy_params.read_predefined_profile_for_pv()
         super().event_activate_energy()

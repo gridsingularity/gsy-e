@@ -33,6 +33,4 @@ class ScmHeatPumpStrategy(SCMLoadProfileStrategy):
     def __init__(self, consumption_kWh_profile=None, consumption_kWh_profile_uuid=None):
         # pylint: disable= super-init-not-called
         """super() should not be called"""
-        self._energy_params = ScmHeatPumpEnergyParameters(
-            consumption_kWh_profile, consumption_kWh_profile_uuid)
-        self.consumption_kWh_profile_uuid = consumption_kWh_profile_uuid
+        super().__init__(consumption_kWh_profile, consumption_kWh_profile_uuid)

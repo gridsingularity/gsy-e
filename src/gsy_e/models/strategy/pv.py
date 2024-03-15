@@ -201,7 +201,6 @@ class PVStrategy(BidEnabledStrategy, UseMarketMakerMixin):
 
     def event_activate_energy(self):
         """Activate energy parameters of the PV."""
-        self._energy_params.activate(self.simulation_config)
         self.set_produced_energy_forecast_in_state(reconfigure=True)
 
     def event_tick(self):

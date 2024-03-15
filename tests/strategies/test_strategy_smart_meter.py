@@ -13,11 +13,11 @@ the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with this program. If
 not, see <http://www.gnu.org/licenses/>.
 """
-import unittest
 import uuid
 from collections import OrderedDict
 from unittest.mock import Mock, patch, call, create_autospec
 
+import pytest
 from gsy_framework.exceptions import GSyException
 from gsy_framework.validators.smart_meter_validator import SmartMeterValidator
 from pendulum import datetime, duration
@@ -25,35 +25,38 @@ from pendulum import datetime, duration
 from gsy_e import constants
 from gsy_e.models.area import Area
 from gsy_e.models.market.one_sided import OneSidedMarket
-from gsy_e.models.strategy.state import SmartMeterState
+from gsy_e.models.strategy.energy_parameters.smart_meter import SmartMeterEnergyParameters
 from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
+from gsy_e.models.strategy.state import SmartMeterState
 
 
 # pylint: disable=protected-access
-class SmartMeterStrategyTest(unittest.TestCase):
+class TestSmartMeterStrategy:
     """Tests for the SmartMeterStrategy behaviour."""
 
-    @classmethod
-    def setUpClass(cls) -> None:
-        """Instantiate slot times that will be shared by energy profiles and market slots mocks."""
-        cls.slot_times = [
+    def setup_method(self) -> None:
+        self.slot_times = [
             datetime(2021, 6, 15, 0, 0, 0),
             datetime(2021, 6, 15, 0, 15, 0),
             datetime(2021, 6, 15, 0, 30, 0)]
         constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = False
 
-    @classmethod
-    def tearDownClass(cls) -> None:
-        constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = True
-
-    def setUp(self) -> None:
-        """Instantiate the strategy used throughout the tests"""
         self.strategy = SmartMeterStrategy(
             initial_selling_rate=30, final_selling_rate=5, smart_meter_profile="some_path.csv")
         self.area_mock = create_autospec(Area)
         self.strategy.area = self.area_mock
         self.strategy.owner = Mock()
         self.strategy.validator = create_autospec(SmartMeterValidator)
+        self.strategy.owner.uuid = str(uuid.uuid4())
+
+    @staticmethod
+    def teardown_method():
+        constants.RETAIN_PAST_MARKET_STRATEGIES_STATE = True
+
+    def _init_energy_params(self):
+        self.strategy._energy_params = SmartMeterEnergyParameters(
+            self.strategy.owner.uuid, self.strategy.smart_meter_profile)
+        self.strategy._energy_params._area = self.area_mock
 
     @staticmethod
     @patch.object(SmartMeterValidator, "validate")
@@ -130,6 +133,7 @@ class SmartMeterStrategyTest(unittest.TestCase):
         # We want to iterate over some area markets, so we create mocks for them
         market_mocks = self._create_market_mocks(3)
         self.strategy.area.all_markets = market_mocks
+        self._init_energy_params()
         self.strategy._energy_params._state = create_autospec(SmartMeterState)
         time_slots = [m.time_slot for m in self.strategy.area.all_markets]
         self.strategy._energy_params.set_energy_forecast_for_future_markets(
@@ -156,8 +160,8 @@ class SmartMeterStrategyTest(unittest.TestCase):
     def test_set_energy_forecast_for_future_markets_no_profile(self, rotate_profile_mock):
         """Consumption/production expectations can't be set without an energy profile."""
         rotate_profile_mock.return_value = None
-        self.strategy._energy_params.activate(self.strategy.area)
-        with self.assertRaises(GSyException):
+        self._init_energy_params()
+        with pytest.raises(GSyException):
             time_slots = [m.time_slot for m in self.strategy.area.all_markets]
             self.strategy._energy_params.set_energy_forecast_for_future_markets(
                 time_slots, reconfigure=True)
@@ -167,6 +171,7 @@ class SmartMeterStrategyTest(unittest.TestCase):
     def test_event_activate_energy(self, rotate_profile_mock):
         """event_activate_energy calls the expected state interface methods."""
         rotate_profile_mock.return_value = self._create_profile_mock()
+        self._init_energy_params()
         self.strategy._energy_params.set_energy_forecast_for_future_markets = Mock()
 
         self.strategy.event_activate_energy()
@@ -177,6 +182,7 @@ class SmartMeterStrategyTest(unittest.TestCase):
     @patch("gsy_e.models.strategy.BidEnabledStrategy.event_market_cycle")
     def test_event_market_cycle(self, super_method_mock):
         """event_market_cycle calls the expected interfaces."""
+        self._init_energy_params()
         self.strategy.bid_update.update_and_populate_price_settings = Mock()
         self.strategy.offer_update.update_and_populate_price_settings = Mock()
         self.strategy.bid_update.reset = Mock()
@@ -217,6 +223,7 @@ class SmartMeterStrategyTest(unittest.TestCase):
     def test_set_energy_measurement_of_last_market(self, utils_mock):
         """The real energy of the last market is set when necessary."""
         # If we are in the first market slot, the real energy is not set
+        self._init_energy_params()
         self.strategy.area.current_market = None
         self.strategy.state.set_energy_measurement_kWh = Mock()
         self.strategy._set_energy_measurement_of_last_market()
@@ -244,6 +251,7 @@ class SmartMeterStrategyTest(unittest.TestCase):
 
         This method is private, but we test it to avoid duplication and because of its complexity.
         """
+        self._init_energy_params()
         self.strategy.state.get_available_energy_kWh = Mock(return_value=12)
         market_mock = self._create_market_mocks(1)[0]
         offer_mock = Mock()

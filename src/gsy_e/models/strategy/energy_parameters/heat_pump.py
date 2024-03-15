@@ -3,11 +3,12 @@ from typing import Optional, Dict, Union
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.enums import HeatPumpSourceType
-from gsy_framework.read_user_profile import InputProfileTypes
+from gsy_framework.read_user_profile import InputProfileTypes, LiveProfileTypes
 from pendulum import DateTime
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
-from gsy_e.models.strategy.profile import EnergyProfile
+from gsy_e.gsy_e_core.global_objects_singleton import global_objects
+from gsy_e.models.strategy.profile import profile_factory
 from gsy_e.models.strategy.state import HeatPumpState
 
 # pylint: disable=pointless-string-statement
@@ -149,7 +150,7 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
 
     # pylint: disable=too-many-instance-attributes, too-many-arguments
     def __init__(
-            self,
+            self, area_uuid: str,
             maximum_power_rating_kW: float = ConstSettings.HeatPumpSettings.MAX_POWER_RATING_KW,
             min_temp_C: float = ConstSettings.HeatPumpSettings.MIN_TEMP_C,
             max_temp_C: float = ConstSettings.HeatPumpSettings.MAX_TEMP_C,
@@ -164,6 +165,14 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
         super().__init__(
             maximum_power_rating_kW, min_temp_C, max_temp_C, initial_temp_C, tank_volume_l)
         self._source_type = source_type
+
+        profile_uuids = global_objects.profiles_handler.get_profile_uuids_for_area(area_uuid)
+        self._consumption_kWh = profile_factory(
+            input_profile=consumption_kWh_profile,
+            input_profile_uuid=profile_uuids.get(LiveProfileTypes.FORECAST))
+        self._ext_temp_C = profile_factory(
+            input_profile=external_temp_C_profile,
+            input_profile_uuid=profile_uuids.get(LiveProfileTypes.MEASUREMENT))
 
         self._consumption_kWh: [DateTime, float] = EnergyProfile(
             consumption_kWh_profile, consumption_kWh_profile_uuid,

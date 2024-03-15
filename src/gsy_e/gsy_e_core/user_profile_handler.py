@@ -191,7 +191,9 @@ class ProfileDBConnectionHandler:
             profile_uuid: pk
             for _, profile_uuid, _, pk, _ in profile_type_info
         }
-        for area_uuid, profile_uuid, live_profile_type_int, pk, _ in profile_type_info:
+        for area_uuid, profile_uuid, live_profile_type_int, pk, profile_type_int in profile_type_info:
+            if InputProfileTypes(profile_type_int) == InputProfileTypes.IDENTITY:
+                self.area_profile_uuid_mapping[area_uuid]
             live_profile_type = LiveProfileTypes(live_profile_type_int)
             if (area_uuid in self.area_profile_uuid_mapping and
                     live_profile_type in self.area_profile_uuid_mapping[area_uuid]):
@@ -410,20 +412,22 @@ class ProfilesHandler:
         """Read the profile type from a profile with the specified UUID."""
         return self.db.get_profile_type_from_db_buffer(profile_uuid)
 
-    def get_profile_uuids_for_area(self, area_uuid: str) -> Dict[LiveProfileTypes, str]:
+    def get_profile_uuids_for_area(self, area_uuid: str) -> Dict[LiveProfileTypes, Optional[str]]:
         """Return dict of LiveProfileTypes->profile_uuid mapping for the provided area_uuid."""
         area_uuid = uuid.UUID(area_uuid)
         if self.db is None or area_uuid not in self.db.area_profile_uuid_mapping:
-            profile_uuids = {}
-        else:
-            p_uuids = self.db.area_profile_uuid_mapping[area_uuid]
-            profile_uuids = {
-                live_profile_type: str(p_uuids[live_profile_type])
-                if live_profile_type in p_uuids else None
-                for live_profile_type in LiveProfileTypes
-            }
+            return {}
+
+        profile_uuids = {
+            live_profile_type: str(profile_uuid)
+            for live_profile_type, profile_uuid in
+            self.db.area_profile_uuid_mapping[area_uuid].items()
+        }
 
         for live_profile_type in LiveProfileTypes:
-            if live_profile_type not in profile_uuids:
+            if live_profile_type in profile_uuids:
+                profile_uuids[live_profile_type] = str(profile_uuids[live_profile_type])
+            else:
                 profile_uuids[live_profile_type] = None
+
         return profile_uuids

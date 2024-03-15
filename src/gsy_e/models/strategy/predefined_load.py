@@ -69,8 +69,8 @@ class DefinedLoadStrategy(LoadHoursStrategy):
                          initial_buying_rate=initial_buying_rate,
                          balancing_energy_ratio=balancing_energy_ratio,
                          use_market_maker_rate=use_market_maker_rate)
-        self._energy_params = DefinedLoadEnergyParameters(
-            daily_load_profile, daily_load_profile_uuid)
+
+        self.daily_load_profile = daily_load_profile
         self.daily_load_profile_uuid = daily_load_profile_uuid  # needed for profile_handler
 
     def event_market_cycle(self):
@@ -98,3 +98,7 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         """Reconfigure the device properties at runtime using the provided arguments."""
         self._area_reconfigure_prices(**kwargs)
         self._energy_params.reset(self.area.spot_market.time_slot, **kwargs)
+
+    def event_activate(self, **kwargs):
+        self._energy_params = DefinedLoadEnergyParameters(self.owner.uuid, self.daily_load_profile)
+        super().event_activate()

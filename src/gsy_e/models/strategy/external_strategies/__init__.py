@@ -154,7 +154,7 @@ class ExternalMixin:
 
     def event_activate(self, **kwargs):
         """Initiate channel names"""
-        super().event_activate(**kwargs)
+        super().event_activate()
         self.channel_names = ExternalStrategyChannels(
             gsy_e.constants.EXTERNAL_CONNECTION_WEB,
             gsy_e.constants.CONFIGURATION_ID,

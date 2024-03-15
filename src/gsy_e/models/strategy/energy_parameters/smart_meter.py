@@ -15,19 +15,29 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from gsy_framework.utils import find_object_of_same_weekday_and_time
 from pendulum.datetime import DateTime
+from gsy_framework.read_user_profile import LiveProfileTypes
+from gsy_framework.utils import find_object_of_same_weekday_and_time
 
 from gsy_e.gsy_e_core.exceptions import GSyException
-from gsy_e.models.strategy.state import SmartMeterState
+from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.models.strategy import utils
-from gsy_e.models.strategy.profile import EnergyProfile
+from gsy_e.models.strategy.profile import profile_factory
+from gsy_e.models.strategy.state import SmartMeterState
+import gsy_e.constants
 
 
 class SmartMeterEnergyParameters:
     """Manage energy parameters for the Smart Meter Strategy class."""
-    def __init__(self, smart_meter_profile, smart_meter_profile_uuid):
-        self._energy_profile = EnergyProfile(smart_meter_profile, smart_meter_profile_uuid)
+    def __init__(self, area_uuid: str, smart_meter_profile):
+
+        profile_uuids = global_objects.profiles_handler.get_profile_uuids_for_area(area_uuid)
+        self._energy_profile = profile_factory(
+            input_profile=smart_meter_profile,
+            input_profile_uuid=profile_uuids.get(LiveProfileTypes.FORECAST))
+        self._measurement_energy_profile = profile_factory(
+            input_profile_uuid=profile_uuids.get(LiveProfileTypes.MEASUREMENT))
+
         self._state = SmartMeterState()
         self._simulation_start_timestamp = None
         self._area = None
@@ -78,12 +88,17 @@ class SmartMeterEnergyParameters:
 
     def set_energy_measurement_kWh(self, time_slot: DateTime) -> None:
         """Set the (simulated) actual energy of the device in a market slot."""
-        energy_forecast_kWh = self._state.get_energy_at_market_slot(time_slot)
-        simulated_measured_energy_kWh = utils.compute_altered_energy(energy_forecast_kWh)
-        # This value can be either positive (consumption) or negative (production). This is
-        # different from the other devices (PV, Load) where the value is positive regardless of
-        # its direction (consumption or production)
-        self._state.set_energy_measurement_kWh(simulated_measured_energy_kWh, time_slot)
+        if gsy_e.constants.CONNECT_TO_PROFILES_DB:
+            measurement_from_profile_kWh = self._measurement_energy_profile.profile.get(time_slot)
+            if measurement_from_profile_kWh is not None:
+                self._state.set_energy_measurement_kWh(measurement_from_profile_kWh, time_slot)
+        else:
+            energy_forecast_kWh = self._state.get_energy_at_market_slot(time_slot)
+            simulated_measured_energy_kWh = utils.compute_altered_energy(energy_forecast_kWh)
+            # This value can be either positive (consumption) or negative (production). This is
+            # different from the other devices (PV, Load) where the value is positive regardless of
+            # its direction (consumption or production)
+            self._state.set_energy_measurement_kWh(simulated_measured_energy_kWh, time_slot)
 
     def reset(self, **kwargs):
         """Reconfigure energy parameters."""
