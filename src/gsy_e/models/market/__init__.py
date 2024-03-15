@@ -26,7 +26,7 @@ from typing import Dict, List, Union, Optional, Callable, TYPE_CHECKING
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.data_classes import Offer, Trade, Bid
 from gsy_framework.enums import SpotMarketTypeEnum
-from numpy.random import random
+import random
 from pendulum import DateTime, duration
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE, DATE_TIME_FORMAT

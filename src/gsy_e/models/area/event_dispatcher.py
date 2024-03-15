@@ -21,7 +21,7 @@ from typing import Union, Dict, TYPE_CHECKING, Optional
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.enums import AvailableMarketTypes
 from gsy_framework.enums import SpotMarketTypeEnum
-from numpy.random import random
+import random
 from pendulum import DateTime
 
 from gsy_e.events.event_structures import MarketEvent, AreaEvent
@@ -140,7 +140,7 @@ class AreaDispatcher:
         if not self.area.events.is_connected:
             return
 
-        for child in sorted(self.area.children, key=lambda _: random()):
+        for child in sorted(self.area.children, random.sample(self.children, len(self.children)):
             if not child.children:
                 continue
             self._broadcast_notification_to_single_agent(
@@ -175,7 +175,7 @@ class AreaDispatcher:
             return
 
         # Broadcast to children in random order to ensure fairness
-        for child in sorted(self.area.children, key=lambda _: random()):
+        for child in sorted(self.area.children, random.sample(self.children, len(self.children)):
             child.dispatcher.event_listener(event_type, **kwargs)
 
         # TODO: Enable the following block once GSYE-340 is implemented

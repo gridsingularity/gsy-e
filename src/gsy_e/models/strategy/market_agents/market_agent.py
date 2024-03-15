@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from typing import Optional, TYPE_CHECKING
 
 from gsy_framework.constants_limits import ConstSettings
-from numpy.random import random
+import random
 
 from gsy_e.constants import TIME_FORMAT
 from gsy_e.models.strategy import BaseStrategy, _TradeLookerUpper
@@ -74,7 +74,7 @@ class MarketAgent(BaseStrategy):
             min_offer_age = kwargs["min_offer_age"]
             self._validate_constructor_arguments(min_offer_age)
             self.min_offer_age = min_offer_age
-            for engine in sorted(self.engines, key=lambda _: random()):
+            for engine in random.sample(self.engines, len(self.engines)):
                 engine.min_offer_age = min_offer_age
 
     @property

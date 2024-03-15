@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import TraderDetails
-from numpy.random import random
+import random
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.models.strategy.market_agents.one_sided_agent import OneSidedAgent
@@ -123,12 +123,12 @@ class BalancingAgent(OneSidedAgent):
         return trade
 
     def event_balancing_trade(self, *, market_id, trade, offer=None):
-        for engine in sorted(self.engines, key=lambda _: random()):
+        for engine in random.sample(self.engines, len(self.engines)):
             engine.event_offer_traded(trade=trade)
 
     def event_balancing_offer_split(self, *, market_id, original_offer, accepted_offer,
                                     residual_offer):
-        for engine in sorted(self.engines, key=lambda _: random()):
+        for engine in random.sample(self.engines, len(self.engines)):
             engine.event_offer_split(market_id=market_id,
                                      original_offer=original_offer,
                                      accepted_offer=accepted_offer,
