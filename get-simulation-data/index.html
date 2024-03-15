@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../img/Profile.png">
-      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-4.0.2">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-4.0.2">
     
     
       
@@ -2227,7 +2227,7 @@ Figure 1: Screenshot of a simulation url, which includes the simulation_id and t
 <ol>
 <li>Import the library and set the parameters of your simulation</li>
 </ol>
-<pre class="codehilite"><code class="language-python">import requests
+<pre class="python codehilite"><code class="language-python">import requests
 
 username = &quot;&lt;your_user&gt;&quot;
 password = &quot;&lt;your_password&gt;&quot;
@@ -2236,28 +2236,29 @@ domain = &quot;https://gsyweb.gridsingularity.com&quot;
 simulation_id = &quot;990abe5e-3126-4b8b-9978-66ca07824d3c&quot;
 market_uuid = &quot;a245cff8-d90a-44d9-82e5-d37999b62e04&quot;
 start_date = &quot;2021-09-25T00:00&quot;
-end_date = &quot;2021-10-01T00:00&quot;</code></pre>
-
+end_date = &quot;2021-10-01T00:00&quot;
+</code></pre>
 
 <ol>
 <li>Generate your JWT token</li>
 </ol>
-<pre class="codehilite"><code class="language-python">response = requests.post(url=domain + &quot;/api-token-auth/&quot;,
+<pre class="python codehilite"><code class="language-python">response = requests.post(url=domain + &quot;/api-token-auth/&quot;,
                          json={&quot;username&quot;: username, &quot;password&quot;: password})
 
-token = response.json()[&quot;token&quot;]</code></pre>
-
+token = response.json()[&quot;token&quot;]
+</code></pre>
 
 <ol>
 <li>Create a URL and send the request:</li>
 </ol>
-<pre class="codehilite"><code class="language-python">historical_data_url = f&quot;{domain}/historical-data/assets/{configuration_id}/{asset_id}/{start_date}/{end_date}&quot;
+<pre class="python codehilite"><code class="language-python">historical_data_url = f&quot;{domain}/historical-data/assets/{configuration_id}/{asset_id}/{start_date}/{end_date}&quot;
 headers = {&quot;Authorization&quot;: f&quot;JWT {token}&quot;}
 
 response = requests.get(url=historical_data_url,
                         headers=headers)
 
-profile = response.json()</code></pre>
+profile = response.json()
+</code></pre>
                 
                   
                 
@@ -2345,7 +2346,7 @@ profile = response.json()</code></pre>
     
       <script src="../assets/javascripts/application.05d1c8d6.js"></script>
       
-      <script>app.initialize({version:"1.3.0",url:{base:".."}})</script>
+      <script>app.initialize({version:"1.4.2",url:{base:".."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
       

@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../img/Profile.png">
-      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-4.0.2">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-4.0.2">
     
     
       
@@ -2051,7 +2051,7 @@
 <li>grid_fee_const*</li>
 </ul>
 <p>In order to update some of these parameters (starred in list above), please use <code>update_config_parameters</code> method to update the general configuration parameters in the setup file:</p>
-<pre class="codehilite"><code class="language-python">from gsy_framework.constants_limits import ConstSettings
+<pre class="python codehilite"><code class="language-python">from gsy_framework.constants_limits import ConstSettings
 def get_setup(config):
     ConstSettings.MASettings.MARKET_TYPE = 2
     config.update_config_parameters(grid_fee_pct=5,
@@ -2070,7 +2070,8 @@ def get_setup(config):
         ],
         config=config
     )
-    return market</code></pre>
+    return market
+</code></pre>
                 
                   
                 
@@ -2158,7 +2159,7 @@ def get_setup(config):
     
       <script src="../assets/javascripts/application.05d1c8d6.js"></script>
       
-      <script>app.initialize({version:"1.3.0",url:{base:".."}})</script>
+      <script>app.initialize({version:"1.4.2",url:{base:".."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
       

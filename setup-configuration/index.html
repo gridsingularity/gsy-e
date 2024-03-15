@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../img/Profile.png">
-      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-4.0.2">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-4.0.2">
     
     
       
@@ -2144,12 +2144,12 @@
                 <h2 id="backend-simulation-configuration">Backend Simulation Configuration<a class="headerlink" href="#backend-simulation-configuration" title="Permanent link">&para;</a></h2>
 <p>In the backend, the simulation process is slightly different compared to the user interface simulations. There is no need to login to set up a simulation. The user first needs to download the code from our Github Repository (Installation Instructions for <a href="../linux-installation-instructions/">Linux</a>, <a href="../ios-installation-instructions/">Mac</a> and <a href="../vm-installation-instructions/">Windows</a>). In the setup-file (in Python programming language), general and <a href="../default-trading-strategy/">trading strategy</a> settings can be defined. Examples can be found in the relevant <a href="https://github.com/gridsingularity/gsy-e/tree/master/src/gsy_e/setup" target="_blank">Grid Singularity GitHub</a> folder.</p>
 <p>This is the most basic skeleton for a setup-file:</p>
-<pre class="codehilite"><code class="language-python">```python
+<pre class="python codehilite"><code class="language-python">```python
 from gsy_e.models.area import Market
 def get_setup(config):
     area = Market(&quot;Grid&quot;, [])
-    return Market</code></pre>
-
+    return Market
+</code></pre>
 
 <p>The user can add more nested submarkets recursively by adding more instances of <code>Market</code> to the second parameter (list) of the <code>Market</code> class. To define the strategy of an asset, please use the <code>Asset</code> class and its strategy parameter. The following grid architecture is given:</p>
 <ul>
@@ -2169,7 +2169,7 @@ def get_setup(config):
 </ul>
 <p>Bold instances in the outline above are markets. For each of these markets, a <a href="../market-agent/">market-agent</a> is created in the background to execute offer/bid forwarding and matching.</p>
 <p>In the following, the corresponding setup-file is shown.</p>
-<pre class="codehilite"><code class="language-python">```python
+<pre class="python codehilite"><code class="language-python">```python
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.storage import StorageStrategy
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
@@ -2217,8 +2217,8 @@ def get_setup(config):
         ],
         config=config
     )
-    return market</code></pre>
-
+    return market
+</code></pre>
 
 <p>Additionally, the user has the possibility to change the default general settings in two different ways:</p>
 <ol>
@@ -2232,13 +2232,13 @@ def get_setup(config):
 <li>Grid_fee_type (if equal to 1: <a href="../constant-fees/">Constant grid fee</a>, if equal to 2 : <a href="../percentage-fees/">Percentage grid fee</a>)</li>
 </ul>
 <p>Here is an example to setup a simulation with the Two-Sided Pay-as-Bid market type, constant grid fee and default min (0cts/kWh) and max to (35cts/kWh) energy rate for all <a href="../model-load/">loads</a>:</p>
-<pre class="codehilite"><code class="language-python">from gsy_framework.constants_limits import ConstSettings
+<pre class="python codehilite"><code class="language-python">from gsy_framework.constants_limits import ConstSettings
 def get_setup(config):
     ConstSettings.MASettings.MARKET_TYPE = 2
     ConstSettings.LoadSettings.MIN_ENERGY_RATE = 0
     ConstSettings.LoadSettings.MAX_ENERGY_RATE = 35
-    ConstSettings.MASettings.GRID_FEE_TYPE = 1</code></pre>
-
+    ConstSettings.MASettings.GRID_FEE_TYPE = 1
+</code></pre>
 
 <h3 id="gsy-e-settingsjson">gsy-e-settings.json<a class="headerlink" href="#gsy-e-settingsjson" title="Permanent link">&para;</a></h3>
 <p>These general settings can also be parsed via a settings file in JSON format, which contains all constants in the advanced_settings branch. An example can be found here: src/gsy-e/setup/gsy-e-settings.json. The settings JSON file can be parsed via the --settings-file keyword</p>
@@ -2329,7 +2329,7 @@ def get_setup(config):
     
       <script src="../assets/javascripts/application.05d1c8d6.js"></script>
       
-      <script>app.initialize({version:"1.3.0",url:{base:".."}})</script>
+      <script>app.initialize({version:"1.4.2",url:{base:".."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
       

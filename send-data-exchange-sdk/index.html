@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../img/Profile.png">
-      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-4.0.2">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-4.0.2">
     
     
       
@@ -2044,8 +2044,8 @@
 <li>Install the SDK Client by following the steps described <a href="../configure-trading-strategies-walkthrough/">here</a>. Since the client is written in Python, the data stream pipeline needs to be written in Python as well.</li>
 <li>Add the following command in the <a href="https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/asset_api_template.py" target="_blank">Grid Singularity Asset SDK Script</a> to set the energy consumption and generation for Load and PV assets for the next market slot:</li>
 </ol>
-<pre class="codehilite"><code>asset_client.set_energy_forecast(&lt;energy_forecast_Wh&gt;)</code></pre>
-
+<pre class="codehilite"><code>asset_client.set_energy_forecast(&lt;energy_forecast_Wh&gt;)
+</code></pre>
 
 <p>An example of how sending forecasts through the SDK Client could be added into the Asset API script can be found <a href="https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/test_sending_energy_forecast.py" target="_blank">here</a>.</p>
                 
@@ -2135,7 +2135,7 @@
     
       <script src="../assets/javascripts/application.05d1c8d6.js"></script>
       
-      <script>app.initialize({version:"1.3.0",url:{base:".."}})</script>
+      <script>app.initialize({version:"1.4.2",url:{base:".."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
       

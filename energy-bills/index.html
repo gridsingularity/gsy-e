@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../img/Profile.png">
-      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-4.0.2">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-4.0.2">
     
     
       
@@ -2035,7 +2035,7 @@
 <p><img alt="alt_text" src="../img/bills-2.png" /></p>
 <p>The bid and the offer are forwarded to the higher-level Grid market and are matched in this market with a clearing price (and trade price) of 0.45 €. For more information on how grid fees are calculated, please read the <a href="../grid-fees/">grid fees documentation</a>).</p>
 <p>In the <code>bills.json</code> file, the cash flow in each market is reported as follows:</p>
-<pre class="codehilite"><code class="language-json">&quot;Parent market&quot;: {
+<pre class="json codehilite"><code class="language-json">&quot;Parent market&quot;: {
 &quot;Agent&quot;: {
 &quot;bought&quot;: Energy that has been bought during the simulation [kWh],
 &quot;sold&quot;: Energy that has been sold during the simulation [kWh],
@@ -2046,8 +2046,8 @@
 &quot;market_fee&quot;: Money spent in the &quot;Parent area&quot; as grid fees [€] ,
 &quot;type&quot;: Type of agent. Can either be a market  or the name of the asset strategy
 },
-},</code></pre>
-
+},
+</code></pre>
 
 <p>Shown below are the results of the previous example. The first set of results is from the highest market, in this case the Grid market :</p>
 <p><img alt="alt_text" src="../img/bills-3.png" style="height:550px;width:250px" />
@@ -2112,7 +2112,7 @@
     
       <script src="../assets/javascripts/application.05d1c8d6.js"></script>
       
-      <script>app.initialize({version:"1.3.0",url:{base:".."}})</script>
+      <script>app.initialize({version:"1.4.2",url:{base:".."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
       

@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../img/Profile.png">
-      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-4.0.2">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-4.0.2">
     
     
       
@@ -2178,20 +2178,20 @@
 <pre class="codehilite"><code>asset_uuid = get_area_uuid_from_area_name_and_collaboration_id(
               &lt;simulation_id&gt;, &lt;asset_name&gt;, &lt;domain_name&gt;
               )
-asset_client = RestAssetClient(asset_uuid, autoregister=True)</code></pre>
-
+asset_client = RestAssetClient(asset_uuid, autoregister=True)
+</code></pre>
 
 <h3 id="backend-simulation">Backend simulation<a class="headerlink" href="#backend-simulation" title="Permanent link">&para;</a></h3>
-<pre class="codehilite"><code>asset_client = RedisAssetClient(&lt;asset-uuid&gt;, autoregister=True)</code></pre>
-
+<pre class="codehilite"><code>asset_client = RedisAssetClient(&lt;asset-uuid&gt;, autoregister=True)
+</code></pre>
 
 <p>Otherwise, it is also possible to connect manually by doing:</p>
-<pre class="codehilite"><code>asset_client.register()</code></pre>
-
+<pre class="codehilite"><code>asset_client.register()
+</code></pre>
 
 <p>To disconnect/unregistering, the following command is available:</p>
-<pre class="codehilite"><code>asset_client.unregister()</code></pre>
-
+<pre class="codehilite"><code>asset_client.unregister()
+</code></pre>
 
 <p>There are two options for you to connect live data streaming to the Grid Singularity Exchange:</p>
 <ol>
@@ -2285,7 +2285,7 @@ asset_client = RestAssetClient(asset_uuid, autoregister=True)</code></pre>
     
       <script src="../assets/javascripts/application.05d1c8d6.js"></script>
       
-      <script>app.initialize({version:"1.3.0",url:{base:".."}})</script>
+      <script>app.initialize({version:"1.4.2",url:{base:".."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
       

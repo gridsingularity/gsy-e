@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../img/Profile.png">
-      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-4.0.2">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-4.0.2">
     
     
       
@@ -2081,14 +2081,15 @@
 <h2 id="backend-configuration">Backend Configuration<a class="headerlink" href="#backend-configuration" title="Permanent link">&para;</a></h2>
 <p>To implement the power plant in a backend simulation one option is available:</p>
 <p><a href="https://github.com/gridsingularity/d3a/blob/54d76a47db04062aa2564826b5da8e637d6c9185/src/d3a/models/strategy/finite_power_plant.py#L25" target="_blank">Finite Power Plant</a></p>
-<pre class="codehilite"><code class="language-python">profile_kW = {
+<pre class="python codehilite"><code class="language-python">profile_kW = {
     0: 0.1,
     8: 0.15,
     12: 0.2,
     19: 0.15,
     22: 0.1
 }
-Market (&quot;Power Plant', strategy=FinitePowerPlant(energy_rate=31.3, max_available_power_kW=profile_kW))</code></pre>
+Market (&quot;Power Plant', strategy=FinitePowerPlant(energy_rate=31.3, max_available_power_kW=profile_kW))
+</code></pre>
                 
                   
                 
@@ -2141,7 +2142,7 @@ Market (&quot;Power Plant', strategy=FinitePowerPlant(energy_rate=31.3, max_avai
     
       <script src="../assets/javascripts/application.05d1c8d6.js"></script>
       
-      <script>app.initialize({version:"1.3.0",url:{base:".."}})</script>
+      <script>app.initialize({version:"1.4.2",url:{base:".."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
       

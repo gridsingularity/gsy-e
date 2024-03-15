@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../img/Profile.png">
-      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-4.0.2">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-4.0.2">
     
     
       
@@ -2280,36 +2280,36 @@
                 <h2 id="solar-panels">Solar Panels<a class="headerlink" href="#solar-panels" title="Permanent link">&para;</a></h2>
 <p>There are two options to implement a PV in a backend:</p>
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/pv.py" target="_blank">Solar Profile</a> (for template generation profile):</p>
-<pre class="codehilite"><code class="language-python">Market(
+<pre class="python codehilite"><code class="language-python">Market(
     &quot;H2 PV&quot;,
     strategy=PVStrategy(
         panel_count=4,
         initial_selling_rate=30,
         final_selling_rate=5,
         fit_to_limit=True,
-        update_interval=duration(minutes=5)))</code></pre>
-
+        update_interval=duration(minutes=5)))
+</code></pre>
 
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/predefined_pv.py" target="_blank">User Profile</a> (for uploaded generation profile):</p>
-<pre class="codehilite"><code class="language-python">user_profile_path = os.path.join(gsy_e_path, &quot;assets/Solar_Curve_W_sunny.csv&quot;)
-Market('H1 PV', strategy=PVUserProfileStrategy(power_profile=user_profile_path, panel_count=4))</code></pre>
-
+<pre class="python codehilite"><code class="language-python">user_profile_path = os.path.join(gsy_e_path, &quot;assets/Solar_Curve_W_sunny.csv&quot;)
+Market('H1 PV', strategy=PVUserProfileStrategy(power_profile=user_profile_path, panel_count=4))
+</code></pre>
 
 <h2 id="consumption">Consumption<a class="headerlink" href="#consumption" title="Permanent link">&para;</a></h2>
 <p>To implement the consumption profile (load) in a backend simulation, two options are available:</p>
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/load_hours.py" target="_blank">User configure Profile</a>:</p>
-<pre class="codehilite"><code class="language-python">Market(
+<pre class="python codehilite"><code class="language-python">Market(
     'Load',
     strategy=LoadHoursStrategy(
         avg_power_W=200, hrs_per_day=6,hrs_of_day=list(range(12, 18)), initial_buying_rate=0,
-        final_buying_rate=35))</code></pre>
-
+        final_buying_rate=35))
+</code></pre>
 
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/predefined_load.py" target="_blank">User upload Profile</a>:</p>
-<pre class="codehilite"><code class="language-python">user_profile_path = os.path.join(gsy_e_path,&quot;assets/load.csv&quot;)
+<pre class="python codehilite"><code class="language-python">user_profile_path = os.path.join(gsy_e_path,&quot;assets/load.csv&quot;)
 
-Market('Load', strategy=LoadProfileStrategy(daily_load_profile=user_profile_path, initial_buying_rate)</code></pre>
-
+Market('Load', strategy=LoadProfileStrategy(daily_load_profile=user_profile_path, initial_buying_rate)
+</code></pre>
 
 <h3 id="addendum-hrs_of_day-and-hrs_per_day">Addendum: <code>hrs_of_day</code> and <code>hrs_per_day</code><a class="headerlink" href="#addendum-hrs_of_day-and-hrs_per_day" title="Permanent link">&para;</a></h3>
 <p><code>hrs_of_day</code> defines the allowed time-window in which the load has to consume for a time defined by <code>hrs_per_day</code>.</p>
@@ -2320,17 +2320,17 @@ Market('Load', strategy=LoadProfileStrategy(daily_load_profile=user_profile_path
 <h2 id="batteries">Batteries<a class="headerlink" href="#batteries" title="Permanent link">&para;</a></h2>
 <p>To implement a battery in a backend simulation one option is available:</p>
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/storage.py" target="_blank">Energy Storage System</a></p>
-<pre class="codehilite"><code class="language-python">Market(
+<pre class="python codehilite"><code class="language-python">Market(
     'Storage',
     strategy=StorageStrategy(
         initial_soc=50, energy_rate_decrease_per_update=3, battery_capacity_kWh=1.2,
-        max_abs_battery_power_kW=5, final_buying_rate=16.99, final_selling_rate= 17.01))</code></pre>
-
+        max_abs_battery_power_kW=5, final_buying_rate=16.99, final_selling_rate= 17.01))
+</code></pre>
 
 <h2 id="power-plant">Power Plant<a class="headerlink" href="#power-plant" title="Permanent link">&para;</a></h2>
 <p>To implement the power plant in a backend simulation one option is available:</p>
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/finite_power_plant.py" target="_blank">Finite Power Plant</a></p>
-<pre class="codehilite"><code class="language-python">profile_kW = {
+<pre class="python codehilite"><code class="language-python">profile_kW = {
 0: 0.1,
 8: 0.15,
 12: 0.2,
@@ -2339,21 +2339,21 @@ Market('Load', strategy=LoadProfileStrategy(daily_load_profile=user_profile_path
 }
 Market(
     &quot;Power Plant&quot;,
-    strategy=FinitePowerPlant(energy_rate=31.3, max_available_power_kW=profile_kW))</code></pre>
-
+    strategy=FinitePowerPlant(energy_rate=31.3, max_available_power_kW=profile_kW))
+</code></pre>
 
 <h2 id="market-maker-utility-pricing">Market Maker (Utility Pricing)<a class="headerlink" href="#market-maker-utility-pricing" title="Permanent link">&para;</a></h2>
 <p>To implement a Market Maker in a backend simulation, two methods are available:</p>
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/market_maker_strategy.py" target="_blank">Infinite power plant</a> (in this mode, the Market Maker has the ability to meet the infinite energy demand of consumers at the highest rate possible in the grid).
-The Market Maker asset strategy in the infinite power plant mode is configured as follows: </p>
-<pre class="codehilite"><code class="language-python">Asset('Market Maker', strategy=MarketMakerStrategy(energy_rate, energy_rate_profile, grid_connected))</code></pre>
-
+The Market Maker asset strategy in the infinite power plant mode is configured as follows:</p>
+<pre class="python codehilite"><code class="language-python">Asset('Market Maker', strategy=MarketMakerStrategy(energy_rate, energy_rate_profile, grid_connected))
+</code></pre>
 
 <p>Where <em>energy_rate</em> is the input for a constant buying rate and <em>energy_rate_profile</em> the input for a variable buying rate. With the <em>grid_connected</em> parameter the user can toggle if the asset is connected to the grid or if it should only dictate the highest energy rate in the grid (islanded mode).</p>
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/infinite_bus.py" target="_blank">Infinite bus</a> (in this mode, the Market Maker has not only the ability to meet the infinite energy demand of the consumer but can also absorb the infinite generation surplus of prosumers/producers at the lowest rate possible in that grid).
-The Market Maker asset strategy in the infinite bus mode is configured as follows: </p>
-<pre class="codehilite"><code class="language-python">Asset('Market Maker', strategy=InfiniteBusStrategy(energy_buy_rate, energy_rate_profile, energy_sell_rate, buying_rate_profile))</code></pre>
-
+The Market Maker asset strategy in the infinite bus mode is configured as follows:</p>
+<pre class="python codehilite"><code class="language-python">Asset('Market Maker', strategy=InfiniteBusStrategy(energy_buy_rate, energy_rate_profile, energy_sell_rate, buying_rate_profile))
+</code></pre>
 
 <p>Where <em>energy_buy_rate</em> and <em>energy_sell_rate</em> are inputs for constant rates and <em>energy_rate_profile</em> and <em>buying_rate_profile</em> the inputs for variable rates.</p>
 <h3 id="addendum-storage-capacity-based-method">Addendum: Storage Capacity Based Method.<a class="headerlink" href="#addendum-storage-capacity-based-method" title="Permanent link">&para;</a></h3>
@@ -2363,21 +2363,21 @@ If the cap_price_strategy is True, the offer price for the storage is calculated
 <p>As an example, considering an <code>initial_selling_rate</code> of 30 cents/kWh and a <code>final_selling_rate</code> of 20 cents/kWh, a storage with an SOC of 1% would sell its energy at 29.9 cents/kWh, and a battery at 100% SOC would sell its energy at 20 cents/kWh.
 To implement a power plant in a backend simulation, one option is available:</p>
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/finite_power_plant.py" target="_blank">Finite Power Plant</a></p>
-<pre class="codehilite"><code class="language-python">profile_kW = {
+<pre class="python codehilite"><code class="language-python">profile_kW = {
     0: 0.1,
     8: 0.15,
     12: 0.2,
     19: 0.15,
     22: 0.1
 }
-Market(&quot;Power Plant&quot;, strategy=FinitePowerPlant(energy_rate=31.3, max_available_power_kW=profile_kW))</code></pre>
-
+Market(&quot;Power Plant&quot;, strategy=FinitePowerPlant(energy_rate=31.3, max_available_power_kW=profile_kW))
+</code></pre>
 
 <h3 id="heat-pumps">Heat pumps<a class="headerlink" href="#heat-pumps" title="Permanent link">&para;</a></h3>
 <h4 id="heat-pump-code-configuration">Heat Pump Code Configuration<a class="headerlink" href="#heat-pump-code-configuration" title="Permanent link">&para;</a></h4>
 <p>To configure a heat pump asset (HP) in the backend code, the following lines are to be added to the children's list of one of the areas in the setup file:</p>
-<pre class="codehilite"><code class="language-python">Asset(name=&quot;Heat Pump&quot;, strategy=HeatPumpStrategy())</code></pre>
-
+<pre class="python codehilite"><code class="language-python">Asset(name=&quot;Heat Pump&quot;, strategy=HeatPumpStrategy())
+</code></pre>
 
 <p>The <strong>HeatPumpStrategy</strong> parameters can be set as follows:</p>
 <ul>
@@ -2394,8 +2394,8 @@ Market(&quot;Power Plant&quot;, strategy=FinitePowerPlant(energy_rate=31.3, max_
 </ul>
 <h4 id="virtual-heat-pump-code-configuration">Virtual Heat Pump Code Configuration<a class="headerlink" href="#virtual-heat-pump-code-configuration" title="Permanent link">&para;</a></h4>
 <p>To configure a virtual heat pump asset (VHP) in the backend code, the following lines are to be added to the children's list of one of the areas in the setup file:</p>
-<pre class="codehilite"><code class="language-python">Asset(name=&quot;Virtual Heat Pump&quot;, strategy=VirtualHeatPumpStrategy())</code></pre>
-
+<pre class="python codehilite"><code class="language-python">Asset(name=&quot;Virtual Heat Pump&quot;, strategy=VirtualHeatPumpStrategy())
+</code></pre>
 
 <p>The <strong>VirtualHeatPumpStrategy</strong> parameters can be set as follows:</p>
 <ul>
@@ -2412,7 +2412,7 @@ Market(&quot;Power Plant&quot;, strategy=FinitePowerPlant(energy_rate=31.3, max_
 </ul>
 <h4 id="heat-pump-price-strategy-configuration">Heat Pump Price Strategy Configuration<a class="headerlink" href="#heat-pump-price-strategy-configuration" title="Permanent link">&para;</a></h4>
 <p>In order to set the bidding strategy, the <strong>order_updater_parameters</strong>  should be set by assigning the <strong>HeatPumpOrderUpdaterParameters</strong> data class and its parameters to it:</p>
-<pre class="codehilite"><code class="language-python">from gsy_e.models.strategy.heat_pump import HeatPumpOrderUpdaterParameters
+<pre class="python codehilite"><code class="language-python">from gsy_e.models.strategy.heat_pump import HeatPumpOrderUpdaterParameters
 from pendulum import duration
 from gsy_framework.enums import AvailableMarketTypes
 
@@ -2420,8 +2420,8 @@ Asset(name=&quot;Heat Pump&quot;, strategy=HeatPumpStrategy(
      order_updater_parameters={
      AvailableMarketTypes.SPOT: HeatPumpOrderUpdaterParameters(
      update_interval=duration(minutes=1), initial_rate=20, final_rate=30)})
-))</code></pre>
-
+))
+</code></pre>
 
 <p>The <strong>order_updater_parameters</strong> expects a dictionary with <strong>AvailableMarketTypes</strong> as key and <strong>HeatPumpOrderUpdaterParameters</strong> as values.
 If not set by the user, the following default values are used:</p>
@@ -2517,7 +2517,7 @@ If not set by the user, the following default values are used:</p>
     
       <script src="../assets/javascripts/application.05d1c8d6.js"></script>
       
-      <script>app.initialize({version:"1.3.0",url:{base:".."}})</script>
+      <script>app.initialize({version:"1.4.2",url:{base:".."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
       

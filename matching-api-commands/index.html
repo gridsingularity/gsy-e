@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../img/Profile.png">
-      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-4.0.2">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-4.0.2">
     
     
       
@@ -2106,7 +2106,8 @@
                 <p>The Matching API is responsible for communicating with a running Grid Singularity Exchange. The client uses the Matching API to dynamically connect to the simulated electrical grid and query the open bids/offers and post-trading recommendations back to Grid Singularity Exchange.</p>
 <h3 id="request_offers_bids">request_offers_bids()<a class="headerlink" href="#request_offers_bids" title="Permanent link">&para;</a></h3>
 <p>This command is used to request bids and offers from a specific market or family of markets, that can be specified through the <strong>filters</strong> dictionary and it is the output of the <a href="../matching-api-events/#on-area-map-response">on_area_map_response</a> method.</p>
-<pre class="codehilite"><code>self.request_offers_bids(filters={“markets: self.id_list})</code></pre>
+<pre class="codehilite"><code>self.request_offers_bids(filters={“markets: self.id_list})
+</code></pre>
                 
                   
                 
@@ -2194,7 +2195,7 @@
     
       <script src="../assets/javascripts/application.05d1c8d6.js"></script>
       
-      <script>app.initialize({version:"1.3.0",url:{base:".."}})</script>
+      <script>app.initialize({version:"1.4.2",url:{base:".."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
       

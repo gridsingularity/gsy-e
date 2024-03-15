@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../img/Profile.png">
-      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-4.0.2">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-4.0.2">
     
     
       
@@ -2086,13 +2086,14 @@
 <h2 id="backend-configuration">Backend Configuration<a class="headerlink" href="#backend-configuration" title="Permanent link">&para;</a></h2>
 <p>There are two options to implement a PV in a backend:</p>
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/c2976cb4f0c8c2823ee755fa33c3efd611498ea0/src/gsy_e/models/strategy/pv.py" target="_blank">Solar Profile</a> (for template generation profile)</p>
-<pre class="codehilite"><code class="language-python">Market ('H2 PV', strategy=PVStrategy(panel_count=4, initial_selling_rate=30, final_selling_rate=5, fit_to_limit=True, update_interval=duration(minutes=5)))</code></pre>
-
+<pre class="python codehilite"><code class="language-python">Market ('H2 PV', strategy=PVStrategy(panel_count=4, initial_selling_rate=30, final_selling_rate=5, fit_to_limit=True, update_interval=duration(minutes=5)))
+</code></pre>
 
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/c2976cb4f0c8c2823ee755fa33c3efd611498ea0/src/gsy_e/models/strategy/predefined_pv.py#L131-L178" target="_blank">User Profile</a> (for uploaded generation profile)</p>
-<pre class="codehilite"><code class="language-python">user_profile_path = os.path.join(gsye_root_path, &quot;assets/Solar_Curve_W_sunny.csv&quot;)
+<pre class="python codehilite"><code class="language-python">user_profile_path = os.path.join(gsye_root_path, &quot;assets/Solar_Curve_W_sunny.csv&quot;)
 Market ('H1 PV', strategy=PVUserProfileStrategy(power_profile=user_profile_path,
-                                             panel_count=))</code></pre>
+                                             panel_count=))
+</code></pre>
                 
                   
                 
@@ -2145,7 +2146,7 @@ Market ('H1 PV', strategy=PVUserProfileStrategy(power_profile=user_profile_path,
     
       <script src="../assets/javascripts/application.05d1c8d6.js"></script>
       
-      <script>app.initialize({version:"1.3.0",url:{base:".."}})</script>
+      <script>app.initialize({version:"1.4.2",url:{base:".."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
       
