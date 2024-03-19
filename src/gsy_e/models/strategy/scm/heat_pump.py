@@ -11,9 +11,16 @@ class ScmHeatPumpEnergyParameters(DefinedLoadEnergyParameters):
     Only needed in order to only allow energy profiles
     """
 
-    def __init__(self, consumption_kWh_profile=None, consumption_kWh_profile_uuid: str = None):
-        super().__init__(consumption_kWh_profile, consumption_kWh_profile_uuid)
+    def __init__(self, consumption_kWh_profile=None,
+                 consumption_kWh_profile_uuid: str = None,
+                 consumption_kWh_measurement_uuid: str = None):
+        super().__init__(consumption_kWh_profile,
+                         consumption_kWh_profile_uuid,
+                         consumption_kWh_measurement_uuid
+                         )
+
         self.energy_profile.profile_type = InputProfileTypes.ENERGY_KWH
+        self.measurement_profile.profile_type = InputProfileTypes.ENERGY_KWH
 
     def serialize(self):
         return {
@@ -30,9 +37,15 @@ class ScmHeatPumpEnergyParameters(DefinedLoadEnergyParameters):
 class ScmHeatPumpStrategy(SCMLoadProfileStrategy):
     """Heat Pump SCM strategy with power consumption dictated by a profile."""
 
-    def __init__(self, consumption_kWh_profile=None, consumption_kWh_profile_uuid=None):
+    def __init__(self, consumption_kWh_profile=None,
+                 consumption_kWh_profile_uuid: str = None,
+                 consumption_kWh_measurement_uuid: str = None):
         # pylint: disable= super-init-not-called
         """super() should not be called"""
         self._energy_params = ScmHeatPumpEnergyParameters(
-            consumption_kWh_profile, consumption_kWh_profile_uuid)
+            consumption_kWh_profile, consumption_kWh_profile_uuid,
+            consumption_kWh_measurement_uuid)
+
+        # needed for profile_handler
         self.consumption_kWh_profile_uuid = consumption_kWh_profile_uuid
+        self.consumption_kWh_measurement_uuid = consumption_kWh_measurement_uuid

@@ -26,7 +26,7 @@ from pendulum import DateTime, duration
 import gsy_e.constants
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.models.strategy import utils
-from gsy_e.models.strategy.profile import EnergyProfile
+from gsy_e.models.strategy.profile import profile_factory
 from gsy_e.models.strategy.state import LoadState
 
 log = logging.getLogger(__name__)
@@ -177,15 +177,21 @@ class LoadHoursPerDayEnergyParameters(LoadHoursEnergyParameters):
 
 class DefinedLoadEnergyParameters(LoadHoursPerDayEnergyParameters):
     """Energy parameters for the defined load strategy class."""
-    def __init__(self, daily_load_profile=None, daily_load_profile_uuid: str = None):
+    def __init__(self, daily_load_profile=None,
+                 daily_load_profile_uuid: str = None,
+                 daily_load_measurement_uuid: str = None,
+                 ):
         super().__init__(avg_power_W=0, hrs_per_day=24, hrs_of_day=list(range(0, 24)))
-        self.energy_profile = EnergyProfile(daily_load_profile, daily_load_profile_uuid)
+
+        self.energy_profile = profile_factory(daily_load_profile, daily_load_profile_uuid)
+        self.measurement_profile = profile_factory(None, daily_load_measurement_uuid)
         self.state = LoadState()
 
     def serialize(self):
         return {
             "daily_load_profile": self.energy_profile.input_profile,
-            "daily_load_profile_uuid": self.energy_profile.input_profile_uuid
+            "daily_load_profile_uuid": self.energy_profile.input_profile_uuid,
+            "daily_load_measurement_uuid": self.measurement_profile.input_profile_uuid
         }
 
     def event_activate_energy(self, area):
@@ -216,6 +222,14 @@ class DefinedLoadEnergyParameters(LoadHoursPerDayEnergyParameters):
         self.state.set_desired_energy(load_energy_kwh * 1000, time_slot, overwrite=False)
         self.state.update_total_demanded_energy(time_slot)
 
+    def set_energy_measurement_kWh(self, time_slot: DateTime) -> None:
+        if gsy_e.constants.CONNECT_TO_PROFILES_DB:
+            measurement_from_profile_kWh = self.measurement_profile.profile.get(time_slot)
+            if measurement_from_profile_kWh is not None:
+                self.state.set_energy_measurement_kWh(measurement_from_profile_kWh, time_slot)
+        else:
+            super().set_energy_measurement_kWh(time_slot)
+
     def _operating_hours(self, energy_kWh):
         """
         Disabled feature for this subclass
@@ -227,6 +241,11 @@ class DefinedLoadEnergyParameters(LoadHoursPerDayEnergyParameters):
         Disabled feature for this subclass
         """
         return True
+
+    def read_and_rotate_profiles(self):
+        """Read and rotate all profiles"""
+        self.energy_profile.read_or_rotate_profiles()
+        self.measurement_profile.read_or_rotate_profiles()
 
 
 class LoadForecastExternalEnergyParamsMixin:
