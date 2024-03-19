@@ -5,7 +5,7 @@ The Grid Singularity Canary Test Network, inspired by the “canary in a coal mi
 
 Connecting and operating a live simulation on Grid Singularity Canary Test Network (GSy CTN) is provided by Grid Singularity as a paid service for those interested to simulate a live peer-to-peer energy trading, and it entails the following activities:
 
-A. [Preparatory Activities](connect-ctn.md#initiate-a-grid-singularity-canary-test-network) (detailed instructions below)
+A. [Preparatory Activities](connect-ctn.md#initiate-a-grid-singularity-canary-test-network) *(detailed instructions below)*
 
   - The local energy market (LEM) manager (or researcher acting as LEM manager, later also termed the designated CTN owner) to configure a digital twin of all the local energy market participants and their energy assets via the [Grid Singularity web-based simulation tool](https://gridsingularity.com/singularity-map){target=_blank} and run the simulation;
   - Once the simulation is completed, the LEM manager to take steps to request a connection to a live GSy CTN;
@@ -13,7 +13,7 @@ A. [Preparatory Activities](connect-ctn.md#initiate-a-grid-singularity-canary-te
   - Grid Singularity team and the acting LEM manager to conduct a  technical workshop to review data and connection requirements and any additional steps to enable data integration;
   - The GSy Admin then reviews and approves the request and initiates the CTN LEM configuration.
 
-B. [Connecting to Grid Singularity Canary Test Network / Data Integration](connect-ctn.md#grid-singularity-canary-test-network-operation) (detailed instructions below)
+B. [Connecting to Grid Singularity Canary Test Network / Data Integration](connect-ctn.md#grid-singularity-canary-test-network-operation) *(detailed instructions below)*
 
   - The GSy Admin to add the acting LEM manager as “a user” of the select LEM CTN simulation (based on provided email address) and assign them the CTN owner role, responsible for trading on behalf of all the participants (assets) in the network;
   - The acting LEM manager to receive a link via email to access the created GSy LEM CTN and log in to view the simulated community under the GSy CTN tab;
@@ -27,7 +27,7 @@ C. Results Monitoring & Analysis
 
 
 ## Initiate a Grid Singularity Canary Test Network
-To initiate a Grid Singularity Canary Test Network (GSy CTN) for a live peer-to-peer trading simulation of a select loca energy market, please follow these steps (a video tutorial is also available [here](https://www.youtube.com/watch?v=8tAl8Td2XsU&list=PLdIkfx9NcrQeD8kLBvASosLce9qJ4gQIH&index=2){target=_blank}):
+To initiate a Grid Singularity Canary Test Network (GSy CTN) for a live peer-to-peer trading simulation of a select local energy market, please follow these steps (a video tutorial is also available [here](https://www.youtube.com/watch?v=8tAl8Td2XsU&list=PLdIkfx9NcrQeD8kLBvASosLce9qJ4gQIH&index=2){target=_blank}):
 
 &nbsp;1. Configure a digital twin of all the local energy market participants and their energy assets via the [Grid Singularity web-based simulation tool](https://gridsingularity.com/singularity-map){target=_blank} and run the simulation, ensuring the relevant [data requirements](data-requirements.md).  Once it is completed, click on the Settings tab, and click “Go” in the box that says, “Bring your simulation closer to reality” as shown in the image below:
 
@@ -38,10 +38,8 @@ To initiate a Grid Singularity Canary Test Network (GSy CTN) for a live peer-to-
 </figure>
 
 
-&nbsp;2. A Grid Singularity representative will be in touch with you shortly to discuss your needs and share a commercial and a data processing agreement to review and execute.{start=2}
+&nbsp;2. A Grid Singularity representative will be in touch with you shortly to discuss your needs and share a commercial and a data processing agreement to review and execute. As an initial step, you will be required to provide the following information:
 
-
-A personal account of an external user does not have the admin rights to create a GSy CTN. If you have any questions, please contact us at contact@gridsingularity.com for technical support and provide us with the following:
 
   - *Your Name*
   - *Grid Singularity account email address*
@@ -52,7 +50,7 @@ A personal account of an external user does not have the admin rights to create 
   - *Purpose of the canary network*
   - *Simulation name*
 
-Once your request is defined contractually and approved, please follow the data integration steps defined in the section below.
+Once your request is defined contractually and approved,  your user account will acquire elevated permissions that will allow the creation of a GSy CTN by following the data integration steps defined in the section below.
 
 ## Grid Singularity Canary Test Network Operation
 
@@ -114,41 +112,42 @@ Upon completing this step, the energy live asset data will be displayed in the G
 ### Grid Singularity Canary Test Network Data Transmission Options
 There are two options to connect the community live data stream to the Grid Singularity Exchange.
 
-#### Send live data streams via the Grid Singularity Exchange SDK
+- Send live data streams via the Grid Singularity Exchange SDK
 [Grid Singularity Exchange SDK](https://github.com/gridsingularity/gsy-e-sdk){target=_blank} (recommended, compatible with Python-based aggregator or smart metre software). This option is a pure Python library that can be integrated with existing aggregator or smart metre software, automating the process of setting up a data stream from the energy assets to the Grid Singularity Exchange. After installing the library and with minimal configuration (by setting up credentials and asset ids), the aggregator (community manager) can transmit the community assets’ forecasts and measurements.  To send live data streams through the Exchange SDK, please follow these steps:
 
-1. Install the SDK Client by following the steps described [here](APIs-introduction.md). Since the client is written in Python, the data stream pipeline needs to be written in Python as well.
-2. Add the following command in the [Grid Singularity Asset SDK Script](https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/asset_api_scripts/canary_network_live_data.py){target=_blank} to set the energy consumption and generation for Load, PV and other assets for the next market slot:
+    1. Install the SDK Client by following the steps described [here](APIs-introduction.md). Since the client is written in Python, the data stream pipeline needs to be written in Python as well.
+    2. Add the following command in the [Grid Singularity Asset SDK Script](https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/asset_api_scripts/canary_network_live_data.py){target=_blank} to set the energy consumption and generation for Load, PV and other assets for the next market slot:
 
-```asset_client.set_energy_forecast(<energy_forecast_Wh>)```
+    ```asset_client.set_energy_forecast(<energy_forecast_Wh>)```
 
-An example of how sending forecasts through the SDK Client could be added into the Asset API script can be found [here](https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/test_sending_energy_forecast.py){target=_blank}.
+    An example of how sending forecasts through the SDK Client could be added into the Asset API script can be found [here](https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/test_sending_energy_forecast.py){target=_blank}.
 
-#### Send live data streams via the REST API
+- Send live data streams via the REST API
 REST API (for non-Python aggregator or smart metre software). This option is a language-agnostic API that can be used to stream live energy asset data to the Grid Singularity Exchange. Unlike the Grid Singularity Exchange SDK, it does not need installation of a GSy library. A RESTful API is used instead, which enables correct transmission of forecasts and measurements of assets to the Exchange. Authentication and asset id assignment are part of the API definition, allowing the aggregator (energy community manager) to send different forecasts and measurements per asset.
 
-To send asset data without using the SDK Client or to set up a data pipeline in another programming language than the SDK Client, the raw REST API can be used. An additional authentication step has to be performed first, and then a post sent, as described below:
+    To send asset data without using the SDK Client or to set up a data pipeline in another programming language than the SDK Client, the raw REST API can be used. An additional authentication step has to be performed first, and then a post sent, as described below:
 
-a. Authentication is done via JSON Web Token (JWT). In order to retrieve the JWT, the following POST request has to be performed:
+    a. Authentication is done via JSON Web Token (JWT). In order to retrieve the JWT, the following POST request has to be performed:
 
-```POST https://gsyweb.gridsingularity.com/api-token-auth/```
+      ```POST https://gsyweb.gridsingularity.com/api-token-auth/```
 
-The body of the request needs to contain the following information (JSON string):
+    The body of the request needs to contain the following information (JSON string):
 
-```{"username": "<your_username>", "password": "<your_password>"}```
+      ```{"username": "<your_username>", "password": "<your_password>"}```
 
-The returned JWT needs to be sent via the Authorization HTTP header when sending the forecast data. For that the user needs to add the following key value pair to the header of each POST command: Authorization: JWT <your_token>
+    The returned JWT needs to be sent via the Authorization HTTP header when sending the forecast data. For that the user needs to add the following key value pair to the header of each POST command: Authorization: JWT <your_token>
 
-b. The POST to send the energy value is (please fill in <Canary Network UUID> and <Asset UUID>):
+    b. The POST to send the energy value is (please fill in `<Canary Network UUID>` and `<Asset UUID>`):
 
-```
-POST https://gsyweb.gridsingularity.com/external-connection/api/
-<Canary Network UUID>/<Asset UUID>/set_energy_forecast/
-```
+      ```
+      POST https://gsyweb.gridsingularity.com/external-connection/api/
+      <Canary Network UUID>/<Asset UUID>/set_energy_forecast/
+      ```
 
-The body of the request needs to contain the following information (JSON string):
+    The body of the request needs to contain the following information (JSON string):
 
-```{"energy_Wh": <energy_value_for_asset>}```
+      ```{"energy_Wh": <energy_value_for_asset>}```
+
 
 Once the connection with the Grid Singularity Canary Test Network is established, we recommend that you verify that the data are sent successfully to the Grid Singularity Exchange,  by comparing the data visualised on the Grid Singularity user interface with the data in your local database and iterate this process until each asset is sending the correct data.
 
