@@ -7,7 +7,7 @@ from gsy_framework.read_user_profile import InputProfileTypes
 from pendulum import DateTime
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
-from gsy_e.models.strategy.profile import EnergyProfile
+from gsy_e.models.strategy.profile import profile_factory
 from gsy_e.models.strategy.state import HeatPumpState
 
 # pylint: disable=pointless-string-statement
@@ -156,21 +156,31 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
             initial_temp_C: float = ConstSettings.HeatPumpSettings.INIT_TEMP_C,
             external_temp_C_profile: Optional[Union[str, float, Dict]] = None,
             external_temp_C_profile_uuid: Optional[str] = None,
+            external_temp_C_measurement_uuid: Optional[str] = None,
             tank_volume_l: float = ConstSettings.HeatPumpSettings.TANK_VOL_L,
             consumption_kWh_profile: Optional[Union[str, float, Dict]] = None,
             consumption_kWh_profile_uuid: Optional[str] = None,
+            consumption_kWh_measurement_uuid: Optional[str] = None,
             source_type: int = ConstSettings.HeatPumpSettings.SOURCE_TYPE):
 
         super().__init__(
             maximum_power_rating_kW, min_temp_C, max_temp_C, initial_temp_C, tank_volume_l)
         self._source_type = source_type
 
-        self._consumption_kWh: [DateTime, float] = EnergyProfile(
+        self._consumption_kWh: [DateTime, float] = profile_factory(
             consumption_kWh_profile, consumption_kWh_profile_uuid,
             profile_type=InputProfileTypes.ENERGY_KWH)
 
-        self._ext_temp_C: [DateTime, float] = EnergyProfile(
+        self._ext_temp_C: [DateTime, float] = profile_factory(
             external_temp_C_profile, external_temp_C_profile_uuid,
+            profile_type=InputProfileTypes.IDENTITY)
+
+        self._measurement_consumption_kWh: [DateTime, float] = profile_factory(
+            None, consumption_kWh_measurement_uuid,
+            profile_type=InputProfileTypes.ENERGY_KWH)
+
+        self._measurement_ext_temp_C: [DateTime, float] = profile_factory(
+            None, external_temp_C_measurement_uuid,
             profile_type=InputProfileTypes.IDENTITY)
 
         self.min_temp_C = min_temp_C  # for usage in the strategy
@@ -181,8 +191,11 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
             **super().serialize(),
             "consumption_kWh": self._consumption_kWh.input_profile,
             "consumption_profile_uuid": self._consumption_kWh.input_profile_uuid,
+            "consumption_kWh_measurement_uuid":
+                self._measurement_consumption_kWh.input_profile_uuid,
             "external_temp_C": self._ext_temp_C.input_profile,
             "external_temp_profile_uuid": self._ext_temp_C.input_profile_uuid,
+            "external_temp_measurement_uuid": self._measurement_ext_temp_C.input_profile_uuid,
             "source_type": self._source_type,
         }
 

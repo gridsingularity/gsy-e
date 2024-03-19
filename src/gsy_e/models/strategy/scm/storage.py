@@ -11,10 +11,17 @@ class SCMStorageStrategy(SCMStrategy):
 
     def __init__(
             self, prosumption_kWh_profile: Union[str, Dict[int, float], Dict[str, float]] = None,
-            prosumption_kWh_profile_uuid: str = None):
+            prosumption_kWh_profile_uuid: str = None,
+            prosumption_kWh_measurement_uuid: str = None):
+
         self._energy_params = StorageProfileEnergyParameters(
-            prosumption_kWh_profile, prosumption_kWh_profile_uuid)
+            prosumption_kWh_profile,
+            prosumption_kWh_profile_uuid,
+            prosumption_kWh_measurement_uuid)
+
+        # needed for profile_handler
         self.prosumption_kWh_profile_uuid = prosumption_kWh_profile_uuid
+        self.prosumption_kWh_measurement_uuid = prosumption_kWh_measurement_uuid
 
     def serialize(self) -> Dict:
         """Serialize the strategy parameters."""

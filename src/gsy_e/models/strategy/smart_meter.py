@@ -69,7 +69,9 @@ class SmartMeterStrategy(BidEnabledStrategy, UseMarketMakerMixin):
             fit_to_limit: bool = True,
             update_interval=None,
             use_market_maker_rate: bool = False,
-            smart_meter_profile_uuid: str = None):
+            smart_meter_profile_uuid: str = None,
+            smart_meter_measurement_uuid: str = None
+    ):
         """
         Args:
             smart_meter_profile: input profile defining the energy production/consumption of the
@@ -94,9 +96,13 @@ class SmartMeterStrategy(BidEnabledStrategy, UseMarketMakerMixin):
                 selling rate as per utility's trading rate.
         """
         super().__init__()
-        self.smart_meter_profile_uuid = smart_meter_profile_uuid  # needed for profile_handler
+
         self._energy_params = SmartMeterEnergyParameters(
-            smart_meter_profile, smart_meter_profile_uuid)
+            smart_meter_profile, smart_meter_profile_uuid, smart_meter_measurement_uuid)
+
+        # needed for profile_handler
+        self.smart_meter_profile_uuid = smart_meter_profile_uuid
+        self.smart_meter_measurement_uuid = smart_meter_measurement_uuid
 
         self.use_market_maker_rate = use_market_maker_rate
         update_interval = self._convert_update_interval_to_duration(update_interval)
@@ -170,7 +176,7 @@ class SmartMeterStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         This method is triggered by the MARKET_CYCLE event.
         """
         super().event_market_cycle()
-
+        self._energy_params.read_and_rotate_profiles()
         self._reset_rates_and_update_prices()
         time_slots = [m.time_slot for m in self.area.all_markets]
         self._energy_params.set_energy_forecast_for_future_markets(

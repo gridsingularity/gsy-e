@@ -58,9 +58,11 @@ class HeatPumpStrategy(TradingStrategyBase):
                  initial_temp_C: float = ConstSettings.HeatPumpSettings.INIT_TEMP_C,
                  external_temp_C_profile: Optional[Union[str, float, Dict]] = None,
                  external_temp_C_profile_uuid: Optional[str] = None,
+                 external_temp_C_measurement_uuid: Optional[str] = None,
                  tank_volume_l: float = ConstSettings.HeatPumpSettings.TANK_VOL_L,
                  consumption_kWh_profile: Optional[Union[str, float, Dict]] = None,
                  consumption_kWh_profile_uuid: Optional[str] = None,
+                 consumption_kWh_measurement_uuid: Optional[str] = None,
                  source_type: int = ConstSettings.HeatPumpSettings.SOURCE_TYPE,
                  order_updater_parameters: Dict[
                      AvailableMarketTypes, HeatPumpOrderUpdaterParameters] = None,
@@ -100,6 +102,8 @@ class HeatPumpStrategy(TradingStrategyBase):
         # needed for profile_handler
         self.external_temp_C_profile_uuid = external_temp_C_profile_uuid
         self.consumption_kWh_profile_uuid = consumption_kWh_profile_uuid
+        self.external_temp_C_measurement_uuid = external_temp_C_measurement_uuid
+        self.consumption_kWh_measurement_uuid = consumption_kWh_measurement_uuid
 
     def _init_price_params(self, order_updater_parameters, preferred_buying_rate):
         self.use_default_updater_params: bool = not order_updater_parameters

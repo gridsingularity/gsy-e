@@ -41,7 +41,8 @@ class DefinedLoadStrategy(LoadHoursStrategy):
                  (ConstSettings.BalancingSettings.OFFER_DEMAND_RATIO,
                   ConstSettings.BalancingSettings.OFFER_SUPPLY_RATIO),
                  use_market_maker_rate: bool = False,
-                 daily_load_profile_uuid: str = None):
+                 daily_load_profile_uuid: str = None,
+                 daily_load_measurement_uuid: str = None):
         """
         Constructor of DefinedLoadStrategy
         :param daily_load_profile: input profile for a day. Can be either a csv file path,
@@ -70,11 +71,14 @@ class DefinedLoadStrategy(LoadHoursStrategy):
                          balancing_energy_ratio=balancing_energy_ratio,
                          use_market_maker_rate=use_market_maker_rate)
         self._energy_params = DefinedLoadEnergyParameters(
-            daily_load_profile, daily_load_profile_uuid)
-        self.daily_load_profile_uuid = daily_load_profile_uuid  # needed for profile_handler
+            daily_load_profile, daily_load_profile_uuid, daily_load_measurement_uuid)
+
+        # needed for profile_handler
+        self.daily_load_profile_uuid = daily_load_profile_uuid
+        self.daily_load_measurement_uuid = daily_load_measurement_uuid
 
     def event_market_cycle(self):
-        self._energy_params.energy_profile.read_or_rotate_profiles()
+        self._energy_params.read_and_rotate_profiles()
         super().event_market_cycle()
 
     def _update_energy_requirement_spot_market(self):
@@ -82,7 +86,7 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         Update required energy values for each market slot.
         :return: None
         """
-        self._energy_params.energy_profile.read_or_rotate_profiles()
+        self._energy_params.read_and_rotate_profiles()
 
         slot_time = self.area.spot_market.time_slot
         self._energy_params.update_energy_requirement(slot_time)

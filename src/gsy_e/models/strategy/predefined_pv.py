@@ -114,7 +114,9 @@ class PVUserProfileStrategy(PVStrategy):
                 minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
             energy_rate_decrease_per_update=None,
             use_market_maker_rate: bool = False,
-            power_profile_uuid: str = None):
+            power_profile_uuid: str = None,
+            power_measurement_uuid: str = None
+    ):
         """
         Constructor of PVUserProfileStrategy
         Args:
@@ -132,8 +134,11 @@ class PVUserProfileStrategy(PVStrategy):
                          energy_rate_decrease_per_update=energy_rate_decrease_per_update,
                          use_market_maker_rate=use_market_maker_rate)
         self._energy_params = PVUserProfileEnergyParameters(
-            panel_count, power_profile, power_profile_uuid)
-        self.power_profile_uuid = power_profile_uuid  # needed for profile_handler
+            panel_count, power_profile, power_profile_uuid, power_measurement_uuid)
+
+        # needed for profile_handler
+        self.power_profile_uuid = power_profile_uuid
+        self.power_measurement_uuid = power_measurement_uuid
 
     def set_produced_energy_forecast_in_state(self, reconfigure=True):
         time_slots = [self.area.spot_market.time_slot]

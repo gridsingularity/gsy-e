@@ -58,10 +58,15 @@ class SCMLoadHoursStrategy(SCMStrategy):
 
 class SCMLoadProfileStrategy(SCMStrategy):
     """Load SCM strategy with power consumption dictated by a profile."""
-    def __init__(self, daily_load_profile=None, daily_load_profile_uuid=None):
+    def __init__(self, daily_load_profile=None,
+                 daily_load_profile_uuid: str = None,
+                 daily_load_measurement_uuid: str = None):
         self._energy_params = DefinedLoadEnergyParameters(
-            daily_load_profile, daily_load_profile_uuid)
+            daily_load_profile, daily_load_profile_uuid, daily_load_measurement_uuid)
+
+        # needed for profile_handler
         self.daily_load_profile_uuid = daily_load_profile_uuid
+        self.daily_load_measurement_uuid = daily_load_measurement_uuid
 
     @property
     def state(self):
