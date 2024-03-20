@@ -29,7 +29,8 @@ class HomeAfterMeterData:
     home_name: str
     sharing_coefficient_percent: float = 0.
     # grid_fees, market_maker_rate and feed_in_tariff units are the selected currency (e.g. Euro)
-    grid_fees: float = 0.
+    grid_import_fee_const: float = 0.
+    grid_export_fee_const: float = 0.
     taxes_surcharges: float = 0.
     fixed_monthly_fee: float = 0.
     marketplace_monthly_fee: float = 0.
@@ -212,6 +213,7 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
     bought_from_grid: float = 0.
     spent_to_grid: float = 0.
     sold_to_grid: float = 0.
+    virtual_compensation: float = 0.
     earned_from_grid: float = 0.
     marketplace_fee: float = 0.
     assistance_fee: float = 0.
@@ -262,11 +264,14 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
         self.tax_surcharges += energy_kWh * tax_surcharge_rate
         self.grid_fees += energy_kWh * grid_fee_rate
 
-    def set_sold_to_grid(self, energy_kWh, energy_rate):
+    def set_sold_to_grid(self, energy_kWh, energy_rate, grid_fee_rate):
         """Update price and energy counters after selling energy to the grid."""
         self.sold_to_grid += energy_kWh
         self.earned_from_grid += energy_kWh * energy_rate
         self.gsy_energy_bill -= energy_kWh * energy_rate
+        export_fee = energy_kWh * grid_fee_rate
+        self.grid_fees += export_fee
+        self.virtual_compensation = energy_kWh * energy_rate - export_fee
 
     def set_min_max_community_savings(
             self, min_savings_percent: float, max_savings_percent: float):
@@ -396,7 +401,8 @@ class SCMManager:
                       f"on the second level after the top."
 
     def add_home_data(self, home_uuid: str, home_name: str,
-                      grid_fees: float, coefficient_percentage: float,
+                      grid_export_fee_const: float, grid_import_fee_const: float,
+                      coefficient_percentage: float,
                       taxes_surcharges: float, fixed_monthly_fee: float,
                       marketplace_monthly_fee: float, assistance_monthly_fee: float,
                       market_maker_rate: float, feed_in_tariff: float,
@@ -404,11 +410,14 @@ class SCMManager:
                       asset_energy_requirements_kWh: Dict[str, float]):
         # pylint: disable=too-many-arguments
         """Import data for one individual home."""
-        if grid_fees is None:
-            grid_fees = 0.0
+        if grid_import_fee_const is None:
+            grid_import_fee_const = 0.0
+        if grid_export_fee_const is None:
+            grid_export_fee_const = 0.0
         self._home_data[home_uuid] = HomeAfterMeterData(
             home_uuid, home_name,
-            grid_fees=grid_fees,
+            grid_export_fee_const=grid_export_fee_const,
+            grid_import_fee_const=grid_import_fee_const,
             sharing_coefficient_percent=coefficient_percentage,
             fixed_monthly_fee=fixed_monthly_fee,
             marketplace_monthly_fee=marketplace_monthly_fee,
@@ -448,15 +457,16 @@ class SCMManager:
             self.community_data.self_consumed_energy_kWh += (
                 home_data.self_production_for_community_kWh)
 
-    def calculate_home_energy_bills(
-            self, home_uuid: str) -> None:
+    def calculate_home_energy_bills(self, home_uuid: str) -> None:
+        # pylint: disable=too-many-locals
         """Calculate energy bills for one home."""
         assert home_uuid in self._home_data
 
         home_data = self._home_data[home_uuid]
 
         market_maker_rate = home_data.market_maker_rate
-        grid_fees = home_data.grid_fees
+        grid_export_fee_const = home_data.grid_export_fee_const
+        grid_import_fee_const = home_data.grid_import_fee_const
         taxes_surcharges = home_data.taxes_surcharges
         feed_in_tariff = home_data.feed_in_tariff
 
@@ -472,9 +482,10 @@ class SCMManager:
             else self._intracommunity_base_rate_eur)
         market_maker_rate_decreased_fees = (
                 intracommunity_base_rate_eur
-                + grid_fees * (1.0 - self._grid_fees_reduction)
+                + grid_import_fee_const * (1.0 - self._grid_fees_reduction)
                 + taxes_surcharges)
-        market_maker_rate_normal_fees = market_maker_rate + grid_fees + taxes_surcharges
+        market_maker_rate_normal_fees = (
+                market_maker_rate + grid_import_fee_const + taxes_surcharges)
 
         home_bill = AreaEnergyBills(
             marketplace_fee=marketplace_fee, fixed_fee=fixed_fee, assistance_fee=assistance_fee,
@@ -495,7 +506,7 @@ class SCMManager:
                     market_maker_rate_decreased_fees)
 
             home_bill.set_sold_to_grid(
-                home_data.self_production_for_grid_kWh, feed_in_tariff)
+                home_data.self_production_for_grid_kWh, feed_in_tariff, grid_export_fee_const)
             if home_data.self_production_for_grid_kWh > FLOATING_POINT_TOLERANCE:
                 home_data.create_sell_trade(
                     self._time_slot, DEFAULT_SCM_GRID_NAME,
@@ -508,7 +519,7 @@ class SCMManager:
             if home_data.energy_need_kWh > FLOATING_POINT_TOLERANCE:
                 home_bill.set_bought_from_community(
                     home_data.energy_need_kWh, market_maker_rate_decreased_fees,
-                    grid_fees * (1.0 - self._grid_fees_reduction), taxes_surcharges
+                    grid_import_fee_const * (1.0 - self._grid_fees_reduction), taxes_surcharges
                 )
                 home_data.create_buy_trade(
                     self._time_slot, DEFAULT_SCM_COMMUNITY_NAME, home_data.energy_need_kWh,
@@ -519,13 +530,13 @@ class SCMManager:
         else:
             home_bill.set_bought_from_community(
                 home_data.allocated_community_energy_kWh, market_maker_rate_decreased_fees,
-                grid_fees * (1.0 - self._grid_fees_reduction), taxes_surcharges
+                grid_import_fee_const * (1.0 - self._grid_fees_reduction), taxes_surcharges
             )
 
             energy_from_grid_kWh = (
                     home_data.energy_need_kWh - home_data.allocated_community_energy_kWh)
             home_bill.set_bought_from_grid(energy_from_grid_kWh, market_maker_rate_normal_fees,
-                                           grid_fees, taxes_surcharges)
+                                           grid_import_fee_const, taxes_surcharges)
 
             if home_data.allocated_community_energy_kWh > 0.0:
                 home_data.create_buy_trade(
@@ -621,6 +632,7 @@ class SCMManager:
             community_bills.marketplace_fee += data.marketplace_fee
             community_bills.assistance_fee += data.assistance_fee
             community_bills.fixed_fee += data.fixed_fee
+            community_bills.virtual_compensation += data.virtual_compensation
 
         return community_bills.to_dict()
 

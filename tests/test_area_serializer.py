@@ -192,7 +192,8 @@ def test_leaf_deserialization_scm():
     recovered = area_from_string(
         '''{
              "name": "house",
-             "grid_fee_constant": 0.3,
+             "grid_export_fee_const": 0.1,
+             "grid_import_fee_const": 0.3,
              "coefficient_percentage": 0.4,
              "taxes_surcharges": 0.5,
              "fixed_monthly_fee": 0.6,
@@ -213,7 +214,8 @@ def test_leaf_deserialization_scm():
         _create_config()
     )
 
-    assert recovered.grid_fee_constant == 0.3
+    assert recovered.grid_import_fee_const == 0.3
+    assert recovered.grid_export_fee_const == 0.1
     assert recovered.coefficient_percentage == 0.4
     assert recovered._taxes_surcharges == 0.5
     assert recovered._fixed_monthly_fee == 0.6

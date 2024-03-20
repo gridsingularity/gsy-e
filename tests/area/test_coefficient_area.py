@@ -86,14 +86,14 @@ class TestCoefficientArea:
                                  coefficient_percentage=0.6,
                                  feed_in_tariff=0.1,
                                  market_maker_rate=0.3,
-                                 grid_fee_constant=0.0)
+                                 grid_import_fee_const=0.0)
         house2 = CoefficientArea(name="House 2", children=[load2, pv2],
                                  coefficient_percentage=0.4,
                                  feed_in_tariff=0.05,
                                  market_maker_rate=0.24,
-                                 grid_fee_constant=0.0)
+                                 grid_import_fee_const=0.0)
         return CoefficientArea(name="Community", children=[house1, house2],
-                               grid_fee_constant=0.0)
+                               grid_import_fee_const=0.0)
 
     @staticmethod
     def test_calculate_after_meter_data(_create_2_house_grid):
@@ -160,7 +160,7 @@ class TestCoefficientArea:
                                  coefficient_percentage=1.0,
                                  feed_in_tariff=0.1,
                                  market_maker_rate=0.3,
-                                 grid_fee_constant=0.0)
+                                 grid_import_fee_const=0.0)
         strategy = MagicMock(spec=SCMPVUserProfile)
         strategy.get_energy_to_sell_kWh = MagicMock(return_value=20.0)
         strategy.get_energy_to_buy_kWh = MagicMock(return_value=0.0)
@@ -169,9 +169,9 @@ class TestCoefficientArea:
                                  coefficient_percentage=0.0,
                                  feed_in_tariff=0.0,
                                  market_maker_rate=0.3,
-                                 grid_fee_constant=0.0)
+                                 grid_import_fee_const=0.0)
         grid_area = CoefficientArea(name="Community", children=[house1, house2],
-                                    grid_fee_constant=0.0)
+                                    grid_import_fee_const=0.0)
 
         time_slot = now()
         scm = SCMManager(grid_area, time_slot)
@@ -335,11 +335,13 @@ class TestCoefficientArea:
         scm_settings = {scm_setting: None}
         with pytest.raises(CoefficientAreaException):
             # grid_fee_constant's default value is None, so setting it to 0, it is tested elsewhere
-            CoefficientArea(name="House 1", children=[load], grid_fee_constant=0., **scm_settings)
+            CoefficientArea(
+                name="House 1", children=[load], grid_import_fee_const=0., **scm_settings)
 
         # check does not fail for non-House areas
-        house = CoefficientArea(name="House 1", children=[load], grid_fee_constant=0.)
-        CoefficientArea(name="Community", children=[house], grid_fee_constant=0., **scm_settings)
+        house = CoefficientArea(name="House 1", children=[load], grid_import_fee_const=0.)
+        CoefficientArea(
+            name="Community", children=[house], grid_import_fee_const=0., **scm_settings)
 
     @staticmethod
     def test_area_reconfigure_event_changes_attributes():
