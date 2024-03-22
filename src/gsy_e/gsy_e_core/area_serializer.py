@@ -177,6 +177,10 @@ def area_from_dict(description, config):
 
         if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
             # For the SCM only use the CoefficientArea strategy.
+            grid_import_fee_const = description.get("grid_import_fee_const", None)
+            grid_import_fee_const = (
+                grid_import_fee_const if grid_import_fee_const is not None else grid_fee_constant)
+            grid_export_fee_const = description.get("grid_export_fee_const", None)
             area = CoefficientArea(
                 name, children, uuid, optional("strategy"), config,
                 coefficient_percentage=description.get("coefficient_percentage", 0.0),
@@ -190,7 +194,9 @@ def area_from_dict(description, config):
                 feed_in_tariff=description.get(
                     "feed_in_tariff", GlobalConfig.FEED_IN_TARIFF / 100.,),
                 grid_fee_percentage=grid_fee_percentage,
-                grid_fee_constant=grid_fee_constant)
+                grid_import_fee_const=grid_import_fee_const,
+                grid_export_fee_const=grid_export_fee_const
+            )
         else:
             area = Area(name, children, uuid, optional("strategy"), config,
                         grid_fee_percentage=grid_fee_percentage,

@@ -24,15 +24,15 @@ def fixture_coefficient_community():
         external_connection_enabled=False
     )
     load = CoefficientArea("load", None, None, SCMLoadProfileStrategy(),
-                           config, grid_fee_constant=0)
+                           config, grid_import_fee_const=0)
     pv = CoefficientArea("pv", None, None, SCMPVUserProfile(),
-                         config, grid_fee_constant=0)
+                         config, grid_import_fee_const=0)
     storage = CoefficientArea("storage", None, None, SCMStorageStrategy(),
-                              config, grid_fee_constant=0)
+                              config, grid_import_fee_const=0)
     house_area = CoefficientArea("House 1", children=[load, pv, storage], config=config,
-                                 grid_fee_constant=0)
+                                 grid_import_fee_const=0)
     community_area = CoefficientArea("House 1", children=[house_area], config=config,
-                                     grid_fee_constant=0)
+                                     grid_import_fee_const=0)
     yield community_area, config
     ConstSettings.MASettings.MARKET_TYPE = SpotMarketTypeEnum.ONE_SIDED.value
     GlobalConfig.sim_duration = duration(days=GlobalConfig.DURATION_D)

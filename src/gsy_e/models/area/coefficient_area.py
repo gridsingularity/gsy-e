@@ -47,7 +47,8 @@ class CoefficientArea(AreaBase):
                  strategy: SCMStrategy = None,
                  config: SimulationConfig = None,
                  grid_fee_percentage: float = None,
-                 grid_fee_constant: float = None,
+                 grid_import_fee_const: float = None,
+                 grid_export_fee_const: float = None,
                  coefficient_percentage: float = 0.0,
                  taxes_surcharges: float = 0.0,
                  fixed_monthly_fee: float = 0.0,
@@ -58,11 +59,10 @@ class CoefficientArea(AreaBase):
                  feed_in_tariff: float = GlobalConfig.FEED_IN_TARIFF / 100.,
                  ):
         # pylint: disable=too-many-arguments
-        super().__init__(name, children, uuid, strategy, config, grid_fee_percentage,
-                         grid_fee_constant)
+        super().__init__(name, children, uuid, strategy, config, grid_fee_percentage)
         self.display_type = (
             "CoefficientArea" if self.strategy is None else self.strategy.__class__.__name__)
-        self.validate_coefficient_area_setting(grid_fee_constant, "grid_fee_constant")
+        self.validate_coefficient_area_setting(grid_import_fee_const, "grid_import_fee_const")
         self.coefficient_percentage = self.validate_coefficient_area_setting(
             coefficient_percentage, "coefficient_percentage")
         self._taxes_surcharges = self.validate_coefficient_area_setting(
@@ -78,6 +78,9 @@ class CoefficientArea(AreaBase):
         self._feed_in_tariff = self.validate_coefficient_area_setting(
             feed_in_tariff, "feed_in_tariff")
         self.past_market_time_slot = None
+
+        self.grid_import_fee_const = grid_import_fee_const
+        self.grid_export_fee_const = grid_export_fee_const
 
     def activate_energy_parameters(self, current_time_slot: DateTime) -> None:
         """Activate the coefficient-based area parameters."""
@@ -154,7 +157,8 @@ class CoefficientArea(AreaBase):
             home_production_kWh += production_kWh
 
         scm_manager.add_home_data(
-            self.uuid, self.name, self.grid_fee_constant, self.coefficient_percentage,
+            self.uuid, self.name, self.grid_export_fee_const, self.grid_import_fee_const,
+            self.coefficient_percentage,
             self._taxes_surcharges, self._fixed_monthly_fee, self._marketplace_monthly_fee,
             self._assistance_monthly_fee, self._market_maker_rate, self._feed_in_tariff,
             home_production_kWh, home_consumption_kWh, dict(asset_energy_requirements_kWh))
@@ -200,6 +204,7 @@ class CoefficientArea(AreaBase):
                 self.uuid, self.strategy.trigger_aggregator_commands)
 
     def market_cycle_external(self):
+        """Method that deals with external requests/commands from aggregators"""
         self._consume_commands_from_aggregator()
         for child in self.children:
             child.market_cycle_external()
