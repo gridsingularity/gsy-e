@@ -39,6 +39,7 @@ class HomeAfterMeterData:
     feed_in_tariff: float = 0.
     consumption_kWh: float = 0.
     production_kWh: float = 0.
+    virtual_compensation: float = 0.
     self_consumed_energy_kWh: float = 0.
     energy_surplus_kWh: float = 0.
     energy_need_kWh: float = 0.
@@ -184,6 +185,7 @@ class CommunityData:
     energy_need_kWh: float = 0.
     energy_bought_from_community_kWh: float = 0.
     energy_sold_to_grid_kWh: float = 0.
+    virtual_compensation: float = 0.
     trades: List[Trade] = field(default_factory=list)
 
     def to_dict(self) -> Dict:
@@ -236,7 +238,8 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
                 self.gsy_energy_bill_excl_revenue_without_fees,
             "gsy_energy_bill_excl_fees": self.gsy_energy_bill_excl_fees,
             "gsy_energy_bill_revenue": self.gsy_energy_bill_revenue,
-            "gsy_total_benefit": self.gsy_total_benefit
+            "gsy_total_benefit": self.gsy_total_benefit,
+            "virtual_compensation": self.virtual_compensation
         })
         return output_dict
 
@@ -271,7 +274,7 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
         self.gsy_energy_bill -= energy_kWh * energy_rate
         export_fee = energy_kWh * grid_fee_rate
         self.grid_fees += export_fee
-        self.virtual_compensation = energy_kWh * energy_rate - export_fee
+        self.virtual_compensation = max(energy_kWh * energy_rate - export_fee, 0)
 
     def set_min_max_community_savings(
             self, min_savings_percent: float, max_savings_percent: float):
@@ -456,6 +459,7 @@ class SCMManager:
             self.community_data.energy_sold_to_grid_kWh += home_data.energy_sold_to_grid_kWh
             self.community_data.self_consumed_energy_kWh += (
                 home_data.self_production_for_community_kWh)
+            self.community_data.virtual_compensation += home_data.virtual_compensation
 
     def calculate_home_energy_bills(self, home_uuid: str) -> None:
         # pylint: disable=too-many-locals
