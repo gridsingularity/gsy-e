@@ -207,16 +207,22 @@ class PVUserProfileEnergyParameters(PVEnergyParameters):
             self.energy_profile.input_profile = kwargs["power_profile"]
         self.energy_profile.read_or_rotate_profiles(reconfigure=True)
 
-    def set_produced_energy_forecast_in_state(
-            self, owner_name, time_slots, reconfigure=True):
+    def set_produced_energy_forecast_in_state(self, owner_name, time_slots, reconfigure=True):
         """Update the production energy forecast."""
-        if not self.energy_profile.profile:
+        self._set_produced_energy(self.energy_profile, owner_name, time_slots, reconfigure)
+
+    def set_produced_energy_measurement_in_state(self, owner_name, time_slots, reconfigure=True):
+        self._set_produced_energy(self.measurement_profile, owner_name, time_slots, reconfigure)
+
+    def _set_produced_energy(self, energy_profile, owner_name, time_slots, reconfigure=True):
+        """Update the production energy forecast."""
+        if not energy_profile.profile:
             raise GSyException(
                 f"PV {owner_name} tries to set its available energy forecast without a "
                 "power profile.")
         for time_slot in time_slots:
             energy_from_profile_kWh = find_object_of_same_weekday_and_time(
-                self.energy_profile.profile, time_slot)
+                energy_profile.profile, time_slot)
             if energy_from_profile_kWh is None:
                 log.error("Could not read area %s profile on timeslot %s. Configuration %s.",
                           owner_name, time_slot, gsy_e.constants.CONFIGURATION_ID)

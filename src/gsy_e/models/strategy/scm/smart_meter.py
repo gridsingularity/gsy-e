@@ -16,10 +16,11 @@ class SCMSmartMeterStrategy(SCMStrategy):
     # pylint: disable=too-many-arguments
     def __init__(
             self, smart_meter_profile: Union[Path, str, Dict[int, float], Dict[str, float]] = None,
-            smart_meter_profile_uuid: str = None):
+            smart_meter_profile_uuid: str = None, smart_meter_measurement_uuid: str = None):
         self._energy_params = SmartMeterEnergyParameters(
-            smart_meter_profile, smart_meter_profile_uuid)
+            smart_meter_profile, smart_meter_profile_uuid, smart_meter_measurement_uuid)
         self.smart_meter_profile_uuid = smart_meter_profile_uuid
+        self.smart_meter_measurement_uuid = smart_meter_measurement_uuid
 
     @property
     def state(self) -> "SmartMeterState":
@@ -38,7 +39,7 @@ class SCMSmartMeterStrategy(SCMStrategy):
 
     def market_cycle(self, area: "CoefficientArea") -> None:
         """Update the storage state for the next time slot."""
-        self._energy_params.set_energy_forecast_for_future_markets(
+        self._energy_params.set_energy_measurement_for_future_markets(
             [area.current_market_time_slot], reconfigure=False)
         self._energy_params.set_energy_measurement_kWh(area.current_market_time_slot)
         self.state.delete_past_state_values(area.past_market_time_slot)

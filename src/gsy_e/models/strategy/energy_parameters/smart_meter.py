@@ -55,19 +55,27 @@ class SmartMeterEnergyParameters:
             area_name=area_name)
 
     def set_energy_forecast_for_future_markets(self, time_slots, reconfigure: bool = True):
+        self._set_energy_forecast_for_future_markets(self._energy_profile, time_slots, reconfigure)
+
+    def set_energy_measurement_for_future_markets(self, time_slots, reconfigure: bool = True):
+        self._set_energy_forecast_for_future_markets(
+            self._measurement_profile, time_slots, reconfigure)
+
+    def _set_energy_forecast_for_future_markets(
+            self, energy_profile, time_slots, reconfigure: bool = True):
         """Set the energy consumption/production expectations for the upcoming market slots.
 
         Args:
             reconfigure: if True, re-read and preprocess the raw profile data.
         """
-        if not self._energy_profile.profile:
+        if not energy_profile.profile:
             raise GSyException(
                 f"Smart Meter {self._area.name} tries to set its required energy forecast without "
                 "a profile.")
 
         for slot_time in time_slots:
             energy_kWh = find_object_of_same_weekday_and_time(
-                self._energy_profile.profile, slot_time)
+                energy_profile.profile, slot_time)
             # For the Smart Meter, the energy amount can be either positive (consumption) or
             # negative (production).
             consumed_energy = energy_kWh if energy_kWh > 0 else 0.0

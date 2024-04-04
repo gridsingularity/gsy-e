@@ -52,10 +52,10 @@ class SCMPVUserProfile(SCMStrategy):
 
     def _update_forecast_in_state(self, area):
         self._energy_params.read_predefined_profile_for_pv()
-        self._energy_params.set_produced_energy_forecast_in_state(
+        self._energy_params.set_energy_measurement_kWh(area.current_market_time_slot)
+        self._energy_params.set_produced_energy_measurement_in_state(
             area.name, [area.current_market_time_slot], True
         )
-        self._energy_params.set_energy_measurement_kWh(area.current_market_time_slot)
 
     def activate(self, area: "AreaBase") -> None:
         self._energy_params.activate(area.config)

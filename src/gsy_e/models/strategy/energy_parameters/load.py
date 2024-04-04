@@ -208,12 +208,18 @@ class DefinedLoadEnergyParameters(LoadHoursPerDayEnergyParameters):
             self.energy_profile.read_or_rotate_profiles(reconfigure=True)
 
     def update_energy_requirement(self, time_slot):
-        if not self.energy_profile.profile:
+        self._update_energy_requirement(self.energy_profile, time_slot)
+
+    def update_energy_requirement_measurement(self, time_slot):
+        self._update_energy_requirement(self.measurement_profile, time_slot)
+
+    def _update_energy_requirement(self, energy_profile, time_slot):
+        if not energy_profile.profile:
             raise GSyException(
                 "Load tries to set its energy forecasted requirement "
                 "without a profile.")
         load_energy_kwh = find_object_of_same_weekday_and_time(
-            self.energy_profile.profile, time_slot)
+            energy_profile.profile, time_slot)
         if load_energy_kwh is None:
             log.error("Could not read area profile %s on timeslot %s. Configuration %s.",
                       self.energy_profile.input_profile_uuid, time_slot,
