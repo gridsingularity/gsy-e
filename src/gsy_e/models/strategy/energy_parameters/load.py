@@ -199,7 +199,7 @@ class DefinedLoadEnergyParameters(LoadHoursPerDayEnergyParameters):
         Runs on activate event.
         :return: None
         """
-        self.energy_profile.read_or_rotate_profiles()
+        self.read_and_rotate_profiles()
         super().event_activate_energy(area)
 
     def reset(self, time_slot: DateTime, **kwargs) -> None:
@@ -224,9 +224,8 @@ class DefinedLoadEnergyParameters(LoadHoursPerDayEnergyParameters):
 
     def set_energy_measurement_kWh(self, time_slot: DateTime) -> None:
         if gsy_e.constants.CONNECT_TO_PROFILES_DB:
-            measurement_from_profile_kWh = self.measurement_profile.profile.get(time_slot)
-            if measurement_from_profile_kWh is not None:
-                self.state.set_energy_measurement_kWh(measurement_from_profile_kWh, time_slot)
+            measurement_from_profile_kWh = self.measurement_profile.profile.get(time_slot, None)
+            self.state.set_energy_measurement_kWh(measurement_from_profile_kWh, time_slot)
         else:
             super().set_energy_measurement_kWh(time_slot)
 

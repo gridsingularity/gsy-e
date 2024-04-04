@@ -224,3 +224,10 @@ class PVUserProfileEnergyParameters(PVEnergyParameters):
 
             available_energy_kWh = energy_from_profile_kWh * self.panel_count
             self._state.set_available_energy(available_energy_kWh, time_slot, reconfigure)
+
+    def set_energy_measurement_kWh(self, time_slot: DateTime) -> None:
+        if gsy_e.constants.CONNECT_TO_PROFILES_DB:
+            measurement_from_profile_kWh = self.measurement_profile.profile.get(time_slot, None)
+            self._state.set_energy_measurement_kWh(measurement_from_profile_kWh, time_slot)
+        else:
+            super().set_energy_measurement_kWh(time_slot)
