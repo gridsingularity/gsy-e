@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from typing import Union, Dict, TYPE_CHECKING
 
 from pendulum import DateTime
+from gsy_framework.constants_limits import GlobalConfig
 
 from gsy_e.models.strategy.energy_parameters.pv import PVUserProfileEnergyParameters
 from gsy_e.models.strategy.scm import SCMStrategy
@@ -53,9 +54,14 @@ class SCMPVUserProfile(SCMStrategy):
     def _update_forecast_in_state(self, area):
         self._energy_params.read_predefined_profile_for_pv()
         self._energy_params.set_energy_measurement_kWh(area.current_market_time_slot)
-        self._energy_params.set_produced_energy_measurement_in_state(
-            area.name, [area.current_market_time_slot], True
-        )
+        if GlobalConfig.is_canary_network():
+            self._energy_params.set_produced_energy_measurement_in_state(
+                area.name, [area.current_market_time_slot], True
+            )
+        else:
+            self._energy_params.set_produced_energy_forecast_in_state(
+                area.name, [area.current_market_time_slot], True
+            )
 
     def activate(self, area: "AreaBase") -> None:
         self._energy_params.activate(area.config)

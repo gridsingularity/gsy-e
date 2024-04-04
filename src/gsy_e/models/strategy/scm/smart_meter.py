@@ -2,9 +2,11 @@ from pathlib import Path
 from typing import Union, Dict, TYPE_CHECKING
 
 from pendulum import DateTime
+from gsy_framework.constants_limits import GlobalConfig
 
 from gsy_e.models.strategy.scm import SCMStrategy
 from gsy_e.models.strategy.energy_parameters.smart_meter import SmartMeterEnergyParameters
+
 
 if TYPE_CHECKING:
     from gsy_e.models.area import CoefficientArea
@@ -39,8 +41,12 @@ class SCMSmartMeterStrategy(SCMStrategy):
 
     def market_cycle(self, area: "CoefficientArea") -> None:
         """Update the storage state for the next time slot."""
-        self._energy_params.set_energy_measurement_for_future_markets(
-            [area.current_market_time_slot], reconfigure=False)
+        if GlobalConfig.is_canary_network():
+            self._energy_params.set_energy_measurement_for_future_markets(
+                [area.current_market_time_slot], reconfigure=False)
+        else:
+            self._energy_params.set_energy_forecast_for_future_markets(
+                [area.current_market_time_slot], reconfigure=False)
         self._energy_params.set_energy_measurement_kWh(area.current_market_time_slot)
         self.state.delete_past_state_values(area.past_market_time_slot)
 

@@ -1,6 +1,7 @@
 from typing import Dict, Union
 
 from pendulum import DateTime
+from gsy_framework.constants_limits import GlobalConfig
 
 from gsy_e.models.strategy.energy_parameters.storage_profile import StorageProfileEnergyParameters
 from gsy_e.models.strategy.scm import SCMStrategy
@@ -34,7 +35,9 @@ class SCMStorageStrategy(SCMStrategy):
         self._energy_params.market_cycle()
 
     def _get_from_profile(self, time_slot: DateTime) -> float:
-        return self._energy_params.energy_measurement.profile.get(time_slot)
+        if GlobalConfig.is_canary_network():
+            return self._energy_params.energy_measurement.profile.get(time_slot)
+        return self._energy_params.energy_profile.profile.get(time_slot)
 
     def get_energy_to_sell_kWh(self, time_slot: DateTime) -> float:
         """Get the available energy for production for the specified time slot."""
