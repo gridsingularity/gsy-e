@@ -32,7 +32,9 @@ class VirtualHeatpumpStrategy(HeatPumpStrategy):
             dh_water_flow_m3_profile_uuid: Optional[str] = None,
             order_updater_parameters: Dict[
                 AvailableMarketTypes, HeatPumpOrderUpdaterParameters] = None,
-            preferred_buying_rate: float = VirtualHPSettings.PREFERRED_BUYING_RATE):
+            preferred_buying_rate: float = VirtualHPSettings.PREFERRED_BUYING_RATE,
+            calibration_coefficient: Optional[float] = None,
+    ):
 
         assert ConstSettings.MASettings.MARKET_TYPE != 1, (
                 "Heatpump has not been implemented for the OneSidedMarket")
@@ -51,6 +53,7 @@ class VirtualHeatpumpStrategy(HeatPumpStrategy):
             water_return_temp_C_profile_uuid=water_return_temp_C_profile_uuid,
             dh_water_flow_m3_profile=dh_water_flow_m3_profile,
             dh_water_flow_m3_profile_uuid=dh_water_flow_m3_profile_uuid,
+            calibration_coefficient=calibration_coefficient
         )
 
         self.water_supply_temp_C_profile_uuid = water_supply_temp_C_profile_uuid
