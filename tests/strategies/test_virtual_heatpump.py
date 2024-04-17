@@ -24,7 +24,8 @@ class TestVirtualHeatpumpStrategy:
             water_return_temp_C_profile_uuid=None,
             dh_water_flow_m3_profile={self._datetime: 0.1},
             dh_water_flow_m3_profile_uuid=None,
-            preferred_buying_rate=20
+            preferred_buying_rate=20,
+            calibration_coefficient=0.85
         )
         strategy_area = Area("asset", strategy=self._virtual_hp)
         area = Area("grid", children=[strategy_area])
