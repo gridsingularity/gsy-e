@@ -54,7 +54,9 @@ PROFILE_UUID_NAMES = [
     "consumption_kWh_measurement_uuid",
     "external_temp_C_measurement_uuid",
     "prosumption_kWh_measurement_uuid",
-    "daily_load_measurement_uuid"
+    "daily_load_measurement_uuid",
+    "power_measurement_uuid",
+    "smart_meter_measurement_uuid"
 ]
 
 
