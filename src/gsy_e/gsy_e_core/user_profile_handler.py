@@ -115,8 +115,13 @@ class ProfileDBConnectionHandler:
 
         self._db.generate_mapping(check_tables=True)
 
+    @property
+    def _buffer_duration(self) -> duration:
+        # For canary networks, the DB should be checked for new data every market slot
+        return GlobalConfig.slot_length if GlobalConfig.is_canary_network() else duration(days=7)
+
     @db_session
-    def get_first_week_from_profile(self, profile_uuid, current_timestamp) -> dict:
+    def get_data_from_profile(self, profile_uuid, current_timestamp) -> dict:
         """ Performs query to database and get the first week from a profile with the specified
             profile uuid. Current timestamp is used in order to rebase the start of the profile
             to the requested time from the simulation (e.g. if a profile contains values from
@@ -138,6 +143,8 @@ class ProfileDBConnectionHandler:
             if datapoint.profile_uuid == profile_uuid
         ).order_by(lambda d: d.time).limit(1)
         if len(first_datapoint) == 0:
+            if GlobalConfig.is_canary_network():
+                return {}
             raise ProfileDBConnectionException(
                 f"Profile in DB is empty for profile with uuid {profile_uuid}")
         first_datapoint_time = first_datapoint[0].time
@@ -146,7 +153,7 @@ class ProfileDBConnectionHandler:
             datapoint for datapoint in self.Profile_Database_ProfileTimeSeries
             if datapoint.profile_uuid == profile_uuid
             and datapoint.time >= first_datapoint_time
-            and datapoint.time <= first_datapoint_time + duration(days=7)
+            and datapoint.time <= first_datapoint_time + self._buffer_duration
         ))
         diff_current_to_db_time = (
             current_timestamp -
@@ -227,7 +234,7 @@ class ProfileDBConnectionHandler:
 
         for profile_uuid, profile_timeseries in self._user_profiles.items():
             if not profile_timeseries:
-                self._user_profiles[profile_uuid] = self.get_first_week_from_profile(
+                self._user_profiles[profile_uuid] = self.get_data_from_profile(
                     profile_uuid, current_timestamp)
 
     def _buffer_time_slots(self):
@@ -267,6 +274,7 @@ class ProfileDBConnectionHandler:
         Args:
             current_timestamp (Datetime): Current pendulum time stamp
                                           that is used to decide whether to buffer or not
+            uuids_used_in_setup (List): list of profile uuids that are used in the simulation
 
         """
         if self._should_buffer_profiles(current_timestamp):
@@ -334,7 +342,7 @@ class ProfilesHandler:
         if should_read_profile_from_db(profile_uuid):
             db_profile = self.db.get_profile_from_db_buffer(profile_uuid)
             if not db_profile:
-                db_profile = self.db.get_first_week_from_profile(
+                db_profile = self.db.get_data_from_profile(
                     profile_uuid, self.current_timestamp)
             return read_arbitrary_profile(profile_type,
                                           db_profile,
