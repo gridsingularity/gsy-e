@@ -21,6 +21,7 @@ from typing import Dict, List, Optional
 from gsy_framework.exceptions import GSyException, GSyDeviceException
 from gsy_framework.utils import find_object_of_same_weekday_and_time, convert_W_to_Wh
 from gsy_framework.validators.load_validator import LoadValidator
+from gsy_framework.constants_limits import GlobalConfig
 from pendulum import DateTime, duration
 
 import gsy_e.constants
@@ -209,6 +210,9 @@ class DefinedLoadEnergyParameters(LoadHoursPerDayEnergyParameters):
 
     def update_energy_requirement(self, time_slot):
         if not self.energy_profile.profile:
+            if GlobalConfig.is_canary_network():
+                return
+            print(GlobalConfig.is_canary_network())
             raise GSyException(
                 "Load tries to set its energy forecasted requirement "
                 "without a profile.")
@@ -221,13 +225,6 @@ class DefinedLoadEnergyParameters(LoadHoursPerDayEnergyParameters):
             load_energy_kwh = 0.0
         self.state.set_desired_energy(load_energy_kwh * 1000, time_slot, overwrite=False)
         self.state.update_total_demanded_energy(time_slot)
-
-    def set_energy_measurement_kWh(self, time_slot: DateTime) -> None:
-        if gsy_e.constants.CONNECT_TO_PROFILES_DB:
-            measurement_from_profile_kWh = self.measurement_profile.profile.get(time_slot, None)
-            self.state.set_energy_measurement_kWh(measurement_from_profile_kWh, time_slot)
-        else:
-            super().set_energy_measurement_kWh(time_slot)
 
     def _operating_hours(self, energy_kWh):
         """
