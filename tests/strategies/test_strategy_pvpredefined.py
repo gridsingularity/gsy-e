@@ -437,8 +437,8 @@ def test_profile_with_date_and_seconds_can_be_parsed(is_canary):
     profile_path = pathlib.Path(gsye_root_path + "/resources/datetime_seconds_profile.csv")
     profile = read_arbitrary_profile(InputProfileTypes.POWER_W, str(profile_path))
     # After the 6th element the rest of the entries are populated with the last value
-    expected_energy_values = [1.5, 1.25, 1.0, 0.75, 0.5, 0.25]
-    if GlobalConfig.is_canary_network():
+    if is_canary:
+        expected_energy_values = [1.5]
         energy_values_profile = []
         energy_values_after_profile = []
         end_time = profile_date.add(minutes=GlobalConfig.slot_length.minutes * 6)
@@ -451,6 +451,7 @@ def test_profile_with_date_and_seconds_can_be_parsed(is_canary):
         assert energy_values_profile == expected_energy_values
         all(x == 0.25 for x in energy_values_after_profile)
     else:
+        expected_energy_values = [1.5, 1.25, 1.0, 0.75, 0.5, 0.25]
         assert list(profile.values())[:6] == expected_energy_values
         assert all(x == 0.25 for x in list(profile.values())[6:])
 
