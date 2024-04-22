@@ -143,7 +143,7 @@ class ProfileDBConnectionHandler:
             first_datapoint = select(
                 datapoint for datapoint in self.Profile_Database_ProfileTimeSeries
                 if datapoint.profile_uuid == profile_uuid and
-                datapoint.time == current_timestamp
+                datapoint.time == self._convert_pendulum_to_datetime(current_timestamp)
             ).order_by(lambda d: d.time).limit(1)
             if len(first_datapoint) == 0:
                 return {}
@@ -267,7 +267,9 @@ class ProfileDBConnectionHandler:
 
         """
         if GlobalConfig.is_canary_network():
-            time_stamps = [current_timestamp, current_timestamp + self._buffer_duration]
+            time_stamps = [self._convert_pendulum_to_datetime(current_timestamp),
+                           self._convert_pendulum_to_datetime(
+                               current_timestamp + self._buffer_duration)]
         else:
             time_stamps = generate_market_slot_list(current_timestamp)
         if not time_stamps:
@@ -338,7 +340,7 @@ class ProfilesHandler:
             self.db.connect()
 
     @property
-    def current_timestamp(self):
+    def current_timestamp(self) -> DateTime:
         """Get the current timestamp of the simulation"""
         return self._current_timestamp
 
