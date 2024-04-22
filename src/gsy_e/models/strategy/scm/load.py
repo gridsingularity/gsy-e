@@ -79,6 +79,7 @@ class SCMLoadProfileStrategy(SCMStrategy):
     def activate(self, area: "AreaBase") -> None:
         """Activate the strategy."""
         self._energy_params.event_activate_energy(area)
+        self._update_energy_requirement(area)
 
     def _update_energy_requirement(self, area: "AreaBase") -> None:
         self._energy_params.energy_profile.read_or_rotate_profiles()

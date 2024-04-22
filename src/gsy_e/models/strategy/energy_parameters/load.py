@@ -212,7 +212,6 @@ class DefinedLoadEnergyParameters(LoadHoursPerDayEnergyParameters):
         if not self.energy_profile.profile:
             if GlobalConfig.is_canary_network():
                 return
-            print(GlobalConfig.is_canary_network())
             raise GSyException(
                 "Load tries to set its energy forecasted requirement "
                 "without a profile.")
