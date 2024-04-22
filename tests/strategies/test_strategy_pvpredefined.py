@@ -221,7 +221,8 @@ def pv_test3(area_test3):
     return p
 
 
-def testing_decrease_offer_price(area_test3, _market_test3, pv_test3):
+def testing_decrease_offer_price(area_test3, market_test3, pv_test3):
+    # pylint: disable=unused-argument
     assert len(pv_test3.offers.posted.items()) == 1
     pv_test3.event_activate()
     pv_test3.event_market_cycle()
