@@ -15,6 +15,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+# pylint: disable=redefined-outer-name, protected-access, missing-function-docstring
+# pylint: disable=missing-class-docstring, pointless-string-statement, no-self-use,global-statement
 import os
 import pathlib
 import uuid
@@ -57,7 +59,7 @@ TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
 class FakeArea:
     def __init__(self, count):
         self.current_tick = 2
-        self.name = 'FakeArea'
+        self.name = "FakeArea"
         self.uuid = str(uuid4())
         self.count = count
         self.test_market = FakeMarket(0)
@@ -89,13 +91,13 @@ class FakeArea:
     @property
     def now(self) -> DateTime:
         """
-        Return the 'current time' as a `DateTime` object.
-        Can be overridden in subclasses to change the meaning of 'now'.
+        Return the "current time" as a `DateTime` object.
+        Can be overridden in subclasses to change the meaning of "now".
 
-        In this default implementation 'current time' is defined by the number of ticks that
+        In this default implementation "current time" is defined by the number of ticks that
         have passed.
         """
-        return DateTime.now(tz=TIME_ZONE).start_of('day') + (
+        return DateTime.now(tz=TIME_ZONE).start_of("day") + (
             self.config.tick_length * self.current_tick
         )
 
@@ -117,12 +119,13 @@ class FakeAreaTimeSlot(FakeArea):
 
 
 class FakeMarket:
+    # pylint: disable=too-many-arguments, unused-argument, attribute-defined-outside-init
     def __init__(self, count):
         self.count = count
         self.id = str(count)
         self.created_offers = []
         self.offers = {
-            'id': Offer(id='id', creation_time=pendulum.now(), price=10, energy=0.5,
+            "id": Offer(id="id", creation_time=pendulum.now(), price=10, energy=0.5,
                         seller=TraderDetails("A", ""))}
         self._time_slot = TIME
 
@@ -213,12 +216,12 @@ def pv_test3(area_test3):
     p = PVPredefinedStrategy(cloud_coverage=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE)
     p.area = area_test3
     p.owner = area_test3
-    p.offers.posted = {Offer('id', pendulum.now(), 30, 1,
+    p.offers.posted = {Offer("id", pendulum.now(), 30, 1,
                              TraderDetails("FakeArea", "")): area_test3.test_market.id}
     return p
 
 
-def testing_decrease_offer_price(area_test3, market_test3, pv_test3):
+def testing_decrease_offer_price(area_test3, _market_test3, pv_test3):
     assert len(pv_test3.offers.posted.items()) == 1
     pv_test3.event_activate()
     pv_test3.event_market_cycle()
@@ -235,12 +238,12 @@ def testing_decrease_offer_price(area_test3, market_test3, pv_test3):
 
 
 @pytest.fixture()
-def pv_test4(area_test3, called):
+def pv_test4(area_test3, _called):
     p = PVPredefinedStrategy(cloud_coverage=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE)
     p.area = area_test3
     p.owner = area_test3
     p.offers.posted = {
-        Offer(id='id', creation_time=pendulum.now(), price=20, energy=1,
+        Offer(id="id", creation_time=pendulum.now(), price=20, energy=1,
               seller=TraderDetails("FakeArea", "")): area_test3.test_market.id
     }
     return p
@@ -250,11 +253,11 @@ def pv_test4(area_test3, called):
 
 
 @pytest.fixture()
-def pv_test5(area_test3, called):
+def pv_test5(area_test3, _called):
     p = PVPredefinedStrategy(cloud_coverage=0)
     p.area = area_test3
     p.owner = area_test3
-    p.offers.posted = {'id': area_test3.test_market}
+    p.offers.posted = {"id": area_test3.test_market}
     return p
 
 
@@ -295,16 +298,16 @@ def testing_produced_energy_forecast_real_data(pv_test66):
     morning_time = pendulum.today(tz=TIME_ZONE).at(hour=5, minute=10, second=0)
     afternoon_time = pendulum.today(tz=TIME_ZONE).at(hour=19, minute=10, second=0)
 
-    class Counts(object):
+    class Counts:
         def __init__(self, time):
             self.total = 0
             self.count = 0
             self.time = time
-    morning_counts = Counts('morning')
-    afternoon_counts = Counts('afternoon')
-    evening_counts = Counts('evening')
+    morning_counts = Counts("morning")
+    afternoon_counts = Counts("afternoon")
+    evening_counts = Counts("evening")
 
-    for (time, power) in pv_test66.state._energy_production_forecast_kWh.items():
+    for (time, _) in pv_test66.state._energy_production_forecast_kWh.items():
         if time < morning_time:
             morning_counts.total += 1
             morning_counts.count = morning_counts.count + 1 \
@@ -336,6 +339,7 @@ def testing_produced_energy_forecast_real_data(pv_test66):
 # The pv sells its whole production at once if possible.
 # Make sure that it doesnt offer it again after selling.
 def test_does_not_offer_sold_energy_again(pv_test6, market_test3):
+    # pylint: disable = attribute-defined-outside-init
     pv_test6.event_activate()
     pv_test6.event_market_cycle()
     assert market_test3.created_offers[0].energy == \
