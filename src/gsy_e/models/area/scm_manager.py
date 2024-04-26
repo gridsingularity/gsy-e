@@ -197,14 +197,104 @@ class CommunityData:
 
 
 @dataclass
+class FeeContainer:
+    """
+    Dataclass that holds the value of the fee and the accumulated value over time and
+    over areas (price).
+    """
+
+    value: float = 0.
+    price: float = 0.
+
+
+@dataclass
+class AreaFees:
+    """Dataclass that contains all fees and their accumulated values"""
+
+    grid_fee: float = 0.
+    grid_fees_reduction: float = 0.
+    per_kWh_fees: Dict[str, FeeContainer] = field(default_factory=dict)
+    monthly_fees: Dict[str, FeeContainer] = field(default_factory=dict)
+
+    def prices_as_dict(self) -> Dict:
+        """Return all prices (accumulated values) for the fees in a dictionary."""
+        return {
+            name: fee.price
+            for name, fee in {**self.per_kWh_fees, **self.monthly_fees}.items()
+        }
+
+    @property
+    def total_per_kWh_fee_price(self):
+        """Return the sum of all per_kWh_fee prices."""
+        return sum(fee.price for fee in self.per_kWh_fees.values())
+
+    @property
+    def total_monthly_fee_price(self):
+        """Return the sum of all monthly_fee prices."""
+        return sum(fee.price for fee in self.monthly_fees.values())
+
+    def add_price_to_fees(self, energy_kWh: float):
+        """Add prices to the container."""
+        for fee in self.per_kWh_fees.values():
+            fee.price += fee.value * energy_kWh
+
+    def add_fees_to_energy_rate(self, energy_rate: float) -> float:
+        """Add per_kWh_fees values to energy_rate."""
+        return energy_rate + sum(fee.value for fee in self.per_kWh_fees.values())
+
+    @property
+    def total_monthly_fees(self):
+        """Return the sum of all monthly fees"""
+        return sum(fee.value for fee in self.monthly_fees.values())
+
+    @property
+    def decreased_grid_fee(self):
+        """Return the decreased grid_fee regarding the grid_fees_reduction."""
+        return self.grid_fee * (1 - self.grid_fees_reduction)
+
+
+@dataclass
+class AreaEnergyRates:
+    """Dataclass that holds the area fees and rates."""
+
+    area_fees: AreaFees = field(default_factory=AreaFees)
+    utility_rate: float = 0.
+    intracommunity_base_rate: float = 0.
+    feed_in_tariff: float = 0.
+
+    @property
+    def intracommunity_rate(self):
+        """Return the rate that is used for trades inside of the community."""
+        return self.area_fees.add_fees_to_energy_rate(
+            self.intracommunity_base_rate + self.area_fees.decreased_grid_fee)
+
+    @property
+    def utility_rate_incl_fees(self):
+        """Return the utility rate including all fees."""
+        return self.area_fees.add_fees_to_energy_rate(self.utility_rate) + self.area_fees.grid_fee
+
+    def accumulate_fees_in_community(self, area_fees=AreaFees):
+        """Add prices from provided area_fees input to the self.area_fees;
+        used for accumulation of the prices for the community bills."""
+        for fee_name, fee_dict in area_fees.per_kWh_fees.items():
+            if fee_name not in self.area_fees.per_kWh_fees:
+                self.area_fees.per_kWh_fees[fee_name] = FeeContainer()
+            self.area_fees.per_kWh_fees[fee_name].price += fee_dict.price
+        for fee_name, fee_dict in area_fees.monthly_fees.items():
+            if fee_name not in self.area_fees.monthly_fees:
+                self.area_fees.monthly_fees[fee_name] = FeeContainer()
+            self.area_fees.monthly_fees[fee_name].price += fee_dict.price
+
+
+@dataclass
 class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
     """Represents home energy bills."""
+    energy_rates: AreaEnergyRates = AreaEnergyRates(AreaFees())
     base_energy_bill: float = 0.
     base_energy_bill_excl_revenue: float = 0.
     base_energy_bill_revenue: float = 0.
     gsy_energy_bill: float = 0.
     grid_fees: float = 0.
-    tax_surcharges: float = 0.
     bought_from_community: float = 0.
     spent_to_community: float = 0.
     sold_to_community: float = 0.
@@ -213,9 +303,6 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
     spent_to_grid: float = 0.
     sold_to_grid: float = 0.
     earned_from_grid: float = 0.
-    marketplace_fee: float = 0.
-    assistance_fee: float = 0.
-    fixed_fee: float = 0.
     self_consumed_savings: float = 0.
     _min_community_savings_percent: float = 0.
     _max_community_savings_percent: float = 0.
@@ -223,7 +310,9 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
     def to_dict(self) -> Dict:
         """Dict representation of the area energy bills."""
         output_dict = asdict(self)
+        del output_dict["energy_rates"]
         output_dict.update({
+            **self.energy_rates.area_fees.prices_as_dict(),
             "savings": self.savings,
             "savings_percent": self.savings_percent,
             "energy_benchmark": self.energy_benchmark,
@@ -238,14 +327,13 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
         })
         return output_dict
 
-    def set_bought_from_community(
-            self, energy_kWh, energy_rate, grid_fee_rate, tax_surcharge_rate):
+    def set_bought_from_community(self, energy_kWh):
         """Update price and energy counters after buying energy from the community."""
         self.bought_from_community += energy_kWh
-        self.spent_to_community += energy_kWh * energy_rate
-        self.gsy_energy_bill += energy_kWh * energy_rate
-        self.tax_surcharges += energy_kWh * tax_surcharge_rate
-        self.grid_fees += energy_kWh * grid_fee_rate
+        self.spent_to_community += energy_kWh * self.energy_rates.intracommunity_rate
+        self.gsy_energy_bill += energy_kWh * self.energy_rates.intracommunity_rate
+        self.energy_rates.area_fees.add_price_to_fees(energy_kWh)
+        self.grid_fees += energy_kWh * self.energy_rates.area_fees.decreased_grid_fee
 
     def set_sold_to_community(self, energy_kWh, energy_rate):
         """Update price and energy counters after buying energy from the community."""
@@ -253,14 +341,13 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
         self.earned_from_community += energy_kWh * energy_rate
         self.gsy_energy_bill -= energy_kWh * energy_rate
 
-    def set_bought_from_grid(
-            self, energy_kWh, energy_rate, grid_fee_rate, tax_surcharge_rate):
+    def set_bought_from_grid(self, energy_kWh):
         """Update price and energy counters after buying energy from the grid."""
         self.bought_from_grid += energy_kWh
-        self.spent_to_grid += energy_kWh * energy_rate
-        self.gsy_energy_bill += energy_kWh * energy_rate
-        self.tax_surcharges += energy_kWh * tax_surcharge_rate
-        self.grid_fees += energy_kWh * grid_fee_rate
+        self.spent_to_grid += energy_kWh * self.energy_rates.utility_rate_incl_fees
+        self.gsy_energy_bill += energy_kWh * self.energy_rates.utility_rate_incl_fees
+        self.energy_rates.area_fees.add_price_to_fees(energy_kWh)
+        self.grid_fees += energy_kWh * self.energy_rates.area_fees.grid_fee
 
     def set_sold_to_grid(self, energy_kWh, energy_rate):
         """Update price and energy counters after selling energy to the grid."""
@@ -313,8 +400,10 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
     @property
     def gsy_energy_bill_excl_revenue_without_fees(self):
         """Energy bill of the home excluding revenue and excluding all fees."""
-        return (self.gsy_energy_bill_excl_revenue - self.grid_fees - self.tax_surcharges
-                - self.fixed_fee - self.marketplace_fee - self.assistance_fee)
+        return (self.gsy_energy_bill_excl_revenue
+                - self.grid_fees
+                - self.energy_rates.area_fees.total_per_kWh_fee_price
+                - self.energy_rates.area_fees.total_monthly_fee_price)
 
     @property
     def gsy_energy_bill_revenue(self):
@@ -324,13 +413,15 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
     @property
     def gsy_energy_bill_excl_fees(self):
         """Energy bill of the home excluding fees."""
-        return (self.gsy_energy_bill - self.grid_fees - self.tax_surcharges
-                - self.fixed_fee - self.marketplace_fee - self.assistance_fee)
+        return (self.gsy_energy_bill
+                - self.grid_fees
+                - self.energy_rates.area_fees.total_per_kWh_fee_price
+                - self.energy_rates.area_fees.total_monthly_fee_price)
 
     @property
     def gsy_total_benefit(self):
         """Calculate the total savings of the home, minus the monthly fees."""
-        return self.savings - self.fixed_fee - self.marketplace_fee - self.assistance_fee
+        return self.savings - self.energy_rates.area_fees.total_monthly_fee_price
 
     @property
     def home_balance_kWh(self):
@@ -345,25 +436,22 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
                 - self.earned_from_grid - self.earned_from_community)
 
     def calculate_base_energy_bill(
-            self, home_data: HomeAfterMeterData, market_maker_rate_normal_fees: float,
-            feed_in_tariff: float):
+            self, home_data: HomeAfterMeterData, area_rates: AreaEnergyRates):
         """Calculate the base (not with GSy improvements) energy bill for the home."""
         if is_no_community_self_consumption():
             self.base_energy_bill_excl_revenue = (
-                    home_data.consumption_kWh * market_maker_rate_normal_fees)
-            self.base_energy_bill_revenue = home_data.production_kWh * feed_in_tariff
+                    home_data.consumption_kWh * area_rates.utility_rate_incl_fees)
+            self.base_energy_bill_revenue = home_data.production_kWh * area_rates.feed_in_tariff
             self.base_energy_bill = (
                     self.base_energy_bill_excl_revenue - self.base_energy_bill_revenue)
         else:
-            base_energy_bill = (
-                    home_data.energy_need_kWh * market_maker_rate_normal_fees +
-                    self.marketplace_fee + self.fixed_fee + self.assistance_fee -
-                    home_data.energy_surplus_kWh * feed_in_tariff)
-            self.base_energy_bill = base_energy_bill
-            self.base_energy_bill_revenue = home_data.energy_surplus_kWh * feed_in_tariff
+            self.base_energy_bill_revenue = (
+                    home_data.energy_surplus_kWh * area_rates.feed_in_tariff)
             self.base_energy_bill_excl_revenue = (
-                    home_data.energy_need_kWh * market_maker_rate_normal_fees +
-                    self.marketplace_fee + self.fixed_fee + self.assistance_fee)
+                    home_data.energy_need_kWh * area_rates.utility_rate_incl_fees +
+                    area_rates.area_fees.total_monthly_fees)
+            self.base_energy_bill = (
+                    self.base_energy_bill_excl_revenue - self.base_energy_bill_revenue)
 
 
 class SCMManager:
@@ -448,97 +536,98 @@ class SCMManager:
             self.community_data.self_consumed_energy_kWh += (
                 home_data.self_production_for_community_kWh)
 
-    def calculate_home_energy_bills(
-            self, home_uuid: str) -> None:
-        """Calculate energy bills for one home."""
-        assert home_uuid in self._home_data
-
-        home_data = self._home_data[home_uuid]
-
-        market_maker_rate = home_data.market_maker_rate
-        grid_fees = home_data.grid_fees
-        taxes_surcharges = home_data.taxes_surcharges
-        feed_in_tariff = home_data.feed_in_tariff
-
+    def _init_area_energy_rates(self, home_data: HomeAfterMeterData) -> AreaEnergyRates:
         slots_per_month = (duration(days=1) / GlobalConfig.slot_length) * monthrange(
             self._time_slot.year, self._time_slot.month)[1]
-        marketplace_fee = home_data.marketplace_monthly_fee / slots_per_month
-        assistance_fee = home_data.assistance_monthly_fee / slots_per_month
-        fixed_fee = home_data.fixed_monthly_fee / slots_per_month
 
-        intracommunity_base_rate_eur = (
-            market_maker_rate
+        intracommunity_base_rate = (
+            home_data.market_maker_rate
             if self._intracommunity_base_rate_eur is None
             else self._intracommunity_base_rate_eur)
-        market_maker_rate_decreased_fees = (
-                intracommunity_base_rate_eur
-                + grid_fees * (1.0 - self._grid_fees_reduction)
-                + taxes_surcharges)
-        market_maker_rate_normal_fees = market_maker_rate + grid_fees + taxes_surcharges
 
+        area_fees = AreaFees(
+            grid_fee=home_data.grid_fees,
+            grid_fees_reduction=self._grid_fees_reduction,
+            per_kWh_fees={
+                "tax_surcharges": FeeContainer(value=home_data.taxes_surcharges)
+            },
+            monthly_fees={
+                "marketplace_fee":
+                    FeeContainer(value=home_data.marketplace_monthly_fee / slots_per_month),
+                "assistance_fee":
+                    FeeContainer(value=home_data.assistance_monthly_fee / slots_per_month),
+                "fixed_fee":
+                    FeeContainer(value=home_data.fixed_monthly_fee / slots_per_month),
+            }
+        )
+        return AreaEnergyRates(
+            area_fees=area_fees,
+            utility_rate=home_data.market_maker_rate,
+            intracommunity_base_rate=intracommunity_base_rate,
+            feed_in_tariff=home_data.feed_in_tariff
+        )
+
+    def calculate_home_energy_bills(self, home_uuid: str) -> None:
+        """Calculate energy bills for one home."""
+        assert home_uuid in self._home_data
+        home_data = self._home_data[home_uuid]
+
+        area_rates = self._init_area_energy_rates(home_data)
         home_bill = AreaEnergyBills(
-            marketplace_fee=marketplace_fee, fixed_fee=fixed_fee, assistance_fee=assistance_fee,
-            gsy_energy_bill=marketplace_fee + fixed_fee + assistance_fee,
+            energy_rates=area_rates,
+            gsy_energy_bill=area_rates.area_fees.total_monthly_fees,
             self_consumed_savings=home_data.self_consumed_energy_kWh * home_data.market_maker_rate)
-        home_bill.calculate_base_energy_bill(
-            home_data, market_maker_rate_normal_fees, feed_in_tariff)
+        home_bill.calculate_base_energy_bill(home_data, area_rates)
 
         # First handle the sold energy case. This case occurs in case of energy surplus of a home.
         if home_data.energy_surplus_kWh > 0.0:
             home_bill.set_sold_to_community(
-                home_data.self_production_for_community_kWh, market_maker_rate_decreased_fees)
+                home_data.self_production_for_community_kWh, area_rates.intracommunity_rate)
             if home_data.self_production_for_community_kWh > FLOATING_POINT_TOLERANCE:
                 home_data.create_sell_trade(
                     self._time_slot, DEFAULT_SCM_COMMUNITY_NAME,
                     home_data.self_production_for_community_kWh,
                     home_data.self_production_for_community_kWh *
-                    market_maker_rate_decreased_fees)
+                    area_rates.intracommunity_rate)
 
             home_bill.set_sold_to_grid(
-                home_data.self_production_for_grid_kWh, feed_in_tariff)
+                home_data.self_production_for_grid_kWh, home_data.feed_in_tariff)
             if home_data.self_production_for_grid_kWh > FLOATING_POINT_TOLERANCE:
                 home_data.create_sell_trade(
                     self._time_slot, DEFAULT_SCM_GRID_NAME,
                     home_data.self_production_for_grid_kWh,
-                    home_data.self_production_for_grid_kWh * feed_in_tariff)
+                    home_data.self_production_for_grid_kWh * home_data.feed_in_tariff)
 
         # Next case is the consumption. In this case the energy allocated from the community
         # is sufficient to cover the energy needs of the home.
         if home_data.allocated_community_energy_kWh > home_data.energy_need_kWh:
             if home_data.energy_need_kWh > FLOATING_POINT_TOLERANCE:
-                home_bill.set_bought_from_community(
-                    home_data.energy_need_kWh, market_maker_rate_decreased_fees,
-                    grid_fees * (1.0 - self._grid_fees_reduction), taxes_surcharges
-                )
+                home_bill.set_bought_from_community(home_data.energy_need_kWh)
                 home_data.create_buy_trade(
                     self._time_slot, DEFAULT_SCM_COMMUNITY_NAME, home_data.energy_need_kWh,
-                    home_data.energy_need_kWh * market_maker_rate_decreased_fees
+                    home_data.energy_need_kWh * area_rates.intracommunity_rate
                 )
         # Next case is in case the allocated energy from the community is not sufficient for the
         # home energy needs. In this case the energy deficit is bought from the grid.
         else:
-            home_bill.set_bought_from_community(
-                home_data.allocated_community_energy_kWh, market_maker_rate_decreased_fees,
-                grid_fees * (1.0 - self._grid_fees_reduction), taxes_surcharges
-            )
+            home_bill.set_bought_from_community(home_data.allocated_community_energy_kWh)
 
             energy_from_grid_kWh = (
                     home_data.energy_need_kWh - home_data.allocated_community_energy_kWh)
-            home_bill.set_bought_from_grid(energy_from_grid_kWh, market_maker_rate_normal_fees,
-                                           grid_fees, taxes_surcharges)
+            home_bill.set_bought_from_grid(energy_from_grid_kWh)
 
             if home_data.allocated_community_energy_kWh > 0.0:
                 home_data.create_buy_trade(
                     self._time_slot, DEFAULT_SCM_COMMUNITY_NAME,
                     home_data.allocated_community_energy_kWh,
-                    home_data.allocated_community_energy_kWh * market_maker_rate_decreased_fees
+                    home_data.allocated_community_energy_kWh * area_rates.intracommunity_rate
                 )
 
             if energy_from_grid_kWh > 0.:
                 home_data.create_buy_trade(
                     self._time_slot, DEFAULT_SCM_GRID_NAME,
                     energy_from_grid_kWh,
-                    energy_from_grid_kWh * market_maker_rate_normal_fees
+                    energy_from_grid_kWh * area_rates.utility_rate_incl_fees
                 )
 
         self._bills[home_uuid] = home_bill
@@ -616,11 +705,8 @@ class SCMManager:
             community_bills.sold_to_grid += data.sold_to_grid
             community_bills.earned_from_grid += data.earned_from_grid
 
-            community_bills.tax_surcharges += data.tax_surcharges
+            community_bills.energy_rates.accumulate_fees_in_community(data.energy_rates.area_fees)
             community_bills.grid_fees += data.grid_fees
-            community_bills.marketplace_fee += data.marketplace_fee
-            community_bills.assistance_fee += data.assistance_fee
-            community_bills.fixed_fee += data.fixed_fee
 
         return community_bills.to_dict()
 
