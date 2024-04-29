@@ -2360,7 +2360,7 @@ The Market Maker asset strategy in the infinite bus mode is configured as follow
 <p>This method was created to sell energy at lower prices during high state of charge - SOC (when the battery has more energy stored) and at higher prices during low SOC (when the battery can afford to sell its stored energy for less).
 If the cap_price_strategy is True, the offer price for the storage is calculated according to:</p>
 <p><code>offer_rate = initial_selling_rate - ((initial_selling_rate - final_selling_rate)\*soc/100)</code></p>
-<p>As an example, considering an <code>initial_selling_rate</code> of 30 cents/kWh and a <code>final_selling_rate</code> of 20 cents/kWh, a storage with an SOC of 1% would sell its energy at 29.9 cents/kWh, and a battery at 100% SOC would sell its energy at 20 cents/kWh.
+<p>As an example, considering an <code>initial_selling_rate</code> of 30 cts/kWh and a <code>final_selling_rate</code> of 20 cts/kWh, a storage with an SOC of 1% would sell its energy at 29.9 cts/kWh, and a battery at 100% SOC would sell its energy at 20 cts/kWh.
 To implement a power plant in a backend simulation, one option is available:</p>
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/finite_power_plant.py" target="_blank">Finite Power Plant</a></p>
 <pre class="codehilite"><code class="language-python">profile_kW = {
@@ -2381,16 +2381,16 @@ Market(&quot;Power Plant&quot;, strategy=FinitePowerPlant(energy_rate=31.3, max_
 
 <p>The <strong>HeatPumpStrategy</strong> parameters can be set as follows:</p>
 <ul>
-<li><strong>maximum_power_rating_kW</strong>: default=3; the maximal power that the HP will consume</li>
-<li><strong>min_temp_C</strong>: (default=50); minimum temperature of the HP storage. If the temperature drops below this point, the HP buys energy at any cost</li>
-<li><strong>max_temp_C</strong>: (default=60); maximum temperature of the HP storage. If the temperature rises above this point, the HP does not buy any energy.</li>
-<li><strong>initial_temp_C</strong>: (default=50); initial temperature of the HP storage at the beginning of the simulation.</li>
-<li><strong>external_temp_C_profile</strong>: (mandatory user input); external temperature that influences the efficiency of the HP. If this parameter is selected, the external temperature is constant for the whole simulation run</li>
-<li><strong>tank_volume_l</strong>: (default=50); volume/capacity of the thermal storage tank</li>
-<li><strong>consumption_kWh</strong>: (mandatory user input); amount of energy the heat pump consumes to produce heat, in kWh. Can be provided as a constant energy kWh value or as an energy consumption time-series profile, as a dictionary that follows the supported format.</li>
-<li><strong>preferred_buying_rate</strong>: (default=15); rate in cts/kWh that determines the <a href="../heat-pump/#heat-pump-asset-trading-strategy">trading strategy</a></li>
+<li><strong>maximum_power_rating_kW</strong>: default=3; the maximal power that the HP will consume;</li>
+<li><strong>min_temp_C</strong>: (default=50); minimum temperature of the HP storage. If the temperature drops below this point, the HP buys energy at any cost;</li>
+<li><strong>max_temp_C</strong>: (default=60); maximum temperature of the HP storage. If the temperature rises above this point, the HP does not buy any energy;</li>
+<li><strong>initial_temp_C</strong>: (default=50); initial temperature of the HP storage at the beginning of the simulation;</li>
+<li><strong>external_temp_C_profile</strong>: (mandatory user input); external temperature that influences the efficiency of the HP. If this parameter is selected, the external temperature is constant for the whole simulation run;</li>
+<li><strong>tank_volume_l</strong>: (default=50); volume/capacity of the thermal storage tank;</li>
+<li><strong>consumption_kWh</strong>: (mandatory user input); amount of energy the heat pump consumes to produce heat, in kWh. Can be provided as a constant energy kWh value or as an energy consumption time-series profile, as a dictionary that follows the supported format;</li>
+<li><strong>preferred_buying_rate</strong>: (default=15); rate in cts/kWh that determines the <a href="../heat-pump/#heat-pump-asset-trading-strategy">trading strategy</a>;</li>
 <li><strong>source_type</strong>:  set how the heat exchange is conducted, either via air or water/ground, as it determines the COP calculation;</li>
-<li><strong>order_updater_parameters</strong>: of type <strong>HeatPumpOrderUpdaterParameters</strong>. A template configuration can be seen <a href="#heat-pump-price-strategy-configuration">below</a>.</li>
+<li><strong>order_updater_parameters</strong>: of type <strong>HeatPumpOrderUpdaterParameters</strong>. A template configuration can be seen <a href="#heat-pump-price-strategy-configuration">below</a></li>
 </ul>
 <h4 id="heat-pump-price-strategy-configuration">Heat Pump Price Strategy Configuration<a class="headerlink" href="#heat-pump-price-strategy-configuration" title="Permanent link">&para;</a></h4>
 <p>In order to configure the heat pump bid pricing, the <strong>order_updater_parameters</strong>  should be set by assigning the <strong>HeatPumpOrderUpdaterParameters</strong> data class and its parameters to it:</p>
@@ -2408,8 +2408,8 @@ Asset(name=&quot;Heat Pump&quot;, strategy=HeatPumpStrategy(
 If not set by the user, the following default values are used:</p>
 <ul>
 <li><strong>update_interval</strong>: interval that represents the time between updates of the bid prices performed by the applied trading strategy (default: 1 minute);</li>
-<li><strong>initial_rate</strong>: bid rate at the start of the market slot; default value is the feed-in-tariff rate (if not set, the default value is 0 cents/kWh as explained in table <a href="../heat-pump/#parameter-table">here</a>);</li>
-<li><strong>final_rate</strong>: bid rate at the end of the market slot; defined by the infinite bus strategy that is part of the simulation, which is the market maker rate (if not set, the default value is 30 cents/kWh).</li>
+<li><strong>initial_rate</strong>: bid rate at the start of the market slot; default value is the feed-in-tariff rate (if not set, the default value is 0 cts/kWh as explained in table <a href="../heat-pump/#parameter-table">here</a>);</li>
+<li><strong>final_rate</strong>: bid rate at the end of the market slot; defined by the infinite bus strategy that is part of the simulation, which is the market maker rate (if not set, the default value is 30 cts/kWh).</li>
 </ul>
 <h4 id="virtual-heat-pump-code-configuration">Virtual Heat Pump Code Configuration<a class="headerlink" href="#virtual-heat-pump-code-configuration" title="Permanent link">&para;</a></h4>
 <p>To configure a virtual heat pump asset (VHP) in the Grid Singularity Exchange backend code, the following lines are to be added to the children's list of one of the areas in the setup file:</p>
@@ -2420,14 +2420,15 @@ If not set by the user, the following default values are used:</p>
 <ul>
 <li><strong>maximum_power_rating_kW</strong>: default=3; the maximum power that the VHP will consume</li>
 <li><strong>min_temp_C</strong>: (default=50); minimum temperature of the VHP storage. If the temperature drops below this point, the HP buys energy at any cost</li>
-<li><strong>max_temp_C</strong>: (default=60); maximum temperature of the VHP storage. If the temperature rises above this point, the HP does not buy any energy.</li>
+<li><strong>max_temp_C</strong>: (default=60); maximum temperature of the VHP storage. If the temperature rises above this point, the HP does not buy any energy</li>
 <li><strong>initial_temp_C</strong>: (default=50); initial temperature of the VHP storage</li>
 <li><strong>water_supply_temp_C_profile</strong>: (mandatory user input); supply temperature of the water that flows from the district heating network (used to calculate the heat demand of the building)</li>
 <li><strong>water_return_temp_C_profile</strong>: (mandatory user input); return temperature of the water that flows from the district heating network (used to calculate the heat demand of the building)</li>
 <li><strong>dh_water_flow_m3_profile</strong>: (mandatory user input); water flow from the district heating network, in aggregated cubic metres per market slot (used to calculate the heat demand of the building)</li>
 <li><strong>tank_volume_l</strong>: (default=50); volume of the storage tank</li>
-<li><strong>preferred_buying_rate</strong>: (default=15); rate in cents/kWh that determines <a href="../heat-pump/#heat-pump-asset-trading-strategy">the trading strategy</a></li>
-<li><strong>order_updater_parameters</strong>: of type <strong>HeatPumpOrderUpdaterParameters</strong>. A template configuration can be seen <a href="#heat-pump-price-strategy-configuration">below</a>.</li>
+<li><strong>calibration_coefficient</strong>: (default=0.65); empirical calibration coefficient for water-to-water heat pumps</li>
+<li><strong>preferred_buying_rate</strong>: (default=15); rate in cts/kWh that determines <a href="../heat-pump/#heat-pump-asset-trading-strategy">the trading strategy</a></li>
+<li><strong>order_updater_parameters</strong>: of type <strong>HeatPumpOrderUpdaterParameters</strong>. A template configuration can be seen <a href="#heat-pump-price-strategy-configuration">below</a></li>
 </ul>
                 
                   
