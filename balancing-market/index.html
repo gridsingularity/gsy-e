@@ -13,7 +13,7 @@
         <meta name="description" content="Documentation for the Grid Singularity Exchange">
       
       
-        <link rel="canonical" href="http://localhost:8000/balancing-market/">
+        <link rel="canonical" href="https://gridsingularity.github.io/gsy-e/documentation/balancing-market/">
       
       
         <meta name="author" content="Grid Singularity">
@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../img/Profile.png">
-      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-4.0.2">
+      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-4.0.2">
     
     
       
@@ -119,7 +119,7 @@
   <nav class="md-header-nav md-grid">
     <div class="md-flex">
       <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="http://localhost:8000/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
+        <a href="https://gridsingularity.github.io/gsy-e/documentation/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
           
             <img src="../img/Profile.png" width="32" height="32">
           
@@ -209,7 +209,7 @@
                   <div class="md-sidebar__inner">
                     <nav class="md-nav md-nav--primary" data-md-level="0">
   <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="http://localhost:8000/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
+    <a href="https://gridsingularity.github.io/gsy-e/documentation/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
       
         <img src="../img/Profile.png" width="48" height="48">
       
@@ -2139,17 +2139,15 @@
 </ol>
 <figure>
 <p><img alt="alt_text" src="../img/balancing-market-structure-1.png" text-align:center_="text-align:center&quot;" />
-  </p>
-<figcaption><b>Figure 4.4</b>: <a href="http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.126.3675">The three tiers of grid control and its activation structure</a>
-</figcaption>
+  <figcaption><b>Figure 4.4</b>: <a href="http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.126.3675">The three tiers of grid control and its activation structure</a>
+</figcaption></p>
 </figure>
 <h2 id="in-conventional-grid-structures">In conventional grid structures<a class="headerlink" href="#in-conventional-grid-structures" title="Permanent link">&para;</a></h2>
 <p><strong>Primary control</strong> is an automatic function that is almost instantaneously activated to stabilise the frequency drops/spikes. It is the fastest type of frequency control with a response time of a few seconds and operates using a joint process involving all TSOs of the synchronous area. This is shown in the figure below. For example, if there is an increase in demand, the energy used to compensate for this demand comes from the kinetic energy stored in large rotating synchronous generators that start decreasing its velocity. This is referred to as <a href="https://eepower.com/technical-articles/frequency-control-in-a-power-system/#" target="_blank">Inertial response</a>. For the generators to recover the speed, the speed controller of each generator acts to increase the generator power to clear the imbalance. Within a period of 30 seconds, each generating unit is able to generate the required power and stabilise this production for at least 15 minutes or depending on the requirements of the TSO within the synchronous region. Primary control is done using generation plants that are connected to the high voltage power supply with the exception of renewable energy sources which are non-schedulable due to its intermittent nature.</p>
 <figure>
 <p><img alt="alt_text" src="../img/balancing-market-structure-2.png" text-align:center_="text-align:center&quot;" />
-  </p>
-<figcaption><b>Figure 4.5</b>: <a href="https://www.nrel.gov/news/program/2020/inertia-and-the-power-grid-a-guide-without-the-spin.html">Recovery of the system from a contingency event and action by primary frequency control (PFR)</a>
-</figcaption>
+  <figcaption><b>Figure 4.5</b>: <a href="https://www.nrel.gov/news/program/2020/inertia-and-the-power-grid-a-guide-without-the-spin.html">Recovery of the system from a contingency event and action by primary frequency control (PFR)</a>
+</figcaption></p>
 </figure>
 <p><strong>Secondary control</strong> is performed automatically by all the generators to restore the nominal frequency, the power exchanges and reserve of the generators used in primary control. The generators involved in this regulation function through dedicated reserve power that are set in conjunction with central controllers. The reserve control power is negotiated in a contract conjunction with the TSO and is a percentage of the maximum available power with a predefined minimum value to ensure that it can be dispatched whenever needed. This service is remunerated according to the set contracts.</p>
 <p><strong>Tertiary control</strong> is not an automatic function and is executed upon request by the grid operator. The reserve margins used for the secondary control are restored through tertiary control.</p>
@@ -2210,9 +2208,8 @@
 <p>In our <strong>transactive energy low voltage grid structure</strong> primary, secondary and tertiary control are controlled by an area controller called the balancing agent.</p>
 <figure>
 <p><img alt="alt_text" src="../img/balancing-market-structure-3.png" text-align:center_="text-align:center&quot;" />
-  </p>
-<figcaption><b>Figure 4.6</b>: Area control structure of market consisting of all three tiers of control (source: Martin Fornage, A generalized transactive energy-based framework: Enphase Energy. Powerpoint presentation 2015)
-</figcaption>
+  <figcaption><b>Figure 4.6</b>: Area control structure of market consisting of all three tiers of control (source: Martin Fornage, A generalized transactive energy-based framework: Enphase Energy. Powerpoint presentation 2015)
+</figcaption></p>
 </figure>
 <p>The balancing agent monitors the health of the system and is in control of all its allocated resources. It also had the ability to control the physical connect and disconnect from upstream and downstream resources according to the type of control required.</p>
 <p><strong>Primary control</strong> happens simultaneously as the spot market through a droop curve. Grid forming assets have different droop curves based on their behaviour (Loads, Storage, PV) which are used to keep the voltage and frequency towards nominal in case of a deviation. Local balancing is therefore done through primary control.</p>
@@ -2305,7 +2302,7 @@
     
       <script src="../assets/javascripts/application.05d1c8d6.js"></script>
       
-      <script>app.initialize({version:"1.4.2",url:{base:".."}})</script>
+      <script>app.initialize({version:"1.3.0",url:{base:".."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
       

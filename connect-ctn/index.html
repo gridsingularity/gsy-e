@@ -13,7 +13,7 @@
         <meta name="description" content="Documentation for the Grid Singularity Exchange">
       
       
-        <link rel="canonical" href="http://localhost:8000/connect-ctn/">
+        <link rel="canonical" href="https://gridsingularity.github.io/gsy-e/documentation/connect-ctn/">
       
       
         <meta name="author" content="Grid Singularity">
@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../img/Profile.png">
-      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-4.0.2">
+      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-4.0.2">
     
     
       
@@ -119,7 +119,7 @@
   <nav class="md-header-nav md-grid">
     <div class="md-flex">
       <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="http://localhost:8000/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
+        <a href="https://gridsingularity.github.io/gsy-e/documentation/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
           
             <img src="../img/Profile.png" width="32" height="32">
           
@@ -209,7 +209,7 @@
                   <div class="md-sidebar__inner">
                     <nav class="md-nav md-nav--primary" data-md-level="0">
   <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="http://localhost:8000/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
+    <a href="https://gridsingularity.github.io/gsy-e/documentation/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
       
         <img src="../img/Profile.png" width="48" height="48">
       
@@ -2207,8 +2207,7 @@
 <p>&nbsp;1. Configure a digital twin of all the local energy market participants and their energy assets via the <a href="https://gridsingularity.com/singularity-map" target="_blank">Grid Singularity web-based simulation tool</a> and run the simulation, ensuring the relevant <a href="../data-requirements/">data requirements</a>.  Once it is completed, click on the Settings tab, and click “Go” in the box that says, “Bring your simulation closer to reality” as shown in the image below:</p>
 <figure>
 <p><img alt="alt_text" src="../img/connect-ctn-1.png" text-align:center_="text-align:center&quot;" />
-  </p>
-<figcaption><b>Figure 1</b>: Grid Singularity user interface (Singularity Map) Settings Tab</figcaption>
+  <figcaption><b>Figure 1</b>: Grid Singularity user interface (Singularity Map) Settings Tab</figcaption></p>
 </figure>
 <p>&nbsp;2. A Grid Singularity representative will be in touch with you shortly to discuss your needs and share a commercial and a data processing agreement to review and execute. As an initial step, you will be required to provide the following information:</p>
 <ul>
@@ -2227,27 +2226,24 @@
 <p>With the creation of a Grid Singularity Test Network (GSy CTN), a Registry tab is added to settings in the sidebar to allow for different user role allocation (see image below). Each home/LEM member or asset owner can be assigned to a home digital twin. The grid operator and the aggregator (asset manager) can also be assigned a role as further described below. In case the designated CTN owner does not intend to invite additional CTN users, steps in this section can be skipped.</p>
 <figure>
 <p><img alt="alt_text" src="../img/connect-ctn-2.png" text-align:center_="text-align:center&quot;" />
-  </p>
-<figcaption><b>Figure 2</b>: Grid Singularity User Interface (Singularity Map) Canary Test Network Registry Tab - “Set new user roles” section
-</figcaption>
+  <figcaption><b>Figure 2</b>: Grid Singularity User Interface (Singularity Map) Canary Test Network Registry Tab - “Set new user roles” section
+</figcaption></p>
 </figure>
 <ul>
 <li>Each community member or asset owner is invited by the designated CTN owner (acting LEM manager) to participate in the created test network through the Add More People invitation tool. To do this, the CTN owner would assign them a GSy User role and automatically trigger an invitation email to be sent. Upon joining, they would be able to view and analyse results for the assets they own.</li>
 </ul>
 <figure>
 <p><img alt="alt_text" src="../img/connect-ctn-3.png" text-align:center_="text-align:center&quot;" />
-  </p>
-<figcaption><b>Figure 3</b>: Grid Singularity User Interface (Singularity Map) Canary Test Network Registry Tab - “Add more people” section
-</figcaption>
+  <figcaption><b>Figure 3</b>: Grid Singularity User Interface (Singularity Map) Canary Test Network Registry Tab - “Add more people” section
+</figcaption></p>
 </figure>
 <ul>
 <li>Aggregators (companies managing other people’s energy assets and/or energy community managers) are invited in the same way. The CTN owner assigns them the Aggregator role and automatically triggers an invitation email. The aggregator then logs in to the platform by following the link in the email and registers their user account, to trade on behalf of each asset assigned to them on the Community Assets tab. Once their registration is accepted by the CTN owner, they can trade on behalf of the assigned assets using the <a href="../asset-api-commands/">Asset API</a>.</li>
 </ul>
 <figure>
 <p><img alt="alt_text" src="../img/connect-ctn-4.png" text-align:center_="text-align:center&quot;" />
-  </p>
-<figcaption><b>Figure 4</b>: Grid Singularity User Interface (Singularity Map) Canary Test Network Registry Tab - “Community Assets” Section
-</figcaption>
+  <figcaption><b>Figure 4</b>: Grid Singularity User Interface (Singularity Map) Canary Test Network Registry Tab - “Community Assets” Section
+</figcaption></p>
 </figure>
 <ul>
 <li>The Grid Operator, similar to the Aggregator, must act upon the invitation email instructions (issued by CTN owner by assigning them that role using the “Add more people” tool), in order to be granted access to manage grid fees and network congestion through the <a href="../grid-operator-api-commands/">Grid Operator API</a>.</li>
@@ -2257,16 +2253,14 @@
 <p>On the map, the designated GSy CTN owner (acting LEM manager) can click on the relevant LEM participant (home) and the asset to initiate the live data stream input for the Grid Singularity Exchange. In the Advanced Settings tab, the live data switch can be toggled to be enabled or disabled. In case the live data switch is enabled, the selected asset will be configured to accept live forecast / measurement data, sent via the Asset API. If the live data is turned off, data will be read through the uploaded historical profiles instead of reading data sent through the Asset API. The latter is a way to simulate a live test network using historical data for research purposes when a live data connection is unavailable.</p>
 <figure>
 <p><img alt="alt_text" src="../img/connect-ctn-5.png" text-align:center_="text-align:center&quot;" />
-  </p>
-<figcaption><b>Figure 5</b>: Grid Singularity User Interface (Singularity Map) Canary Test Network Advanced Settings Tab
-</figcaption>
+  <figcaption><b>Figure 5</b>: Grid Singularity User Interface (Singularity Map) Canary Test Network Advanced Settings Tab
+</figcaption></p>
 </figure>
 <p>Upon completing this step, the energy live asset data will be displayed in the Grid Singularity User Interface as part of the Canary Test Network Results Dashboard, as shown in the image below:</p>
 <figure>
 <p><img alt="alt_text" src="../img/connect-ctn-6.png" text-align:center_="text-align:center&quot;" />
-  </p>
-<figcaption><b>Figure 6</b>: Grid Singularity User Interface (Singularity Map) Canary Test Network Results Dashboard Example
-</figcaption>
+  <figcaption><b>Figure 6</b>: Grid Singularity User Interface (Singularity Map) Canary Test Network Results Dashboard Example
+</figcaption></p>
 </figure>
 <h3 id="grid-singularity-canary-test-network-data-transmission-options">Grid Singularity Canary Test Network Data Transmission Options<a class="headerlink" href="#grid-singularity-canary-test-network-data-transmission-options" title="Permanent link">&para;</a></h3>
 <p>There are two options to connect the community live data stream to the Grid Singularity Exchange.</p>
@@ -2386,7 +2380,7 @@ REST API (for non-Python aggregator or smart metre software). This option is a l
     
       <script src="../assets/javascripts/application.05d1c8d6.js"></script>
       
-      <script>app.initialize({version:"1.4.2",url:{base:".."}})</script>
+      <script>app.initialize({version:"1.3.0",url:{base:".."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
       

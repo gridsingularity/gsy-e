@@ -13,7 +13,7 @@
         <meta name="description" content="Documentation for the Grid Singularity Exchange">
       
       
-        <link rel="canonical" href="http://localhost:8000/backend-results-energy-bills/">
+        <link rel="canonical" href="https://gridsingularity.github.io/gsy-e/documentation/backend-results-energy-bills/">
       
       
         <meta name="author" content="Grid Singularity">
@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../img/Profile.png">
-      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-4.0.2">
+      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-4.0.2">
     
     
       
@@ -115,7 +115,7 @@
   <nav class="md-header-nav md-grid">
     <div class="md-flex">
       <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="http://localhost:8000/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
+        <a href="https://gridsingularity.github.io/gsy-e/documentation/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
           
             <img src="../img/Profile.png" width="32" height="32">
           
@@ -205,7 +205,7 @@
                   <div class="md-sidebar__inner">
                     <nav class="md-nav md-nav--primary" data-md-level="0">
   <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="http://localhost:8000/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
+    <a href="https://gridsingularity.github.io/gsy-e/documentation/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
       
         <img src="../img/Profile.png" width="48" height="48">
       
@@ -2044,16 +2044,14 @@
                 <p>The cumulative energy bills for each market and energy asset are reported on the UI Results page and in a JSON file bills.json for a backend simulation. The bills are reported as the cash flow through each market.</p>
 <figure>
 <p><img alt="alt_text" src="../img/backend-results-1.png" text-align:center_="text-align:center&quot;" />
-  </p>
-<figcaption><b>Figure 2.18</b>: Example grid setup showing connection to the grid.
-</figcaption>
+  <figcaption><b>Figure 2.18</b>: Example grid setup showing connection to the grid.
+</figcaption></p>
 </figure>
 <p>This configuration is simulated for one day using the Pay-as-Bid market type and the load bidding to buy energy at 12:00, leading to the propagation of the load bid and the grid operator offer until they are matched as shown in the figure below:</p>
 <figure>
 <p><img alt="alt_text" src="../img/backend-results-2.png" text-align:center_="text-align:center&quot;" />
-  </p>
-<figcaption><b>Figure 2.19</b>: Example grid setup showing connection to the grid.
-</figcaption>
+  <figcaption><b>Figure 2.19</b>: Example grid setup showing connection to the grid.
+</figcaption></p>
 </figure>
 <p>The bid and the offer are forwarded to the higher-level Grid market and are matched in this market with a clearing price (and trade price) of €0.45. For more information on how grid fees are calculated, please read the <a href="../grid-fees/">grid fees documentation</a>.</p>
 <p>In the bills.json file, the cash flow in each market is reported as follows:</p>
@@ -2072,25 +2070,22 @@
 <p>Shown below are the results of the previous example. The first set of results is from the highest market, in this case the Grid market:</p>
 <figure>
 <p><img alt="alt_text" src="../img/backend-results-example-1.png" text-align:center_="text-align:center&quot;" />
-  </p>
-<figcaption><b>Figure 2.20</b>: Example of bills results in the Grid level.
-</figcaption>
+  <figcaption><b>Figure 2.20</b>: Example of bills results in the Grid level.
+</figcaption></p>
 </figure>
 <p>In the Grid market, House 1 has bought 1 kWh from the Gris and spent €0.375 for this trade. House 1 also pays the €0.075 grid fee that the Grid market is charging. The total cost of 1 kWh of energy is €0.375 + €0.075 = €0.45</p>
 <p>One level down the hierarchy, the House 1 market is displayed in the figure below:</p>
 <p>The House 1 market has no information on the other markets’ grid fees, so only considers its own fees in the bills table. Therefore, the Load spends €0.45 (€0.0375 + €0.075) for 1 kWh of energy that is externally supplied to House 1, with no grid fee added since House 1 has no fees.</p>
 <figure>
 <p><img alt="alt_text" src="../img/backend-results-example-1.png" text-align:center_="text-align:center&quot;" />
-  </p>
-<figcaption><b>Figure 2.21</b>: Example of bills results in the House 1 level.
-</figcaption>
+  <figcaption><b>Figure 2.21</b>: Example of bills results in the House 1 level.
+</figcaption></p>
 </figure>
 <p>Finally, the bills of each energy asset are shown:</p>
 <figure>
 <p><img alt="alt_text" src="../img/backend-results-example-5.png" text-align:center_="text-align:center&quot;" />
-  </p>
-<figcaption><b>Figure 2.22</b>: Example of bills for all assets in the configuration.
-</figcaption>
+  <figcaption><b>Figure 2.22</b>: Example of bills for all assets in the configuration.
+</figcaption></p>
 </figure>
                 
                   
@@ -2179,7 +2174,7 @@
     
       <script src="../assets/javascripts/application.05d1c8d6.js"></script>
       
-      <script>app.initialize({version:"1.4.2",url:{base:".."}})</script>
+      <script>app.initialize({version:"1.3.0",url:{base:".."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
       

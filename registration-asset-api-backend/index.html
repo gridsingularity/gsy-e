@@ -13,7 +13,7 @@
         <meta name="description" content="Documentation for the Grid Singularity Exchange">
       
       
-        <link rel="canonical" href="http://localhost:8000/registration-asset-api-backend/">
+        <link rel="canonical" href="https://gridsingularity.github.io/gsy-e/documentation/registration-asset-api-backend/">
       
       
         <meta name="author" content="Grid Singularity">
@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../img/Profile.png">
-      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-4.0.2">
+      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-4.0.2">
     
     
       
@@ -119,7 +119,7 @@
   <nav class="md-header-nav md-grid">
     <div class="md-flex">
       <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="http://localhost:8000/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
+        <a href="https://gridsingularity.github.io/gsy-e/documentation/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
           
             <img src="../img/Profile.png" width="32" height="32">
           
@@ -209,7 +209,7 @@
                   <div class="md-sidebar__inner">
                     <nav class="md-nav md-nav--primary" data-md-level="0">
   <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="http://localhost:8000/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
+    <a href="https://gridsingularity.github.io/gsy-e/documentation/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
       
         <img src="../img/Profile.png" width="48" height="48">
       
@@ -2296,8 +2296,8 @@
                 <p><em>Note: If you are running the Grid Singularity exchange (previously callled D3A) using a virtual machine and <a href="../vm-installation-instructions/">vagrant</a>, the latest GSy-e SDK is already installed on your computer and you can skip to the Launch Simulation section below. If you are running the exchange software locally, please follow the following instructions.</em></p>
 <h3 id="start-redis-server">Start Redis server<a class="headerlink" href="#start-redis-server" title="Permanent link">&para;</a></h3>
 <p>To use the API locally, your script interacts with the simulation using a local Redis instance. To start the redis instance, open a new terminal and run the following command :</p>
-<pre class="codehilite"><code>redis-server /usr/local/etc/redis.conf
-</code></pre>
+<pre class="codehilite"><code>redis-server /usr/local/etc/redis.conf</code></pre>
+
 
 <p>To install redis in Ubuntu follow the instructions in this <a href="https://redis.io/topics/quickstart" target="_blank">link</a>.</p>
 <h3 id="open-external-connection-to-api-for-assets">Open external connection to API for Assets<a class="headerlink" href="#open-external-connection-to-api-for-assets" title="Permanent link">&para;</a></h3>
@@ -2324,19 +2324,19 @@ initial_buying_rate=0,
 final_buying_rate=25,
 initial_selling_rate=30,                                                                              final_selling_rate=25.1),
                                   ),
-                         ]),
-</code></pre>
+                         ]),</code></pre>
+
 
 <p>By default, trading strategies do not allow API connections unless the <code>ExternalStrategy</code> is used. Please also ensure that the appropriate libraries are imported to use the API.</p>
 <h3 id="launch-simulation">Launch simulation<a class="headerlink" href="#launch-simulation" title="Permanent link">&para;</a></h3>
 <p>This requires you to have the backend codebase installed on your machine to run simulations (see <a href="../linux-installation-instructions/">Installation Instructions</a>). First, navigate to the Grid Singularity folder (gsy) in a new terminal, then activate the Grid Singularity (gsy-env) environment with the command:</p>
-<pre class="codehilite"><code>workon gsy-env
-</code></pre>
+<pre class="codehilite"><code>workon gsy-env</code></pre>
+
 
 <p>An template setup is already available in github and ready to be run <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/api_setup/default_community.py" target="_blank">here</a> (data available for the July 2021).</p>
 <p>To run this simulation and wait for the API template script to execute:</p>
-<pre class="codehilite"><code>gsy-env -l INFO run -t 15s -s 15m --setup api_setup.default_community --slot-length-realtime 5 --start-date 2021-07-01 --enable-external-connection --paused
-</code></pre>
+<pre class="codehilite"><code>gsy-env -l INFO run -t 15s -s 15m --setup api_setup.default_community --slot-length-realtime 5 --start-date 2021-07-01 --enable-external-connection --paused</code></pre>
+
 
 <p>After few seconds, the simulation should begin, waiting for the API template as mentioned in the figure below:</p>
 <p><img alt="alt_text" src="../img/api-overview-2.png" /></p>
@@ -2345,24 +2345,24 @@ initial_selling_rate=30,                                                        
 <p>Before launching the SDK Script, users need to adapt the following information in their script:</p>
 <h3 id="oracle-name">Oracle name<a class="headerlink" href="#oracle-name" title="Permanent link">&para;</a></h3>
 <p>This parameter is only relevant when using the API on the User-Interface. This defines the name of the aggregator / API name that manages the markets and energy assets. Once the name is set it cannot be changed within the same running collaboration.</p>
-<pre class="codehilite"><code>oracle_name = 'oracle'
-</code></pre>
+<pre class="codehilite"><code>oracle_name = 'oracle'</code></pre>
+
 
 <h3 id="assets-list">Assets list<a class="headerlink" href="#assets-list" title="Permanent link">&para;</a></h3>
 <p>The list of assets  needs to be updated to include the assets registered to user through the registration process, in arrays as follows :</p>
 <pre class="codehilite"><code>load_names = ['Load 1 L13', 'Load 2 L21', 'Load 3 L17']
 pv_names = ['PV 1 (4kW)', 'PV 3 (5kW)']
-storage_names = ['Tesla Powerwall 3']
-</code></pre>
+storage_names = ['Tesla Powerwall 3']</code></pre>
 
-<pre class="codehilite"><code>market_names = [&quot;Grid&quot;, &quot;Community&quot;]
-</code></pre>
+
+<pre class="codehilite"><code>market_names = [&quot;Grid&quot;, &quot;Community&quot;]</code></pre>
+
 
 <p>The SDK Script has an “automatic” connection process to manage energy assets. If the function <em>automatic</em> is True, the Exchange SDK will automatically connect to all energy assets that it is registered to. This option is only available for simulations running on the User-Interface.</p>
 <h3 id="interact-with-local-simulations">Interact with local simulations<a class="headerlink" href="#interact-with-local-simulations" title="Permanent link">&para;</a></h3>
 <p>To interact with a locally running simulation (backend simulation), username, passwords, domain and websocket names and simulation_id are not necessary. There is only an additional flag required in the CLI command : --run-on-redis.</p>
-<pre class="codehilite"><code>gsy-e-sdk --log-level INFO run --setup asset_api_template --run-on-redis
-</code></pre>
+<pre class="codehilite"><code>gsy-e-sdk --log-level INFO run --setup asset_api_template --run-on-redis</code></pre>
+
 
 <h4 id="log-levels">Log levels:<a class="headerlink" href="#log-levels" title="Permanent link">&para;</a></h4>
 <p>The API CLI command can receive a <em>--log-level</em> argument. Adjusting this parameter will increase or reduce the level of information displayed in the terminal, while the agent is running. There are 4 levels (classed from low detailed to high:</p>
@@ -2463,7 +2463,7 @@ storage_names = ['Tesla Powerwall 3']
     
       <script src="../assets/javascripts/application.05d1c8d6.js"></script>
       
-      <script>app.initialize({version:"1.4.2",url:{base:".."}})</script>
+      <script>app.initialize({version:"1.3.0",url:{base:".."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
       

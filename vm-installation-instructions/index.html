@@ -13,7 +13,7 @@
         <meta name="description" content="Documentation for the Grid Singularity Exchange">
       
       
-        <link rel="canonical" href="http://localhost:8000/vm-installation-instructions/">
+        <link rel="canonical" href="https://gridsingularity.github.io/gsy-e/documentation/vm-installation-instructions/">
       
       
         <meta name="author" content="Grid Singularity">
@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../img/Profile.png">
-      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-4.0.2">
+      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-4.0.2">
     
     
       
@@ -119,7 +119,7 @@
   <nav class="md-header-nav md-grid">
     <div class="md-flex">
       <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="http://localhost:8000/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
+        <a href="https://gridsingularity.github.io/gsy-e/documentation/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
           
             <img src="../img/Profile.png" width="32" height="32">
           
@@ -209,7 +209,7 @@
                   <div class="md-sidebar__inner">
                     <nav class="md-nav md-nav--primary" data-md-level="0">
   <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="http://localhost:8000/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
+    <a href="https://gridsingularity.github.io/gsy-e/documentation/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
       
         <img src="../img/Profile.png" width="48" height="48">
       
@@ -2206,82 +2206,81 @@
 <h3 id="step-2-install-virtualbox-and-vagrant">Step 2: Install Virtualbox and Vagrant<a class="headerlink" href="#step-2-install-virtualbox-and-vagrant" title="Permanent link">&para;</a></h3>
 <p>It is recommended to use Chocolatey as a package management tool for Windows.</p>
 <p>Open your terminal (cmd.exe) as administrator and install chocolatey by running the following command :</p>
-<pre class="codehilite"><code>@&quot;%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe&quot; -NoProfile -InputFormat None -ExecutionPolicy Bypass -Command &quot;[System.Net.ServicePointManager]::SecurityProtocol = 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))&quot; &amp;&amp; SET &quot;PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin&quot;
-</code></pre>
+<pre class="codehilite"><code>@&quot;%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe&quot; -NoProfile -InputFormat None -ExecutionPolicy Bypass -Command &quot;[System.Net.ServicePointManager]::SecurityProtocol = 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))&quot; &amp;&amp; SET &quot;PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin&quot;</code></pre>
+
 
 <p>Install Virtualbox from a Windows console</p>
-<pre class="codehilite"><code>choco install virtualbox
-</code></pre>
+<pre class="codehilite"><code>choco install virtualbox</code></pre>
+
 
 <p>Install Vagrant (this is a software wrapper around virtualbox and other supervisors, that allows easy creation, download, and installation of virtual machines.</p>
 <pre class="codehilite"><code>choco install vagrant
-vagrant plugin install vagrant-disksize
-</code></pre>
+vagrant plugin install vagrant-disksize</code></pre>
+
 
 <h3 id="step-3-install-grid-singularity-exchange-while-sharing-a-folder-between-guest-and-host-machine-via-vagrant">Step 3: Install Grid Singularity Exchange while sharing a folder between guest and host machine via vagrant<a class="headerlink" href="#step-3-install-grid-singularity-exchange-while-sharing-a-folder-between-guest-and-host-machine-via-vagrant" title="Permanent link">&para;</a></h3>
 <p>Create a new-folder that you want to share across guest and host machines.</p>
 <p>Add the Vagrantfile from Grid Singularity Exchange repository into your newly created folder.</p>
 <p>Open a terminal and go into your newly-created folder with:</p>
-<pre class="codehilite"><code>cd &lt;path-to-your-folder&gt;
-</code></pre>
+<pre class="codehilite"><code>cd &lt;path-to-your-folder&gt;</code></pre>
+
 
 <p>If it is your first time do:</p>
-<pre class="codehilite"><code>vagrant up
-</code></pre>
+<pre class="codehilite"><code>vagrant up</code></pre>
+
 
 <p>If vagrant was already running, please delete re-initialize with the following steps first :</p>
 <ul>
 <li>Delete old vagrant images via :</li>
 </ul>
-<pre class="codehilite"><code>vagrant destroy --force
-</code></pre>
+<pre class="codehilite"><code>vagrant destroy --force</code></pre>
+
 
 <ul>
 <li>Remove residues of old vagrant boxes via :</li>
 </ul>
-<pre class="codehilite"><code>vagrant box remove ubuntu/&lt;your-box-name&gt; --all --force
-</code></pre>
+<pre class="codehilite"><code>vagrant box remove ubuntu/&lt;your-box-name&gt; --all --force</code></pre>
+
 
 <h3 id="step-4-reload-your-virtual-machine">Step 4: Reload your virtual machine:<a class="headerlink" href="#step-4-reload-your-virtual-machine" title="Permanent link">&para;</a></h3>
-<pre class="codehilite"><code>vagrant reload
-</code></pre>
+<pre class="codehilite"><code>vagrant reload</code></pre>
+
 
 <h3 id="step-5-access-your-virtual-machine-terminal-to-run-grid-singularity-exchange">Step 5: Access your virtual machine terminal to run Grid Singularity Exchange:<a class="headerlink" href="#step-5-access-your-virtual-machine-terminal-to-run-grid-singularity-exchange" title="Permanent link">&para;</a></h3>
-<pre class="codehilite"><code>vagrant ssh
-</code></pre>
+<pre class="codehilite"><code>vagrant ssh</code></pre>
+
 
 <h3 id="step-6-share-folder-to-windows-host-by-running-these-three-commands">Step 6: Share folder to Windows host by running these three commands:<a class="headerlink" href="#step-6-share-folder-to-windows-host-by-running-these-three-commands" title="Permanent link">&para;</a></h3>
-<pre class="codehilite"><code>cp -r /home/vagrant/gsy-e/vagrant/
-</code></pre>
+<pre class="codehilite"><code>cp -r /home/vagrant/gsy-e/vagrant/</code></pre>
+
 
 <p>Share gsy-e-sdk:</p>
-<pre class="codehilite"><code>cp -r /home/vagrant/gsy-e-sdk/vagrant/
-</code></pre>
+<pre class="codehilite"><code>cp -r /home/vagrant/gsy-e-sdk/vagrant/</code></pre>
+
 
 <p>If you have results you want to export to Windows :</p>
 <pre class="codehilite"><code>cd /home/vagrant/gsy-e-simulation/
 zip -r &lt;your-zip-filename&gt;.zip ./&lt;folder-to-be-zipped&gt;/
-cp -r &lt;your-zip-filename&gt;.zip /vagrant/
-</code></pre>
+cp -r &lt;your-zip-filename&gt;.zip /vagrant/</code></pre>
+
 
 <h3 id="step-7-run-a-gsy-e-simulation">Step 7: Run a gsy-e simulation<a class="headerlink" href="#step-7-run-a-gsy-e-simulation" title="Permanent link">&para;</a></h3>
 <p>Activate the gsy-e environment:</p>
-<pre class="codehilite"><code>source /home/vagrant/envs/gsy-e/bin/activate
-</code></pre>
+<pre class="codehilite"><code>source /home/vagrant/envs/gsy-e/bin/activate</code></pre>
+
 
 <p>Run simulation with:</p>
 <pre class="codehilite"><code>cd /vagrant/gsy-e
-gsy-e run
-</code></pre>
+gsy-e run</code></pre>
+
 
 <h3 id="step-8-run-the-grid-singularity-exchange-sdk-in-vagrant">Step 8: Run the Grid Singularity Exchange SDK in Vagrant<a class="headerlink" href="#step-8-run-the-grid-singularity-exchange-sdk-in-vagrant" title="Permanent link">&para;</a></h3>
 <p>Activate the Exchange SDK environment:</p>
-<pre class="codehilite"><code>source /home/vagrant/envs/exchange-sdk/bin/activate
-</code></pre>
+<pre class="codehilite"><code>source /home/vagrant/envs/exchange-sdk/bin/activate</code></pre>
+
 
 <p>To run your SDK script, run the following command (template here):</p>
-<pre class="codehilite"><code>python your_sdk_script.py
-</code></pre>
+<pre class="codehilite"><code>python your_sdk_script.py</code></pre>
                 
                   
                 
@@ -2369,7 +2368,7 @@ gsy-e run
     
       <script src="../assets/javascripts/application.05d1c8d6.js"></script>
       
-      <script>app.initialize({version:"1.4.2",url:{base:".."}})</script>
+      <script>app.initialize({version:"1.3.0",url:{base:".."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
       

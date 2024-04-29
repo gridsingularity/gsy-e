@@ -13,7 +13,7 @@
         <meta name="description" content="Documentation for the Grid Singularity Exchange">
       
       
-        <link rel="canonical" href="http://localhost:8000/general-settings/">
+        <link rel="canonical" href="https://gridsingularity.github.io/gsy-e/documentation/general-settings/">
       
       
         <meta name="author" content="Grid Singularity">
@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../img/Profile.png">
-      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-4.0.2">
+      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-4.0.2">
     
     
       
@@ -119,7 +119,7 @@
   <nav class="md-header-nav md-grid">
     <div class="md-flex">
       <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="http://localhost:8000/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
+        <a href="https://gridsingularity.github.io/gsy-e/documentation/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
           
             <img src="../img/Profile.png" width="32" height="32">
           
@@ -209,7 +209,7 @@
                   <div class="md-sidebar__inner">
                     <nav class="md-nav md-nav--primary" data-md-level="0">
   <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="http://localhost:8000/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
+    <a href="https://gridsingularity.github.io/gsy-e/documentation/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
       
         <img src="../img/Profile.png" width="48" height="48">
       
@@ -2147,8 +2147,8 @@
 from gsy_e.models.area import Area
 def get_setup(config):
     area = Area('Grid', [])
-    return area
-</code></pre>
+    return area</code></pre>
+
 
 <p>The user can add more nested submarkets recursively by adding more instances of <code>Area</code> to the second parameter (list) of the <code>Area</code> class. If the strategy parameter is set in the <code>Area</code> class, the area is converted to a leaf node, e.g. a load. The following grid architecture is given:</p>
 <ul>
@@ -2216,8 +2216,8 @@ def get_setup(config):
         ],
         config=config
     )
-    return area
-</code></pre>
+    return area</code></pre>
+
 
 <p>Additionally the user has the possibility to change the default general settings in two different ways:</p>
 <ol>
@@ -2237,8 +2237,8 @@ def get_setup(config):
     ConstSettings.MASettings.MARKET_TYPE = 2
     ConstSettings.LoadSettings.MIN_ENERGY_RATE = 0
     ConstSettings.LoadSettings.MAX_ENERGY_RATE = 35
-    ConstSettings.MASettings.GRID_FEE_TYPE = 1
-</code></pre>
+    ConstSettings.MASettings.GRID_FEE_TYPE = 1</code></pre>
+
 
 <h3 id="d3a-settingsjson">d3a-settings.json<a class="headerlink" href="#d3a-settingsjson" title="Permanent link">&para;</a></h3>
 <p>These general settings can also be parsed via a settings file in JSON format, which contains all constants in the advanced_settings branch. An example can be found here: src/d3a/setup/d3a-settings.json The settings JSON file can be parsed via the --settings-file keyword</p>
@@ -2275,8 +2275,8 @@ def get_setup(config):
         ],
         config=config
     )
-    return area
-</code></pre>
+    return area</code></pre>
+
 
 <h4 id="simulation-launch">Simulation launch<a class="headerlink" href="#simulation-launch" title="Permanent link">&para;</a></h4>
 <p>Once the entire grid architecture is modelled, including energy assets, the user can launch the trading simulation by running a command line including desired setup features:</p>
@@ -2288,12 +2288,12 @@ def get_setup(config):
 <li>--slot-length-realtime: Desired duration of slot in realtime [default: 0s]</li>
 </ul>
 <p>Example simulation call:</p>
-<pre class="codehilite"><code class="language-commandline">d3a -l ERROR run --duration=1d --tick-length=1s --slot-length=15m --cloud-coverage=0 --setup default_2a
-</code></pre>
+<pre class="codehilite"><code class="language-commandline">d3a -l ERROR run --duration=1d --tick-length=1s --slot-length=15m --cloud-coverage=0 --setup default_2a</code></pre>
+
 
 <p>Getting help in the command line:</p>
-<pre class="codehilite"><code class="language-commandline">d3a --help returns:
-</code></pre>
+<pre class="codehilite"><code class="language-commandline">d3a --help returns:</code></pre>
+
 
 <pre class="codehilite"><code>Usage: d3a [OPTIONS] COMMAND [ARGS]...
 
@@ -2436,8 +2436,7 @@ Options:
 
   --start-date DATE             Start date of the Simulation (YYYY-MM-DD)  [default: 2019-09-27]
 
-  --help                        Show this message and exit.
-</code></pre>
+  --help                        Show this message and exit.</code></pre>
                 
                   
                 
@@ -2490,7 +2489,7 @@ Options:
     
       <script src="../assets/javascripts/application.05d1c8d6.js"></script>
       
-      <script>app.initialize({version:"1.4.2",url:{base:".."}})</script>
+      <script>app.initialize({version:"1.3.0",url:{base:".."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
       

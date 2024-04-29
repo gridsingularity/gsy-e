@@ -13,7 +13,7 @@
         <meta name="description" content="Documentation for the Grid Singularity Exchange">
       
       
-        <link rel="canonical" href="http://localhost:8000/cloud-service-guide/">
+        <link rel="canonical" href="https://gridsingularity.github.io/gsy-e/documentation/cloud-service-guide/">
       
       
         <meta name="author" content="Grid Singularity">
@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../img/Profile.png">
-      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-4.0.2">
+      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-4.0.2">
     
     
       
@@ -119,7 +119,7 @@
   <nav class="md-header-nav md-grid">
     <div class="md-flex">
       <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="http://localhost:8000/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
+        <a href="https://gridsingularity.github.io/gsy-e/documentation/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
           
             <img src="../img/Profile.png" width="32" height="32">
           
@@ -209,7 +209,7 @@
                   <div class="md-sidebar__inner">
                     <nav class="md-nav md-nav--primary" data-md-level="0">
   <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="http://localhost:8000/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
+    <a href="https://gridsingularity.github.io/gsy-e/documentation/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
       
         <img src="../img/Profile.png" width="48" height="48">
       
@@ -2116,19 +2116,19 @@
 <p>Now you need to copy your scripts/files from your local computer onto your AWS instance. To do that you need to connect to your instance by using the ssh key and your public DNS. You can find the DNS of your instance by selecting your instance and looking at the summary</p>
 <p><img alt="alt_text" src="../img/cloud-setup-4.png" /></p>
 <p>First you need to make sure your key is not publicly available on your machine. Run the following command</p>
-<pre class="codehilite"><code>chmod 400 path_to/mykey.pem
-</code></pre>
+<pre class="codehilite"><code>chmod 400 path_to/mykey.pem</code></pre>
+
 
 <h3 id="step-2-upload-relevant-files-onto-the-instance">Step 2: Upload relevant files onto the instance<a class="headerlink" href="#step-2-upload-relevant-files-onto-the-instance" title="Permanent link">&para;</a></h3>
 <p>To copy a file into your AWS instance please run the equivalent command (with your own information)</p>
-<pre class="codehilite"><code>scp -i path_to_ssh_key.pem path_to_file   username@public_DNS:/path_to_copy
-</code></pre>
+<pre class="codehilite"><code>scp -i path_to_ssh_key.pem path_to_file   username@public_DNS:/path_to_copy</code></pre>
+
 
 <p>The username can be found after clicking on connect. The default username will depend on the instance platform you are using. If you are using Linux, “ubuntu” will be the default username.</p>
 <p>Additionally we recommend copying your files into the home directory of your instance <code>/home/ubuntu</code>.</p>
 <p>Here is an example of command</p>
-<pre class="codehilite"><code>scp -i Desktop/mykey.pem myscript.py   ubuntu@ec2-18-188-221-121.us-east-2.compute.amazonaws.com:/home/ubuntu/
-</code></pre>
+<pre class="codehilite"><code>scp -i Desktop/mykey.pem myscript.py   ubuntu@ec2-18-188-221-121.us-east-2.compute.amazonaws.com:/home/ubuntu/</code></pre>
+
 
 <h3 id="step-3-connect-to-the-instance">Step 3: Connect to the instance<a class="headerlink" href="#step-3-connect-to-the-instance" title="Permanent link">&para;</a></h3>
 <p>Once you have copied all necessary files onto you AWS instance you can connect to your instance with 2 ways</p>
@@ -2137,75 +2137,75 @@
 <li>With your local terminal cli (recommended)</li>
 </ol>
 <p>To connect to your instance from your local terminal you just need to run the following command with your equivalent information</p>
-<pre class="codehilite"><code>ssh -i path_to/mykey.pem username@public_DNS
-</code></pre>
+<pre class="codehilite"><code>ssh -i path_to/mykey.pem username@public_DNS</code></pre>
+
 
 <p>Example</p>
-<pre class="codehilite"><code>ssh -i Desktop/mykey.pem ubuntu@ec2-18-188-221-121.us-east-2.compute.amazonaws.com
-</code></pre>
+<pre class="codehilite"><code>ssh -i Desktop/mykey.pem ubuntu@ec2-18-188-221-121.us-east-2.compute.amazonaws.com</code></pre>
+
 
 <p>Once connected, go into the directory you have previously sent your files. If you have copied them in <code>/home/ubuntu</code>, just run the following command</p>
-<pre class="codehilite"><code>cd /home/ubuntu
-</code></pre>
+<pre class="codehilite"><code>cd /home/ubuntu</code></pre>
+
 
 <p>You can list all the files in the directory, to confirm that your files are correctly copied onto the instance by running</p>
-<pre class="codehilite"><code>ls
-</code></pre>
+<pre class="codehilite"><code>ls</code></pre>
+
 
 <h3 id="step-4-initialize-the-instances-environment-and-install-grid-singularity-client">Step 4: Initialize the instance's environment and install Grid Singularity Client<a class="headerlink" href="#step-4-initialize-the-instances-environment-and-install-grid-singularity-client" title="Permanent link">&para;</a></h3>
 <p>Update and install all required package on your AWS instance</p>
 <p>Update your sudo</p>
-<pre class="codehilite"><code>sudo apt update
-</code></pre>
+<pre class="codehilite"><code>sudo apt update</code></pre>
+
 
 <p>Install python3 pip</p>
-<pre class="codehilite"><code>sudo apt install python3-pip
-</code></pre>
+<pre class="codehilite"><code>sudo apt install python3-pip</code></pre>
+
 
 <p>Add <code>deadnakes</code> to your system source</p>
-<pre class="codehilite"><code>sudo add-apt-repository ppa:deadsnakes/ppa
-</code></pre>
+<pre class="codehilite"><code>sudo add-apt-repository ppa:deadsnakes/ppa</code></pre>
+
 
 <p>Install python 3.6</p>
-<pre class="codehilite"><code>sudo apt-get install python3.6
-</code></pre>
+<pre class="codehilite"><code>sudo apt-get install python3.6</code></pre>
+
 
 <p>Install virtual environment</p>
-<pre class="codehilite"><code>sudo apt install python3-virtualenv
-</code></pre>
+<pre class="codehilite"><code>sudo apt install python3-virtualenv</code></pre>
+
 
 <p>Create a virtual environment with python 3.6</p>
-<pre class="codehilite"><code>virtualenv /tmp/d3a --python=/usr/bin/python3.6
-</code></pre>
+<pre class="codehilite"><code>virtualenv /tmp/d3a --python=/usr/bin/python3.6</code></pre>
+
 
 <p>Activate your virtual environment</p>
-<pre class="codehilite"><code>source /tmp/d3a/bin/activate
-</code></pre>
+<pre class="codehilite"><code>source /tmp/d3a/bin/activate</code></pre>
+
 
 <p>Install d3a api client</p>
-<pre class="codehilite"><code>pip3 install git+https://github.com/gridsingularity/d3a-api-client.git
-</code></pre>
+<pre class="codehilite"><code>pip3 install git+https://github.com/gridsingularity/d3a-api-client.git</code></pre>
+
 
 <h3 id="step-5-install-screen-and-run-the-api-agent">Step 5: Install screen and run the API agent<a class="headerlink" href="#step-5-install-screen-and-run-the-api-agent" title="Permanent link">&para;</a></h3>
 <p>To be able to run the script indefinitely on your AWS instance you need to install Linux <a href="https://kapeli.com/cheat_sheets/screen.docset/Contents/Resources/Documents/index" target="_blank">Screen</a> (that allows to have multiple screen within your terminal) with the following command</p>
-<pre class="codehilite"><code>sudo apt-get install screen
-</code></pre>
+<pre class="codehilite"><code>sudo apt-get install screen</code></pre>
+
 
 <p>Create a new screen</p>
-<pre class="codehilite"><code>screen -S screen_name
-</code></pre>
+<pre class="codehilite"><code>screen -S screen_name</code></pre>
+
 
 <p>Run your python script</p>
-<pre class="codehilite"><code>python3 assets.py
-</code></pre>
+<pre class="codehilite"><code>python3 assets.py</code></pre>
+
 
 <p>To detach from the current screen session</p>
-<pre class="codehilite"><code>Ctr+a+d
-</code></pre>
+<pre class="codehilite"><code>Ctr+a+d</code></pre>
+
 
 <p>If you want to log back in the relevant screen run</p>
-<pre class="codehilite"><code>screen -r screen_name
-</code></pre>
+<pre class="codehilite"><code>screen -r screen_name</code></pre>
+
 
 <p>Once you are detached for the running screen you are able to close your terminal and your script will continue to run indefinitely on your AWS instance</p>
                 
@@ -2260,7 +2260,7 @@
     
       <script src="../assets/javascripts/application.05d1c8d6.js"></script>
       
-      <script>app.initialize({version:"1.4.2",url:{base:".."}})</script>
+      <script>app.initialize({version:"1.3.0",url:{base:".."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
       

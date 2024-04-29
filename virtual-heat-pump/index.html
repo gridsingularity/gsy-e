@@ -13,7 +13,7 @@
         <meta name="description" content="Documentation for the Grid Singularity Exchange">
       
       
-        <link rel="canonical" href="http://localhost:8000/virtual-heat-pump/">
+        <link rel="canonical" href="https://gridsingularity.github.io/gsy-e/documentation/virtual-heat-pump/">
       
       
         <meta name="author" content="Grid Singularity">
@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../img/Profile.png">
-      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-4.0.2">
+      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-4.0.2">
     
     
       
@@ -119,7 +119,7 @@
   <nav class="md-header-nav md-grid">
     <div class="md-flex">
       <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="http://localhost:8000/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
+        <a href="https://gridsingularity.github.io/gsy-e/documentation/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
           
             <img src="../img/Profile.png" width="32" height="32">
           
@@ -209,7 +209,7 @@
                   <div class="md-sidebar__inner">
                     <nav class="md-nav md-nav--primary" data-md-level="0">
   <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="http://localhost:8000/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
+    <a href="https://gridsingularity.github.io/gsy-e/documentation/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
       
         <img src="../img/Profile.png" width="48" height="48">
       
@@ -2123,51 +2123,50 @@
                 
                 <h1 id="virtual-heat-pump">Virtual Heat Pump<a class="headerlink" href="#virtual-heat-pump" title="Permanent link">&para;</a></h1>
 <h2 id="virtual-heat-pump-model">Virtual Heat Pump Model<a class="headerlink" href="#virtual-heat-pump-model" title="Permanent link">&para;</a></h2>
-<p>A Virtual Heat Pump (VHP) is akin to a digital twin representing the district heating system role in the electricity market, simulating how the demand for electricity that is satisfied by district heating could be satisfied if a heat pump were used instead. This allows for a comparison of the costs and benefits of the two alternatives, including an assessment on the impact on the grid stability by potentially adding heat pumps to the system. Finally, it facilitates the sizing optimization (the selection of the model, rating or other nameplate parameters) of the heat pump if there is a consideration to replace the district heating connection.</p>
-<p>The modelled trading strategy assumes that the district heating network connection would be replaced by a ground source heat pump, which includes a water tank storage (reference model illustrated in the figure below). Other parameters of the Virtual Heat Pump can be modified, and are described in detail in the <a href="../assets-installation/#virtual-heat-pump-code-configuration">Virtual Heat Pump Code Configuration</a>.</p>
+<p>A Virtual Heat Pump (VHP) is akin to a digital twin representing the district heating system role in the electricity market, simulating how the demand for electricity that is satisfied by district heating could be satisfied if a heat pump were used instead. This allows for a comparison of the costs and benefits of the two alternatives, including an assessment on the impact on the grid stability by potentially adding heat pumps to the system. Finally, it facilitates the sizing optimization (selection of the model, the rating or other nameplate parameters) of the heat pump if there is a consideration to replace the district heating connection. The modelled trading strategy assumes that the district heating network connection would be replaced by a ground source heat pump, which includes a water tank storage (reference model illustrated in the figure below). The heat pump is modelled in its entirety as a single system and not as separate units; therefore, the condenser and the compressor are both accounted for in the electricity demand. Other VHP configuration parameters can be modified to suit a particular use case, as described in detail in the <a href="../assets-installation/#virtual-heat-pump-code-configuration">Virtual Heat Pump Code Configuration</a>.</p>
 <figure>
 <p><img alt="alt_text" src="../img/virtual-heatpump-schema.png" />
-  </p>
-<figcaption><b>Figure 2.29</b>: Ground source virtual heat pump diagram
-</figcaption>
+  <figcaption><b>Figure 2.29</b>: Ground source virtual heat pump diagram
+</figcaption></p>
 </figure>
 <p>The heat pump operation steps are the following:</p>
 <ol>
-<li>Heat from the water pipes in the ground (#1 in Figure 2.29) is transferred to the source side of the heat pump, via the heat exchanger (#2 in Figure 2.29)</li>
-<li>The heat pump condenser (#3 in Figure 2.29) converts the heat pump liquid medium to gas, thus increasing its temperature.</li>
-<li>The heat from the condenser side of the heat pump is transferred to the water tank storage via the second heat exchanger (#4 in Figure 2.29).</li>
-<li>The water tank storage (#5 in Figure 2.29) temperature is increased as a result of the heat produced by the heat pump condenser at step #3 in Figure 2.29.</li>
+<li>Heat from the water pipes (boreholes) in the ground (#1 in Figure 2.29) is transferred to the source side of the heat pump, via the heat exchanger (evaporator) (#2 in Figure 2.29)</li>
+<li>The heat pump compressor (#3 in Figure 2.29) increases the pressure and the temperature of the gas medium.</li>
+<li>The heat from the condenser side of the heat pump is transferred to the water tank storage via the second heat exchanger (#4 in Figure 2.29) and the gas medium is cooled and converted to liquid (condensed).</li>
+<li>The water tank storage (#5 in Figure 2.29) temperature is increased as a result of the heat produced by the heat pump condenser in step #3.</li>
 <li>Heat from the water tank storage is used in order to provide the heat demand of the building (#6 in Figure 2.29).</li>
 </ol>
-<p>Unlike the heat pump model described above, district heating networks use water pipes that are directly connected to the building, and usually the supply temperature, return temperature and water flow are measured in order to facilitate customer billing. The virtual heat pump model can use these  district heating measurements to calculate the heat demand of the building.  The heat demand is then provided as an input for the VHP model to calculate the energy that needs to be consumed by the heat pump in order to provide the heat demand, taking into account the flexibility that the water tank storage provides.</p>
+<p>Unlike the heat pump model described above, district heating networks use water pipes that are directly connected to the building, and usually the supply temperature, return temperature and water flow rates are measured in order to facilitate customer billing. The virtual heat pump model can use these district heating measurements to calculate the heat demand of the building.  The heat demand is then provided as an input for the VHP model to calculate the energy that needs to be consumed by the heat pump in order to provide the heat demand, taking into account the flexibility that the water tank storage provides.</p>
 <h2 id="virtual-heat-pump-model-equations">Virtual Heat Pump Model Equations<a class="headerlink" href="#virtual-heat-pump-model-equations" title="Permanent link">&para;</a></h2>
-<p>The model of the virtual heat pump comprises a set of mathematical equations that each simulates a different component of a heat pump system. The system of linear equations is optimised, in order to define the state and operation of the simulated heat pump. The optimisation parameter of the proposed model is the target temperature of the storage. The system is allowed to monitor the current temperature of the storage, and try to achieve a target storage temperature that is bounded by the limitations of min / max temperature of the water tank.</p>
-<p>The output of the proposed model is the calculation of the electricity consumption of the heat pump <span class="arithmatex">\(P_{el-hp}\)</span>, which can be used in order to participate in the energy market, at the same time incorporating the flexibility provided by the water tank storage. The electricity consumption, which is related to a supplied heat <span class="arithmatex">\(Q_{hp_{out}}\)</span> and COP, is calculated based on the following equation:</p>
+<p>The model of the virtual heat pump comprises a set of mathematical equations that each simulates a different component of a heat pump system. The system of linear equations is optimised, in order to define the state and operation of the simulated heat pump. The optimisation parameter of the proposed model is the target temperature of the storage. The system is allowed to monitor the current temperature of the storage, and aims to achieve a target storage temperature that is bounded by the limitations of the minimum and the maximum temperature of the water tank.</p>
+<p>The output of the proposed model is the calculation of the electricity consumption of the heat pump <span class="arithmatex">\(P_{el-hp}\)</span>, which can be used for this asset to participate in the energy market, while incorporating the flexibility provided by the water tank storage. The electricity consumption, which is related to a supplied heat <span class="arithmatex">\(Q_{hp_{out}}\)</span> and COP, is calculated based on the following equation:</p>
 <div class="arithmatex">\[Q_{hp_{out}} = P_{el-hp} * COP \tag{1}\]</div>
 <p>The electricity consumption of the heat pump is upper-bounded by the maximum power consumption of the heat pump <span class="arithmatex">\(P_{el-hp} &lt;= P_{el-hp-max}\)</span>.</p>
-<p>The assumption is that the losses from the heat exchanger between the heat pump and the storage are ignored, and heat supplied by the heat pump to the storage is roughly equivalent to the heat generated by the heat pump itself: <span class="arithmatex">\(Q_{in} \small  \cong Q_{hp_{out}}\)</span> resulting in</p>
+<p>The assumption is that the losses from the heat exchanger between the heat pump and the storage are ignored, and that the heat supplied by the heat pump to the storage is roughly equivalent to the heat generated by the heat pump itself: <span class="arithmatex">\(Q_{in} \small  \cong Q_{hp_{out}}\)</span> resulting in</p>
 <div class="arithmatex">\[Q_{hp_{out}} = P_{el-hp} \cdot COP = Q_{in} \tag{2}\]</div>
 <p>The <span class="arithmatex">\(COP\)</span> at each time-slot will be calculated as</p>
 <div class="arithmatex">\[ COP= \eta T_{condenser} / (T_{condenser} - T_{source}) \tag{3}\]</div>
 <p>Where:</p>
 <ul>
-<li><span class="arithmatex">\(\eta\)</span> is the empirical calibration coefficient = 0.85 for water to water heat pumps</li>
-<li><span class="arithmatex">\(T_{source}\)</span> is  the district heating supply temperature</li>
+<li><span class="arithmatex">\(\eta\)</span> is the empirical calibration coefficient for water-to-water heat pumps</li>
+<li><span class="arithmatex">\(T_{source}\)</span> is the district heating supply temperature</li>
 <li><span class="arithmatex">\(T_{condenser}\)</span> is the condenser (or sink) temperature</li>
 </ul>
-<p>For the solution of the former equations the heat generated by the heat pump (<span class="arithmatex">\(Q_{hp_{out}}\)</span>) is needed, and it needs to be associated with the water tank model. The underlying premise is that the input heat to the water tank should be equal to the heat that is extracted from the water tank to cover the heat demand of the building, plus the extra heat stored in the water tank. This relation is reflected by the following equation for the market slot <span class="arithmatex">\(i\)</span>:</p>
+<p>The formula is based on the Carnot equation, with the default calibration coefficient of η=0.6 selected based upon a literature review of different COP formulations. This coefficient can be changed in the backend code.</p>
+<p>A required input for solving the preceding equations is the amount of heat generated by the heat pump (<span class="arithmatex">\(Q_{hp_{out}}\)</span>), and it needs to be associated with the water tank model (since the heat generated by the heat pump is used exclusively to increase the water tank temperature and provide the heat demand of the home - the main input of our model). The underlying premise is that the heat input to the water tank should be equal to the heat that is extracted from the water tank to cover the heat demand of the building, plus the extra heat stored in the water tank. This relation is reflected by the following equation for the market slot <span class="arithmatex">\(i\)</span>:</p>
 <div class="arithmatex">\[Q_{in, i} - Q_{out,i} - Q_{loss,i} = \rho_i V_i C_p \cdot \frac{dT_i}{dt} \tag{4}\]</div>
 <p>Where:</p>
 <ul>
-<li><span class="arithmatex">\(Q_{in, i}\)</span> is the heat generated by the heat pump, in other words the added heat to the water tank storage</li>
-<li><span class="arithmatex">\(Q_{out,i}\)</span> is the heat demand of the building, in other words the heat extracted from the water tank storage</li>
-<li><span class="arithmatex">\(Q_{loss,i}\)</span> is the heat losses due to the water tank storage. For the time being it is ignored</li>
+<li><span class="arithmatex">\(Q_{in, i}\)</span> is the heat generated by the heat pump, i.e. the added heat to the water tank storage</li>
+<li><span class="arithmatex">\(Q_{out,i}\)</span> is the heat demand of the building, i.e. the heat extracted from the water tank storage</li>
+<li><span class="arithmatex">\(Q_{loss,i}\)</span> is the heat loss due to the water tank storage (ignored by the current model)</li>
 <li><span class="arithmatex">\(\rho_i\)</span> ρi  is the water density (constant, <span class="arithmatex">\(1 kg/l\)</span>)</li>
 <li><span class="arithmatex">\(V_i\)</span> is the water tank volume (in <span class="arithmatex">\(l\)</span>)</li>
-<li><span class="arithmatex">\(C_p\)</span> is the water specific heat capacity  (constant, <span class="arithmatex">\(4182 J/kg°C\)</span>)</li>
+<li><span class="arithmatex">\(C_p\)</span> is the water specific heat capacity (constant, <span class="arithmatex">\(4182 J/kg°C\)</span>)</li>
 <li><span class="arithmatex">\(\frac{dT_i}{dt}\)</span> is the temperature derivative (in <span class="arithmatex">\(°C/sec\)</span>)</li>
 </ul>
-<p>The temperature derivative is calculated using the temperature difference between the target temperature of the water tank storage (<span class="arithmatex">\(T_{storage-target}, in Celsius\)</span> ,  used as the optimization variable of the system, and provides the flexibility to the heat pump operation) and the current temperature of the water tank storage (<span class="arithmatex">\(T_{storage-current}\)</span> in Celcius), divided by the duration of the measurement duration (<span class="arithmatex">\(t_{measurement}\)</span>), in seconds, has to be equal to the market slot duration):</p>
+<p>The temperature derivative is calculated as the temperature difference between (i) the target temperature of the water tank storage (<span class="arithmatex">\(T_{storage-target}, in Celsius\)</span>,  used as the optimization variable of the system, providing the flexibility to the heat pump operation) and (ii) the current temperature of the water tank storage (<span class="arithmatex">\(T_{storage-current}\)</span> in Celsius), divided by the measurement duration (<span class="arithmatex">\(t_{measurement}\)</span>), in seconds; has to be equal to the market slot duration):</p>
 <div class="arithmatex">\[\frac{dT_i}{dt} = (T_{storage-target} - T_{storage-current}) / t_{measurement} \tag{5}\]</div>
 <p>The <span class="arithmatex">\(Q_{out,i}\)</span> can be calculated using the following equation:</p>
 <div class="arithmatex">\[Q_{out,i} = \dot{m}_{DH} C_p (T_{s,i} - T_{r,i}) \tag{6}\]</div>
@@ -2183,7 +2182,7 @@
 <ul>
 <li><span class="arithmatex">\(\dot{m}\)</span> is the water flow to the tank (in <span class="arithmatex">\(kg/sec\)</span>)</li>
 <li><span class="arithmatex">\(C_p\)</span> is the water specific heat capacity  (constant, <span class="arithmatex">\(4182 J/kg°C\)</span>)</li>
-<li><span class="arithmatex">\(T_{condenser}\)</span> is the HP condenser setpoint, to be defined by the optimizer each time step. <span class="arithmatex">\(T_{condenser}\)</span> will be the maximum allowed and not set to a constant value. As an optimization variable input to the system, this value will be changing from the condenser temperature required for the water tank to reach its maximum temperature, to the condenser temperature required to maintain the current temperature, depending on the energy that the heat pump traded / consumed.</li>
+<li><span class="arithmatex">\(T_{condenser}\)</span> is the HP condenser setpoint, to be defined by the optimizer each time step. <span class="arithmatex">\(T_{condenser}\)</span> is the maximum allowed and not set to a constant value. As an optimization variable input to the system, this value will be changing from the condenser temperature required for the water tank to reach its maximum temperature, to the condenser temperature required to maintain the current temperature, depending on the energy that the heat pump traded / consumed.</li>
 <li><span class="arithmatex">\(T_{storagemean}\)</span> is the volume-averaged water tank storage temperature at the start of the market slot (in <span class="arithmatex">\(°C\)</span>)</li>
 </ul>
 <p>The system of equations 4, 5, 6, 7 is calculating the value of the condenser temperature (<span class="arithmatex">\(T_{condenser}\)</span>) by using the target storage temperature as the optimization parameter (<span class="arithmatex">\(T_{storage-target}\)</span>). The calculated condenser temperature is then used by equation 3 in order to calculate the <span class="arithmatex">\(COP\)</span> ,  which in turn is used in conjunction with <span class="arithmatex">\(Q_{in,i}\)</span> in equation 2 in order to finally calculate <span class="arithmatex">\(P_{el-hp}\)</span>.</p>
@@ -2274,7 +2273,7 @@
     
       <script src="../assets/javascripts/application.05d1c8d6.js"></script>
       
-      <script>app.initialize({version:"1.4.2",url:{base:".."}})</script>
+      <script>app.initialize({version:"1.3.0",url:{base:".."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
       

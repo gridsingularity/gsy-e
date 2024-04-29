@@ -13,7 +13,7 @@
         <meta name="description" content="Documentation for the Grid Singularity Exchange">
       
       
-        <link rel="canonical" href="http://localhost:8000/blockchain-off-chain-storage/">
+        <link rel="canonical" href="https://gridsingularity.github.io/gsy-e/documentation/blockchain-off-chain-storage/">
       
       
         <meta name="author" content="Grid Singularity">
@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../img/Profile.png">
-      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-4.0.2">
+      <meta name="generator" content="mkdocs-1.3.0, mkdocs-material-4.0.2">
     
     
       
@@ -119,7 +119,7 @@
   <nav class="md-header-nav md-grid">
     <div class="md-flex">
       <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="http://localhost:8000/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
+        <a href="https://gridsingularity.github.io/gsy-e/documentation/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
           
             <img src="../img/Profile.png" width="32" height="32">
           
@@ -209,7 +209,7 @@
                   <div class="md-sidebar__inner">
                     <nav class="md-nav md-nav--primary" data-md-level="0">
   <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="http://localhost:8000/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
+    <a href="https://gridsingularity.github.io/gsy-e/documentation/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
       
         <img src="../img/Profile.png" width="48" height="48">
       
@@ -2343,8 +2343,7 @@
 <p>Each of the off-chain storage components is associated with proprietary, component-specific  database tables, and exposed to other <a href="../blockchain-system-components-overview/">GSY DEX system components</a> via HTTP REST endpoints to facilitate common operations and streamline access to data. This approach ensures that other GSY DEX system components can read, update and save information related to each storage component. Furthermore, separating the data in different components restricts data dependencies and thereby optimises data management, including by enabling efficient database migration and other operations on the database tables’ schema.   Data storage segmentation also facilitates partial data transfer to other data storages in the future system upgrades. Off-chain storage workers’ role is to ensure that off-chain storage subcomponents, namely the GSY DEX Grid Topology Storage and the GSY DEX Measurements Storage, securely receive the required data such as asset-level generation and consumption, and that the GSY DEX Trades Storage and the GSY DEX Order Book Storage can support and improve performance of the matching operation based on a set of preferred energy attributes.</p>
 <figure>
 <p><img alt="alt_text" src="../img/blockchain-off-chain-storage-1.png" text-align:center_="text-align:center&quot;" />
-  </p>
-<figcaption><b>Figure 1</b>: GSY DEX Off-Chain Storage - GSY Node Communication Flow.</figcaption>
+  <figcaption><b>Figure 1</b>: GSY DEX Off-Chain Storage - GSY Node Communication Flow.</figcaption></p>
 </figure>
 <h3 id="gsy-dex-off-chain-storage-communication-protocol">GSY DEX Off-Chain Storage Communication Protocol<a class="headerlink" href="#gsy-dex-off-chain-storage-communication-protocol" title="Permanent link">&para;</a></h3>
 <p>The GSY Node stores the order and trade information in the GSY DEX Off-Chain Storage by leveraging off-chain workers as described above, which perform HTTP requests on behalf of the Node. Notably, the GSY Node saves the bids and offers in the GSY DEX Order Book Storage and the trades in the GSY DEX Trades Storage in order to make them available for other system services, namely those performed by the GSY DEX Analytics Engine and the GSY DEX Matching Engine. These other GSY DEX system components all leverage the same HTTP REST API as the GSY Node to access the GSY DEX Off-Chain Storage.</p>
@@ -2352,8 +2351,7 @@
 <p>The GSY DEX Matching Engine, in turn requires access specifically to the GSY DEX Order Book Storage to retrieve the open offers and bids in order to perform the market supply and demand matching operation.</p>
 <figure>
 <p><img alt="alt_text" src="../img/blockchain-off-chain-storage-2.png" text-align:center_="text-align:center&quot;" />
-  </p>
-<figcaption><b>Figure 2</b>: GSY DEX Off-Chain Storage Dataflow.</figcaption>
+  <figcaption><b>Figure 2</b>: GSY DEX Off-Chain Storage Dataflow.</figcaption></p>
 </figure>
 <h3 id="gsy-dex-grid-topology-storage">GSY DEX Grid Topology Storage<a class="headerlink" href="#gsy-dex-grid-topology-storage" title="Permanent link">&para;</a></h3>
 <p>The GSY DEX Grid Topology (Off-Chain) Storage is responsible for persisting the data pertaining to grid topology (also referred to as ontology), which is required for data access management and exchange (energy trade) facilitation. The following data is stored in the GSY DEX Grid Topology (Off-Chain) Storage:</p>
@@ -2397,10 +2395,10 @@
    &quot;max_consumption_kWh&quot;: 5,
    &quot;coordinates&quot;: [43.2, 45],
    &quot;children&quot;: []
- }
-</code></pre>
+ }</code></pre>
 
-<figcaption><b>Figure 3</b>: Example of GSY DEX Off-Chain Grid Topology Storage Load.</figcaption>
+
+<p><figcaption><b>Figure 3</b>: Example of GSY DEX Off-Chain Grid Topology Storage Load.</figcaption></p>
 </figure>
 <figure>
 <pre class="codehilite"><code class="language-json">{
@@ -2413,10 +2411,10 @@
    &quot;max_power_rating_kW&quot;: 20,
    &quot;coordinates&quot;: [43.2, 45],
    &quot;children&quot;: [&quot;load_uuid&quot;]
- }
-</code></pre>
+ }</code></pre>
 
-<figcaption><b>Figure 4</b>: Example of a voltage transformer in the GSY DEX Off-Chain Grid Topology Storage.</figcaption>
+
+<p><figcaption><b>Figure 4</b>: Example of a voltage transformer in the GSY DEX Off-Chain Grid Topology Storage.</figcaption></p>
 </figure>
 <h4 id="measurements-storage-database-schema">Measurements Storage Database Schema<a class="headerlink" href="#measurements-storage-database-schema" title="Permanent link">&para;</a></h4>
 <p>The Measurements Storage will persist forecasts and measurements, using the same data type. The <code>type</code> data entry attribute is used to differentiate between forecasts and measurements, thereby allowing the database to select only forecasts or measurements, depending on the user interest. Furthermore, <code>type</code>, <code>asset_uuid</code> and <code>time_slot</code> data entries are indexed, in order to accelerate queries that select forecasts or measurements for a select asset and period of time.</p>
@@ -2430,10 +2428,10 @@
    &quot;creation_time&quot;: 1546300800,
    &quot;energy_consumption_kWh&quot;: 1.2,
    &quot;energy_production_kWh&quot;: 0,
-}
-</code></pre>
+}</code></pre>
 
-<figcaption><b>Figure 5</b>: Example of a forecast in the GSY DEX Off-Chain Measurements Storage.</figcaption>
+
+<p><figcaption><b>Figure 5</b>: Example of a forecast in the GSY DEX Off-Chain Measurements Storage.</figcaption></p>
 </figure>
 <figure>
 <pre class="codehilite"><code class="language-json">{
@@ -2445,10 +2443,10 @@
    &quot;creation_time&quot;: 1546300800,
    &quot;energy_consumption_kWh&quot;: 10.2,
    &quot;energy_production_kWh&quot;: 0.3,
-}
-</code></pre>
+}</code></pre>
 
-<figcaption><b>Figure 6</b>: Example of a measurement in the GSY DEX Off-Chain Measurements Storage.</figcaption>
+
+<p><figcaption><b>Figure 6</b>: Example of a measurement in the GSY DEX Off-Chain Measurements Storage.</figcaption></p>
 </figure>
 <h4 id="order-book-storage-database-schema">Order Book Storage Database Schema<a class="headerlink" href="#order-book-storage-database-schema" title="Permanent link">&para;</a></h4>
 <p>Bids and offers are saved using the same data type. Similar to the other storage subcomponents, <code>type</code> data entry attribute in the JSON document is used in order to differentiate between offers and bids, thus allowing the user to filter for either one. Moreover, <code>type</code>, <code>asset_uuid</code>, <code>market_uuid</code> and <code>time_slot</code> data entries are indexed, in order to accelerate queries that select bids or offers for a select asset, market and time slot.</p>
@@ -2465,10 +2463,10 @@
        &quot;energy&quot;: 10,
        &quot;energy_rate&quot;: 1
    }
-}
-</code></pre>
+}</code></pre>
 
-<figcaption><b>Figure 7</b>: Example of a bid in the GSY DEX Off-Chain Order Book Storage.</figcaption>
+
+<p><figcaption><b>Figure 7</b>: Example of a bid in the GSY DEX Off-Chain Order Book Storage.</figcaption></p>
 </figure>
 <figure>
 <pre class="codehilite"><code class="language-json">{
@@ -2483,10 +2481,10 @@
        &quot;energy&quot;: 10,
        &quot;energy_rate&quot;: 1
    }
-}
-</code></pre>
+}</code></pre>
 
-<figcaption><b>Figure 8</b>: Example of an offer in the GSY DEX Off-Chain Order Book Storage.</figcaption>
+
+<p><figcaption><b>Figure 8</b>: Example of an offer in the GSY DEX Off-Chain Order Book Storage.</figcaption></p>
 </figure>
 <h4 id="trades-storage-database-schema">Trades Storage Database Schema<a class="headerlink" href="#trades-storage-database-schema" title="Permanent link">&para;</a></h4>
 <p>Trades are also saved using JSON documents in a similar format as the Order. The same fields as for the Order Book Storage will need to be indexed, namely asset_uuid, market_uuid and time_slot, thus speeding up the selection of the trades for one asset / market / time slot.</p>
@@ -2510,17 +2508,17 @@
        &quot;energy&quot;: 10,
        &quot;energy_rate&quot;: 1
    },
-}
-</code></pre>
+}</code></pre>
 
-<figcaption><b>Figure 9</b>: Example of a trade in the GSY DEX Off-Chain Order Book Storage.</figcaption>
+
+<p><figcaption><b>Figure 9</b>: Example of a trade in the GSY DEX Off-Chain Order Book Storage.</figcaption></p>
 </figure>
 <h3 id="http-rest-api-schema">HTTP REST API Schema<a class="headerlink" href="#http-rest-api-schema" title="Permanent link">&para;</a></h3>
 <p>Each storage subcomponent is exposed via separate REST endpoints for operations that are most commonly required by the users of the GSY DEX Off-Chain Storage API. GET and POST requests are supported to facilitate reading of database entries, as well as the creation of new database entries.</p>
 <h4 id="grid-topology-storage-api-schema">Grid Topology Storage API Schema<a class="headerlink" href="#grid-topology-storage-api-schema" title="Permanent link">&para;</a></h4>
 <p>The Grid Topology Storage uses the dedicated endpoint</p>
-<pre class="codehilite"><code class="language-commandline">/grid-topology
-</code></pre>
+<pre class="codehilite"><code class="language-commandline">/grid-topology</code></pre>
+
 
 <p>In order to both fetch and create new entries. The endpoint supports both GET and POST HTTP requests, and the accepted input data format is similar to the database schema:</p>
 <figure>
@@ -2542,19 +2540,19 @@
       &quot;max_consumption_kWh&quot;: 5,
       &quot;children&quot;: []
     }
- }]
-</code></pre>
+ }]</code></pre>
 
-<figcaption><b>Figure 10</b>: Example of GSY DEX Off-Chain Grid Topology REST API POST.</figcaption>
+
+<p><figcaption><b>Figure 10</b>: Example of GSY DEX Off-Chain Grid Topology REST API POST.</figcaption></p>
 </figure>
 <h4 id="measurements-storage-api-schema">Measurements Storage API Schema<a class="headerlink" href="#measurements-storage-api-schema" title="Permanent link">&para;</a></h4>
 <p>The Measurements Storage uses one dedicated endpoint for forecasts:</p>
-<pre class="codehilite"><code class="language-commandline">/forecasts
-</code></pre>
+<pre class="codehilite"><code class="language-commandline">/forecasts</code></pre>
+
 
 <p>and one for measurements:</p>
-<pre class="codehilite"><code class="language-commandline">/measurements
-</code></pre>
+<pre class="codehilite"><code class="language-commandline">/measurements</code></pre>
+
 
 <p>Both endpoints support GET and POST HTTP requests, in order to be able to both fetch and create forecasts / measurements. The accepted input data format is similar to the database schema in both cases:</p>
 <figure>
@@ -2577,15 +2575,15 @@ POST /measurements
    &quot;time_slot&quot;: 2,
    &quot;creation_time&quot;: 1546300800,
    &quot;energy&quot;: 10.2,
-}
-</code></pre>
+}</code></pre>
 
-<figcaption><b>Figure 11</b>: Example of GSY DEX Off-Chain Measurements Storage REST API POST.</figcaption>
+
+<p><figcaption><b>Figure 11</b>: Example of GSY DEX Off-Chain Measurements Storage REST API POST.</figcaption></p>
 </figure>
 <h4 id="order-book-storage-api-schema">Order Book Storage API Schema<a class="headerlink" href="#order-book-storage-api-schema" title="Permanent link">&para;</a></h4>
 <p>The Order Book Storage uses the dedicated endpoint</p>
-<pre class="codehilite"><code class="language-commandline">/orders
-</code></pre>
+<pre class="codehilite"><code class="language-commandline">/orders</code></pre>
+
 
 <p>In order to both fetch and create new entries. The endpoint supports both GET and POST HTTP request, and the accepted input data format is similar to the database schema:</p>
 <figure>
@@ -2616,15 +2614,15 @@ POST /orders/
        &quot;energy&quot;: 10,
        &quot;energy_rate&quot;: 1
    }
-}]
-</code></pre>
+}]</code></pre>
 
-<figcaption><b>Figure 12</b>: Example of the GSY DEX Off-Chain Order Book REST API POST.</figcaption>
+
+<p><figcaption><b>Figure 12</b>: Example of the GSY DEX Off-Chain Order Book REST API POST.</figcaption></p>
 </figure>
 <h4 id="trades-storage-api-schema">Trades Storage API Schema<a class="headerlink" href="#trades-storage-api-schema" title="Permanent link">&para;</a></h4>
 <p>The Trades Storage uses the dedicated endpoint</p>
-<pre class="codehilite"><code class="language-commandline">/trades
-</code></pre>
+<pre class="codehilite"><code class="language-commandline">/trades</code></pre>
+
 
 <p>in order to both fetch and create new entries. The endpoint supports both GET and POST HTTP request, and the accepted input data format is similar to the database schema:</p>
 <figure>
@@ -2648,10 +2646,10 @@ POST /orders/
        &quot;energy&quot;: 10,
        &quot;energy_rate&quot;: 1
    },
-}]
-</code></pre>
+}]</code></pre>
 
-<figcaption><b>Figure 13</b>: Example of the GSY DEX Off-Chain Trades Storage REST API POST.</figcaption>
+
+<p><figcaption><b>Figure 13</b>: Example of the GSY DEX Off-Chain Trades Storage REST API POST.</figcaption></p>
 </figure>
                 
                   
@@ -2740,7 +2738,7 @@ POST /orders/
     
       <script src="../assets/javascripts/application.05d1c8d6.js"></script>
       
-      <script>app.initialize({version:"1.4.2",url:{base:".."}})</script>
+      <script>app.initialize({version:"1.3.0",url:{base:".."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
       
