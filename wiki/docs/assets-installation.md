@@ -137,7 +137,7 @@ The **HeatPumpStrategy** parameters can be set as follows:
   * **initial_temp_C**: (default=50); initial temperature of the HP storage at the beginning of the simulation;
   * **external_temp_C_profile**: (mandatory user input); external temperature that influences the efficiency of the HP. If this parameter is selected, the external temperature is constant for the whole simulation run;
   * **tank_volume_l**: (default=50); volume/capacity of the thermal storage tank;
-  * **consumption_kWh**: (mandatory user input); amount of energy the heat pump consumes to produce heat, in kWh. Can be provided as a constant energy kWh value or as an energy consumption time-series profile, as a dictionary that follows the supported format;
+  * **consumption_kWh**: (mandatory user input); constant amount of energy the heat pump consumes to produce heat, in kWh (can be provided as a constant energy kWh value or as an energy consumption time-series profile, as a dictionary that follows the supported format);
   * **preferred_buying_rate**: (default=15); rate in cts/kWh that determines the [trading strategy](heat-pump.md#heat-pump-asset-trading-strategy);
   * **source_type**:  set how the heat exchange is conducted, either via air or water/ground, as it determines the COP calculation;
   * **order_updater_parameters**: of type **HeatPumpOrderUpdaterParameters**. A template configuration can be seen [below](#heat-pump-price-strategy-configuration)
@@ -181,6 +181,6 @@ The **VirtualHeatPumpStrategy** parameters can be set as follows:
   * **water_return_temp_C_profile**: (mandatory user input); return temperature of the water that flows from the district heating network (used to calculate the heat demand of the building)
   * **dh_water_flow_m3_profile**: (mandatory user input); water flow from the district heating network, in aggregated cubic metres per market slot (used to calculate the heat demand of the building)
   * **tank_volume_l**: (default=50); volume of the storage tank
-  * **calibration_coefficient**: (default=0.65); empirical calibration coefficient for water-to-water heat pumps
+  * **calibration_coefficient**: (default=0.6); empirical calibration coefficient for water-to-water heat pumps
   * **preferred_buying_rate**: (default=15); rate in cts/kWh that determines [the trading strategy](heat-pump.md#heat-pump-asset-trading-strategy)
   * **order_updater_parameters**: of type **HeatPumpOrderUpdaterParameters**. A template configuration can be seen [below](#heat-pump-price-strategy-configuration)

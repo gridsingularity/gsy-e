@@ -74,7 +74,7 @@ Under the Trading Strategy tab, the following parameters can be defined, describ
 ## Heat Pump Asset Trading Strategy
 The heat hump places bids for electrical energy ranging from an initial to final buying rate, with prices increasing incrementally within the market slot upon the update interval. Asset owners (or managers) can either set the final rate as a default preferred buying rate or select a preferred buying rate based on a smart trading algorithm.
 
-When the heat pump bids are below the preferred buying rate, the heat pump tries to consume as much energy as possible to satisfy the demand, while also charging the thermal storage for future use, thus maximising the benefit from lower electricity prices ([case a](#a-bid-rate--preferred-buying-rate)). On the other hand, if the electricity price is higher than the specified buying price, the heat pump only consumes the required energy to maintain the storage at the same temperature level as the one before the energy trade occurs (i.e. consumes only the energy required to satisfy the asset owner’s heat demand), aiming to minimise the costs incurred by the increased energy prices ([case b](#b-bid-rate--preferred-buying-rate)).
+When the heat pump bids are below the preferred buying rate, the heat pump tries to consume as much energy as possible to satisfy the demand, while also charging the thermal storage for future use, thus maximising the benefit from lower electricity prices ([case a](#a-bid-rate-preferred-buying-rate)). On the other hand, if the electricity price is higher than the specified buying price, the heat pump only consumes the required energy to maintain the storage at the same temperature level as the one before the energy trade occurs (i.e. consumes only the energy required to satisfy the asset owner’s heat demand), aiming to minimise the costs incurred by the increased energy prices ([case b](#b-bid-rate-preferred-buying-rate)).
 
 ### a. Bid rate <= Preferred buying rate
 
@@ -102,7 +102,7 @@ In this situation, the heat pump strategy is to consume the least possible amoun
   * $T_{curr} > T_{min} + T_{decrease}$: In this case, the heat pump does not consume any energy (it’s not commanded to function because the temperature will be within the temperature limits even if some heat is consumed in the market slot). Therefore, $E_{tobuy} = 0$
   * $T_{curr} <= T_{min} + T_{decrease}$: In this case the heat pump is forced to function, and it consumes the energy to maintain the temperature at the minimum, taking into account the energy consumption of the user’s premise.
 
-In all cases, the maximum power rating is respected, meaning that not more energy is requested than the energy equivalent of the Maximum Power Rating, as illustrated in graphs below (figures 1 and 2).
+In all cases, the maximum power rating is respected, meaning that not more energy is requested than the energy equivalent of the Maximum Power Rating, as illustrated in graphs below:
 
 
 <figure markdown>
