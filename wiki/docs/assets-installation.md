@@ -131,7 +131,7 @@ Asset(name="Heat Pump", strategy=HeatPumpStrategy())
 
 The **HeatPumpStrategy** parameters can be set as follows:
 
-  * **maximum_power_rating_kW**: default=3; the maximal power that the HP will consume;
+  * **maximum_power_rating_kW**: default=3; the maximum power that the HP will consume;
   * **min_temp_C**: (default=50); minimum temperature of the HP storage. If the temperature drops below this point, the HP buys energy at any cost;
   * **max_temp_C**: (default=60); maximum temperature of the HP storage. If the temperature rises above this point, the HP does not buy any energy;
   * **initial_temp_C**: (default=50); initial temperature of the HP storage at the beginning of the simulation;
