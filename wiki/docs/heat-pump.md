@@ -48,11 +48,11 @@ Under the Trading Strategy tab, the following parameters can be defined, describ
 
 <figure markdown>
   ![alt_text](img/heat-pump-advanced3.png){:style="height:500px;width:250px";text-align:center"}
-  <figcaption><b>Figure 2.26</b>: Trading strategy inputs in the advanced mode heat pump configurationin the Grid Singularity Exchange web-based interface
+  <figcaption><b>Figure 2.26</b>: Trading strategy inputs in the advanced mode heat pump configuration in the Grid Singularity Exchange web-based interface
 </figcaption>
 </figure>
 
-**Table 2.1:** <span id="parameter-table">parameter-tableHeat Pump Configuration Parameters in the Grid Singularity Exchange</span>
+**Table 2.1:** <span id="parameter-table">Heat Pump Configuration Parameters in the Grid Singularity Exchange</span>
 
 |          Parameters          | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |  Unit   |     Data Type     | Mandatory User Input |   Default Value   |
 |:----------------------------:|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|:-------:|:-----------------:|:--------------------:|:-----------------:|
