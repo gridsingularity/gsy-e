@@ -312,7 +312,7 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
         output_dict = asdict(self)
         del output_dict["energy_rates"]
         output_dict.update({
-            **self.energy_rates.area_fees.prices_as_dict(),
+            "fees": self.energy_rates.area_fees.prices_as_dict(),
             "savings": self.savings,
             "savings_percent": self.savings_percent,
             "energy_benchmark": self.energy_benchmark,
