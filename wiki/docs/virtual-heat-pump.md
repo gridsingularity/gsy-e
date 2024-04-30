@@ -61,7 +61,7 @@ Where:
   * $C_p$ is the water specific heat capacity (constant, $4182 J/kg°C$)
   * $\frac{dT_i}{dt}$ is the temperature derivative (in $°C/sec$)
 
-The temperature derivative is calculated as the temperature difference between (i) the target temperature of the water tank storage ($T_{storage-target}$, in Celsius, used as the optimization variable of the system, providing the flexibility to the heat pump operation) and (ii) the current temperature of the water tank storage ($T_{storage-current}$ in Celsius), divided by the measurement duration ($t_{measurement}$), in seconds; has to be equal to the market slot duration):
+The temperature derivative is calculated as the temperature difference between (i) the target temperature of the water tank storage ($T_{storage-target}$, in Celsius, used as the optimization variable of the system, providing flexibility to the heat pump operation) and (ii) the current temperature of the water tank storage ($T_{storage-current}$ in Celsius), divided by the measurement duration ($t_{measurement}$), in seconds; has to be equal to the market slot duration):
 
 $$\frac{dT_i}{dt} = (T_{storage-target} - T_{storage-current}) / t_{measurement} \tag{6}$$
 
