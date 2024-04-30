@@ -13,7 +13,7 @@ from gsy_e.gsy_e_core.rq_job_handler import launch_simulation_from_rq_job
 
 
 class TestRqJobHandler:
-    # pylint: disable=attribute-defined-outside-init
+    # pylint: disable=attribute-defined-outside-init, too-many-instance-attributes
 
     def setup_method(self):
         self.original_config_type = GlobalConfig.CONFIG_TYPE
@@ -52,7 +52,7 @@ class TestRqJobHandler:
         settings = {"type": config_type.value}
         scenario = {"configuration_uuid": "config_uuid"}
         with patch("gsy_e.gsy_e_core.rq_job_handler._adapt_settings", Mock(return_value=settings)):
-            launch_simulation_from_rq_job(scenario, settings, None, {}, {}, "id")
+            launch_simulation_from_rq_job(scenario, settings, None, {}, {}, {}, "id")
         assert GlobalConfig.CONFIG_TYPE == config_type.value
         assert gsy_e.constants.EXTERNAL_CONNECTION_WEB is True
         if config_type == ConfigurationType.CANARY_NETWORK:
@@ -75,7 +75,7 @@ class TestRqJobHandler:
             }
         }
         scenario = {"configuration_uuid": "config_uuid"}
-        launch_simulation_from_rq_job(scenario, settings, None, {}, {}, "id")
+        launch_simulation_from_rq_job(scenario, settings, None, {}, {}, {}, "id")
         assert (ConstSettings.SCMSettings.MARKET_ALGORITHM ==
                 CoefficientAlgorithm.NO_COMMUNITY_SELF_CONSUMPTION.value)
         assert ConstSettings.SCMSettings.INTRACOMMUNITY_BASE_RATE_EUR == 12
@@ -96,7 +96,8 @@ class TestRqJobHandler:
             }'''
         }
         scenario = {"configuration_uuid": "config_uuid"}
-        launch_simulation_from_rq_job(scenario, settings, None, {}, {"scm_past_slots": True}, "id")
+        launch_simulation_from_rq_job(scenario, settings, None, {},
+                                      {"scm_past_slots": True}, {}, "id")
         assert run_sim_mock.call_count == 2
         config = run_sim_mock.call_args_list[0][1]["simulation_config"]
         assert config.slot_length == duration(minutes=30)
@@ -119,7 +120,7 @@ class TestRqJobHandler:
         }
         scenario = {"configuration_uuid": "config_uuid"}
         with pytest.raises(Exception):
-            launch_simulation_from_rq_job(scenario, settings, None, {}, {}, "id")
+            launch_simulation_from_rq_job(scenario, settings, None, {}, {}, {}, "id")
         assert publish_job_error_mock.call_count == 1
         assert publish_job_error_mock.call_args_list[0][0][0] == "id"
         assert "Fake Error" in publish_job_error_mock.call_args_list[0][0][1]
@@ -131,4 +132,4 @@ class TestRqJobHandler:
         }
         scenario = {}
         with pytest.raises(Exception):
-            launch_simulation_from_rq_job(scenario, settings, None, {}, {}, "id")
+            launch_simulation_from_rq_job(scenario, settings, None, {}, {}, {}, "id")
