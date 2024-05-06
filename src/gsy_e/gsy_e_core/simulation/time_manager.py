@@ -193,7 +193,7 @@ class SimulationTimeManagerScm(TimeManagerBase):
         self.slot_time_counter = int(time())
 
     @staticmethod
-    def get_start_time(config: "SimulationConfig") -> DateTime:
+    def get_start_time_on_init(config: "SimulationConfig") -> DateTime:
         """Return the start tim of the simulation."""
         if gsy_e.constants.RUN_IN_REALTIME:
             today = pendulum.today(tz=TIME_ZONE)
