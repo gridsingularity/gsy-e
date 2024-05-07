@@ -21,7 +21,6 @@ from typing import TYPE_CHECKING, List, Optional, Dict
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.utils import key_in_dict_and_not_none
-from gsy_framework.enums import SCMFeeType
 from numpy.random import random
 from pendulum import DateTime
 
@@ -29,6 +28,7 @@ from gsy_e.models.area.area_base import AreaBase
 from gsy_e.models.config import SimulationConfig
 from gsy_e.models.strategy.external_strategies import ExternalMixin
 from gsy_e.models.strategy.scm import SCMStrategy
+from gsy_e.models.area.scm_dataclasses import FeeProperties
 
 log = getLogger(__name__)
 
@@ -63,19 +63,14 @@ class CoefficientArea(AreaBase):
         self._feed_in_tariff = self.validate_coefficient_area_setting(
             feed_in_tariff, "feed_in_tariff")
         self.past_market_time_slot = None
-        self.fee_properties: Dict = {}
+        self.fee_properties = FeeProperties()
 
     def update_fee_properties(self, properties: Dict) -> None:
         """Update fee_properties."""
-        self.fee_properties = properties.get(self.uuid, {})
-        self._validate_fee_properties()
-
-    def _validate_fee_properties(self):
+        for property_name, fee_dict in properties.get(self.uuid, {}).items():
+            setattr(self.fee_properties, property_name, fee_dict)
         try:
-            for fee_group, fee_group_dict in self.fee_properties.items():
-                assert fee_group in SCMFeeType.member_names()
-                for fee_value in fee_group_dict.values():
-                    assert fee_value is not None
+            self.fee_properties.validate()
         except AssertionError as ex:
             raise CoefficientAreaException(f"Invalid fee properties {self.fee_properties}") from ex
 

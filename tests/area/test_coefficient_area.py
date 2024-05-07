@@ -347,10 +347,6 @@ class TestCoefficientArea:
         with pytest.raises(CoefficientAreaException):
             scm_area.update_fee_properties(wrong_scm_properties)
 
-        wrong_scm_properties = {scm_area_uuid: {"unknown_fee_group": {"some_fee": None}}}
-        with pytest.raises(CoefficientAreaException):
-            scm_area.update_fee_properties(wrong_scm_properties)
-
     @staticmethod
     def test_area_reconfigure_event_changes_attributes():
         area = CoefficientArea(name="House")

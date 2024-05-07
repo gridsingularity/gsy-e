@@ -8,7 +8,6 @@ from uuid import uuid4
 from gsy_framework.constants_limits import (
     ConstSettings, GlobalConfig, is_no_community_self_consumption)
 from gsy_framework.data_classes import Trade, TraderDetails
-from gsy_framework.enums import SCMFeeType
 from gsy_framework.sim_results.kpi_calculation_helper import KPICalculationHelper
 from pendulum import DateTime, duration
 
@@ -16,6 +15,7 @@ import gsy_e.constants
 from gsy_e.constants import (DEFAULT_SCM_COMMUNITY_NAME, DEFAULT_SCM_GRID_NAME,
                              FLOATING_POINT_TOLERANCE)
 from gsy_e.models.strategy.scm import SCMStrategy
+from gsy_e.models.area.scm_dataclasses import FeeProperties
 
 
 if TYPE_CHECKING:
@@ -40,7 +40,7 @@ class HomeAfterMeterData:
     community_total_production_kWh: float = 0.
     _self_production_for_community_kWh: float = 0.
     trades: List[Trade] = None
-    fee_properties: Dict[str, float] = field(default_factory=dict)
+    fee_properties: FeeProperties = field(default_factory=FeeProperties)
     asset_energy_requirements_kWh: Dict[str, float] = field(default_factory=dict)
 
     def to_dict(self) -> Dict:
@@ -483,7 +483,7 @@ class SCMManager:
     def add_home_data(self, home_uuid: str, home_name: str,
                       coefficient_percentage: float,
                       market_maker_rate: float, feed_in_tariff: float,
-                      fee_properties: Dict,
+                      fee_properties: FeeProperties,
                       production_kWh: float, consumption_kWh: float,
                       asset_energy_requirements_kWh: Dict[str, float]):
         # pylint: disable=too-many-arguments
@@ -536,15 +536,12 @@ class SCMManager:
             else self._intracommunity_base_rate_eur)
 
         area_fees = AreaFees(
-            grid_fee=home_data.fee_properties.get(
-                SCMFeeType.GRID_FEES.name, {}).get("grid_fee_constant", 0),
+            grid_fee=home_data.fee_properties.GRID_FEES.get("grid_fee_constant", 0),
             grid_fees_reduction=self._grid_fees_reduction,
             per_kWh_fees={k: FeeContainer(value=v)
-                          for k, v in home_data.fee_properties.get(
-                    SCMFeeType.PER_KWH_FEES.name, {}).items()},
+                          for k, v in home_data.fee_properties.PER_KWH_FEES.items()},
             monthly_fees={k: FeeContainer(value=v / slots_per_month)
-                          for k, v in home_data.fee_properties.get(
-                    SCMFeeType.MONTHLY_FEES.name, {}).items()}
+                          for k, v in home_data.fee_properties.MONTHLY_FEES.items()}
         )
         return AreaEnergyRates(
             area_fees=area_fees,
