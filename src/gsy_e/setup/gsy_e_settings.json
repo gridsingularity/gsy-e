@@ -280,10 +280,8 @@
     "SCMSettings": {
       "GRID_FEES_REDUCTION": 0.28,
       "MARKET_ALGORITHM": 1,
-      "MARKET_ALGORITHM_LIMIT": [
-        1,
-        3
-      ]
+      "MARKET_ALGORITHM_LIMIT": [1, 3],
+      "HOURS_OF_DELAY": 72
     }
   }
 }

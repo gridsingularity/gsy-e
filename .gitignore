@@ -51,6 +51,7 @@ nosetests.xml
 coverage.xml
 *,cover
 .hypothesis/
+integration_tests
 
 # Translations
 *.mo

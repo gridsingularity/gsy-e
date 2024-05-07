@@ -73,10 +73,10 @@ def launch_simulation_from_rq_job(scenario: Dict,
                 instance(
                     datetime.combine(date.today(), datetime.min.time()),
                     tz=gsy_e.constants.TIME_ZONE))
+
             if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
                 # For SCM CNs, run with SCM_CN_DAYS_OF_DELAY in order to be able to get results.
-                config.start_date = config.start_date.subtract(
-                    days=gsy_e.constants.SCM_CN_DAYS_OF_DELAY)
+                config.start_date = config.start_date.subtract(hours=settings.hours_of_delay)
 
         run_simulation(setup_module_name=scenario_name,
                        simulation_config=config,
@@ -160,6 +160,8 @@ def _configure_constants_constsettings(
     ConstSettings.SCMSettings.MARKET_ALGORITHM = CoefficientAlgorithm(
         settings.get("scm_coefficient_algorithm", 1)).value
 
+    ConstSettings.SCMSettings.HOURS_OF_DELAY = settings.get("scm_cn_hours_of_delay", 72)
+
 
 def _create_config_settings_object(
         scenario: Dict, settings: Dict, aggregator_device_mapping: Dict
@@ -224,8 +226,9 @@ def _handle_scm_past_slots_simulation_run(
     # Adding 4 hours of extra time to the SCM past slots simulation duration, in order to
     # compensate for the runtime of the SCM past slots simulation and to not have any results gaps
     # after this simulation run and the following Canary Network launch.
-    config.end_date = now(tz=gsy_e.constants.TIME_ZONE).subtract(
-        days=gsy_e.constants.SCM_CN_DAYS_OF_DELAY).add(hours=4)
+    config.end_date = (
+        now(tz=gsy_e.constants.TIME_ZONE).subtract(hours=settings.hours_of_delay).add(hours=4)
+    )
     config.sim_duration = config.end_date - config.start_date
     GlobalConfig.sim_duration = config.sim_duration
     gsy_e.constants.RUN_IN_REALTIME = False

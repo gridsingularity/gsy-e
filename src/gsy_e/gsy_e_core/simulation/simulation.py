@@ -71,6 +71,7 @@ class Simulation:
         )
         self._time = simulation_time_manager_factory(
             slot_length_realtime=slot_length_realtime,
+            hours_of_delay=simulation_config.hours_of_delay
         )
 
         self._setup = SimulationSetup(
