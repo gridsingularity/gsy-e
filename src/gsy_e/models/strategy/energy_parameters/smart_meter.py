@@ -21,21 +21,30 @@ from pendulum.datetime import DateTime
 from gsy_e.gsy_e_core.exceptions import GSyException
 from gsy_e.models.strategy.state import SmartMeterState
 from gsy_e.models.strategy import utils
-from gsy_e.models.strategy.profile import EnergyProfile
+from gsy_e.models.strategy.profile import profile_factory
 
 
 class SmartMeterEnergyParameters:
     """Manage energy parameters for the Smart Meter Strategy class."""
-    def __init__(self, smart_meter_profile, smart_meter_profile_uuid):
-        self._energy_profile = EnergyProfile(smart_meter_profile, smart_meter_profile_uuid)
+    def __init__(self, smart_meter_profile,
+                 smart_meter_profile_uuid: str = None,
+                 smart_meter_measurement_uuid: str = None):
+        self._energy_profile = profile_factory(smart_meter_profile, smart_meter_profile_uuid)
+        self._measurement_profile = profile_factory(None, smart_meter_measurement_uuid)
+
         self._state = SmartMeterState()
         self._simulation_start_timestamp = None
         self._area = None
 
+    def read_and_rotate_profiles(self):
+        """Read and rotate all profiles"""
+        self._energy_profile.read_or_rotate_profiles()
+        self._measurement_profile.read_or_rotate_profiles()
+
     def activate(self, area):
         """Trigger by strategy activate event, configure the energy parameters for trading."""
         self._area = area
-        self._energy_profile.read_or_rotate_profiles()
+        self.read_and_rotate_profiles()
         self._simulation_start_timestamp = area.now
 
     def decrement_energy_requirement(self, energy_kWh: float, time_slot: DateTime, area_name: str):
@@ -51,8 +60,6 @@ class SmartMeterEnergyParameters:
         Args:
             reconfigure: if True, re-read and preprocess the raw profile data.
         """
-        self._energy_profile.read_or_rotate_profiles(reconfigure=reconfigure)
-
         if not self._energy_profile.profile:
             raise GSyException(
                 f"Smart Meter {self._area.name} tries to set its required energy forecast without "
