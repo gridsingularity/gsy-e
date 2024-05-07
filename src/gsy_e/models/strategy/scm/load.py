@@ -1,6 +1,7 @@
 from typing import Dict, TYPE_CHECKING
 
 from pendulum import DateTime
+from gsy_framework.constants_limits import GlobalConfig
 
 from gsy_e.models.strategy.energy_parameters.load import (
     LoadHoursEnergyParameters, DefinedLoadEnergyParameters)
@@ -58,9 +59,12 @@ class SCMLoadHoursStrategy(SCMStrategy):
 
 class SCMLoadProfileStrategy(SCMStrategy):
     """Load SCM strategy with power consumption dictated by a profile."""
-    def __init__(self, daily_load_profile=None, daily_load_profile_uuid=None):
+    def __init__(self, daily_load_profile=None,
+                 daily_load_profile_uuid: str = None):
         self._energy_params = DefinedLoadEnergyParameters(
             daily_load_profile, daily_load_profile_uuid)
+
+        # needed for profile_handler
         self.daily_load_profile_uuid = daily_load_profile_uuid
 
     @property
@@ -75,10 +79,12 @@ class SCMLoadProfileStrategy(SCMStrategy):
     def activate(self, area: "AreaBase") -> None:
         """Activate the strategy."""
         self._energy_params.event_activate_energy(area)
+        self._update_energy_requirement(area)
 
     def _update_energy_requirement(self, area: "AreaBase") -> None:
         self._energy_params.energy_profile.read_or_rotate_profiles()
         self._energy_params.update_energy_requirement(area.current_market_time_slot)
+        self._energy_params.set_energy_measurement_kWh(area.past_market_time_slot)
 
     def market_cycle(self, area: "AreaBase") -> None:
         """Update the load forecast and measurements for the next/previous market slot."""
@@ -91,3 +97,13 @@ class SCMLoadProfileStrategy(SCMStrategy):
     def get_energy_to_buy_kWh(self, time_slot: DateTime) -> float:
         """Get the available energy for consumption for the specified time slot."""
         return self._energy_params.state.get_energy_requirement_Wh(time_slot) / 1000.0
+
+    @staticmethod
+    def deserialize_args(constructor_args: Dict) -> Dict:
+        if not GlobalConfig.is_canary_network():
+            return constructor_args
+        # move measurement_uuid into forecast uuid because this is only used in SCM
+        measurement_uuid = constructor_args.get("daily_load_measurement_uuid")
+        if measurement_uuid:
+            constructor_args["daily_load_profile_uuid"] = measurement_uuid
+        return constructor_args

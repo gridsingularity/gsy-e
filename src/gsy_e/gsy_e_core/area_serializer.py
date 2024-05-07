@@ -52,7 +52,7 @@ class AreaEncoder(json.JSONEncoder):
         # separately.
         if type(o) in [Area, CoefficientArea, Market, Asset]:
             return self._encode_area(o)
-        if isinstance(o, Leaf):
+        if isinstance(o, (Leaf, CoefficientLeaf)):
             return self._encode_leaf(o)
         if isinstance(o, (BaseStrategy, SCMStrategy)):
             return self._encode_subobject(o)

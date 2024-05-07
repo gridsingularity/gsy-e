@@ -24,13 +24,14 @@ from gsy_framework.read_user_profile import InputProfileTypes, read_arbitrary_pr
 from gsy_framework.utils import (convert_kW_to_kWh, find_object_of_same_weekday_and_time,
                                  key_in_dict_and_not_none)
 from gsy_framework.validators import PVValidator
+from gsy_framework.constants_limits import GlobalConfig
 from pendulum.datetime import DateTime
 
 import gsy_e.constants
 from gsy_e.gsy_e_core.exceptions import GSyException
 from gsy_e.gsy_e_core.util import gsye_root_path
 from gsy_e.models.strategy import utils
-from gsy_e.models.strategy.profile import EnergyProfile
+from gsy_e.models.strategy.profile import profile_factory
 from gsy_e.models.strategy.state import PVState
 
 log = logging.getLogger(__name__)
@@ -177,16 +178,20 @@ class PVPredefinedEnergyParameters(PVEnergyParameters):
 
 class PVUserProfileEnergyParameters(PVEnergyParameters):
     """Energy-related parameters for the PVUserProfile Strategy class."""
-    def __init__(self, panel_count: int = 1, power_profile: str = None,
-                 power_profile_uuid: str = None):
+    def __init__(self, panel_count: int = 1,
+                 power_profile: str = None,
+                 power_profile_uuid: str = None,
+                 power_measurement_uuid: str = None):
         super().__init__(panel_count, None)
-        self.energy_profile = EnergyProfile(power_profile, power_profile_uuid)
+        self.energy_profile = profile_factory(power_profile, power_profile_uuid)
+        self.measurement_profile = profile_factory(None, power_measurement_uuid)
 
     def serialize(self):
         return {
             **super().serialize(),
             "power_profile": self.energy_profile.input_profile,
-            "power_profile_uuid": self.energy_profile.input_profile_uuid
+            "power_profile_uuid": self.energy_profile.input_profile_uuid,
+            "power_measurement_uuid": self.measurement_profile.input_profile_uuid
         }
 
     def read_predefined_profile_for_pv(self):
@@ -195,6 +200,7 @@ class PVUserProfileEnergyParameters(PVEnergyParameters):
         :return: key value pairs of time to energy in kWh
         """
         self.energy_profile.read_or_rotate_profiles()
+        self.measurement_profile.read_or_rotate_profiles()
 
     def reset(self, **kwargs):
         """Reset the energy parameters of the strategy."""
@@ -206,6 +212,8 @@ class PVUserProfileEnergyParameters(PVEnergyParameters):
             self, owner_name, time_slots, reconfigure=True):
         """Update the production energy forecast."""
         if not self.energy_profile.profile:
+            if GlobalConfig.is_canary_network():
+                return
             raise GSyException(
                 f"PV {owner_name} tries to set its available energy forecast without a "
                 "power profile.")

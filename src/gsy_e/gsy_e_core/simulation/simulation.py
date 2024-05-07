@@ -408,14 +408,14 @@ class CoefficientSimulation(Simulation):
 
         # has to be called after areas are initiated in order to retrieve the profile uuids
         global_objects.profiles_handler.update_time_and_buffer_profiles(
-            GlobalConfig.start_date, area=self.area)
+            self._time.get_start_time_on_init(self.config), area=self.area)
 
         self._results.init_results(self.simulation_id, self.area, self._setup)
         self._results.update_and_send_results(self)
 
         log.debug("Starting simulation with config %s", self.config)
 
-        self.area.activate_energy_parameters(self.config.start_date)
+        self.area.activate_energy_parameters(self._time.get_start_time_on_init(self.config))
 
         if self.config.external_connection_enabled:
             global_objects.scm_external_global_stats(self.area)
