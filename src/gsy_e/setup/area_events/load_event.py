@@ -39,7 +39,7 @@ def get_setup(config):
                                                                         final_buying_rate=37),
                           event_list=[StrategyEvents(12, {"avg_power_W": 400,
                                                           "hrs_per_day": 22,
-                                                          "hrs_of_day": range(0, 22)}),
+                                                          "hrs_of_day": list(range(0, 22))}),
                                       StrategyEvents(15, {"initial_buying_rate": 24,
                                                           "fit_to_limit": False,
                                                           "update_interval": 10,

@@ -14,7 +14,6 @@ from gsy_e.models.strategy.profile import EnergyProfile
 
 logger = logging.getLogger(__name__)
 
-CALIBRATION_COEFFICIENT = 0.85
 WATER_SPECIFIC_HEAT_CAPACITY = 4182  # [J/kg°C]
 GROUND_WATER_TEMPERATURE_C = 12
 
@@ -25,7 +24,9 @@ class HeatpumpStorageEnergySolver:
     def __init__(
             self, tank_volume_l: float, current_storage_temp_C: float, dh_supply_temp_C: float,
             dh_return_temp_C: float, dh_flow_m3_per_hour: float,
-            target_storage_temp_C: Optional[float] = None, energy_kWh: Optional[float] = None):
+            target_storage_temp_C: Optional[float] = None, energy_kWh: Optional[float] = None,
+            calibration_coefficient: float = ConstSettings.HeatPumpSettings.CALIBRATION_COEFFICIENT
+    ):
         # Optional inputs
         self.energy_kWh = energy_kWh
         self.target_storage_temp_C = target_storage_temp_C
@@ -44,6 +45,7 @@ class HeatpumpStorageEnergySolver:
         self.condenser_temp_C = None
         self.cop = None
         self.p_el_W = None
+        self.calibration_coefficient = calibration_coefficient
 
     def __str__(self):
         return (
@@ -82,7 +84,7 @@ class HeatpumpStorageEnergySolver:
             self.condenser_temp_C = (self.q_in_J / (
                     self.dh_flow_kg_per_sec * WATER_SPECIFIC_HEAT_CAPACITY)
                               ) + self.target_storage_temp_C
-            self.cop = CALIBRATION_COEFFICIENT * (
+            self.cop = self.calibration_coefficient * (
                     self.condenser_temp_C / (self.condenser_temp_C - GROUND_WATER_TEMPERATURE_C))
             self.p_el_W = self.q_in_J / self.cop
             self.energy_kWh = convert_W_to_kWh(self.p_el_W, GlobalConfig.slot_length)
@@ -107,8 +109,8 @@ class HeatpumpStorageEnergySolver:
             sp.Eq((q_in_sym / (
                     self.dh_flow_kg_per_sec * WATER_SPECIFIC_HEAT_CAPACITY)) + storage_temp_sym,
                   condenser_temp_sym),
-            sp.Eq(CALIBRATION_COEFFICIENT * (condenser_temp_sym /
-                                             (condenser_temp_sym - GROUND_WATER_TEMPERATURE_C)),
+            sp.Eq(self.calibration_coefficient * (
+                    condenser_temp_sym / (condenser_temp_sym - GROUND_WATER_TEMPERATURE_C)),
                   cop_sym),
             sp.Eq(q_in_sym / cop_sym,
                   self.p_el_W)
@@ -137,6 +139,7 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
             water_return_temp_C_profile_uuid: Optional[str] = None,
             dh_water_flow_m3_profile: Optional[Union[str, float, Dict]] = None,
             dh_water_flow_m3_profile_uuid: Optional[str] = None,
+            calibration_coefficient: Optional[float] = None,
     ):
         super().__init__(
             maximum_power_rating_kW, min_temp_C, max_temp_C, initial_temp_C, tank_volume_l)
@@ -152,6 +155,12 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
         self._dh_water_flow_m3: [DateTime, float] = EnergyProfile(
             dh_water_flow_m3_profile, dh_water_flow_m3_profile_uuid,
             profile_type=InputProfileTypes.IDENTITY)
+
+        self.calibration_coefficient = (
+            calibration_coefficient
+            if calibration_coefficient is not None
+            else ConstSettings.HeatPumpSettings.CALIBRATION_COEFFICIENT
+        )
 
     def serialize(self):
         """Return dict with the current energy parameter values."""
@@ -206,7 +215,8 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
             dh_supply_temp_C=self._water_supply_temp_C.profile[time_slot],
             dh_return_temp_C=self._water_return_temp_C.profile[time_slot],
             dh_flow_m3_per_hour=self._dh_water_flow_m3.profile[time_slot],
-            target_storage_temp_C=self.state.get_storage_temp_C(time_slot))
+            target_storage_temp_C=self.state.get_storage_temp_C(time_slot),
+            calibration_coefficient=self.calibration_coefficient)
         solver.calculate_energy_from_storage_temp()
         self.state.update_unmatched_demand_kWh(time_slot, solver.energy_kWh)
 
@@ -234,7 +244,8 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
             dh_supply_temp_C=self._water_supply_temp_C.profile[time_slot],
             dh_return_temp_C=self._water_return_temp_C.profile[time_slot],
             dh_flow_m3_per_hour=self._dh_water_flow_m3.profile[time_slot],
-            target_storage_temp_C=target_storage_temp_C)
+            target_storage_temp_C=target_storage_temp_C,
+            calibration_coefficient=self.calibration_coefficient)
         solver.calculate_energy_from_storage_temp()
 
         logger.debug(solver)
@@ -253,7 +264,8 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
             dh_supply_temp_C=self._water_supply_temp_C.profile[time_slot],
             dh_return_temp_C=self._water_return_temp_C.profile[time_slot],
             dh_flow_m3_per_hour=self._dh_water_flow_m3.profile[time_slot],
-            energy_kWh=energy_kWh)
+            energy_kWh=energy_kWh,
+            calibration_coefficient=self.calibration_coefficient)
         solver.calculate_storage_temp_from_energy()
         logger.debug(solver)
 
@@ -281,7 +293,8 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
                 dh_supply_temp_C=self._water_supply_temp_C.profile[last_time_slot],
                 dh_return_temp_C=self._water_return_temp_C.profile[last_time_slot],
                 dh_flow_m3_per_hour=self._dh_water_flow_m3.profile[last_time_slot],
-                target_storage_temp_C=target_storage_temp_C)
+                target_storage_temp_C=target_storage_temp_C,
+                calibration_coefficient=self.calibration_coefficient)
             solver.calculate_energy_from_storage_temp()
             self.state.set_cop(last_time_slot, solver.cop)
             self.state.set_condenser_temp(last_time_slot, solver.condenser_temp_C)

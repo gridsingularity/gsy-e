@@ -20,7 +20,7 @@ import gc
 import os
 from logging import getLogger
 from time import sleep, time
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING, Dict, Optional
 
 import psutil
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
@@ -401,22 +401,46 @@ class CoefficientSimulation(Simulation):
     area: "CoefficientArea"
     _results: CoefficientSimulationResultsManager
 
+    def __init__(self, setup_module_name: str, simulation_config: SimulationConfig,
+                 simulation_events: str = None, seed=None,
+                 paused: bool = False, pause_after: Duration = None, repl: bool = False,
+                 no_export: bool = False, export_path: str = None,
+                 export_subdir: str = None, redis_job_id=None, enable_bc=False,
+                 slot_length_realtime: Duration = None, incremental: bool = False,
+                 scm_properties: Optional[Dict] = None):
+        # pylint: disable=too-many-arguments, too-many-locals
+
+        # order matters here
+        self._scm_properties = scm_properties if scm_properties is not None else {}
+        super().__init__(setup_module_name,  simulation_config, simulation_events, seed, paused,
+                         pause_after, repl, no_export, export_path, export_subdir, redis_job_id,
+                         enable_bc, slot_length_realtime, incremental)
+
+    def update_scm_area_properties(self, area: "CoefficientArea"):
+        """Update scm_properties for all non-asset areas."""
+        area.update_fee_properties(self._scm_properties)
+        for child in area.children:
+            if child.children:
+                self.update_scm_area_properties(child)
+
     def _init(self) -> None:
         # has to be called before load_setup_module():
         global_objects.profiles_handler.activate()
 
         self.area = self._setup.load_setup_module()
 
+        self.update_scm_area_properties(self.area)
+
         # has to be called after areas are initiated in order to retrieve the profile uuids
         global_objects.profiles_handler.update_time_and_buffer_profiles(
-            GlobalConfig.start_date, area=self.area)
+            self._time.get_start_time_on_init(self.config), area=self.area)
 
         self._results.init_results(self.simulation_id, self.area, self._setup)
         self._results.update_and_send_results(self)
 
         log.debug("Starting simulation with config %s", self.config)
 
-        self.area.activate_energy_parameters(self.config.start_date)
+        self.area.activate_energy_parameters(self._time.get_start_time_on_init(self.config))
 
         if self.config.external_connection_enabled:
             global_objects.scm_external_global_stats(self.area)

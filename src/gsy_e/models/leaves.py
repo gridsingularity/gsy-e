@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import inspect
 import logging
+from typing import Optional, Dict, Tuple
 
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.enums import SpotMarketTypeEnum
@@ -49,6 +50,7 @@ from gsy_e.models.strategy.scm.pv import SCMPVUserProfile
 from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
 from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
 from gsy_e.models.strategy.storage import StorageStrategy
+import gsy_e.constants
 
 external_strategies_mapping = {
     LoadHoursStrategy: LoadHoursExternalStrategy,
@@ -69,6 +71,19 @@ forecast_strategy_mapping = {
 }
 
 
+def _select_strategy_mapping(
+        forecast_stream_enabled: bool, allow_external_connection: bool
+) -> Tuple[Optional[Dict], str]:
+    if forecast_stream_enabled is True:
+        if gsy_e.constants.CONNECT_TO_PROFILES_DB:
+            return external_strategies_mapping, "external_strategies_mapping"
+        return forecast_strategy_mapping, "forecast_strategy_mapping"
+    if allow_external_connection:
+        return external_strategies_mapping, "external_strategies_mapping"
+
+    return None, ""
+
+
 class LeafBase:
     """
     Superclass for frequently used leaf Areas, so they can be
@@ -80,18 +95,17 @@ class LeafBase:
     def __init__(self, name, config, uuid=None, **kwargs):
         if (config.external_connection_enabled and
                 ConstSettings.MASettings.MARKET_TYPE != SpotMarketTypeEnum.COEFFICIENTS.value):
-            if kwargs.get("forecast_stream_enabled", False) is True:
+
+            strategy_mapping, mapping_str = _select_strategy_mapping(
+                kwargs.get("forecast_stream_enabled", False),
+                kwargs.get("allow_external_connection", False))
+            if strategy_mapping:
                 try:
-                    self.strategy_type = forecast_strategy_mapping[self.strategy_type]
+                    self.strategy_type = strategy_mapping[self.strategy_type]
                 except KeyError:
-                    logging.error("%s could not be found in forecast_strategy_mapping, "
-                                  "using template strategy.", self.strategy_type)
-            elif kwargs.get("allow_external_connection", False) is True:
-                try:
-                    self.strategy_type = external_strategies_mapping[self.strategy_type]
-                except KeyError:
-                    logging.error("%s could not be found in external_strategies_mapping, "
-                                  "using template strategy.", self.strategy_type)
+                    logging.error(
+                        "%s could not be found in %s, using template strategy.",
+                        self.strategy_type, mapping_str)
 
         # The following code is used in order to collect all the available constructor arguments
         # from the strategy class that needs to be constructed, and cross-check with the input

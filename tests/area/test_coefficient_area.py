@@ -15,12 +15,13 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import uuid
 from math import isclose
 from unittest.mock import MagicMock
 
 import pytest
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.enums import SpotMarketTypeEnum, CoefficientAlgorithm
+from gsy_framework.enums import SpotMarketTypeEnum, CoefficientAlgorithm, SCMFeeType
 from pendulum import duration, today
 from pendulum import now
 
@@ -85,15 +86,12 @@ class TestCoefficientArea:
         house1 = CoefficientArea(name="House 1", children=[load, pv],
                                  coefficient_percentage=0.6,
                                  feed_in_tariff=0.1,
-                                 market_maker_rate=0.3,
-                                 grid_fee_constant=0.0)
+                                 market_maker_rate=0.3)
         house2 = CoefficientArea(name="House 2", children=[load2, pv2],
                                  coefficient_percentage=0.4,
                                  feed_in_tariff=0.05,
-                                 market_maker_rate=0.24,
-                                 grid_fee_constant=0.0)
-        return CoefficientArea(name="Community", children=[house1, house2],
-                               grid_fee_constant=0.0)
+                                 market_maker_rate=0.24)
+        return CoefficientArea(name="Community", children=[house1, house2])
 
     @staticmethod
     def test_calculate_after_meter_data(_create_2_house_grid):
@@ -152,6 +150,7 @@ class TestCoefficientArea:
 
     @staticmethod
     def test_calculate_after_meter_data_including_home_with_single_pv():
+        # pylint: disable=too-many-statements
         strategy = MagicMock(spec=SCMLoadHoursStrategy)
         strategy.get_energy_to_sell_kWh = MagicMock(return_value=0.0)
         strategy.get_energy_to_buy_kWh = MagicMock(return_value=0.7)
@@ -159,8 +158,7 @@ class TestCoefficientArea:
         house1 = CoefficientArea(name="House 1", children=[load],
                                  coefficient_percentage=1.0,
                                  feed_in_tariff=0.1,
-                                 market_maker_rate=0.3,
-                                 grid_fee_constant=0.0)
+                                 market_maker_rate=0.3)
         strategy = MagicMock(spec=SCMPVUserProfile)
         strategy.get_energy_to_sell_kWh = MagicMock(return_value=20.0)
         strategy.get_energy_to_buy_kWh = MagicMock(return_value=0.0)
@@ -168,10 +166,8 @@ class TestCoefficientArea:
         house2 = CoefficientArea(name="House 2", children=[pv2],
                                  coefficient_percentage=0.0,
                                  feed_in_tariff=0.0,
-                                 market_maker_rate=0.3,
-                                 grid_fee_constant=0.0)
-        grid_area = CoefficientArea(name="Community", children=[house1, house2],
-                                    grid_fee_constant=0.0)
+                                 market_maker_rate=0.3)
+        grid_area = CoefficientArea(name="Community", children=[house1, house2])
 
         time_slot = now()
         scm = SCMManager(grid_area, time_slot)
@@ -219,7 +215,9 @@ class TestCoefficientArea:
         assert isclose(scm._bills[house2.uuid].home_balance_kWh, -20.0)
 
     @staticmethod
-    def test_trigger_energy_trades(_create_2_house_grid):
+    @pytest.mark.parametrize("intracommunity_base_rate", (None, 0.3))
+    def test_trigger_energy_trades(_create_2_house_grid, intracommunity_base_rate):
+        ConstSettings.SCMSettings.INTRACOMMUNITY_BASE_RATE_EUR = intracommunity_base_rate
         grid_area = _create_2_house_grid
         house1 = grid_area.children[0]
         house2 = grid_area.children[1]
@@ -240,7 +238,10 @@ class TestCoefficientArea:
         assert isclose(scm._bills[house2.uuid].base_energy_bill, -0.005)
         assert isclose(scm._bills[house2.uuid].base_energy_bill_excl_revenue, 0.0)
         assert isclose(scm._bills[house2.uuid].base_energy_bill_revenue, 0.005)
-        assert isclose(scm._bills[house2.uuid].gsy_energy_bill, -0.0164)
+        if intracommunity_base_rate is None:
+            assert isclose(scm._bills[house2.uuid].gsy_energy_bill, -0.0164)
+        else:
+            assert isclose(scm._bills[house2.uuid].gsy_energy_bill, -0.02)
 
         assert isclose(scm._bills[house2.uuid].savings,
                        0.0, abs_tol=constants.FLOATING_POINT_TOLERANCE)
@@ -257,7 +258,10 @@ class TestCoefficientArea:
         assert trades[1].buyer.name == "House 1"
         assert len(scm._home_data[house2.uuid].trades) == 2
         trades = scm._home_data[house2.uuid].trades
-        assert isclose(trades[0].trade_rate, 0.24)
+        if intracommunity_base_rate is None:
+            assert isclose(trades[0].trade_rate, 0.24)
+        else:
+            assert isclose(trades[0].trade_rate, 0.3)
         assert isclose(trades[0].traded_energy, 0.06)
         assert trades[0].seller.name == "House 2"
         assert trades[0].buyer.name == "Community"
@@ -312,10 +316,6 @@ class TestCoefficientArea:
     @staticmethod
     @pytest.mark.parametrize("scm_setting", [
         "coefficient_percentage",
-        "taxes_surcharges",
-        "fixed_monthly_fee",
-        "marketplace_monthly_fee",
-        "assistance_monthly_fee",
         "market_maker_rate",
         "feed_in_tariff",
     ])
@@ -327,20 +327,31 @@ class TestCoefficientArea:
         scm_settings = {scm_setting: None}
         with pytest.raises(CoefficientAreaException):
             # grid_fee_constant's default value is None, so setting it to 0, it is tested elsewhere
-            CoefficientArea(name="House 1", children=[load], grid_fee_constant=0., **scm_settings)
+            CoefficientArea(name="House 1", children=[load], **scm_settings)
 
         # check does not fail for non-House areas
-        house = CoefficientArea(name="House 1", children=[load], grid_fee_constant=0.)
-        CoefficientArea(name="Community", children=[house], grid_fee_constant=0., **scm_settings)
+        house = CoefficientArea(name="House 1", children=[load])
+        CoefficientArea(name="Community", children=[house], **scm_settings)
+
+    @staticmethod
+    def test_update_fee_properties_only_allows_non_none_values():
+        strategy = MagicMock(spec=SCMLoadHoursStrategy)
+        strategy.get_energy_to_sell_kWh = MagicMock(return_value=0.0)
+        strategy.get_energy_to_buy_kWh = MagicMock(return_value=0.7)
+        load = CoefficientArea(name="load", strategy=strategy)
+        scm_area_uuid = str(uuid.uuid4())
+        scm_area = CoefficientArea(
+            name="House 1", children=[load], uuid=scm_area_uuid)
+
+        wrong_scm_properties = {scm_area_uuid: {SCMFeeType(0).name: {"some_fee": None}}}
+        with pytest.raises(CoefficientAreaException):
+            scm_area.update_fee_properties(wrong_scm_properties)
 
     @staticmethod
     def test_area_reconfigure_event_changes_attributes():
         area = CoefficientArea(name="House")
         setting_name_attr_mapping = {
             "coefficient_percentage": "coefficient_percentage",
-            "taxes_surcharges": "_taxes_surcharges",
-            "fixed_monthly_fee": "_fixed_monthly_fee",
-            "marketplace_monthly_fee": "_marketplace_monthly_fee",
             "market_maker_rate": "_market_maker_rate",
             "feed_in_tariff": "_feed_in_tariff"
         }

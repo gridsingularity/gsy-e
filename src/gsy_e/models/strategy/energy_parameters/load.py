@@ -18,18 +18,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import logging
 from typing import Dict, List, Optional
 
-from gsy_framework.utils import (
-    convert_W_to_Wh)
-from gsy_framework.utils import find_object_of_same_weekday_and_time
+from gsy_framework.exceptions import GSyException, GSyDeviceException
+from gsy_framework.utils import find_object_of_same_weekday_and_time, convert_W_to_Wh
 from gsy_framework.validators.load_validator import LoadValidator
+from gsy_framework.constants_limits import GlobalConfig
 from pendulum import DateTime, duration
 
 import gsy_e.constants
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
-from gsy_e.gsy_e_core.exceptions import GSyException
-from gsy_e.models.strategy.state import LoadState
 from gsy_e.models.strategy import utils
-from gsy_e.models.strategy.profile import EnergyProfile
+from gsy_e.models.strategy.profile import profile_factory
+from gsy_e.models.strategy.state import LoadState
 
 log = logging.getLogger(__name__)
 
@@ -173,20 +172,27 @@ class LoadHoursPerDayEnergyParameters(LoadHoursEnergyParameters):
         self._initial_hrs_per_day = hrs_per_day
 
         if len(self.hrs_of_day) < hrs_per_day:
-            raise ValueError("Length of list 'hrs_of_day' must be greater equal 'hrs_per_day'")
+            raise GSyDeviceException(
+                "Length of list 'hrs_of_day' must be greater equal 'hrs_per_day'")
 
 
 class DefinedLoadEnergyParameters(LoadHoursPerDayEnergyParameters):
     """Energy parameters for the defined load strategy class."""
-    def __init__(self, daily_load_profile=None, daily_load_profile_uuid: str = None):
+    def __init__(self, daily_load_profile=None,
+                 daily_load_profile_uuid: str = None,
+                 daily_load_measurement_uuid: str = None,
+                 ):
         super().__init__(avg_power_W=0, hrs_per_day=24, hrs_of_day=list(range(0, 24)))
-        self.energy_profile = EnergyProfile(daily_load_profile, daily_load_profile_uuid)
+
+        self.energy_profile = profile_factory(daily_load_profile, daily_load_profile_uuid)
+        self.measurement_profile = profile_factory(None, daily_load_measurement_uuid)
         self.state = LoadState()
 
     def serialize(self):
         return {
             "daily_load_profile": self.energy_profile.input_profile,
-            "daily_load_profile_uuid": self.energy_profile.input_profile_uuid
+            "daily_load_profile_uuid": self.energy_profile.input_profile_uuid,
+            "daily_load_measurement_uuid": self.measurement_profile.input_profile_uuid
         }
 
     def event_activate_energy(self, area):
@@ -194,7 +200,7 @@ class DefinedLoadEnergyParameters(LoadHoursPerDayEnergyParameters):
         Runs on activate event.
         :return: None
         """
-        self.energy_profile.read_or_rotate_profiles()
+        self.read_and_rotate_profiles()
         super().event_activate_energy(area)
 
     def reset(self, time_slot: DateTime, **kwargs) -> None:
@@ -204,6 +210,8 @@ class DefinedLoadEnergyParameters(LoadHoursPerDayEnergyParameters):
 
     def update_energy_requirement(self, time_slot):
         if not self.energy_profile.profile:
+            if GlobalConfig.is_canary_network():
+                return
             raise GSyException(
                 "Load tries to set its energy forecasted requirement "
                 "without a profile.")
@@ -228,6 +236,11 @@ class DefinedLoadEnergyParameters(LoadHoursPerDayEnergyParameters):
         Disabled feature for this subclass
         """
         return True
+
+    def read_and_rotate_profiles(self):
+        """Read and rotate all profiles"""
+        self.energy_profile.read_or_rotate_profiles()
+        self.measurement_profile.read_or_rotate_profiles()
 
 
 class LoadForecastExternalEnergyParamsMixin:

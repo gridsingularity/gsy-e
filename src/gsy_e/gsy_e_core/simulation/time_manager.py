@@ -192,6 +192,18 @@ class SimulationTimeManagerScm(TimeManagerBase):
 
         self.slot_time_counter = int(time())
 
+    @staticmethod
+    def get_start_time_on_init(config: "SimulationConfig") -> DateTime:
+        """Return the start tim of the simulation."""
+        if gsy_e.constants.RUN_IN_REALTIME:
+            today = pendulum.today(tz=TIME_ZONE)
+            seconds_since_midnight = time() - today.int_timestamp
+            slot_no = int(seconds_since_midnight // config.slot_length.seconds) + 1
+            start_time = config.start_date + duration(seconds=slot_no*config.slot_length.seconds)
+        else:
+            start_time = config.start_date
+        return start_time
+
     def calc_resume_slot_and_count_realtime(
             self, config: "SimulationConfig", slot_resume: int, status: "SimulationStatusManager"
     ) -> Tuple[int, int]:

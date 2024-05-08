@@ -33,6 +33,8 @@ bcrypt==3.2.0
     #   -r requirements/dev.txt
     #   paramiko
 behave==1.2.6
+    # via behavex
+behavex==3.2.0
     # via -r requirements/tests.in
 cached-property==1.5.2
     # via -r requirements/dev.txt
@@ -68,12 +70,18 @@ click-default-group==1.2.2
     # via -r requirements/dev.txt
 colorlog==4.7.2
     # via -r requirements/dev.txt
-coverage==6.1.1
-    # via -r requirements/tests.in
+configobj==5.0.8
+    # via behavex
+coverage[toml]==6.1.1
+    # via
+    #   -r requirements/tests.in
+    #   pytest-cov
 cryptography==35.0.0
     # via
     #   -r requirements/dev.txt
     #   paramiko
+csscompressor==0.9.5
+    # via behavex
 decorator==5.1.1
     # via
     #   -r requirements/dev.txt
@@ -91,6 +99,8 @@ et-xmlfile==1.1.0
     #   -r requirements/dev.txt
     #   gsy-framework
     #   openpyxl
+execnet==2.0.2
+    # via pytest-xdist
 fabric3==1.14.post1
     # via -r requirements/dev.txt
 filelock==3.3.2
@@ -112,6 +122,8 @@ geocoder==1.17.5
     # via
     #   -r requirements/dev.txt
     #   gsy-framework
+htmlmin==0.1.12
+    # via behavex
 hypothesis==4.38.0
     # via -r requirements/tests.in
 identify==2.3.3
@@ -131,6 +143,8 @@ isort==5.10.0
     #   -r requirements/dev.txt
     #   -r requirements/tests.in
     #   pylint
+jinja2==3.1.3
+    # via behavex
 jsonschema==4.1.2
     # via
     #   -r requirements/dev.txt
@@ -143,6 +157,8 @@ lazy-object-proxy==1.6.0
     # via
     #   -r requirements/dev.txt
     #   astroid
+markupsafe==2.1.5
+    # via jinja2
 mccabe==0.6.1
     # via
     #   -r requirements/dev.txt
@@ -249,8 +265,14 @@ pyrsistent==0.18.0
 pytest==6.2.5
     # via
     #   -r requirements/tests.in
+    #   pytest-cov
     #   pytest-random-order
+    #   pytest-xdist
+pytest-cov==4.1.0
+    # via -r requirements/tests.in
 pytest-random-order==1.0.4
+    # via -r requirements/tests.in
+pytest-xdist==3.5.0
     # via -r requirements/tests.in
 python-dateutil==2.8.2
     # via
@@ -300,6 +322,7 @@ six==1.16.0
     #   -r requirements/dev.txt
     #   bcrypt
     #   behave
+    #   configobj
     #   fabric3
     #   flake8-tuple
     #   geocoder
@@ -331,6 +354,8 @@ toml==0.10.2
     #   pylint
     #   pytest
     #   tox
+tomli==2.0.1
+    # via coverage
 tox==3.24.4
     # via
     #   -r requirements/dev.txt

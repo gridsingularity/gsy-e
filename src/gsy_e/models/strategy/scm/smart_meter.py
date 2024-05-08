@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Union, Dict, TYPE_CHECKING
 
 from pendulum import DateTime
+from gsy_framework.constants_limits import GlobalConfig
 
 from gsy_e.models.strategy.scm import SCMStrategy
 from gsy_e.models.strategy.energy_parameters.smart_meter import SmartMeterEnergyParameters
@@ -50,3 +51,13 @@ class SCMSmartMeterStrategy(SCMStrategy):
     def get_energy_to_buy_kWh(self, time_slot: DateTime) -> float:
         """Get the available energy for consumption for the specified time slot."""
         return self.state.get_energy_requirement_Wh(time_slot) / 1000.0
+
+    @staticmethod
+    def deserialize_args(constructor_args: Dict) -> Dict:
+        if not GlobalConfig.is_canary_network():
+            return constructor_args
+        # move measurement_uuid into forecast uuid because this is only used in SCM
+        measurement_uuid = constructor_args.get("smart_meter_measurement_uuid")
+        if measurement_uuid:
+            constructor_args["smart_meter_profile_uuid"] = measurement_uuid
+        return constructor_args

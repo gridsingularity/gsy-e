@@ -15,15 +15,17 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from gsy_e.models.area import Area
-from gsy_e.models.strategy.load_hours import LoadHoursStrategy
-from gsy_e.models.strategy.commercial_producer import CommercialStrategy
 from gsy_framework.constants_limits import ConstSettings
+
+from gsy_e.models.area import Area
+from gsy_e.models.strategy.commercial_producer import CommercialStrategy
+from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 
 
 def get_setup(config):
     # Two sided market
     ConstSettings.MASettings.MARKET_TYPE = 2
+    ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL = 5
 
     area = Area(
         "Grid",
