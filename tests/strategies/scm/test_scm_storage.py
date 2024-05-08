@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock
 
-import pytest
 from gsy_framework.constants_limits import GlobalConfig
+import pytest
 from pendulum import today, duration
 
 from gsy_e.models.area.coefficient_area import CoefficientArea

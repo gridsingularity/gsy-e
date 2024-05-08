@@ -15,7 +15,6 @@ SAMPLE_STATE = {
     "charge_history": {},
     "charge_history_kWh": {},
     "offered_history": {},
-    "used_history": {},
     "energy_to_buy_dict": {},
     "energy_to_sell_dict": {},
     "used_storage": 0.0,
@@ -375,8 +374,6 @@ class TestStorageState:
                 storage_state.energy_to_buy_dict, time_slot, 0)
             assert_time_slot_in_dict_attribute_with_default_value(
                 storage_state.offered_history, time_slot, "-")
-            assert_time_slot_in_dict_attribute_with_default_value(
-                storage_state.used_history, time_slot, "-")
             assert_time_slot_in_dict_attribute_with_default_value(
                 storage_state.time_series_ess_share, time_slot, {ESSEnergyOrigin.UNKNOWN: 0.,
                                                                  ESSEnergyOrigin.LOCAL: 0.,

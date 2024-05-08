@@ -52,7 +52,7 @@ class AreaEncoder(json.JSONEncoder):
         # separately.
         if type(o) in [Area, CoefficientArea, Market, Asset]:
             return self._encode_area(o)
-        if isinstance(o, Leaf):
+        if isinstance(o, (Leaf, CoefficientLeaf)):
             return self._encode_leaf(o)
         if isinstance(o, (BaseStrategy, SCMStrategy)):
             return self._encode_subobject(o)
@@ -172,26 +172,19 @@ def area_from_dict(description, config):
         else:
             children = None
 
-        grid_fee_percentage = description.get("grid_fee_percentage", None)
-        grid_fee_constant = description.get("grid_fee_constant", None)
-
         if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
             # For the SCM only use the CoefficientArea strategy.
             area = CoefficientArea(
                 name, children, uuid, optional("strategy"), config,
                 coefficient_percentage=description.get("coefficient_percentage", 0.0),
-                taxes_surcharges=description.get("taxes_surcharges", 0.0),
-                fixed_monthly_fee=description.get("fixed_monthly_fee", 0.0),
-                marketplace_monthly_fee=description.get("marketplace_monthly_fee", 0.0),
-                assistance_monthly_fee=description.get("assistance_monthly_fee", 0.0),
                 market_maker_rate=description.get(
                     "market_maker_rate",
                     ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE / 100.),
                 feed_in_tariff=description.get(
-                    "feed_in_tariff", GlobalConfig.FEED_IN_TARIFF / 100.,),
-                grid_fee_percentage=grid_fee_percentage,
-                grid_fee_constant=grid_fee_constant)
+                    "feed_in_tariff", GlobalConfig.FEED_IN_TARIFF / 100.,))
         else:
+            grid_fee_percentage = description.get("grid_fee_percentage", None)
+            grid_fee_constant = description.get("grid_fee_constant", None)
             area = Area(name, children, uuid, optional("strategy"), config,
                         grid_fee_percentage=grid_fee_percentage,
                         grid_fee_constant=grid_fee_constant,

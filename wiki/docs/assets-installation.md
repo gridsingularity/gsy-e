@@ -104,7 +104,7 @@ If the cap_price_strategy is True, the offer price for the storage is calculated
 
 `offer_rate = initial_selling_rate - ((initial_selling_rate - final_selling_rate)\*soc/100)`
 
-As an example, considering an `initial_selling_rate` of 30 cents/kWh and a `final_selling_rate` of 20 cents/kWh, a storage with an SOC of 1% would sell its energy at 29.9 cents/kWh, and a battery at 100% SOC would sell its energy at 20 cents/kWh.
+As an example, considering an `initial_selling_rate` of 30 cts/kWh and a `final_selling_rate` of 20 cts/kWh, a storage with an SOC of 1% would sell its energy at 29.9 cts/kWh, and a battery at 100% SOC would sell its energy at 20 cts/kWh.
 To implement a power plant in a backend simulation, one option is available:
 
 [Finite Power Plant](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/finite_power_plant.py){target=_blank}
@@ -131,41 +131,20 @@ Asset(name="Heat Pump", strategy=HeatPumpStrategy())
 
 The **HeatPumpStrategy** parameters can be set as follows:
 
-  * **maximum_power_rating_kW**: default=3; the maximal power that the HP will consume
-  * **min_temp_C**: (default=50); minimum temperature of the HP storage. If the temperature drops below this point, the HP buys energy at any cost
-  * **max_temp_C**: (default=60); maximum temperature of the HP storage. If the temperature rises above this point, the HP does not buy any energy.
-  * **initial_temp_C**: (default=50); initial temperature of the HP storage
-  * **external_temp_C_profile**: (mandatory user input); external temperature that influences the efficiency of the HP. If this parameter is selected, the external temperature is constant for the whole simulation run
-  * **tank_volume_l**: (default=15); rate in ct/kWh that determines the trading strategy
-  * **consumption_kWh**: (mandatory user input); constant power value in kWh or provided power profile as a dictionary that follows the supported format, representing the power that the HP consumes when operating.
-  * **preferred_buying_rate**: (mandatory user input); constant power value in kWh or provided power profile as a dictionary that follows the supported format, representing the power that the HP consumes when operating.
+  * **maximum_power_rating_kW**: default=3; the maximum power that the HP will consume;
+  * **min_temp_C**: (default=50); minimum temperature of the HP storage. If the temperature drops below this point, the HP buys energy at any cost;
+  * **max_temp_C**: (default=60); maximum temperature of the HP storage. If the temperature rises above this point, the HP does not buy any energy;
+  * **initial_temp_C**: (default=50); initial temperature of the HP storage at the beginning of the simulation;
+  * **external_temp_C_profile**: (mandatory user input); external temperature that influences the efficiency of the HP. If this parameter is selected, the external temperature is constant for the whole simulation run;
+  * **tank_volume_l**: (default=50); volume/capacity of the thermal storage tank;
+  * **consumption_kWh**: (mandatory user input); constant amount of energy the heat pump consumes to produce heat, in kWh (can be provided as a constant energy kWh value or as an energy consumption time-series profile, as a dictionary that follows the supported format);
+  * **preferred_buying_rate**: (default=15); rate in cts/kWh that determines the [trading strategy](heat-pump.md#heat-pump-asset-trading-strategy);
   * **source_type**:  set how the heat exchange is conducted, either via air or water/ground, as it determines the COP calculation;
-  * **order_updater_parameters**: of type **HeatPumpOrderUpdaterParameters**. A template configuration can be seen [below](#heat-pump-price-strategy-configuration).
-
-
-#### Virtual Heat Pump Code Configuration
-
-To configure a virtual heat pump asset (VHP) in the backend code, the following lines are to be added to the children's list of one of the areas in the setup file:
-```python
-Asset(name="Virtual Heat Pump", strategy=VirtualHeatPumpStrategy())
-```
-
-The **VirtualHeatPumpStrategy** parameters can be set as follows:
-
-  * **maximum_power_rating_kW**: default=3; the maximal power that the VHP will consume
-  * **min_temp_C**: (default=50); minimum temperature of the VHP storage. If the temperature drops below this point, the HP buys energy at any cost
-  * **max_temp_C**: (default=60); maximum temperature of the VHP storage. If the temperature rises above this point, the HP does not buy any energy.
-  * **initial_temp_C**: (default=50); initial temperature of the VHP storage
-  * **water_supply_temp_C_profile**: (mandatory user input); supply temperature of the water that flows from the district heating network. Used to calculate the heat demand of the building
-  * **water_return_temp_C_profile**: (mandatory user input); return temperature of the water that flows from the district heating network. Used to calculate the heat demand of the building
-  * **dh_water_flow_m3_profile**: (mandatory user input); water flow from the district heating network. In aggregated cubic metres per market slot. Used to calculate the heat demand of the building
-  * **tank_volume_l**: (default=50); volume of the storage tank
-  * **preferred_buying_rate**: (default=15); rate in ct/kWh that determines [the trading strategy](heat-pump.md#heat-pump-asset-trading-strategy)
-  * **order_updater_parameters**: of type **HeatPumpOrderUpdaterParameters**. A template configuration can be seen [below](#heat-pump-price-strategy-configuration).
+  * **order_updater_parameters**: of type **HeatPumpOrderUpdaterParameters**. A template configuration can be seen [below](#heat-pump-price-strategy-configuration)
 
 #### Heat Pump Price Strategy Configuration
 
-In order to set the bidding strategy, the **order_updater_parameters**  should be set by assigning the **HeatPumpOrderUpdaterParameters** data class and its parameters to it:
+In order to configure the heat pump bid pricing, the **order_updater_parameters**  should be set by assigning the **HeatPumpOrderUpdaterParameters** data class and its parameters to it:
 
 ```python
 from gsy_e.models.strategy.heat_pump import HeatPumpOrderUpdaterParameters
@@ -175,12 +154,33 @@ from gsy_framework.enums import AvailableMarketTypes
 Asset(name="Heat Pump", strategy=HeatPumpStrategy(
      order_updater_parameters={
      AvailableMarketTypes.SPOT: HeatPumpOrderUpdaterParameters(
-     update_interval=duration(minutes=1), initial_rate=20, final_rate=30)})
-))
+     update_interval=duration(minutes=1), initial_rate=20, final_rate=30)}))
 ```
 The **order_updater_parameters** expects a dictionary with **AvailableMarketTypes** as key and **HeatPumpOrderUpdaterParameters** as values.
 If not set by the user, the following default values are used:
 
   * **update_interval**: interval that represents the time between updates of the bid prices performed by the applied trading strategy (default: 1 minute);
-  * **initial_rate**: bid rate at the start of the market slot; default value is the feed-in-tariff rate (if not set, the default value is 0 ct/kWh as explained in table [here](heat-pump.md#parameter-table));
-  * **final_rate**: bid rate at the end of the market slot; defined by the infinite bus strategy that is part of the simulation, which is the market maker rate (if not set, the default value is 30ct/kWh).
+  * **initial_rate**: bid rate at the start of the market slot; default value is the feed-in-tariff rate (if not set, the default value is 0 cts/kWh as explained in table [here](heat-pump.md#parameter-table));
+  * **final_rate**: bid rate at the end of the market slot; defined by the infinite bus strategy that is part of the simulation, which is the market maker rate (if not set, the default value is 30 cts/kWh).
+
+
+#### Virtual Heat Pump Code Configuration
+
+To configure a virtual heat pump asset (VHP) in the Grid Singularity Exchange backend code, the following lines are to be added to the children's list of one of the areas in the setup file:
+```python
+Asset(name="Virtual Heat Pump", strategy=VirtualHeatPumpStrategy())
+```
+
+The **VirtualHeatPumpStrategy** parameters can be set as follows:
+
+  * **maximum_power_rating_kW**: default=3; the maximum power that the VHP will consume
+  * **min_temp_C**: (default=50); minimum temperature of the VHP storage. If the temperature drops below this point, the HP buys energy at any cost
+  * **max_temp_C**: (default=60); maximum temperature of the VHP storage. If the temperature rises above this point, the HP does not buy any energy
+  * **initial_temp_C**: (default=50); initial temperature of the VHP storage
+  * **water_supply_temp_C_profile**: (mandatory user input); supply temperature of the water that flows from the district heating network (used to calculate the heat demand of the building)
+  * **water_return_temp_C_profile**: (mandatory user input); return temperature of the water that flows from the district heating network (used to calculate the heat demand of the building)
+  * **dh_water_flow_m3_profile**: (mandatory user input); water flow from the district heating network, in aggregated cubic metres per market slot (used to calculate the heat demand of the building)
+  * **tank_volume_l**: (default=50); volume of the storage tank
+  * **calibration_coefficient**: (default=0.6); empirical calibration coefficient for water-to-water heat pumps
+  * **preferred_buying_rate**: (default=15); rate in cts/kWh that determines [the trading strategy](heat-pump.md#heat-pump-asset-trading-strategy)
+  * **order_updater_parameters**: of type **HeatPumpOrderUpdaterParameters**. A template configuration can be seen [below](#heat-pump-price-strategy-configuration)

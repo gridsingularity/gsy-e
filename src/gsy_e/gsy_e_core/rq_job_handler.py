@@ -26,6 +26,7 @@ def launch_simulation_from_rq_job(scenario: Dict,
                                   events: Optional[str],
                                   aggregator_device_mapping: Dict,
                                   saved_state: Dict,
+                                  scm_properties: Dict,
                                   job_id: str,
                                   connect_to_profiles_db: bool = True):
     # pylint: disable=too-many-arguments, too-many-locals
@@ -54,6 +55,9 @@ def launch_simulation_from_rq_job(scenario: Dict,
 
         kwargs = {"no_export": True,
                   "seed": settings.get("random_seed", 0)}
+
+        if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
+            kwargs.update({"scm_properties": scm_properties})
 
         past_slots_sim_state = _handle_scm_past_slots_simulation_run(
             scenario, settings, events, aggregator_device_mapping, saved_state, job_id,
@@ -157,8 +161,14 @@ def _configure_constants_constsettings(
     )
     gsy_e.constants.CONNECT_TO_PROFILES_DB = connect_to_profiles_db
 
-    ConstSettings.SCMSettings.MARKET_ALGORITHM = CoefficientAlgorithm(
-        settings.get("scm_coefficient_algorithm", 1)).value
+    if settings.get("scm"):
+        ConstSettings.SCMSettings.MARKET_ALGORITHM = CoefficientAlgorithm(
+            settings["scm"]["coefficient_algorithm"]).value
+        ConstSettings.SCMSettings.GRID_FEES_REDUCTION = settings["scm"]["grid_fees_reduction"]
+        ConstSettings.SCMSettings.INTRACOMMUNITY_BASE_RATE_EUR = (
+            settings["scm"]["intracommunity_rate_base_eur"])
+    else:
+        assert spot_market_type is not SpotMarketTypeEnum.COEFFICIENTS.value
 
 def _create_config_settings_object(
         scenario: Dict, settings: Dict, aggregator_device_mapping: Dict

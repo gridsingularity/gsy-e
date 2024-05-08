@@ -1,6 +1,7 @@
 from typing import Dict, Union
 
 from pendulum import DateTime
+from gsy_framework.constants_limits import GlobalConfig
 
 from gsy_e.models.strategy.energy_parameters.storage_profile import StorageProfileEnergyParameters
 from gsy_e.models.strategy.scm import SCMStrategy
@@ -12,8 +13,11 @@ class SCMStorageStrategy(SCMStrategy):
     def __init__(
             self, prosumption_kWh_profile: Union[str, Dict[int, float], Dict[str, float]] = None,
             prosumption_kWh_profile_uuid: str = None):
+
         self._energy_params = StorageProfileEnergyParameters(
             prosumption_kWh_profile, prosumption_kWh_profile_uuid)
+
+        # needed for profile_handler
         self.prosumption_kWh_profile_uuid = prosumption_kWh_profile_uuid
 
     def serialize(self) -> Dict:
@@ -43,3 +47,13 @@ class SCMStorageStrategy(SCMStrategy):
     def state(self):
         """Return empty state."""
         return self._energy_params.state
+
+    @staticmethod
+    def deserialize_args(constructor_args: Dict) -> Dict:
+        if not GlobalConfig.is_canary_network():
+            return constructor_args
+        # move measurement_uuid into forecast uuid because this is only used in SCM
+        measurement_uuid = constructor_args.get("prosumption_kWh_measurement_uuid")
+        if measurement_uuid:
+            constructor_args["prosumption_kWh_profile_uuid"] = measurement_uuid
+        return constructor_args
