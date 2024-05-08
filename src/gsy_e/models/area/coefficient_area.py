@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from collections import defaultdict
 from logging import getLogger
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List, Optional, Dict
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.utils import key_in_dict_and_not_none
@@ -28,6 +28,7 @@ from gsy_e.models.area.area_base import AreaBase
 from gsy_e.models.config import SimulationConfig
 from gsy_e.models.strategy.external_strategies import ExternalMixin
 from gsy_e.models.strategy.scm import SCMStrategy
+from gsy_e.models.area.scm_dataclasses import FeeProperties
 
 log = getLogger(__name__)
 
@@ -46,38 +47,32 @@ class CoefficientArea(AreaBase):
                  uuid: str = None,
                  strategy: SCMStrategy = None,
                  config: SimulationConfig = None,
-                 grid_fee_percentage: float = None,
-                 grid_fee_constant: float = None,
                  coefficient_percentage: float = 0.0,
-                 taxes_surcharges: float = 0.0,
-                 fixed_monthly_fee: float = 0.0,
-                 marketplace_monthly_fee: float = 0.0,
-                 assistance_monthly_fee: float = 0.0,
                  market_maker_rate: float = (
                          ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE / 100.),
                  feed_in_tariff: float = GlobalConfig.FEED_IN_TARIFF / 100.,
                  ):
         # pylint: disable=too-many-arguments
-        super().__init__(name, children, uuid, strategy, config, grid_fee_percentage,
-                         grid_fee_constant)
+        super().__init__(name, children, uuid, strategy, config, 0, 0)
         self.display_type = (
             "CoefficientArea" if self.strategy is None else self.strategy.__class__.__name__)
-        self.validate_coefficient_area_setting(grid_fee_constant, "grid_fee_constant")
         self.coefficient_percentage = self.validate_coefficient_area_setting(
             coefficient_percentage, "coefficient_percentage")
-        self._taxes_surcharges = self.validate_coefficient_area_setting(
-            taxes_surcharges, "taxes_surcharges")
-        self._fixed_monthly_fee = self.validate_coefficient_area_setting(
-            fixed_monthly_fee, "fixed_monthly_fee")
-        self._marketplace_monthly_fee = self.validate_coefficient_area_setting(
-            marketplace_monthly_fee, "marketplace_monthly_fee")
-        self._assistance_monthly_fee = self.validate_coefficient_area_setting(
-            assistance_monthly_fee, "assistance_monthly_fee")
         self._market_maker_rate = self.validate_coefficient_area_setting(
             market_maker_rate, "market_maker_rate")
         self._feed_in_tariff = self.validate_coefficient_area_setting(
             feed_in_tariff, "feed_in_tariff")
         self.past_market_time_slot = None
+        self.fee_properties = FeeProperties()
+
+    def update_fee_properties(self, properties: Dict) -> None:
+        """Update fee_properties."""
+        for property_name, fee_dict in properties.get(self.uuid, {}).items():
+            setattr(self.fee_properties, property_name, fee_dict)
+        try:
+            self.fee_properties.validate()
+        except AssertionError as ex:
+            raise CoefficientAreaException(f"Invalid fee properties {self.fee_properties}") from ex
 
     def activate_energy_parameters(self, current_time_slot: DateTime) -> None:
         """Activate the coefficient-based area parameters."""
@@ -112,20 +107,11 @@ class CoefficientArea(AreaBase):
         """Reconfigure the device properties at runtime using the provided arguments."""
         if self.strategy is not None:
             self.strategy.area_reconfigure_event(**kwargs)
-            return True
+            return
 
         if key_in_dict_and_not_none(kwargs, "coefficient_percentage"):
             self.coefficient_percentage = self.validate_coefficient_area_setting(
                 kwargs["coefficient_percentage"], "coefficient_percentage")
-        if key_in_dict_and_not_none(kwargs, "taxes_surcharges"):
-            self._taxes_surcharges = self.validate_coefficient_area_setting(
-                kwargs["taxes_surcharges"], "taxes_surcharges")
-        if key_in_dict_and_not_none(kwargs, "fixed_monthly_fee"):
-            self._fixed_monthly_fee = self.validate_coefficient_area_setting(
-                kwargs["fixed_monthly_fee"], "fixed_monthly_fee")
-        if key_in_dict_and_not_none(kwargs, "marketplace_monthly_fee"):
-            self._marketplace_monthly_fee = self.validate_coefficient_area_setting(
-                kwargs["marketplace_monthly_fee"], "marketplace_monthly_fee")
         if key_in_dict_and_not_none(kwargs, "market_maker_rate"):
             self._market_maker_rate = self.validate_coefficient_area_setting(
                 kwargs["market_maker_rate"], "market_maker_rate")
@@ -154,9 +140,8 @@ class CoefficientArea(AreaBase):
             home_production_kWh += production_kWh
 
         scm_manager.add_home_data(
-            self.uuid, self.name, self.grid_fee_constant, self.coefficient_percentage,
-            self._taxes_surcharges, self._fixed_monthly_fee, self._marketplace_monthly_fee,
-            self._assistance_monthly_fee, self._market_maker_rate, self._feed_in_tariff,
+            self.uuid, self.name, self.coefficient_percentage,
+            self._market_maker_rate, self._feed_in_tariff, self.fee_properties,
             home_production_kWh, home_consumption_kWh, dict(asset_energy_requirements_kWh))
 
     def calculate_home_after_meter_data(
@@ -200,6 +185,7 @@ class CoefficientArea(AreaBase):
                 self.uuid, self.strategy.trigger_aggregator_commands)
 
     def market_cycle_external(self):
+        """External market cycle method."""
         self._consume_commands_from_aggregator()
         for child in self.children:
             child.market_cycle_external()

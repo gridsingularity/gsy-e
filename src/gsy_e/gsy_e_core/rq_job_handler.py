@@ -26,6 +26,7 @@ def launch_simulation_from_rq_job(scenario: Dict,
                                   events: Optional[str],
                                   aggregator_device_mapping: Dict,
                                   saved_state: Dict,
+                                  scm_properties: Dict,
                                   job_id: str,
                                   connect_to_profiles_db: bool = True):
     # pylint: disable=too-many-arguments, too-many-locals
@@ -54,6 +55,9 @@ def launch_simulation_from_rq_job(scenario: Dict,
 
         kwargs = {"no_export": True,
                   "seed": settings.get("random_seed", 0)}
+
+        if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
+            kwargs.update({"scm_properties": scm_properties})
 
         past_slots_sim_state = _handle_scm_past_slots_simulation_run(
             scenario, settings, events, aggregator_device_mapping, saved_state, job_id,
