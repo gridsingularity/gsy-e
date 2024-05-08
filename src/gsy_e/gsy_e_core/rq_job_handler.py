@@ -160,9 +160,6 @@ def _configure_constants_constsettings(
     ConstSettings.SCMSettings.MARKET_ALGORITHM = CoefficientAlgorithm(
         settings.get("scm_coefficient_algorithm", 1)).value
 
-    ConstSettings.SCMSettings.HOURS_OF_DELAY = settings.get("scm_cn_hours_of_delay", 72)
-
-
 def _create_config_settings_object(
         scenario: Dict, settings: Dict, aggregator_device_mapping: Dict
 ) -> SimulationConfig:
