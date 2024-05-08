@@ -160,6 +160,7 @@ def _configure_constants_constsettings(
     ConstSettings.SCMSettings.MARKET_ALGORITHM = CoefficientAlgorithm(
         settings.get("scm_coefficient_algorithm", 1)).value
 
+
 def _create_config_settings_object(
         scenario: Dict, settings: Dict, aggregator_device_mapping: Dict
 ) -> SimulationConfig:
