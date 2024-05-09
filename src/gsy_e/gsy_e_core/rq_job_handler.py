@@ -79,8 +79,8 @@ def launch_simulation_from_rq_job(scenario: Dict,
                     tz=gsy_e.constants.TIME_ZONE))
 
             if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
-                # For SCM CNs, run with SCM_CN_DAYS_OF_DELAY in order to be able to get results.
-                config.start_date = config.start_date.subtract(hours=settings.hours_of_delay)
+                config.start_date = config.start_date.subtract(hours=settings["scm"]
+                                                               ["hours_of_delay"])
 
         run_simulation(setup_module_name=scenario_name,
                        simulation_config=config,
@@ -174,30 +174,47 @@ def _configure_constants_constsettings(
 def _create_config_settings_object(
         scenario: Dict, settings: Dict, aggregator_device_mapping: Dict
 ) -> SimulationConfig:
+
     config_settings = {
-        "start_date":
-            instance(datetime.combine(settings.get("start_date"), datetime.min.time()),
-                     tz=gsy_e.constants.TIME_ZONE)
-            if "start_date" in settings else GlobalConfig.start_date,
-        "sim_duration":
+        "start_date": (
+            instance(
+                datetime.combine(settings.get("start_date"), datetime.min.time()),
+                tz=gsy_e.constants.TIME_ZONE,
+            )
+            if "start_date" in settings
+            else GlobalConfig.start_date
+        ),
+        "sim_duration": (
             duration(days=settings["duration"].days)
-            if "duration" in settings else GlobalConfig.sim_duration,
-        "slot_length":
+            if "duration" in settings
+            else GlobalConfig.sim_duration
+        ),
+        "slot_length": (
             duration(seconds=settings["slot_length"].seconds)
-            if "slot_length" in settings else GlobalConfig.slot_length,
-        "tick_length":
+            if "slot_length" in settings
+            else GlobalConfig.slot_length
+        ),
+        "tick_length": (
             duration(seconds=settings["tick_length"].seconds)
-            if "tick_length" in settings else GlobalConfig.tick_length,
-        "market_maker_rate":
-            settings.get("market_maker_rate",
-                         ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE),
+            if "tick_length" in settings
+            else GlobalConfig.tick_length
+        ),
+        "market_maker_rate": settings.get(
+            "market_maker_rate", ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
+        ),
         "cloud_coverage": settings.get("cloud_coverage", GlobalConfig.cloud_coverage),
         "pv_user_profile": settings.get("pv_user_profile", None),
-        "capacity_kW": settings.get("capacity_kW",
-                                    ConstSettings.PVSettings.DEFAULT_CAPACITY_KW),
+        "capacity_kW": settings.get(
+            "capacity_kW", ConstSettings.PVSettings.DEFAULT_CAPACITY_KW
+        ),
         "grid_fee_type": settings.get("grid_fee_type", GlobalConfig.grid_fee_type),
-        "external_connection_enabled": settings.get("external_connection_enabled", False),
-        "aggregator_device_mapping": aggregator_device_mapping
+        "external_connection_enabled": settings.get(
+            "external_connection_enabled", False
+        ),
+        "aggregator_device_mapping": aggregator_device_mapping,
+        "hours_of_delay": settings["scm"].get(
+            "hours_of_delay", ConstSettings.SCMSettings.HOURS_OF_DELAY
+        ),
     }
 
     validate_global_settings(config_settings)
@@ -235,7 +252,8 @@ def _handle_scm_past_slots_simulation_run(
     # compensate for the runtime of the SCM past slots simulation and to not have any results gaps
     # after this simulation run and the following Canary Network launch.
     config.end_date = (
-        now(tz=gsy_e.constants.TIME_ZONE).subtract(hours=settings.hours_of_delay).add(hours=4)
+        now(tz=gsy_e.constants.TIME_ZONE).subtract(hours=settings["scm"]["hours_of_delay"])
+                                         .add(hours=4)
     )
     config.sim_duration = config.end_date - config.start_date
     GlobalConfig.sim_duration = config.sim_duration

@@ -45,13 +45,22 @@ class TestRqJobHandler:
 
     @staticmethod
     @patch("gsy_e.gsy_e_core.rq_job_handler.run_simulation", Mock())
-    @pytest.mark.parametrize("config_type", [
-        ConfigurationType.COLLABORATION, ConfigurationType.CANARY_NETWORK, ConfigurationType.B2B])
+    @pytest.mark.parametrize(
+        "config_type",
+        [
+            ConfigurationType.COLLABORATION,
+            ConfigurationType.CANARY_NETWORK,
+            ConfigurationType.B2B,
+        ],
+    )
     def test_config_type_is_correctly_set(config_type):
         assert GlobalConfig.CONFIG_TYPE == ConfigurationType.SIMULATION.value
         settings = {"type": config_type.value}
         scenario = {"configuration_uuid": "config_uuid"}
-        with patch("gsy_e.gsy_e_core.rq_job_handler._adapt_settings", Mock(return_value=settings)):
+        with patch(
+            "gsy_e.gsy_e_core.rq_job_handler._adapt_settings",
+            Mock(return_value=settings),
+        ):
             launch_simulation_from_rq_job(scenario, settings, None, {}, {}, {}, "id")
         assert GlobalConfig.CONFIG_TYPE == config_type.value
         assert gsy_e.constants.EXTERNAL_CONNECTION_WEB is True
@@ -71,13 +80,16 @@ class TestRqJobHandler:
             "scm": {
                 "coefficient_algorithm": 3,
                 "grid_fees_reduction": 0.45,
-                "intracommunity_rate_base_eur": 12
-            }
+                "intracommunity_rate_base_eur": 12,
+                "hours_of_delay": 4,
+            },
         }
         scenario = {"configuration_uuid": "config_uuid"}
         launch_simulation_from_rq_job(scenario, settings, None, {}, {}, {}, "id")
-        assert (ConstSettings.SCMSettings.MARKET_ALGORITHM ==
-                CoefficientAlgorithm.NO_COMMUNITY_SELF_CONSUMPTION.value)
+        assert (
+            ConstSettings.SCMSettings.MARKET_ALGORITHM
+            == CoefficientAlgorithm.NO_COMMUNITY_SELF_CONSUMPTION.value
+        )
         assert ConstSettings.SCMSettings.INTRACOMMUNITY_BASE_RATE_EUR == 12
         assert ConstSettings.SCMSettings.GRID_FEES_REDUCTION == 0.45
         assert ConstSettings.MASettings.MARKET_TYPE == 3
@@ -91,28 +103,35 @@ class TestRqJobHandler:
             "start_date": date(2023, 1, 1),
             "slot_length": duration(minutes=30),
             "tick_length": duration(seconds=20),
-            "advanced_settings": '''{
+            "advanced_settings": """{
                 "BalancingSettings": {"SPOT_TRADE_RATIO": 0.99}
-            }'''
+            }""",
         }
         scenario = {"configuration_uuid": "config_uuid"}
-        launch_simulation_from_rq_job(scenario, settings, None, {},
-                                      {"scm_past_slots": True}, {}, "id")
+        launch_simulation_from_rq_job(
+            scenario, settings, None, {}, {"scm_past_slots": True}, {}, "id"
+        )
         assert run_sim_mock.call_count == 2
         config = run_sim_mock.call_args_list[0][1]["simulation_config"]
         assert config.slot_length == duration(minutes=30)
         assert config.tick_length == duration(seconds=20)
         assert config.start_date == datetime(2023, 1, 1)
-        expected_end_date = now(tz=gsy_e.constants.TIME_ZONE).subtract(
-            days=gsy_e.constants.SCM_CN_DAYS_OF_DELAY).add(hours=4)
-        assert (config.end_date.replace(second=0, microsecond=0) ==
-                expected_end_date.replace(second=0, microsecond=0))
+        expected_end_date = (
+            now(tz=gsy_e.constants.TIME_ZONE)
+            .subtract(hours=ConstSettings.SCMSettings.HOURS_OF_DELAY)
+            .add(hours=4)
+        )
+        assert config.end_date.replace(
+            second=0, microsecond=0
+        ) == expected_end_date.replace(second=0, microsecond=0)
         assert config.sim_duration == config.end_date - config.start_date
         assert ConstSettings.BalancingSettings.SPOT_TRADE_RATIO == 0.99
 
     @staticmethod
-    @patch("gsy_e.gsy_e_core.rq_job_handler.run_simulation",
-           Mock(side_effect=Exception("Fake Error")))
+    @patch(
+        "gsy_e.gsy_e_core.rq_job_handler.run_simulation",
+        Mock(side_effect=Exception("Fake Error")),
+    )
     @patch("gsy_e.gsy_e_core.redis_connections.simulation.publish_job_error_output")
     def test_error_during_launch_simulation_published_via_redis(publish_job_error_mock):
         settings = {
