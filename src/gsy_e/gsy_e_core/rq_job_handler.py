@@ -212,7 +212,7 @@ def _create_config_settings_object(
             "external_connection_enabled", False
         ),
         "aggregator_device_mapping": aggregator_device_mapping,
-        "hours_of_delay": settings["scm"].get(
+        "hours_of_delay": settings.get("scm", {}).get(
             "hours_of_delay", ConstSettings.SCMSettings.HOURS_OF_DELAY
         ),
     }
@@ -252,8 +252,9 @@ def _handle_scm_past_slots_simulation_run(
     # compensate for the runtime of the SCM past slots simulation and to not have any results gaps
     # after this simulation run and the following Canary Network launch.
     config.end_date = (
-        now(tz=gsy_e.constants.TIME_ZONE).subtract(hours=settings["scm"]["hours_of_delay"])
-                                         .add(hours=4)
+        now(tz=gsy_e.constants.TIME_ZONE)
+        .subtract(hours=config.hours_of_delay)
+        .add(hours=4)
     )
     config.sim_duration = config.end_date - config.start_date
     GlobalConfig.sim_duration = config.sim_duration
