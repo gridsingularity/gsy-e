@@ -5,7 +5,7 @@ from setuptools import find_packages, setup
 gsy_framework_branch = "master"
 
 try:
-    with open("requirements/dev.txt", encoding="utf-8") as req:
+    with open("requirements/base.in", encoding="utf-8") as req:
         REQUIREMENTS = [r.partition("#")[0] for r in req if not r.startswith("-e")]
         REQUIREMENTS.extend(
             [f"gsy-framework @ "
