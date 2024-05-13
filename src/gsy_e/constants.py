@@ -71,8 +71,6 @@ DEFAULT_SCM_GRID_NAME = "Grid"
 
 FORWARD_MARKET_MAX_DURATION_YEARS = 6
 
-SCM_CN_DAYS_OF_DELAY = 3
-
 
 class SettlementTemplateStrategiesConstants:
     """Constants related to the configuration of settlement template strategies"""
