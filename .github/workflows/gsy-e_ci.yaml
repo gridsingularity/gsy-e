@@ -6,72 +6,72 @@ jobs:
   test-build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 
-    - uses: 8BitJonny/gh-get-current-pr@1.3.0
-      id: PR
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        sha: ${{ github.event.pull_request.head.sha }}
-        filterOutClosed: true
+      - uses: 8BitJonny/gh-get-current-pr@1.3.0
+        id: PR
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          sha: ${{ github.event.pull_request.head.sha }}
+          filterOutClosed: true
 
-    - name: parse integration tests branch
-      env:
-        prBody: ${{ steps.PR.outputs.pr_body }}
-      run: |
-        echo "::set-output name=PARSED_INTEGRATION_TESTS_BRANCH::$(echo -e $prBody | sed -n 's/.*\*\*INTEGRATION_TESTS_BRANCH\*\*=\([^ ]*\).*/\1/p')"
-      id: parse_branch
+      - name: parse integration tests branch
+        env:
+          prBody: ${{ steps.PR.outputs.pr_body }}
+        run: |
+          echo "::set-output name=PARSED_INTEGRATION_TESTS_BRANCH::$(echo -e $prBody | sed -n 's/.*\*\*INTEGRATION_TESTS_BRANCH\*\*=\([^ ]*\).*/\1/p')"
+        id: parse_branch
 
-    - name: validate parsed integration tests branch
-      env:
-        PARSED_INTEGRATION_TESTS_BRANCH: ${{ steps.parse_branch.outputs.PARSED_INTEGRATION_TESTS_BRANCH }}
-      run: |
-        echo "::set-output name=INTEGRATION_TESTS_BRANCH::${PARSED_INTEGRATION_TESTS_BRANCH:-master}"
-      id: validated_branch
+      - name: validate parsed integration tests branch
+        env:
+          PARSED_INTEGRATION_TESTS_BRANCH: ${{ steps.parse_branch.outputs.PARSED_INTEGRATION_TESTS_BRANCH }}
+        run: |
+          echo "::set-output name=INTEGRATION_TESTS_BRANCH::${PARSED_INTEGRATION_TESTS_BRANCH:-master}"
+        id: validated_branch
 
-    - name: parse framework branch
-      env:
-        prBody: ${{ steps.PR.outputs.pr_body }}
-      run: |
-        echo "::set-output name=PARSED_GSY_FRAMEWORK_BRANCH::$(echo -e $prBody | sed -n 's/.*\*\*GSY_FRAMEWORK_BRANCH\*\*=\([^ ]*\).*/\1/p')"
-      id: parse_branch_framework
+      - name: parse framework branch
+        env:
+          prBody: ${{ steps.PR.outputs.pr_body }}
+        run: |
+          echo "::set-output name=PARSED_GSY_FRAMEWORK_BRANCH::$(echo -e $prBody | sed -n 's/.*\*\*GSY_FRAMEWORK_BRANCH\*\*=\([^ ]*\).*/\1/p')"
+        id: parse_branch_framework
 
-    - name: validate parsed framework branch
-      env:
-        PARSED_GSY_FRAMEWORK_BRANCH: ${{ steps.parse_branch_framework.outputs.PARSED_GSY_FRAMEWORK_BRANCH }}
-      run: |
-        echo "::set-output name=GSY_FRAMEWORK_BRANCH::${PARSED_GSY_FRAMEWORK_BRANCH:-master}"
-      id: validated_branch_framework
+      - name: validate parsed framework branch
+        env:
+          PARSED_GSY_FRAMEWORK_BRANCH: ${{ steps.parse_branch_framework.outputs.PARSED_GSY_FRAMEWORK_BRANCH }}
+        run: |
+          echo "::set-output name=GSY_FRAMEWORK_BRANCH::${PARSED_GSY_FRAMEWORK_BRANCH:-master}"
+        id: validated_branch_framework
 
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.8
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.11
 
-    - name: Install dependencies
-      env:
-        TOXENV: ci
-        GSY_FRAMEWORK_BRANCH: ${{ steps.validated_branch_framework.outputs.GSY_FRAMEWORK_BRANCH }}
-        INTEGRATION_TESTS_REPO: https://gsydev:${{ secrets.GSYDEV_TOKEN }}@github.com/gridsingularity/gsy-backend-integration-tests.git
-        INTEGRATION_TESTS_BRANCH: ${{ steps.validated_branch.outputs.INTEGRATION_TESTS_BRANCH }}
-      run: |
-        export SOLC_BINARY=$HOME/solc/usr/bin/solc
-        export LD_LIBRARY_PATH=$HOME/solc/usr/lib:$LD_LIBRARY_PATH
-        pip install tox==3.24.4
-        tox -e $TOXENV --verbose
+      - name: Install dependencies
+        env:
+          TOXENV: ci
+          GSY_FRAMEWORK_BRANCH: ${{ steps.validated_branch_framework.outputs.GSY_FRAMEWORK_BRANCH }}
+          INTEGRATION_TESTS_REPO: https://gsydev:${{ secrets.GSYDEV_TOKEN }}@github.com/gridsingularity/gsy-backend-integration-tests.git
+          INTEGRATION_TESTS_BRANCH: ${{ steps.validated_branch.outputs.INTEGRATION_TESTS_BRANCH }}
+        run: |
+          export SOLC_BINARY=$HOME/solc/usr/bin/solc
+          export LD_LIBRARY_PATH=$HOME/solc/usr/lib:$LD_LIBRARY_PATH
+          pip install tox==3.24.4
+          tox -e $TOXENV --verbose
 
-    - name: Archive artifacts
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
+      - name: Archive artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
           name: behave-output
           path: |
             output
             coverage.xml
 
-    - name: Check coverage with Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        token: ${{ secrets.CODECOV_TOKEN_GSY_E }}
-        fail_ci_if_error: true
-        verbose: true
+      - name: Check coverage with Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN_GSY_E }}
+          fail_ci_if_error: true
+          verbose: true
