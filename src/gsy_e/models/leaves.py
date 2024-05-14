@@ -244,10 +244,10 @@ class SCMStorage(CoefficientLeaf):
 scm_leaf_mapping = {
     "LoadHours": SCMLoadHours,
     "LoadProfile": SCMLoadProfile,
-    "Storage": SCMStorage,
+    "ScmStorage": SCMStorage,
     "PV": SCMPVProfile,
     "PVProfile": SCMPVProfile,
-    "HeatPump": SCMHeatPump
+    "ScmHeatPump": SCMHeatPump
 }
 
 forward_leaf_mapping = {

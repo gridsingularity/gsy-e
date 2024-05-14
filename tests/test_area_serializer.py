@@ -201,7 +201,7 @@ def test_leaf_deserialization_scm():
                  {"name": "load1", "type": "LoadHours", "avg_power_W": 200},
                  {"name": "load1", "type": "LoadProfile", "daily_load_profile": "test.csv",
                   "daily_load_profile_uuid": "abcdef"},
-                 {"name": "storage1", "type": "Storage", "initial_soc": 34}
+                 {"name": "storage1", "type": "ScmStorage", "initial_soc": 34}
              ]
            }
         ''',
