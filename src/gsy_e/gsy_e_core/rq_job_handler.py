@@ -80,7 +80,7 @@ def launch_simulation_from_rq_job(scenario: Dict,
 
             if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
                 config.start_date = config.start_date.subtract(hours=settings["scm"]
-                                                               ["hours_of_delay"])
+                                                               ["scm_cn_hours_of_delay"])
 
         run_simulation(setup_module_name=scenario_name,
                        simulation_config=config,
