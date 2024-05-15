@@ -60,7 +60,7 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         }
 
     # pylint: disable=too-many-arguments
-    def __init__(self, avg_power_W, hrs_per_day=None, hrs_of_day=None,
+    def __init__(self, avg_power_W, hrs_of_day=None,
                  fit_to_limit=True, energy_rate_increase_per_update=None,
                  update_interval=None,
                  initial_buying_rate: Union[float, Dict, str] =
@@ -74,7 +74,6 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         """
         Constructor of LoadHoursStrategy
         :param avg_power_W: Power rating of load device
-        :param hrs_per_day: Daily energy usage
         :param hrs_of_day: hours of day energy is needed
         :param fit_to_limit: if set to True, it will make a linear curve
         following following initial_buying_rate & final_buying_rate
@@ -87,7 +86,7 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         """
         super().__init__()
         self._energy_params = LoadHoursPerDayEnergyParameters(
-            avg_power_W, hrs_per_day, hrs_of_day)
+            avg_power_W, hrs_of_day)
 
         self.balancing_energy_ratio = BalancingRatio(*balancing_energy_ratio)
         self.use_market_maker_rate = use_market_maker_rate
@@ -158,7 +157,6 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         self._future_market_strategy.update_and_populate_price_settings(self)
 
     def _cycle_energy_parameters(self):
-        self._energy_params.add_entry_in_hrs_per_day(self.area.spot_market.time_slot)
         self._calculate_active_markets()
         self._update_energy_requirement_in_state()
         # Provide energy values for the past market slot, to be used in the settlement market
@@ -476,8 +474,6 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
 
         for market in self.active_markets:
             if not self._energy_params.allowed_operating_hours(market.time_slot):
-                # Overwrite desired energy to 0 in case the previous step has populated the
-                # desired energy by the hrs_per_day have been exhausted.
                 self.state.set_desired_energy(0.0, market.time_slot, True)
         if self.area.current_market:
             self.state.update_total_demanded_energy(self.area.current_market.time_slot)

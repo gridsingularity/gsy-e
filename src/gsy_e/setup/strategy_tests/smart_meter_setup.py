@@ -30,7 +30,7 @@ def get_setup(config):
         [
             Area("House 1", [
                 Area("H1 Load", strategy=LoadHoursStrategy(
-                     avg_power_W=200, hrs_per_day=6, hrs_of_day=list(range(12, 18)),
+                     avg_power_W=200, hrs_of_day=list(range(12, 18)),
                      final_buying_rate=35)),
                 Area("H1 Storage 1", strategy=StorageStrategy(initial_soc=50))
                 ],

@@ -11,7 +11,6 @@ def get_setup(config):
 
     houses_1 = [Area(f"House 1 {i}", children=[
         Area(f"House 1 {i} Loads ", strategy=LoadHoursStrategy(avg_power_W=500,
-                                                               hrs_per_day=24,
                                                                hrs_of_day=list(range(0, 24)),
                                                                initial_buying_rate=1,
                                                                final_buying_rate=12)
@@ -20,7 +19,6 @@ def get_setup(config):
     houses_2 = [Area(f"House 2 {i}", children=[
         Area(f"House 2 {i} Loads ",
                 strategy=LoadHoursStrategy(avg_power_W=500,
-                                           hrs_per_day=24,
                                            hrs_of_day=list(range(0, 24)),
                                            initial_buying_rate=1,
                                            final_buying_rate=12)
@@ -29,7 +27,6 @@ def get_setup(config):
     houses_3 = [Area(f"House 3 {i}", children=[
         Area(f"House 3 {i} Loads",
                 strategy=LoadHoursStrategy(avg_power_W=500,
-                                           hrs_per_day=24,
                                            hrs_of_day=list(range(0, 24)),
                                            initial_buying_rate=1,
                                            final_buying_rate=12)
@@ -38,7 +35,6 @@ def get_setup(config):
     flats = [Area(f"Flat {i}", children=[
         Area(f"Flat {i} Loads ",
              strategy=LoadHoursStrategy(avg_power_W=500,
-                                        hrs_per_day=24,
                                         hrs_of_day=list(range(0, 24)),
                                         initial_buying_rate=1,
                                         final_buying_rate=12)

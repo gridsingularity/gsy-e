@@ -32,13 +32,11 @@ def get_setup(config):
                 "House 1",
                 children=[
                     Asset("H1 General Load", strategy=LoadHoursStrategy(avg_power_W=200,
-                                                                        hrs_per_day=24,
                                                                         hrs_of_day=list(
                                                                             range(0, 24)),
                                                                         initial_buying_rate=1,
                                                                         final_buying_rate=37),
                           event_list=[StrategyEvents(12, {"avg_power_W": 400,
-                                                          "hrs_per_day": 22,
                                                           "hrs_of_day": list(range(0, 22))}),
                                       StrategyEvents(15, {"initial_buying_rate": 24,
                                                           "fit_to_limit": False,

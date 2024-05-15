@@ -482,7 +482,6 @@ class LoadHoursForecastExternalStrategy(
                   ConstSettings.BalancingSettings.OFFER_SUPPLY_RATIO),
                  use_market_maker_rate: bool = False,
                  avg_power_W=0,
-                 hrs_per_day=0,
                  hrs_of_day=None):
         """
         Constructor of LoadForecastStrategy
@@ -501,4 +500,4 @@ class LoadHoursForecastExternalStrategy(
                          use_market_maker_rate=use_market_maker_rate)
 
         self._energy_params = LoadHoursForecastEnergyParams(
-            avg_power_W, hrs_per_day, hrs_of_day)
+            avg_power_W, hrs_of_day)

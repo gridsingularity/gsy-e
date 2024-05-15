@@ -16,16 +16,15 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import logging
-from typing import Dict, List, Optional
+from typing import List, Optional
 
-from gsy_framework.exceptions import GSyException, GSyDeviceException
+from gsy_framework.exceptions import GSyException
 from gsy_framework.utils import find_object_of_same_weekday_and_time, convert_W_to_Wh
 from gsy_framework.validators.load_validator import LoadValidator
 from gsy_framework.constants_limits import GlobalConfig
-from pendulum import DateTime, duration
+from pendulum import DateTime
 
 import gsy_e.constants
-from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.models.strategy import utils
 from gsy_e.models.strategy.profile import profile_factory
 from gsy_e.models.strategy.state import LoadState
@@ -112,77 +111,13 @@ class LoadHoursEnergyParameters:
             raise ValueError("Hrs_of_day list should contain integers between 0 and 23.")
 
 
-class LoadHoursPerDayEnergyParameters(LoadHoursEnergyParameters):
-    """Add the hours-per-day quota parameter to the LoadHoursEnergyParameters."""
-    def __init__(self, avg_power_W, hrs_per_day=None, hrs_of_day=None):
-        LoadValidator.validate_energy(
-            avg_power_W=avg_power_W, hrs_per_day=hrs_per_day, hrs_of_day=hrs_of_day)
-
-        super().__init__(avg_power_W, hrs_of_day)
-
-        # Maps each simulation day to the number of active hours in that day
-        self.hrs_per_day: Dict[int, int] = {}
-        self._initial_hrs_per_day: Optional[int] = None
-        self._assign_hours_per_day(hrs_per_day)
-
-    def serialize(self):
-        return {
-            **super().serialize(),
-            "hrs_per_day": self.hrs_per_day,
-        }
-
-    def add_entry_in_hrs_per_day(self, time_slot: DateTime, overwrite: bool = False) -> None:
-        """Add the current day (in simulation) with the mapped hrs_per_day."""
-        current_day = self._get_day_of_timestamp(time_slot)
-        if current_day not in self.hrs_per_day or overwrite:
-            self.hrs_per_day[current_day] = self._initial_hrs_per_day
-
-    def reset(self, time_slot: DateTime, **kwargs) -> None:
-        super().reset(time_slot, **kwargs)
-        if kwargs.get("hrs_per_day") is not None:
-            self._assign_hours_per_day(kwargs["hrs_per_day"])
-            self.add_entry_in_hrs_per_day(time_slot, overwrite=True)
-
-    def event_activate_energy(self, area):
-        """Update energy requirement upon the activation event."""
-        self.hrs_per_day = {0: self._initial_hrs_per_day}
-        super().event_activate_energy(area)
-
-    def allowed_operating_hours(self, time_slot):
-        """Validate that the hours per day parameter is respected."""
-        current_day = self._get_day_of_timestamp(time_slot)
-        return (super().allowed_operating_hours(time_slot) and
-                (current_day in self.hrs_per_day and
-                 self.hrs_per_day[current_day] > FLOATING_POINT_TOLERANCE))
-
-    def decrease_hours_per_day(self, time_slot, energy_Wh):
-        """Decrease the energy from the quota of hours per day."""
-        current_day = self._get_day_of_timestamp(time_slot)
-        if self.hrs_per_day != {} and current_day in self.hrs_per_day:
-            self.hrs_per_day[current_day] -= self._operating_hours(energy_Wh / 1000.0)
-
-    def _operating_hours(self, energy_kWh):
-        return (((energy_kWh * 1000) / self.energy_per_slot_Wh)
-                * (self._area.config.slot_length / duration(hours=1)))
-
-    def _assign_hours_per_day(self, hrs_per_day: int):
-        if hrs_per_day is None:
-            hrs_per_day = len(self.hrs_of_day)
-
-        self._initial_hrs_per_day = hrs_per_day
-
-        if len(self.hrs_of_day) < hrs_per_day:
-            raise GSyDeviceException(
-                "Length of list 'hrs_of_day' must be greater equal 'hrs_per_day'")
-
-
-class DefinedLoadEnergyParameters(LoadHoursPerDayEnergyParameters):
+class DefinedLoadEnergyParameters(LoadHoursEnergyParameters):
     """Energy parameters for the defined load strategy class."""
     def __init__(self, daily_load_profile=None,
                  daily_load_profile_uuid: str = None,
                  daily_load_measurement_uuid: str = None,
                  ):
-        super().__init__(avg_power_W=0, hrs_per_day=24, hrs_of_day=list(range(0, 24)))
+        super().__init__(avg_power_W=0, hrs_of_day=list(range(0, 24)))
 
         self.energy_profile = profile_factory(daily_load_profile, daily_load_profile_uuid)
         self.measurement_profile = profile_factory(None, daily_load_measurement_uuid)
@@ -265,5 +200,5 @@ class LoadProfileForecastEnergyParams(
 
 
 class LoadHoursForecastEnergyParams(
-        LoadForecastExternalEnergyParamsMixin, LoadHoursPerDayEnergyParameters):
+        LoadForecastExternalEnergyParamsMixin, LoadHoursEnergyParameters):
     """Energy parameters class for the forecasted external load hours strategy."""

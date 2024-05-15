@@ -30,7 +30,6 @@ def get_setup(config):
                 "House 1",
                 [
                     Area("H1 General Load", strategy=LoadHoursStrategy(avg_power_W=200,
-                                                                       hrs_per_day=6,
                                                                        hrs_of_day=list(
                                                                            range(12, 22)),
                                                                        final_buying_rate=35)
@@ -45,7 +44,6 @@ def get_setup(config):
                 "House 2",
                 [
                     Area("H2 General Load", strategy=LoadHoursStrategy(avg_power_W=200,
-                                                                       hrs_per_day=4,
                                                                        hrs_of_day=list(
                                                                            range(12, 16)),
                                                                        final_buying_rate=35)
@@ -56,7 +54,6 @@ def get_setup(config):
                 ]
             ),
             Area("Cell Tower", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                          hrs_per_day=24,
                                                           hrs_of_day=list(range(0, 24)),
                                                           final_buying_rate=35)
                  )

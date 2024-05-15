@@ -38,7 +38,7 @@ def get_setup(config):
                     Area("Family 2 children with PV",
                          [
                             Area("Family General Load", strategy=LoadHoursStrategy(
-                                avg_power_W=2161, hrs_of_day=list(range(24)), hrs_per_day=24,
+                                avg_power_W=2161, hrs_of_day=list(range(24)),
                                 initial_buying_rate=27.895, final_buying_rate=27.895,
                                 fit_to_limit=True)),
                             Area("Family PV", strategy=PVStrategy(
