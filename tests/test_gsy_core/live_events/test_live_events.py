@@ -29,7 +29,6 @@ class TestLiveEvents:
             sim_duration=duration(hours=12),
             slot_length=duration(minutes=15),
             tick_length=duration(seconds=15),
-            cloud_coverage=0,
             external_connection_enabled=False
         )
 

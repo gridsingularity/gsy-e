@@ -109,7 +109,7 @@ _setup_modules = available_simulation_scenarios
               help="Market type. 1 for one-sided market, 2 for two-sided market, "
                    "3 for coefficient-based trading.")
 def run(setup_module_name, settings_file, duration, slot_length, tick_length,
-        cloud_coverage, enable_external_connection, start_date,
+        enable_external_connection, start_date,
         pause_at, incremental, slot_length_realtime, enable_dof: bool,
         market_type: int, **kwargs):
     """Configure settings and run a simulation."""
@@ -130,12 +130,11 @@ def run(setup_module_name, settings_file, duration, slot_length, tick_length,
             global_settings = {"sim_duration": duration,
                                "slot_length": slot_length,
                                "tick_length": tick_length,
-                               "cloud_coverage": cloud_coverage,
                                "enable_degrees_of_freedom": enable_dof}
 
             validate_global_settings(global_settings)
             simulation_config = SimulationConfig(
-                duration, slot_length, tick_length, cloud_coverage, start_date=start_date,
+                duration, slot_length, tick_length, start_date=start_date,
                 external_connection_enabled=enable_external_connection,
                 enable_degrees_of_freedom=enable_dof)
 

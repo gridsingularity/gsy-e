@@ -35,7 +35,6 @@ class SimulationConfig:
         sim_duration: duration,
         slot_length: duration,
         tick_length: duration,
-        cloud_coverage: int,
         market_maker_rate=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
         pv_user_profile=None,
         start_date: DateTime = today(tz=TIME_ZONE),
@@ -51,8 +50,6 @@ class SimulationConfig:
             sim_duration: The total duration of the simulation
             slot_length: The duration of each market slot
             tick_length: The duration of each slot tick
-            cloud_coverage: An integer to define the sky conditions
-                (see ConstSettings.PVSettings.DEFAULT_POWER_PROFILE)
             market_maker_rate: The cost to buy electricity from the utility
             pv_user_profile: A custom PV profile provided by the user
             start_date: The start date of the simulation
@@ -86,7 +83,6 @@ class SimulationConfig:
                 f"Too few ticks per slot ({self.ticks_per_slot}). Adjust simulation parameters")
         self.total_ticks = self.sim_duration // self.slot_length * self.ticks_per_slot
 
-        self.cloud_coverage = cloud_coverage
         self.market_slot_list = []
 
         change_global_config(**self.__dict__)
@@ -109,7 +105,7 @@ class SimulationConfig:
     def as_dict(self):
         """Return config parameters as dict."""
         fields = {"sim_duration", "slot_length", "tick_length", "ticks_per_slot",
-                  "total_ticks", "cloud_coverage", "capacity_kW", "grid_fee_type",
+                  "total_ticks", "capacity_kW", "grid_fee_type",
                   "external_connection_enabled", "enable_degrees_of_freedom", "hours_of_delay"}
         return {
             k: format_interval(v) if isinstance(v, Duration) else v
@@ -117,11 +113,9 @@ class SimulationConfig:
             if k in fields
         }
 
-    def update_config_parameters(self, *, cloud_coverage=None, pv_user_profile=None,
+    def update_config_parameters(self, *, pv_user_profile=None,
                                  market_maker_rate=None, capacity_kW=None):
         """Update provided config parameters."""
-        if cloud_coverage is not None:
-            self.cloud_coverage = cloud_coverage
         if pv_user_profile is not None:
             self.read_pv_user_profile(pv_user_profile)
         if market_maker_rate is not None:
@@ -157,7 +151,6 @@ def create_simulation_config_from_global_config():
         slot_length=GlobalConfig.slot_length,
         sim_duration=GlobalConfig.sim_duration,
         tick_length=GlobalConfig.tick_length,
-        cloud_coverage=GlobalConfig.cloud_coverage,
         market_maker_rate=GlobalConfig.market_maker_rate,
         start_date=GlobalConfig.start_date,
         grid_fee_type=GlobalConfig.grid_fee_type,

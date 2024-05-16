@@ -117,7 +117,6 @@ class FakeArea:
             sim_duration=Duration(hours=24),
             slot_length=Duration(minutes=15),
             tick_length=Duration(seconds=15),
-            cloud_coverage=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE,
             market_maker_rate=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
             external_connection_enabled=False
         )
