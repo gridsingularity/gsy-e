@@ -36,7 +36,6 @@ class SimulationConfig:
         slot_length: duration,
         tick_length: duration,
         market_maker_rate=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
-        pv_user_profile=None,
         start_date: DateTime = today(tz=TIME_ZONE),
         capacity_kW=None,
         grid_fee_type=ConstSettings.MASettings.GRID_FEE_TYPE,
@@ -51,7 +50,6 @@ class SimulationConfig:
             slot_length: The duration of each market slot
             tick_length: The duration of each slot tick
             market_maker_rate: The cost to buy electricity from the utility
-            pv_user_profile: A custom PV profile provided by the user
             start_date: The start date of the simulation
             capacity_kW: The capacity of PV panels in kW
             grid_fee_type: An integer describing the type of grid fees to be applied
@@ -69,7 +67,6 @@ class SimulationConfig:
         self.grid_fee_type = grid_fee_type
         self.enable_degrees_of_freedom = enable_degrees_of_freedom
         self.market_maker_rate = market_maker_rate
-        self.pv_user_profile = pv_user_profile
         self.hours_of_delay = hours_of_delay
 
         self.ticks_per_slot = self.slot_length / self.tick_length
@@ -86,7 +83,6 @@ class SimulationConfig:
         self.market_slot_list = []
 
         change_global_config(**self.__dict__)
-        self.read_pv_user_profile(pv_user_profile)
         self.set_market_maker_rate(market_maker_rate)
 
         self.capacity_kW = capacity_kW or ConstSettings.PVSettings.DEFAULT_CAPACITY_KW
@@ -113,21 +109,13 @@ class SimulationConfig:
             if k in fields
         }
 
-    def update_config_parameters(self, *, pv_user_profile=None,
+    def update_config_parameters(self, *,
                                  market_maker_rate=None, capacity_kW=None):
         """Update provided config parameters."""
-        if pv_user_profile is not None:
-            self.read_pv_user_profile(pv_user_profile)
         if market_maker_rate is not None:
             self.set_market_maker_rate(market_maker_rate)
         if capacity_kW is not None:
             self.capacity_kW = capacity_kW
-
-    def read_pv_user_profile(self, pv_user_profile=None):
-        """Read global pv user profile."""
-        self.pv_user_profile = (
-            None if pv_user_profile is None
-            else read_arbitrary_profile(InputProfileTypes.POWER_W, pv_user_profile))
 
     def set_market_maker_rate(self, market_maker_rate):
         """
@@ -142,7 +130,6 @@ def create_simulation_config_from_global_config():
     Create a SimulationConfig object from the GlobalConfig class members.
     These 2 object are not currently in sync because the following parameters are missing from the
     GlobalConfig:
-    - pv_user_profile
     - capacity_kW
     - external_connection_enabled
     - aggregator_device_mapping
