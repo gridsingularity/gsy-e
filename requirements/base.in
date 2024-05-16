@@ -14,4 +14,7 @@ pytz
 sortedcontainers
 sympy
 pony
+psycopg2==2.9.9
+psycopg2-binary==2.9.9
+
 -e git+https://github.com/gridsingularity/gsy-framework@master#egg=gsy_framework
