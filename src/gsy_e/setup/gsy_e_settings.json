@@ -4,7 +4,7 @@
     "slot_length": "15m",
     "tick_length": "15s",
     "cloud_coverage": 0,
-    "start_date": "2024-01-12"
+    "start_date": "2024-05-16"
   },
   "advanced_settings": {
     "GeneralSettings": {
@@ -242,7 +242,12 @@
         0,
         30
       ],
-      "PREFERRED_BUYING_RATE": 30
+      "PREFERRED_BUYING_RATE": 30,
+      "CALIBRATION_COEFFICIENT": 0.6,
+      "CALIBRATION_COEFFICIENT_RANGE": [
+        0,
+        1
+      ]
     },
     "MASettings": {
       "GRID_FEE_TYPE": 1,
@@ -279,8 +284,12 @@
     },
     "SCMSettings": {
       "GRID_FEES_REDUCTION": 0.28,
+      "INTRACOMMUNITY_BASE_RATE_EUR": null,
       "MARKET_ALGORITHM": 1,
-      "MARKET_ALGORITHM_LIMIT": [1, 3],
+      "MARKET_ALGORITHM_LIMIT": [
+        1,
+        3
+      ],
       "HOURS_OF_DELAY": 72
     }
   }
