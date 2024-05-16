@@ -295,7 +295,7 @@ class AreaEnergyRates:
 @dataclass
 class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
     """Represents home energy bills."""
-    energy_rates: AreaEnergyRates = AreaEnergyRates(AreaFees())
+    energy_rates: AreaEnergyRates = field(default_factory=AreaEnergyRates)
     base_energy_bill: float = 0.
     base_energy_bill_excl_revenue: float = 0.
     base_energy_bill_revenue: float = 0.
