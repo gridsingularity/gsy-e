@@ -81,7 +81,7 @@ class TestRqJobHandler:
                 "coefficient_algorithm": 3,
                 "grid_fees_reduction": 0.45,
                 "intracommunity_rate_base_eur": 12,
-                "hours_of_delay": 4,
+                "scm_cn_hours_of_delay": 4,
             },
         }
         scenario = {"configuration_uuid": "config_uuid"}
