@@ -44,11 +44,9 @@ def _ensure_pre_commit():
         checkers_dir.rmdir()
     if not pre_commit_installed:
         print("Configuring 'pre-commit' git hooks")
-        # with hide("running", "stdout"):
-        cnx.local("pre-commit install --overwrite", hide=True, echo="running")
+        cnx.local("pre-commit install --overwrite", hide=True)
     else:
-        # with hide("running", "stdout"):
-        cnx.local("pre-commit autoupdate")
+        cnx.local("pre-commit autoupdate", hide=True)
 
 
 def _ensure_venv():
@@ -62,7 +60,7 @@ def _ensure_pip_tools():
         import piptools  # noqa
     except ImportError:
         print("Installing 'pip-tools'")
-        cnx.local("pip install pip-tools")
+        cnx.local("pip install pip-tools", hide=True)
 
 
 def _pre_check():
@@ -91,7 +89,6 @@ def compile_requirements(_ctx, upgrade="", package=None):
         print("Upgrading all package specs")
     _pre_check()
     upgrade = upgrade.lower() in {"true", "upgrade", "1", "yes", "up"}
-    # with hide("running", "stdout"):
     print("Updating requirements")
     _fab_compile_requirements_file(REQ_DIR / "base.in", upgrade, package)
     _fab_compile_requirements_file(REQ_DIR / "dev.in", upgrade, package)
@@ -107,8 +104,8 @@ def sync(ctx):
         str(f.relative_to(HERE))
         for f in REQ_DIR.glob("*.txt")
     )
-    cnx.local(f"pip-sync {joined_req_paths}")
-    cnx.local("pip install -e .")
+    cnx.local(f"pip-sync {joined_req_paths}", hide=True)
+    cnx.local("pip install -e .", hide=True)
     _ensure_pre_commit()
     write_default_settings_file(ctx)
 
