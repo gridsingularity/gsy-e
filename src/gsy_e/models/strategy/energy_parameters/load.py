@@ -190,9 +190,6 @@ class LoadForecastExternalEnergyParamsMixin:
     def event_activate_energy(self, area):
         """Overridden with empty implementation to disable profile activation."""
 
-    def decrease_hours_per_day(self, time_slot, energy_Wh):
-        """Overridden with empty implementation to disable template strategy energy tracking."""
-
 
 class LoadProfileForecastEnergyParams(
         LoadForecastExternalEnergyParamsMixin, DefinedLoadEnergyParameters):

@@ -38,7 +38,7 @@ from gsy_e.models.base import AssetType
 from gsy_e.models.market import MarketBase
 from gsy_e.models.strategy.state import LoadState
 from gsy_e.models.strategy import BidEnabledStrategy
-from gsy_e.models.strategy.energy_parameters.load import LoadHoursPerDayEnergyParameters
+from gsy_e.models.strategy.energy_parameters.load import LoadHoursEnergyParameters
 from gsy_e.models.strategy.future.strategy import future_market_strategy_factory
 from gsy_e.models.strategy.settlement.strategy import settlement_market_strategy_factory
 from gsy_e.models.strategy.update_frequency import TemplateStrategyBidUpdater
@@ -85,8 +85,7 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         as per utility's trading rate
         """
         super().__init__()
-        self._energy_params = LoadHoursPerDayEnergyParameters(
-            avg_power_W, hrs_of_day)
+        self._energy_params = LoadHoursEnergyParameters(avg_power_W, hrs_of_day)
 
         self.balancing_energy_ratio = BalancingRatio(*balancing_energy_ratio)
         self.use_market_maker_rate = use_market_maker_rate
@@ -299,7 +298,6 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
                     energy_kWh=energy_Wh / 1000,
                     time_slot=time_slot,
                     area_name=self.owner.name)
-                self._energy_params.decrease_hours_per_day(time_slot, energy_Wh)
 
         except MarketException:
             self.log.exception("An Error occurred while buying an offer")
@@ -383,9 +381,6 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
                 energy_kWh=bid_trade.traded_energy,
                 time_slot=bid_trade.time_slot,
                 area_name=self.owner.name)
-            self._energy_params.decrease_hours_per_day(
-                bid_trade.time_slot,
-                bid_trade.traded_energy * 1000.0)
 
     def event_offer_traded(self, *, market_id, trade):
         """Register the offer traded by the device and its effects. Extends the superclass method.
