@@ -21,7 +21,7 @@ from gsy_e.models.strategy.pv import PVStrategy
 
 
 def get_setup(config):
-    config.update_config_parameters(market_maker_rate=35, cloud_coverage=1)
+    config.update_config_parameters(market_maker_rate=35)
     area = Area(
         "Grid",
         [

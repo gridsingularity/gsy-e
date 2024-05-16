@@ -124,10 +124,7 @@ class PVPredefinedEnergyParameters(PVEnergyParameters):
         parameters and selects the appropriate predefined profile.
         """
         if self._power_profile_index is None or self._power_profile_index == 4:
-            if simulation_config.pv_user_profile is not None:
-                self.energy_profile = simulation_config.pv_user_profile
-                return
-            self._power_profile_index = simulation_config.cloud_coverage
+            self._power_profile_index = 0
         if self._power_profile_index == 0:  # 0:sunny
             profile_path = (
                 pathlib.Path(gsye_root_path + "/resources/Solar_Curve_sunny_normalized.csv"))
