@@ -70,9 +70,6 @@ _setup_modules = available_simulation_scenarios
               help="Length of a market slot")
 @click.option("--slot-length-realtime", type=IntervalType("M:S"), default="0m",
               show_default=True, help="Desired duration of slot in realtime")
-@click.option("-c", "--cloud-coverage", type=int,
-              default=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE, show_default=True,
-              help="Cloud coverage, 0 for sunny, 1 for partial coverage, 2 for clouds.")
 @click.option("--setup", "setup_module_name", default="default_2a",
               help=("Simulation setup module use. "
                     f"Available modules: [{', '.join(_setup_modules)}]"))

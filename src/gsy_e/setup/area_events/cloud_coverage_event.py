@@ -22,7 +22,6 @@ from gsy_e.models.strategy.predefined_pv import PVPredefinedStrategy
 
 
 def get_setup(config):
-    config.cloud_coverage = 0
     area = Market(
         "Grid",
         [

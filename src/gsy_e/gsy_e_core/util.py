@@ -307,7 +307,7 @@ def change_global_config(**kwargs):
         if hasattr(GlobalConfig, arg):
             setattr(GlobalConfig, arg, value)
         else:
-            # continue, if config setting is not member of GlobalConfig, e.g. pv_user_profile
+            # continue, if config setting is not member of GlobalConfig, e.g. capacity_kW
             pass
 
 

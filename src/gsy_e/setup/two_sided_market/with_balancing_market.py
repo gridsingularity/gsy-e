@@ -56,7 +56,6 @@ def get_setup(config):
                 [
                     Area("H2 General Load", strategy=LoadHoursStrategy(
                         avg_power_W=100,
-                        hrs_per_day=24,
                         hrs_of_day=list(range(0, 24)),
                         initial_buying_rate=ConstSettings.LoadSettings.INITIAL_BUYING_RATE,
                         final_buying_rate=ConstSettings.LoadSettings.FINAL_BUYING_RATE,
