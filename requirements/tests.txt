@@ -83,10 +83,15 @@ csscompressor==0.9.5
 decorator==5.1.1
     # via
     #   -r requirements/dev.txt
+    #   fabric
     #   gsy-framework
     #   ratelim
 deepdiff==7.0.1
     # via -r requirements/tests.in
+deprecated==1.2.14
+    # via
+    #   -r requirements/dev.txt
+    #   fabric
 dill==0.3.8
     # via
     #   -r requirements/dev.txt
@@ -103,7 +108,7 @@ et-xmlfile==1.1.0
     #   openpyxl
 execnet==2.1.1
     # via pytest-xdist
-fabric3==1.14.post1
+fabric==3.2.2
     # via -r requirements/dev.txt
 filelock==3.3.2
     # via
@@ -140,6 +145,10 @@ idna==2.10
     #   requests
 iniconfig==2.0.0
     # via pytest
+invoke==2.2.0
+    # via
+    #   -r requirements/dev.txt
+    #   fabric
 isort==5.13.2
     # via
     #   -r requirements/dev.txt
@@ -192,7 +201,7 @@ parameterized==0.9.0
 paramiko==2.12.0
     # via
     #   -r requirements/dev.txt
-    #   fabric3
+    #   fabric
 parse==1.20.1
     # via
     #   behave
@@ -224,6 +233,10 @@ pre-commit==3.3.0
     #   -r requirements/dev.txt
     #   gsy-framework
 psutil==5.9.8
+    # via -r requirements/dev.txt
+psycopg2==2.9.9
+    # via -r requirements/dev.txt
+psycopg2-binary==2.9.9
     # via -r requirements/dev.txt
 py==1.10.0
     # via
@@ -320,7 +333,6 @@ six==1.16.0
     #   -r requirements/dev.txt
     #   behave
     #   configobj
-    #   fabric3
     #   flake8-tuple
     #   geocoder
     #   gsy-framework
@@ -374,3 +386,7 @@ websockets==10.0
     # via
     #   -r requirements/dev.txt
     #   gsy-framework
+wrapt==1.16.0
+    # via
+    #   -r requirements/dev.txt
+    #   deprecated
