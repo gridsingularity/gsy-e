@@ -1,6 +1,7 @@
+import os
 from setuptools import find_packages, setup
 
-gsy_framework_branch = "master"
+gsy_framework_branch = os.environ.get("GSY_FRAMEWORK_BRANCH", "master")
 
 try:
     with open("requirements/dev.txt", encoding="utf-8") as req:
