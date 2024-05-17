@@ -20,7 +20,7 @@ from gsy_framework.utils import key_in_dict_and_not_none
 from gsy_framework.validators import MarketMakerValidator
 
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
-from gsy_e.models.strategy.profile import EnergyProfile
+from gsy_e.models.strategy.profile import StrategyProfile
 
 
 class MarketMakerStrategy(CommercialStrategy):
@@ -41,7 +41,7 @@ class MarketMakerStrategy(CommercialStrategy):
                energy_rate_profile, energy_rate_profile_uuid, energy_rate]):
             energy_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
 
-        self._sell_energy_profile = EnergyProfile(
+        self._sell_energy_profile = StrategyProfile(
             energy_rate_profile, energy_rate_profile_uuid, energy_rate)
         self._read_or_rotate_profiles()
 

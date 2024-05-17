@@ -27,7 +27,7 @@ from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.exceptions import MarketException
 from gsy_e.models.base import AssetType
 from gsy_e.models.strategy import INF_ENERGY, BaseStrategy
-from gsy_e.models.strategy.profile import EnergyProfile
+from gsy_e.models.strategy.profile import StrategyProfile
 
 
 class CommercialStrategy(BaseStrategy):
@@ -40,7 +40,7 @@ class CommercialStrategy(BaseStrategy):
 
         if energy_rate is None:
             energy_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
-        self._sell_energy_profile = EnergyProfile(input_energy_rate=energy_rate)
+        self._sell_energy_profile = StrategyProfile(input_energy_rate=energy_rate)
 
     @property
     def energy_rate(self):

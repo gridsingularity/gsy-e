@@ -7,7 +7,7 @@ from gsy_framework.read_user_profile import InputProfileTypes, convert_kW_to_kWh
 
 import gsy_e.constants
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
-from gsy_e.models.strategy.profile import EnergyProfile
+from gsy_e.models.strategy.profile import StrategyProfile
 
 
 @pytest.fixture(name="db")
@@ -28,7 +28,7 @@ class TestEnergyProfile:
     @staticmethod
     def test_energy_profile_with_identity_input_profile():
         """Check input profile when no read from db is required and no input_energy_rate is set."""
-        ep = EnergyProfile(
+        ep = StrategyProfile(
             input_profile={i: randint(15, 30) for i in range(24)},
             input_profile_uuid="UUID",
             input_energy_rate=None,
@@ -47,7 +47,7 @@ class TestEnergyProfile:
     @staticmethod
     def test_energy_profile_with_identity_input_profile_rate():
         """Check input_energy_rate has priority over input_profile and input_profile_uuid."""
-        ep = EnergyProfile(
+        ep = StrategyProfile(
             input_profile={i: randint(15, 30) for i in range(24)},
             input_profile_uuid="UUID",
             input_energy_rate=30,
@@ -66,7 +66,7 @@ class TestEnergyProfile:
     @staticmethod
     def test_energy_profile_with_identity_input_profile_uuid(db):
         """Check input_profile_uuid has priority over input_profile_uuid and input_profile_rate."""
-        ep = EnergyProfile(
+        ep = StrategyProfile(
             input_profile={i: randint(15, 30) for i in range(24)},
             input_profile_uuid="UUID",
             input_energy_rate=30,
@@ -85,7 +85,7 @@ class TestEnergyProfile:
     @staticmethod
     def test_energy_profile_with_power_input_profile():
         """Check input_profile when profile_type is set to InputProfileTypes.POWER_W."""
-        ep = EnergyProfile(
+        ep = StrategyProfile(
             input_profile={i: randint(1000, 2000) for i in range(24)},
             input_profile_uuid="UUID",
             input_energy_rate=None,
@@ -106,7 +106,7 @@ class TestEnergyProfile:
     @staticmethod
     def test_energy_profile_with_power_input_profile_rate():
         """Check input_profile_rate when profile_type is set to InputProfileTypes.POWER_W."""
-        ep = EnergyProfile(
+        ep = StrategyProfile(
             input_profile={i: randint(15, 30) for i in range(24)},
             input_profile_uuid="UUID",
             input_energy_rate=3000,
@@ -120,7 +120,7 @@ class TestEnergyProfile:
     @staticmethod
     def test_energy_profile_reconfigure():
         """Check profile reconfigure works."""
-        ep = EnergyProfile(
+        ep = StrategyProfile(
             input_profile={i: randint(15, 30) for i in range(24)},
             input_profile_uuid="UUID",
             input_energy_rate=3000,

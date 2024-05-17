@@ -26,7 +26,7 @@ from gsy_e.gsy_e_core.exceptions import MarketException
 from gsy_e.models.base import AssetType
 from gsy_e.models.strategy import INF_ENERGY, BidEnabledStrategy
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
-from gsy_e.models.strategy.profile import EnergyProfile
+from gsy_e.models.strategy.profile import StrategyProfile
 
 
 # pylint: disable=missing-class-docstring, too-many-instance-attributes, too-many-arguments
@@ -45,7 +45,7 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
         if all(arg is None for arg in [
                buying_rate_profile, buying_rate_profile_uuid, energy_buy_rate]):
             energy_buy_rate = ConstSettings.GeneralSettings.DEFAULT_FEED_IN_TARIFF
-        self._buy_energy_profile = EnergyProfile(
+        self._buy_energy_profile = StrategyProfile(
             buying_rate_profile, buying_rate_profile_uuid, energy_buy_rate,
             profile_type=InputProfileTypes.IDENTITY)
 
@@ -53,7 +53,7 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
         if all(arg is None for arg in [
                energy_rate_profile, energy_rate_profile_uuid, energy_sell_rate]):
             energy_sell_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
-        self._sell_energy_profile = EnergyProfile(
+        self._sell_energy_profile = StrategyProfile(
             energy_rate_profile, energy_rate_profile_uuid, energy_sell_rate,
             profile_type=InputProfileTypes.IDENTITY)
 

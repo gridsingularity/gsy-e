@@ -6,7 +6,7 @@ from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.gsy_e_core.util import should_read_profile_from_db
 
 
-class EnergyProfileBase(ABC):
+class StrategyProfileBase(ABC):
     """Base class for Profiles"""
 
     def __init__(self):
@@ -25,7 +25,7 @@ class EnergyProfileBase(ABC):
         """Rotate current profile or read and preprocess profile from source."""
 
 
-class EmptyProfile(EnergyProfileBase):
+class EmptyProfile(StrategyProfileBase):
     """Empty profile class"""
 
     def __init__(
@@ -41,7 +41,7 @@ class EmptyProfile(EnergyProfileBase):
         pass
 
 
-class EnergyProfile(EnergyProfileBase):
+class StrategyProfile(StrategyProfileBase):
     """Manage reading/rotating energy profile of an asset."""
 
     def __init__(
@@ -95,8 +95,9 @@ class EnergyProfile(EnergyProfileBase):
 
 def profile_factory(input_profile=None, input_profile_uuid=None,
                     input_energy_rate=None,
-                    profile_type: InputProfileTypes = None) -> EnergyProfileBase:
+                    profile_type: InputProfileTypes = None) -> StrategyProfileBase:
     """Return correct profile handling class for input parameters."""
     return (EmptyProfile(profile_type)
-            if input_profile == input_profile_uuid == input_energy_rate is None
-            else EnergyProfile(input_profile, input_profile_uuid, input_energy_rate, profile_type))
+            if input_profile is None and input_profile_uuid is None and input_energy_rate is None
+            else StrategyProfile(
+        input_profile, input_profile_uuid, input_energy_rate, profile_type))

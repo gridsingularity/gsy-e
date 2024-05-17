@@ -10,7 +10,7 @@ from pendulum import DateTime
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.models.strategy.energy_parameters.heat_pump import (
     HeatPumpEnergyParametersBase, WATER_DENSITY)
-from gsy_e.models.strategy.profile import EnergyProfile
+from gsy_e.models.strategy.profile import StrategyProfile
 
 logger = logging.getLogger(__name__)
 
@@ -144,15 +144,15 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
         super().__init__(
             maximum_power_rating_kW, min_temp_C, max_temp_C, initial_temp_C, tank_volume_l)
 
-        self._water_supply_temp_C: [DateTime, float] = EnergyProfile(
+        self._water_supply_temp_C: [DateTime, float] = StrategyProfile(
             water_supply_temp_C_profile, water_supply_temp_C_profile_uuid,
             profile_type=InputProfileTypes.IDENTITY)
 
-        self._water_return_temp_C: [DateTime, float] = EnergyProfile(
+        self._water_return_temp_C: [DateTime, float] = StrategyProfile(
             water_return_temp_C_profile, water_return_temp_C_profile_uuid,
             profile_type=InputProfileTypes.IDENTITY)
 
-        self._dh_water_flow_m3: [DateTime, float] = EnergyProfile(
+        self._dh_water_flow_m3: [DateTime, float] = StrategyProfile(
             dh_water_flow_m3_profile, dh_water_flow_m3_profile_uuid,
             profile_type=InputProfileTypes.IDENTITY)
 
