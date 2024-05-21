@@ -1,9 +1,15 @@
 from abc import abstractmethod, ABC
+import logging
+from pendulum import DateTime
 
 from gsy_framework.read_user_profile import InputProfileTypes
+from gsy_framework.constants_limits import GlobalConfig
+from gsy_framework.utils import find_object_of_same_weekday_and_time
 
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.gsy_e_core.util import should_read_profile_from_db
+
+log = logging.getLogger(__name__)
 
 
 class StrategyProfileBase(ABC):
@@ -24,6 +30,9 @@ class StrategyProfileBase(ABC):
     def read_or_rotate_profiles(self, reconfigure=False):
         """Rotate current profile or read and preprocess profile from source."""
 
+    def get_value(self, time_slot: DateTime):
+        """Return value for specific time_slot."""
+
 
 class EmptyProfile(StrategyProfileBase):
     """Empty profile class"""
@@ -39,6 +48,9 @@ class EmptyProfile(StrategyProfileBase):
 
     def read_or_rotate_profiles(self, reconfigure=False):
         pass
+
+    def get_value(self, time_slot: DateTime):
+        return None
 
 
 class StrategyProfile(StrategyProfileBase):
@@ -66,6 +78,18 @@ class StrategyProfile(StrategyProfileBase):
         self.profile = {}
 
         self.profile_type = profile_type
+
+    def get_value(self, time_slot: DateTime) -> float:
+        if time_slot in self.profile:
+            return self.profile[time_slot]
+        if GlobalConfig.is_canary_network():
+            value = find_object_of_same_weekday_and_time(self.profile, time_slot)
+            if value is None:
+                log.error("Value for time_slot %s could not be found in profile in "
+                          "Canary Network, returning 0", time_slot)
+                return 0
+            return value
+        raise KeyError(f"Value for time_slot {time_slot} could not be found in profile.")
 
     def _read_input_profile_type(self):
         if self.input_profile_uuid:

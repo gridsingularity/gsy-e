@@ -19,8 +19,7 @@ from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.data_classes import TraderDetails
 from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.read_user_profile import InputProfileTypes
-from gsy_framework.utils import (convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict,
-                                 find_object_of_same_weekday_and_time)
+from gsy_framework.utils import (convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict)
 
 from gsy_e.gsy_e_core.exceptions import MarketException
 from gsy_e.models.base import AssetType
@@ -45,7 +44,7 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
         if all(arg is None for arg in [
                buying_rate_profile, buying_rate_profile_uuid, energy_buy_rate]):
             energy_buy_rate = ConstSettings.GeneralSettings.DEFAULT_FEED_IN_TARIFF
-        self._buy_energy_profile = StrategyProfile(
+        self.energy_buy_profile = StrategyProfile(
             buying_rate_profile, buying_rate_profile_uuid, energy_buy_rate,
             profile_type=InputProfileTypes.IDENTITY)
 
@@ -66,7 +65,7 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
     def energy_buy_rate(self):
         # This method exists for backward compatibility.
         """Return buy energy profile of the asset."""
-        return self._buy_energy_profile.profile
+        return self.energy_buy_profile.profile
 
     def serialize(self):
         return {
@@ -75,17 +74,17 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
             "energy_rate_profile": self._sell_energy_profile.input_profile,
             "energy_rate_profile_uuid": self._sell_energy_profile.input_profile_uuid,
             # buy
-            "energy_buy_rate": self._buy_energy_profile.input_energy_rate,
-            "buying_rate_profile": self._buy_energy_profile.input_profile,
-            "buying_rate_profile_uuid": self._buy_energy_profile.input_profile_uuid,
+            "energy_buy_rate": self.energy_buy_profile.input_energy_rate,
+            "buying_rate_profile": self.energy_buy_profile.input_profile,
+            "buying_rate_profile_uuid": self.energy_buy_profile.input_profile_uuid,
         }
 
     def _read_or_rotate_profiles(self, reconfigure=False):
         self._sell_energy_profile.read_or_rotate_profiles(reconfigure=reconfigure)
-        self._buy_energy_profile.read_or_rotate_profiles(reconfigure=reconfigure)
+        self.energy_buy_profile.read_or_rotate_profiles(reconfigure=reconfigure)
 
         GlobalConfig.market_maker_rate = self._sell_energy_profile.profile
-        GlobalConfig.FEED_IN_TARIFF = self._buy_energy_profile.profile
+        GlobalConfig.FEED_IN_TARIFF = self.energy_buy_profile.profile
 
     def event_activate(self, **kwargs):
         """Event activate."""
@@ -97,9 +96,7 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
             if offer.seller.name == self.owner.name:
                 # Don't buy our own offer
                 continue
-            if offer.energy_rate <= find_object_of_same_weekday_and_time(
-                    self.energy_buy_rate,
-                    market.time_slot):
+            if offer.energy_rate <= self.energy_buy_profile.get_value(market.time_slot):
                 try:
                     self.accept_offer(market, offer, buyer=TraderDetails(
                         self.owner.name, self.owner.uuid, self.owner.name, self.owner.uuid))
@@ -118,9 +115,7 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
         if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value:
             for market in self.area.all_markets:
                 try:
-                    buy_rate = find_object_of_same_weekday_and_time(
-                        self.energy_buy_rate,
-                        market.time_slot)
+                    buy_rate = self.energy_buy_profile.get_value(market.time_slot)
                     self.post_bid(market,
                                   buy_rate * INF_ENERGY,
                                   INF_ENERGY)
@@ -130,11 +125,11 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
     def get_state(self):
         return {
             "energy_rate": convert_pendulum_to_str_in_dict(self._sell_energy_profile.profile),
-            "energy_buy_rate": convert_pendulum_to_str_in_dict(self._buy_energy_profile.profile),
+            "energy_buy_rate": convert_pendulum_to_str_in_dict(self.energy_buy_profile.profile),
         }
 
     def restore_state(self, saved_state):
-        self._buy_energy_profile.profile = convert_str_to_pendulum_in_dict(
+        self.energy_buy_profile.profile = convert_str_to_pendulum_in_dict(
             saved_state["energy_buy_rate"])
         self._sell_energy_profile.profile = convert_str_to_pendulum_in_dict(
             saved_state["energy_rate"])
