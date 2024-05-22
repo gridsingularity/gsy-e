@@ -26,7 +26,7 @@ from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.exceptions import MarketException
 from gsy_e.models.base import AssetType
 from gsy_e.models.strategy import INF_ENERGY, BaseStrategy
-from gsy_e.models.strategy.profile import StrategyProfile
+from gsy_e.models.strategy.strategy_profile import StrategyProfile
 
 
 class CommercialStrategy(BaseStrategy):

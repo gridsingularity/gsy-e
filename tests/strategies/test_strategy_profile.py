@@ -7,7 +7,7 @@ from gsy_framework.read_user_profile import InputProfileTypes, convert_kW_to_kWh
 
 import gsy_e.constants
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
-from gsy_e.models.strategy.profile import StrategyProfile
+from gsy_e.models.strategy.strategy_profile import StrategyProfile
 
 
 @pytest.fixture(name="db")

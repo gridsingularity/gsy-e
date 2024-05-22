@@ -25,7 +25,7 @@ from gsy_e.gsy_e_core.exceptions import MarketException
 from gsy_e.models.base import AssetType
 from gsy_e.models.strategy import INF_ENERGY, BidEnabledStrategy
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
-from gsy_e.models.strategy.profile import StrategyProfile
+from gsy_e.models.strategy.strategy_profile import StrategyProfile
 
 
 # pylint: disable=missing-class-docstring, too-many-instance-attributes, too-many-arguments

@@ -27,7 +27,7 @@ from pendulum import DateTime, duration
 import gsy_e.constants
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.models.strategy import utils
-from gsy_e.models.strategy.profile import profile_factory
+from gsy_e.models.strategy.strategy_profile import profile_factory
 from gsy_e.models.strategy.state import LoadState
 
 log = logging.getLogger(__name__)

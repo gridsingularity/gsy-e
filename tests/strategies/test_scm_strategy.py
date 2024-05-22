@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock
 
 from gsy_e.models.area import CoefficientArea
-from gsy_e.models.strategy.profile import StrategyProfile
+from gsy_e.models.strategy.strategy_profile import StrategyProfile
 from gsy_e.models.strategy.scm.pv import SCMPVUserProfile, PVUserProfileEnergyParameters
 from gsy_e.models.strategy.scm.load import SCMLoadProfileStrategy, DefinedLoadEnergyParameters
 

@@ -20,7 +20,7 @@ from gsy_framework.utils import key_in_dict_and_not_none
 from gsy_framework.validators import MarketMakerValidator
 
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
-from gsy_e.models.strategy.profile import StrategyProfile
+from gsy_e.models.strategy.strategy_profile import StrategyProfile
 
 
 class MarketMakerStrategy(CommercialStrategy):

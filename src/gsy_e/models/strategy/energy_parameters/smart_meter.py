@@ -20,7 +20,7 @@ from pendulum.datetime import DateTime
 from gsy_e.gsy_e_core.exceptions import GSyException
 from gsy_e.models.strategy.state import SmartMeterState
 from gsy_e.models.strategy import utils
-from gsy_e.models.strategy.profile import profile_factory
+from gsy_e.models.strategy.strategy_profile import profile_factory
 
 
 class SmartMeterEnergyParameters:

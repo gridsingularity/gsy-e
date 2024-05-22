@@ -30,7 +30,7 @@ import gsy_e.constants
 from gsy_e.gsy_e_core.exceptions import GSyException
 from gsy_e.gsy_e_core.util import gsye_root_path
 from gsy_e.models.strategy import utils
-from gsy_e.models.strategy.profile import profile_factory
+from gsy_e.models.strategy.strategy_profile import profile_factory
 from gsy_e.models.strategy.state import PVState
 
 log = logging.getLogger(__name__)

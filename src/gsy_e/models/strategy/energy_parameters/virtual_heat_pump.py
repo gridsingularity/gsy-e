@@ -10,7 +10,7 @@ from pendulum import DateTime
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.models.strategy.energy_parameters.heat_pump import (
     HeatPumpEnergyParametersBase, WATER_DENSITY)
-from gsy_e.models.strategy.profile import StrategyProfile
+from gsy_e.models.strategy.strategy_profile import StrategyProfile
 
 logger = logging.getLogger(__name__)
 
