@@ -26,7 +26,7 @@ from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.exceptions import GSyException
 from gsy_framework.read_user_profile import InputProfileTypes, read_arbitrary_profile
 from gsy_framework.utils import (
-    find_object_of_same_weekday_and_time, key_in_dict_and_not_none)
+    get_from_profile_same_weekday_and_time, key_in_dict_and_not_none)
 from gsy_framework.validators import StorageValidator
 from pendulum import duration
 
@@ -116,7 +116,7 @@ class StorageStrategy(BidEnabledStrategy):
         for time_slot in self.offer_update.initial_rate_profile_buffer.keys():
             StorageValidator.validate(
                 initial_selling_rate=self.offer_update.initial_rate_profile_buffer[time_slot],
-                final_selling_rate=find_object_of_same_weekday_and_time(
+                final_selling_rate=get_from_profile_same_weekday_and_time(
                     self.offer_update.final_rate_profile_buffer, time_slot))
         self.bid_update = TemplateStrategyBidUpdater(
             initial_rate=initial_buying_rate, final_rate=final_buying_rate,
@@ -127,7 +127,7 @@ class StorageStrategy(BidEnabledStrategy):
         for time_slot in self.bid_update.initial_rate_profile_buffer.keys():
             StorageValidator.validate(
                 initial_buying_rate=self.bid_update.initial_rate_profile_buffer[time_slot],
-                final_buying_rate=find_object_of_same_weekday_and_time(
+                final_buying_rate=get_from_profile_same_weekday_and_time(
                     self.bid_update.final_rate_profile_buffer, time_slot))
         self._state = StorageState(
             initial_soc=initial_soc, initial_energy_origin=initial_energy_origin,
@@ -231,18 +231,18 @@ class StorageStrategy(BidEnabledStrategy):
                 continue
 
             bid_rate_change = (None if bid_fit_to_limit else
-                               find_object_of_same_weekday_and_time(
+                               get_from_profile_same_weekday_and_time(
                                    energy_rate_increase_per_update, time_slot))
             offer_rate_change = (None if offer_fit_to_limit else
-                                 find_object_of_same_weekday_and_time(
+                                 get_from_profile_same_weekday_and_time(
                                      energy_rate_decrease_per_update, time_slot))
             StorageValidator.validate(
                 initial_selling_rate=initial_selling_rate[time_slot],
-                final_selling_rate=find_object_of_same_weekday_and_time(
+                final_selling_rate=get_from_profile_same_weekday_and_time(
                     final_selling_rate, time_slot),
-                initial_buying_rate=find_object_of_same_weekday_and_time(
+                initial_buying_rate=get_from_profile_same_weekday_and_time(
                     initial_buying_rate, time_slot),
-                final_buying_rate=find_object_of_same_weekday_and_time(
+                final_buying_rate=get_from_profile_same_weekday_and_time(
                     final_buying_rate, time_slot),
                 energy_rate_increase_per_update=bid_rate_change,
                 energy_rate_decrease_per_update=offer_rate_change)

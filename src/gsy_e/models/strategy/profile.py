@@ -4,7 +4,7 @@ from pendulum import DateTime
 
 from gsy_framework.read_user_profile import InputProfileTypes
 from gsy_framework.constants_limits import GlobalConfig
-from gsy_framework.utils import find_object_of_same_weekday_and_time
+from gsy_framework.utils import get_from_profile_same_weekday_and_time
 
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.gsy_e_core.util import should_read_profile_from_db
@@ -83,7 +83,7 @@ class StrategyProfile(StrategyProfileBase):
         if time_slot in self.profile:
             return self.profile[time_slot]
         if GlobalConfig.is_canary_network():
-            value = find_object_of_same_weekday_and_time(self.profile, time_slot)
+            value = get_from_profile_same_weekday_and_time(self.profile, time_slot)
             if value is None:
                 log.error("Value for time_slot %s could not be found in profile in "
                           "Canary Network, returning 0", time_slot)

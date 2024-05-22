@@ -23,7 +23,7 @@ from gsy_framework.data_classes import TraderDetails
 from gsy_framework.exceptions import GSyException
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from gsy_framework.utils import (
-    find_object_of_same_weekday_and_time, key_in_dict_and_not_none)
+    get_from_profile_same_weekday_and_time, key_in_dict_and_not_none)
 from gsy_framework.validators import PVValidator
 from pendulum import duration
 
@@ -178,10 +178,10 @@ class PVStrategy(BidEnabledStrategy, UseMarketMakerMixin):
                     and time_slot < self.area.current_market.time_slot:
                 continue
             rate_change = None if fit_to_limit else \
-                find_object_of_same_weekday_and_time(energy_rate_change_per_update, time_slot)
+                get_from_profile_same_weekday_and_time(energy_rate_change_per_update, time_slot)
             PVValidator.validate_rate(
                 initial_selling_rate=initial_rate[time_slot],
-                final_selling_rate=find_object_of_same_weekday_and_time(final_rate, time_slot),
+                final_selling_rate=get_from_profile_same_weekday_and_time(final_rate, time_slot),
                 energy_rate_decrease_per_update=rate_change,
                 fit_to_limit=fit_to_limit)
 

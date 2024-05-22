@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from gsy_framework.utils import convert_str_to_pendulum_in_dict, convert_pendulum_to_str_in_dict
-from gsy_framework.utils import find_object_of_same_weekday_and_time, convert_kW_to_kWh
+from gsy_framework.utils import get_from_profile_same_weekday_and_time, convert_kW_to_kWh
 from gsy_framework.validators import FiniteDieselGeneratorValidator
 
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
@@ -49,8 +49,8 @@ class FinitePowerPlant(CommercialStrategy):
 
     def event_market_cycle(self):
         power_from_profile = \
-            find_object_of_same_weekday_and_time(self.max_available_power_kW,
-                                                 self.area.spot_market.time_slot)
+            get_from_profile_same_weekday_and_time(self.max_available_power_kW,
+                                                   self.area.spot_market.time_slot)
         self.energy_per_slot_kWh = convert_kW_to_kWh(power_from_profile,
                                                      self.simulation_config.slot_length)
         if self.energy_per_slot_kWh <= 0.0:
