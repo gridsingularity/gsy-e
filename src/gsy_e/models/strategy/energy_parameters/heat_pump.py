@@ -239,7 +239,8 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
 
     def _populate_state(self, time_slot: DateTime):
         super()._populate_state(time_slot)
-        self.state.set_energy_consumption_kWh(time_slot, self._consumption_kWh.profile[time_slot])
+        self.state.set_energy_consumption_kWh(
+            time_slot, self._consumption_kWh.get_value(time_slot))
 
     def _calc_Q_from_energy_kWh(self, time_slot: DateTime, energy_kWh: float) -> float:
         return self.state.get_cop(time_slot) * energy_kWh
@@ -253,7 +254,7 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
         the lower the efficiency of the heat pump (the lower COP).
         """
         return self._cop_model(self.state.get_storage_temp_C(time_slot),
-                               self._ext_temp_C.profile[time_slot])
+                               self._ext_temp_C.get_value(time_slot))
 
     def _cop_model(self, temp_current: float, temp_ambient: float) -> float:
         """COP model following https://www.nature.com/articles/s41597-019-0199-y"""
