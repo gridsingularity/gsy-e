@@ -57,7 +57,7 @@ jobs:
         run: |
           export SOLC_BINARY=$HOME/solc/usr/bin/solc
           export LD_LIBRARY_PATH=$HOME/solc/usr/lib:$LD_LIBRARY_PATH
-          pip install tox==3.24.4
+          pip install tox==4.15.0
           tox -e $TOXENV --verbose
 
       - name: Archive artifacts

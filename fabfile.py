@@ -90,6 +90,9 @@ def compile_requirements(_ctx, upgrade="", package=None):
     _pre_check()
     upgrade = upgrade.lower() in {"true", "upgrade", "1", "yes", "up"}
     print("Updating requirements")
+    cnx.local(f"rm -rf {REQ_DIR / 'base.txt'}")
+    cnx.local(f"rm -rf {REQ_DIR / 'dev.txt'}")
+    cnx.local(f"rm -rf {REQ_DIR / 'tests.txt'}")
     _fab_compile_requirements_file(REQ_DIR / "base.in", upgrade, package)
     _fab_compile_requirements_file(REQ_DIR / "dev.in", upgrade, package)
     _fab_compile_requirements_file(REQ_DIR / "tests.in", upgrade, package)
