@@ -201,6 +201,7 @@ class TestCoefficientArea:
         assert isclose(scm._bills[house1.uuid].savings_percent, 0.0)
         assert isclose(scm._bills[house1.uuid].home_balance, 0.21)
         assert isclose(scm._bills[house1.uuid].home_balance_kWh, 0.7)
+        assert isclose(scm._bills[house2.uuid].export_grid_fees, 0)
 
         # Validate that the home with the PV populates the energy bills correctly.
         assert isclose(scm._bills[house2.uuid].base_energy_bill, 0.0)
@@ -213,6 +214,7 @@ class TestCoefficientArea:
         assert isclose(scm._bills[house2.uuid].sold_to_grid, 19.3)
         assert isclose(scm._bills[house2.uuid].home_balance, -0.21)
         assert isclose(scm._bills[house2.uuid].home_balance_kWh, -20.0)
+        assert isclose(scm._bills[house2.uuid].export_grid_fees, 0.0)
 
     @staticmethod
     @pytest.mark.parametrize("intracommunity_base_rate", (None, 0.3))
@@ -234,6 +236,7 @@ class TestCoefficientArea:
         assert isclose(scm._bills[house1.uuid].gsy_energy_bill, 0.06)
         assert isclose(scm._bills[house1.uuid].savings, 0.0)
         assert isclose(scm._bills[house1.uuid].savings_percent, 0.0)
+        assert isclose(scm._bills[house2.uuid].export_grid_fees, 0.0)
         # energy surplus * feed in tariff for the case of positive energy surplus
         assert isclose(scm._bills[house2.uuid].base_energy_bill, -0.005)
         assert isclose(scm._bills[house2.uuid].base_energy_bill_excl_revenue, 0.0)
@@ -242,6 +245,7 @@ class TestCoefficientArea:
             assert isclose(scm._bills[house2.uuid].gsy_energy_bill, -0.0164)
         else:
             assert isclose(scm._bills[house2.uuid].gsy_energy_bill, -0.02)
+        assert isclose(scm._bills[house2.uuid].export_grid_fees, 0.0)
 
         assert isclose(scm._bills[house2.uuid].savings,
                        0.0, abs_tol=constants.FLOATING_POINT_TOLERANCE)
@@ -368,3 +372,27 @@ class TestCoefficientArea:
         load = CoefficientArea(name="load", strategy=strategy)
         load.area_reconfigure_event()
         load.strategy.area_reconfigure_event.assert_called_once()
+
+    @staticmethod
+    def test_virtual_compensation_is_calculated_correctly(_create_2_house_grid):
+        grid_area = _create_2_house_grid
+        house1 = grid_area.children[0]
+        house2 = grid_area.children[1]
+        property_dict = {
+            house1.uuid:
+                {"GRID_FEES": {"grid_export_fee_const": 0.02}},
+            house2.uuid:
+                {"GRID_FEES": {"grid_export_fee_const": 0.02}}
+        }
+        house1.update_fee_properties(property_dict)
+        house2.update_fee_properties(property_dict)
+        house1.coefficient_percentage = 0.8
+        house2.coefficient_percentage = 0.2
+        time_slot = now()
+        scm = SCMManager(grid_area, time_slot)
+        grid_area.calculate_home_after_meter_data(time_slot, scm)
+        scm.calculate_community_after_meter_data()
+        grid_area.trigger_energy_trades(scm)
+
+        assert isclose(scm._bills[house1.uuid].export_grid_fees, 0)
+        assert isclose(scm._bills[house2.uuid].export_grid_fees, 0.0004)
