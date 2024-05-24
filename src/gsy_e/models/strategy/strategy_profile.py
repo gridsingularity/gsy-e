@@ -30,8 +30,9 @@ class StrategyProfileBase(ABC):
     def read_or_rotate_profiles(self, reconfigure=False):
         """Rotate current profile or read and preprocess profile from source."""
 
-    def get_value(self, time_slot: DateTime):
+    def get_value(self, _time_slot: DateTime):
         """Return value for specific time_slot."""
+        return 0
 
 
 class EmptyProfile(StrategyProfileBase):
@@ -48,9 +49,6 @@ class EmptyProfile(StrategyProfileBase):
 
     def read_or_rotate_profiles(self, reconfigure=False):
         pass
-
-    def get_value(self, time_slot: DateTime):
-        return None
 
 
 class StrategyProfile(StrategyProfileBase):

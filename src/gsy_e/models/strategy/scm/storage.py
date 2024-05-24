@@ -30,18 +30,15 @@ class SCMStorageStrategy(SCMStrategy):
     def market_cycle(self, _area):
         self._energy_params.market_cycle()
 
-    def _get_from_profile(self, time_slot: DateTime) -> float:
-        return self._energy_params.energy_profile.profile.get(time_slot)
-
     def get_energy_to_sell_kWh(self, time_slot: DateTime) -> float:
         """Get the available energy for production for the specified time slot."""
-        energy_value = self._get_from_profile(time_slot)
-        return abs(energy_value) if energy_value < 0 else 0
+        energy_value = self._energy_params.energy_profile.get_value(time_slot)
+        return abs(energy_value) if energy_value and energy_value < 0 else 0
 
     def get_energy_to_buy_kWh(self, time_slot: DateTime) -> float:
         """Get the available energy for consumption for the specified time slot."""
-        energy_value = self._get_from_profile(time_slot)
-        return energy_value if energy_value > 0 else 0
+        energy_value = self._energy_params.energy_profile.get_value(time_slot)
+        return energy_value if energy_value and energy_value > 0 else 0
 
     @property
     def state(self):
