@@ -19,8 +19,7 @@ from typing import Dict
 
 import gsy_e.constants
 from gsy_e.gsy_e_core.market_counters import ExternalTickCounter
-from gsy_e.gsy_e_core.util import (find_object_of_same_weekday_and_time,
-                                   get_market_maker_rate_from_config)
+from gsy_e.gsy_e_core.util import get_market_maker_rate_from_config
 
 
 class ExternalConnectionGlobalStatistics:
@@ -49,9 +48,8 @@ class ExternalConnectionGlobalStatistics:
         from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
         for child in area.children:
             if isinstance(child.strategy, InfiniteBusStrategy):
-                self.current_feed_in_tariff = \
-                    find_object_of_same_weekday_and_time(child.strategy.energy_buy_rate,
-                                                         current_market_slot)
+                self.current_feed_in_tariff = child.strategy.energy_buy_profile.get_value(
+                    current_market_slot)
                 return
 
     def _buffer_market_maker_rate(self):

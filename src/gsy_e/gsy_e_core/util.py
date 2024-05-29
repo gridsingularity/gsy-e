@@ -33,7 +33,7 @@ from gsy_framework.enums import BidOfferMatchAlgoEnum
 from gsy_framework.exceptions import GSyException
 from gsy_framework.utils import (
     area_name_from_area_or_ma_name, iterate_over_all_modules, str_to_pendulum_datetime,
-    find_object_of_same_weekday_and_time)
+    get_from_profile_same_weekday_and_time)
 from pendulum import duration, from_format, instance, DateTime
 from rex import rex
 
@@ -438,8 +438,8 @@ def get_market_maker_rate_from_config(next_market, default_value=None, time_slot
             except AttributeError as e:
                 logging.exception("time_slot parameter is required for future markets.")
                 raise e
-        return find_object_of_same_weekday_and_time(GlobalConfig.market_maker_rate,
-                                                    time_slot)
+        return get_from_profile_same_weekday_and_time(GlobalConfig.market_maker_rate,
+                                                      time_slot)
     return GlobalConfig.market_maker_rate
 
 
@@ -452,8 +452,8 @@ def get_feed_in_tariff_rate_from_config(next_market: "MarketBase", time_slot=Non
             time_slot = next_market.time_slot
             assert time_slot, "time_slot parameter is missing to get feed-in tariff"
 
-        return find_object_of_same_weekday_and_time(GlobalConfig.FEED_IN_TARIFF,
-                                                    time_slot) or 0.
+        return get_from_profile_same_weekday_and_time(GlobalConfig.FEED_IN_TARIFF,
+                                                      time_slot) or 0.
     return GlobalConfig.FEED_IN_TARIFF
 
 
