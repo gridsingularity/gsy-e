@@ -21,8 +21,7 @@ import pathlib
 
 import pendulum
 from gsy_framework.read_user_profile import InputProfileTypes, read_arbitrary_profile
-from gsy_framework.utils import (convert_kW_to_kWh, find_object_of_same_weekday_and_time,
-                                 key_in_dict_and_not_none)
+from gsy_framework.utils import convert_kW_to_kWh, key_in_dict_and_not_none
 from gsy_framework.validators import PVValidator
 from gsy_framework.constants_limits import GlobalConfig
 from pendulum.datetime import DateTime
@@ -31,7 +30,7 @@ import gsy_e.constants
 from gsy_e.gsy_e_core.exceptions import GSyException
 from gsy_e.gsy_e_core.util import gsye_root_path
 from gsy_e.models.strategy import utils
-from gsy_e.models.strategy.profile import profile_factory
+from gsy_e.models.strategy.strategy_profile import profile_factory
 from gsy_e.models.strategy.state import PVState
 
 log = logging.getLogger(__name__)
@@ -110,6 +109,7 @@ class PVPredefinedEnergyParameters(PVEnergyParameters):
         super().__init__(panel_count, capacity_kW)
         self.cloud_coverage = cloud_coverage
         self._power_profile_index = cloud_coverage
+        # in this strategy we do not use the StrategyProfile but populate a dictionary
         self.energy_profile = {}
 
     def serialize(self):
@@ -157,8 +157,7 @@ class PVPredefinedEnergyParameters(PVEnergyParameters):
                 f"PV {owner_name} tries to set its available energy forecast without a "
                 "power profile.")
         for time_slot in time_slots:
-            datapoint_kWh = find_object_of_same_weekday_and_time(
-                self.energy_profile, time_slot)
+            datapoint_kWh = self.energy_profile.get(time_slot)
             if datapoint_kWh is None:
                 log.error("Could not read area %s profile on timeslot %s. Configuration %s.",
                           owner_name, time_slot, gsy_e.constants.CONFIGURATION_ID)
@@ -218,8 +217,7 @@ class PVUserProfileEnergyParameters(PVEnergyParameters):
                 f"PV {owner_name} tries to set its available energy forecast without a "
                 "power profile.")
         for time_slot in time_slots:
-            energy_from_profile_kWh = find_object_of_same_weekday_and_time(
-                self.energy_profile.profile, time_slot)
+            energy_from_profile_kWh = self.energy_profile.get_value(time_slot)
             if energy_from_profile_kWh is None:
                 log.error("Could not read area %s profile on timeslot %s. Configuration %s.",
                           owner_name, time_slot, gsy_e.constants.CONFIGURATION_ID)

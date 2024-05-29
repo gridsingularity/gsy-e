@@ -19,15 +19,14 @@ import logging
 
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import TraderDetails
-from gsy_framework.utils import (convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict,
-                                 find_object_of_same_weekday_and_time)
+from gsy_framework.utils import convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict
 from gsy_framework.validators import CommercialProducerValidator
 
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.exceptions import MarketException
 from gsy_e.models.base import AssetType
 from gsy_e.models.strategy import INF_ENERGY, BaseStrategy
-from gsy_e.models.strategy.profile import EnergyProfile
+from gsy_e.models.strategy.strategy_profile import StrategyProfile
 
 
 class CommercialStrategy(BaseStrategy):
@@ -40,7 +39,7 @@ class CommercialStrategy(BaseStrategy):
 
         if energy_rate is None:
             energy_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
-        self._sell_energy_profile = EnergyProfile(input_energy_rate=energy_rate)
+        self._sell_energy_profile = StrategyProfile(input_energy_rate=energy_rate)
 
     @property
     def energy_rate(self):
@@ -88,8 +87,7 @@ class CommercialStrategy(BaseStrategy):
 
     def offer_energy(self, market):
         """Method for offering energy on a market."""
-        energy_rate = find_object_of_same_weekday_and_time(
-            self.energy_rate, market.time_slot)
+        energy_rate = self._sell_energy_profile.get_value(market.time_slot)
         try:
             offer = market.offer(
                 self.energy_per_slot_kWh * energy_rate,

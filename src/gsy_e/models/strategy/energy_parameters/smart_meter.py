@@ -15,13 +15,12 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from gsy_framework.utils import find_object_of_same_weekday_and_time
 from pendulum.datetime import DateTime
 
 from gsy_e.gsy_e_core.exceptions import GSyException
 from gsy_e.models.strategy.state import SmartMeterState
 from gsy_e.models.strategy import utils
-from gsy_e.models.strategy.profile import profile_factory
+from gsy_e.models.strategy.strategy_profile import profile_factory
 
 
 class SmartMeterEnergyParameters:
@@ -66,8 +65,7 @@ class SmartMeterEnergyParameters:
                 "a profile.")
 
         for slot_time in time_slots:
-            energy_kWh = find_object_of_same_weekday_and_time(
-                self._energy_profile.profile, slot_time)
+            energy_kWh = self._energy_profile.get_value(slot_time)
             # For the Smart Meter, the energy amount can be either positive (consumption) or
             # negative (production).
             consumed_energy = energy_kWh if energy_kWh > 0 else 0.0

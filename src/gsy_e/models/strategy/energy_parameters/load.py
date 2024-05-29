@@ -19,7 +19,7 @@ import logging
 from typing import Dict, List, Optional
 
 from gsy_framework.exceptions import GSyException, GSyDeviceException
-from gsy_framework.utils import find_object_of_same_weekday_and_time, convert_W_to_Wh
+from gsy_framework.utils import convert_W_to_Wh
 from gsy_framework.validators.load_validator import LoadValidator
 from gsy_framework.constants_limits import GlobalConfig
 from pendulum import DateTime, duration
@@ -27,7 +27,7 @@ from pendulum import DateTime, duration
 import gsy_e.constants
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.models.strategy import utils
-from gsy_e.models.strategy.profile import profile_factory
+from gsy_e.models.strategy.strategy_profile import profile_factory
 from gsy_e.models.strategy.state import LoadState
 
 log = logging.getLogger(__name__)
@@ -215,8 +215,7 @@ class DefinedLoadEnergyParameters(LoadHoursPerDayEnergyParameters):
             raise GSyException(
                 "Load tries to set its energy forecasted requirement "
                 "without a profile.")
-        load_energy_kwh = find_object_of_same_weekday_and_time(
-            self.energy_profile.profile, time_slot)
+        load_energy_kwh = self.energy_profile.get_value(time_slot)
         if load_energy_kwh is None:
             log.error("Could not read area profile %s on timeslot %s. Configuration %s.",
                       self.energy_profile.input_profile_uuid, time_slot,

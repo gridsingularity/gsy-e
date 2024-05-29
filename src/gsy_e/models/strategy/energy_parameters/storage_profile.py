@@ -2,7 +2,7 @@ from typing import Dict, Union
 
 from gsy_framework.read_user_profile import InputProfileTypes
 
-from gsy_e.models.strategy.profile import profile_factory
+from gsy_e.models.strategy.strategy_profile import profile_factory
 from gsy_e.models.strategy.state.base_states import DummyState
 
 

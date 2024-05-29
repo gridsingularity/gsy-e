@@ -21,7 +21,7 @@ from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Offer, TraderDetails
 from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.read_user_profile import InputProfileTypes, read_arbitrary_profile
-from gsy_framework.utils import find_object_of_same_weekday_and_time, limit_float_precision
+from gsy_framework.utils import get_from_profile_same_weekday_and_time, limit_float_precision
 from gsy_framework.validators.smart_meter_validator import SmartMeterValidator
 from numpy import random
 from pendulum import duration
@@ -437,24 +437,24 @@ class SmartMeterStrategy(BidEnabledStrategy, UseMarketMakerMixin):
     def _validate_consumption_rates(
             self, initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit):
         for time_slot in initial_rate.keys():
-            rate_change = None if fit_to_limit else find_object_of_same_weekday_and_time(
+            rate_change = None if fit_to_limit else get_from_profile_same_weekday_and_time(
                 energy_rate_change_per_update, time_slot)
 
             self.validator.validate_rate(
                 initial_buying_rate=initial_rate[time_slot],
                 energy_rate_increase_per_update=rate_change,
-                final_buying_rate=find_object_of_same_weekday_and_time(final_rate, time_slot),
+                final_buying_rate=get_from_profile_same_weekday_and_time(final_rate, time_slot),
                 fit_to_limit=fit_to_limit)
 
     def _validate_production_rates(
             self, initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit):
         for time_slot in initial_rate.keys():
-            rate_change = None if fit_to_limit else find_object_of_same_weekday_and_time(
+            rate_change = None if fit_to_limit else get_from_profile_same_weekday_and_time(
                 energy_rate_change_per_update, time_slot)
 
             self.validator.validate_rate(
                 initial_selling_rate=initial_rate[time_slot],
-                final_selling_rate=find_object_of_same_weekday_and_time(final_rate, time_slot),
+                final_selling_rate=get_from_profile_same_weekday_and_time(final_rate, time_slot),
                 energy_rate_decrease_per_update=rate_change,
                 fit_to_limit=fit_to_limit)
 
