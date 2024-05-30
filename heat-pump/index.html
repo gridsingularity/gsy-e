@@ -2373,6 +2373,13 @@
 <li><span class="arithmatex">\(\rho_{water}\)</span> is the density of water</li>
 <li><span class="arithmatex">\(COP\)</span> is the coefficient of performance of the heat pump; depends on the heat pump type, and <span class="arithmatex">\(\Delta T = T_{curr} - T_{ambient}\)</span></li>
 </ul>
+<p>Note: <span class="arithmatex">\(COP\)</span> calculation follows the model proposed by <a href="https://www.nature.com/articles/s41597-019-0199-y" target="_blank">Ruhnau et al.</a> using the following input parameters:</p>
+<ul>
+<li>Ambient temperature (temperature of the source of the heat, dependent on the type; this could be water (brine) or air)</li>
+<li>Comfort temperature (temperature of the sink i.e. the current temperature of the heat pump storage)</li>
+<li>Heat pump type (water-to-water or air-to-water)</li>
+</ul>
+<p>To determine the <a href="./#heat-pump-asset-trading-strategy">heat pump trading strategy</a>, the COP is calculated for each market slot taking into account the current storage temperature and the ambient temperature. </p>
 <h3 id="b-bid-rate-preferred-buying-rate">b. Bid rate &gt; Preferred buying rate<a class="headerlink" href="#b-bid-rate-preferred-buying-rate" title="Permanent link">&para;</a></h3>
 <p>In this situation, the heat pump strategy is to consume the least possible amount of energy in order to keep the temperature at the same level, since the prices are relatively high. Two different situations can arise:</p>
 <ul>
