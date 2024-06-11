@@ -158,9 +158,8 @@ class TestEnergyProfile:
     @staticmethod
     def test_strategy_profile_get_value_returns_correctly_for_simulations(strategy_profile):
         assert strategy_profile.get_value(CUSTOM_DATETIME.add(minutes=15)) == 1
-
-        with pytest.raises(KeyError):
-            strategy_profile.get_value(CUSTOM_DATETIME.subtract(minutes=15))
+        # Does not raise an exception but return 0 in case of missing profile value
+        assert strategy_profile.get_value(CUSTOM_DATETIME.subtract(minutes=15)) == 0
 
     @staticmethod
     @patch("gsy_e.models.strategy.strategy_profile.GlobalConfig.is_canary_network", lambda: True)
