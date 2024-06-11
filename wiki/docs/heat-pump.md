@@ -95,6 +95,15 @@ where
   * $COP$ is the coefficient of performance of the heat pump; depends on the heat pump type, and $\Delta T = T_{curr} - T_{ambient}$
 
 
+Note: $COP$ calculation follows the model proposed by [Ruhnau et al.](https://www.nature.com/articles/s41597-019-0199-y){target=_blank} using the following input parameters:
+
+  * Ambient temperature (temperature of the source of the heat, dependent on the type; this could be water (brine) or air)
+  * Comfort temperature (temperature of the sink i.e. the current temperature of the heat pump storage)
+  * Heat pump type (water-to-water or air-to-water)
+
+To determine the [heat pump trading strategy](heat-pump.md#heat-pump-asset-trading-strategy), the COP is calculated for each market slot taking into account the current storage temperature and the ambient temperature.
+
+
 ### b. Bid rate > Preferred buying rate
 
 In this situation, the heat pump strategy is to consume the least possible amount of energy in order to keep the temperature at the same level, since the prices are relatively high. Two different situations can arise:
