@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from typing import Union, Dict, TYPE_CHECKING
 
 from pendulum import DateTime
+from gsy_framework.constants_limits import GlobalConfig
 
 from gsy_e.models.strategy.energy_parameters.pv import PVUserProfileEnergyParameters
 from gsy_e.models.strategy.scm import SCMStrategy
@@ -63,3 +64,13 @@ class SCMPVUserProfile(SCMStrategy):
     def market_cycle(self, area: "AreaBase") -> None:
         self._update_forecast_in_state(area)
         self.state.delete_past_state_values(area.past_market_time_slot)
+
+    @staticmethod
+    def deserialize_args(constructor_args: Dict) -> Dict:
+        if not GlobalConfig.is_canary_network():
+            return constructor_args
+        # move measurement_uuid into forecast uuid because this is only used in SCM
+        measurement_uuid = constructor_args.get("power_measurement_uuid")
+        if measurement_uuid:
+            constructor_args["power_profile_uuid"] = measurement_uuid
+        return constructor_args

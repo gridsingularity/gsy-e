@@ -131,6 +131,7 @@ class SmartMeterStrategyTest(unittest.TestCase):
         market_mocks = self._create_market_mocks(3)
         self.strategy.area.all_markets = market_mocks
         self.strategy._energy_params._state = create_autospec(SmartMeterState)
+        self.strategy._energy_params.read_and_rotate_profiles()
         time_slots = [m.time_slot for m in self.strategy.area.all_markets]
         self.strategy._energy_params.set_energy_forecast_for_future_markets(
             time_slots, reconfigure=True)
@@ -185,6 +186,7 @@ class SmartMeterStrategyTest(unittest.TestCase):
         self.strategy.bid_update.delete_past_state_values = Mock()
         self.strategy.offer_update.delete_past_state_values = Mock()
         self.strategy._energy_params.set_energy_forecast_for_future_markets = Mock()
+        self.strategy._energy_params.read_and_rotate_profiles = Mock()
         self.strategy._set_energy_measurement_of_last_market = Mock()
         self.strategy._post_offer = Mock()
         market_mocks = self._create_market_mocks(3)

@@ -29,7 +29,7 @@ from gsy_framework.enums import SpotMarketTypeEnum
 from pendulum import DateTime, duration, now
 
 import gsy_e.constants
-from gsy_e.constants import TIME_ZONE, SCM_CN_DAYS_OF_DELAY
+from gsy_e.constants import TIME_ZONE
 
 if TYPE_CHECKING:
     from gsy_e.models.area import Area, AreaBase
@@ -145,15 +145,15 @@ class SimulationTimeManagerScm(TimeManagerBase):
     start_time: DateTime = None
     paused_time: int = 0  # Time spent in paused state, in seconds
     slot_length_realtime: duration = None
+    hours_of_delay: int = 0
     slot_time_counter: float = time()
 
     def __post_init__(self):
         self.start_time: DateTime = self._set_start_time()
 
-    @staticmethod
-    def _set_start_time():
+    def _set_start_time(self):
         # Set SCM start time. By default it is 2 days before the current datetime.
-        return now(tz=TIME_ZONE) - duration(days=SCM_CN_DAYS_OF_DELAY)
+        return now(tz=TIME_ZONE) - duration(hours=self.hours_of_delay)
 
     def reset(self, not_restored_from_state: bool = True) -> None:
         """
@@ -192,6 +192,18 @@ class SimulationTimeManagerScm(TimeManagerBase):
 
         self.slot_time_counter = int(time())
 
+    @staticmethod
+    def get_start_time_on_init(config: "SimulationConfig") -> DateTime:
+        """Return the start tim of the simulation."""
+        if gsy_e.constants.RUN_IN_REALTIME:
+            today = pendulum.today(tz=TIME_ZONE)
+            seconds_since_midnight = time() - today.int_timestamp
+            slot_no = int(seconds_since_midnight // config.slot_length.seconds) + 1
+            start_time = config.start_date + duration(seconds=slot_no*config.slot_length.seconds)
+        else:
+            start_time = config.start_date
+        return start_time
+
     def calc_resume_slot_and_count_realtime(
             self, config: "SimulationConfig", slot_resume: int, status: "SimulationStatusManager"
     ) -> Tuple[int, int]:
@@ -213,8 +225,9 @@ class SimulationTimeManagerScm(TimeManagerBase):
         return slot_count, slot_resume
 
 
-def simulation_time_manager_factory(slot_length_realtime: duration):
+def simulation_time_manager_factory(slot_length_realtime: duration, hours_of_delay: int):
     """Factory for time manager objects."""
     if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
-        return SimulationTimeManagerScm(slot_length_realtime=slot_length_realtime)
+        return SimulationTimeManagerScm(slot_length_realtime=slot_length_realtime,
+                                        hours_of_delay=hours_of_delay)
     return SimulationTimeManager(slot_length_realtime=slot_length_realtime)

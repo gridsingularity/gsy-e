@@ -24,7 +24,7 @@ from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.exceptions import GSyDeviceException
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from gsy_framework.utils import (
-    limit_float_precision, find_object_of_same_weekday_and_time,
+    limit_float_precision, get_from_profile_same_weekday_and_time,
     is_time_slot_in_simulation_duration)
 from gsy_framework.validators.load_validator import LoadValidator
 from numpy import random
@@ -142,12 +142,12 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
                     and time_slot < self.area.current_market.time_slot):
                 continue
             rate_change = (None if fit_to_limit else
-                           find_object_of_same_weekday_and_time(
+                           get_from_profile_same_weekday_and_time(
                                energy_rate_change_per_update, time_slot))
             LoadValidator.validate_rate(
                 initial_buying_rate=initial_rate[time_slot],
                 energy_rate_increase_per_update=rate_change,
-                final_buying_rate=find_object_of_same_weekday_and_time(final_rate, time_slot),
+                final_buying_rate=get_from_profile_same_weekday_and_time(final_rate, time_slot),
                 fit_to_limit=fit_to_limit)
 
     def event_activate(self, **kwargs):

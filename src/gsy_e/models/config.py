@@ -30,13 +30,22 @@ from gsy_e.gsy_e_core.util import change_global_config, format_interval
 class SimulationConfig:
     """Class defining parameters that describe the behavior of a simulation."""
     # pylint: disable=too-many-instance-attributes, too-many-arguments
-    def __init__(self, sim_duration: duration, slot_length: duration, tick_length: duration,
-                 cloud_coverage: int,
-                 market_maker_rate=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
-                 pv_user_profile=None, start_date: DateTime = today(tz=TIME_ZONE),
-                 capacity_kW=None, grid_fee_type=ConstSettings.MASettings.GRID_FEE_TYPE,
-                 external_connection_enabled=True, aggregator_device_mapping=None,
-                 enable_degrees_of_freedom: bool = True):
+    def __init__(
+        self,
+        sim_duration: duration,
+        slot_length: duration,
+        tick_length: duration,
+        cloud_coverage: int,
+        market_maker_rate=ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
+        pv_user_profile=None,
+        start_date: DateTime = today(tz=TIME_ZONE),
+        capacity_kW=None,
+        grid_fee_type=ConstSettings.MASettings.GRID_FEE_TYPE,
+        external_connection_enabled=True,
+        aggregator_device_mapping=None,
+        enable_degrees_of_freedom: bool = True,
+        hours_of_delay: int = ConstSettings.SCMSettings.HOURS_OF_DELAY,
+    ):
         """
         Args:
             sim_duration: The total duration of the simulation
@@ -53,6 +62,7 @@ class SimulationConfig:
             aggregator_device_mapping: A dictionary that maps each aggregator to its devices
             enable_degrees_of_freedom: If True, allow orders to have Degrees of Freedom (they can
                 specify additional requirements and attributes)
+            hours_of_delay: Hours of delay
         """
         self.sim_duration = sim_duration
         self.start_date = start_date
@@ -63,6 +73,7 @@ class SimulationConfig:
         self.enable_degrees_of_freedom = enable_degrees_of_freedom
         self.market_maker_rate = market_maker_rate
         self.pv_user_profile = pv_user_profile
+        self.hours_of_delay = hours_of_delay
 
         self.ticks_per_slot = self.slot_length / self.tick_length
         if self.ticks_per_slot != int(self.ticks_per_slot):
@@ -99,7 +110,7 @@ class SimulationConfig:
         """Return config parameters as dict."""
         fields = {"sim_duration", "slot_length", "tick_length", "ticks_per_slot",
                   "total_ticks", "cloud_coverage", "capacity_kW", "grid_fee_type",
-                  "external_connection_enabled", "enable_degrees_of_freedom"}
+                  "external_connection_enabled", "enable_degrees_of_freedom", "hours_of_delay"}
         return {
             k: format_interval(v) if isinstance(v, Duration) else v
             for k, v in self.__dict__.items()

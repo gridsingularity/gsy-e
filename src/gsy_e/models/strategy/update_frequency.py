@@ -20,7 +20,7 @@ from typing import TYPE_CHECKING, Callable, List, Dict
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.read_user_profile import InputProfileTypes
-from gsy_framework.utils import (find_object_of_same_weekday_and_time,
+from gsy_framework.utils import (get_from_profile_same_weekday_and_time,
                                  is_time_slot_in_simulation_duration)
 from pendulum import duration, DateTime, Duration
 
@@ -154,12 +154,12 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
                 continue
             if self.fit_to_limit is False:
                 self.energy_rate_change_per_update[time_slot] = (
-                    find_object_of_same_weekday_and_time(
+                    get_from_profile_same_weekday_and_time(
                         self.energy_rate_change_per_update_profile_buffer, time_slot)
                 )
-            initial_rate = find_object_of_same_weekday_and_time(
+            initial_rate = get_from_profile_same_weekday_and_time(
                 self.initial_rate_profile_buffer, time_slot)
-            final_rate = find_object_of_same_weekday_and_time(
+            final_rate = get_from_profile_same_weekday_and_time(
                 self.final_rate_profile_buffer, time_slot)
 
             if initial_rate is None or final_rate is None:
@@ -168,9 +168,9 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
                     "Reloading profiles from the database.",
                     gsy_e.constants.CONFIGURATION_ID, area.uuid)
                 self._read_or_rotate_rate_profiles()
-                initial_rate = find_object_of_same_weekday_and_time(
+                initial_rate = get_from_profile_same_weekday_and_time(
                     self.initial_rate_profile_buffer, time_slot)
-                final_rate = find_object_of_same_weekday_and_time(
+                final_rate = get_from_profile_same_weekday_and_time(
                     self.final_rate_profile_buffer, time_slot)
 
             # Hackathon TODO: get rid of self.initial_rate, self.final_rate, self.update_counter
@@ -194,9 +194,9 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
     def _set_or_update_energy_rate_change_per_update(self, time_slot: DateTime) -> None:
         energy_rate_change_per_update = {}
         if self.fit_to_limit:
-            initial_rate = find_object_of_same_weekday_and_time(
+            initial_rate = get_from_profile_same_weekday_and_time(
                 self.initial_rate_profile_buffer, time_slot)
-            final_rate = find_object_of_same_weekday_and_time(
+            final_rate = get_from_profile_same_weekday_and_time(
                 self.final_rate_profile_buffer, time_slot)
             energy_rate_change_per_update[time_slot] = (
                     (initial_rate - final_rate) / self.number_of_available_updates
@@ -204,11 +204,11 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
         else:
             if self.rate_limit_object is min:
                 energy_rate_change_per_update[time_slot] = \
-                    -1 * find_object_of_same_weekday_and_time(
+                    -1 * get_from_profile_same_weekday_and_time(
                         self.energy_rate_change_per_update_profile_buffer, time_slot)
             elif self.rate_limit_object is max:
                 energy_rate_change_per_update[time_slot] = \
-                    find_object_of_same_weekday_and_time(
+                    get_from_profile_same_weekday_and_time(
                         self.energy_rate_change_per_update_profile_buffer, time_slot)
         self.energy_rate_change_per_update.update(energy_rate_change_per_update)
 

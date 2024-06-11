@@ -13,7 +13,7 @@ from gsy_e.gsy_e_core.rq_job_handler import launch_simulation_from_rq_job
 
 
 class TestRqJobHandler:
-    # pylint: disable=attribute-defined-outside-init
+    # pylint: disable=attribute-defined-outside-init, too-many-instance-attributes
 
     def setup_method(self):
         self.original_config_type = GlobalConfig.CONFIG_TYPE
@@ -23,10 +23,12 @@ class TestRqJobHandler:
         self.original_connect_to_profiles_db = gsy_e.constants.CONNECT_TO_PROFILES_DB
         self.original_config_id = gsy_e.constants.CONFIGURATION_ID
         self.original_start_date = GlobalConfig.start_date
+        self.original_slot_length = GlobalConfig.slot_length
 
     def teardown_method(self):
         GlobalConfig.CONFIG_TYPE = self.original_config_type
         GlobalConfig.start_date = self.original_start_date
+        GlobalConfig.slot_length = self.original_slot_length
         gsy_e.constants.EXTERNAL_CONNECTION_WEB = self.original_external_connection_web
         gsy_e.constants.RUN_IN_REALTIME = self.original_run_in_realtime
         gsy_e.constants.SEND_EVENTS_RESPONSES_TO_SDK_VIA_RQ = self.original_sertsvr
@@ -43,14 +45,23 @@ class TestRqJobHandler:
 
     @staticmethod
     @patch("gsy_e.gsy_e_core.rq_job_handler.run_simulation", Mock())
-    @pytest.mark.parametrize("config_type", [
-        ConfigurationType.COLLABORATION, ConfigurationType.CANARY_NETWORK, ConfigurationType.B2B])
+    @pytest.mark.parametrize(
+        "config_type",
+        [
+            ConfigurationType.COLLABORATION,
+            ConfigurationType.CANARY_NETWORK,
+            ConfigurationType.B2B,
+        ],
+    )
     def test_config_type_is_correctly_set(config_type):
         assert GlobalConfig.CONFIG_TYPE == ConfigurationType.SIMULATION.value
         settings = {"type": config_type.value}
         scenario = {"configuration_uuid": "config_uuid"}
-        with patch("gsy_e.gsy_e_core.rq_job_handler._adapt_settings", Mock(return_value=settings)):
-            launch_simulation_from_rq_job(scenario, settings, None, {}, {}, "id")
+        with patch(
+            "gsy_e.gsy_e_core.rq_job_handler._adapt_settings",
+            Mock(return_value=settings),
+        ):
+            launch_simulation_from_rq_job(scenario, settings, None, {}, {}, {}, "id")
         assert GlobalConfig.CONFIG_TYPE == config_type.value
         assert gsy_e.constants.EXTERNAL_CONNECTION_WEB is True
         if config_type == ConfigurationType.CANARY_NETWORK:
@@ -69,13 +80,16 @@ class TestRqJobHandler:
             "scm": {
                 "coefficient_algorithm": 3,
                 "grid_fees_reduction": 0.45,
-                "intracommunity_rate_base_eur": 12
-            }
+                "intracommunity_rate_base_eur": 12,
+                "scm_cn_hours_of_delay": 4,
+            },
         }
         scenario = {"configuration_uuid": "config_uuid"}
-        launch_simulation_from_rq_job(scenario, settings, None, {}, {}, "id")
-        assert (ConstSettings.SCMSettings.MARKET_ALGORITHM ==
-                CoefficientAlgorithm.NO_COMMUNITY_SELF_CONSUMPTION.value)
+        launch_simulation_from_rq_job(scenario, settings, None, {}, {}, {}, "id")
+        assert (
+            ConstSettings.SCMSettings.MARKET_ALGORITHM
+            == CoefficientAlgorithm.NO_COMMUNITY_SELF_CONSUMPTION.value
+        )
         assert ConstSettings.SCMSettings.INTRACOMMUNITY_BASE_RATE_EUR == 12
         assert ConstSettings.SCMSettings.GRID_FEES_REDUCTION == 0.45
         assert ConstSettings.MASettings.MARKET_TYPE == 3
@@ -89,27 +103,35 @@ class TestRqJobHandler:
             "start_date": date(2023, 1, 1),
             "slot_length": duration(minutes=30),
             "tick_length": duration(seconds=20),
-            "advanced_settings": '''{
+            "advanced_settings": """{
                 "BalancingSettings": {"SPOT_TRADE_RATIO": 0.99}
-            }'''
+            }""",
         }
         scenario = {"configuration_uuid": "config_uuid"}
-        launch_simulation_from_rq_job(scenario, settings, None, {}, {"scm_past_slots": True}, "id")
+        launch_simulation_from_rq_job(
+            scenario, settings, None, {}, {"scm_past_slots": True}, {}, "id"
+        )
         assert run_sim_mock.call_count == 2
         config = run_sim_mock.call_args_list[0][1]["simulation_config"]
         assert config.slot_length == duration(minutes=30)
         assert config.tick_length == duration(seconds=20)
         assert config.start_date == datetime(2023, 1, 1)
-        expected_end_date = now(tz=gsy_e.constants.TIME_ZONE).subtract(
-            days=gsy_e.constants.SCM_CN_DAYS_OF_DELAY).add(hours=4)
-        assert (config.end_date.replace(second=0, microsecond=0) ==
-                expected_end_date.replace(second=0, microsecond=0))
+        expected_end_date = (
+            now(tz=gsy_e.constants.TIME_ZONE)
+            .subtract(hours=ConstSettings.SCMSettings.HOURS_OF_DELAY)
+            .add(hours=4)
+        )
+        assert config.end_date.replace(
+            second=0, microsecond=0
+        ) == expected_end_date.replace(second=0, microsecond=0)
         assert config.sim_duration == config.end_date - config.start_date
         assert ConstSettings.BalancingSettings.SPOT_TRADE_RATIO == 0.99
 
     @staticmethod
-    @patch("gsy_e.gsy_e_core.rq_job_handler.run_simulation",
-           Mock(side_effect=Exception("Fake Error")))
+    @patch(
+        "gsy_e.gsy_e_core.rq_job_handler.run_simulation",
+        Mock(side_effect=Exception("Fake Error")),
+    )
     @patch("gsy_e.gsy_e_core.redis_connections.simulation.publish_job_error_output")
     def test_error_during_launch_simulation_published_via_redis(publish_job_error_mock):
         settings = {
@@ -117,7 +139,7 @@ class TestRqJobHandler:
         }
         scenario = {"configuration_uuid": "config_uuid"}
         with pytest.raises(Exception):
-            launch_simulation_from_rq_job(scenario, settings, None, {}, {}, "id")
+            launch_simulation_from_rq_job(scenario, settings, None, {}, {}, {}, "id")
         assert publish_job_error_mock.call_count == 1
         assert publish_job_error_mock.call_args_list[0][0][0] == "id"
         assert "Fake Error" in publish_job_error_mock.call_args_list[0][0][1]
@@ -129,4 +151,4 @@ class TestRqJobHandler:
         }
         scenario = {}
         with pytest.raises(Exception):
-            launch_simulation_from_rq_job(scenario, settings, None, {}, {}, "id")
+            launch_simulation_from_rq_job(scenario, settings, None, {}, {}, {}, "id")

@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock
 
 from gsy_e.models.area import CoefficientArea
-from gsy_e.models.strategy.profile import EnergyProfile
+from gsy_e.models.strategy.strategy_profile import StrategyProfile
 from gsy_e.models.strategy.scm.pv import SCMPVUserProfile, PVUserProfileEnergyParameters
 from gsy_e.models.strategy.scm.load import SCMLoadProfileStrategy, DefinedLoadEnergyParameters
 
@@ -32,7 +32,7 @@ class TestSCMLoadStrategies:
     def test_scm_load_profile_strategy_updates_energy_forecast():
         # pylint: disable=protected-access
         energy_params = MagicMock(spec=DefinedLoadEnergyParameters)
-        energy_params.energy_profile = MagicMock(spec=EnergyProfile)
+        energy_params.energy_profile = MagicMock(spec=StrategyProfile)
         load = SCMLoadProfileStrategy()
         area = CoefficientArea(name="load", strategy=load)
 
