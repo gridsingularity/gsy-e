@@ -31,7 +31,7 @@ class RedisAreaEventDispatcher(RedisEventDispatcherBase):
         self.redis.publish(dispatch_chanel, json.dumps(send_data))
 
     def broadcast_event_redis(self, event_type: AreaEvent, **kwargs):
-        for child in sorted(self.area.children, key=lambda _: random()):
+        for child in sorted(self.area.children, random.sample(self.children, len(self.children)):
             self.publish_area_event(child.uuid, event_type, **kwargs)
             self.redis.wait()
             self.root_dispatcher.market_event_dispatcher.wait_for_futures()
@@ -44,7 +44,7 @@ class RedisAreaEventDispatcher(RedisEventDispatcherBase):
 
             if not self.area.events.is_connected:
                 break
-            for area_name in sorted(agents, key=lambda _: random()):
+            for area_name in sorted(agents, random.sample(self.children, len(self.children)):
                 agents[area_name].event_listener(event_type, **kwargs)
                 self.root_dispatcher.market_notify_event_dispatcher.wait_for_futures()
 

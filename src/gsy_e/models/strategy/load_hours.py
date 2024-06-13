@@ -27,7 +27,7 @@ from gsy_framework.utils import (
     limit_float_precision, get_from_profile_same_weekday_and_time,
     is_time_slot_in_simulation_duration)
 from gsy_framework.validators.load_validator import LoadValidator
-from numpy import random
+import random
 from pendulum import duration
 
 from gsy_e import constants

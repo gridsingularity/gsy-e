@@ -23,7 +23,7 @@ from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.read_user_profile import InputProfileTypes, read_arbitrary_profile
 from gsy_framework.utils import get_from_profile_same_weekday_and_time, limit_float_precision
 from gsy_framework.validators.smart_meter_validator import SmartMeterValidator
-from numpy import random
+import random
 from pendulum import duration
 
 from gsy_e import constants
