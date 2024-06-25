@@ -110,7 +110,7 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
-      <a href="#simulation-configuration-file" tabindex="1" class="md-skip">
+      <a href="#cli-command" tabindex="1" class="md-skip">
         Skip to content
       </a>
     
@@ -1385,11 +1385,11 @@
       <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-2" type="checkbox" id="nav-5-2-2" checked>
     
     <label class="md-nav__link" for="nav-5-2-2">
-      Configure trading strategies through the Grid Singularity Asset API
+      Create custom trading agents using the Grid Singularity Asset API
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
       <label class="md-nav__title" for="nav-5-2-2">
-        Configure trading strategies through the Grid Singularity Asset API
+        Create custom trading agents using the Grid Singularity Asset API
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
@@ -1405,25 +1405,6 @@
     </a>
   </li>
 
-        
-          
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
-    
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-2-2" type="checkbox" id="nav-5-2-2-2">
-    
-    <label class="md-nav__link" for="nav-5-2-2-2">
-      Asset API
-    </label>
-    <nav class="md-nav" data-md-component="collapsible" data-md-level="4">
-      <label class="md-nav__title" for="nav-5-2-2-2">
-        Asset API
-      </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
         
           
           
@@ -1461,11 +1442,6 @@
   </li>
 
         
-      </ul>
-    </nav>
-  </li>
-
-        
           
           
           
@@ -1475,13 +1451,13 @@
 
   <li class="md-nav__item md-nav__item--active md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-2-3" type="checkbox" id="nav-5-2-2-3" checked>
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-2-5" type="checkbox" id="nav-5-2-2-5" checked>
     
-    <label class="md-nav__link" for="nav-5-2-2-3">
+    <label class="md-nav__link" for="nav-5-2-2-5">
       Launch the Asset API
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="4">
-      <label class="md-nav__title" for="nav-5-2-2-3">
+      <label class="md-nav__title" for="nav-5-2-2-5">
         Launch the Asset API
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -1514,13 +1490,6 @@
   
     <label class="md-nav__title" for="__toc">Table of contents</label>
     <ul class="md-nav__list" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#simulation-configuration-file" title="Simulation configuration file:" class="md-nav__link">
-    Simulation configuration file:
-  </a>
-  
-</li>
       
         <li class="md-nav__item">
   <a href="#cli-command" title="CLI command:" class="md-nav__link">
@@ -1730,11 +1699,11 @@
       <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-4" type="checkbox" id="nav-5-2-4">
     
     <label class="md-nav__link" for="nav-5-2-4">
-      Customise the clearing algorithm through the Grid Singularity Matching API
+      Customize the clearing algorithm through the Grid Singularity Matching API
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
       <label class="md-nav__title" for="nav-5-2-4">
-        Customise the clearing algorithm through the Grid Singularity Matching API
+        Customize the clearing algorithm through the Grid Singularity Matching API
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
@@ -2097,13 +2066,6 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#simulation-configuration-file" title="Simulation configuration file:" class="md-nav__link">
-    Simulation configuration file:
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#cli-command" title="CLI command:" class="md-nav__link">
     CLI command:
   </a>
@@ -2172,19 +2134,11 @@
 </ul>
 <p>The API agent can interface with a local simulation (<a href="../setup-configuration/">backend</a>) or a <a href="../collaboration/">collaboration</a>/<a href="../connect-ctn/">Canary Network</a> (<a href="https://www.d3a.io/" target="_blank">User-Interface</a>). There are 3 methods to parse the required information when launching the API to connect to the UI, as thoroughly explained in the text below:</p>
 <ol>
-<li>Simulation configuration file</li>
 <li>CLI command</li>
 <li>Environment variables</li>
 </ol>
-<h4 id="simulation-configuration-file">Simulation configuration file:<a class="headerlink" href="#simulation-configuration-file" title="Permanent link">&para;</a></h4>
-<p>The simulation configuration file is a JSON format file downloadable on the <a href="https://www.d3a.io/" target="_blank">User-Interface</a>.  It contains all the information about the simulation setup (username, simulation name and UUID, domain name, websocket domain name, global settings of the simulation and the registry, consisting of all the grid hierarchy including markets and assets and whether or not the user is connected to those). To download this file the user needs to go to the Registry page of the relevant collaboration/Canary Test Network and click on the top right edit icon and Download Exchange SDK Summary.</p>
-<p><img alt="alt_text" src="../img/api-overview-3.png" /></p>
-<p>To run the Asset API, you can run the following command by adapting the arguments to your case:</p>
-<pre class="codehilite"><code>gsy-e-sdk --log-level INFO run  --setup asset_api_template -u username -p password -i absolute_path/my_simulation_config.json</code></pre>
-
-
 <h4 id="cli-command">CLI command:<a class="headerlink" href="#cli-command" title="Permanent link">&para;</a></h4>
-<p>Instead of passing the JSON file, the user can directly pass the relevant variables as arguments in the CLI commands. For that to work, the user needs to pass the domain name and websocket name (both are optional parameters and only relevant when connecting to specific domains) and the simulation_id. The simulation_id corresponds to the Universally Unique Identifier. This token can be found in the URL of a collaboration or a Canary Test Network in the User Interface.</p>
+<p>The user can directly pass the relevant variables as arguments in the CLI commands. For that to work, the user needs to pass the domain name and websocket name (both are optional parameters and only relevant when connecting to specific domains) and the simulation_id. The simulation_id corresponds to the Universally Unique Identifier (UUID). This token can be found in the URL of a collaboration or a Canary Test Network in the User Interface. It is the UUID right after the URL <code>https://gridsingularity.com/singularity-map/results/</code> (marked in the screenshot below)</p>
 <p><img alt="alt_text" src="../img/api-overview-4.png" /></p>
 <p>To run the Asset API, users can run the following command by adapting the arguments to their case:</p>
 <pre class="codehilite"><code class="language-commandline">gsy-e-sdk --log-level INFO run  --setup asset_api_template -u username -p password --simulation-id UUID</code></pre>

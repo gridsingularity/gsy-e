@@ -1379,11 +1379,11 @@
       <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-2" type="checkbox" id="nav-5-2-2">
     
     <label class="md-nav__link" for="nav-5-2-2">
-      Configure trading strategies through the Grid Singularity Asset API
+      Create custom trading agents using the Grid Singularity Asset API
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
       <label class="md-nav__title" for="nav-5-2-2">
-        Configure trading strategies through the Grid Singularity Asset API
+        Create custom trading agents using the Grid Singularity Asset API
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
@@ -1399,25 +1399,6 @@
     </a>
   </li>
 
-        
-          
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
-    
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-2-2" type="checkbox" id="nav-5-2-2-2">
-    
-    <label class="md-nav__link" for="nav-5-2-2-2">
-      Asset API
-    </label>
-    <nav class="md-nav" data-md-component="collapsible" data-md-level="4">
-      <label class="md-nav__title" for="nav-5-2-2-2">
-        Asset API
-      </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
         
           
           
@@ -1455,11 +1436,6 @@
   </li>
 
         
-      </ul>
-    </nav>
-  </li>
-
-        
           
           
           
@@ -1467,13 +1443,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-2-3" type="checkbox" id="nav-5-2-2-3">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-2-5" type="checkbox" id="nav-5-2-2-5">
     
-    <label class="md-nav__link" for="nav-5-2-2-3">
+    <label class="md-nav__link" for="nav-5-2-2-5">
       Launch the Asset API
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="4">
-      <label class="md-nav__title" for="nav-5-2-2-3">
+      <label class="md-nav__title" for="nav-5-2-2-5">
         Launch the Asset API
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -1676,11 +1652,11 @@
       <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-4" type="checkbox" id="nav-5-2-4">
     
     <label class="md-nav__link" for="nav-5-2-4">
-      Customise the clearing algorithm through the Grid Singularity Matching API
+      Customize the clearing algorithm through the Grid Singularity Matching API
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
       <label class="md-nav__title" for="nav-5-2-4">
-        Customise the clearing algorithm through the Grid Singularity Matching API
+        Customize the clearing algorithm through the Grid Singularity Matching API
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
@@ -2044,9 +2020,7 @@
                 <p>The Grid Singularity Grid Operator API is designed for grid operators (notably Distribution System Operators or DSOs) to manage congestion and grid constraints in different markets across the grid. The structure is designed so that multiple markets can be managed by a single agent (digital representation of the grid operator preferences), allowing information to be aggregated for integrated grid management.</p>
 <p>It allows users to create agents that can dynamically change the grid fee in different markets. These agents can request and receive information through the Grid Operator API, feed that information into a tariff model, and submit grid fees through the Exchange SDK to change grid fees on the exchange.  For more information, see <a href="https://gridsingularity.medium.com/energy-singularity-challenge-2020-testing-novel-grid-fee-models-and-intelligent-peer-to-peer-6a0d715a9063" target="_blank">this article</a>.</p>
 <p>To actively manage grid congestion by sending new grid fees at every market slot for different markets at different levels of the grid, please follow the following steps:</p>
-<ul>
-<li>Install the Grid Singularity Exchange SDK on your computer by launching the following commands on your terminal window:</li>
-</ul>
+<p>Before, please install the Grid Singularity Exchange SDK on your computer by launching the following commands on your terminal window:</p>
 <p><strong>Install gsy-e-sdk</strong></p>
 <pre class="codehilite"><code>mkvirtualenv gsy-e-sdk
 pip install https://github.com/gridsingularity/gsy-e-sdk.git</code></pre>
@@ -2062,19 +2036,14 @@ pip install git+https://github.com/gridsingularity/gsy-e-sdk.git</code></pre>
 pip install openpyxl</code></pre>
 
 
-<ul>
-<li>Go to the <em>Registry and Scoreboard</em> section of the Collaboration of your interest and apply to every market that you wish to connect and to actively manage by sending new grid fees for each market slot. Then click on <em>Submit your actions</em>. If you have not already created a Collaboration / Canary Test Network, please follow instructions respectively <a href="../collaboration/">here</a> or <a href="../connect-ctn/">here</a> first.</li>
-</ul>
-<p><img alt="alt_text" src="../img/implement-grid-fees-1.png" /></p>
-<ul>
-<li>Notify Grid Singularity administration by sending an email to <a href="mailto:contact@gridsingularity.com">contact@gridsingularity.com</a> to accept your applications) (note: this action will be automated in the future).</li>
-</ul>
-<p><img alt="alt_text" src="../img/implement-grid-fees-2.png" /></p>
-<ul>
-<li>Edit the <a href="https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/grid_operator_api_template.py" target="_blank">Grid Operator SDK Script template</a> to experiment with different grid fee models.</li>
-<li><a href="../registration-grid-operator-api-user-interface/">Launch the Grid Operator SDK Script</a> to connect with the Grid Singularity Collaboration / Canary Test Network. A video tutorial is also available <a href="https://www.youtube.com/watch?v=LoYoyIy-C7M" target="_blank">here</a>.</li>
+<ol>
+<li>For connecting to a specific Collaboration/Canary Network, the owner/Exchange Operator has to invite and grant access as Grid operator in the Registry panel:
+   <figure markdown>
+     <img _text-align:center=";text-align:center" alt="alt_text" src="../img/set_user_roles_colab.png" style="height:340px;width:300px" />
+   </figure></li>
+<li>Edit the <a href="https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/grid_operator_api_scripts/rest_grid_fees.py" target="_blank">Grid Operator SDK Script template</a> to experiment with different grid fee models and launch it.</li>
 <li>Run the Collaboration or notify the collaboration owner that you are ready.</li>
-</ul>
+</ol>
                 
                   
                 

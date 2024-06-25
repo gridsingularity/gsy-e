@@ -1381,11 +1381,11 @@
       <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-2" type="checkbox" id="nav-5-2-2" checked>
     
     <label class="md-nav__link" for="nav-5-2-2">
-      Configure trading strategies through the Grid Singularity Asset API
+      Create custom trading agents using the Grid Singularity Asset API
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
       <label class="md-nav__title" for="nav-5-2-2">
-        Configure trading strategies through the Grid Singularity Asset API
+        Create custom trading agents using the Grid Singularity Asset API
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
@@ -1408,25 +1408,6 @@
     
   </li>
 
-        
-          
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
-    
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-2-2" type="checkbox" id="nav-5-2-2-2">
-    
-    <label class="md-nav__link" for="nav-5-2-2-2">
-      Asset API
-    </label>
-    <nav class="md-nav" data-md-component="collapsible" data-md-level="4">
-      <label class="md-nav__title" for="nav-5-2-2-2">
-        Asset API
-      </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
         
           
           
@@ -1464,11 +1445,6 @@
   </li>
 
         
-      </ul>
-    </nav>
-  </li>
-
-        
           
           
           
@@ -1476,13 +1452,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-2-3" type="checkbox" id="nav-5-2-2-3">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-2-5" type="checkbox" id="nav-5-2-2-5">
     
-    <label class="md-nav__link" for="nav-5-2-2-3">
+    <label class="md-nav__link" for="nav-5-2-2-5">
       Launch the Asset API
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="4">
-      <label class="md-nav__title" for="nav-5-2-2-3">
+      <label class="md-nav__title" for="nav-5-2-2-5">
         Launch the Asset API
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -1676,11 +1652,11 @@
       <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-4" type="checkbox" id="nav-5-2-4">
     
     <label class="md-nav__link" for="nav-5-2-4">
-      Customise the clearing algorithm through the Grid Singularity Matching API
+      Customize the clearing algorithm through the Grid Singularity Matching API
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
       <label class="md-nav__title" for="nav-5-2-4">
-        Customise the clearing algorithm through the Grid Singularity Matching API
+        Customize the clearing algorithm through the Grid Singularity Matching API
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
@@ -2043,40 +2019,18 @@
                 
                 <p>The Grid Singularity Asset API is designed for aggregators (energy service providers) who wish to provide their customers (individuals and communities) with benefits of peer-to-peer and community trading facilitated by the Grid Singularity Exchange. They can create agents that follow custom trading strategies to buy and sell energy in the energy market on behalf of managed energy assets. The agent can request and receive information through the Asset API, feed that information into an algorithm, and post bids or offers on the exchange.</p>
 <p>To actively place bids and offers on behalf of energy assets, please follow these steps:</p>
-<ul>
+<ol>
+<li>Follow the steps <a href="../connect-ctn/#grid-singularity-test-network-user-roles">here</a></li>
 <li>Install the Grid Singularity Exchange SDK on your computer by launching the following commands on your terminal window:</li>
-</ul>
+</ol>
 <p><strong>Install gsy-e-sdk</strong></p>
 <pre class="codehilite"><code>mkvirtualenv gsy-e-sdk
-pip install https://github.com/gridsingularity/gsy-e-sdk.git</code></pre>
+pip install git+https://github.com/gridsingularity/gsy-e-sdk.git</code></pre>
 
 
 <p><strong>Update gsy-e-sdk (needed when an update is deployed)</strong></p>
 <pre class="codehilite"><code>pip uninstall -y gsy-e-sdk
 pip install git+https://github.com/gridsingularity/gsy-e-sdk.git</code></pre>
-
-
-<ul>
-<li>Go to the <em>Registry</em> section of the Collaboration of your interest and apply for each <em>asset</em> you wish to connect to manage their trading strategies by clicking on the asset or home. Then click on the green <em>Apply</em> button. If you have not already created a Collaboration / Canary Test Network or users are not yet registered for their assets, please follow instructions respectively <a href="../collaboration/">here</a> or <a href="../connect-ctn/">here</a> first.</li>
-</ul>
-<figure>
-<p><img _text-align:center_=";text-align:center&quot;" alt="alt_text" src="../img/configure-trading-strategies-1.png" style="height:500px;width:300px" />
-  <figcaption><b>Figure 5.2</b>: View of the connection overview.
-</figcaption></p>
-</figure>
-<ul>
-<li>Notify Grid Singularity administration by sending an email to <a href="mailto:contact@gridsingularity.com">contact@gridsingularity.com</a> to accept your applications (note: this action will be automated in the future).</li>
-</ul>
-<figure>
-<p><img _text-align:center_=";text-align:center&quot;" alt="alt_text" src="../img/configure-trading-strategies-2.png" style="height:400px;width:370px" />
-  <figcaption><b>Figure 5.3</b>: View of the connection overview for the admin
-</figcaption></p>
-</figure>
-<ul>
-<li>Edit the <a href="../asset-api-template-script/">Asset SDK Script template</a> developed by Grid Singularity to customize the trading strategies.</li>
-<li><a href="../registration-grid-operator-api-user-interface/">Launch the Asset SDK Script</a> to connect with the Grid Singularity Collaboration / Canary Test Network. A video tutorial is also available <a href="https://www.youtube.com/watch?v=oCcQ6pYFd5w&amp;feature=youtu.be" target="_blank">here</a>.</li>
-<li>Run the Collaboration or notify Grid Singularity that you are ready.</li>
-</ul>
                 
                   
                 

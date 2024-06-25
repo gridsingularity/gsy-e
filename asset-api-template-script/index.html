@@ -1385,11 +1385,11 @@
       <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-2" type="checkbox" id="nav-5-2-2" checked>
     
     <label class="md-nav__link" for="nav-5-2-2">
-      Configure trading strategies through the Grid Singularity Asset API
+      Create custom trading agents using the Grid Singularity Asset API
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
       <label class="md-nav__title" for="nav-5-2-2">
-        Configure trading strategies through the Grid Singularity Asset API
+        Create custom trading agents using the Grid Singularity Asset API
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
@@ -1405,27 +1405,6 @@
     </a>
   </li>
 
-        
-          
-          
-          
-
-  
-
-
-  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
-    
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-2-2" type="checkbox" id="nav-5-2-2-2" checked>
-    
-    <label class="md-nav__link" for="nav-5-2-2-2">
-      Asset API
-    </label>
-    <nav class="md-nav" data-md-component="collapsible" data-md-level="4">
-      <label class="md-nav__title" for="nav-5-2-2-2">
-        Asset API
-      </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
         
           
           
@@ -1525,11 +1504,6 @@
   </li>
 
         
-      </ul>
-    </nav>
-  </li>
-
-        
           
           
           
@@ -1537,13 +1511,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-2-3" type="checkbox" id="nav-5-2-2-3">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-2-5" type="checkbox" id="nav-5-2-2-5">
     
-    <label class="md-nav__link" for="nav-5-2-2-3">
+    <label class="md-nav__link" for="nav-5-2-2-5">
       Launch the Asset API
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="4">
-      <label class="md-nav__title" for="nav-5-2-2-3">
+      <label class="md-nav__title" for="nav-5-2-2-5">
         Launch the Asset API
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -1737,11 +1711,11 @@
       <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-4" type="checkbox" id="nav-5-2-4">
     
     <label class="md-nav__link" for="nav-5-2-4">
-      Customise the clearing algorithm through the Grid Singularity Matching API
+      Customize the clearing algorithm through the Grid Singularity Matching API
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
       <label class="md-nav__title" for="nav-5-2-4">
-        Customise the clearing algorithm through the Grid Singularity Matching API
+        Customize the clearing algorithm through the Grid Singularity Matching API
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
@@ -2162,7 +2136,7 @@
                 <p>Asset API template scripts are flexible and versatile Python scripts that can be easily modified for the implementation of custom smart trading strategies, integration of trading preferences (<a href="../degrees-of-freedom/">Degrees of Freedom</a>), interaction with the <a href="../settlement-market-structure/">Settlement Market</a> and other uses.</p>
 <p>In this section, each script will be described along with its functionalities, in order of complexity.</p>
 <h2 id="post-bids-and-offers-to-the-grid-singularity-exchange">Post bids and offers to the Grid Singularity Exchange<a class="headerlink" href="#post-bids-and-offers-to-the-grid-singularity-exchange" title="Permanent link">&para;</a></h2>
-<p>The key functionality of the Asset API is to post bids or offers to the Grid Singularity Exchange on behalf of energy asset owners based on their preferences. A template script can be found <a href="https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/asset_api_scripts/rest_bid_offer_posting.py" target="_blank">here</a>.</p>
+<p>The key functionality of the Asset API is to post bids or offers to the Grid Singularity Exchange on behalf of energy asset owners based on their preferences. A template script can be found <a href="https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/asset_api_scripts/rest_basic_strategies.py" target="_blank">here</a>.</p>
 <p>Users need to list the names of the assets to be connected with the Asset API, as shown in the following example. For simulations launched from the user-interface (UI), the CONNECT_TO_ALL_ASSETS parameter is available. If set to True, the Asset API connects automatically to all the assets the aggregator is connected to.</p>
 <pre class="codehilite"><code class="language-python"># List of assets' names to be connected with the API
 LOAD_NAMES = [&quot;Load 1 L13&quot;, &quot;Load 2 L21&quot;, &quot;Load 3 L17&quot;]
@@ -2292,7 +2266,7 @@ med_price = (market_maker_rate - fit_rate) / 2 + fit_rate</code></pre>
 
 
 <p>Lastly, in the <em>asset_strategy</em> dictionary, the pricing strategy is defined for each asset individually. This allows assets to have independent strategies depending on the available market information and their location in the grid.</p>
-<p>The current pricing strategies are deterministic, representing a linear function bounded between the Feed-in Tariff-grid fee (lower boundary) and the Market Maker price + grid fee (upper boundary). Since the Asset API can post up to 10 bids/offers per market slot, the strategies incrementally ramp up (bids) or down (offers) for a total of 10 prices per energy asset. The final bid/offer price is set at least 2 ticks before the end of the market slot (9th and 10th tick in the example). The load strategy, the PV strategy and the storage strategy, as assets that can charge and discharge and therefore place bids and offers at the same time, are designed as follows.</p>
+<p>The current pricing strategies are deterministic, representing a linear function bounded between the Feed-in Tariff-grid fee (lower boundary) and the Market Maker price + grid fee (upper boundary). Since the Asset API can post bids/offer on every tick, the number of posts is limited to the number of ticks in the market slot. In the template strategy that are presented here, bids are ramped up and offers are ramped down for a total of 10 prices per energy asset. This can be configured by setting the <code>TICK_DISPATCH_FREQUENCY_PERCENT</code> parameter (at the top of the script). The final bid/offer price is set at least at 80% market slot completion. The load strategy, the PV strategy and the storage strategy, as assets that can charge and discharge and therefore place bids and offers at the same time, are designed as follows.</p>
 <pre class="codehilite"><code class="language-python"># Consumption strategy
 if &quot;energy_requirement_kWh&quot; in area_dict[&quot;asset_info&quot;]:
    load_strategy = []

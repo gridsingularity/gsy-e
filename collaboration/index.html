@@ -1429,11 +1429,11 @@
       <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-2" type="checkbox" id="nav-5-2-2">
     
     <label class="md-nav__link" for="nav-5-2-2">
-      Configure trading strategies through the Grid Singularity Asset API
+      Create custom trading agents using the Grid Singularity Asset API
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
       <label class="md-nav__title" for="nav-5-2-2">
-        Configure trading strategies through the Grid Singularity Asset API
+        Create custom trading agents using the Grid Singularity Asset API
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
@@ -1449,25 +1449,6 @@
     </a>
   </li>
 
-        
-          
-          
-          
-
-
-  <li class="md-nav__item md-nav__item--nested">
-    
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-2-2" type="checkbox" id="nav-5-2-2-2">
-    
-    <label class="md-nav__link" for="nav-5-2-2-2">
-      Asset API
-    </label>
-    <nav class="md-nav" data-md-component="collapsible" data-md-level="4">
-      <label class="md-nav__title" for="nav-5-2-2-2">
-        Asset API
-      </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
         
           
           
@@ -1505,11 +1486,6 @@
   </li>
 
         
-      </ul>
-    </nav>
-  </li>
-
-        
           
           
           
@@ -1517,13 +1493,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-2-3" type="checkbox" id="nav-5-2-2-3">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-2-5" type="checkbox" id="nav-5-2-2-5">
     
-    <label class="md-nav__link" for="nav-5-2-2-3">
+    <label class="md-nav__link" for="nav-5-2-2-5">
       Launch the Asset API
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="4">
-      <label class="md-nav__title" for="nav-5-2-2-3">
+      <label class="md-nav__title" for="nav-5-2-2-5">
         Launch the Asset API
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -1717,11 +1693,11 @@
       <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-4" type="checkbox" id="nav-5-2-4">
     
     <label class="md-nav__link" for="nav-5-2-4">
-      Customise the clearing algorithm through the Grid Singularity Matching API
+      Customize the clearing algorithm through the Grid Singularity Matching API
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
       <label class="md-nav__title" for="nav-5-2-4">
-        Customise the clearing algorithm through the Grid Singularity Matching API
+        Customize the clearing algorithm through the Grid Singularity Matching API
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
@@ -2125,18 +2101,17 @@
                 
                   <h1>Create a Grid Singularity Collaboration</h1>
                 
-                <p><em>Note: Collaborations are only available at Grid Singularity’s previous interface (d3a</em><a href="https://www.d3a.io/" target="_blank"><em>.io</em></a><em>) at the moment, and we will update this document as soon as the tool is migrated to the new interface.</em></p>
-<p>Collaboration is a type of simulation in the <a href="https://www.d3a.io/" target="_blank">Grid Singularity </a>user interface that allows multiple users to participate in the same environment. They can act in a collaborative or competitive way, aiming to optimize specific metrics, for instance the cost of <a href="../bills-traded-energy/">energy bill</a> or peak congestion. Users can connect through the <a href="../APIs-introduction/">Grid Singularity API</a> to actively engage in the collaboration, assuming one of the following roles:</p>
+                <p>Collaboration is a type of simulation in the <a href="https://www.d3a.io/" target="_blank">Grid Singularity </a>user interface that allows multiple users to participate in the same environment. They can act in a collaborative or competitive way, aiming to optimize specific metrics, for instance the cost of <a href="../bills-traded-energy/">energy bill</a> or peak congestion. Users can connect through the <a href="../APIs-introduction/">Grid Singularity API</a> to actively engage in the collaboration, assuming one of the following roles:</p>
 <h3 id="exchange-operator">Exchange Operator<a class="headerlink" href="#exchange-operator" title="Permanent link">&para;</a></h3>
 <p>The exchange operator (EO) is responsible for building the digital twin representation of the electrical grid, including energy assets and (sub)markets. Once the setup is complete, the EO facilitates the approval of other users to register to manage a set of (sub)markets and energy assets, and subsequently launches the collaboration. The EO is also in charge of expanding the grid (see <a href="../events/">events</a>) or registering new energy assets in the course of a simulated collaboration.</p>
 <h3 id="grid-operator">Grid Operator<a class="headerlink" href="#grid-operator" title="Permanent link">&para;</a></h3>
 <p>The grid operator role is designed specifically for Distribution System Operators (DSOs), Distribution Network Operators (DNOs), Independent System Operators (ISOs) and Transmission System Operators (TSOs), which can register to manage different (sub)markets, on different grid levels in the collaboration. Once registered and approved by the EO, they can manage the relevant markets by using the Grid Operator API to change grid fees to manage the grid congestion in the local energy market by optimizing specific metrics, such as peak percentage.</p>
 <h3 id="aggregator">Aggregator<a class="headerlink" href="#aggregator" title="Permanent link">&para;</a></h3>
-<p>The aggregator role is designed for aggregator companies participating in the Grid Singularity Exchange. Aggregators can apply to manage energy assets (Load i.e. <a href="../consumption/">energy  consumption</a>, <a href="../solar-panels/">PV</a> and Storage i.e. <a href="../battery/">batteries</a>) owned by communities, consumers, producers and prosumers. Once approved by the Exchange Operator, aggregators are responsible for buying and selling energy on behalf of their customers by connecting their energy assets with set trading preferences through the <a href="" title="configure-trading-strategies-walkthrough.md">Asset API</a>.</p>
+<p>The aggregator role is designed for aggregator (energy service provider / asset management) companies participating in the Grid Singularity Exchange. Aggregators can apply to manage energy assets (Load i.e. <a href="../consumption/">energy  consumption</a>, <a href="../solar-panels/">PV</a> and Storage i.e. <a href="../battery/">batteries</a>) owned by communities, consumers, producers and prosumers. Once approved by the Exchange Operator, aggregators are responsible for buying and selling energy on behalf of their customers by connecting their energy assets with set trading preferences through the <a href="" title="configure-trading-strategies-walkthrough.md">Asset API</a>.</p>
 <p>To create a Collaboration in the Grid Singularity user interface, follow these steps:</p>
 <ul>
 <li>
-<p>Log-in to Grid Singularity Exchange (as noted, the full functionality is still available only via our previous interface: d3a.io) with your Grid Singularity credentials to automatically access previously created simulations.</p>
+<p>Log-in to Grid Singularity Exchange with your Grid Singularity credentials to automatically access previously created simulations.</p>
 </li>
 <li>
 <p>Select the simulation that you want to set up as a Collaboration by clicking on <em>Edit → Create a Collaboration</em>. If you have not yet created a simulation or want to create a new one, please follow the instructions <a href="../community/">here</a>.</p>
@@ -2153,8 +2128,8 @@
 <li><em>Purpose of the Collaboration</em></li>
 <li><em>Simulation URL</em></li>
 </ul>
-<p>The simulation URL should look like this at the moment:</p>
-<p><img alt="alt_text" src="../img/simulation-URL.png" /></p>
+<p>The <em>simulation URL</em> should look like this:</p>
+<pre class="codehilite"><code>https://gridsingularity.com/singularity-map/results/522d9105-8447-462e-8651-7611c071578c/2f3ac36b-7249-4321-8e48-dd87f4e5d39c</code></pre>
                 
                   
                 

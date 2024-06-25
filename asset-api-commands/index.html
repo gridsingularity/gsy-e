@@ -1385,11 +1385,11 @@
       <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-2" type="checkbox" id="nav-5-2-2" checked>
     
     <label class="md-nav__link" for="nav-5-2-2">
-      Configure trading strategies through the Grid Singularity Asset API
+      Create custom trading agents using the Grid Singularity Asset API
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
       <label class="md-nav__title" for="nav-5-2-2">
-        Configure trading strategies through the Grid Singularity Asset API
+        Create custom trading agents using the Grid Singularity Asset API
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
@@ -1405,27 +1405,6 @@
     </a>
   </li>
 
-        
-          
-          
-          
-
-  
-
-
-  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
-    
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-2-2" type="checkbox" id="nav-5-2-2-2" checked>
-    
-    <label class="md-nav__link" for="nav-5-2-2-2">
-      Asset API
-    </label>
-    <nav class="md-nav" data-md-component="collapsible" data-md-level="4">
-      <label class="md-nav__title" for="nav-5-2-2-2">
-        Asset API
-      </label>
-      <ul class="md-nav__list" data-md-scrollfix>
-        
         
           
           
@@ -1523,13 +1502,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#asset_info" title="asset_info()" class="md-nav__link">
-    asset_info()
-  </a>
-  
-</li>
-      
       
       
       
@@ -1553,11 +1525,6 @@
   </li>
 
         
-      </ul>
-    </nav>
-  </li>
-
-        
           
           
           
@@ -1565,13 +1532,13 @@
 
   <li class="md-nav__item md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-2-3" type="checkbox" id="nav-5-2-2-3">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-2-5" type="checkbox" id="nav-5-2-2-5">
     
-    <label class="md-nav__link" for="nav-5-2-2-3">
+    <label class="md-nav__link" for="nav-5-2-2-5">
       Launch the Asset API
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="4">
-      <label class="md-nav__title" for="nav-5-2-2-3">
+      <label class="md-nav__title" for="nav-5-2-2-5">
         Launch the Asset API
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
@@ -1765,11 +1732,11 @@
       <input class="md-toggle md-nav__toggle" data-md-toggle="nav-5-2-4" type="checkbox" id="nav-5-2-4">
     
     <label class="md-nav__link" for="nav-5-2-4">
-      Customise the clearing algorithm through the Grid Singularity Matching API
+      Customize the clearing algorithm through the Grid Singularity Matching API
     </label>
     <nav class="md-nav" data-md-component="collapsible" data-md-level="3">
       <label class="md-nav__title" for="nav-5-2-4">
-        Customise the clearing algorithm through the Grid Singularity Matching API
+        Customize the clearing algorithm through the Grid Singularity Matching API
       </label>
       <ul class="md-nav__list" data-md-scrollfix>
         
@@ -2187,13 +2154,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#asset_info" title="asset_info()" class="md-nav__link">
-    asset_info()
-  </a>
-  
-</li>
-      
       
       
       
@@ -2341,12 +2301,6 @@ Here is an example:</p>
 </ul>
 <p>Here is an example:</p>
 <pre class="codehilite"><code>self.add_to_batch_commands.delete_offer(asset_uuid=&quot;62f827ec-ef86-4782-b5c3-88327751d97d&quot;, bid_id = &quot;2e7866d8-3dg6-49ad-afe8-fd5876a3e679&quot;)</code></pre>
-
-
-<h3 id="asset_info">asset_info()<a class="headerlink" href="#asset_info" title="Permanent link">&para;</a></h3>
-<p>It gets asset information(returns required energy for Loads, available energy for PVs and energy to buy/sell for storages). This command receives one argument: asset_uuid, which is the Universal Unique Identifier of the selected asset.
-Here is an example:</p>
-<pre class="codehilite"><code>self.add_to_batch_commands.asset_info(asset_uuid=&quot;62f827ec-ef86-4782-b5c3-88327751d97d&quot;)</code></pre>
 
 
 <p>After adding all the wanted commands in the batch, the API can execute it with the following command:</p>
