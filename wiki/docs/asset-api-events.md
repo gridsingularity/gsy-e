@@ -1,7 +1,7 @@
-Each market cycle lasts 15 minutes and is divided into 10 ticks until it ends. The bids and offers are posted within the market cycle at each tick until the cycle ends.
+Each market cycle lasts 15 minutes and is divided into ticks. The bids and offers can be posted within the market cycle at each tick until the cycle ends.
 
 <figure markdown>
-  ![alt_text](img/asset-API-events.png){:text-align:center"}
+  ![alt_text](img/asset_api_slot_overview.png){:text-align:center"}
   <figcaption><b>Figure 5.4</b>: Market slot overall structure and Asset API events.
 </figcaption>
 </figure>

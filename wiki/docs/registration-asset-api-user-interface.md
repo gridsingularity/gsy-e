@@ -32,26 +32,12 @@ The arguments are :
 
 The API agent can interface with a local simulation ([backend](setup-configuration.md)) or a [collaboration](collaboration.md)/[Canary Network](connect-ctn.md) ([User-Interface](https://www.d3a.io/){target=_blank}). There are 3 methods to parse the required information when launching the API to connect to the UI, as thoroughly explained in the text below:
 
-1. Simulation configuration file
-2. CLI command
-3. Environment variables
-
-####Simulation configuration file:
-
-The simulation configuration file is a JSON format file downloadable on the [User-Interface](https://www.d3a.io/){target=_blank}.  It contains all the information about the simulation setup (username, simulation name and UUID, domain name, websocket domain name, global settings of the simulation and the registry, consisting of all the grid hierarchy including markets and assets and whether or not the user is connected to those). To download this file the user needs to go to the Registry page of the relevant collaboration/Canary Test Network and click on the top right edit icon and Download Exchange SDK Summary.
-
-
-![alt_text](img/api-overview-3.png)
-
-To run the Asset API, you can run the following command by adapting the arguments to your case:
-
-```
-gsy-e-sdk --log-level INFO run  --setup asset_api_template -u username -p password -i absolute_path/my_simulation_config.json
-```
+1. CLI command
+2. Environment variables
 
 ####CLI command:
 
-Instead of passing the JSON file, the user can directly pass the relevant variables as arguments in the CLI commands. For that to work, the user needs to pass the domain name and websocket name (both are optional parameters and only relevant when connecting to specific domains) and the simulation_id. The simulation_id corresponds to the Universally Unique Identifier. This token can be found in the URL of a collaboration or a Canary Test Network in the User Interface.
+The user can directly pass the relevant variables as arguments in the CLI commands. For that to work, the user needs to pass the domain name and websocket name (both are optional parameters and only relevant when connecting to specific domains) and the simulation_id. The simulation_id corresponds to the Universally Unique Identifier (UUID). This token can be found in the URL of a collaboration or a Canary Test Network in the User Interface. It is the UUID right after the URL `https://gridsingularity.com/singularity-map/results/` (marked in the screenshot below)
 
 ![alt_text](img/api-overview-4.png)
 

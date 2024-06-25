@@ -1,5 +1,3 @@
-*Note: Collaborations are only available at Grid Singularity’s previous interface (d3a*[*.io*](https://www.d3a.io/){target=_blank}*) at the moment, and we will update this document as soon as the tool is migrated to the new interface.*
-
 Collaboration is a type of simulation in the [Grid Singularity ](https://www.d3a.io/){target=_blank}user interface that allows multiple users to participate in the same environment. They can act in a collaborative or competitive way, aiming to optimize specific metrics, for instance the cost of [energy bill](bills-traded-energy.md) or peak congestion. Users can connect through the [Grid Singularity API](APIs-introduction.md) to actively engage in the collaboration, assuming one of the following roles:
 
 ###Exchange Operator
@@ -12,11 +10,11 @@ The grid operator role is designed specifically for Distribution System Operator
 
 ###Aggregator
 
-The aggregator role is designed for aggregator companies participating in the Grid Singularity Exchange. Aggregators can apply to manage energy assets (Load i.e. [energy  consumption](consumption.md), [PV](solar-panels.md) and Storage i.e. [batteries](battery.md)) owned by communities, consumers, producers and prosumers. Once approved by the Exchange Operator, aggregators are responsible for buying and selling energy on behalf of their customers by connecting their energy assets with set trading preferences through the [Asset API]('configure-trading-strategies-walkthrough.md').
+The aggregator role is designed for aggregator (energy service provider / asset management) companies participating in the Grid Singularity Exchange. Aggregators can apply to manage energy assets (Load i.e. [energy  consumption](consumption.md), [PV](solar-panels.md) and Storage i.e. [batteries](battery.md)) owned by communities, consumers, producers and prosumers. Once approved by the Exchange Operator, aggregators are responsible for buying and selling energy on behalf of their customers by connecting their energy assets with set trading preferences through the [Asset API]('configure-trading-strategies-walkthrough.md').
 
 To create a Collaboration in the Grid Singularity user interface, follow these steps:
 
-* Log-in to Grid Singularity Exchange (as noted, the full functionality is still available only via our previous interface: d3a.io) with your Grid Singularity credentials to automatically access previously created simulations.
+* Log-in to Grid Singularity Exchange with your Grid Singularity credentials to automatically access previously created simulations.
 
 * Select the simulation that you want to set up as a Collaboration by clicking on *Edit → Create a Collaboration*. If you have not yet created a simulation or want to create a new one, please follow the instructions [here](community.md).
 
@@ -31,6 +29,7 @@ To create a Collaboration in the Grid Singularity user interface, follow these s
 - *Purpose of the Collaboration*
 - *Simulation URL*
 
-The simulation URL should look like this at the moment:
-
-![alt_text](img/simulation-URL.png)
+The *simulation URL* should look like this:
+```
+https://gridsingularity.com/singularity-map/results/522d9105-8447-462e-8651-7611c071578c/2f3ac36b-7249-4321-8e48-dd87f4e5d39c
+```

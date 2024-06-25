@@ -4,7 +4,7 @@ It allows users to create agents that can dynamically change the grid fee in dif
 
 To actively manage grid congestion by sending new grid fees at every market slot for different markets at different levels of the grid, please follow the following steps:
 
-* Install the Grid Singularity Exchange SDK on your computer by launching the following commands on your terminal window:
+Before, please install the Grid Singularity Exchange SDK on your computer by launching the following commands on your terminal window:
 
 **Install gsy-e-sdk**
 
@@ -24,14 +24,9 @@ pip install pandas
 pip install openpyxl
 ```
 
-* Go to the *Registry and Scoreboard* section of the Collaboration of your interest and apply to every market that you wish to connect and to actively manage by sending new grid fees for each market slot. Then click on *Submit your actions*. If you have not already created a Collaboration / Canary Test Network, please follow instructions respectively [here](collaboration.md) or [here](connect-ctn.md) first.
-
-![alt_text](img/implement-grid-fees-1.png)
-
-* Notify Grid Singularity administration by sending an email to [contact@gridsingularity.com](mailto:contact@gridsingularity.com) to accept your applications) (note: this action will be automated in the future).
-
-![alt_text](img/implement-grid-fees-2.png)
-
-* Edit the [Grid Operator SDK Script template](https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/grid_operator_api_template.py){target=_blank} to experiment with different grid fee models.
-* [Launch the Grid Operator SDK Script](registration-grid-operator-api-user-interface.md) to connect with the Grid Singularity Collaboration / Canary Test Network. A video tutorial is also available [here](https://www.youtube.com/watch?v=LoYoyIy-C7M){target=_blank}.
-* Run the Collaboration or notify the collaboration owner that you are ready.
+1. For connecting to a specific Collaboration/Canary Network, the owner/Exchange Operator has to invite and grant access as Grid operator in the Registry panel:
+   <figure markdown>
+     ![alt_text](img/set_user_roles_colab.png){:style="height:340px;width:300px";text-align:center}
+   </figure>
+2. Edit the [Grid Operator SDK Script template](https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/grid_operator_api_scripts/rest_grid_fees.py){target=_blank} to experiment with different grid fee models and launch it.
+3. Run the Collaboration or notify the collaboration owner that you are ready.

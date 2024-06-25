@@ -3,7 +3,7 @@ Asset API template scripts are flexible and versatile Python scripts that can be
 In this section, each script will be described along with its functionalities, in order of complexity.
 
 ##Post bids and offers to the Grid Singularity Exchange
-The key functionality of the Asset API is to post bids or offers to the Grid Singularity Exchange on behalf of energy asset owners based on their preferences. A template script can be found [here](https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/asset_api_scripts/rest_bid_offer_posting.py){target=_blank}.
+The key functionality of the Asset API is to post bids or offers to the Grid Singularity Exchange on behalf of energy asset owners based on their preferences. A template script can be found [here](https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/asset_api_scripts/rest_basic_strategies.py){target=_blank}.
 
 Users need to list the names of the assets to be connected with the Asset API, as shown in the following example. For simulations launched from the user-interface (UI), the CONNECT_TO_ALL_ASSETS parameter is available. If set to True, the Asset API connects automatically to all the assets the aggregator is connected to.
 
@@ -147,7 +147,7 @@ for area_uuid, area_dict in self.latest_grid_tree_flat.items():
 ```
 Lastly, in the _asset_strategy_ dictionary, the pricing strategy is defined for each asset individually. This allows assets to have independent strategies depending on the available market information and their location in the grid.
 
-The current pricing strategies are deterministic, representing a linear function bounded between the Feed-in Tariff-grid fee (lower boundary) and the Market Maker price + grid fee (upper boundary). Since the Asset API can post up to 10 bids/offers per market slot, the strategies incrementally ramp up (bids) or down (offers) for a total of 10 prices per energy asset. The final bid/offer price is set at least 2 ticks before the end of the market slot (9th and 10th tick in the example). The load strategy, the PV strategy and the storage strategy, as assets that can charge and discharge and therefore place bids and offers at the same time, are designed as follows.
+The current pricing strategies are deterministic, representing a linear function bounded between the Feed-in Tariff-grid fee (lower boundary) and the Market Maker price + grid fee (upper boundary). Since the Asset API can post bids/offer on every tick, the number of posts is limited to the number of ticks in the market slot. In the template strategy that are presented here, bids are ramped up and offers are ramped down for a total of 10 prices per energy asset. This can be configured by setting the `TICK_DISPATCH_FREQUENCY_PERCENT` parameter (at the top of the script). The final bid/offer price is set at least at 80% market slot completion. The load strategy, the PV strategy and the storage strategy, as assets that can charge and discharge and therefore place bids and offers at the same time, are designed as follows.
 
 ```python
 # Consumption strategy
