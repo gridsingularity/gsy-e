@@ -210,7 +210,9 @@ markdown_extensions:
 plugins:
     - search:
         lang: en
-
+    - exclude-search:
+        exclude:
+          - canary-network.md
     - redirects:
         redirect_maps:
             # When trying to reach the root page, redirect to the documentation page

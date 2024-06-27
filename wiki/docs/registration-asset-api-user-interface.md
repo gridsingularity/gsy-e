@@ -30,7 +30,7 @@ The arguments are :
 *   `simulation-config-path` --> Path to the JSON file that contains the user's collaboration/CN information.
 *   `run-on-redis` --> This flag targets the local testing of the SDK, where no user authentication is required. A locally running redis server and a running Grid Singularity CLI simulation are needed here.
 
-The API agent can interface with a local simulation ([backend](setup-configuration.md)) or a [collaboration](collaboration.md)/[Canary Network](connect-ctn.md) ([User-Interface](https://www.d3a.io/){target=_blank}). There are 3 methods to parse the required information when launching the API to connect to the UI, as thoroughly explained in the text below:
+The API agent can interface with a local simulation ([backend](setup-configuration.md)) or a [collaboration](collaboration.md)/[Canary Network](connect-ctn.md) ([User-Interface](https://www.d3a.io/){target=_blank}). There are 2 methods to parse the required information when launching the API to connect to the UI, as thoroughly explained in the text below:
 
 1. CLI command
 2. Environment variables
