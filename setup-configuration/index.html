@@ -2159,7 +2159,7 @@ def get_setup(config):
 <li>Market_type (if equal to 1: <a href="../one-sided-pay-as-offer/">One-Sided Pay-as-Offer</a>, if equal to 2 : <a href="../two-sided-pay-as-bid/">Two-Sided Pay-as-Bid</a>, if equal to 3 : <a href="../two-sided-pay-as-clear/">Two-Sided Pay-as-Clear</a>)</li>
 <li>Grid_fee_type (if equal to 1: <a href="../constant-fees/">Constant grid fee</a>, if equal to 2 : <a href="../percentage-fees/">Percentage grid fee</a>)</li>
 </ul>
-<p>Here is an example to setup a simulation with the Two-Sided Pay-as-Bid market type, constant grid fee and default min (0cts/kWh) and max to (35cts/kWh) energy rate for all <a href="../not_shown/model-load/">loads</a>:</p>
+<p>Here is an example to setup a simulation with the Two-Sided Pay-as-Bid market type, constant grid fee and default min (0cts/kWh) and max to (35cts/kWh) energy rate for all <a href="../model-load/">loads</a>:</p>
 <pre class="codehilite"><code class="language-python">from gsy_framework.constants_limits import ConstSettings
 def get_setup(config):
     ConstSettings.MASettings.MARKET_TYPE = 2

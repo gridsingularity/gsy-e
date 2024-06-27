@@ -2240,7 +2240,7 @@
 <li>Our new user interface (UI), found at <a href="https://map.gridsingularity.com/singularity-map" target="_blank">Grid Singularity map</a> will replace the old one at <a href="https://www.d3a.io/" target="_blank">d3a.io</a>. This new UI is intended to make creating and running simulations much <strong>easier</strong> for users who might be new to thinking about their energy use and <strong>simulating</strong> their own energy community.</li>
 <li>Additional features in the map include a <strong>search bar</strong>, which facilitates searching for an address or town on the map. After running the simulation, highlighted results displayed directly above each home and community in the map.</li>
 <li>There are standard (template) homes and profiles that can be used by users who do not have information about actual energy consumption and/or production, generated from <a href="https://www.loadprofilegenerator.de/" target="_blank">loadprofilegenerator.de</a> and <a href="https://energydatamap.com/" target="_blank">energydatamap.com</a>.</li>
-<li>We provide additional information on the <a href="../not_shown/canary-network/">Canary Test Network</a> for live data simulations, which is the next step in building an energy community</li>
+<li>We provide additional information on the <a href="../canary-network/">Canary Test Network</a> for live data simulations, which is the next step in building an energy community</li>
 <li>Animated color visuals in the map view assist analysis, with a color assigned to each home and community on the <a href="https://map.gridsingularity.com/singularity-map" target="_blank">map</a> when the simulation is running: <strong>green</strong> for net exports, <strong>blue</strong> for neutral, and <strong>red</strong> for net imports</li>
 <li>We also provide <strong>Map 3D</strong> view, where users can view their simulations and homes in 3-Dimensions</li>
 <li>Side navigation bar summarizes the contents of a users’ energy community to additionally aid optimal energy community configuration</li>
@@ -2252,7 +2252,7 @@
 <p>The following features were implemented :</p>
 <ul>
 <li><a href="../markets/">Market slot</a> length realtime: This can be set to simulations and collaborations. It slows down the running pace with a constant value (speed can go from the fasted as possible up until real-time.</li>
-<li>Public library is updated: New <a href="../not_shown/model-load/">loads</a> and <a href="../not_shown/model-pv/">PVs</a> profiles were added to the public library. A total of <strong>24</strong> loads, representing various types of households was generated using <a href="https://www.loadprofilegenerator.de/" target="_blank">loadprofilegenerator.de</a>. PV production profiles were taken from <a href="https://energydatamap.com/">energydatamap.com</a> for different cities. These new loads and PVs have profiles of a full year (2021).</li>
+<li>Public library is updated: New <a href="../model-load/">loads</a> and <a href="../model-pv/">PVs</a> profiles were added to the public library. A total of <strong>24</strong> loads, representing various types of households was generated using <a href="https://www.loadprofilegenerator.de/" target="_blank">loadprofilegenerator.de</a>. PV production profiles were taken from <a href="https://energydatamap.com/">energydatamap.com</a> for different cities. These new loads and PVs have profiles of a full year (2021).</li>
 <li>Users can now download the <strong>registry</strong> page as a JSON file, to facilitate the connection with the API to a collaboration/Canary Network.</li>
 </ul>
 <h2 id="version-0110">Version 0.11.0<a class="headerlink" href="#version-0110" title="Permanent link">&para;</a></h2>
@@ -2260,7 +2260,7 @@
 <ul>
 <li>Time Resolution setting for graphs: Users can choose to <strong>view data</strong> in the graphs in 2 hour, 1 hour, or 15 minutes time resolution. This allows for <strong>faster</strong> loading of the graphs as the simulation run time is extended. Users can change the time resolution for the Energy Trade Profile, Energy Pricing, and Asset Profile graphs.</li>
 <li>Add a Library as an <a href="../events/">Event</a>: Users can add <strong>grid components</strong> from the Library into their simulation while it is running.</li>
-<li><a href="../not_shown/canary-network/">Canary Network</a> Enhancements: Canary Networks are automatically restarted in the event of a software deploy or other system disruption. Users can view previous weeks of Canary Network data and <a href="../results-download/">download the results</a>. Canary Network simulations can run for weeks at a time and store all data for future analysis and research.</li>
+<li><a href="../canary-network/">Canary Network</a> Enhancements: Canary Networks are automatically restarted in the event of a software deploy or other system disruption. Users can view previous weeks of Canary Network data and <a href="../results-download/">download the results</a>. Canary Network simulations can run for weeks at a time and store all data for future analysis and research.</li>
 <li>Users can trade through the Grid Singularity <a href="../configure-trading-strategies-walkthrough/">Asset</a> and <a href="../implement-grid-fees-walkthrough/">Grid Operator</a> APIs through a cloud web service. This feature allows users to <strong>automate</strong> their trading algorithms and connect to the API from the cloud instead of hosting and monitoring on a local computer.</li>
 </ul>
 <iframe width="560" height="315" src="https://www.youtube.com/embed/b2LGxgnEAcM" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
@@ -2268,8 +2268,8 @@
 <h2 id="version-0100">Version 0.10.0<a class="headerlink" href="#version-0100" title="Permanent link">&para;</a></h2>
 <p>The following features were implemented :</p>
 <ul>
-<li><a href="../not_shown/canary-network/">Canary Networks</a>: An admin user can create a Canary Network simulation, which duplicates a <a href="../collaboration/">collaboration</a> simulation and allows the admin to connect each energy asset in the grid to its <strong>live data stream</strong> in order to simulate trading on the asset's live metered data readings. The Canary Network runs in <strong>real-time</strong>, with incoming data collected during each 15 minute market slot. Researcher users can trade on behalf of energy assets using the registry to connect to the live data stream which broadcasts the energy required for each asset through the <a href="../configure-trading-strategies-walkthrough/">Asset API</a>. Grid Operator users can change the grid fees and grid parameters of each grid market using the registry which connects them to their markets through the <a href="../implement-grid-fees-walkthrough/">Grid Operator API</a>. Therefore, the Canary Network realizes the digital twin model of an energy asset and enables Researcher users to trade in real-time on behalf of their assets as a proof of concept. Once a Canary Network is established, it continues to run and agents can trade over weeks and months of time, for long term study of energy asset data and agent and market behavior. Previous weeks of data and results are saved in the results page weekly history.</li>
-<li>Island or Grid-connect a <a href="../not_shown/model-market-maker/">Market Maker</a> as an event: Users can now change the role and mode of the Market Maker as an event, allowing users to simulate <strong>blackouts</strong> by changing the Market Maker to an islanding role, or simulating other impacts resulting from a change in the Market Maker parameters, such as showing the effect of connecting an islanded Market Maker to the grid.</li>
+<li><a href="../canary-network/">Canary Networks</a>: An admin user can create a Canary Network simulation, which duplicates a <a href="../collaboration/">collaboration</a> simulation and allows the admin to connect each energy asset in the grid to its <strong>live data stream</strong> in order to simulate trading on the asset's live metered data readings. The Canary Network runs in <strong>real-time</strong>, with incoming data collected during each 15 minute market slot. Researcher users can trade on behalf of energy assets using the registry to connect to the live data stream which broadcasts the energy required for each asset through the <a href="../configure-trading-strategies-walkthrough/">Asset API</a>. Grid Operator users can change the grid fees and grid parameters of each grid market using the registry which connects them to their markets through the <a href="../implement-grid-fees-walkthrough/">Grid Operator API</a>. Therefore, the Canary Network realizes the digital twin model of an energy asset and enables Researcher users to trade in real-time on behalf of their assets as a proof of concept. Once a Canary Network is established, it continues to run and agents can trade over weeks and months of time, for long term study of energy asset data and agent and market behavior. Previous weeks of data and results are saved in the results page weekly history.</li>
+<li>Island or Grid-connect a <a href="../model-market-maker/">Market Maker</a> as an event: Users can now change the role and mode of the Market Maker as an event, allowing users to simulate <strong>blackouts</strong> by changing the Market Maker to an islanding role, or simulating other impacts resulting from a change in the Market Maker parameters, such as showing the effect of connecting an islanded Market Maker to the grid.</li>
 </ul>
 <iframe width="560" height="315" src="https://www.youtube.com/embed/kHacTJvTRwM" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
@@ -2311,7 +2311,7 @@
 <li><a href="../events/">Simulation events</a> <br />Add, delete, or update areas or energy resources in a simulation while it is running. This allows users to grow their simulations in real-time and analyze the impacts of energy resources coming online and changes to grid parameters such as grid fees.</li>
 <li>Timeline to view <a href="../events/">events</a> and zoom in <br />View all events in a timeline and click on each event to view its relevant grid configuration and results. Zoom in to view results for a specific day.</li>
 <li>Pause or stop a simulation <br />Pause a simulation to freeze it while adding an event. Stop a simulation pre-maturely in order to run another version sooner.</li>
-<li>Configure an infinite bus as part of the <a href="../not_shown/model-market-maker/">Market Maker</a> <br />Configure an Infinite Bus in order to add a feed-in-tariff to the simulation.</li>
+<li>Configure an infinite bus as part of the <a href="../model-market-maker/">Market Maker</a> <br />Configure an Infinite Bus in order to add a feed-in-tariff to the simulation.</li>
 </ul>
 <iframe width="560" height="315" src="https://www.youtube.com/embed/X5Fhb1mEBu4" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
@@ -2319,9 +2319,9 @@
 <p>The following features were implemented :</p>
 <ul>
 <li><a href="../constant-fees/">Constant based Grid Fees</a></li>
-<li><a href="../self-sufficiency-consumption/">Self Sufficiency, Self Consumption</a>, and <a href="../not_shown/peak-percentage/">Energy Peak Percentage</a> KPIs</li>
+<li><a href="../self-sufficiency-consumption/">Self Sufficiency, Self Consumption</a>, and <a href="../peak-percentage/">Energy Peak Percentage</a> KPIs</li>
 <li>Simulation runtime status indicator</li>
-<li>Increased node limit to <a href="../not_shown/general-settings/">1000 nodes</a></li>
+<li>Increased node limit to <a href="../general-settings/">1000 nodes</a></li>
 <li><a href="../collaboration/">Collaborations</a> Scoreboard</li>
 <li>Select visible charts on <a href="../results/">Results page</a></li>
 <li>Colors for Energy Bills Bought and Sold</li>
@@ -2349,10 +2349,10 @@
 <h2 id="version-020">Version 0.2.0<a class="headerlink" href="#version-020" title="Permanent link">&para;</a></h2>
 <p>The following features were implemented :</p>
 <ul>
-<li>Run simulations for <a href="../not_shown/general-settings/">one week</a></li>
+<li>Run simulations for <a href="../general-settings/">one week</a></li>
 <li>Choose your market type: additional access to <a href="../two-sided-pay-as-bid/">two-sided pay as bid</a> and <a href="../two-sided-pay-as-clear/">two-sided pay as clear</a> market types</li>
 <li>New user friendly asset strategies</li>
-<li>Configure your <a href="../not_shown/model-market-maker/">market maker</a></li>
+<li>Configure your <a href="../model-market-maker/">market maker</a></li>
 <li>Scrollable graphs on the results page optimized for longer simulations</li>
 <li>Download simulation results</li>
 </ul>

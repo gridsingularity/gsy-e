@@ -101,6 +101,16 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://gridsingularity.github.io/gsy-e/documentation/canary-network/</loc>
+         <lastmod>2024-06-27</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://gridsingularity.github.io/gsy-e/documentation/cloud-service-guide/</loc>
+         <lastmod>2024-06-27</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://gridsingularity.github.io/gsy-e/documentation/collaboration/</loc>
          <lastmod>2024-06-27</lastmod>
          <changefreq>daily</changefreq>
@@ -176,7 +186,17 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://gridsingularity.github.io/gsy-e/documentation/energy-bills/</loc>
+         <lastmod>2024-06-27</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://gridsingularity.github.io/gsy-e/documentation/events/</loc>
+         <lastmod>2024-06-27</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://gridsingularity.github.io/gsy-e/documentation/general-settings/</loc>
          <lastmod>2024-06-27</lastmod>
          <changefreq>daily</changefreq>
     </url>
@@ -241,12 +261,22 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://gridsingularity.github.io/gsy-e/documentation/library/</loc>
+         <lastmod>2024-06-27</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://gridsingularity.github.io/gsy-e/documentation/licensing/</loc>
          <lastmod>2024-06-27</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://gridsingularity.github.io/gsy-e/documentation/linux-installation-instructions/</loc>
+         <lastmod>2024-06-27</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://gridsingularity.github.io/gsy-e/documentation/map/</loc>
          <lastmod>2024-06-27</lastmod>
          <changefreq>daily</changefreq>
     </url>
@@ -296,7 +326,42 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://gridsingularity.github.io/gsy-e/documentation/model-load/</loc>
+         <lastmod>2024-06-27</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://gridsingularity.github.io/gsy-e/documentation/model-market-maker/</loc>
+         <lastmod>2024-06-27</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://gridsingularity.github.io/gsy-e/documentation/model-markets/</loc>
+         <lastmod>2024-06-27</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://gridsingularity.github.io/gsy-e/documentation/model-power-plant/</loc>
+         <lastmod>2024-06-27</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://gridsingularity.github.io/gsy-e/documentation/model-pv/</loc>
+         <lastmod>2024-06-27</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://gridsingularity.github.io/gsy-e/documentation/model-storage/</loc>
+         <lastmod>2024-06-27</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://gridsingularity.github.io/gsy-e/documentation/one-sided-pay-as-offer/</loc>
+         <lastmod>2024-06-27</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://gridsingularity.github.io/gsy-e/documentation/peak-percentage/</loc>
          <lastmod>2024-06-27</lastmod>
          <changefreq>daily</changefreq>
     </url>
@@ -446,6 +511,16 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://gridsingularity.github.io/gsy-e/documentation/ui-initialisation/</loc>
+         <lastmod>2024-06-27</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://gridsingularity.github.io/gsy-e/documentation/upload-file-formats/</loc>
+         <lastmod>2024-06-27</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://gridsingularity.github.io/gsy-e/documentation/version-update/</loc>
          <lastmod>2024-06-27</lastmod>
          <changefreq>daily</changefreq>
@@ -462,81 +537,6 @@
     </url>
     <url>
          <loc>https://gridsingularity.github.io/gsy-e/documentation/img/power-plant/</loc>
-         <lastmod>2024-06-27</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://gridsingularity.github.io/gsy-e/documentation/not_shown/canary-network/</loc>
-         <lastmod>2024-06-27</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://gridsingularity.github.io/gsy-e/documentation/not_shown/cloud-service-guide/</loc>
-         <lastmod>2024-06-27</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://gridsingularity.github.io/gsy-e/documentation/not_shown/energy-bills/</loc>
-         <lastmod>2024-06-27</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://gridsingularity.github.io/gsy-e/documentation/not_shown/general-settings/</loc>
-         <lastmod>2024-06-27</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://gridsingularity.github.io/gsy-e/documentation/not_shown/library/</loc>
-         <lastmod>2024-06-27</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://gridsingularity.github.io/gsy-e/documentation/not_shown/map/</loc>
-         <lastmod>2024-06-27</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://gridsingularity.github.io/gsy-e/documentation/not_shown/model-load/</loc>
-         <lastmod>2024-06-27</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://gridsingularity.github.io/gsy-e/documentation/not_shown/model-market-maker/</loc>
-         <lastmod>2024-06-27</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://gridsingularity.github.io/gsy-e/documentation/not_shown/model-markets/</loc>
-         <lastmod>2024-06-27</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://gridsingularity.github.io/gsy-e/documentation/not_shown/model-power-plant/</loc>
-         <lastmod>2024-06-27</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://gridsingularity.github.io/gsy-e/documentation/not_shown/model-pv/</loc>
-         <lastmod>2024-06-27</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://gridsingularity.github.io/gsy-e/documentation/not_shown/model-storage/</loc>
-         <lastmod>2024-06-27</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://gridsingularity.github.io/gsy-e/documentation/not_shown/peak-percentage/</loc>
-         <lastmod>2024-06-27</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://gridsingularity.github.io/gsy-e/documentation/not_shown/ui-initialisation/</loc>
-         <lastmod>2024-06-27</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://gridsingularity.github.io/gsy-e/documentation/not_shown/upload-file-formats/</loc>
          <lastmod>2024-06-27</lastmod>
          <changefreq>daily</changefreq>
     </url>
