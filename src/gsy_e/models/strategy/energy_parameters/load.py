@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import logging
 from typing import List, Optional
 
-from gsy_framework.exceptions import GSyException, GSyDeviceException
+from gsy_framework.exceptions import GSyException
 from gsy_framework.utils import convert_W_to_Wh
 from gsy_framework.validators.load_validator import LoadValidator
 from gsy_framework.constants_limits import GlobalConfig
