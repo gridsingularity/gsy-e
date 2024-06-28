@@ -103,7 +103,7 @@ class SCMManager:
             else self._intracommunity_base_rate_eur)
 
         area_fees = AreaFees(
-            grid_fee=home_data.fee_properties.GRID_FEES.get("grid_fee_constant", 0),
+            **home_data.fee_properties.GRID_FEES,
             grid_fees_reduction=self._grid_fees_reduction,
             per_kWh_fees={k: FeeContainer(value=v)
                           for k, v in home_data.fee_properties.PER_KWH_FEES.items()},
@@ -142,6 +142,7 @@ class SCMManager:
 
             home_bill.set_sold_to_grid(
                 home_data.self_production_for_grid_kWh, home_data.feed_in_tariff)
+            home_bill.set_export_grid_fees(home_data.self_production_for_grid_kWh)
             if home_data.self_production_for_grid_kWh > FLOATING_POINT_TOLERANCE:
                 home_data.create_sell_trade(
                     self._time_slot, DEFAULT_SCM_GRID_NAME,
@@ -257,6 +258,7 @@ class SCMManager:
 
             community_bills.energy_rates.accumulate_fees_in_community(data.energy_rates.area_fees)
             community_bills.grid_fees += data.grid_fees
+            community_bills.export_grid_fees += data.export_grid_fees
 
         return community_bills.to_dict()
 

@@ -1,4 +1,5 @@
 # pylint: disable=protected-access
+from unittest.mock import Mock
 from math import isclose
 
 import pytest
@@ -110,3 +111,21 @@ class TestHeatPumpEnergyParameters:
         assert energy_params.state._cop[CURRENT_MARKET_SLOT] == 0
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
         assert energy_params.state._cop[CURRENT_MARKET_SLOT] == 6.5425
+
+    @staticmethod
+    def test_if_profiles_are_rotated_on_activate(energy_params):
+        energy_params._consumption_kWh.read_or_rotate_profiles = Mock()
+        energy_params._ext_temp_C.read_or_rotate_profiles = Mock()
+        energy_params.event_activate()
+        energy_params._consumption_kWh.read_or_rotate_profiles.assert_called_once()
+        energy_params._ext_temp_C.read_or_rotate_profiles.assert_called_once()
+
+    @staticmethod
+    def test_if_profiles_are_rotated_on_market_cycle(energy_params):
+        energy_params._consumption_kWh.read_or_rotate_profiles = Mock()
+        energy_params._ext_temp_C.read_or_rotate_profiles = Mock()
+        energy_params._populate_state = Mock()
+        energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
+        energy_params._consumption_kWh.read_or_rotate_profiles.assert_called_once()
+        energy_params._ext_temp_C.read_or_rotate_profiles.assert_called_once()
+        energy_params._populate_state.assert_called_once()

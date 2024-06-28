@@ -10,7 +10,7 @@ from pendulum import DateTime
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.models.strategy.energy_parameters.heat_pump import (
     HeatPumpEnergyParametersBase, WATER_DENSITY)
-from gsy_e.models.strategy.profile import EnergyProfile
+from gsy_e.models.strategy.strategy_profile import StrategyProfile
 
 logger = logging.getLogger(__name__)
 
@@ -144,15 +144,15 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
         super().__init__(
             maximum_power_rating_kW, min_temp_C, max_temp_C, initial_temp_C, tank_volume_l)
 
-        self._water_supply_temp_C: [DateTime, float] = EnergyProfile(
+        self._water_supply_temp_C: [DateTime, float] = StrategyProfile(
             water_supply_temp_C_profile, water_supply_temp_C_profile_uuid,
             profile_type=InputProfileTypes.IDENTITY)
 
-        self._water_return_temp_C: [DateTime, float] = EnergyProfile(
+        self._water_return_temp_C: [DateTime, float] = StrategyProfile(
             water_return_temp_C_profile, water_return_temp_C_profile_uuid,
             profile_type=InputProfileTypes.IDENTITY)
 
-        self._dh_water_flow_m3: [DateTime, float] = EnergyProfile(
+        self._dh_water_flow_m3: [DateTime, float] = StrategyProfile(
             dh_water_flow_m3_profile, dh_water_flow_m3_profile_uuid,
             profile_type=InputProfileTypes.IDENTITY)
 
@@ -192,9 +192,9 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
         return min(self._max_energy_consumption_kWh, min_energy_consumption)
 
     def _calc_temp_decrease_K(self, time_slot: DateTime) -> float:
-        dh_supply_temp = self._water_supply_temp_C.profile[time_slot]
-        dh_return_temp = self._water_return_temp_C.profile[time_slot]
-        m_m3 = self._dh_water_flow_m3.profile[time_slot]
+        dh_supply_temp = self._water_supply_temp_C.get_value(time_slot)
+        dh_return_temp = self._water_return_temp_C.get_value(time_slot)
+        m_m3 = self._dh_water_flow_m3.get_value(time_slot)
         m_kg_per_sec = m_m3 * 1000 / 3600
         q_out = m_kg_per_sec * WATER_SPECIFIC_HEAT_CAPACITY * (dh_supply_temp - dh_return_temp)
         temp_differential_per_sec = -q_out / (
@@ -212,9 +212,9 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
         solver = HeatpumpStorageEnergySolver(
             tank_volume_l=self._tank_volume_l,
             current_storage_temp_C=self.state.get_storage_temp_C(time_slot),
-            dh_supply_temp_C=self._water_supply_temp_C.profile[time_slot],
-            dh_return_temp_C=self._water_return_temp_C.profile[time_slot],
-            dh_flow_m3_per_hour=self._dh_water_flow_m3.profile[time_slot],
+            dh_supply_temp_C=self._water_supply_temp_C.get_value(time_slot),
+            dh_return_temp_C=self._water_return_temp_C.get_value(time_slot),
+            dh_flow_m3_per_hour=self._dh_water_flow_m3.get_value(time_slot),
             target_storage_temp_C=self.state.get_storage_temp_C(time_slot),
             calibration_coefficient=self.calibration_coefficient)
         solver.calculate_energy_from_storage_temp()
@@ -241,9 +241,9 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
         solver = HeatpumpStorageEnergySolver(
             tank_volume_l=self._tank_volume_l,
             current_storage_temp_C=self.state.get_storage_temp_C(time_slot),
-            dh_supply_temp_C=self._water_supply_temp_C.profile[time_slot],
-            dh_return_temp_C=self._water_return_temp_C.profile[time_slot],
-            dh_flow_m3_per_hour=self._dh_water_flow_m3.profile[time_slot],
+            dh_supply_temp_C=self._water_supply_temp_C.get_value(time_slot),
+            dh_return_temp_C=self._water_return_temp_C.get_value(time_slot),
+            dh_flow_m3_per_hour=self._dh_water_flow_m3.get_value(time_slot),
             target_storage_temp_C=target_storage_temp_C,
             calibration_coefficient=self.calibration_coefficient)
         solver.calculate_energy_from_storage_temp()
@@ -261,9 +261,9 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
         solver = HeatpumpStorageEnergySolver(
             tank_volume_l=self._tank_volume_l,
             current_storage_temp_C=self.state.get_storage_temp_C(time_slot),
-            dh_supply_temp_C=self._water_supply_temp_C.profile[time_slot],
-            dh_return_temp_C=self._water_return_temp_C.profile[time_slot],
-            dh_flow_m3_per_hour=self._dh_water_flow_m3.profile[time_slot],
+            dh_supply_temp_C=self._water_supply_temp_C.get_value(time_slot),
+            dh_return_temp_C=self._water_return_temp_C.get_value(time_slot),
+            dh_flow_m3_per_hour=self._dh_water_flow_m3.get_value(time_slot),
             energy_kWh=energy_kWh,
             calibration_coefficient=self.calibration_coefficient)
         solver.calculate_storage_temp_from_energy()
@@ -290,9 +290,9 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
             solver = HeatpumpStorageEnergySolver(
                 tank_volume_l=self._tank_volume_l,
                 current_storage_temp_C=self.state.get_storage_temp_C(last_time_slot),
-                dh_supply_temp_C=self._water_supply_temp_C.profile[last_time_slot],
-                dh_return_temp_C=self._water_return_temp_C.profile[last_time_slot],
-                dh_flow_m3_per_hour=self._dh_water_flow_m3.profile[last_time_slot],
+                dh_supply_temp_C=self._water_supply_temp_C.get_value(last_time_slot),
+                dh_return_temp_C=self._water_return_temp_C.get_value(last_time_slot),
+                dh_flow_m3_per_hour=self._dh_water_flow_m3.get_value(last_time_slot),
                 target_storage_temp_C=target_storage_temp_C,
                 calibration_coefficient=self.calibration_coefficient)
             solver.calculate_energy_from_storage_temp()
@@ -311,7 +311,7 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
         """To be called at the start of the market slot. """
         self._rotate_profiles(current_time_slot)
         self._populate_state(current_time_slot)
-        supply_temp = self._water_supply_temp_C.profile[current_time_slot]
-        return_temp = self._water_return_temp_C.profile[current_time_slot]
+        supply_temp = self._water_supply_temp_C.get_value(current_time_slot)
+        return_temp = self._water_return_temp_C.get_value(current_time_slot)
         assert supply_temp >= return_temp, f"Supply temperature {supply_temp} has to be greater " \
                                            f"than {return_temp}, timeslot {current_time_slot}"

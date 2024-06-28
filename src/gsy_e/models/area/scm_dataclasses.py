@@ -217,7 +217,8 @@ class FeeContainer:
 class AreaFees:
     """Dataclass that contains all fees and their accumulated values"""
 
-    grid_fee: float = 0.
+    grid_import_fee_const: float = 0.
+    grid_export_fee_const: float = 0.
     grid_fees_reduction: float = 0.
     per_kWh_fees: Dict[str, FeeContainer] = field(default_factory=dict)
     monthly_fees: Dict[str, FeeContainer] = field(default_factory=dict)
@@ -256,7 +257,7 @@ class AreaFees:
     @property
     def decreased_grid_fee(self):
         """Return the decreased grid_fee regarding the grid_fees_reduction."""
-        return self.grid_fee * (1 - self.grid_fees_reduction)
+        return self.grid_import_fee_const * (1 - self.grid_fees_reduction)
 
 
 @dataclass
@@ -277,7 +278,8 @@ class AreaEnergyRates:
     @property
     def utility_rate_incl_fees(self):
         """Return the utility rate including all fees."""
-        return self.area_fees.add_fees_to_energy_rate(self.utility_rate) + self.area_fees.grid_fee
+        return (self.area_fees.add_fees_to_energy_rate(self.utility_rate) +
+                self.area_fees.grid_import_fee_const)
 
     def accumulate_fees_in_community(self, area_fees=AreaFees):
         """Add prices from provided area_fees input to the self.area_fees;
@@ -310,6 +312,7 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
     sold_to_grid: float = 0.
     earned_from_grid: float = 0.
     self_consumed_savings: float = 0.
+    export_grid_fees: float = 0.
     _min_community_savings_percent: float = 0.
     _max_community_savings_percent: float = 0.
 
@@ -353,13 +356,17 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
         self.spent_to_grid += energy_kWh * self.energy_rates.utility_rate_incl_fees
         self.gsy_energy_bill += energy_kWh * self.energy_rates.utility_rate_incl_fees
         self.energy_rates.area_fees.add_price_to_fees(energy_kWh)
-        self.grid_fees += energy_kWh * self.energy_rates.area_fees.grid_fee
+        self.grid_fees += energy_kWh * self.energy_rates.area_fees.grid_import_fee_const
 
     def set_sold_to_grid(self, energy_kWh, energy_rate):
         """Update price and energy counters after selling energy to the grid."""
         self.sold_to_grid += energy_kWh
         self.earned_from_grid += energy_kWh * energy_rate
         self.gsy_energy_bill -= energy_kWh * energy_rate
+
+    def set_export_grid_fees(self, energy_kWh: float):
+        export_price = energy_kWh * self.energy_rates.area_fees.grid_export_fee_const
+        self.export_grid_fees += export_price
 
     def set_min_max_community_savings(
             self, min_savings_percent: float, max_savings_percent: float):

@@ -1,12 +1,19 @@
 from abc import abstractmethod, ABC
+import logging
+from pendulum import DateTime
 
 from gsy_framework.read_user_profile import InputProfileTypes
+from gsy_framework.constants_limits import GlobalConfig
+from gsy_framework.utils import get_from_profile_same_weekday_and_time
 
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.gsy_e_core.util import should_read_profile_from_db
+from gsy_e.models.strategy.utils import is_scm_simulation
+
+log = logging.getLogger(__name__)
 
 
-class EnergyProfileBase(ABC):
+class StrategyProfileBase(ABC):
     """Base class for Profiles"""
 
     def __init__(self):
@@ -24,8 +31,12 @@ class EnergyProfileBase(ABC):
     def read_or_rotate_profiles(self, reconfigure=False):
         """Rotate current profile or read and preprocess profile from source."""
 
+    def get_value(self, _time_slot: DateTime):
+        """Return value for specific time_slot."""
+        return 0
 
-class EmptyProfile(EnergyProfileBase):
+
+class EmptyProfile(StrategyProfileBase):
     """Empty profile class"""
 
     def __init__(
@@ -41,7 +52,7 @@ class EmptyProfile(EnergyProfileBase):
         pass
 
 
-class EnergyProfile(EnergyProfileBase):
+class StrategyProfile(StrategyProfileBase):
     """Manage reading/rotating energy profile of an asset."""
 
     def __init__(
@@ -66,6 +77,20 @@ class EnergyProfile(EnergyProfileBase):
         self.profile = {}
 
         self.profile_type = profile_type
+
+    def get_value(self, time_slot: DateTime) -> float:
+        if time_slot in self.profile:
+            return self.profile[time_slot]
+        if GlobalConfig.is_canary_network() or is_scm_simulation():
+            value = get_from_profile_same_weekday_and_time(self.profile, time_slot)
+            if value is None:
+                log.error("Value for time_slot %s could not be found in profile %s in "
+                          "Canary Network, returning 0", time_slot, self.input_profile_uuid)
+                return 0
+            return value
+        log.error("Value for time_slot %s could not be found in profile "
+                  "%s.", time_slot, self.input_profile_uuid)
+        return 0
 
     def _read_input_profile_type(self):
         if self.input_profile_uuid:
@@ -95,8 +120,9 @@ class EnergyProfile(EnergyProfileBase):
 
 def profile_factory(input_profile=None, input_profile_uuid=None,
                     input_energy_rate=None,
-                    profile_type: InputProfileTypes = None) -> EnergyProfileBase:
+                    profile_type: InputProfileTypes = None) -> StrategyProfileBase:
     """Return correct profile handling class for input parameters."""
     return (EmptyProfile(profile_type)
-            if input_profile == input_profile_uuid == input_energy_rate is None
-            else EnergyProfile(input_profile, input_profile_uuid, input_energy_rate, profile_type))
+            if input_profile is None and input_profile_uuid is None and input_energy_rate is None
+            else StrategyProfile(
+        input_profile, input_profile_uuid, input_energy_rate, profile_type))
