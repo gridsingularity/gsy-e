@@ -80,30 +80,27 @@ nav:
     - 'Create a Grid Singularity Collaboration': 'collaboration.md'
     - 'Connect to the Grid Singularity APIs':
         - 'Introduction': 'APIs-introduction.md'
-        - 'Configure trading strategies through the Grid Singularity Asset API':
+        - 'Create custom trading agents using the Grid Singularity Asset API':
             - 'Grid Singularity Asset API Overview': 'configure-trading-strategies-walkthrough.md'
-            - 'Asset API':
-                - 'Asset API Events': 'asset-api-events.md'
-                - 'Asset API Commands': 'asset-api-commands.md'
-                - 'Asset API Template Script': 'asset-api-template-script.md'
+            - 'Asset API Events': 'asset-api-events.md'
+            - 'Asset API Commands': 'asset-api-commands.md'
+            - 'Asset API Template Script': 'asset-api-template-script.md'
             - 'Launch the Asset API':
                 - 'Registration - Simulations run on the User-Interface': 'registration-asset-api-user-interface.md'
                 - 'Registration - Simulations run on the Backend': 'registration-asset-api-backend.md'
         - 'Implement dynamic grid fees through the Grid Singularity Grid Operator API':
             - 'Grid Singularity Grid Operator API Overview': 'implement-grid-fees-walkthrough.md'
-            - 'Grid Operator API.':
-                - 'Grid Operator API Events': 'grid-operator-api-events.md'
-                - 'Grid Operator API Commands': 'grid-operator-api-commands.md'
-                - 'Grid Operator API Template Script': 'grid-operator-api-template-script.md'
+            - 'Grid Operator API Events': 'grid-operator-api-events.md'
+            - 'Grid Operator API Commands': 'grid-operator-api-commands.md'
+            - 'Grid Operator API Template Script': 'grid-operator-api-template-script.md'
             - 'Launch the Grid Operator API':
                 - 'Registration - Simulations run on the User-Interface': 'registration-grid-operator-api-user-interface.md'
                 - 'Registration - Simulations run on the Backend': 'registration-grid-operator-api-backend.md'
-        - 'Customise the clearing algorithm through the Grid Singularity Matching API':
+        - 'Customize the clearing algorithm through the Grid Singularity Matching API':
             - 'Grid Singularity Matching API Overview': 'matching-api-walkthrough.md'
-            - 'Matching API':
-                - 'Matching API Events': 'matching-api-events.md'
-                - 'Matching API Commands': 'matching-api-commands.md'
-                - 'Matching API Template Script': 'matching-api-template-script.md'
+            - 'Matching API Events': 'matching-api-events.md'
+            - 'Matching API Commands': 'matching-api-commands.md'
+            - 'Matching API Template Script': 'matching-api-template-script.md'
             - 'Launch the Matching API':
                 - 'Registration - Simulations run on the User-Interface': 'registration-matching-api-user-interface.md'
                 - 'Registration - Simulations run on the Backend': 'registration-matching-api-backend.md'
@@ -213,7 +210,9 @@ markdown_extensions:
 plugins:
     - search:
         lang: en
-
+    - exclude-search:
+        exclude:
+          - canary-network.md
     - redirects:
         redirect_maps:
             # When trying to reach the root page, redirect to the documentation page
