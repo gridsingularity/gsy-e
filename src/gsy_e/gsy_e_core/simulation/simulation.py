@@ -575,6 +575,7 @@ def run_simulation(
         redis_job_id = (
             redis_job_id if not saved_sim_state
             else saved_sim_state["general"]["simulation_id"])
+
         simulation = simulation_class_factory()(
             setup_module_name=setup_module_name,
             simulation_config=simulation_config,

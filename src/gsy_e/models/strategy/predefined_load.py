@@ -62,7 +62,7 @@ class DefinedLoadStrategy(LoadHoursStrategy):
             update_interval = \
                 duration(minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
 
-        super().__init__(avg_power_W=0, hrs_per_day=24, hrs_of_day=list(range(0, 24)),
+        super().__init__(avg_power_W=0, hrs_of_day=list(range(0, 24)),
                          fit_to_limit=fit_to_limit,
                          energy_rate_increase_per_update=energy_rate_increase_per_update,
                          update_interval=update_interval,

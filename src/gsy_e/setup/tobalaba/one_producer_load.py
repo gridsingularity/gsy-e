@@ -24,8 +24,7 @@ def get_setup(config):
     area = Area(
         "Grid",
         [
-            Area("Cell Tower", strategy=LoadHoursStrategy(avg_power_W=50,
-                                                          hrs_per_day=24)
+            Area("Cell Tower", strategy=LoadHoursStrategy(avg_power_W=50)
                  ),
             Area("Commercial Energy Producer",
                  strategy=FinitePowerPlant(energy_rate=30,

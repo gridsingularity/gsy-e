@@ -44,7 +44,6 @@ class TestSimulation:
         simulation_config = SimulationConfig(duration(hours=int(12)),
                                              duration(minutes=int(60)),
                                              duration(seconds=int(60)),
-                                             cloud_coverage=0,
                                              market_maker_rate=30,
                                              start_date=today(tz=TIME_ZONE),
                                              external_connection_enabled=False)
@@ -71,7 +70,6 @@ class TestSimulation:
         simulation_config = SimulationConfig(duration(hours=int(12)),
                                              duration(minutes=int(60)),
                                              duration(seconds=int(60)),
-                                             cloud_coverage=0,
                                              market_maker_rate=30,
                                              start_date=today(tz=TIME_ZONE),
                                              external_connection_enabled=False)

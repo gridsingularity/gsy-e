@@ -47,7 +47,6 @@ def get_setup(config):
             ),
             Area("Cell Tower",
                  strategy=LoadHoursStrategy(avg_power_W=100,
-                                            hrs_per_day=24,
                                             hrs_of_day=list(range(0, 24)),
                                             final_buying_rate=30,
                                             fit_to_limit=True,

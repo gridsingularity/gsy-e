@@ -33,7 +33,6 @@ def get_setup(config):
                      ),
                 Area("H1 Buyer", strategy=LoadHoursStrategy(avg_power_W=1000,
                                                             hrs_of_day=list(range(24)),
-                                                            hrs_per_day=24,
                                                             fit_to_limit=False,
                                                             initial_buying_rate=4,
                                                             energy_rate_increase_per_update=0)
@@ -42,7 +41,6 @@ def get_setup(config):
                  baseline_peak_energy_import_kWh=1, baseline_peak_energy_export_kWh=1)
                  ),
             Area("Community Load", strategy=LoadHoursStrategy(avg_power_W=500,
-                                                              hrs_per_day=24,
                                                               hrs_of_day=list(range(24)),
                                                               fit_to_limit=False,
                                                               initial_buying_rate=6,

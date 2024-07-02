@@ -20,12 +20,10 @@ def get_setup(config):
                 [
                     Area("H1 General Load1",
                          strategy=LoadHoursExternalStrategy(avg_power_W=200,
-                                                            hrs_per_day=6,
                                                             hrs_of_day=list(range(12, 18)),
                                                             final_buying_rate=35)),
                     Area("H1 General Load2",
                          strategy=LoadHoursExternalStrategy(avg_power_W=150,
-                                                            hrs_per_day=24,
                                                             hrs_of_day=list(range(0, 24)),
                                                             final_buying_rate=40)),
                     Area("H1 Storage1", strategy=StorageExternalStrategy(initial_soc=100,
@@ -40,7 +38,7 @@ def get_setup(config):
                 "House 2",
                 [
                     Area("H2 General Load1", strategy=LoadHoursExternalStrategy(
-                        avg_power_W=200, hrs_per_day=24, hrs_of_day=list(range(0, 24)),
+                        avg_power_W=200, hrs_of_day=list(range(0, 24)),
                         final_buying_rate=35)),
                     Area("H2 Storage1", strategy=StorageExternalStrategy(initial_soc=100,
                                                                          battery_capacity_kWh=20)),
@@ -49,7 +47,6 @@ def get_setup(config):
                 ],
             ),
             Area("Cell Tower", strategy=LoadHoursExternalStrategy(avg_power_W=100,
-                                                                  hrs_per_day=24,
                                                                   hrs_of_day=list(range(0, 24)),
                                                                   final_buying_rate=35)
                  ),

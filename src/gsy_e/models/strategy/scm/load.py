@@ -42,8 +42,6 @@ class SCMLoadHoursStrategy(SCMStrategy):
         self._energy_params.update_energy_requirement(area.current_market_time_slot)
 
         if not self._energy_params.allowed_operating_hours(area.current_market_time_slot):
-            # Overwrite desired energy to 0 in case the previous step has populated the
-            # desired energy by the hrs_per_day have been exhausted.
             self._energy_params.state.set_desired_energy(0.0, area.current_market_time_slot, True)
         if area.current_market_time_slot:
             self._energy_params.state.update_total_demanded_energy(area.current_market_time_slot)

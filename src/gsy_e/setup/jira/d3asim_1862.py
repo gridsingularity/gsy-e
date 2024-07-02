@@ -12,8 +12,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from gsy_e.models.area import Area
 from gsy_framework.constants_limits import ConstSettings
+from gsy_e.models.area import Area
 from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 
@@ -30,7 +30,6 @@ def get_setup(config):
                 "House 1",
                 [
                     Area("H1 General Load", strategy=LoadHoursStrategy(avg_power_W=4000,
-                                                                       hrs_per_day=1,
                                                                        hrs_of_day=list(
                                                                            range(1, 2)),
                                                                        initial_buying_rate=45,

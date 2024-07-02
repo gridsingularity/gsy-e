@@ -40,17 +40,17 @@ def get_setup(config):
                 "House 1",
                 [
                     Area("H1 General Load1", strategy=LoadHoursStrategy(
-                        avg_power_W=100, hrs_per_day=24, hrs_of_day=list(range(24)),
+                        avg_power_W=100, hrs_of_day=list(range(24)),
                         initial_buying_rate=28.8, fit_to_limit=False,
                         energy_rate_increase_per_update=0),
                          ),
                     Area("H1 General Load2", strategy=LoadHoursStrategy(
-                        avg_power_W=100, hrs_per_day=24, hrs_of_day=list(range(24)),
+                        avg_power_W=100, hrs_of_day=list(range(24)),
                         initial_buying_rate=18.8, fit_to_limit=False,
                         energy_rate_increase_per_update=0),
                          ),
                     Area("H1 General Load3", strategy=LoadHoursStrategy(
-                        avg_power_W=100, hrs_per_day=24, hrs_of_day=list(range(24)),
+                        avg_power_W=100, hrs_of_day=list(range(24)),
                         initial_buying_rate=8.8, fit_to_limit=False,
                         energy_rate_increase_per_update=0),
                          ),

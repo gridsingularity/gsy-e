@@ -124,10 +124,7 @@ class PVPredefinedEnergyParameters(PVEnergyParameters):
         parameters and selects the appropriate predefined profile.
         """
         if self._power_profile_index is None or self._power_profile_index == 4:
-            if simulation_config.pv_user_profile is not None:
-                self.energy_profile = simulation_config.pv_user_profile
-                return
-            self._power_profile_index = simulation_config.cloud_coverage
+            self._power_profile_index = 0
         if self._power_profile_index == 0:  # 0:sunny
             profile_path = (
                 pathlib.Path(gsye_root_path + "/resources/Solar_Curve_sunny_normalized.csv"))
@@ -149,9 +146,9 @@ class PVPredefinedEnergyParameters(PVEnergyParameters):
             for time_slot, weight in power_weight_profile.items()}
 
     def set_produced_energy_forecast_in_state(
-            self, config_cloud_coverage, owner_name, time_slots, reconfigure=True):
+            self, owner_name, time_slots, reconfigure=True):
         """Update the production energy forecast."""
-        self._power_profile_index = self.cloud_coverage or config_cloud_coverage
+        self._power_profile_index = self.cloud_coverage
         if not self.energy_profile:
             raise GSyException(
                 f"PV {owner_name} tries to set its available energy forecast without a "

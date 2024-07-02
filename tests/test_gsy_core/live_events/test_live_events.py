@@ -29,13 +29,12 @@ class TestLiveEvents:
             sim_duration=duration(hours=12),
             slot_length=duration(minutes=15),
             tick_length=duration(seconds=15),
-            cloud_coverage=0,
             external_connection_enabled=False
         )
 
         self.live_events = LiveEvents(self.config)
         self.strategy_load = LoadHoursStrategy(
-            avg_power_W=123, hrs_per_day=3, hrs_of_day=[2, 3, 4, 5], fit_to_limit=False,
+            avg_power_W=123, hrs_of_day=[2, 3, 4, 5], fit_to_limit=False,
             energy_rate_increase_per_update=2, update_interval=5, initial_buying_rate=11,
             final_buying_rate=31)
         self.strategy_pv = PVStrategy(
@@ -183,7 +182,6 @@ class TestLiveEvents:
         self.live_events.add_event(event_dict)
         self.live_events.handle_all_events(self.area_grid)
         assert self.area1.strategy._energy_params.avg_power_W == 234
-        assert self.area1.strategy._energy_params.hrs_per_day[0] == 6
         assert self.area1.strategy._energy_params.hrs_of_day == [0, 1, 2, 3, 4, 5, 6, 7]
         assert set(self.area1.strategy.bid_update.energy_rate_change_per_update.values()) == {-3}
         assert self.area1.strategy.bid_update.update_interval.minutes == 9

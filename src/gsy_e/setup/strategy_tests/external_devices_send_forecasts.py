@@ -21,7 +21,6 @@ def get_setup(config):
                 "House 1",
                 [
                     Asset("H1 General Load", strategy=LoadHoursStrategy(avg_power_W=200,
-                                                                        hrs_per_day=6,
                                                                         hrs_of_day=list(
                                                                             range(12, 18)),
                                                                         final_buying_rate=35)
@@ -51,7 +50,6 @@ def get_setup(config):
                 ], external_connection_available=True,
             ),
             Market("Community Load", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                                hrs_per_day=24,
                                                                 hrs_of_day=list(range(0, 24)),
                                                                 final_buying_rate=35)
                    ),

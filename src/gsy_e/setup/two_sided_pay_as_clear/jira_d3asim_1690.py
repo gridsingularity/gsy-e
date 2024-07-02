@@ -43,7 +43,7 @@ def get_setup(config):
                         "House 1",
                         [
                             Area("Load H1", strategy=LoadHoursStrategy(
-                                avg_power_W=200, hrs_per_day=24, hrs_of_day=range(24),
+                                avg_power_W=200, hrs_of_day=range(24),
                                 final_buying_rate=30, initial_buying_rate=15,
                                 fit_to_limit=True, update_interval=5),
                                  ),
@@ -59,7 +59,7 @@ def get_setup(config):
                         "House 2",
                         [
                             Area("Load H2", strategy=LoadHoursStrategy(
-                                avg_power_W=200, hrs_per_day=24, hrs_of_day=range(24),
+                                avg_power_W=200, hrs_of_day=range(24),
                                 final_buying_rate=30, initial_buying_rate=18,
                                 fit_to_limit=True, update_interval=5),
                                  ),
@@ -75,7 +75,7 @@ def get_setup(config):
                         "House 3",
                         [
                             Area("Load H3", strategy=LoadHoursStrategy(
-                                avg_power_W=200, hrs_per_day=24, hrs_of_day=range(24),
+                                avg_power_W=200, hrs_of_day=range(24),
                                 final_buying_rate=30, initial_buying_rate=16,
                                 update_interval=5),
                                  ),
@@ -85,7 +85,7 @@ def get_setup(config):
                         "House 4",
                         [
                             Area("Load H4", strategy=LoadHoursStrategy(
-                                avg_power_W=200, hrs_per_day=24, hrs_of_day=range(24),
+                                avg_power_W=200, hrs_of_day=range(24),
                                 final_buying_rate=30, initial_buying_rate=15,
                                 update_interval=5),
                                  ),

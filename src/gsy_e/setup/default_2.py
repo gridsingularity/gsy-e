@@ -30,13 +30,11 @@ def get_setup(config):
                 "House 1",
                 [
                     Area("H1 General Load", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                                       hrs_per_day=4,
                                                                        hrs_of_day=list(
                                                                            range(12, 20)),
                                                                        final_buying_rate=29)
                          ),
                     Area("H1 Lighting", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                                   hrs_per_day=4,
                                                                    hrs_of_day=list(range(12, 16)))
                          ),
                     Area("H1 Storage1", strategy=StorageStrategy(initial_soc=50)
@@ -49,13 +47,11 @@ def get_setup(config):
                 "House 2",
                 [
                     Area("H2 General Load", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                                       hrs_per_day=3,
                                                                        hrs_of_day=list(
                                                                            range(12, 18)),
                                                                        final_buying_rate=50)
                          ),
                     Area("H2 Lighting", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                                   hrs_per_day=4,
                                                                    hrs_of_day=list(range(12, 16)))
                          ),
                     Area("H2 PV", strategy=PVStrategy(2, 80)
@@ -66,12 +62,10 @@ def get_setup(config):
                 "House 3",
                 [
                     Area("H3 General Load", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                                       hrs_per_day=1,
                                                                        hrs_of_day=list(
                                                                            range(12, 13)))
                          ),
                     Area("H3 Lighting", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                                   hrs_per_day=4,
                                                                    hrs_of_day=list(range(12, 16)))
                          ),
                     Area("H3 PV", strategy=PVStrategy(4, 60)
@@ -82,16 +76,13 @@ def get_setup(config):
                 "House 4",
                 [
                     Area("H4 General Load", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                                       hrs_per_day=1,
                                                                        hrs_of_day=list(
                                                                            range(12, 13)))
                          ),
                     Area("H4 Lighting", strategy=LoadHoursStrategy(avg_power_W=200,
-                                                                   hrs_per_day=4,
                                                                    hrs_of_day=list(range(12, 16)))
                          ),
                     Area("H4 TV", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                             hrs_per_day=4,
                                                              hrs_of_day=list(range(14, 18)))
                          ),
                     Area("H4 PV", strategy=PVStrategy(4, 60)
@@ -106,16 +97,13 @@ def get_setup(config):
                 "House 5",
                 [
                     Area("H5 General Load", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                                       hrs_per_day=1,
                                                                        hrs_of_day=list(
                                                                            range(12, 13)))
                          ),
                     Area("H5 Lighting", strategy=LoadHoursStrategy(avg_power_W=200,
-                                                                   hrs_per_day=4,
                                                                    hrs_of_day=list(range(12, 16)))
                          ),
                     Area("H5 TV", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                             hrs_per_day=4,
                                                              hrs_of_day=list(range(10, 15)))
                          ),
                     Area("H5 PV", strategy=PVStrategy(5, 60),
@@ -132,7 +120,6 @@ def get_setup(config):
                  ),
 
             Area("Cell Tower", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                          hrs_per_day=24,
                                                           hrs_of_day=list(range(0, 24)))
                  )
         ],

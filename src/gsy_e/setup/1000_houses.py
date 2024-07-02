@@ -27,7 +27,6 @@ def get_setup(config):
         "Grid",
         [*[Area("House " + str(i), [
             Area(f"H{i} General Load", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                                  hrs_per_day=24,
                                                                   hrs_of_day=list(range(24))),
                  ),
             Area(f"H{i} PV",

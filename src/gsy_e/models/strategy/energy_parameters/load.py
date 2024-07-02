@@ -15,17 +15,17 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import logging
-from typing import Dict, List, Optional
 
-from gsy_framework.exceptions import GSyException, GSyDeviceException
+import logging
+from typing import List, Optional
+
+from gsy_framework.exceptions import GSyException
 from gsy_framework.utils import convert_W_to_Wh
 from gsy_framework.validators.load_validator import LoadValidator
 from gsy_framework.constants_limits import GlobalConfig
-from pendulum import DateTime, duration
+from pendulum import DateTime
 
 import gsy_e.constants
-from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.models.strategy import utils
 from gsy_e.models.strategy.strategy_profile import profile_factory
 from gsy_e.models.strategy.state import LoadState
@@ -35,9 +35,9 @@ log = logging.getLogger(__name__)
 
 class LoadHoursEnergyParameters:
     """Basic energy parameters of the load strategy."""
+
     def __init__(self, avg_power_W, hrs_of_day=None):
-        LoadValidator.validate_energy(
-            avg_power_W=avg_power_W, hrs_of_day=hrs_of_day)
+        LoadValidator.validate_energy(avg_power_W=avg_power_W, hrs_of_day=hrs_of_day)
 
         self.state = LoadState()
 
@@ -56,24 +56,30 @@ class LoadHoursEnergyParameters:
         """Return dict with the current energy parameter values."""
         return {"avg_power_W": self.avg_power_W, "hrs_of_day": self.hrs_of_day}
 
-    def decrement_energy_requirement(self, energy_kWh: float, time_slot: DateTime, area_name: str):
+    def decrement_energy_requirement(
+        self, energy_kWh: float, time_slot: DateTime, area_name: str
+    ):
         """Decrease the energy requirements of the asset."""
         self.state.decrement_energy_requirement(
             purchased_energy_Wh=energy_kWh * 1000,
             time_slot=time_slot,
-            area_name=area_name)
+            area_name=area_name,
+        )
 
     def set_energy_measurement_kWh(self, time_slot: DateTime) -> None:
         """Set the (simulated) actual energy consumed by the device in a market slot."""
         energy_forecast_kWh = self.state.get_desired_energy_Wh(time_slot) / 1000
-        simulated_measured_energy_kWh = utils.compute_altered_energy(energy_forecast_kWh)
+        simulated_measured_energy_kWh = utils.compute_altered_energy(
+            energy_forecast_kWh
+        )
 
         self.state.set_energy_measurement_kWh(simulated_measured_energy_kWh, time_slot)
 
     def update_energy_requirement(self, time_slot):
         """Update the energy requirement and desired energy from the state class."""
         self.energy_per_slot_Wh = convert_W_to_Wh(
-            self.avg_power_W, self._area.config.slot_length)
+            self.avg_power_W, self._area.config.slot_length
+        )
         if self.allowed_operating_hours(time_slot):
             desired_energy_Wh = self.energy_per_slot_Wh
         else:
@@ -109,82 +115,25 @@ class LoadHoursEnergyParameters:
         self.hrs_of_day = hrs_of_day
 
         if not all(0 <= h <= 23 for h in hrs_of_day):
-            raise ValueError("Hrs_of_day list should contain integers between 0 and 23.")
+            raise ValueError(
+                "Hrs_of_day list should contain integers between 0 and 23."
+            )
 
 
-class LoadHoursPerDayEnergyParameters(LoadHoursEnergyParameters):
-    """Add the hours-per-day quota parameter to the LoadHoursEnergyParameters."""
-    def __init__(self, avg_power_W, hrs_per_day=None, hrs_of_day=None):
-        LoadValidator.validate_energy(
-            avg_power_W=avg_power_W, hrs_per_day=hrs_per_day, hrs_of_day=hrs_of_day)
-
-        super().__init__(avg_power_W, hrs_of_day)
-
-        # Maps each simulation day to the number of active hours in that day
-        self.hrs_per_day: Dict[int, int] = {}
-        self._initial_hrs_per_day: Optional[int] = None
-        self._assign_hours_per_day(hrs_per_day)
-
-    def serialize(self):
-        return {
-            **super().serialize(),
-            "hrs_per_day": self.hrs_per_day,
-        }
-
-    def add_entry_in_hrs_per_day(self, time_slot: DateTime, overwrite: bool = False) -> None:
-        """Add the current day (in simulation) with the mapped hrs_per_day."""
-        current_day = self._get_day_of_timestamp(time_slot)
-        if current_day not in self.hrs_per_day or overwrite:
-            self.hrs_per_day[current_day] = self._initial_hrs_per_day
-
-    def reset(self, time_slot: DateTime, **kwargs) -> None:
-        super().reset(time_slot, **kwargs)
-        if kwargs.get("hrs_per_day") is not None:
-            self._assign_hours_per_day(kwargs["hrs_per_day"])
-            self.add_entry_in_hrs_per_day(time_slot, overwrite=True)
-
-    def event_activate_energy(self, area):
-        """Update energy requirement upon the activation event."""
-        self.hrs_per_day = {0: self._initial_hrs_per_day}
-        super().event_activate_energy(area)
-
-    def allowed_operating_hours(self, time_slot):
-        """Validate that the hours per day parameter is respected."""
-        current_day = self._get_day_of_timestamp(time_slot)
-        return (super().allowed_operating_hours(time_slot) and
-                (current_day in self.hrs_per_day and
-                 self.hrs_per_day[current_day] > FLOATING_POINT_TOLERANCE))
-
-    def decrease_hours_per_day(self, time_slot, energy_Wh):
-        """Decrease the energy from the quota of hours per day."""
-        current_day = self._get_day_of_timestamp(time_slot)
-        if self.hrs_per_day != {} and current_day in self.hrs_per_day:
-            self.hrs_per_day[current_day] -= self._operating_hours(energy_Wh / 1000.0)
-
-    def _operating_hours(self, energy_kWh):
-        return (((energy_kWh * 1000) / self.energy_per_slot_Wh)
-                * (self._area.config.slot_length / duration(hours=1)))
-
-    def _assign_hours_per_day(self, hrs_per_day: int):
-        if hrs_per_day is None:
-            hrs_per_day = len(self.hrs_of_day)
-
-        self._initial_hrs_per_day = hrs_per_day
-
-        if len(self.hrs_of_day) < hrs_per_day:
-            raise GSyDeviceException(
-                "Length of list 'hrs_of_day' must be greater equal 'hrs_per_day'")
-
-
-class DefinedLoadEnergyParameters(LoadHoursPerDayEnergyParameters):
+class DefinedLoadEnergyParameters(LoadHoursEnergyParameters):
     """Energy parameters for the defined load strategy class."""
-    def __init__(self, daily_load_profile=None,
-                 daily_load_profile_uuid: str = None,
-                 daily_load_measurement_uuid: str = None,
-                 ):
-        super().__init__(avg_power_W=0, hrs_per_day=24, hrs_of_day=list(range(0, 24)))
 
-        self.energy_profile = profile_factory(daily_load_profile, daily_load_profile_uuid)
+    def __init__(
+        self,
+        daily_load_profile=None,
+        daily_load_profile_uuid: str = None,
+        daily_load_measurement_uuid: str = None,
+    ):
+        super().__init__(avg_power_W=0, hrs_of_day=list(range(0, 24)))
+
+        self.energy_profile = profile_factory(
+            daily_load_profile, daily_load_profile_uuid
+        )
         self.measurement_profile = profile_factory(None, daily_load_measurement_uuid)
         self.state = LoadState()
 
@@ -192,7 +141,7 @@ class DefinedLoadEnergyParameters(LoadHoursPerDayEnergyParameters):
         return {
             "daily_load_profile": self.energy_profile.input_profile,
             "daily_load_profile_uuid": self.energy_profile.input_profile_uuid,
-            "daily_load_measurement_uuid": self.measurement_profile.input_profile_uuid
+            "daily_load_measurement_uuid": self.measurement_profile.input_profile_uuid,
         }
 
     def event_activate_energy(self, area):
@@ -214,14 +163,20 @@ class DefinedLoadEnergyParameters(LoadHoursPerDayEnergyParameters):
                 return
             raise GSyException(
                 "Load tries to set its energy forecasted requirement "
-                "without a profile.")
+                "without a profile."
+            )
         load_energy_kwh = self.energy_profile.get_value(time_slot)
         if load_energy_kwh is None:
-            log.error("Could not read area profile %s on timeslot %s. Configuration %s.",
-                      self.energy_profile.input_profile_uuid, time_slot,
-                      gsy_e.constants.CONFIGURATION_ID)
+            log.error(
+                "Could not read area profile %s on timeslot %s. Configuration %s.",
+                self.energy_profile.input_profile_uuid,
+                time_slot,
+                gsy_e.constants.CONFIGURATION_ID,
+            )
             load_energy_kwh = 0.0
-        self.state.set_desired_energy(load_energy_kwh * 1000, time_slot, overwrite=False)
+        self.state.set_desired_energy(
+            load_energy_kwh * 1000, time_slot, overwrite=False
+        )
         self.state.update_total_demanded_energy(time_slot)
 
     def _operating_hours(self, energy_kWh):
@@ -254,15 +209,14 @@ class LoadForecastExternalEnergyParamsMixin:
     def event_activate_energy(self, area):
         """Overridden with empty implementation to disable profile activation."""
 
-    def decrease_hours_per_day(self, time_slot, energy_Wh):
-        """Overridden with empty implementation to disable template strategy energy tracking."""
-
 
 class LoadProfileForecastEnergyParams(
-        LoadForecastExternalEnergyParamsMixin, DefinedLoadEnergyParameters):
+    LoadForecastExternalEnergyParamsMixin, DefinedLoadEnergyParameters
+):
     """Energy parameters class for the forecasted external load profile strategy."""
 
 
 class LoadHoursForecastEnergyParams(
-        LoadForecastExternalEnergyParamsMixin, LoadHoursPerDayEnergyParameters):
+    LoadForecastExternalEnergyParamsMixin, LoadHoursEnergyParameters
+):
     """Energy parameters class for the forecasted external load hours strategy."""

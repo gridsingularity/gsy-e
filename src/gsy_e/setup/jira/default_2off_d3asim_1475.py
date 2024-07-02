@@ -30,7 +30,6 @@ def get_setup(config):
                                                             name="Office1X-LOAD",
                                                             strategy=LoadHoursStrategy(
                                                                     avg_power_W=500,
-                                                                    hrs_per_day=5,
                                                                     hrs_of_day=[7, 8, 17, 18, 19],
                                                                     initial_buying_rate=0,
                                                                     final_buying_rate=26)
@@ -44,7 +43,6 @@ def get_setup(config):
                                                             name="Office1Y-LOAD",
                                                             strategy=LoadHoursStrategy(
                                                                     avg_power_W=1000,
-                                                                    hrs_per_day=24,
                                                                     hrs_of_day=list(range(24)),
                                                                     initial_buying_rate=0,
                                                                     final_buying_rate=29)
@@ -71,7 +69,6 @@ def get_setup(config):
                                                             name="Office2X-LOAD",
                                                             strategy=LoadHoursStrategy(
                                                                     avg_power_W=500,
-                                                                    hrs_per_day=5,
                                                                     hrs_of_day=[7, 8, 17, 18, 19],
                                                                     initial_buying_rate=0,
                                                                     final_buying_rate=29)
@@ -85,7 +82,6 @@ def get_setup(config):
                                                             name="Office2Y-LOAD",
                                                             strategy=LoadHoursStrategy(
                                                                     avg_power_W=1000,
-                                                                    hrs_per_day=24,
                                                                     hrs_of_day=list(range(24)),
                                                                     initial_buying_rate=0,
                                                                     final_buying_rate=20)
