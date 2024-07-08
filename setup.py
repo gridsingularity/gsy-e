@@ -7,9 +7,11 @@ try:
     with open("requirements/dev.txt", encoding="utf-8") as req:
         REQUIREMENTS = [r.partition("#")[0] for r in req if not r.startswith("-e")]
         REQUIREMENTS.extend(
-            [f"gsy-framework @ "
-             f"git+https://github.com/gridsingularity/gsy-framework.git@{gsy_framework_branch}"
-             ])
+            [
+                f"gsy-framework @ "
+                f"git+https://github.com/gridsingularity/gsy-framework.git@{gsy_framework_branch}"
+            ]
+        )
 except OSError:
     # Shouldn't happen
     REQUIREMENTS = []

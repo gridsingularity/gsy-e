@@ -135,15 +135,6 @@ Here is an example:
 self.add_to_batch_commands.delete_offer(asset_uuid="62f827ec-ef86-4782-b5c3-88327751d97d", bid_id = "2e7866d8-3dg6-49ad-afe8-fd5876a3e679")
 ```
 
-###asset_info()
-
-It gets asset information(returns required energy for Loads, available energy for PVs and energy to buy/sell for storages). This command receives one argument: asset_uuid, which is the Universal Unique Identifier of the selected asset.
-Here is an example:
-
-```
-self.add_to_batch_commands.asset_info(asset_uuid="62f827ec-ef86-4782-b5c3-88327751d97d")
-```
-
 After adding all the wanted commands in the batch, the API can execute it with the following command:
 
 ```
