@@ -90,7 +90,7 @@ class PVPredefinedStrategy(PVStrategy):
             self._energy_params.read_predefined_profile_for_pv(self.simulation_config)
 
         self._energy_params.set_produced_energy_forecast_in_state(
-            self.simulation_config.cloud_coverage, self.owner.name, time_slots, reconfigure
+            self.owner.name, time_slots, reconfigure
         )
 
     def area_reconfigure_event(self, *args, **kwargs):

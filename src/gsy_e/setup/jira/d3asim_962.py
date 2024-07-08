@@ -15,6 +15,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+import os
+
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
 from gsy_e.models.strategy.finite_power_plant import FinitePowerPlant
@@ -23,7 +25,7 @@ from gsy_e.models.strategy.storage import StorageStrategy
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_e.models.strategy.pv import PVStrategy
 from gsy_e.gsy_e_core.util import gsye_root_path
-import os
+
 
 profile_path = os.path.join(gsye_root_path, "resources/LOAD_DATA_1_5d.csv")
 
@@ -47,7 +49,6 @@ def get_setup(config):
                 "House 2",
                 [
                     Area("H2 General Load", strategy=LoadHoursStrategy(avg_power_W=1000,
-                                                                       hrs_per_day=4,
                                                                        hrs_of_day=list(
                                                                            range(12, 16)),
                                                                        final_buying_rate=35)

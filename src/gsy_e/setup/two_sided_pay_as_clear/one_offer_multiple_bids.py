@@ -32,15 +32,15 @@ def get_setup(config):
                 "Energy Community",
                 [
                     Area("Load 1", strategy=LoadHoursStrategy(
-                        avg_power_W=500, hrs_per_day=24, hrs_of_day=list(range(24)),
+                        avg_power_W=500, hrs_of_day=list(range(24)),
                         initial_buying_rate=10, final_buying_rate=10),
                          ),
                     Area("Load 2", strategy=LoadHoursStrategy(
-                        avg_power_W=500, hrs_per_day=24, hrs_of_day=list(range(24)),
+                        avg_power_W=500, hrs_of_day=list(range(24)),
                         initial_buying_rate=15, final_buying_rate=15),
                          ),
                     Area("Load 3", strategy=LoadHoursStrategy(
-                        avg_power_W=500, hrs_per_day=24, hrs_of_day=list(range(24)),
+                        avg_power_W=500, hrs_of_day=list(range(24)),
                         initial_buying_rate=30, final_buying_rate=30),
                          ),
                     Area("Local Supply",

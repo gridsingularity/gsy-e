@@ -33,7 +33,6 @@ def get_setup(config):
                 "House",
                 [
                     Area("Load", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                            hrs_per_day=10,
                                                             hrs_of_day=list(range(8, 19)))
                          ),
                     Area("PV", strategy=PVPredefinedStrategy(capacity_kW=0.25,

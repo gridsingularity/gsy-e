@@ -30,7 +30,6 @@ def get_setup(config):
                 event_list=[DisableMarketEvent(12), EnableMarketEvent(16)],
                 children=[
                     Asset("H1 General Load", strategy=LoadHoursStrategy(avg_power_W=200,
-                                                                        hrs_per_day=24,
                                                                         hrs_of_day=list(
                                                                             range(0, 24)),
                                                                         final_buying_rate=35)

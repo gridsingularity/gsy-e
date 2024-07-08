@@ -45,7 +45,7 @@ def get_setup(config):
                     Area("Home",
                          [
                              Area("Home Load", strategy=LoadHoursStrategy(
-                                 avg_power_W=3147, hrs_of_day=list(range(24)), hrs_per_day=24,
+                                 avg_power_W=3147, hrs_of_day=list(range(24)),
                                  initial_buying_rate=25, final_buying_rate=25,
                                  fit_to_limit=True)),
                              Area("Home PV", strategy=PVStrategy(
@@ -60,7 +60,7 @@ def get_setup(config):
                         capacity_kW=4, panel_count=1,
                         initial_selling_rate=30, final_selling_rate=2)),
                     Area("Community Load", strategy=LoadHoursStrategy(
-                        avg_power_W=400, hrs_of_day=list(range(24)), hrs_per_day=24,
+                        avg_power_W=400, hrs_of_day=list(range(24)),
                         initial_buying_rate=25.5, final_buying_rate=25.5,
                         fit_to_limit=True)),
                     Area("Community ESS", strategy=StorageStrategy(

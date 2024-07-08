@@ -41,7 +41,7 @@ def get_setup(config):
                     Area("Family 2 children with PV + ESS",
                          [
                             Area("Family General Load", strategy=LoadHoursStrategy(
-                                avg_power_W=5680, hrs_of_day=list(range(24)), hrs_per_day=24,
+                                avg_power_W=5680, hrs_of_day=list(range(24)),
                                 initial_buying_rate=23, final_buying_rate=23)),
                             Area("Family PV", strategy=PVStrategy(
                                 capacity_kW=17.985, panel_count=1,
@@ -55,7 +55,7 @@ def get_setup(config):
                         max_available_power_kW=10, energy_rate=1
                     )),
                     Area("Community Load", strategy=LoadHoursStrategy(
-                        avg_power_W=1200, hrs_of_day=list(range(24)), hrs_per_day=24,
+                        avg_power_W=1200, hrs_of_day=list(range(24)),
                         initial_buying_rate=10, final_buying_rate=10))
 
                 ], grid_fee_constant=4.0),
