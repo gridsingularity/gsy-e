@@ -7,7 +7,10 @@ from gsy_framework.constants_limits import GlobalConfig, TIME_ZONE
 from gsy_framework.utils import generate_market_slot_list
 from pendulum import duration, today
 
-from gsy_e.models.strategy.energy_parameters.heat_pump import HeatPumpEnergyParameters
+from gsy_e.models.strategy.energy_parameters.heat_pump import (
+    HeatPumpEnergyParameters,
+    TankParameters,
+)
 
 CURRENT_MARKET_SLOT = today(tz=TIME_ZONE)
 
@@ -22,19 +25,21 @@ def fixture_heatpump_energy_params() -> HeatPumpEnergyParameters:
     GlobalConfig.slot_length = duration(minutes=60)
 
     external_temp_profile = {
-        timestamp: 25
-        for timestamp in generate_market_slot_list(CURRENT_MARKET_SLOT)
+        timestamp: 25 for timestamp in generate_market_slot_list(CURRENT_MARKET_SLOT)
     }
     consumption_profile = {
-        timestamp: 5
-        for timestamp in generate_market_slot_list(CURRENT_MARKET_SLOT)
+        timestamp: 5 for timestamp in generate_market_slot_list(CURRENT_MARKET_SLOT)
     }
     energy_params = HeatPumpEnergyParameters(
-        min_temp_C=10,
-        max_temp_C=60,
-        initial_temp_C=20,
-        tank_volume_l=500,
         maximum_power_rating_kW=30,
+        tank_parameters=[
+            TankParameters(
+                min_temp_C=10,
+                max_temp_C=60,
+                initial_temp_C=20,
+                tank_volume_L=500,
+            )
+        ],
         external_temp_C_profile=external_temp_profile,
         consumption_kWh_profile=consumption_profile,
     )
@@ -60,51 +65,59 @@ class TestHeatPumpEnergyParameters:
 
     @staticmethod
     def test_event_market_cycle_populates_state(energy_params):
-        assert CURRENT_MARKET_SLOT not in energy_params.state._temp_decrease_K
-        assert CURRENT_MARKET_SLOT not in energy_params.state._storage_temp_C
-        assert CURRENT_MARKET_SLOT not in energy_params.state._min_energy_demand_kWh
-        assert CURRENT_MARKET_SLOT not in energy_params.state._max_energy_demand_kWh
+        tank_state = energy_params._tanks._tanks_energy_parameters[0]._state
+        heatpump_state = energy_params.state
+        assert CURRENT_MARKET_SLOT not in tank_state._temp_decrease_K
+        assert CURRENT_MARKET_SLOT not in tank_state._storage_temp_C
+        assert CURRENT_MARKET_SLOT not in heatpump_state._min_energy_demand_kWh
+        assert CURRENT_MARKET_SLOT not in heatpump_state._max_energy_demand_kWh
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
-        assert isclose(energy_params.state._temp_decrease_K[CURRENT_MARKET_SLOT],
-                       56.4, abs_tol=1e-3)
-        assert energy_params.state._storage_temp_C[CURRENT_MARKET_SLOT] == 20
-        assert isclose(energy_params.state._min_energy_demand_kWh[CURRENT_MARKET_SLOT],
-                       5, abs_tol=1e-3)
-        assert isclose(energy_params.state._max_energy_demand_kWh[CURRENT_MARKET_SLOT],
-                       8.546, abs_tol=1e-3)
+        assert isclose(tank_state._temp_decrease_K[CURRENT_MARKET_SLOT], 56.4, abs_tol=1e-3)
+        assert tank_state._storage_temp_C[CURRENT_MARKET_SLOT] == 20
+        assert isclose(heatpump_state._min_energy_demand_kWh[CURRENT_MARKET_SLOT], 5, abs_tol=1e-3)
+        assert isclose(
+            heatpump_state._max_energy_demand_kWh[CURRENT_MARKET_SLOT], 8.546, abs_tol=1e-3
+        )
 
     @staticmethod
     def test_event_traded_energy_decrements_posted_energy(energy_params):
+        heatpump_state = energy_params.state
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
         traded_energy = 0.00001
-        original_min_demand = energy_params.state._min_energy_demand_kWh[CURRENT_MARKET_SLOT]
-        original_max_demand = energy_params.state._max_energy_demand_kWh[CURRENT_MARKET_SLOT]
+        original_min_demand = heatpump_state._min_energy_demand_kWh[CURRENT_MARKET_SLOT]
+        original_max_demand = heatpump_state._max_energy_demand_kWh[CURRENT_MARKET_SLOT]
         energy_params.event_traded_energy(CURRENT_MARKET_SLOT, traded_energy)
-        assert (energy_params.state._min_energy_demand_kWh[CURRENT_MARKET_SLOT] ==
-                original_min_demand - traded_energy)
-        assert (energy_params.state._max_energy_demand_kWh[CURRENT_MARKET_SLOT] ==
-                original_max_demand - traded_energy)
+        assert (
+            heatpump_state._min_energy_demand_kWh[CURRENT_MARKET_SLOT]
+            == original_min_demand - traded_energy
+        )
+        assert (
+            heatpump_state._max_energy_demand_kWh[CURRENT_MARKET_SLOT]
+            == original_max_demand - traded_energy
+        )
 
     @staticmethod
     def test_event_traded_energy_updates_temp_increase(energy_params):
+        tank_state = energy_params._tanks._tanks_energy_parameters[0]._state
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
         traded_energy = 0.1
         energy_params.event_traded_energy(CURRENT_MARKET_SLOT, traded_energy)
-        assert isclose(energy_params.state._temp_increase_K[CURRENT_MARKET_SLOT],
-                       1.1280172413793106)
+        assert isclose(tank_state._temp_increase_K[CURRENT_MARKET_SLOT], 1.1280172413793106)
 
     @staticmethod
     def test_get_min_energy_demand_kWh_returns_correct_value(energy_params):
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
-        assert isclose(energy_params.get_min_energy_demand_kWh(CURRENT_MARKET_SLOT),
-                       5, abs_tol=1e-3)
+        assert isclose(
+            energy_params.get_min_energy_demand_kWh(CURRENT_MARKET_SLOT), 5, abs_tol=1e-3
+        )
 
     @staticmethod
     def test_get_max_energy_demand_kWh_returns_correct_value(energy_params):
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
         energy_params.get_max_energy_demand_kWh(CURRENT_MARKET_SLOT)
-        assert isclose(energy_params.get_max_energy_demand_kWh(CURRENT_MARKET_SLOT),
-                       8.546, abs_tol=1e-3)
+        assert isclose(
+            energy_params.get_max_energy_demand_kWh(CURRENT_MARKET_SLOT), 8.546, abs_tol=1e-3
+        )
 
     @staticmethod
     def test_event_market_cycle_calculates_and_sets_cop(energy_params):

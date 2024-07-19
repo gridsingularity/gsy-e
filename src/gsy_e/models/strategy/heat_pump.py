@@ -8,9 +8,14 @@ from gsy_framework.validators.heat_pump_validator import HeatPumpValidator
 from pendulum import DateTime, duration
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
-from gsy_e.gsy_e_core.util import (get_market_maker_rate_from_config,
-                                   get_feed_in_tariff_rate_from_config)
-from gsy_e.models.strategy.energy_parameters.heat_pump import HeatPumpEnergyParameters
+from gsy_e.gsy_e_core.util import (
+    get_market_maker_rate_from_config,
+    get_feed_in_tariff_rate_from_config,
+)
+from gsy_e.models.strategy.energy_parameters.heat_pump import (
+    HeatPumpEnergyParameters,
+    TankParameters,
+)
 from gsy_e.models.strategy.order_updater import OrderUpdaterParameters, OrderUpdater
 from gsy_e.models.strategy.state import HeatPumpState
 from gsy_e.models.strategy.trading_strategy_base import TradingStrategyBase
@@ -22,6 +27,7 @@ if TYPE_CHECKING:
 @dataclass
 class HeatPumpOrderUpdaterParameters(OrderUpdaterParameters):
     """Order updater parameters for the HeatPump"""
+
     update_interval: Optional[duration] = None
     initial_rate: Optional[float] = None
     final_rate: Optional[float] = None
@@ -31,7 +37,8 @@ class HeatPumpOrderUpdaterParameters(OrderUpdaterParameters):
         """Update class members if set to None or if global default values should be used."""
         if use_default or self.update_interval is None:
             self.update_interval = duration(
-                minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
+                minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL
+            )
         if use_default or self.final_rate is None or self.use_market_maker_rate:
             self.final_rate = get_market_maker_rate_from_config(market)
         if use_default or self.initial_rate is None:
@@ -42,7 +49,7 @@ class HeatPumpOrderUpdaterParameters(OrderUpdaterParameters):
             "update_interval": self.update_interval,
             "initial_buying_rate": self.initial_rate,
             "final_buying_rate": self.final_rate,
-            "use_market_maker_rate": self.use_market_maker_rate
+            "use_market_maker_rate": self.use_market_maker_rate,
         }
 
 
@@ -50,42 +57,47 @@ class HeatPumpStrategy(TradingStrategyBase):
     """Strategy for heat pumps with storages."""
 
     # pylint: disable=too-many-arguments,super-init-not-called
-    def __init__(self,
-                 maximum_power_rating_kW: float =
-                 ConstSettings.HeatPumpSettings.MAX_POWER_RATING_KW,
-                 min_temp_C: float = ConstSettings.HeatPumpSettings.MIN_TEMP_C,
-                 max_temp_C: float = ConstSettings.HeatPumpSettings.MAX_TEMP_C,
-                 initial_temp_C: float = ConstSettings.HeatPumpSettings.INIT_TEMP_C,
-                 external_temp_C_profile: Optional[Union[str, float, Dict]] = None,
-                 external_temp_C_profile_uuid: Optional[str] = None,
-                 external_temp_C_measurement_uuid: Optional[str] = None,
-                 tank_volume_l: float = ConstSettings.HeatPumpSettings.TANK_VOL_L,
-                 consumption_kWh_profile: Optional[Union[str, float, Dict]] = None,
-                 consumption_kWh_profile_uuid: Optional[str] = None,
-                 consumption_kWh_measurement_uuid: Optional[str] = None,
-                 source_type: int = ConstSettings.HeatPumpSettings.SOURCE_TYPE,
-                 order_updater_parameters: Dict[
-                     AvailableMarketTypes, HeatPumpOrderUpdaterParameters] = None,
-                 preferred_buying_rate: float =
-                 ConstSettings.HeatPumpSettings.PREFERRED_BUYING_RATE
-                 ):
+    def __init__(
+        self,
+        maximum_power_rating_kW: float = ConstSettings.HeatPumpSettings.MAX_POWER_RATING_KW,
+        min_temp_C: float = ConstSettings.HeatPumpSettings.MIN_TEMP_C,
+        max_temp_C: float = ConstSettings.HeatPumpSettings.MAX_TEMP_C,
+        initial_temp_C: float = ConstSettings.HeatPumpSettings.INIT_TEMP_C,
+        external_temp_C_profile: Optional[Union[str, float, Dict]] = None,
+        external_temp_C_profile_uuid: Optional[str] = None,
+        external_temp_C_measurement_uuid: Optional[str] = None,
+        tank_volume_l: float = ConstSettings.HeatPumpSettings.TANK_VOL_L,
+        consumption_kWh_profile: Optional[Union[str, float, Dict]] = None,
+        consumption_kWh_profile_uuid: Optional[str] = None,
+        consumption_kWh_measurement_uuid: Optional[str] = None,
+        source_type: int = ConstSettings.HeatPumpSettings.SOURCE_TYPE,
+        order_updater_parameters: Dict[
+            AvailableMarketTypes, HeatPumpOrderUpdaterParameters
+        ] = None,
+        preferred_buying_rate: float = ConstSettings.HeatPumpSettings.PREFERRED_BUYING_RATE,
+    ):
 
-        assert ConstSettings.MASettings.MARKET_TYPE != 1, (
-                "Heatpump has not been implemented for the OneSidedMarket")
+        assert (
+            ConstSettings.MASettings.MARKET_TYPE != 1
+        ), "Heatpump has not been implemented for the OneSidedMarket"
 
         self._init_price_params(order_updater_parameters, preferred_buying_rate)
 
         self._energy_params = HeatPumpEnergyParameters(
             maximum_power_rating_kW=maximum_power_rating_kW,
-            min_temp_C=min_temp_C,
-            max_temp_C=max_temp_C,
-            initial_temp_C=initial_temp_C,
+            tank_parameters=[
+                TankParameters(
+                    min_temp_C=min_temp_C,
+                    max_temp_C=max_temp_C,
+                    initial_temp_C=initial_temp_C,
+                    tank_volume_L=tank_volume_l,
+                )
+            ],
             external_temp_C_profile=external_temp_C_profile,
             external_temp_C_profile_uuid=external_temp_C_profile_uuid,
-            tank_volume_l=tank_volume_l,
             consumption_kWh_profile=consumption_kWh_profile,
             consumption_kWh_profile_uuid=consumption_kWh_profile_uuid,
-            source_type=source_type
+            source_type=source_type,
         )
         HeatPumpValidator.validate(
             maximum_power_rating_kW=maximum_power_rating_kW,
@@ -97,7 +109,8 @@ class HeatPumpStrategy(TradingStrategyBase):
             tank_volume_l=tank_volume_l,
             consumption_kWh_profile=consumption_kWh_profile,
             consumption_kWh_profile_uuid=consumption_kWh_profile_uuid,
-            source_type=source_type)
+            source_type=source_type,
+        )
 
         # needed for profile_handler
         self.external_temp_C_profile_uuid = external_temp_C_profile_uuid
@@ -109,7 +122,8 @@ class HeatPumpStrategy(TradingStrategyBase):
         self.use_default_updater_params: bool = not order_updater_parameters
         if self.use_default_updater_params:
             order_updater_parameters = {
-                AvailableMarketTypes.SPOT: HeatPumpOrderUpdaterParameters()}
+                AvailableMarketTypes.SPOT: HeatPumpOrderUpdaterParameters()
+            }
         else:
             for market_type in AvailableMarketTypes:
                 if not order_updater_parameters.get(market_type):
@@ -119,8 +133,9 @@ class HeatPumpStrategy(TradingStrategyBase):
                     final_buying_rate=order_updater_parameters[market_type].final_rate,
                     update_interval=order_updater_parameters[market_type].update_interval,
                     use_market_maker_rate=(
-                        order_updater_parameters[market_type].use_market_maker_rate),
-                    preferred_buying_rate=preferred_buying_rate
+                        order_updater_parameters[market_type].use_market_maker_rate
+                    ),
+                    preferred_buying_rate=preferred_buying_rate,
                 )
 
         super().__init__(order_updater_parameters=order_updater_parameters)
@@ -132,7 +147,7 @@ class HeatPumpStrategy(TradingStrategyBase):
         return {
             "preferred_buying_rate": self.preferred_buying_rate,
             **self._energy_params.serialize(),
-            **self._order_updater_params.get(AvailableMarketTypes.SPOT).serialize()
+            **self._order_updater_params.get(AvailableMarketTypes.SPOT).serialize(),
         }
 
     @staticmethod
@@ -140,15 +155,16 @@ class HeatPumpStrategy(TradingStrategyBase):
         """Deserialize the constructor arguments for the HeatPump strategy."""
         if "order_updater_parameters" not in constructor_args:
             constructor_args["order_updater_parameters"] = {
-                AvailableMarketTypes.SPOT:
-                    HeatPumpOrderUpdaterParameters(
-                        update_interval=(duration(
-                            minutes=constructor_args.get("update_interval")
-                        ) if constructor_args.get("update_interval") is not None else None),
-                        initial_rate=constructor_args.get("initial_buying_rate", None),
-                        final_rate=constructor_args.get("final_buying_rate", None),
-                        use_market_maker_rate=constructor_args.get("use_market_maker_rate", False)
-                    )
+                AvailableMarketTypes.SPOT: HeatPumpOrderUpdaterParameters(
+                    update_interval=(
+                        duration(minutes=constructor_args.get("update_interval"))
+                        if constructor_args.get("update_interval") is not None
+                        else None
+                    ),
+                    initial_rate=constructor_args.get("initial_buying_rate", None),
+                    final_rate=constructor_args.get("final_buying_rate", None),
+                    use_market_maker_rate=constructor_args.get("use_market_maker_rate", False),
+                )
             }
             constructor_args.pop("initial_buying_rate", None)
             constructor_args.pop("final_buying_rate", None)
@@ -194,31 +210,34 @@ class HeatPumpStrategy(TradingStrategyBase):
         pass
 
     def post_order(
-            self, market: "MarketBase", market_slot: DateTime, order_rate: float = None, **kwargs):
+        self, market: "MarketBase", market_slot: DateTime, order_rate: float = None, **kwargs
+    ):
 
         if not order_rate:
-            order_rate = self._order_updaters[market][market_slot].get_energy_rate(
-                self.area.now)
+            order_rate = self._order_updaters[market][market_slot].get_energy_rate(self.area.now)
         order_energy_kWh = self._get_energy_buy_energy(order_rate, market_slot)
 
         if order_energy_kWh <= FLOATING_POINT_TOLERANCE:
             return
         market.bid(
-            order_rate * order_energy_kWh, order_energy_kWh,
+            order_rate * order_energy_kWh,
+            order_energy_kWh,
             original_price=order_rate * order_energy_kWh,
-            buyer=TraderDetails(self.owner.name, self.owner.uuid,
-                                self.owner.name, self.owner.uuid),
-            time_slot=market_slot)
+            buyer=TraderDetails(
+                self.owner.name, self.owner.uuid, self.owner.name, self.owner.uuid
+            ),
+            time_slot=market_slot,
+        )
 
     def remove_open_orders(self, market: "MarketBase", market_slot: DateTime):
         if self.area.is_market_spot(market.id):
-            bids = [bid
-                    for bid in market.bids.values()
-                    if bid.buyer.name == self.owner.name]
+            bids = [bid for bid in market.bids.values() if bid.buyer.name == self.owner.name]
         else:
-            bids = [bid
-                    for bid in market.slot_bid_mapping[market_slot]
-                    if bid.buyer.name == self.owner.name]
+            bids = [
+                bid
+                for bid in market.slot_bid_mapping[market_slot]
+                if bid.buyer.name == self.owner.name
+            ]
 
         for bid in bids:
             market.delete_bid(bid)
@@ -228,29 +247,32 @@ class HeatPumpStrategy(TradingStrategyBase):
         if buy_rate > self.preferred_buying_rate:
             temp_decrease = self._energy_params.state.get_temp_decrease_K(market_slot)
             if self.state.get_storage_temp_C(market_slot) - temp_decrease >= (
-                    self._energy_params.min_temp_C + TEMPERATURE_TOLERANCE_C):
+                self._energy_params.min_temp_C + TEMPERATURE_TOLERANCE_C
+            ):
                 return 0
             return self._energy_params.get_min_energy_demand_kWh(market_slot)
         return self._energy_params.get_max_energy_demand_kWh(market_slot)
 
     def _create_order_updaters(
-            self, market: "MarketBase", market_slot: DateTime, market_type: AvailableMarketTypes):
+        self, market: "MarketBase", market_slot: DateTime, market_type: AvailableMarketTypes
+    ):
         if not self._order_updater_for_market_slot_exists(market, market_slot):
             if market not in self._order_updaters:
                 self._order_updaters[market] = {}
             self._order_updater_params[market_type].update(market, self.use_default_updater_params)
             self._order_updaters[market][market_slot] = OrderUpdater(
                 self._order_updater_params[market_type],
-                market.get_market_parameters_for_market_slot(market_slot))
+                market.get_market_parameters_for_market_slot(market_slot),
+            )
 
-    def _post_order_to_new_market(self, market, market_slot,
-                                  market_type=AvailableMarketTypes.SPOT):
+    def _post_order_to_new_market(
+        self, market, market_slot, market_type=AvailableMarketTypes.SPOT
+    ):
         self._create_order_updaters(market, market_slot, market_type)
         self.post_order(market, market_slot)
 
     def _post_orders_to_new_markets(self):
-        self._post_order_to_new_market(
-            self.area.spot_market, self.area.spot_market.time_slot)
+        self._post_order_to_new_market(self.area.spot_market, self.area.spot_market.time_slot)
 
     def _update_open_orders(self):
         for market, market_slot_updater_dict in self._order_updaters.items():
