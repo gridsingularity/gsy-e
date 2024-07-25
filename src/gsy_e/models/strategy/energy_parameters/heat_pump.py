@@ -30,21 +30,24 @@ class HeatPumpEnergyParametersException(Exception):
 class CombinedHeatpumpTanksState:
     """Combined state that includes both heatpump and tanks state."""
 
-    def __init__(self, hp_state, tanks_state):
+    def __init__(self, hp_state: HeatPumpState, tanks_state: AllTanksEnergyParameters):
         self._hp_state = hp_state
         self._tanks_state = tanks_state
 
     def get_results_dict(self, current_time_slot: DateTime) -> dict:
         """Results dict for all heatpump and tanks results."""
-        return {**self._hp_state.get_results_dict(), **self._tanks_state.get_results_dict()}
+        return {
+            **self._hp_state.get_results_dict(current_time_slot),
+            **self._tanks_state.get_results_dict(current_time_slot),
+        }
 
     @property
-    def heatpump(self):
+    def heatpump(self) -> HeatPumpState:
         """Exposes the heatpump state."""
         return self._hp_state
 
     @property
-    def tanks(self):
+    def tanks(self) -> AllTanksEnergyParameters:
         """Exposes the tanks state."""
         return self._tanks_state
 
@@ -71,7 +74,7 @@ class HeatPumpEnergyParametersBase(ABC):
         self._state = CombinedHeatpumpTanksState(state, tanks)
 
     @property
-    def combined_state(self):
+    def combined_state(self) -> CombinedHeatpumpTanksState:
         """Combined heatpump and tanks state."""
         return self._state
 
