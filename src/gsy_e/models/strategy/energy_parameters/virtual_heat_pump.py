@@ -1,21 +1,22 @@
 import logging
 from typing import Optional, Union, Dict, List
 
+from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.read_user_profile import InputProfileTypes
+from pendulum import DateTime
+
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.models.strategy.energy_parameters.heat_pump import HeatPumpEnergyParametersBase
 from gsy_e.models.strategy.energy_parameters.heat_pump_tank import (
-    WATER_SPECIFIC_HEAT_CAPACITY,
     TankParameters,
     AllTanksEnergyParameters,
 )
+from gsy_e.models.strategy.energy_parameters.heatpump_constants import WATER_SPECIFIC_HEAT_CAPACITY
 from gsy_e.models.strategy.energy_parameters.virtual_heatpump_solver import (
     VirtualHeatpumpSolverParameters,
     HeatpumpStorageEnergySolver,
 )
 from gsy_e.models.strategy.strategy_profile import StrategyProfile
-from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.read_user_profile import InputProfileTypes
-from pendulum import DateTime
 
 logger = logging.getLogger(__name__)
 
@@ -123,7 +124,7 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
         Return the energy needed to be consumed by the heatpump in order to generate enough heat
         to maintain the same tank temp in degrees C.
         """
-        tank_parameters = self._tanks.create_tank_parameters_for_maintaining_tank_temperature(
+        tank_parameters = self._tanks.create_tank_solver_for_maintaining_tank_temperature(
             time_slot
         )
 
@@ -164,9 +165,7 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
         logger.debug(solver)
         return solver.energy_kWh
 
-    def update_tanks_temp_with_energy(
-        self, energy_kWh: float, time_slot: DateTime
-    ) -> HeatpumpStorageEnergySolver:
+    def increase_tanks_temp_update_hp_state(self, energy_kWh: float, time_slot: DateTime):
         """
         Update the water tanks temperature after the heatpump has consumed energy_kWh energy and
         produced heat with it.
@@ -180,7 +179,15 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
             calibration_coefficient=self.calibration_coefficient,
             energy_kWh=energy_kWh,
         )
-        return self._tanks.update_tanks_temperature_with_energy(heatpump_parameters, time_slot)
+
+        solver = self._tanks.increase_tanks_temperature_with_energy_vhp(
+            heatpump_parameters, time_slot
+        )
+
+        # Update last slot statistics (COP, heat demand, condenser temp)
+        self.state.set_cop(time_slot, solver.cop)
+        self.state.set_condenser_temp(time_slot, solver.condenser_temp_C)
+        self.state.set_heat_demand(time_slot, solver.q_out_J)
 
     def event_traded_energy(self, time_slot: DateTime, energy_kWh: float):
         """React to an event_traded_energy."""
@@ -192,12 +199,7 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
         if last_time_slot in self._water_supply_temp_C.profile:
             # Update temp increase
             energy_kWh = self.state.get_energy_consumption_kWh(last_time_slot)
-            solver = self.update_tanks_temp_with_energy(energy_kWh, last_time_slot)
-
-            # Update last slot statistics (COP, heat demand, condenser temp)
-            self.state.set_cop(last_time_slot, solver.cop)
-            self.state.set_condenser_temp(last_time_slot, solver.condenser_temp_C)
-            self.state.set_heat_demand(last_time_slot, solver.q_out_J)
+            self.increase_tanks_temp_update_hp_state(energy_kWh, last_time_slot)
 
         self._tanks.update_tanks_temperature(time_slot)
 

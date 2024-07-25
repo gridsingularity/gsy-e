@@ -1,17 +1,18 @@
 from abc import ABC, abstractmethod
 from typing import Optional, Dict, Union, List
 
-from gsy_e.constants import FLOATING_POINT_TOLERANCE
-from gsy_e.models.strategy.state import HeatPumpState
-from gsy_e.models.strategy.strategy_profile import profile_factory
-from gsy_e.models.strategy.energy_parameters.heat_pump_tank import (
-    TankParameters,
-    AllTanksEnergyParameters,
-)
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.enums import HeatPumpSourceType
 from gsy_framework.read_user_profile import InputProfileTypes
 from pendulum import DateTime
+
+from gsy_e.constants import FLOATING_POINT_TOLERANCE
+from gsy_e.models.strategy.energy_parameters.heat_pump_tank import (
+    TankParameters,
+    AllTanksEnergyParameters,
+)
+from gsy_e.models.strategy.state import HeatPumpState
+from gsy_e.models.strategy.strategy_profile import profile_factory
 
 # pylint: disable=pointless-string-statement
 """
@@ -158,7 +159,9 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
             "maximum_power_rating_kW": self._maximum_power_rating_kW,
             "consumption_kWh": self._consumption_kWh.input_profile,
             "consumption_profile_uuid": self._consumption_kWh.input_profile_uuid,
-            "consumption_kWh_measurement_uuid": self._measurement_consumption_kWh.input_profile_uuid,
+            "consumption_kWh_measurement_uuid": (
+                self._measurement_consumption_kWh.input_profile_uuid
+            ),
             "external_temp_C": self._ext_temp_C.input_profile,
             "external_temp_profile_uuid": self._ext_temp_C.input_profile_uuid,
             "external_temp_measurement_uuid": self._measurement_ext_temp_C.input_profile_uuid,
@@ -170,7 +173,7 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
         self._decrement_posted_energy(time_slot, energy_kWh)
 
         traded_heat_energy = self._calc_Q_from_energy_kWh(time_slot, energy_kWh)
-        self._tanks.increase_tanks_temp(traded_heat_energy, time_slot)
+        self._tanks.increase_tanks_temp_from_heat_energy(traded_heat_energy, time_slot)
 
         self._calculate_and_set_unmatched_demand(time_slot)
 
@@ -200,7 +203,7 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
         produced_heat_energy = self._calc_Q_from_energy_kWh(
             time_slot, self._consumption_kWh.profile[time_slot]
         )
-        self._tanks.set_temp_decrease(produced_heat_energy, time_slot)
+        self._tanks.decrease_tanks_temp_from_heat_energy(produced_heat_energy, time_slot)
         super()._populate_state(time_slot)
         self.state.set_energy_consumption_kWh(
             time_slot, self._consumption_kWh.get_value(time_slot)

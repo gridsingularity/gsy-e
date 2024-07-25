@@ -3,21 +3,23 @@ from dataclasses import dataclass
 from typing import Optional, List
 
 import sympy as sp
-from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.utils import convert_W_to_kWh, convert_kWh_to_W
 
+from gsy_e.constants import FLOATING_POINT_TOLERANCE
+from gsy_e.models.strategy.energy_parameters.heatpump_constants import (
+    WATER_SPECIFIC_HEAT_CAPACITY,
+    WATER_DENSITY,
+    GROUND_WATER_TEMPERATURE_C,
+)
+
 logger = logging.getLogger(__name__)
-
-WATER_SPECIFIC_HEAT_CAPACITY = 4182  # [J/kg°C]
-
-GROUND_WATER_TEMPERATURE_C = 12
-# TODO: Refactor to a global constant
-WATER_DENSITY = 1  # [kg / l]
 
 
 @dataclass
 class VirtualHeatpumpSolverParameters:
+    """Sympy solver parameters for the Heatpump."""
+
     dh_supply_temp_C: float
     dh_return_temp_C: float
     dh_flow_m3_per_hour: float
@@ -36,6 +38,8 @@ class VirtualHeatpumpSolverParameters:
 
 @dataclass
 class TankSolverParameters:
+    """Sympy solver parameters for the water tank."""
+
     tank_volume_L: float
     current_storage_temp_C: float
     target_storage_temp_C: float = None
@@ -131,8 +135,9 @@ class HeatpumpStorageEnergySolver:
             # Tcond = ((Qin / mC) + Ttarget1 + Ttarget2 + .... ) / nr_tanks
             self.condenser_temp_C = (
                 self.q_in_J / (self.dh_flow_kg_per_sec * WATER_SPECIFIC_HEAT_CAPACITY)
-            ) + sum(tank.target_storage_temp_C for tank in self.tank_parameters) / len(
-                self.tank_parameters
+            ) + (
+                sum(tank.target_storage_temp_C for tank in self.tank_parameters)
+                / len(self.tank_parameters)
             )
             self.cop = self.calibration_coefficient * (
                 self.condenser_temp_C / (self.condenser_temp_C - GROUND_WATER_TEMPERATURE_C)
@@ -174,8 +179,7 @@ class HeatpumpStorageEnergySolver:
                     WATER_DENSITY
                     * WATER_SPECIFIC_HEAT_CAPACITY
                     * tank.tank_volume_L
-                    * tank_symbols[2 * tank_index]
-                    + 1
+                    * tank_symbols[(2 * tank_index) + 1]
                 )
                 for tank_index, tank in enumerate(self.tank_parameters)
             ]
@@ -206,5 +210,5 @@ class HeatpumpStorageEnergySolver:
         self.cop = float(solution.get(cop_sym))
         for tank_index, tank in enumerate(self.tank_parameters):
             tank.target_storage_temp_C = float(solution.get(tank_symbols[2 * tank_index]))
-            tank.temp_differential_per_sec = float(solution.get(tank_symbols[2 * tank_index] + 1))
+            tank.temp_differential_per_sec = float(solution.get(tank_symbols[2 * tank_index + 1]))
         self.condenser_temp_C = float(solution.get(condenser_temp_sym))
