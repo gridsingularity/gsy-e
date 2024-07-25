@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
 import csv
 import json
 import logging
@@ -24,8 +25,14 @@ import shutil
 from typing import TYPE_CHECKING, Dict, List, Tuple
 
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.data_classes import (BalancingOffer, BalancingTrade, Bid, MarketClearingState,
-                                        Offer, Trade)
+from gsy_framework.data_classes import (
+    BalancingOffer,
+    BalancingTrade,
+    Bid,
+    MarketClearingState,
+    Offer,
+    Trade,
+)
 from gsy_framework.enums import AvailableMarketTypes, BidOfferMatchAlgoEnum, SpotMarketTypeEnum
 from gsy_framework.utils import mkdir_from_str
 from pendulum import DateTime
@@ -35,12 +42,17 @@ from gsy_e.gsy_e_core.area_serializer import area_to_string
 from gsy_e.gsy_e_core.enums import PAST_MARKET_TYPE_FILE_SUFFIX_MAPPING
 from gsy_e.gsy_e_core.matching_engine_singleton import bid_offer_matcher
 from gsy_e.gsy_e_core.sim_results.file_export_endpoints import file_export_endpoints_factory
-from gsy_e.gsy_e_core.sim_results.results_plots import (PlotAverageTradePrice, PlotDeviceStats,
-                                                        PlotEnergyProfile,
-                                                        PlotEnergyTradeProfileHR,
-                                                        PlotESSEnergyTrace, PlotESSSOCHistory,
-                                                        PlotOrderInfo, PlotSupplyDemandCurve,
-                                                        PlotUnmatchedLoads)
+from gsy_e.gsy_e_core.sim_results.results_plots import (
+    PlotAverageTradePrice,
+    PlotDeviceStats,
+    PlotEnergyProfile,
+    PlotEnergyTradeProfileHR,
+    PlotESSEnergyTrace,
+    PlotESSSOCHistory,
+    PlotOrderInfo,
+    PlotSupplyDemandCurve,
+    PlotUnmatchedLoads,
+)
 from gsy_e.gsy_e_core.util import constsettings_to_dict
 from gsy_e.models.area import Area
 
@@ -69,7 +81,8 @@ results_field_to_json_filename_mapping = {
     "random_seed": "random_seed",
     "simulation_state": "simulation_state",
     "status": "status",
-    "trade_profile": "trade_profile"
+    "trade_profile": "trade_profile",
+    "imported_exported_energy": "imported_exported_energy",
 }
 
 
@@ -78,8 +91,9 @@ class ExportAndPlot:
     """Handle local export of plots and csv-files."""
 
     # pylint: disable=too-many-arguments
-    def __init__(self, root_area: Area, path: str, subdir: str,
-                 endpoint_buffer: "SimulationEndpointBuffer"):
+    def __init__(
+        self, root_area: Area, path: str, subdir: str, endpoint_buffer: "SimulationEndpointBuffer"
+    ):
         self.area = root_area
         self.endpoint_buffer = endpoint_buffer
         self.file_stats_endpoint = file_export_endpoints_factory()
@@ -141,25 +155,30 @@ class ExportAndPlot:
 
         PlotEnergyProfile(self.endpoint_buffer, self.plot_dir).plot(self.area)
         PlotUnmatchedLoads(self.area, self.file_stats_endpoint, self.plot_dir).plot()
-        PlotAverageTradePrice(
-            self.file_stats_endpoint, self.plot_dir).plot(self.area, self.plot_dir)
-        PlotESSSOCHistory(
-            self.file_stats_endpoint, self.plot_dir).plot(self.area, self.plot_dir)
+        PlotAverageTradePrice(self.file_stats_endpoint, self.plot_dir).plot(
+            self.area, self.plot_dir
+        )
+        PlotESSSOCHistory(self.file_stats_endpoint, self.plot_dir).plot(self.area, self.plot_dir)
         PlotESSEnergyTrace(self.plot_dir).plot(self.area, self.plot_dir)
         if ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR:
             PlotOrderInfo(self.endpoint_buffer).plot_per_area_per_market_slot(
-                self.area, self.plot_dir)
+                self.area, self.plot_dir
+            )
         if ConstSettings.GeneralSettings.EXPORT_DEVICE_PLOTS:
             PlotDeviceStats(self.endpoint_buffer, self.plot_dir).plot(self.area, [])
         if ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR:
-            PlotEnergyTradeProfileHR(
-                self.endpoint_buffer, self.plot_dir).plot(self.area, self.plot_dir)
-        if (ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value and
-                ConstSettings.MASettings.BID_OFFER_MATCH_TYPE ==
-                BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value and
-                ConstSettings.GeneralSettings.EXPORT_SUPPLY_DEMAND_PLOTS is True):
-            PlotSupplyDemandCurve(
-                self.file_stats_endpoint, self.plot_dir).plot(self.area, self.plot_dir)
+            PlotEnergyTradeProfileHR(self.endpoint_buffer, self.plot_dir).plot(
+                self.area, self.plot_dir
+            )
+        if (
+            ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value
+            and ConstSettings.MASettings.BID_OFFER_MATCH_TYPE
+            == BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
+            and ConstSettings.GeneralSettings.EXPORT_SUPPLY_DEMAND_PLOTS is True
+        ):
+            PlotSupplyDemandCurve(self.file_stats_endpoint, self.plot_dir).plot(
+                self.area, self.plot_dir
+            )
 
         self.move_root_plot_folder()
 
@@ -185,8 +204,11 @@ class ExportAndPlot:
         """
         old_dir = os.path.join(self.plot_dir, self.area.slug)
         if not os.path.isdir(old_dir):
-            _log.error("PLOT ERROR: No plots were generated for %s "
-                       "under %s", self.area.slug, self.plot_dir)
+            _log.error(
+                "PLOT ERROR: No plots were generated for %s " "under %s",
+                self.area.slug,
+                self.plot_dir,
+            )
             return
         source = os.listdir(old_dir)
         for si in source:
@@ -195,8 +217,7 @@ class ExportAndPlot:
 
     def _export_spot_markets_stats(self, area: Area, directory: dir, is_first: bool) -> None:
         """Export bids, offers, trades, statistics csv-files for all spot markets."""
-        self._export_area_stats_csv_file(area, directory, AvailableMarketTypes.SPOT,
-                                         is_first)
+        self._export_area_stats_csv_file(area, directory, AvailableMarketTypes.SPOT, is_first)
         if not area.children:
             return
         self._export_offers_bids_trades_to_csv_files(
@@ -204,28 +225,32 @@ class ExportAndPlot:
             market_member="trades",
             file_path=self._file_path(directory, f"{area.slug}-trades"),
             labels=("slot",) + Trade.csv_fields(),
-            is_first=is_first)
+            is_first=is_first,
+        )
 
         self._export_offers_bids_trades_to_csv_files(
             past_markets=area.past_markets,
             market_member="offer_history",
             file_path=self._file_path(directory, f"{area.slug}-offers"),
             labels=("slot",) + Offer.csv_fields(),
-            is_first=is_first)
+            is_first=is_first,
+        )
 
         self._export_offers_bids_trades_to_csv_files(
             past_markets=area.past_markets,
             market_member="bid_history",
             file_path=self._file_path(directory, f"{area.slug}-bids"),
             labels=("slot",) + Bid.csv_fields(),
-            is_first=is_first)
+            is_first=is_first,
+        )
 
     def _export_settlement_markets_stats(self, area: Area, directory: dir, is_first: bool) -> None:
         """Export bids, offers, trades, statistics csv-files for all settlement markets."""
         if not ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS:
             return
-        self._export_area_stats_csv_file(area, directory, AvailableMarketTypes.SETTLEMENT,
-                                         is_first)
+        self._export_area_stats_csv_file(
+            area, directory, AvailableMarketTypes.SETTLEMENT, is_first
+        )
         if not area.children:
             return
         self._export_offers_bids_trades_to_csv_files(
@@ -233,27 +258,31 @@ class ExportAndPlot:
             market_member="trades",
             file_path=self._file_path(directory, f"{area.slug}-settlement-trades"),
             labels=("slot",) + Trade.csv_fields(),
-            is_first=is_first)
+            is_first=is_first,
+        )
         self._export_offers_bids_trades_to_csv_files(
             past_markets=area.past_settlement_markets.values(),
             market_member="offer_history",
             file_path=self._file_path(directory, f"{area.slug}-settlement-offers"),
             labels=("slot",) + Offer.csv_fields(),
-            is_first=is_first)
+            is_first=is_first,
+        )
         self._export_offers_bids_trades_to_csv_files(
             past_markets=area.past_settlement_markets.values(),
             market_member="bid_history",
             file_path=self._file_path(directory, f"{area.slug}-settlement-bids"),
             labels=("slot",) + Bid.csv_fields(),
-            is_first=is_first)
+            is_first=is_first,
+        )
 
     def _export_future_markets_stats(self, area: Area, directory: dir, is_first: bool) -> None:
         """Export bids, offers, trades, statistics csv-files for all settlement markets."""
-        if (ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS <= 0 or
-                not area.future_markets):
+        if (
+            ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS <= 0
+            or not area.future_markets
+        ):
             return
-        self._export_area_stats_csv_file(area, directory, AvailableMarketTypes.FUTURE,
-                                         is_first)
+        self._export_area_stats_csv_file(area, directory, AvailableMarketTypes.FUTURE, is_first)
         if not area.children:
             return
 
@@ -262,26 +291,28 @@ class ExportAndPlot:
             market_member="trades",
             file_path=self._file_path(directory, f"{area.slug}-future-trades"),
             labels=("slot",) + Trade.csv_fields(),
-            is_first=is_first)
+            is_first=is_first,
+        )
         self._export_future_offers_bid_trades_to_csv_files(
             future_markets=area.future_markets,
             market_member="offer_history",
             file_path=self._file_path(directory, f"{area.slug}-future-offers"),
             labels=("slot",) + Offer.csv_fields(),
-            is_first=is_first)
+            is_first=is_first,
+        )
         self._export_future_offers_bid_trades_to_csv_files(
             future_markets=area.future_markets,
             market_member="bid_history",
             file_path=self._file_path(directory, f"{area.slug}-future-bids"),
             labels=("slot",) + Bid.csv_fields(),
-            is_first=is_first)
+            is_first=is_first,
+        )
 
     def _export_balancing_markets_stats(self, area: Area, directory: dir, is_first: bool) -> None:
         """Export bids, offers, trades, statistics csv-files for all balancing markets."""
         if not ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
             return
-        self._export_area_stats_csv_file(area, directory, AvailableMarketTypes.BALANCING,
-                                         is_first)
+        self._export_area_stats_csv_file(area, directory, AvailableMarketTypes.BALANCING, is_first)
         if not area.children:
             return
         self._export_offers_bids_trades_to_csv_files(
@@ -289,17 +320,20 @@ class ExportAndPlot:
             market_member="trades",
             file_path=self._file_path(directory, f"{area.slug}-balancing-trades"),
             labels=("slot",) + BalancingTrade.csv_fields(),
-            is_first=is_first)
+            is_first=is_first,
+        )
 
         self._export_offers_bids_trades_to_csv_files(
             past_markets=area.past_balancing_markets,
             market_member="offer_history",
             file_path=self._file_path(directory, f"{area.slug}-balancing-offers"),
             labels=("slot",) + BalancingOffer.csv_fields(),
-            is_first=is_first)
+            is_first=is_first,
+        )
 
-    def _export_area_with_children(self, area: Area, directory: dir,
-                                   is_first: bool = False) -> None:
+    def _export_area_with_children(
+        self, area: Area, directory: dir, is_first: bool = False
+    ) -> None:
         """
         Uses the FileExportEndpoints object and writes them to csv files
         Runs _export_area_energy and _export_area_stats_csv_file
@@ -317,9 +351,11 @@ class ExportAndPlot:
         self._export_balancing_markets_stats(area, directory, is_first)
 
         if area.children:
-            if (ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED and
-                    ConstSettings.MASettings.BID_OFFER_MATCH_TYPE ==
-                    BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value):
+            if (
+                ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED
+                and ConstSettings.MASettings.BID_OFFER_MATCH_TYPE
+                == BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
+            ):
                 self._export_area_clearing_rate(area, directory, "market-clearing-rate", is_first)
 
     def _export_area_clearing_rate(self, area, directory, file_suffix, is_first) -> None:
@@ -333,7 +369,8 @@ class ExportAndPlot:
                     writer.writerow(labels)
                 for market in area.past_markets:
                     market_clearing = bid_offer_matcher.matcher.match_algorithm.state.clearing.get(
-                        market.id)
+                        market.id
+                    )
                     if market_clearing is None:
                         continue
                     for time, clearing in market_clearing.items():
@@ -345,8 +382,12 @@ class ExportAndPlot:
 
     @staticmethod
     def _export_future_offers_bid_trades_to_csv_files(
-            future_markets: "FutureMarkets", market_member: str, file_path: dir,
-            labels: Tuple, is_first: bool = False) -> None:
+        future_markets: "FutureMarkets",
+        market_member: str,
+        file_path: dir,
+        labels: Tuple,
+        is_first: bool = False,
+    ) -> None:
         """
         Export files containing individual future offers, bids (*-bids*/*-offers*.csv files).
         """
@@ -366,10 +407,14 @@ class ExportAndPlot:
             _log.exception("Could not export offers, bids, trades")
 
     @staticmethod
-    def _export_offers_bids_trades_to_csv_files(past_markets: List, market_member: str,
-                                                file_path: dir, labels: Tuple,
-                                                is_first: bool = False) -> None:
-        """ Export files containing individual offers, bids (*-bids*/*-offers*.csv files)."""
+    def _export_offers_bids_trades_to_csv_files(
+        past_markets: List,
+        market_member: str,
+        file_path: dir,
+        labels: Tuple,
+        is_first: bool = False,
+    ) -> None:
+        """Export files containing individual offers, bids (*-bids*/*-offers*.csv files)."""
         try:
             with open(file_path, "a", encoding="utf-8") as csv_file:
                 writer = csv.writer(csv_file)
@@ -382,9 +427,9 @@ class ExportAndPlot:
         except OSError:
             _log.exception("Could not export offers, bids, trades")
 
-    def _export_area_stats_csv_file(self, area: Area, directory: dir,
-                                    past_market_type: AvailableMarketTypes,
-                                    is_first: bool) -> None:
+    def _export_area_stats_csv_file(
+        self, area: Area, directory: dir, past_market_type: AvailableMarketTypes, is_first: bool
+    ) -> None:
         """Export trade statistics in *.csv files."""
         file_name = f"{area.slug}{PAST_MARKET_TYPE_FILE_SUFFIX_MAPPING[past_market_type]}"
         data = self.file_stats_endpoint.export_data_factory(area, past_market_type)
@@ -405,16 +450,23 @@ class ExportAndPlot:
 
 # pylint: disable=missing-class-docstring,arguments-differ,attribute-defined-outside-init
 
+
 class CoefficientExportAndPlot(ExportAndPlot):
 
-    def data_to_csv(self, area: "Area", time_slot: DateTime, is_first: bool = True,
-                    scm_manager: "SCMManager" = None):
+    def data_to_csv(
+        self,
+        area: "Area",
+        time_slot: DateTime,
+        is_first: bool = True,
+        scm_manager: "SCMManager" = None,
+    ):
         self._time_slot = time_slot
         self._scm_manager = scm_manager
         self._export_area_with_children(area, self.directory, is_first)
 
-    def _export_area_with_children(self, area: Area, directory: dir,
-                                   is_first: bool = False) -> None:
+    def _export_area_with_children(
+        self, area: Area, directory: dir, is_first: bool = False
+    ) -> None:
         """
         Uses the FileExportEndpoints object and writes them to csv files
         Runs _export_area_energy and _export_area_stats_csv_file
@@ -430,14 +482,15 @@ class CoefficientExportAndPlot(ExportAndPlot):
                 area_uuid=area.uuid,
                 file_path=self._file_path(directory, f"{area.slug}-trades"),
                 labels=("slot",) + Trade.csv_fields(),
-                is_first=is_first)
+                is_first=is_first,
+            )
 
-        self._export_area_stats_csv_file(area, directory, AvailableMarketTypes.SPOT,
-                                         is_first)
+        self._export_area_stats_csv_file(area, directory, AvailableMarketTypes.SPOT, is_first)
 
     def _export_scm_trades_to_csv_files(
-            self, area_uuid: str, file_path: dir, labels: Tuple, is_first: bool = False) -> None:
-        """ Export files containing individual SCM trades."""
+        self, area_uuid: str, file_path: dir, labels: Tuple, is_first: bool = False
+    ) -> None:
+        """Export files containing individual SCM trades."""
         try:
             with open(file_path, "a", encoding="utf-8") as csv_file:
                 writer = csv.writer(csv_file)
