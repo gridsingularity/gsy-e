@@ -53,7 +53,7 @@ class TankSolverParameters:
         )
 
 
-class HeatpumpStorageEnergySolver:
+class VirtualHeatpumpStorageEnergySolver:
     # pylint: disable=too-many-instance-attributes,too-many-arguments
     """Solver that calculates heatpump storage temperature and energy."""
 

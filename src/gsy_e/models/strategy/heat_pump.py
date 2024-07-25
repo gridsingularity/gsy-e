@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Dict, TYPE_CHECKING, Optional, Union
+from typing import Dict, TYPE_CHECKING, Optional, Union, List
 
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Trade, TraderDetails
@@ -53,20 +53,17 @@ class HeatPumpOrderUpdaterParameters(OrderUpdaterParameters):
         }
 
 
-class HeatPumpStrategy(TradingStrategyBase):
-    """Strategy for heat pumps with storages."""
+class MultipleTankHeatPumpStrategy(TradingStrategyBase):
+    """Strategy for heat pumps with multiple storages."""
 
     # pylint: disable=too-many-arguments,super-init-not-called
     def __init__(
         self,
         maximum_power_rating_kW: float = ConstSettings.HeatPumpSettings.MAX_POWER_RATING_KW,
-        min_temp_C: float = ConstSettings.HeatPumpSettings.MIN_TEMP_C,
-        max_temp_C: float = ConstSettings.HeatPumpSettings.MAX_TEMP_C,
-        initial_temp_C: float = ConstSettings.HeatPumpSettings.INIT_TEMP_C,
+        tank_parameters: List[TankParameters] = None,
         external_temp_C_profile: Optional[Union[str, float, Dict]] = None,
         external_temp_C_profile_uuid: Optional[str] = None,
         external_temp_C_measurement_uuid: Optional[str] = None,
-        tank_volume_l: float = ConstSettings.HeatPumpSettings.TANK_VOL_L,
         consumption_kWh_profile: Optional[Union[str, float, Dict]] = None,
         consumption_kWh_profile_uuid: Optional[str] = None,
         consumption_kWh_measurement_uuid: Optional[str] = None,
@@ -85,32 +82,27 @@ class HeatPumpStrategy(TradingStrategyBase):
 
         self._energy_params = HeatPumpEnergyParameters(
             maximum_power_rating_kW=maximum_power_rating_kW,
-            tank_parameters=[
-                TankParameters(
-                    min_temp_C=min_temp_C,
-                    max_temp_C=max_temp_C,
-                    initial_temp_C=initial_temp_C,
-                    tank_volume_L=tank_volume_l,
-                )
-            ],
+            tank_parameters=tank_parameters,
             external_temp_C_profile=external_temp_C_profile,
             external_temp_C_profile_uuid=external_temp_C_profile_uuid,
             consumption_kWh_profile=consumption_kWh_profile,
             consumption_kWh_profile_uuid=consumption_kWh_profile_uuid,
             source_type=source_type,
         )
-        HeatPumpValidator.validate(
-            maximum_power_rating_kW=maximum_power_rating_kW,
-            min_temp_C=min_temp_C,
-            max_temp_C=max_temp_C,
-            initial_temp_C=initial_temp_C,
-            external_temp_C_profile=external_temp_C_profile,
-            external_temp_C_profile_uuid=external_temp_C_profile_uuid,
-            tank_volume_l=tank_volume_l,
-            consumption_kWh_profile=consumption_kWh_profile,
-            consumption_kWh_profile_uuid=consumption_kWh_profile_uuid,
-            source_type=source_type,
-        )
+
+        for tank in tank_parameters:
+            HeatPumpValidator.validate(
+                maximum_power_rating_kW=maximum_power_rating_kW,
+                min_temp_C=tank.min_temp_C,
+                max_temp_C=tank.max_temp_C,
+                initial_temp_C=tank.initial_temp_C,
+                external_temp_C_profile=external_temp_C_profile,
+                external_temp_C_profile_uuid=external_temp_C_profile_uuid,
+                tank_volume_l=tank.tank_volume_L,
+                consumption_kWh_profile=consumption_kWh_profile,
+                consumption_kWh_profile_uuid=consumption_kWh_profile_uuid,
+                source_type=source_type,
+            )
 
         # needed for profile_handler
         self.external_temp_C_profile_uuid = external_temp_C_profile_uuid
@@ -274,3 +266,49 @@ class HeatPumpStrategy(TradingStrategyBase):
                 if updater.is_time_for_update(self.area.now):
                     self.remove_open_orders(market, market_slot)
                     self.post_order(market, market_slot)
+
+
+class HeatPumpStrategy(MultipleTankHeatPumpStrategy):
+    """Strategy for heat pumps with a single storage tank."""
+
+    # pylint: disable=too-many-arguments,super-init-not-called
+    def __init__(
+        self,
+        maximum_power_rating_kW: float = ConstSettings.HeatPumpSettings.MAX_POWER_RATING_KW,
+        min_temp_C: float = ConstSettings.HeatPumpSettings.MIN_TEMP_C,
+        max_temp_C: float = ConstSettings.HeatPumpSettings.MAX_TEMP_C,
+        initial_temp_C: float = ConstSettings.HeatPumpSettings.INIT_TEMP_C,
+        external_temp_C_profile: Optional[Union[str, float, Dict]] = None,
+        external_temp_C_profile_uuid: Optional[str] = None,
+        external_temp_C_measurement_uuid: Optional[str] = None,
+        tank_volume_l: float = ConstSettings.HeatPumpSettings.TANK_VOL_L,
+        consumption_kWh_profile: Optional[Union[str, float, Dict]] = None,
+        consumption_kWh_profile_uuid: Optional[str] = None,
+        consumption_kWh_measurement_uuid: Optional[str] = None,
+        source_type: int = ConstSettings.HeatPumpSettings.SOURCE_TYPE,
+        order_updater_parameters: Dict[
+            AvailableMarketTypes, HeatPumpOrderUpdaterParameters
+        ] = None,
+        preferred_buying_rate: float = ConstSettings.HeatPumpSettings.PREFERRED_BUYING_RATE,
+    ):
+        tank_parameters = [
+            TankParameters(
+                min_temp_C=min_temp_C,
+                max_temp_C=max_temp_C,
+                initial_temp_C=initial_temp_C,
+                tank_volume_L=tank_volume_l,
+            )
+        ]
+        super().__init__(
+            maximum_power_rating_kW,
+            tank_parameters,
+            external_temp_C_profile,
+            external_temp_C_profile_uuid,
+            external_temp_C_measurement_uuid,
+            consumption_kWh_profile,
+            consumption_kWh_profile_uuid,
+            consumption_kWh_measurement_uuid,
+            source_type,
+            order_updater_parameters,
+            preferred_buying_rate,
+        )

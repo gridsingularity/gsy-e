@@ -14,7 +14,7 @@ from gsy_e.models.strategy.energy_parameters.heat_pump_tank import (
 from gsy_e.models.strategy.energy_parameters.heatpump_constants import WATER_SPECIFIC_HEAT_CAPACITY
 from gsy_e.models.strategy.energy_parameters.virtual_heatpump_solver import (
     VirtualHeatpumpSolverParameters,
-    HeatpumpStorageEnergySolver,
+    VirtualHeatpumpStorageEnergySolver,
 )
 from gsy_e.models.strategy.strategy_profile import StrategyProfile
 
@@ -112,7 +112,7 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
                 dh_flow_m3_per_hour=self._dh_water_flow_m3.get_value(time_slot),
                 calibration_coefficient=self.calibration_coefficient,
             )
-            solver = HeatpumpStorageEnergySolver(
+            solver = VirtualHeatpumpStorageEnergySolver(
                 tank_parameters=tank_solver_parameters, heatpump_parameters=heatpump_parameters
             )
             solver.calculate_energy_from_storage_temp()
@@ -135,7 +135,7 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
             calibration_coefficient=self.calibration_coefficient,
         )
 
-        solver = HeatpumpStorageEnergySolver(
+        solver = VirtualHeatpumpStorageEnergySolver(
             tank_parameters=tank_parameters, heatpump_parameters=heatpump_parameters
         )
         solver.calculate_energy_from_storage_temp()
@@ -157,7 +157,7 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
             calibration_coefficient=self.calibration_coefficient,
         )
 
-        solver = HeatpumpStorageEnergySolver(
+        solver = VirtualHeatpumpStorageEnergySolver(
             tank_parameters=tank_parameters, heatpump_parameters=heatpump_parameters
         )
         solver.calculate_energy_from_storage_temp()

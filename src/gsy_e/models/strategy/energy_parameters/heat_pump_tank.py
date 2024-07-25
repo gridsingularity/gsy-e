@@ -16,7 +16,7 @@ from gsy_e.models.strategy.energy_parameters.heatpump_constants import (
 from gsy_e.models.strategy.energy_parameters.virtual_heatpump_solver import (
     TankSolverParameters,
     VirtualHeatpumpSolverParameters,
-    HeatpumpStorageEnergySolver,
+    VirtualHeatpumpStorageEnergySolver,
 )
 
 logger = logging.getLogger(__name__)
@@ -93,12 +93,12 @@ class TankEnergyParameters:
 
     def get_max_energy_consumption(self, cop: float, time_slot: DateTime):
         """Calculate max energy consumption that a heatpump with provided COP can consume."""
-        max_desired_temp_diff = (
+        max_temp_diff = (
             self._parameters.max_temp_C
             - self._state.get_storage_temp_C(time_slot)
             + self._state.get_temp_decrease_K(time_slot)
         )
-        return max_desired_temp_diff * self._Q_specific / cop
+        return max_temp_diff * self._Q_specific / cop
 
     def get_min_energy_consumption(self, cop: float, time_slot: DateTime):
         """Calculate min energy consumption that a heatpump with provided COP can consume."""
@@ -289,7 +289,7 @@ class AllTanksEnergyParameters:
 
     def increase_tanks_temperature_with_energy_vhp(
         self, heatpump_parameters: VirtualHeatpumpSolverParameters, time_slot: DateTime
-    ) -> HeatpumpStorageEnergySolver:
+    ) -> VirtualHeatpumpStorageEnergySolver:
         """
         Increase tank temperature from energy, provided as part of the heatpump parameters.
         """
@@ -297,7 +297,7 @@ class AllTanksEnergyParameters:
             tank.create_tank_parameters_without_target_tank_temp(time_slot)
             for tank in self._tanks_energy_parameters
         ]
-        solver = HeatpumpStorageEnergySolver(
+        solver = VirtualHeatpumpStorageEnergySolver(
             heatpump_parameters=heatpump_parameters, tank_parameters=tank_parameters
         )
         solver.calculate_storage_temp_from_energy()

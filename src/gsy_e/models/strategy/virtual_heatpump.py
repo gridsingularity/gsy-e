@@ -56,7 +56,6 @@ class MultipleTankVirtualHeatpumpStrategy(HeatPumpStrategy):
         self.dh_water_flow_m3_profile_uuid = dh_water_flow_m3_profile_uuid
 
         # Repeat the validation for each of the tanks in order to conform to the validate method.
-        # TODO: Multiple tank validator will need to be created.
         for tank in tank_parameters:
             VirtualHeatPumpValidator.validate(
                 maximum_power_rating_kW=maximum_power_rating_kW,
