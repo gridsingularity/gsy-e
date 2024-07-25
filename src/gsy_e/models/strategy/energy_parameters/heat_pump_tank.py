@@ -259,22 +259,6 @@ class AllTanksEnergyParameters:
             tank.get_unmatched_demand_kWh(time_slot) for tank in self._tanks_energy_parameters
         )
 
-    def serialize(self) -> Union[Dict, List]:
-        """Serializable dict with the parameters of all water tanks."""
-        if len(self._tanks_energy_parameters) == 1:
-            # Return a dict for the case of one tank, in order to not break other services that
-            # support one single tank.
-            return self._tanks_energy_parameters[0].serialize()
-        return [tank.serialize() for tank in self._tanks_energy_parameters]
-
-    def get_results_dict(self, current_time_slot: DateTime):
-        """Results dict with the results from all water tanks."""
-        if len(self._tanks_energy_parameters) == 1:
-            # Return a dict for the case of one tank, in order to not break other services that
-            # support one single tank.
-            return self._tanks_energy_parameters[0].get_results_dict(current_time_slot)
-        return [tank.get_results_dict(current_time_slot) for tank in self._tanks_energy_parameters]
-
     def create_tank_solver_for_maintaining_tank_temperature(
         self, time_slot: DateTime
     ) -> List[TankSolverParameters]:
@@ -321,3 +305,34 @@ class AllTanksEnergyParameters:
             )
 
         return solver
+
+    def serialize(self) -> Union[Dict, List]:
+        """Serializable dict with the parameters of all water tanks."""
+        if len(self._tanks_energy_parameters) == 1:
+            # Return a dict for the case of one tank, in order to not break other services that
+            # support one single tank.
+            return self._tanks_energy_parameters[0].serialize()
+        return [tank.serialize() for tank in self._tanks_energy_parameters]
+
+    def get_results_dict(self, current_time_slot: DateTime):
+        """Results dict with the results from all water tanks."""
+        if len(self._tanks_energy_parameters) == 1:
+            # Return a dict for the case of one tank, in order to not break other services that
+            # support one single tank.
+            return self._tanks_energy_parameters[0].get_results_dict(current_time_slot)
+        return [tank.get_results_dict(current_time_slot) for tank in self._tanks_energy_parameters]
+
+    def get_state(self) -> Union[List, Dict]:
+        if len(self._tanks_energy_parameters) == 1:
+            # Return a dict for the case of one tank, in order to not break other services that
+            # support one single tank.
+            return self._tanks_energy_parameters[0]._state.get_state()
+        return [tank._state.get_state() for tank in self._tanks_energy_parameters]
+
+    def restore_state(self, state_dict: dict):
+        for tank in self._tanks_energy_parameters:
+            tank._state.restore_state(state_dict)
+
+    def delete_past_state_values(self, current_time_slot: DateTime):
+        for tank in self._tanks_energy_parameters:
+            tank._state.delete_past_state_values(current_time_slot)

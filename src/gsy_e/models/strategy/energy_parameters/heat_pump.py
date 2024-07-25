@@ -41,6 +41,23 @@ class CombinedHeatpumpTanksState:
             **self._tanks_state.get_results_dict(current_time_slot),
         }
 
+    def get_state(self) -> Dict:
+        """Return the current state of the device."""
+        return {
+            **self._hp_state.get_state(),
+            **self._tanks_state.get_state(),
+        }
+
+    def restore_state(self, state_dict: Dict):
+        """Update the state of the device using the provided dictionary."""
+        self._hp_state.restore_state(state_dict)
+        self._tanks_state.restore_state(state_dict)
+
+    def delete_past_state_values(self, current_time_slot: DateTime):
+        """Delete the state of the device before the given time slot."""
+        self._hp_state.delete_past_state_values(current_time_slot)
+        self._tanks_state.delete_past_state_values(current_time_slot)
+
     @property
     def heatpump(self) -> HeatPumpState:
         """Exposes the heatpump state."""
