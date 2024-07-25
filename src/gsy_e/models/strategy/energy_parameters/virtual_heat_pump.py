@@ -37,7 +37,9 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
         dh_water_flow_m3_profile_uuid: Optional[str] = None,
         calibration_coefficient: Optional[float] = None,
     ):
-        super().__init__(maximum_power_rating_kW=maximum_power_rating_kW)
+        super().__init__(
+            maximum_power_rating_kW=maximum_power_rating_kW, tank_parameters=tank_parameters
+        )
         if not tank_parameters:
             tank_parameters = [TankParameters()]
 
@@ -85,7 +87,7 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
         self._water_return_temp_C.read_or_rotate_profiles()
         self._water_supply_temp_C.read_or_rotate_profiles()
         self._dh_water_flow_m3.read_or_rotate_profiles()
-        self.state.delete_past_state_values(current_time_slot)
+        self._state.heatpump.delete_past_state_values(current_time_slot)
 
     def _calc_energy_to_buy_maximum(self, time_slot: DateTime) -> float:
         max_energy_consumption = self._max_tank_temp_to_energy(time_slot)
@@ -117,7 +119,7 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
             )
             solver.calculate_energy_from_storage_temp()
             logger.debug(solver)
-            self.state.set_unmatched_demand_kWh(time_slot, solver.energy_kWh)
+            self._state.heatpump.set_unmatched_demand_kWh(time_slot, solver.energy_kWh)
 
     def _current_tank_temp_to_energy(self, time_slot: DateTime) -> float:
         """
@@ -185,20 +187,20 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
         )
 
         # Update last slot statistics (COP, heat demand, condenser temp)
-        self.state.set_cop(time_slot, solver.cop)
-        self.state.set_condenser_temp(time_slot, solver.condenser_temp_C)
-        self.state.set_heat_demand(time_slot, solver.q_out_J)
+        self._state.heatpump.set_cop(time_slot, solver.cop)
+        self._state.heatpump.set_condenser_temp(time_slot, solver.condenser_temp_C)
+        self._state.heatpump.set_heat_demand(time_slot, solver.q_out_J)
 
     def event_traded_energy(self, time_slot: DateTime, energy_kWh: float):
         """React to an event_traded_energy."""
         self._decrement_posted_energy(time_slot, energy_kWh)
-        self.state.update_energy_consumption_kWh(time_slot, energy_kWh)
+        self._state.heatpump.update_energy_consumption_kWh(time_slot, energy_kWh)
 
     def _populate_state(self, time_slot: DateTime):
         last_time_slot = self.last_time_slot(time_slot)
         if last_time_slot in self._water_supply_temp_C.profile:
             # Update temp increase
-            energy_kWh = self.state.get_energy_consumption_kWh(last_time_slot)
+            energy_kWh = self._state.heatpump.get_energy_consumption_kWh(last_time_slot)
             self.increase_tanks_temp_update_hp_state(energy_kWh, last_time_slot)
 
         self._tanks.update_tanks_temperature(time_slot)

@@ -56,6 +56,10 @@ class TankEnergyParameters:
             "tank_volume_l": self._parameters.tank_volume_L,
         }
 
+    def get_results_dict(self, current_time_slot: DateTime):
+        """Results dict with the results from the tank."""
+        return self._state.get_results_dict(current_time_slot)
+
     def increase_tank_temp_from_heat_energy(self, heat_energy: float, time_slot: DateTime):
         """Increase the temperature of the water tank with the provided heat energy."""
         temp_increase_K = self._Q_kWh_to_temp_diff(heat_energy)
@@ -262,6 +266,14 @@ class AllTanksEnergyParameters:
             # support one single tank.
             return self._tanks_energy_parameters[0].serialize()
         return [tank.serialize() for tank in self._tanks_energy_parameters]
+
+    def get_results_dict(self, current_time_slot: DateTime):
+        """Results dict with the results from all water tanks."""
+        if len(self._tanks_energy_parameters) == 1:
+            # Return a dict for the case of one tank, in order to not break other services that
+            # support one single tank.
+            return self._tanks_energy_parameters[0].get_results_dict(current_time_slot)
+        return [tank.get_results_dict(current_time_slot) for tank in self._tanks_energy_parameters]
 
     def create_tank_solver_for_maintaining_tank_temperature(
         self, time_slot: DateTime

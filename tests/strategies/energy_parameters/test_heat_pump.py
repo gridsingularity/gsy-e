@@ -65,8 +65,8 @@ class TestHeatPumpEnergyParameters:
 
     @staticmethod
     def test_event_market_cycle_populates_state(energy_params):
-        tank_state = energy_params._tanks._tanks_energy_parameters[0]._state
-        heatpump_state = energy_params.state
+        tank_state = energy_params._state.tanks._tanks_energy_parameters[0]._state
+        heatpump_state = energy_params._state.heatpump
         assert CURRENT_MARKET_SLOT not in tank_state._temp_decrease_K
         assert CURRENT_MARKET_SLOT not in tank_state._storage_temp_C
         assert CURRENT_MARKET_SLOT not in heatpump_state._min_energy_demand_kWh
@@ -81,7 +81,7 @@ class TestHeatPumpEnergyParameters:
 
     @staticmethod
     def test_event_traded_energy_decrements_posted_energy(energy_params):
-        heatpump_state = energy_params.state
+        heatpump_state = energy_params._state.heatpump
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
         traded_energy = 0.00001
         original_min_demand = heatpump_state._min_energy_demand_kWh[CURRENT_MARKET_SLOT]
@@ -98,7 +98,7 @@ class TestHeatPumpEnergyParameters:
 
     @staticmethod
     def test_event_traded_energy_updates_temp_increase(energy_params):
-        tank_state = energy_params._tanks._tanks_energy_parameters[0]._state
+        tank_state = energy_params._state.tanks._tanks_energy_parameters[0]._state
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
         traded_energy = 0.1
         energy_params.event_traded_energy(CURRENT_MARKET_SLOT, traded_energy)
@@ -121,9 +121,9 @@ class TestHeatPumpEnergyParameters:
 
     @staticmethod
     def test_event_market_cycle_calculates_and_sets_cop(energy_params):
-        assert energy_params.state._cop[CURRENT_MARKET_SLOT] == 0
+        assert energy_params._state.heatpump._cop[CURRENT_MARKET_SLOT] == 0
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
-        assert energy_params.state._cop[CURRENT_MARKET_SLOT] == 6.5425
+        assert energy_params._state.heatpump._cop[CURRENT_MARKET_SLOT] == 6.5425
 
     @staticmethod
     def test_if_profiles_are_rotated_on_activate(energy_params):

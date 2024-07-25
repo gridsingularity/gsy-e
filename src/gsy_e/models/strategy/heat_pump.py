@@ -166,7 +166,7 @@ class MultipleTankHeatPumpStrategy(TradingStrategyBase):
 
     @property
     def state(self) -> HeatPumpState:
-        return self._energy_params.state
+        return self._energy_params.combined_state
 
     def event_activate(self, **kwargs):
         self._energy_params.event_activate()
