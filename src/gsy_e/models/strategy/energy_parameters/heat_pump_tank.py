@@ -213,9 +213,6 @@ class AllTanksEnergyParameters:
             tank.decrease_tank_temp_vhp(heat_energy_per_tank, time_slot)
             for tank in self._tanks_energy_parameters
         ]
-        # TODO: Implemented the current behavior, which is wrong because setting the current tank
-        # temp to target tank temp ignores the energy that is already consumed from the heatpump
-        # and the corresponding temp increase.
         if any(unmatched_heat_demand):
             return self.create_tank_solver_for_maintaining_tank_temperature(time_slot)
         return []
@@ -323,6 +320,8 @@ class AllTanksEnergyParameters:
         return [tank.get_results_dict(current_time_slot) for tank in self._tanks_energy_parameters]
 
     def get_state(self) -> Union[List, Dict]:
+        """Get all tanks state."""
+        # pylint: disable=protected-access
         if len(self._tanks_energy_parameters) == 1:
             # Return a dict for the case of one tank, in order to not break other services that
             # support one single tank.
@@ -330,9 +329,13 @@ class AllTanksEnergyParameters:
         return [tank._state.get_state() for tank in self._tanks_energy_parameters]
 
     def restore_state(self, state_dict: dict):
+        """Restore all tanks state."""
+        # pylint: disable=protected-access
         for tank in self._tanks_energy_parameters:
             tank._state.restore_state(state_dict)
 
     def delete_past_state_values(self, current_time_slot: DateTime):
+        """Delete previous state from all tanks."""
+        # pylint: disable=protected-access
         for tank in self._tanks_energy_parameters:
             tank._state.delete_past_state_values(current_time_slot)
