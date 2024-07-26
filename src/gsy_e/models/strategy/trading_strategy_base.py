@@ -6,8 +6,9 @@ from pendulum import DateTime, duration
 
 from gsy_e.events import EventMixin
 from gsy_e.models.base import AreaBehaviorBase
-from gsy_e.models.strategy.order_updater import (OrderUpdater, OrderUpdaterParameters)
+from gsy_e.models.strategy.order_updater import OrderUpdater, OrderUpdaterParameters
 from gsy_e.models.strategy import _TradeLookerUpper
+
 if TYPE_CHECKING:
     from gsy_e.models.strategy.state import StateInterface
     from gsy_e.models.market import MarketBase
@@ -15,17 +16,18 @@ if TYPE_CHECKING:
 
 class TradingStrategyBase(EventMixin, AreaBehaviorBase, ABC):
     """Base class for the new market strategies."""
-    def __init__(self,
-                 order_updater_parameters: Dict[
-                     AvailableMarketTypes, OrderUpdaterParameters]):
+
+    def __init__(
+        self, order_updater_parameters: Dict[AvailableMarketTypes, OrderUpdaterParameters]
+    ):
 
         super().__init__()
-        self._order_updater_params: Dict[AvailableMarketTypes,
-                                         OrderUpdaterParameters] = order_updater_parameters
+        self._order_updater_params: Dict[AvailableMarketTypes, OrderUpdaterParameters] = (
+            order_updater_parameters
+        )
         self._order_updaters: Dict["MarketBase", Dict[DateTime, OrderUpdater]] = {}
 
-    @staticmethod
-    def serialize():
+    def serialize(self):
         """Serialize strategy parameters."""
         return {}
 
@@ -35,8 +37,7 @@ class TradingStrategyBase(EventMixin, AreaBehaviorBase, ABC):
         if "order_updater_params" in constructor_args:
             constructor_args["order_updater_params"] = {
                 AvailableMarketTypes(market_type): OrderUpdaterParameters(
-                    duration(minutes=updater_params[0]), updater_params[1],
-                    updater_params[2]
+                    duration(minutes=updater_params[0]), updater_params[1], updater_params[2]
                 )
                 for market_type, updater_params in constructor_args["order_updater_params"].items()
             }
@@ -73,8 +74,9 @@ class TradingStrategyBase(EventMixin, AreaBehaviorBase, ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def post_order(self, market: "MarketBase", market_slot: DateTime,
-                   order_rate: float = None, **kwargs):
+    def post_order(
+        self, market: "MarketBase", market_slot: DateTime, order_rate: float = None, **kwargs
+    ):
         """Post orders to the markets that just opened."""
         raise NotImplementedError
 
