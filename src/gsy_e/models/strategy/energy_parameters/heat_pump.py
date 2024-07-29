@@ -166,9 +166,9 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
         self,
         maximum_power_rating_kW: float = ConstSettings.HeatPumpSettings.MAX_POWER_RATING_KW,
         tank_parameters: List[TankParameters] = None,
-        external_temp_C_profile: Optional[Union[str, float, Dict]] = None,
-        external_temp_C_profile_uuid: Optional[str] = None,
-        external_temp_C_measurement_uuid: Optional[str] = None,
+        source_temp_C_profile: Optional[Union[str, float, Dict]] = None,
+        source_temp_C_profile_uuid: Optional[str] = None,
+        source_temp_C_measurement_uuid: Optional[str] = None,
         consumption_kWh_profile: Optional[Union[str, float, Dict]] = None,
         consumption_kWh_profile_uuid: Optional[str] = None,
         consumption_kWh_measurement_uuid: Optional[str] = None,
@@ -185,9 +185,9 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
             profile_type=InputProfileTypes.ENERGY_KWH,
         )
 
-        self._ext_temp_C: [DateTime, float] = profile_factory(
-            external_temp_C_profile,
-            external_temp_C_profile_uuid,
+        self._source_temp_C: [DateTime, float] = profile_factory(
+            source_temp_C_profile,
+            source_temp_C_profile_uuid,
             profile_type=InputProfileTypes.IDENTITY,
         )
 
@@ -195,8 +195,8 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
             None, consumption_kWh_measurement_uuid, profile_type=InputProfileTypes.ENERGY_KWH
         )
 
-        self._measurement_ext_temp_C: [DateTime, float] = profile_factory(
-            None, external_temp_C_measurement_uuid, profile_type=InputProfileTypes.IDENTITY
+        self._measurement_source_temp_C: [DateTime, float] = profile_factory(
+            None, source_temp_C_measurement_uuid, profile_type=InputProfileTypes.IDENTITY
         )
 
         # self.min_temp_C = min_temp_C  # for usage in the strategy
@@ -212,9 +212,9 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
             "consumption_kWh_measurement_uuid": (
                 self._measurement_consumption_kWh.input_profile_uuid
             ),
-            "external_temp_C": self._ext_temp_C.input_profile,
-            "external_temp_profile_uuid": self._ext_temp_C.input_profile_uuid,
-            "external_temp_measurement_uuid": self._measurement_ext_temp_C.input_profile_uuid,
+            "source_temp_C": self._source_temp_C.input_profile,
+            "source": self._source_temp_C.input_profile_uuid,
+            "source_temp_measurement_uuid": self._measurement_source_temp_C.input_profile_uuid,
             "source_type": self._source_type,
         }
 
@@ -230,7 +230,7 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
     def _rotate_profiles(self, current_time_slot: Optional[DateTime] = None):
         super()._rotate_profiles(current_time_slot)
         self._consumption_kWh.read_or_rotate_profiles()
-        self._ext_temp_C.read_or_rotate_profiles()
+        self._source_temp_C.read_or_rotate_profiles()
 
     def _calc_energy_to_buy_maximum(self, time_slot: DateTime) -> float:
         cop = self._state.heatpump.get_cop(time_slot)
@@ -272,7 +272,7 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
         """
         return self._cop_model(
             self._state.tanks.get_average_tank_temperature(time_slot),
-            self._ext_temp_C.get_value(time_slot),
+            self._source_temp_C.get_value(time_slot),
         )
 
     def _cop_model(self, temp_current: float, temp_ambient: float) -> float:

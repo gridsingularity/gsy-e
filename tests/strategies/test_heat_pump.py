@@ -36,7 +36,7 @@ def fixture_heatpump_strategy(request) -> Tuple["TradingStrategyBase", "Area"]:
             consumption_kWh_profile=os.path.join(
                 gsye_root_path, "resources", "hp_consumption_kWh.csv"
             ),
-            external_temp_C_profile=os.path.join(
+            source_temp_C_profile=os.path.join(
                 gsye_root_path, "resources", "hp_external_temp_C.csv"
             ),
             **strategy_params

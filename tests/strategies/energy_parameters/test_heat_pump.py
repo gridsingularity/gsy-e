@@ -24,7 +24,7 @@ def fixture_heatpump_energy_params() -> HeatPumpEnergyParameters:
     GlobalConfig.sim_duration = duration(days=1)
     GlobalConfig.slot_length = duration(minutes=60)
 
-    external_temp_profile = {
+    source_temp_profile = {
         timestamp: 25 for timestamp in generate_market_slot_list(CURRENT_MARKET_SLOT)
     }
     consumption_profile = {
@@ -40,7 +40,7 @@ def fixture_heatpump_energy_params() -> HeatPumpEnergyParameters:
                 tank_volume_L=500,
             )
         ],
-        external_temp_C_profile=external_temp_profile,
+        source_temp_C_profile=source_temp_profile,
         consumption_kWh_profile=consumption_profile,
     )
     yield energy_params
@@ -55,13 +55,13 @@ class TestHeatPumpEnergyParameters:
     def test_event_activates_populates_profiles(energy_params):
         energy_params.event_activate()
         assert len(energy_params._consumption_kWh.profile) == 24
-        assert len(energy_params._ext_temp_C.profile) == 24
+        assert len(energy_params._source_temp_C.profile) == 24
 
     @staticmethod
     def test_event_market_cycle_populates_profiles(energy_params):
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
         assert len(energy_params._consumption_kWh.profile) == 24
-        assert len(energy_params._ext_temp_C.profile) == 24
+        assert len(energy_params._source_temp_C.profile) == 24
 
     @staticmethod
     def test_event_market_cycle_populates_state(energy_params):
@@ -128,17 +128,17 @@ class TestHeatPumpEnergyParameters:
     @staticmethod
     def test_if_profiles_are_rotated_on_activate(energy_params):
         energy_params._consumption_kWh.read_or_rotate_profiles = Mock()
-        energy_params._ext_temp_C.read_or_rotate_profiles = Mock()
+        energy_params._source_temp_C.read_or_rotate_profiles = Mock()
         energy_params.event_activate()
         energy_params._consumption_kWh.read_or_rotate_profiles.assert_called_once()
-        energy_params._ext_temp_C.read_or_rotate_profiles.assert_called_once()
+        energy_params._source_temp_C.read_or_rotate_profiles.assert_called_once()
 
     @staticmethod
     def test_if_profiles_are_rotated_on_market_cycle(energy_params):
         energy_params._consumption_kWh.read_or_rotate_profiles = Mock()
-        energy_params._ext_temp_C.read_or_rotate_profiles = Mock()
+        energy_params._source_temp_C.read_or_rotate_profiles = Mock()
         energy_params._populate_state = Mock()
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
         energy_params._consumption_kWh.read_or_rotate_profiles.assert_called_once()
-        energy_params._ext_temp_C.read_or_rotate_profiles.assert_called_once()
+        energy_params._source_temp_C.read_or_rotate_profiles.assert_called_once()
         energy_params._populate_state.assert_called_once()
