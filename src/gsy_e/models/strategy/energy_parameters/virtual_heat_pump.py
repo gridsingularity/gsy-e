@@ -11,7 +11,10 @@ from gsy_e.models.strategy.energy_parameters.heat_pump_tank import (
     TankParameters,
     AllTanksEnergyParameters,
 )
-from gsy_e.models.strategy.energy_parameters.heatpump_constants import WATER_SPECIFIC_HEAT_CAPACITY
+from gsy_e.models.strategy.energy_parameters.heatpump_constants import (
+    WATER_SPECIFIC_HEAT_CAPACITY,
+    DEFAULT_SOURCE_TEMPERATURE_C,
+)
 from gsy_e.models.strategy.energy_parameters.virtual_heatpump_solver import (
     VirtualHeatpumpSolverParameters,
     VirtualHeatpumpStorageEnergySolver,
@@ -33,6 +36,8 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
         water_supply_temp_C_profile_uuid: Optional[str] = None,
         water_return_temp_C_profile: Optional[Union[str, float, Dict]] = None,
         water_return_temp_C_profile_uuid: Optional[str] = None,
+        source_temp_C_profile: Optional[Union[str, float, Dict]] = DEFAULT_SOURCE_TEMPERATURE_C,
+        source_temp_C_profile_uuid: Optional[str] = None,
         dh_water_flow_m3_profile: Optional[Union[str, float, Dict]] = None,
         dh_water_flow_m3_profile_uuid: Optional[str] = None,
         calibration_coefficient: Optional[float] = None,
@@ -63,6 +68,13 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
             profile_type=InputProfileTypes.IDENTITY,
         )
 
+        self._source_temp_C_profile: [DateTime, float] = StrategyProfile(
+            source_temp_C_profile,
+            source_temp_C_profile_uuid,
+            profile_type=InputProfileTypes.IDENTITY,
+        )
+        print("self.source_temp_C_profile.profile", self._source_temp_C_profile.profile)
+
         self.calibration_coefficient = (
             calibration_coefficient
             if calibration_coefficient is not None
@@ -87,6 +99,7 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
         self._water_return_temp_C.read_or_rotate_profiles()
         self._water_supply_temp_C.read_or_rotate_profiles()
         self._dh_water_flow_m3.read_or_rotate_profiles()
+        self._source_temp_C_profile.read_or_rotate_profiles()
         self._state.heatpump.delete_past_state_values(current_time_slot)
 
     def _calc_energy_to_buy_maximum(self, time_slot: DateTime) -> float:
@@ -112,6 +125,7 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
                 dh_supply_temp_C=self._water_supply_temp_C.get_value(time_slot),
                 dh_return_temp_C=self._water_return_temp_C.get_value(time_slot),
                 dh_flow_m3_per_hour=self._dh_water_flow_m3.get_value(time_slot),
+                source_temp_C=self._source_temp_C_profile.get_value(time_slot),
                 calibration_coefficient=self.calibration_coefficient,
             )
             solver = VirtualHeatpumpStorageEnergySolver(
@@ -134,6 +148,7 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
             dh_supply_temp_C=self._water_supply_temp_C.get_value(time_slot),
             dh_return_temp_C=self._water_return_temp_C.get_value(time_slot),
             dh_flow_m3_per_hour=self._dh_water_flow_m3.get_value(time_slot),
+            source_temp_C=self._source_temp_C_profile.get_value(time_slot),
             calibration_coefficient=self.calibration_coefficient,
         )
 
@@ -156,6 +171,7 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
             dh_supply_temp_C=self._water_supply_temp_C.get_value(time_slot),
             dh_return_temp_C=self._water_return_temp_C.get_value(time_slot),
             dh_flow_m3_per_hour=self._dh_water_flow_m3.get_value(time_slot),
+            source_temp_C=self._source_temp_C_profile.get_value(time_slot),
             calibration_coefficient=self.calibration_coefficient,
         )
 
@@ -178,6 +194,7 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
             dh_supply_temp_C=self._water_supply_temp_C.get_value(time_slot),
             dh_return_temp_C=self._water_return_temp_C.get_value(time_slot),
             dh_flow_m3_per_hour=self._dh_water_flow_m3.get_value(time_slot),
+            source_temp_C=self._source_temp_C_profile.get_value(time_slot),
             calibration_coefficient=self.calibration_coefficient,
             energy_kWh=energy_kWh,
         )

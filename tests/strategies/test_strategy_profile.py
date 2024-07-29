@@ -30,12 +30,9 @@ def profile_db_connection_fixture():
 def fixture_strategy_profile():
     strategy_profile = StrategyProfile(
         profile_type=InputProfileTypes.ENERGY_KWH,
-        input_profile={
-            CUSTOM_DATETIME.add(minutes=15): 1,
-            CUSTOM_DATETIME.add(minutes=30): 2
-        })
+        input_profile={CUSTOM_DATETIME.add(minutes=15): 1, CUSTOM_DATETIME.add(minutes=30): 2},
+    )
     strategy_profile.read_or_rotate_profiles()
-    print(strategy_profile.profile)
     return strategy_profile
 
 
@@ -49,7 +46,7 @@ class TestEnergyProfile:
             input_profile={i: randint(15, 30) for i in range(24)},
             input_profile_uuid="UUID",
             input_energy_rate=None,
-            profile_type=InputProfileTypes.IDENTITY
+            profile_type=InputProfileTypes.IDENTITY,
         )
 
         assert ep.input_profile_uuid is None
@@ -68,7 +65,7 @@ class TestEnergyProfile:
             input_profile={i: randint(15, 30) for i in range(24)},
             input_profile_uuid="UUID",
             input_energy_rate=30,
-            profile_type=InputProfileTypes.IDENTITY
+            profile_type=InputProfileTypes.IDENTITY,
         )
 
         assert ep.input_profile is None
@@ -87,7 +84,7 @@ class TestEnergyProfile:
             input_profile={i: randint(15, 30) for i in range(24)},
             input_profile_uuid="UUID",
             input_energy_rate=30,
-            profile_type=InputProfileTypes.IDENTITY
+            profile_type=InputProfileTypes.IDENTITY,
         )
 
         assert ep.input_profile is None
@@ -106,7 +103,7 @@ class TestEnergyProfile:
             input_profile={i: randint(1000, 2000) for i in range(24)},
             input_profile_uuid="UUID",
             input_energy_rate=None,
-            profile_type=InputProfileTypes.POWER_W
+            profile_type=InputProfileTypes.POWER_W,
         )
 
         assert ep.input_profile_uuid is None
@@ -116,9 +113,13 @@ class TestEnergyProfile:
         ep.read_or_rotate_profiles()
 
         for time_slot, power in ep.profile.items():
-            assert convert_kW_to_kWh(
-                power_W=ep.input_profile.get(time_slot.hour) / 1000,
-                slot_length=GlobalConfig.slot_length) == power
+            assert (
+                convert_kW_to_kWh(
+                    power_W=ep.input_profile.get(time_slot.hour) / 1000,
+                    slot_length=GlobalConfig.slot_length,
+                )
+                == power
+            )
 
     @staticmethod
     def test_strategy_profile_with_power_input_profile_rate():
@@ -127,7 +128,7 @@ class TestEnergyProfile:
             input_profile={i: randint(15, 30) for i in range(24)},
             input_profile_uuid="UUID",
             input_energy_rate=3000,
-            profile_type=InputProfileTypes.POWER_W
+            profile_type=InputProfileTypes.POWER_W,
         )
 
         ep.read_or_rotate_profiles()
@@ -141,7 +142,7 @@ class TestEnergyProfile:
             input_profile={i: randint(15, 30) for i in range(24)},
             input_profile_uuid="UUID",
             input_energy_rate=3000,
-            profile_type=InputProfileTypes.POWER_W
+            profile_type=InputProfileTypes.POWER_W,
         )
 
         ep.read_or_rotate_profiles()
@@ -166,10 +167,14 @@ class TestEnergyProfile:
     def test_strategy_profile_get_value_returns_correctly_for_canary_networks(strategy_profile):
         assert strategy_profile.get_value(CUSTOM_DATETIME.add(minutes=15)) == 1
 
-        with patch("gsy_e.models.strategy.strategy_profile.get_from_profile_same_weekday_and_time",
-                   lambda x, y: 3):
+        with patch(
+            "gsy_e.models.strategy.strategy_profile.get_from_profile_same_weekday_and_time",
+            lambda x, y: 3,
+        ):
             assert strategy_profile.get_value(CUSTOM_DATETIME.subtract(days=7)) == 3
 
-        with patch("gsy_e.models.strategy.strategy_profile.get_from_profile_same_weekday_and_time",
-                   lambda x, y: None):
+        with patch(
+            "gsy_e.models.strategy.strategy_profile.get_from_profile_same_weekday_and_time",
+            lambda x, y: None,
+        ):
             assert strategy_profile.get_value(CUSTOM_DATETIME.subtract(days=7)) == 0

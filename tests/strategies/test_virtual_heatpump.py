@@ -7,6 +7,7 @@ from pendulum import DateTime, UTC
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.virtual_heatpump import VirtualHeatpumpStrategy
+from src.gsy_e.models.strategy.strategy_profile import global_objects
 
 
 class TestVirtualHeatpumpStrategy:
@@ -16,6 +17,7 @@ class TestVirtualHeatpumpStrategy:
         self._datetime = DateTime(year=2022, month=7, day=1, tzinfo=UTC)
         self._default_start_date = GlobalConfig.start_date
         GlobalConfig.start_date = DateTime(year=2022, month=7, day=1, tzinfo=UTC)
+        # print(start init)
         self._virtual_hp = VirtualHeatpumpStrategy(
             10,
             10,
@@ -31,6 +33,10 @@ class TestVirtualHeatpumpStrategy:
             preferred_buying_rate=20,
             calibration_coefficient=0.85,
         )
+
+        # make sure that the correct current timestamp is set:
+        self.original_current_time_stamp = global_objects.profiles_handler.current_timestamp
+        global_objects.profiles_handler._update_current_time(timestamp=self._datetime)
         strategy_area = Area("asset", strategy=self._virtual_hp)
         area = Area("grid", children=[strategy_area])
         area.config.start_date = self._datetime
@@ -40,6 +46,9 @@ class TestVirtualHeatpumpStrategy:
     def teardown_method(self):
         ConstSettings.MASettings.MARKET_TYPE = 1
         GlobalConfig.start_date = self._default_start_date
+        global_objects.profiles_handler._update_current_time(
+            timestamp=self.original_current_time_stamp
+        )
 
     parameterized_arg_list_max = [
         (60.0, 45.0, 0.1, 27.4639476),
@@ -54,6 +63,7 @@ class TestVirtualHeatpumpStrategy:
     def test_energy_from_max_tank_temp(
         self, water_supply_temp, water_return_temp, water_flow, energy
     ):
+        print("start test")
         self._virtual_hp._energy_params._water_supply_temp_C.profile = {
             self._datetime: water_supply_temp
         }
