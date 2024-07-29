@@ -3,7 +3,7 @@
     "sim_duration": "24h",
     "slot_length": "15m",
     "tick_length": "15s",
-    "start_date": "2024-05-17"
+    "start_date": "2024-07-19"
   },
   "advanced_settings": {
     "GeneralSettings": {
@@ -20,8 +20,14 @@
       "EXPORT_OFFER_BID_TRADE_HR": false,
       "RUN_REAL_TIME": false,
       "EVENT_DISPATCHING_VIA_REDIS": false,
-      "RATE_CHANGE_PER_UPDATE_LIMIT": [0, 1000],
-      "ENERGY_PROFILE_LIMIT": [0, 9223372036854775807],
+      "RATE_CHANGE_PER_UPDATE_LIMIT": [
+        0,
+        1000
+      ],
+      "ENERGY_PROFILE_LIMIT": [
+        0,
+        9223372036854775807
+      ],
       "MIN_NUM_TICKS": 10,
       "MIN_SLOT_LENGTH_M": 2,
       "MAX_SLOT_LENGTH_M": 60,
@@ -46,68 +52,183 @@
       "FULLY_AUTO_TRADING": true
     },
     "AreaSettings": {
-      "PERCENTAGE_FEE_LIMIT": [0, 100],
-      "CONSTANT_FEE_LIMIT": [0, 9223372036854775807]
+      "PERCENTAGE_FEE_LIMIT": [
+        0,
+        100
+      ],
+      "CONSTANT_FEE_LIMIT": [
+        0,
+        9223372036854775807
+      ]
     },
     "CommercialProducerSettings": {
-      "ENERGY_RATE_LIMIT": [0, 10000],
-      "MAX_POWER_KW_LIMIT": [0, 10000000]
+      "ENERGY_RATE_LIMIT": [
+        0,
+        10000
+      ],
+      "MAX_POWER_KW_LIMIT": [
+        0,
+        10000000
+      ]
     },
     "StorageSettings": {
-      "MIN_SOC_LIMIT": [0, 99],
-      "INITIAL_CHARGE_LIMIT": [0, 100],
+      "MIN_SOC_LIMIT": [
+        0,
+        99
+      ],
+      "INITIAL_CHARGE_LIMIT": [
+        0,
+        100
+      ],
       "CAPACITY": 1.2,
-      "CAPACITY_LIMIT": [0, 2000000],
+      "CAPACITY_LIMIT": [
+        0,
+        2000000
+      ],
       "MAX_ABS_POWER": 5,
-      "MAX_ABS_POWER_RANGE": [0, 2000000],
-      "BUYING_RATE_RANGE": [0, 24.9],
-      "INITIAL_BUYING_RATE_LIMIT": [0, 10000],
-      "FINAL_BUYING_RATE_LIMIT": [0, 10000],
-      "SELLING_RATE_RANGE": [30, 25],
-      "INITIAL_SELLING_RATE_LIMIT": [0, 10000],
-      "FINAL_SELLING_RATE_LIMIT": [0, 10000],
+      "MAX_ABS_POWER_RANGE": [
+        0,
+        2000000
+      ],
+      "BUYING_RATE_RANGE": [
+        0,
+        24.9
+      ],
+      "INITIAL_BUYING_RATE_LIMIT": [
+        0,
+        10000
+      ],
+      "FINAL_BUYING_RATE_LIMIT": [
+        0,
+        10000
+      ],
+      "SELLING_RATE_RANGE": [
+        30,
+        25
+      ],
+      "INITIAL_SELLING_RATE_LIMIT": [
+        0,
+        10000
+      ],
+      "FINAL_SELLING_RATE_LIMIT": [
+        0,
+        10000
+      ],
       "MIN_ALLOWED_SOC": 10
     },
     "LoadSettings": {
-      "AVG_POWER_LIMIT": [0, 9223372036854775807],
-      "HOURS_LIMIT": [0, 24],
-      "BUYING_RATE_RANGE": [0, 35],
-      "INITIAL_BUYING_RATE_LIMIT": [0, 10000],
-      "FINAL_BUYING_RATE_LIMIT": [0, 10000],
+      "AVG_POWER_LIMIT": [
+        0,
+        9223372036854775807
+      ],
+      "HOURS_LIMIT": [
+        0,
+        24
+      ],
+      "BUYING_RATE_RANGE": [
+        0,
+        35
+      ],
+      "INITIAL_BUYING_RATE_LIMIT": [
+        0,
+        10000
+      ],
+      "FINAL_BUYING_RATE_LIMIT": [
+        0,
+        10000
+      ],
       "LOAD_PENALTY_RATE": 29.2
     },
     "PVSettings": {
       "DEFAULT_PANEL_COUNT": 1,
-      "PANEL_COUNT_LIMIT": [1, 10000],
-      "FINAL_SELLING_RATE_LIMIT": [0, 10000],
-      "INITIAL_SELLING_RATE_LIMIT": [0, 10000],
-      "CAPACITY_KW_LIMIT": [0, 9223372036854775807],
-      "MAX_PANEL_OUTPUT_W_LIMIT": [0, 9223372036854775807],
-      "SELLING_RATE_RANGE": [30, 0],
+      "PANEL_COUNT_LIMIT": [
+        1,
+        10000
+      ],
+      "FINAL_SELLING_RATE_LIMIT": [
+        0,
+        10000
+      ],
+      "INITIAL_SELLING_RATE_LIMIT": [
+        0,
+        10000
+      ],
+      "CAPACITY_KW_LIMIT": [
+        0,
+        9223372036854775807
+      ],
+      "MAX_PANEL_OUTPUT_W_LIMIT": [
+        0,
+        9223372036854775807
+      ],
+      "SELLING_RATE_RANGE": [
+        30,
+        0
+      ],
       "DEFAULT_POWER_PROFILE": 0,
+      "CLOUD_COVERAGE_LIMIT": [
+        0,
+        5
+      ],
       "DEFAULT_CAPACITY_KW": 5,
       "MAX_PANEL_OUTPUT_W": 160,
       "PV_PENALTY_RATE": 0,
-      "AZIMUTH_LIMIT": [0, 360],
-      "TILT_LIMIT": [0, 90]
+      "AZIMUTH_LIMIT": [
+        0,
+        360
+      ],
+      "TILT_LIMIT": [
+        0,
+        90
+      ]
     },
     "SmartMeterSettings": {
-      "SELLING_RATE_RANGE": [30, 0],
-      "INITIAL_SELLING_RATE_LIMIT": [0, 10000],
-      "FINAL_SELLING_RATE_LIMIT": [0, 10000],
-      "BUYING_RATE_RANGE": [0, 35],
-      "INITIAL_BUYING_RATE_LIMIT": [0, 10000],
-      "FINAL_BUYING_RATE_LIMIT": [0, 10000]
+      "SELLING_RATE_RANGE": [
+        30,
+        0
+      ],
+      "INITIAL_SELLING_RATE_LIMIT": [
+        0,
+        10000
+      ],
+      "FINAL_SELLING_RATE_LIMIT": [
+        0,
+        10000
+      ],
+      "BUYING_RATE_RANGE": [
+        0,
+        35
+      ],
+      "INITIAL_BUYING_RATE_LIMIT": [
+        0,
+        10000
+      ],
+      "FINAL_BUYING_RATE_LIMIT": [
+        0,
+        10000
+      ]
     },
     "WindSettings": {
       "FINAL_SELLING_RATE": 0,
       "MAX_WIND_TURBINE_OUTPUT_W": 160
     },
     "HeatPumpSettings": {
-      "MAX_POWER_RATING_KW_LIMIT": [0, 9223372036854775807],
-      "TEMP_C_LIMIT": [0.0, 200.0],
-      "TANK_VOLUME_L_LIMIT": [0, 9223372036854775807],
-      "BUYING_RATE_LIMIT": [0, 10000],
+      "MAX_POWER_RATING_KW_LIMIT": [
+        0,
+        9223372036854775807
+      ],
+      "TEMP_C_LIMIT": [
+        0.0,
+        200.0
+      ],
+      "TANK_VOLUME_L_LIMIT": [
+        0,
+        9223372036854775807
+      ],
+      "BUYING_RATE_LIMIT": [
+        0,
+        10000
+      ],
       "MAX_POWER_RATING_KW": 3,
       "CONSUMPTION_KW": 0.5,
       "MIN_TEMP_C": 50,
@@ -116,18 +237,33 @@
       "EXT_TEMP_C": 10,
       "TANK_VOL_L": 50,
       "SOURCE_TYPE": 0,
-      "BUYING_RATE_RANGE": [0, 30],
+      "BUYING_RATE_RANGE": [
+        0,
+        30
+      ],
       "PREFERRED_BUYING_RATE": 30,
       "CALIBRATION_COEFFICIENT": 0.6,
-      "CALIBRATION_COEFFICIENT_RANGE": [0, 1]
+      "CALIBRATION_COEFFICIENT_RANGE": [
+        0,
+        1
+      ]
     },
     "MASettings": {
       "GRID_FEE_TYPE": 1,
-      "VALID_FEE_TYPES": [1, 2],
+      "VALID_FEE_TYPES": [
+        1,
+        2
+      ],
       "MARKET_TYPE": 1,
-      "MARKET_TYPE_LIMIT": [1, 3],
+      "MARKET_TYPE_LIMIT": [
+        1,
+        3
+      ],
       "BID_OFFER_MATCH_TYPE": 1,
-      "BID_OFFER_MATCH_TYPE_LIMIT": [1, 4],
+      "BID_OFFER_MATCH_TYPE_LIMIT": [
+        1,
+        4
+      ],
       "PAY_AS_CLEAR_AGGREGATION_ALGORITHM": 1,
       "MIN_OFFER_AGE": 2,
       "MIN_BID_AGE": 2
@@ -149,7 +285,10 @@
       "GRID_FEES_REDUCTION": 0.28,
       "INTRACOMMUNITY_BASE_RATE_EUR": null,
       "MARKET_ALGORITHM": 1,
-      "MARKET_ALGORITHM_LIMIT": [1, 3],
+      "MARKET_ALGORITHM_LIMIT": [
+        1,
+        3
+      ],
       "HOURS_OF_DELAY": 72
     }
   }
