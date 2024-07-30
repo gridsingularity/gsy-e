@@ -96,7 +96,7 @@ class MultipleTankHeatPumpStrategy(TradingStrategyBase):
                 min_temp_C=tank.min_temp_C,
                 max_temp_C=tank.max_temp_C,
                 initial_temp_C=tank.initial_temp_C,
-                sourcel_temp_C_profile=source_temp_C_profile,
+                source_temp_C_profile=source_temp_C_profile,
                 source_temp_C_profile_uuid=source_temp_C_profile_uuid,
                 tank_volume_l=tank.tank_volume_L,
                 consumption_kWh_profile=consumption_kWh_profile,
