@@ -10,7 +10,6 @@ from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.models.strategy.energy_parameters.heatpump_constants import (
     WATER_SPECIFIC_HEAT_CAPACITY,
     WATER_DENSITY,
-    GROUND_WATER_TEMPERATURE_C,
 )
 
 logger = logging.getLogger(__name__)
@@ -23,16 +22,18 @@ class VirtualHeatpumpSolverParameters:
     dh_supply_temp_C: float
     dh_return_temp_C: float
     dh_flow_m3_per_hour: float
+    source_temp_C: float
     calibration_coefficient: float = ConstSettings.HeatPumpSettings.CALIBRATION_COEFFICIENT
     energy_kWh: Optional[float] = None
 
     def __str__(self):
         return (
             f"Supply temp: {self.dh_supply_temp_C} "
-            f"Return Temp: {self.dh_return_temp_C} "
+            f"Return temp: {self.dh_return_temp_C} "
             f"Water Flow: {self.dh_flow_m3_per_hour} "
             f"Calibration Coefficient: {self.calibration_coefficient} "
             f"Energy: {self.energy_kWh}"
+            f"Source temp: {self.source_temp_C}"
         )
 
 
@@ -70,6 +71,7 @@ class VirtualHeatpumpStorageEnergySolver:
         self.dh_supply_temp_C = heatpump_parameters.dh_supply_temp_C
         self.dh_return_temp_C = heatpump_parameters.dh_return_temp_C
         self.dh_flow_kg_per_sec = heatpump_parameters.dh_flow_m3_per_hour * 1000 / 3600
+        self.source_temp_C = heatpump_parameters.source_temp_C
         if self.dh_flow_kg_per_sec < FLOATING_POINT_TOLERANCE:
             self.dh_flow_kg_per_sec = 0
         # Outputs
@@ -139,8 +141,10 @@ class VirtualHeatpumpStorageEnergySolver:
                 sum(tank.target_storage_temp_C for tank in self.tank_parameters)
                 / len(self.tank_parameters)
             )
+            print("self.source_temp_C", self.source_temp_C)
             self.cop = self.calibration_coefficient * (
-                self.condenser_temp_C / (self.condenser_temp_C - GROUND_WATER_TEMPERATURE_C)
+                self.condenser_temp_C
+                / (self.condenser_temp_C - self.heatpump_parameters.source_temp_C)
             )
             self.p_el_W = self.q_in_J / self.cop
             self.energy_kWh = convert_W_to_kWh(self.p_el_W, GlobalConfig.slot_length)
@@ -184,7 +188,7 @@ class VirtualHeatpumpStorageEnergySolver:
                 for tank_index, tank in enumerate(self.tank_parameters)
             ]
         )
-
+        print("ff", self.heatpump_parameters.source_temp_C)
         ans = sp.solve(
             [
                 *equation_list,
@@ -199,7 +203,10 @@ class VirtualHeatpumpStorageEnergySolver:
                 ),
                 sp.Eq(
                     self.calibration_coefficient
-                    * (condenser_temp_sym / (condenser_temp_sym - GROUND_WATER_TEMPERATURE_C)),
+                    * (
+                        condenser_temp_sym
+                        / (condenser_temp_sym - self.heatpump_parameters.source_temp_C)
+                    ),
                     cop_sym,
                 ),
                 sp.Eq(q_in_sym / cop_sym, self.p_el_W),

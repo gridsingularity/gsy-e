@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
 import os
 
 from gsy_framework.constants_limits import ConstSettings
@@ -40,9 +41,11 @@ def get_setup(config):
                         "H1 Heat Pump",
                         strategy=HeatPumpStrategy(
                             consumption_kWh_profile=os.path.join(
-                                gsye_root_path, "resources", "hp_consumption_kWh.csv"),
-                            external_temp_C_profile=os.path.join(
-                                gsye_root_path, "resources", "hp_external_temp_C.csv")
+                                gsye_root_path, "resources", "hp_consumption_kWh.csv"
+                            ),
+                            source_temp_C_profile=os.path.join(
+                                gsye_root_path, "resources", "hp_external_temp_C.csv"
+                            ),
                         ),
                     ),
                 ],
@@ -65,11 +68,10 @@ def get_setup(config):
                 grid_fee_percentage=0,
                 grid_fee_constant=0,
             ),
-            Area("Infinite Bus",
-                 strategy=InfiniteBusStrategy(energy_sell_rate=25,
-                                              energy_buy_rate=0),
-
-                 ),
+            Area(
+                "Infinite Bus",
+                strategy=InfiniteBusStrategy(energy_sell_rate=25, energy_buy_rate=0),
+            ),
         ],
         config=config,
     )

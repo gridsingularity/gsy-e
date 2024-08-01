@@ -61,9 +61,9 @@ class MultipleTankHeatPumpStrategy(TradingStrategyBase):
         self,
         maximum_power_rating_kW: float = ConstSettings.HeatPumpSettings.MAX_POWER_RATING_KW,
         tank_parameters: List[TankParameters] = None,
-        external_temp_C_profile: Optional[Union[str, float, Dict]] = None,
-        external_temp_C_profile_uuid: Optional[str] = None,
-        external_temp_C_measurement_uuid: Optional[str] = None,
+        source_temp_C_profile: Optional[Union[str, float, Dict]] = None,
+        source_temp_C_profile_uuid: Optional[str] = None,
+        source_temp_C_measurement_uuid: Optional[str] = None,
         consumption_kWh_profile: Optional[Union[str, float, Dict]] = None,
         consumption_kWh_profile_uuid: Optional[str] = None,
         consumption_kWh_measurement_uuid: Optional[str] = None,
@@ -83,8 +83,8 @@ class MultipleTankHeatPumpStrategy(TradingStrategyBase):
         self._energy_params = HeatPumpEnergyParameters(
             maximum_power_rating_kW=maximum_power_rating_kW,
             tank_parameters=tank_parameters,
-            external_temp_C_profile=external_temp_C_profile,
-            external_temp_C_profile_uuid=external_temp_C_profile_uuid,
+            source_temp_C_profile=source_temp_C_profile,
+            source_temp_C_profile_uuid=source_temp_C_profile_uuid,
             consumption_kWh_profile=consumption_kWh_profile,
             consumption_kWh_profile_uuid=consumption_kWh_profile_uuid,
             source_type=source_type,
@@ -96,8 +96,8 @@ class MultipleTankHeatPumpStrategy(TradingStrategyBase):
                 min_temp_C=tank.min_temp_C,
                 max_temp_C=tank.max_temp_C,
                 initial_temp_C=tank.initial_temp_C,
-                external_temp_C_profile=external_temp_C_profile,
-                external_temp_C_profile_uuid=external_temp_C_profile_uuid,
+                source_temp_C_profile=source_temp_C_profile,
+                source_temp_C_profile_uuid=source_temp_C_profile_uuid,
                 tank_volume_l=tank.tank_volume_L,
                 consumption_kWh_profile=consumption_kWh_profile,
                 consumption_kWh_profile_uuid=consumption_kWh_profile_uuid,
@@ -105,9 +105,9 @@ class MultipleTankHeatPumpStrategy(TradingStrategyBase):
             )
 
         # needed for profile_handler
-        self.external_temp_C_profile_uuid = external_temp_C_profile_uuid
+        self.source_temp_C_profile_uuid = source_temp_C_profile_uuid
         self.consumption_kWh_profile_uuid = consumption_kWh_profile_uuid
-        self.external_temp_C_measurement_uuid = external_temp_C_measurement_uuid
+        self.source_temp_C_measurement_uuid = source_temp_C_measurement_uuid
         self.consumption_kWh_measurement_uuid = consumption_kWh_measurement_uuid
 
     def _init_price_params(self, order_updater_parameters, preferred_buying_rate):
@@ -278,9 +278,9 @@ class HeatPumpStrategy(MultipleTankHeatPumpStrategy):
         min_temp_C: float = ConstSettings.HeatPumpSettings.MIN_TEMP_C,
         max_temp_C: float = ConstSettings.HeatPumpSettings.MAX_TEMP_C,
         initial_temp_C: float = ConstSettings.HeatPumpSettings.INIT_TEMP_C,
-        external_temp_C_profile: Optional[Union[str, float, Dict]] = None,
-        external_temp_C_profile_uuid: Optional[str] = None,
-        external_temp_C_measurement_uuid: Optional[str] = None,
+        source_temp_C_profile: Optional[Union[str, float, Dict]] = None,
+        source_temp_C_profile_uuid: Optional[str] = None,
+        source_temp_C_measurement_uuid: Optional[str] = None,
         tank_volume_l: float = ConstSettings.HeatPumpSettings.TANK_VOL_L,
         consumption_kWh_profile: Optional[Union[str, float, Dict]] = None,
         consumption_kWh_profile_uuid: Optional[str] = None,
@@ -302,9 +302,9 @@ class HeatPumpStrategy(MultipleTankHeatPumpStrategy):
         super().__init__(
             maximum_power_rating_kW,
             tank_parameters,
-            external_temp_C_profile,
-            external_temp_C_profile_uuid,
-            external_temp_C_measurement_uuid,
+            source_temp_C_profile,
+            source_temp_C_profile_uuid,
+            source_temp_C_measurement_uuid,
             consumption_kWh_profile,
             consumption_kWh_profile_uuid,
             consumption_kWh_measurement_uuid,

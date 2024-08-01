@@ -8,6 +8,8 @@ from gsy_e.models.strategy.energy_parameters.heat_pump import TankParameters
 from gsy_e.models.strategy.energy_parameters.virtual_heat_pump import (
     VirtualHeatpumpEnergyParameters,
 )
+from gsy_e.models.strategy.energy_parameters.heatpump_constants import DEFAULT_SOURCE_TEMPERATURE_C
+
 from gsy_e.models.strategy.heat_pump import HeatPumpOrderUpdaterParameters, HeatPumpStrategy
 
 VirtualHPSettings = ConstSettings.HeatPumpSettings
@@ -25,6 +27,8 @@ class MultipleTankVirtualHeatpumpStrategy(HeatPumpStrategy):
         water_supply_temp_C_profile_uuid: Optional[str] = None,
         water_return_temp_C_profile: Optional[Union[str, float, Dict]] = None,
         water_return_temp_C_profile_uuid: Optional[str] = None,
+        source_temp_C_profile: Optional[Union[str, float, Dict]] = DEFAULT_SOURCE_TEMPERATURE_C,
+        source_temp_C_profile_uuid: Optional[str] = None,
         dh_water_flow_m3_profile: Optional[Union[str, float, Dict]] = None,
         dh_water_flow_m3_profile_uuid: Optional[str] = None,
         order_updater_parameters: Dict[
@@ -49,6 +53,8 @@ class MultipleTankVirtualHeatpumpStrategy(HeatPumpStrategy):
             dh_water_flow_m3_profile=dh_water_flow_m3_profile,
             dh_water_flow_m3_profile_uuid=dh_water_flow_m3_profile_uuid,
             calibration_coefficient=calibration_coefficient,
+            source_temp_C_profile=source_temp_C_profile,
+            source_temp_C_profile_uuid=source_temp_C_profile_uuid,
         )
 
         self.water_supply_temp_C_profile_uuid = water_supply_temp_C_profile_uuid
@@ -91,6 +97,8 @@ class VirtualHeatpumpStrategy(MultipleTankVirtualHeatpumpStrategy):
         water_supply_temp_C_profile_uuid: Optional[str] = None,
         water_return_temp_C_profile: Optional[Union[str, float, Dict]] = None,
         water_return_temp_C_profile_uuid: Optional[str] = None,
+        source_temp_C_profile: Optional[Union[str, float, Dict]] = DEFAULT_SOURCE_TEMPERATURE_C,
+        source_temp_C_profile_uuid: Optional[str] = None,
         dh_water_flow_m3_profile: Optional[Union[str, float, Dict]] = None,
         dh_water_flow_m3_profile_uuid: Optional[str] = None,
         order_updater_parameters: Dict[
@@ -121,6 +129,8 @@ class VirtualHeatpumpStrategy(MultipleTankVirtualHeatpumpStrategy):
             water_supply_temp_C_profile_uuid,
             water_return_temp_C_profile,
             water_return_temp_C_profile_uuid,
+            source_temp_C_profile,
+            source_temp_C_profile_uuid,
             dh_water_flow_m3_profile,
             dh_water_flow_m3_profile_uuid,
             order_updater_parameters,
