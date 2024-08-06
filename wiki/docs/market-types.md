@@ -13,7 +13,7 @@ The current implementation of Grid Singularity Exchange focuses on peer-to-peer 
 
 <figure markdown>
   ![alt_text](img/market-types.png){:text-align:center"}
-  <figcaption><b>Figure 3.5</b>: Market Types implemented in the Grid Singularity Exchange.
+  <figcaption><b>Figure 3.5</b>: Market Types implemented in the Grid Singularity Exchange
 </figcaption>
 </figure>
 
@@ -114,7 +114,7 @@ In conventional grid structures:
 
 <figure markdown>
   ![alt_text](img/balancing-market-structure-2.png){:text-align:center"}
-  <figcaption><b>Figure 4.5</b>: Recovery of the system from a contingency event and action by primary frequency control (source: Paul Denholm, Trieu Mai, Rick Wallace Kenyon, Ben Kroposki, and Mark O’Malley, National Renewable Energy Laboratory, <a href="https://www.nrel.gov/news/program/2020/inertia-and-the-power-grid-a-guide-without-the-spin.html">Inertia and the Power Grid: A Guide Without the Spin</a>, May 2020)
+  <figcaption><b>Figure 3.9</b>: Recovery of the system from a contingency event and action by primary frequency control (source: Paul Denholm, Trieu Mai, Rick Wallace Kenyon, Ben Kroposki, and Mark O’Malley, National Renewable Energy Laboratory, <a href="https://www.nrel.gov/news/program/2020/inertia-and-the-power-grid-a-guide-without-the-spin.html">Inertia and the Power Grid: A Guide Without the Spin</a>, May 2020)
 </figcaption>
 </figure>
 
@@ -196,7 +196,7 @@ The Balancing Agent is responsible for monitoring power imbalances in the segmen
 
 <figure markdown>
   ![alt_text](img/balancing-market-implementation-1.png){:text-align:center"}
-  <figcaption><b>Figure 3.10</b>: Structure of Balancing Market in Grid Singularity Exchange.
+  <figcaption><b>Figure 3.10</b>: Structure of Balancing Market in Grid Singularity Exchange
 </figcaption>
 </figure>
 
@@ -270,12 +270,12 @@ Spot and settlement markets are functionally connected.By accessing trades of th
 
 <figure markdown>
   ![alt_text](img/market-rotation.png){:text-align:center"}
-  <figcaption><b>Figure 3.12</b>: Example of settlement markets available for each market slot and their time rotation in the Grid Singularity Exchange.
+  <figcaption><b>Figure 3.12</b>: Example of settlement markets available for each market slot and their time rotation in the Grid Singularity Exchange
 </figcaption>
 </figure>
 
 
-#### Asset Trading Strategies in Settlement markets
+#### Asset Trading Strategies in Settlement Markets
 
 Prosumer assets can post orders (bids/offers) of their energy deviations to the settlement market in order to get compensated by another entity that deviated inversely. Energy deviations are calculated as the difference between the forecasted and measured production or consumption.
 
@@ -286,12 +286,12 @@ Posting and updating bids and offers in settlement markets functions in  the sam
 
 <figure markdown>
   ![alt_text](img/assets-strategies-1.png){:text-align:center"}
-  <figcaption><b>Figure 3.13</b>: Settlement market posting energy deviations mechanism with external asset strategies.
+  <figcaption><b>Figure 3.13</b>: Settlement market posting energy deviations mechanism with external asset strategies
 </figcaption>
 </figure>
 
 
-#### Integrated Asset Strategies in Settlement markets
+#### Integrated Asset Strategies in Settlement Markets
 The Grid Singularity Exchange includes integrated trading strategies for the settlement market for all supported assets, enabling their automated participation to the settlement market without any intervention from the asset owner.  The settlement trading strategies are extensions of the [asset trading strategies](trading-agents-and-strategies.md#asset-trading-strategies), with the additional abilities to measure the energy deviation of the asset prosumption and to use this deviation for posting bids and offers to the settlement markets.
 Since they are extensions of the asset trading strategies, the settlement trading strategies participate in the spot market in exactly the same way as the asset trading strategies. Depending on the forecasted energy for the asset (as described in detail [here](configuration.md)), they post bids and offers to the spot market first. After some energy is traded on the spot market, the settlement trading strategies wait for the energy delivery and then verify that the traded energy from the asset corresponds to the produced or consumed energy of the asset. If there is an energy deviation between the traded energy and the measured energy, the settlement trading strategies use this deviation for posting a bid or offer with energy value equal to the energy deviation of the asset. For example, if a PV forecasted to produce 5kWh of energy for the 12:00 market, but the simulated measured energy reveals that the it only produced 4kWh for that time slot, the template strategy will post a bid to the 12:00 settlement market with the energy 1kWh. The behaviour for the price increase of this bid is the same as in the spot market: the energy rate of the bid is increased during the market until the Final selling rate is reached.
 
@@ -300,7 +300,7 @@ As the settlement market will stay available for longer than the normal spot mar
 
 <figure markdown>
   ![alt_text](img/assets-strategies-2.png){:text-align:center"}
-  <figcaption><b>Figure 3.14</b>: Settlement market posting energy deviations mechanism with template asset strategies.
+  <figcaption><b>Figure 3.14</b>: Settlement market posting energy deviations mechanism with template asset strategies
 </figcaption>
 </figure>
 

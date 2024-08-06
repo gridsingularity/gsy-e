@@ -19,7 +19,7 @@ The constant grid fee is a market based fee, defined in €/kWh and added to eac
 
 <figure markdown>
   ![alt_text](img/grid-fee-constant-1.png){:text-align:center"}
-  <figcaption><b>Figure 3.15</b>: Constant grid fee calculation in the Grid Singularity Exchange.
+  <figcaption><b>Figure 3.15</b>: Constant grid fee calculation in the Grid Singularity Exchange
 </figcaption>
 </figure>
 
@@ -30,7 +30,7 @@ The rate of a bid or offer changes as that bid or offer is propagated into diffe
 
 <figure markdown>
   ![alt_text](img/grid-fee-constant-2.png){:text-align:center"}
-  <figcaption><b>Figure 3.16</b>: Constant Grid Fee Example Calculation in One-Sided Pay-as-Offer Market.
+  <figcaption><b>Figure 3.16</b>: Constant Grid Fee Example Calculation in One-Sided Pay-as-Offer Market
 </figcaption>
 </figure>
 
@@ -67,7 +67,7 @@ Home 2 Market = (0.10 + 0)*1 = 0.10.
 
 <figure markdown>
   ![alt_text](img/grid-fee-constant-3.png){:text-align:center"}
-  <figcaption><b>Figure 4.17</b>: Constant Grid Fee Example Calculation in Two-Sided Pay-as-Bid Market.
+  <figcaption><b>Figure 3.17</b>: Constant Grid Fee Example Calculation in Two-Sided Pay-as-Bid Market
 </figcaption>
 </figure>
 
@@ -131,7 +131,7 @@ The Load pays the Trade Price of 0.30€, which includes 0.26€ revenue for the
 
 <figure markdown>
   ![alt_text](img/grid-fee-percentage-1.png){:text-align:center"}
-  <figcaption><b>Figure 3.18</b>: Percentage grid fee calculation in the Grid Singularity Exchange.
+  <figcaption><b>Figure 3.18</b>: Percentage grid fee calculation in the Grid Singularity Exchange
 </figcaption>
 </figure>
 
@@ -141,7 +141,7 @@ The price of a bid or offer changes as it is propagated into different markets t
 
 <figure markdown>
   ![alt_text](img/grid-fee-percentage-2.png){:text-align:center"}
-  <figcaption><b>Figure 3.19</b>: Percentage Grid Fee Example Calculation in One-Sided Pay-as-Offer Market.
+  <figcaption><b>Figure 3.19</b>: Percentage Grid Fee Example Calculation in One-Sided Pay-as-Offer Market
 </figcaption>
 </figure>
 
@@ -166,7 +166,7 @@ trade_price = energy * trade_rate
 
 <figure markdown>
   ![alt_text](img/grid-fee-percentage-3.png){:text-align:center"}
-  <figcaption><b>Figure 4.20</b>: Percentage Grid Fee Example Calculation in Two-Sided Pay-as-Bid Market.
+  <figcaption><b>Figure 3.20</b>: Percentage Grid Fee Example Calculation in Two-Sided Pay-as-Bid Market
 </figcaption>
 </figure>
 
