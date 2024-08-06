@@ -14,7 +14,7 @@ Trading process through the Matching API:
 
 4. **Matching** - The Matching API pairs bids and offers together according to an external matching algorithm provided by a third-party matching algorithm provider and sends the proposed bid/offer pairs (technically called *recommendations*)  back to the exchange.
 
-5. **Verification function** - Each recommendation is submitted to  the exchange’s verification function, a mechanism that checks whether the [clearing rate](market-types.md#two-sided-pay-as-clear-market) and the energy to be traded proposed by the recommendation respect the bids and offers’ [attributes and requirements](degrees-of-freedom.md).
+5. **Verification function** - Each recommendation is submitted to  the exchange’s verification function, a mechanism that checks whether the [clearing rate](market-types.md#two-sided-pay-as-clear-market) and the energy to be traded proposed by the recommendation respect the bids and offers’ [attributes and requirements](trading-agents-and-strategies.md#bidoffer-attributes-and-requirements-for-trading-preferences-degrees-of-freedom).
 
 6. **Transactions and rejections** - Recommended matches that pass the verification function’s check will be submitted as transactions in the Grid Singularity exchange. Recommendations rejected by the verification function will trigger a notification through the Matching API and not be sent to the exchange for clearing.
 
