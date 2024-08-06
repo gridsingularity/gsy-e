@@ -259,7 +259,7 @@ The rest of the script functionality has been covered in the [previous section](
 
 ##Introduce trading preferences with the Degrees of Freedom
 
-With the Asset API, users also have the option to specify trading preferences for each asset, such as preferred trading partners, energy type, energy amount and rate. An example of such a script can be found [here](https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/asset_api_scripts/degrees_of_freedom.py){target=_blank}. These preferences are also known as requirements and attributes or “degrees of freedom”, as explained [here](degrees-of-freedom.md).
+With the Asset API, users also have the option to specify trading preferences for each asset, such as preferred trading partners, energy type, energy amount and rate. An example of such a script can be found [here](https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/asset_api_scripts/degrees_of_freedom.py){target=_blank}. These preferences are also known as requirements and attributes or “degrees of freedom”, as explained [here](trading-agents-and-strategies.md#bidoffer-attributes-and-requirements-for-trading-preferences-degrees-of-freedom).
 
 Requirements are uploaded to the template script via a JSON file (an example can be found [here](https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/asset_api_scripts/resources/requirements.json){target=_blank}), which has the following structure:
 
