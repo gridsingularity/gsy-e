@@ -8,12 +8,12 @@ from pendulum import DateTime
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.models.strategy.state import HeatPumpTankState
-from gsy_e.models.strategy.energy_parameters.heatpump_constants import (
+from gsy_e.models.strategy.energy_parameters.heatpump.constants import (
     WATER_SPECIFIC_HEAT_CAPACITY,
     WATER_DENSITY,
     SPECIFIC_HEAT_CONST_WATER,
 )
-from gsy_e.models.strategy.energy_parameters.virtual_heatpump_solver import (
+from gsy_e.models.strategy.energy_parameters.heatpump.virtual_heatpump_solver import (
     TankSolverParameters,
     VirtualHeatpumpSolverParameters,
     VirtualHeatpumpStorageEnergySolver,

@@ -4,11 +4,11 @@ from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.enums import AvailableMarketTypes
 from gsy_framework.validators.heat_pump_validator import VirtualHeatPumpValidator
 
-from gsy_e.models.strategy.energy_parameters.heat_pump import TankParameters
-from gsy_e.models.strategy.energy_parameters.virtual_heat_pump import (
+from gsy_e.models.strategy.energy_parameters.heatpump.heat_pump import TankParameters
+from gsy_e.models.strategy.energy_parameters.heatpump.virtual_heat_pump import (
     VirtualHeatpumpEnergyParameters,
 )
-from gsy_e.models.strategy.energy_parameters.heatpump_constants import DEFAULT_SOURCE_TEMPERATURE_C
+from gsy_e.models.strategy.energy_parameters.heatpump.constants import DEFAULT_SOURCE_TEMPERATURE_C
 
 from gsy_e.models.strategy.heat_pump import HeatPumpOrderUpdaterParameters, HeatPumpStrategy
 

@@ -7,7 +7,7 @@ from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.utils import convert_W_to_kWh, convert_kWh_to_W
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
-from gsy_e.models.strategy.energy_parameters.heatpump_constants import (
+from gsy_e.models.strategy.energy_parameters.heatpump.constants import (
     WATER_SPECIFIC_HEAT_CAPACITY,
     WATER_DENSITY,
 )

@@ -12,7 +12,7 @@ from gsy_e.gsy_e_core.util import (
     get_market_maker_rate_from_config,
     get_feed_in_tariff_rate_from_config,
 )
-from gsy_e.models.strategy.energy_parameters.heat_pump import (
+from gsy_e.models.strategy.energy_parameters.heatpump.heat_pump import (
     HeatPumpEnergyParameters,
     TankParameters,
 )
