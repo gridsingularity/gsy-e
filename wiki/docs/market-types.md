@@ -6,20 +6,20 @@ The main technical objective  of an electricity market exchange is to balance th
 3. **[Settlement market](market-types.md#settlement-market)**: post-delivery trades of deviations between energy physically produced/consumed and energy purchased in the spot or futures market to settle imbalances locally before BRP billing.
 4. **Flexibility market**: short-term markets, where flexibility is bought shortly before it is needed on the network (day-ahead, or even intraday).
 5. **Futures market**: Trades for the longer term future consumption and production of energy are agreed in advance. This market is currently in development of Grid Singularity energy exchange implementation.
-6. Community trading / peer-to-market type: assumes a collective self-consumption scheme, where the energy generation in the community is aggregated and then allocated in a predetermined allocation coefficient to each member. In this case, the trading only occurs between one community member and one renewable asset, usually member-owned or community-owned and shared solar panel (PV) rather than among all assets in the community.
+6. [Community trading / peer-to-market type](market-types.md#community-trading-market): assumes a collective self-consumption scheme, where the energy generation in the community is aggregated and then allocated in a predetermined allocation coefficient to each member. In this case, the trading only occurs between one community member and one renewable asset, usually member-owned or community-owned and shared solar panel (PV) rather than among all assets in the community.
 
 The current implementation of Grid Singularity Exchange focuses on peer-to-peer spot and balancing markets, with a commercial peer-to-market community trading application available via [Grid Singularity’s Social Community Manager](https://gridsingularity.com/scm){target=_blank}. Balancing markets take place immediately after each spot market slot (if enabled). The duration of the markets can be configured.
 
 
 <figure markdown>
   ![alt_text](img/market-types.png){:text-align:center"}
-  <figcaption><b>Figure 3.5</b>: Market Types implemented in Grid Singularity Exchange.
+  <figcaption><b>Figure 3.5</b>: Market Types implemented in the Grid Singularity Exchange.
 </figcaption>
 </figure>
 
 
 #### Simulated Time
-Simulated time is the time unit within a simulation as opposed to real-time which is the real-life time that the simulation takes (7 days of trading can be simulated in minutes or hours).
+Simulated time is the time unit within a simulation as opposed to real-time which is the real-life time that the simulation takes (seven days of trading can be simulated in minutes or hours).
 
 
 #### Market Slots
@@ -45,7 +45,7 @@ In a local energy market (LEM), bids and offers are matched according to the sel
 3. [Two-Sided Pay-as-Clear Market](market-types.md#two-sided-pay-as-clear-market)
 
 ### One-Sided Pay-as-Offer Market
-In the One-Sided Pay-as-Offer market, trading agents representing energy producers, including prosumers (hereinafter termed “sellers) post offers in the market with an energy price determined by the [assets' trading strategies](trading-agents-and-strategies.md).
+In the One-Sided Pay-as-Offer market, trading agents representing energy producers, including prosumers (hereinafter termed "sellers") post offers in the market with an energy price determined by the [asset trading strategies](trading-agents-and-strategies.md).
 
 Agents representing consumers (hereinafter termed “buyers”) can see the offers available in their local market, filter affordable offers and then select the most favourable offer. The energy rate upon which the seller and buyer settle is the price of the offer (pay-as-offer). Consequently, the trade rate may differ for trades settled in the same slot. The auction is continuous, meaning that once an offer is posted, it can be accepted immediately, even before the end of each market slot.
 
@@ -61,7 +61,7 @@ The market constantly triggers the matching between bids and offers according to
 
 <figure markdown>
   ![alt_text](img/pay-as-bid-1.png){:text-align:center"}
-  <figcaption><b>Figure 3.6</b>: Two-Sided Pay-as-Bid Market mechanism in the Grid Singularity  Exchange.
+  <figcaption><b>Figure 3.6</b>: Two-Sided Pay-as-Bid Market Mechanism in the Grid Singularity  Exchange
 </figcaption>
 </figure>
 
@@ -77,7 +77,7 @@ Currently, there is a merit-order-effect mechanism implemented for bid and offer
 
 <figure markdown>
   ![alt_text](img/pay-as-clear-1.png){:text-align:center"}
-  <figcaption><b>Figure 3.7</b>: Two-Sided Pay-as-Clear Market mechanism in the Grid Singularity Exchange.
+  <figcaption><b>Figure 3.7</b>: Two-Sided Pay-as-Clear Market Mechanism in the Grid Singularity Exchange
 </figcaption>
 </figure>
 
@@ -239,7 +239,7 @@ BALANCING_OFFER_DEMAND_RATIO → (Default: 0.1) (It dictates the ratio of spot_m
 
 BALANCING_OFFER_SUPPLY_RATIO → (Default: 0.1) (It dictates the ratio of spot_market_energy to be offered in balancing market as supply_balancing_offer)
 
-BALANCING_FLEXIBLE_LOADS_SUPPORT → (Default: True) (It enables [Load Trading Strategy](consumption.md) to place supply_balancing_offer (effectively curtailing it's load))
+BALANCING_FLEXIBLE_LOADS_SUPPORT → (Default: True) (It enables [Load Trading Strategy](consumption.md) to place supply_balancing_offer - effectively curtailing it's load)
 
 Examples of balancing market setups are available [here](https://github.com/gridsingularity/gsy-e/tree/master/src/gsy_e/setup/balancing_market){target=_blank}.
 
@@ -249,7 +249,7 @@ Examples of balancing market setups are available [here](https://github.com/grid
 ### Settlement Market Structure
 Spot and futures trading requires predictions of energy use at both the asset and network level, which are often associated with high prediction errors. Thus, although a balancing mechanism should deal with the energy imbalances on the physical level, financial exchanges might still not be settled, causing a mismatch between physical energy delivery and market accounting. Some market approaches create orders and matches based on the last 15-minute slot’s energy use (post-delivery, read by smart metres) to solve this problem. Others allow the grid operator to set prices or enforce penalties for any deviance Symbiotic Energy Markets concept espoused by [Grid Singularity’s technical approach](technical-approach.md) allows similar post-delivery trading by all market participants.
 
-Deviations between energy physically produced/consumed and energy purchased in the spot or futures market can be traded post-delivery by submitting a time slot in the past as a requirement attached to a bid or offer, creating a settlement market (figure 3.8). Bids and offers will be matched leveraging the [two-sided pay-as-bid matching mechanism](market-types.md#two-sided-pay-as-bid-market). This allows local deviations to balance without penalty (e.g. a local solar panel that overproduces matches their deviation to a local load that over-consumed), with the remainder filled at a market rate (likely a premium) by individual assets, balancing groups, or grid operators that provided balancing services during delivery. A specific limit may be introduced to represent the time interval in which post-delivery trading can be conducted.
+Deviations between energy physically produced/consumed and energy purchased in the spot or futures market can be traded post-delivery by submitting a time slot in the past as a requirement attached to a bid or offer, creating a settlement market (figure 3.8). Bids and offers will be matched leveraging the [Two-Sided Pay-as-Bid matching mechanism](market-types.md#two-sided-pay-as-bid-market). This allows local deviations to balance without penalty (e.g. a local solar panel that overproduces matches their deviation to a local load that over-consumed), with the remainder filled at a market rate (likely a premium) by individual assets, balancing groups, or grid operators that provided balancing services during delivery. A specific limit may be introduced to represent the time interval in which post-delivery trading can be conducted.
 
 
 <figure markdown>
@@ -261,7 +261,7 @@ Deviations between energy physically produced/consumed and energy purchased in t
 
 ### Settlement Market Implementation in the Grid Singularity Exchange backend
 
-#### Settlement market settings
+#### Settlement Market Settings
 
 If [`ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS`](https://github.com/gridsingularity/gsy-framework/blob/175a9c3c3295b78e3b5d7610e221b6f2ea72f6ec/gsy_framework/constants_limits.py#L70){target=_blank} is set to True, settlement markets are created for each market cycle. For each past spot market, there is always a respective settlement market. The settlement market order book is kept open for placing bids and offers for a number of hours after energy delivery, which the user sets with [`Const.Settings.SettlementMarketSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS`](https://github.com/gridsingularity/gsy-framework/blob/175a9c3c3295b78e3b5d7610e221b6f2ea72f6ec/gsy_framework/constants_limits.py#L69){target=_blank}, contrary to the operation of the spot market, which keeps its order book open for 15 minutes (starting 15 minutes before the energy delivery).
 
@@ -275,11 +275,9 @@ Spot and settlement markets are functionally connected.By accessing trades of th
 </figure>
 
 
-#### Assets’ trading strategies in settlement markets
+#### Asset Trading Strategies in Settlement markets
 
 Prosumer assets can post orders (bids/offers) of their energy deviations to the settlement market in order to get compensated by another entity that deviated inversely. Energy deviations are calculated as the difference between the forecasted and measured production or consumption.
-
-#### External asset strategies in settlement markets
 
 Asset owners or asset aggregators (other entities managing energy assets on behalf of the asset owners) can post the forecasted and measured energy to the Grid Singularity Exchange for each market slot via the [Asset API](configure-trading-strategies-walkthrough.md) with the batch commands _set_energy_forecast_ and _set_energy_measurement_.
 
@@ -293,8 +291,8 @@ Posting and updating bids and offers in settlement markets functions in  the sam
 </figure>
 
 
-#### Asset strategies in settlement markets
-The Grid Singularity Exchange includes integrated trading strategies for the settlement market for all supported assets, enabling their automated participation to the settlement market without any intervention from the asset owner.  The settlement trading strategies are extensions of the [asset trading strategies](trading-agents-and-strategies.md#asset-trading-strategies-), with the additional abilities to measure the energy deviation of the asset prosumption and to use this deviation for posting bids and offers to the settlement markets.
+#### Integrated Asset Strategies in Settlement markets
+The Grid Singularity Exchange includes integrated trading strategies for the settlement market for all supported assets, enabling their automated participation to the settlement market without any intervention from the asset owner.  The settlement trading strategies are extensions of the [asset trading strategies](trading-agents-and-strategies.md#asset-trading-strategies), with the additional abilities to measure the energy deviation of the asset prosumption and to use this deviation for posting bids and offers to the settlement markets.
 Since they are extensions of the asset trading strategies, the settlement trading strategies participate in the spot market in exactly the same way as the asset trading strategies. Depending on the forecasted energy for the asset (as described in detail [here](configuration.md)), they post bids and offers to the spot market first. After some energy is traded on the spot market, the settlement trading strategies wait for the energy delivery and then verify that the traded energy from the asset corresponds to the produced or consumed energy of the asset. If there is an energy deviation between the traded energy and the measured energy, the settlement trading strategies use this deviation for posting a bid or offer with energy value equal to the energy deviation of the asset. For example, if a PV forecasted to produce 5kWh of energy for the 12:00 market, but the simulated measured energy reveals that the it only produced 4kWh for that time slot, the template strategy will post a bid to the 12:00 settlement market with the energy 1kWh. The behaviour for the price increase of this bid is the same as in the spot market: the energy rate of the bid is increased during the market until the Final selling rate is reached.
 
 As the settlement market will stay available for longer than the normal spot market (configurable by [`Const.Settings.SettlementMarketSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS`](https://github.com/gridsingularity/gsy-framework/blob/175a9c3c3295b78e3b5d7610e221b6f2ea72f6ec/gsy_framework/constants_limits.py#L69){target=_blank}, please also see [here](market-types.md#settlement-market-implementation-in-the-grid-singularity-exchange-backend-)), the template strategy will not update the orders as frequently as in the normal spot market, but following the time interval set by the parameter  [`SettlementTemplateStrategiesConstants.UPDATE_INTERVAL_MIN`](https://github.com/gridsingularity/gsy-e/blob/7f5d2866cfd8b8327e590a1377db2d9bd2909746/src/gsy_e/constants.py#L72).
