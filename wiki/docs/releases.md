@@ -45,7 +45,7 @@ The following features were implemented :
 The following features were implemented :
 
 * [Market slot](markets.md) length realtime: This can be set to simulations and collaborations. It slows down the running pace with a constant value (speed can go from the fasted as possible up until real-time.
-* Public library is updated: New [loads](model-load.md) and [PVs](model-pv.md) profiles were added to the public library. A total of **24** loads, representing various types of households was generated using [loadprofilegenerator.de](https://www.loadprofilegenerator.de/){target=_blank}. PV production profiles were taken from [energydatamap.com](https://energydatamap.com/) for different cities. These new loads and PVs have profiles of a full year (2021).
+* Public library is updated: New [loads](consumption.md) and [PVs](solar-panels.md) profiles were added to the public library. A total of **24** loads, representing various types of households was generated using [loadprofilegenerator.de](https://www.loadprofilegenerator.de/){target=_blank}. PV production profiles were taken from [energydatamap.com](https://energydatamap.com/) for different cities. These new loads and PVs have profiles of a full year (2021).
 * Users can now download the **registry** page as a JSON file, to facilitate the connection with the API to a collaboration/Canary Network.
 
 ##Version 0.11.0
@@ -71,7 +71,7 @@ The following features were implemented :
 * [Market API](implement-grid-fees-walkthrough.md), which allows grid operators and researchers to monitor metrics and set grid fees in the select local energy market simulation collaboration
 * Easier registration for researchers and grid operators to manage multiple assets and use market [API](APIs-introduction.md) through the Registry page.
 * Bids and offers are prioritised in their first market by setting a wait time of 2 ticks before allowing them to propagate to higher markets in the grid hierarchy. This wait time is set in the backend as the minimum bid or offer age parameter.
-* [Grid fees](constant-fees.md) integrated in the Results page - [Energy Pricing](results.md#energy-pricing) graph for each market
+* [Grid fees](grid-fee-accounting.md#constant-grid-fee-calculation) integrated in the Results page - [Energy Pricing](results.md#energy-pricing) graph for each market
 * Total grid fees reported in the Scoreboard page that demonstrates market performance metrics for each collaboration simulation.
 * Net Energy calculation added to Results page - [Energy Trade Profile](results.md#energy-trade-profile) graph in order to calculate the peak energy at a market node in the simulation. The current peak imports and exports were previously calculated based on the cumulative trades, but are now calculated from the net energy consumption, which can be a net import or export.
 * Updated load final selling rate and PV initial buying rate in the [template strategies](trading-agents-and-strategies) now take the total grid fees into account in addition to the market maker (usually utility) rate.
@@ -91,7 +91,7 @@ The following features were implemented :
 The following features were implemented :
 
 * [Detailed energy trade profile graph](results.md#detailed-energy-trade-profile). Zoom in to each 15 minute market slot to view the scheduled trades with 1 minute resolution.
-* Grid Operator user can change grid parameters inside a collaboration and while it is running, like [grid fees](constant-fees.md) or the transformer capacity.
+* Grid Operator user can change grid parameters inside a collaboration and while it is running, like [grid fees](grid-fee-accounting.md) or the transformer capacity.
 * Allow collaboration participants to register for [events](events.md) while the simulation is running. Allows users to simulate a growing community.
 * Information Aggregator to compile and send average market measurements to assist data scientists in building smart strategies to trade through the [API](configure-trading-strategies-walkthrough.md).
 
@@ -113,7 +113,7 @@ The following features were implemented :
 ##Version 0.5.0
 The following features were implemented :
 
-* [Constant based Grid Fees](constant-fees.md)
+* [Constant based Grid Fees](grid-fee-accounting.md#constant-grid-fee-calculation)
 * [Self Sufficiency, Self Consumption](self-sufficiency-consumption.md), and [Energy Peak Percentage](peak-percentage.md) KPIs
 * Simulation runtime status indicator
 * Increased node limit to [1000 nodes](general-settings.md)
@@ -126,7 +126,7 @@ The following features were implemented :
 ##Version 0.4.0
 The following features were implemented :
 
-* [Grid fees](grid-fees.md) configuration
+* [Grid fees](grid-fee-accounting.md) configuration
 * User roles, including 'Collaborations' feature for multi user testing and Grid Singularity-hosted challenges
 * [API](configure-trading-strategies-walkthrough.md) connection to energy assets allowing bids and offers to be submitted by external algorithms
 
@@ -146,7 +146,7 @@ The following features were implemented :
 The following features were implemented :
 
 * Run simulations for [one week](general-settings.md)
-* Choose your market type: additional access to [two-sided pay as bid](two-sided-pay-as-bid.md) and [two-sided pay as clear](two-sided-pay-as-clear.md) market types
+* Choose your market type: additional access to [two-sided pay as bid](market-types.md#two-sided-pay-as-bid-market) and [two-sided pay as clear](market-types.md#two-sided-pay-as-clear-market) market types
 * New user friendly asset strategies
 * Configure your [market maker](model-market-maker.md)
 * Scrollable graphs on the results page optimized for longer simulations

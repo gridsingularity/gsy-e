@@ -17,11 +17,11 @@ When creating a new simulation, simulation collaboration or a simulation in the 
     *   Partially Cloudy (generation profile with 250W panel)
     *   Gaussian (the user can define the panel power output)
     *   Upload a profile (a custom default PV production curve can be uploaded as described in [Upload File Formats](upload-file-formats.md))
-*   **Spot market type**: The user can select one of three market types: [One-sided pay-as-offer](one-sided-pay-as-offer.md), [Two-sided pay-as-bid](two-sided-pay-as-bid.md) and [Two-sided pay-as-clear](two-sided-pay-as-clear.md).
+*   **Spot market type**: The user can select one of three market types: [One-sided pay-as-offer](market-types.md#one-sided-pay-as-offer-market), [Two-sided pay-as-bid](market-types.md#two-sided-pay-as-bid-market) and [Two-sided pay-as-clear](market-types.md#two-sided-pay-as-clear-market).
 *   **Number of spot markets**: Number of future spot markets where the energy assets and agents can trade.
 *   **Duration of market slot**: Duration of each spot market,between 2 and 60 minutes. Default is set to 15 minutes.
 *   **Tick duration**: Amount of time between two increments of each market slot when trades are cleared or agent trading rates are updated. Default duration is 15 simulated seconds, yielding 60 ticks per market slot.
-*   **Grid Fees**: The user can select one of two types: [Constant grid fee](constant-fees.md) or [Percentage grid fee](percentage-fees.md)
+*   **Grid Fees**: The user can select one of two types: [Constant grid fee](grid-fee-accounting.md#constant-grid-fee-calculation) or [Percentage grid fee](grid-fee-accounting.md#percentage-grid-fee-calculation)
 
 The interface for selecting general settings is shown below:
 
@@ -63,7 +63,7 @@ The user can add more nested submarkets recursively by adding more instances of 
     *   House 2
         *   H2 General Load
 
-Bold instances in the outline above are markets (`Area` component). For each of these markets, an [inter-area-agent](market-agent.md) is created in the background to execute offer/bid forwarding and matching.
+Bold instances in the outline above are markets (`Area` component). For each of these markets, a [market agent](trading-agents-and-strategies.md) is created in the background to execute offer/bid forwarding and matching.
 
 In the following, the corresponding setup-file is shown.
 
@@ -130,10 +130,10 @@ For a description of each grid component please see the **Modelling** section.
 
 The user can overwrite the configuration settings by changing variables of the [ConstSettings](https://github.com/gridsingularity/d3a-interface/blob/master/d3a_interface/constants_limits.py){target=_blank} class in the setup-file. This class defines the default values for various parameters (general simulation settings, market settings and energy asset configuration). For instance, the user can define multiple configuration parameters in the get_setup function by overwriting the[ ConstSettings](https://github.com/gridsingularity/d3a-interface/blob/master/d3a_interface/constants_limits.py){target=_blank} default values. For example, the following parameters can be set :
 
-* Market_type (if equal to 1: [One-Sided Pay-as-Offer](one-sided-pay-as-offer.md), if equal to 2 : [Two-Sided Pay-as-Bid](two-sided-pay-as-bid.md), if equal to 3 : [Two-Sided Pay-as-Clear](two-sided-pay-as-clear.md))
-* Grid_fee_type (if equal to 1: [Constant grid fee](constant-fees.md), if equal to 2 : [Percentage grid fee](percentage-fees.md))
+* Market_type (if equal to 1: [One-Sided Pay-as-Offer](market-types.md#one-sided-pay-as-offer-market), if equal to 2 : [Two-Sided Pay-as-Bid](market-types.md#two-sided-pay-as-bid-market), if equal to 3 : [Two-Sided Pay-as-Clear](market-types.md#two-sided-pay-as-clear-market))
+* Grid_fee_type (if equal to 1: [Constant grid fee](grid-fee-accounting.md#constant-grid-fee-calculation), if equal to 2 : [Percentage grid fee](grid-fee-accounting.md#percentage-grid-fee-calculation))
 
-Here is an example to setup a simulation with the Two-Sided Pay-as-Bid market type, constant grid fee and default min (0cts/kWh) and max to (35cts/kWh) energy rate for all [loads](model-load.md):
+Here is an example to setup a simulation with the Two-Sided Pay-as-Bid market type, constant grid fee and default min (0cts/kWh) and max to (35cts/kWh) energy rate for all [loads](consumption.md):
 
 ```python
 from gsy_framework.constants_limits import ConstSettings

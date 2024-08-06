@@ -6,11 +6,11 @@ The main goal of an electricity market exchange is to balance the grid in terms 
 
 ![alt_text](img/markets-1.png)
 
-The current implementation of Grid Singularity software focuses on the spot and balancing markets. [Balancing markets](balancing-market.md) take place immediately after each spot market slot (if enabled). The duration of the markets can be configured. Currently, three spot market types are implemented:
+The current implementation of Grid Singularity software focuses on the spot and balancing markets. [Balancing markets](market-types.md#balancing-market) take place immediately after each spot market slot (if enabled). The duration of the markets can be configured. Currently, three spot market types are implemented:
 
-1. [One-sided Pay-as-Offer](one-sided-pay-as-offer.md)
-2. [Two-sided Pay-as-Bid](two-sided-pay-as-bid.md)
-3. [Two-sided Pay-as-Clear](two-sided-pay-as-clear.md)
+1. [One-sided Pay-as-Offer](market-types.md#one-sided-pay-as-offer-market)
+2. [Two-sided Pay-as-Bid](market-types.md#two-sided-pay-as-bid-market)
+3. [Two-sided Pay-as-Clear](market-types.md#two-sided-pay-as-clear-market)
 
 ##Market Slots
 
@@ -22,4 +22,4 @@ Depending on the market type, bids and offers are either matched within or at th
 
 Each slot is further segmented into ticks. The default setting for a tick is 15 seconds of simulated time (simulated time is the time unit within a simulation as opposed to real-time which is the real-life time that the simulation takes; e.g. a simulation can simulate 7 days of trading in minutes or hours), and this configuration may be changed. The default 15 minute market slot is made up of 60 15-second ticks.
 
-In a pay-as-bid market, the market is cleared at the end of each tick. If an order is not matched, it is propagated to all adjacent markets by an [Inter-Area Agent](market-agent.md) after two ticks. If an order is not matched at the end of two next ticks, it is further propagated to connected markets in the subsequent ticks following the same logic.
+In a pay-as-bid market, the market is cleared at the end of each tick. If an order is not matched, it is propagated to all adjacent markets by a [Market Agent](trading-agents-and-strategies.md) after two ticks. If an order is not matched at the end of two next ticks, it is further propagated to connected markets in the subsequent ticks following the same logic.

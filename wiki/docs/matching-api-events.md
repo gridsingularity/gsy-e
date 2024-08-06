@@ -21,7 +21,7 @@ The method on_tick is called when a new [tick](market-types.md#market-ticks) is 
 ```
 def on_offers_bids_response(self, data):
 ```
-The method on_offers_bids_response is triggered when open [offers/bids](market-agent.md) responses are returned. The **data** dictionary received from the exchange contains information on all open bids/offers posted. The structure is shown below:
+The method on_offers_bids_response is triggered when open [offers/bids](trading-agents-and-strategies.md) responses are returned. The **data** dictionary received from the exchange contains information on all open bids/offers posted. The structure is shown below:
 
 ```json
 {'8f7b7e7b-0f4a-490b-853f-6017af84ef60':
