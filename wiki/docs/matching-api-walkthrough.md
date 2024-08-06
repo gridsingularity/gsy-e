@@ -6,7 +6,7 @@ The Grid Singularity Matching Application Programming Interface (or Matching API
 
 Trading process through the Matching API:
 
-1. **Bids and Offers creation** - [Bids and Offers](market-agent.md) are created on behalf of the [energy assets](configuration.md) (either by using the [default GSy trading strategy](default-trading-strategy.md) or through the [Asset API](configure-trading-strategies-walkthrough.md)) and sent to the exchange.
+1. **Bids and Offers creation** - [Bids and Offers](market-agent.md) are created on behalf of the [energy assets](configuration.md) (either by using the [default GSy trading strategy](trading-agents-and-strategies) or through the [Asset API](configure-trading-strategies-walkthrough.md)) and sent to the exchange.
 
 2. **Order book** - The exchange gathers the bids and offers for all the different markets, which are currently organised in a [hierarchical structure](market-agent.md).
 

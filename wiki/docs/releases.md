@@ -74,7 +74,7 @@ The following features were implemented :
 * [Grid fees](constant-fees.md) integrated in the Results page - [Energy Pricing](results.md#energy-pricing) graph for each market
 * Total grid fees reported in the Scoreboard page that demonstrates market performance metrics for each collaboration simulation.
 * Net Energy calculation added to Results page - [Energy Trade Profile](results.md#energy-trade-profile) graph in order to calculate the peak energy at a market node in the simulation. The current peak imports and exports were previously calculated based on the cumulative trades, but are now calculated from the net energy consumption, which can be a net import or export.
-* Updated load final selling rate and PV initial buying rate in the [template strategies](default-trading-strategy.md) now take the total grid fees into account in addition to the market maker (usually utility) rate.
+* Updated load final selling rate and PV initial buying rate in the [template strategies](trading-agents-and-strategies) now take the total grid fees into account in addition to the market maker (usually utility) rate.
 * Users can now run three simulations and/or collaborations at once (previous limit was two)
 
 

@@ -70,7 +70,7 @@ nav:
               - 'Markets and rotation' : 'markets-rotation.md'
               - 'Assets strategies' : 'assets-strategies.md'
     - 'Bids/Offers Process and Hierarchical Market Structure': 'market-agent.md'
-    - 'Trading Strategies': 'default-trading-strategy.md'
+    - 'Trading Strategies': 'trading-agents-and-strategies.md'
     - 'Grid Fee Accounting':
         - 'Grid Fee Objectives': 'grid-fees.md'
         - 'Constant Grid Fee Calculation': 'constant-fees.md'

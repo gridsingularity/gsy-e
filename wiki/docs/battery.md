@@ -43,7 +43,7 @@ Note: The default setting of the battery component is 100% energy conversion eff
 
 In general all bids and offers follow the physical constraint of the set `max_abs_battery_power_kW value. The accumulated energy per market slot cannot exceed this power value times the length of the market slot, in hours. Energy sold and bought cancel each other out, meaning that if 2kWh are both sold and bought in the same market slot, the relative power remains 0kW.
 
-For the buying rate increase and selling rate decrease behaviour, please see the [Trading Strategies page](default-trading-strategy.md).
+For the buying rate increase and selling rate decrease behaviour, please see the [Trading Strategies page](trading-agents-and-strategies).
 
 ###Buying energy in the [One-Sided Market](one-sided-pay-as-offer.md)
 
