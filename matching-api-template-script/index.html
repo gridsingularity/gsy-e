@@ -998,18 +998,6 @@
   </li>
 
         
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../degrees-of-freedom/" title="Degrees of Freedom" class="md-nav__link">
-      Degrees of Freedom
-    </a>
-  </li>
-
-        
       </ul>
     </nav>
   </li>
@@ -1749,7 +1737,7 @@
 <ol>
 <li><a href="https://github.com/gridsingularity/gsy-framework/blob/master/gsy_framework/matching_algorithms/pay_as_bid_matching_algorithm.py" target="_blank">Pay as Bid algorithm</a> - this clears markets continuously during the market slot following this <a href="../market-types/#two-sided-pay-as-bid-market">strategy</a>;</li>
 <li><a href="https://github.com/gridsingularity/gsy-framework/blob/master/gsy_framework/matching_algorithms/pay_as_clear_matching_algorithm.py" target="_blank">Pay as Clear algorithm</a> - this clears markets by ordering bids and offers and defining a single clearing price, following this <a href="../market-types/#two-sided-pay-as-clear-market">strategy</a>;</li>
-<li><a href="https://github.com/gridsingularity/gsy-matching-engine-sdk/blob/master/gsy_matching_engine_sdk/matching_algorithms/attributed_matching_algorithm.py" target="_blank">Attributed matching algorithm</a> - this follows the same logic as the <a href="https://github.com/gridsingularity/gsy-framework/blob/master/gsy_framework/matching_algorithms/pay_as_bid_matching_algorithm.py" target="_blank">Pay-as-Bid clearing</a> but takes into account <a href="../degrees-of-freedom/">degrees of freedom</a> such as attributes and requirements (listed as dictionaries for bids and offers):<ul>
+<li><a href="https://github.com/gridsingularity/gsy-matching-engine-sdk/blob/master/gsy_matching_engine_sdk/matching_algorithms/attributed_matching_algorithm.py" target="_blank">Attributed matching algorithm</a> - this follows the same logic as the <a href="https://github.com/gridsingularity/gsy-framework/blob/master/gsy_framework/matching_algorithms/pay_as_bid_matching_algorithm.py" target="_blank">Pay-as-Bid clearing</a> but takes into account <a href="../trading-agents-and-strategies/#bidoffer-attributes-and-requirements-for-trading-preferences-degrees-of-freedom">degrees of freedom</a> such as attributes and requirements (listed as dictionaries for bids and offers):<ul>
 <li><a href="https://github.com/gridsingularity/d3a-api-client/blob/master/README.md#attributes" target="_blank">Attributes</a> - “energy type”, currently implemented only for offers (e.g. “green” energy)</li>
 <li><a href="https://github.com/gridsingularity/d3a-api-client/blob/master/README.md#requirements" target="_blank">Requirements</a> - “trading partners” implemented for offers and “energy type”, “trading partners”, “energy”, and “price” implemented for bids.</li>
 </ul>

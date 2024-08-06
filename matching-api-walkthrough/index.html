@@ -998,18 +998,6 @@
   </li>
 
         
-          
-          
-          
-
-
-  <li class="md-nav__item">
-    <a href="../degrees-of-freedom/" title="Degrees of Freedom" class="md-nav__link">
-      Degrees of Freedom
-    </a>
-  </li>
-
-        
       </ul>
     </nav>
   </li>
@@ -1699,7 +1687,7 @@
 <p><strong>Matching</strong> - The Matching API pairs bids and offers together according to an external matching algorithm provided by a third-party matching algorithm provider and sends the proposed bid/offer pairs (technically called <em>recommendations</em>)  back to the exchange.</p>
 </li>
 <li>
-<p><strong>Verification function</strong> - Each recommendation is submitted to  the exchange’s verification function, a mechanism that checks whether the <a href="../market-types/#two-sided-pay-as-clear-market">clearing rate</a> and the energy to be traded proposed by the recommendation respect the bids and offers’ <a href="../degrees-of-freedom/">attributes and requirements</a>.</p>
+<p><strong>Verification function</strong> - Each recommendation is submitted to  the exchange’s verification function, a mechanism that checks whether the <a href="../market-types/#two-sided-pay-as-clear-market">clearing rate</a> and the energy to be traded proposed by the recommendation respect the bids and offers’ <a href="../trading-agents-and-strategies/#bidoffer-attributes-and-requirements-for-trading-preferences-degrees-of-freedom">attributes and requirements</a>.</p>
 </li>
 <li>
 <p><strong>Transactions and rejections</strong> - Recommended matches that pass the verification function’s check will be submitted as transactions in the Grid Singularity exchange. Recommendations rejected by the verification function will trigger a notification through the Matching API and not be sent to the exchange for clearing.</p>
