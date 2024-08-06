@@ -1,3 +1,0 @@
-In the One-Sided Pay-as-Offer market, agents representing energy producers, including prosumers (*sellers*) post offers in the market with an energy price determined by the assets' [trading strategy](default-trading-strategy.md).
-
-Agents representing consumers (*buyers*) can **see** the offers available in their local market, **filter** affordable offers and then **select** the most favorable offer. The energy rate on which the seller and buyer settle is the **price of the offer** (pay-as-offer). Consequently, the trade rate may differ for trades settled in the same slot. The auction is **continuous**, meaning that once an offer is posted, it can be accepted right away, even before the end of each [market slot](market-types.md#market-slots).

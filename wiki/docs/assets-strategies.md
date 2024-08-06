@@ -1,4 +1,4 @@
-Prosumer assets can post orders ([bids/offers](market-agent.md)) of their energy deviations to the settlement market in order to get compensated by another entity that deviated in the opposite direction. Energy deviations are calculated from the difference between the traded energy and measured energy for production or consumption.
+Prosumer assets can post orders ([bids/offers](trading-agents-and-strategies.md)) of their energy deviations to the settlement market in order to get compensated by another entity that deviated in the opposite direction. Energy deviations are calculated from the difference between the traded energy and measured energy for production or consumption.
 
 ##External asset strategies
 
@@ -15,7 +15,7 @@ Measurements should be set in the current market cycle for the unsettled deviati
 
 ###Posting of Orders
 
-Posting and updating bids and offers works the same as in the [spot markets](spot-market-types.md). If the provided _time_slot_ is a settlement market already, the order is placed or updated in the settlement market. The external client can only post maximally the amount of energy of the deviation to the settlement market.
+Posting and updating bids and offers works the same as in the [spot markets](market-types.md#spot-market). If the provided _time_slot_ is a settlement market already, the order is placed or updated in the settlement market. The external client can only post maximally the amount of energy of the deviation to the settlement market.
 
 ###Unsettled Deviation
 To find out the amount of deviated energy, a key named _unsettled_deviation_kWh_ is added on the _assets_info_ dictionary. Its value is itself a dictionary with past time slots as keys and the unsettled energy as values. An example is shown below:
@@ -30,7 +30,7 @@ To find out the amount of deviated energy, a key named _unsettled_deviation_kWh_
 }
 ```
 
-There will appear as many time slots as they fit in the amount of hours specified on [`ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS`](https://github.com/gridsingularity/gsy-framework/blob/175a9c3c3295b78e3b5d7610e221b6f2ea72f6ec/gsy_framework/constants_limits.py#L70){target=_blank}. The value in each time slot is the maximal amount of energy that can be posted (please also see [Settlement Market Rotation](markets-rotation.md)).
+There will appear as many time slots as they fit in the amount of hours specified on [`ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS`](https://github.com/gridsingularity/gsy-framework/blob/175a9c3c3295b78e3b5d7610e221b6f2ea72f6ec/gsy_framework/constants_limits.py#L70){target=_blank}. The value in each time slot is the maximal amount of energy that can be posted (please also see [Settlement Market Rotation](market-types.md#settlement-market-structure)).
 
 The sign of the unsettled energy can vary depending on wether more energy was traded than measured or vice versa.
 
@@ -82,4 +82,4 @@ The actual measured energy is calculated by a random deviation of the forecasted
 
 The template strategies will post orders (bids / offers) with energy values equal to the energy deviations for each market. For example, if a PV forecasted to produce 5kWh of energy for the 12:00 market, but the simulated measured energy reveals that it only produced 4kWh for that time slot, the template strategy will post a bid to the 12:00 settlement market with the energy 1kWh. The behavior for the price increase of this bid is the same as in the spot market: the energy rate of the bid is increased during the market until the final selling rate is reached.
 
-As the settlement market will stay available for longer than the normal spot market (configurable by [`Const.Settings.SettlementMarketSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS`](https://github.com/gridsingularity/gsy-framework/blob/175a9c3c3295b78e3b5d7610e221b6f2ea72f6ec/gsy_framework/constants_limits.py#L69){target=_blank}, please also see [here](markets-rotation.md)), the template strategy will not update the orders as frequent as in the normal spot market, but in the interval that can be set by the parameter [`SettlementTemplateStrategiesConstants.UPDATE_INTERVAL_MIN`](https://github.com/gridsingularity/gsy-e/blob/7f5d2866cfd8b8327e590a1377db2d9bd2909746/src/gsy_e/constants.py#L72).
+As the settlement market will stay available for longer than the normal spot market (configurable by [`Const.Settings.SettlementMarketSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS`](https://github.com/gridsingularity/gsy-framework/blob/175a9c3c3295b78e3b5d7610e221b6f2ea72f6ec/gsy_framework/constants_limits.py#L69){target=_blank}, please also see [here](market-types.md#settlement-market)), the template strategy will not update the orders as frequent as in the normal spot market, but in the interval that can be set by the parameter [`SettlementTemplateStrategiesConstants.UPDATE_INTERVAL_MIN`](https://github.com/gridsingularity/gsy-e/blob/7f5d2866cfd8b8327e590a1377db2d9bd2909746/src/gsy_e/constants.py#L72).
