@@ -3,7 +3,7 @@
 The Grid Singularity Exchange includes integrated, market-based trading strategies for all supported assets, enabling automated asset trading without any intervention from the asset owner.
 These  trading strategies are deterministic. Each consuming asset will first try to buy energy at a low price and, if not cleared, the price will increase linearly during the market slot until a user-set maximum is reached. In turn, assets generating energy will try to sell at a high price first and, if not cleared, reduce their rate linearly until a user-set minimum is reached.
 
-In addition to asset trading strategies, another important component for the definition of the grid topology is the Market Agent. Contrary to asset trading strategies, which are associated with energy assets, the Market Agents are associated with electricity grid components (e.g. voltage transformers) and/or separate segments of the electricity grid (e.g. medium voltage grid of a geographical area).  The Market Agent is responsible for maintaining the grid topology and determining the market hierarchy in the Grid Singularity Exchange, managing trading within and among different segments of the grid.To facilitate communication among different markets, each Market Agent maintains a reference to the markets that are above and below in the grid hierarchy,  enabling each market to progressively propagate their bids and offers across the entire grid.
+In addition to asset trading strategies, another important component for the definition of the grid topology is the Market Agent. Contrary to asset trading strategies, which are associated with energy assets, the Market Agents are associated with electricity grid components (e.g. voltage transformers) and/or separate segments of the electricity grid (e.g. medium voltage grid of a geographical area).  The Market Agent is responsible for maintaining the grid topology and determining the market hierarchy in the Grid Singularity Exchange, managing trading within and among different segments of the grid. To facilitate communication among different markets, each Market Agent maintains a reference to the markets that are above and below in the grid hierarchy, enabling each market to progressively propagate their bids and offers across the entire grid.
 Its main functionalities are the following:
 
 * Forwarding bids and offers from a lower hierarchy (market) to an upper hierarchy (market),
@@ -19,7 +19,7 @@ The following illustration shows a sample grid setup and the role of the Market 
 
 <figure markdown>
   ![alt_text](img/marketagent-1.png){:text-align:center"}
-  <figcaption><b>Figure 3.1</b>: Market Agents and bids / offers propagation in the Grid Singularity Exchange.
+  <figcaption><b>Figure 3.1</b>: Market Agents and bids / offers propagation in the Grid Singularity Exchange
 </figcaption>
 </figure>
 
@@ -36,7 +36,7 @@ An example of a bid and offer with attributes and requirements is shown in the f
 
 <figure markdown>
   ![alt_text](img/degrees-of-freedom.png){:text-align:center"}
-  <figcaption><b>Figure 3.2</b>: Example of a bid and offer with attributes and requirements.
+  <figcaption><b>Figure 3.2</b>: Example of a bid and offer with attributes and requirements
 </figcaption>
 </figure>
 
@@ -57,7 +57,7 @@ The following plot shows the changing energy rate in a spot market slot (slot_le
 
 <figure markdown>
   ![alt_text](img/default-trading-2.png){:text-align:center"}
-  <figcaption><b>Figure 3.3</b>: Four different trading settings of an example PV asset in a spot market slot (slot_length = 15 min).
+  <figcaption><b>Figure 3.3</b>: Four different trading settings of an example PV asset in a spot market slot (slot_length = 15 min)
 </figcaption>
 </figure>
 
@@ -77,7 +77,7 @@ The following plot shows the energy rate change in a spot market slot (slot_leng
 
 <figure markdown>
   ![alt_text](img/default-trading-1.png){:text-align:center"}
-  <figcaption><b>Figure 3.4</b>: Four different trading settings of an example PV asset in a spot market slot (slot_length = 15 min).
+  <figcaption><b>Figure 3.4</b>: Four different trading settings of an example PV asset in a spot market slot (slot_length = 15 min)
 </figcaption>
 </figure>
 
@@ -86,6 +86,3 @@ Assets can also deploy more intelligent trading strategies, as demonstrated in t
 
 * Grid Singularity. (September 10, 2020). [En Route to Energy Singularity Odyssey Momentum: Learnings from the 2020 Chaos Experiment](https://gridsingularity.medium.com/en-route-to-energy-singularity-odyssey-momentum-learnings-from-the-2020-chaos-experiment-8dc38ff26869){target=_blank}
 * Grid Singularity. (November 25, 2020). [Energy Singularity Challenge 2020: Social Energy Networks](https://gridsingularity.medium.com/energy-singularity-challenge-2020-social-energy-networks-157b390e5f39){target=_blank}
-
-
-Information on how to set up and train intelligent trading strategies through the Grid Singularity Asset API is available [here](configure-trading-strategies-walkthrough.md).

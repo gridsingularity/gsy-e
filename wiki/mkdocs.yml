@@ -54,7 +54,7 @@ nav:
     - 'Results Download': 'results-download.md'
     - 'Duplicating simulations': 'duplicating-simulations'
 - 'Market Mechanisms':
-    - 'Grid Singularity Exchange trading agents and strategies': 'trading-agents-and-strategies.md'
+    - 'Grid Singularity Exchange Trading Agents and Strategies': 'trading-agents-and-strategies.md'
     - 'Grid Singularity Exchange Market Types': 'market-types.md'
     - 'Grid Fee Accounting': 'grid-fee-accounting.md'
 - 'Collaborations and APIs':
