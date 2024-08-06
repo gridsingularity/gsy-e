@@ -94,6 +94,7 @@ Electrical power systems are characterised by voltage and frequency and the flow
 
 
 Each control strategy has specific purposes and features and can be categorised in three groups, as shown in the figure below.
+
 1. **Primary Control** (Frequency Containment Reserve - FCR)
 2. **Secondary Control** (Automatic Frequency Restoration Reserves - aFRR)
 3. **Tertiary Control** (Manual Frequency Restoration Reserves - mFRR)
@@ -262,7 +263,7 @@ Deviations between energy physically produced/consumed and energy purchased in t
 
 #### Settlement market settings
 
-If [`ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS`](https://github.com/gridsingularity/gsy-framework/blob/175a9c3c3295b78e3b5d7610e221b6f2ea72f6ec/gsy_framework/constants_limits.py#L70){target=_blank} is set to True, settlement markets are created for each market cycle. For each past spot market, there is always a respective settlement market. The settlement market order book is kept open for placing bids and offers for a number of hours after energy delivery, which the user sets with [`Const.Settings.SettlementMarketSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS`](https://github.com/gridsingularity/gsy-framework/blob/175a9c3c3295b78e3b5d7610e221b6f2ea72f6ec/gsy_framework/constants_limits.py#L69){target=_blank},contrary to the operation of the spot market, which keeps its order book open for 15 minutes (starting 15 minutes before the energy delivery).
+If [`ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS`](https://github.com/gridsingularity/gsy-framework/blob/175a9c3c3295b78e3b5d7610e221b6f2ea72f6ec/gsy_framework/constants_limits.py#L70){target=_blank} is set to True, settlement markets are created for each market cycle. For each past spot market, there is always a respective settlement market. The settlement market order book is kept open for placing bids and offers for a number of hours after energy delivery, which the user sets with [`Const.Settings.SettlementMarketSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS`](https://github.com/gridsingularity/gsy-framework/blob/175a9c3c3295b78e3b5d7610e221b6f2ea72f6ec/gsy_framework/constants_limits.py#L69){target=_blank}, contrary to the operation of the spot market, which keeps its order book open for 15 minutes (starting 15 minutes before the energy delivery).
 
 Spot and settlement markets are functionally connected.By accessing trades of the corresponding spot market for the energy delivery period, the settlement market reads the traded energy by each asset and compares it with energy measurements of each asset, calculating any energy deviation of the expected consumed or produced energy.
 
