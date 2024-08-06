@@ -45,11 +45,12 @@ An example of a bid and offer with attributes and requirements is shown in the f
 
 
 Generation assets can select one of five trading settings when posting market offers:
-* initial_selling_rate
-* final_selling_rate
-* update_interval
-* energy_rate_decrease_per_update
-* linear_pricing
+
+*  initial_selling_rate
+*  final_selling_rate
+*  update_interval
+*  energy_rate_decrease_per_update
+*  linear_pricing
 
 The following plot shows the changing energy rate in a spot market slot (slot_length = 15 min) for the first four trading settings of an example PV asset.
 
@@ -64,6 +65,7 @@ The following plot shows the changing energy rate in a spot market slot (slot_le
 If the fifth trading strategy is selected and linear_pricing set to `True`, `energy_rate_decrease_per_update` is ignored and a rate decrease per time is calculated, starting at initial_selling_rate and ending at final_selling_rate while updating the rate at each update_interval.
 
 Similarly, consuming assets (loads and/or storages) can select of the following five trading settings when posting bids:
+
 * initial_buying_rate
 * final_buying_rate
 * update_interval
