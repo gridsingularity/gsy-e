@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
 import json
 import logging
 import sys
@@ -60,6 +61,7 @@ INF_ENERGY = int(sys.maxsize)
 @dataclass
 class AcceptOfferParameters:
     """Parameters for the accept_offer MarketStrategyConnectionAdapter methods"""
+
     market: Union["OneSidedMarket", str]
     offer: Offer
     buyer: TraderDetails
@@ -68,22 +70,27 @@ class AcceptOfferParameters:
 
     def to_dict(self) -> dict:
         """Convert dataclass to dict in order to be able to send these arguments via Redis."""
-        return {"offer_or_id": self.offer.to_json_string(),
-                "buyer": self.buyer.serializable_dict(),
-                "energy": self.energy,
-                "trade_bid_info": self.trade_bid_info.serializable_dict()}
+        return {
+            "offer_or_id": self.offer.to_json_string(),
+            "buyer": self.buyer.serializable_dict(),
+            "energy": self.energy,
+            "trade_bid_info": self.trade_bid_info.serializable_dict(),
+        }
 
     def accept_offer_using_market_object(self) -> Trade:
         """Calls accept offer on the market object that is contained in the dataclass,
-         using the arguments from the other dataclass members"""
+        using the arguments from the other dataclass members"""
         return self.market.accept_offer(
-            offer_or_id=self.offer, buyer=self.buyer,
+            offer_or_id=self.offer,
+            buyer=self.buyer,
             energy=self.energy,
-            trade_bid_info=self.trade_bid_info)
+            trade_bid_info=self.trade_bid_info,
+        )
 
 
 class _TradeLookerUpper:
     """Find trades that concern the strategy from the selected market"""
+
     def __init__(self, owner_name: str):
         self.owner_name = owner_name
 
@@ -94,8 +101,9 @@ class _TradeLookerUpper:
                 yield trade
 
 
-def market_strategy_connection_adapter_factory() -> Union["MarketStrategyConnectionAdapter",
-                                                          "MarketStrategyConnectionRedisAdapter"]:
+def market_strategy_connection_adapter_factory() -> (
+    Union["MarketStrategyConnectionAdapter", "MarketStrategyConnectionRedisAdapter"]
+):
     """
     Return an object of either MarketStrategyConnectionRedisAdapter or
     MarketStrategyConnectionAdapter, depending on whether the flag EVENT_DISPATCHING_VIA_REDIS is
@@ -114,6 +122,7 @@ class MarketStrategyConnectionRedisAdapter:
     the class methods. Useful for markets that are run in a remote service, different from
     the strategy.
     """
+
     def __init__(self):
         self.redis = BlockingCommunicator()
         self._trade_buffer: Optional[Trade] = None
@@ -132,8 +141,7 @@ class MarketStrategyConnectionRedisAdapter:
 
         """
         market_id = market.id if not isinstance(market, str) else market
-        self._send_events_to_market("OFFER", market_id, offer_args,
-                                    self._redis_offer_response)
+        self._send_events_to_market("OFFER", market_id, offer_args, self._redis_offer_response)
         offer = self._offer_buffer
         assert offer is not None
         self._offer_buffer = None
@@ -141,12 +149,18 @@ class MarketStrategyConnectionRedisAdapter:
 
     def accept_offer(self, offer_parameters: AcceptOfferParameters) -> Trade:
         """Accept an offer on a market via Redis."""
-        market_id = (offer_parameters.market.id
-                     if not isinstance(offer_parameters.market, str)
-                     else offer_parameters.market)
+        market_id = (
+            offer_parameters.market.id
+            if not isinstance(offer_parameters.market, str)
+            else offer_parameters.market
+        )
 
-        self._send_events_to_market("ACCEPT_OFFER", market_id, offer_parameters.to_dict(),
-                                    self._redis_accept_offer_response)
+        self._send_events_to_market(
+            "ACCEPT_OFFER",
+            market_id,
+            offer_parameters.to_dict(),
+            self._redis_accept_offer_response,
+        )
         trade = self._trade_buffer
         self._trade_buffer = None
         assert trade is not None
@@ -160,17 +174,24 @@ class MarketStrategyConnectionRedisAdapter:
         else:
             raise D3ARedisException(
                 f"Error when receiving response on channel {payload['channel']}:: "
-                f"{data['exception']}:  {data['error_message']} {data}")
+                f"{data['exception']}:  {data['error_message']} {data}"
+            )
 
     def delete_offer(self, market: Union["OneSidedMarket", str], offer: Offer) -> None:
         """Delete offer from a market"""
         market_id = market.id if not isinstance(market, str) else market
         data = {"offer_or_id": offer.to_json_string()}
-        self._send_events_to_market("DELETE_OFFER", market_id, data,
-                                    self._redis_delete_offer_response)
+        self._send_events_to_market(
+            "DELETE_OFFER", market_id, data, self._redis_delete_offer_response
+        )
 
-    def _send_events_to_market(self, event_type_str: str, market_id: Union[str, MarketBase],
-                               data: dict, callback: Callable) -> None:
+    def _send_events_to_market(
+        self,
+        event_type_str: str,
+        market_id: Union[str, MarketBase],
+        data: dict,
+        callback: Callable,
+    ) -> None:
         if not isinstance(market_id, str):
             market_id = market_id.id
         response_channel = f"{market_id}/{event_type_str}/RESPONSE"
@@ -186,8 +207,11 @@ class MarketStrategyConnectionRedisAdapter:
         self.redis.poll_until_response_received(event_response_was_received_callback)
 
         if data["transaction_uuid"] not in self._event_response_uuids:
-            logging.error("Transaction ID not found after %s seconds: %s",
-                          REDIS_PUBLISH_RESPONSE_TIMEOUT, data)
+            logging.error(
+                "Transaction ID not found after %s seconds: %s",
+                REDIS_PUBLISH_RESPONSE_TIMEOUT,
+                data,
+            )
         else:
             self._event_response_uuids.remove(data["transaction_uuid"])
 
@@ -199,7 +223,8 @@ class MarketStrategyConnectionRedisAdapter:
         else:
             raise D3ARedisException(
                 f"Error when receiving response on channel {payload['channel']}:: "
-                f"{data['exception']}:  {data['error_message']}")
+                f"{data['exception']}:  {data['error_message']}"
+            )
 
     def _redis_offer_response(self, payload):
         data = json.loads(payload["data"])
@@ -209,7 +234,8 @@ class MarketStrategyConnectionRedisAdapter:
         else:
             raise D3ARedisException(
                 f"Error when receiving response on channel {payload['channel']}:: "
-                f"{data['exception']}:  {data['error_message']}")
+                f"{data['exception']}:  {data['error_message']}"
+            )
 
 
 class MarketStrategyConnectionAdapter:
@@ -217,6 +243,7 @@ class MarketStrategyConnectionAdapter:
     Adapter to the MarketBase class. Used by default when accessing the market object directly and
     not via Redis.
     """
+
     @staticmethod
     def accept_offer(offer_parameters: AcceptOfferParameters) -> Trade:
         """Accept an offer on a market."""
@@ -252,7 +279,7 @@ class Offers:
         self.split = {}  # type: Dict[str, Offer]
 
     def _delete_past_offers(
-            self, existing_offers: Dict[Offer, str], current_time_slot: DateTime
+        self, existing_offers: Dict[Offer, str], current_time_slot: DateTime
     ) -> Dict[Offer, str]:
         offers = {}
         for offer, market_id in existing_offers.items():
@@ -290,8 +317,9 @@ class Offers:
 
     def is_offer_posted(self, market_id: str, offer_id: str) -> bool:
         """Check if offer is posted on the market"""
-        return offer_id in [offer.id for offer, _market in self.posted.items()
-                            if market_id == _market]
+        return offer_id in [
+            offer.id for offer, _market in self.posted.items() if market_id == _market
+        ]
 
     def _get_sold_offer_ids_in_market(self, market_id: str) -> List[str]:
         sold_offer_ids = []
@@ -304,9 +332,11 @@ class Offers:
         open_offers = []
         sold_offer_ids = self._get_sold_offer_ids_in_market(market_id)
         for offer, _market_id in self.posted.items():
-            if (offer.id not in sold_offer_ids
-                    and market_id == _market_id
-                    and (time_slot is None or offer.time_slot == time_slot)):
+            if (
+                offer.id not in sold_offer_ids
+                and market_id == _market_id
+                and (time_slot is None or offer.time_slot == time_slot)
+            ):
                 open_offers.append(offer)
         return open_offers
 
@@ -316,27 +346,35 @@ class Offers:
 
     def posted_in_market(self, market_id: str, time_slot: DateTime = None) -> List[Offer]:
         """Get list of posted offers in market"""
-        return [offer
-                for offer, _market in self.posted.items()
-                if market_id == _market and (time_slot is None or offer.time_slot == time_slot)]
+        return [
+            offer
+            for offer, _market in self.posted.items()
+            if market_id == _market and (time_slot is None or offer.time_slot == time_slot)
+        ]
 
     def posted_offer_energy(self, market_id: str, time_slot: DateTime = None) -> float:
         """Get energy of all posted offers"""
-        return sum(o.energy
-                   for o in self.posted_in_market(market_id, time_slot)
-                   if time_slot is None or o.time_slot == time_slot)
+        return sum(
+            o.energy
+            for o in self.posted_in_market(market_id, time_slot)
+            if time_slot is None or o.time_slot == time_slot
+        )
 
     def sold_offer_energy(self, market_id: str, time_slot: DateTime = None) -> float:
         """Get energy of all sold offers"""
-        return sum(o.energy
-                   for o in self.sold_in_market(market_id)
-                   if time_slot is None or o.time_slot == time_slot)
+        return sum(
+            o.energy
+            for o in self.sold_in_market(market_id)
+            if time_slot is None or o.time_slot == time_slot
+        )
 
     def sold_offer_price(self, market_id: str, time_slot: DateTime = None) -> float:
         """Get sum of all sold offers' price"""
-        return sum(o.price
-                   for o in self.sold_in_market(market_id)
-                   if time_slot is None or o.time_slot == time_slot)
+        return sum(
+            o.price
+            for o in self.sold_in_market(market_id)
+            if time_slot is None or o.time_slot == time_slot
+        )
 
     def sold_in_market(self, market_id: str) -> List[Offer]:
         """Get list of sold offers in a market"""
@@ -344,9 +382,14 @@ class Offers:
 
     # pylint: disable=too-many-arguments
     def can_offer_be_posted(
-            self, offer_energy: float, offer_price: float, available_energy: float,
-            market: "MarketBase", replace_existing: bool = False,
-            time_slot: Optional[DateTime] = None) -> bool:
+        self,
+        offer_energy: float,
+        offer_price: float,
+        available_energy: float,
+        market: "MarketBase",
+        replace_existing: bool = False,
+        time_slot: Optional[DateTime] = None,
+    ) -> bool:
         """
         Check whether an offer with the specified parameters can be posted on the market
         Args:
@@ -370,8 +413,9 @@ class Offers:
 
         total_posted_energy = offer_energy + posted_offer_energy
 
-        return ((total_posted_energy - available_energy) < FLOATING_POINT_TOLERANCE
-                and offer_price >= 0.0)
+        return (
+            total_posted_energy - available_energy
+        ) < FLOATING_POINT_TOLERANCE and offer_price >= 0.0
 
     def post(self, offer: Offer, market_id: str) -> None:
         """Add offer to the posted dict"""
@@ -379,8 +423,9 @@ class Offers:
         if offer.id not in self.split:
             self.posted[offer] = market_id
 
-    def remove_offer_from_cache_and_market(self, market: "OneSidedMarket",
-                                           offer_id: str = None) -> List[str]:
+    def remove_offer_from_cache_and_market(
+        self, market: "OneSidedMarket", offer_id: str = None
+    ) -> List[str]:
         """Delete offer from the market and remove it from the dicts"""
         if offer_id is None:
             to_delete_offers = self.open_in_market(market.id)
@@ -424,8 +469,9 @@ class Offers:
         except AttributeError as ex:
             raise SimulationException("Trade event before strategy was initialized.") from ex
 
-    def on_offer_split(self, original_offer: Offer, accepted_offer: Offer, residual_offer: Offer,
-                       market_id: str) -> None:
+    def on_offer_split(
+        self, original_offer: Offer, accepted_offer: Offer, residual_offer: Offer, market_id: str
+    ) -> None:
         """React to the event of an offer split"""
         if original_offer.seller.name == self.strategy.owner.name:
             self.split[original_offer.id] = accepted_offer
@@ -440,6 +486,7 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
     markets, thus removing the need to access the market to view the offers that the strategy
     has posted. Define a common interface which all strategies should implement.
     """
+
     # pylint: disable=too-many-public-methods
     def __init__(self):
         super().__init__()
@@ -451,8 +498,7 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
         self._settlement_market_strategy = self._create_settlement_market_strategy()
         self._future_market_strategy = self._create_future_market_strategy()
 
-    @staticmethod
-    def serialize():
+    def serialize(self):
         """Serialize strategy status."""
         return {}
 
@@ -469,8 +515,7 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
     def _create_settlement_market_strategy(cls):
         return SettlementMarketStrategyInterface()
 
-    @classmethod
-    def _create_future_market_strategy(cls):
+    def _create_future_market_strategy(self):
         return FutureMarketStrategyInterface()
 
     def energy_traded(self, market_id: str, time_slot: DateTime = None) -> float:
@@ -489,8 +534,10 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
     @property
     def _is_eligible_for_balancing_market(self) -> bool:
         """Check if strategy can participate in the balancing market"""
-        return (self.owner.name in DeviceRegistry.REGISTRY and
-                ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET)
+        return (
+            self.owner.name in DeviceRegistry.REGISTRY
+            and ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET
+        )
 
     def _remove_existing_offers(self, market: "OneSidedMarket", time_slot: DateTime) -> None:
         """Remove all existing offers in the market with respect to time_slot."""
@@ -510,10 +557,12 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
             # Remove all existing offers that are still open in the market
             self._remove_existing_offers(market, offer_kwargs.get("time_slot") or market.time_slot)
 
-        if (not offer_kwargs.get("seller") or
-                not isinstance(offer_kwargs.get("seller"), TraderDetails)):
+        if not offer_kwargs.get("seller") or not isinstance(
+            offer_kwargs.get("seller"), TraderDetails
+        ):
             offer_kwargs["seller"] = TraderDetails(
-                self.owner.name, self.owner.uuid, self.owner.name, self.owner.uuid)
+                self.owner.name, self.owner.uuid, self.owner.name, self.owner.uuid
+            )
         if not offer_kwargs.get("time_slot"):
             offer_kwargs["time_slot"] = market.time_slot
 
@@ -522,13 +571,16 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
 
         return offer
 
-    def post_first_offer(self, market: "OneSidedMarket", energy_kWh: float,
-                         initial_energy_rate: float) -> Optional[Offer]:
+    def post_first_offer(
+        self, market: "OneSidedMarket", energy_kWh: float, initial_energy_rate: float
+    ) -> Optional[Offer]:
         """Post first and only offer for the strategy. Will fail if another offer already
-         exists."""
+        exists."""
         if any(offer.seller.uuid == self.owner.uuid for offer in market.get_offers().values()):
-            self.owner.log.debug("There is already another offer posted on the market, therefore"
-                                 " do not repost another first offer.")
+            self.owner.log.debug(
+                "There is already another offer posted on the market, therefore"
+                " do not repost another first offer."
+            )
             return None
         return self.post_offer(
             market,
@@ -537,8 +589,9 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
             energy=energy_kWh,
         )
 
-    def get_posted_offers(self, market: "OneSidedMarket",
-                          time_slot: Optional[DateTime] = None) -> List[Offer]:
+    def get_posted_offers(
+        self, market: "OneSidedMarket", time_slot: Optional[DateTime] = None
+    ) -> List[Offer]:
         """Get list of posted offers from a market"""
         return self.offers.posted_in_market(market.id, time_slot)
 
@@ -560,8 +613,15 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
         """Checks if any offers have been posted in the market slot with the given ID."""
         return len(self.offers.posted_in_market(market_id)) > 0
 
-    def accept_offer(self, market: "OneSidedMarket", offer: Offer, *, buyer: TraderDetails = None,
-                     energy: float = None, trade_bid_info: "TradeBidOfferInfo" = None):
+    def accept_offer(
+        self,
+        market: "OneSidedMarket",
+        offer: Offer,
+        *,
+        buyer: TraderDetails = None,
+        energy: float = None,
+        trade_bid_info: "TradeBidOfferInfo" = None,
+    ):
         """
         Accept an offer on a market.
         Args:
@@ -580,8 +640,7 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
         if not isinstance(offer, Offer):
             offer = market.offers[offer]
         trade = self._market_adapter.accept_offer(
-            AcceptOfferParameters(
-                market, offer, buyer, energy, trade_bid_info)
+            AcceptOfferParameters(market, offer, buyer, energy, trade_bid_info)
         )
 
         self.offers.bought_offer(trade.match_details["offer"], market.id)
@@ -610,8 +669,14 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
         """
         self.offers.on_trade(market_id, trade)
 
-    def event_offer_split(self, *, market_id: str, original_offer: Offer, accepted_offer: Offer,
-                          residual_offer: Offer) -> None:
+    def event_offer_split(
+        self,
+        *,
+        market_id: str,
+        original_offer: Offer,
+        accepted_offer: Offer,
+        residual_offer: Offer,
+    ) -> None:
         """React to the event of an offer split"""
         self.offers.on_offer_split(original_offer, accepted_offer, residual_offer, market_id)
 
@@ -624,23 +689,38 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
 
     def _assert_if_trade_offer_price_is_too_low(self, market_id: str, trade: Trade) -> None:
         if trade.is_offer_trade and trade.seller.name == self.owner.name:
-            offer = [o for o in self.offers.sold[market_id]
-                     if o.id == trade.match_details["offer"].id][0]
-            assert (trade.trade_rate >=
-                    offer.energy_rate - FLOATING_POINT_TOLERANCE)
+            offer = [
+                o for o in self.offers.sold[market_id] if o.id == trade.match_details["offer"].id
+            ][0]
+            assert trade.trade_rate >= offer.energy_rate - FLOATING_POINT_TOLERANCE
 
     # pylint: disable=too-many-arguments
-    def can_offer_be_posted(self, offer_energy: float, offer_price: float, available_energy: float,
-                            market: "OneSidedMarket", time_slot: Optional[DateTime],
-                            replace_existing: bool = False) -> bool:
+    def can_offer_be_posted(
+        self,
+        offer_energy: float,
+        offer_price: float,
+        available_energy: float,
+        market: "OneSidedMarket",
+        time_slot: Optional[DateTime],
+        replace_existing: bool = False,
+    ) -> bool:
         """Check if an offer with the selected attributes can be posted"""
         return self.offers.can_offer_be_posted(
-            offer_energy, offer_price, available_energy, market, time_slot=time_slot,
-            replace_existing=replace_existing)
+            offer_energy,
+            offer_price,
+            available_energy,
+            market,
+            time_slot=time_slot,
+            replace_existing=replace_existing,
+        )
 
     def can_settlement_offer_be_posted(
-            self, offer_energy: float, offer_price: float,
-            market: "OneSidedMarket", replace_existing: bool = False) -> bool:
+        self,
+        offer_energy: float,
+        offer_price: float,
+        market: "OneSidedMarket",
+        replace_existing: bool = False,
+    ) -> bool:
         """
         Checks whether an offer can be posted to the settlement market
         :param offer_energy: Energy of the offer that we want to post
@@ -654,8 +734,13 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
             return False
         unsettled_energy_kWh = self.state.get_unsettled_deviation_kWh(market.time_slot)
         return self.offers.can_offer_be_posted(
-            offer_energy, offer_price, unsettled_energy_kWh, market, time_slot=market.time_slot,
-            replace_existing=replace_existing)
+            offer_energy,
+            offer_price,
+            unsettled_energy_kWh,
+            market,
+            time_slot=market.time_slot,
+            replace_existing=replace_existing,
+        )
 
     @property
     def spot_market(self) -> "MarketBase":
@@ -669,8 +754,9 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
             return None
         return self.spot_market.time_slot
 
-    def update_offer_rates(self, market: "OneSidedMarket", updated_rate: float,
-                           time_slot: Optional[DateTime] = None) -> None:
+    def update_offer_rates(
+        self, market: "OneSidedMarket", updated_rate: float, time_slot: Optional[DateTime] = None
+    ) -> None:
         """Update the total price of all offers in the specified market based on their new rate."""
         if market.id not in self.offers.open.values():
             return
@@ -685,12 +771,14 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
                 new_offer = market.offer(
                     updated_price,
                     offer.energy,
-                    TraderDetails(self.owner.name,
-                                  self.owner.uuid,
-                                  offer.seller.origin,
-                                  offer.seller.origin_uuid),
+                    TraderDetails(
+                        self.owner.name,
+                        self.owner.uuid,
+                        offer.seller.origin,
+                        offer.seller.origin_uuid,
+                    ),
                     original_price=updated_price,
-                    time_slot=offer.time_slot or market.time_slot or time_slot
+                    time_slot=offer.time_slot or market.time_slot or time_slot,
                 )
                 self.offers.replace(offer, new_offer, market.id)
             except MarketException:
@@ -705,6 +793,7 @@ class BidEnabledStrategy(BaseStrategy):
     Base strategy for all areas / assets that are eligible to post bids and interact with a
     two sided market
     """
+
     def __init__(self):
         super().__init__()
         self._bids = {}
@@ -733,8 +822,13 @@ class BidEnabledStrategy(BaseStrategy):
 
     # pylint: disable=too-many-arguments
     def post_bid(
-            self, market: MarketBase, price: float, energy: float, replace_existing: bool = True,
-            time_slot: Optional[DateTime] = None) -> Bid:
+        self,
+        market: MarketBase,
+        price: float,
+        energy: float,
+        replace_existing: bool = True,
+        time_slot: Optional[DateTime] = None,
+    ) -> Bid:
         """
         Post bid to a specified market.
         Args:
@@ -755,17 +849,16 @@ class BidEnabledStrategy(BaseStrategy):
         bid = market.bid(
             price,
             energy,
-            TraderDetails(
-                self.owner.name, self.owner.uuid,
-                self.owner.name, self.owner.uuid),
+            TraderDetails(self.owner.name, self.owner.uuid, self.owner.name, self.owner.uuid),
             original_price=price,
-            time_slot=time_slot or market.time_slot
+            time_slot=time_slot or market.time_slot,
         )
         self.add_bid_to_posted(market.id, bid)
         return bid
 
-    def update_bid_rates(self, market: "TwoSidedMarket", updated_rate: float,
-                         time_slot: Optional[DateTime] = None) -> None:
+    def update_bid_rates(
+        self, market: "TwoSidedMarket", updated_rate: float, time_slot: Optional[DateTime] = None
+    ) -> None:
         """Replace the rate of all bids in the market slot with the given updated rate."""
         for bid in self.get_posted_bids(market, time_slot):
             if abs(bid.energy_rate - updated_rate) <= FLOATING_POINT_TOLERANCE:
@@ -773,14 +866,24 @@ class BidEnabledStrategy(BaseStrategy):
             assert bid.buyer.name == self.owner.name
 
             self.remove_bid_from_pending(market.id, bid.id)
-            self.post_bid(market, bid.energy * updated_rate,
-                          bid.energy, replace_existing=False,
-                          time_slot=bid.time_slot)
+            self.post_bid(
+                market,
+                bid.energy * updated_rate,
+                bid.energy,
+                replace_existing=False,
+                time_slot=bid.time_slot,
+            )
 
     # pylint: disable=too-many-arguments
-    def can_bid_be_posted(self, bid_energy: float, bid_price: float, required_energy_kWh: float,
-                          market: "TwoSidedMarket", replace_existing: bool = False,
-                          time_slot: Optional[DateTime] = None) -> bool:
+    def can_bid_be_posted(
+        self,
+        bid_energy: float,
+        bid_price: float,
+        required_energy_kWh: float,
+        market: "TwoSidedMarket",
+        replace_existing: bool = False,
+        time_slot: Optional[DateTime] = None,
+    ) -> bool:
         """Check if a bid can be posted to the market"""
 
         if replace_existing:
@@ -788,13 +891,17 @@ class BidEnabledStrategy(BaseStrategy):
         else:
             posted_bid_energy = self.posted_bid_energy(market.id, time_slot)
 
-        total_posted_energy = (bid_energy + posted_bid_energy)
+        total_posted_energy = bid_energy + posted_bid_energy
 
         return total_posted_energy <= required_energy_kWh and bid_price >= 0.0
 
-    def can_settlement_bid_be_posted(self, bid_energy: float, bid_price: float,
-                                     market: "TwoSidedMarket",
-                                     replace_existing: bool = False) -> bool:
+    def can_settlement_bid_be_posted(
+        self,
+        bid_energy: float,
+        bid_price: float,
+        market: "TwoSidedMarket",
+        replace_existing: bool = False,
+    ) -> bool:
         """
         Checks whether a bid can be posted to the settlement market
         :param bid_energy: Energy of the bid that we want to post
@@ -808,8 +915,13 @@ class BidEnabledStrategy(BaseStrategy):
             return False
         unsettled_energy_kWh = self.state.get_unsettled_deviation_kWh(market.time_slot)
         return self.can_bid_be_posted(
-            bid_energy, bid_price, unsettled_energy_kWh, market, time_slot=market.time_slot,
-            replace_existing=replace_existing)
+            bid_energy,
+            bid_price,
+            unsettled_energy_kWh,
+            market,
+            time_slot=market.time_slot,
+            replace_existing=replace_existing,
+        )
 
     def is_bid_posted(self, market: "TwoSidedMarket", bid_id: str) -> bool:
         """Check if bid is posted to the market"""
@@ -828,19 +940,25 @@ class BidEnabledStrategy(BaseStrategy):
         """
         if market_id not in self._bids:
             return 0.0
-        return sum(b.energy
-                   for b in self._bids[market_id]
-                   if time_slot is None or b.time_slot == time_slot)
+        return sum(
+            b.energy
+            for b in self._bids[market_id]
+            if time_slot is None or b.time_slot == time_slot
+        )
 
     def _traded_bid_energy(self, market_id: str, time_slot: Optional[DateTime] = None) -> float:
-        return sum(b.energy
-                   for b in self._get_traded_bids_from_market(market_id)
-                   if time_slot is None or b.time_slot == time_slot)
+        return sum(
+            b.energy
+            for b in self._get_traded_bids_from_market(market_id)
+            if time_slot is None or b.time_slot == time_slot
+        )
 
     def _traded_bid_costs(self, market_id: str, time_slot: Optional[DateTime] = None) -> float:
-        return sum(b.price
-                   for b in self._get_traded_bids_from_market(market_id)
-                   if time_slot is None or b.time_slot == time_slot)
+        return sum(
+            b.price
+            for b in self._get_traded_bids_from_market(market_id)
+            if time_slot is None or b.time_slot == time_slot
+        )
 
     def remove_bid_from_pending(self, market_id: str, bid_id: str = None) -> List[str]:
         """Remove bid from pending bids dict"""
@@ -855,13 +973,14 @@ class BidEnabledStrategy(BaseStrategy):
         for b_id in deleted_bid_ids:
             if b_id in market.bids.keys():
                 market.delete_bid(b_id)
-        self._bids[market.id] = [bid for bid in self.get_posted_bids(market)
-                                 if bid.id not in deleted_bid_ids]
+        self._bids[market.id] = [
+            bid for bid in self.get_posted_bids(market) if bid.id not in deleted_bid_ids
+        ]
         return deleted_bid_ids
 
     def add_bid_to_posted(self, market_id: str, bid: Bid) -> None:
         """Add bid to posted bids dict"""
-        if market_id not in self._bids.keys():
+        if market_id not in self._bids:
             self._bids[market_id] = []
         self._bids[market_id].append(bid)
 
@@ -885,11 +1004,20 @@ class BidEnabledStrategy(BaseStrategy):
         # time_slot is empty when called for spot markets, where we can retrieve the bids for a
         # time_slot only by the market_id. For the future markets, the time_slot needs to be
         # defined for the correct bid selection.
-        return len([bid for bid in self._bids[market_id]
-                    if time_slot is None or bid.time_slot == time_slot]) > 0
+        return (
+            len(
+                [
+                    bid
+                    for bid in self._bids[market_id]
+                    if time_slot is None or bid.time_slot == time_slot
+                ]
+            )
+            > 0
+        )
 
-    def post_first_bid(self, market: "MarketBase", energy_Wh: float,
-                       initial_energy_rate: float) -> Optional[Bid]:
+    def post_first_bid(
+        self, market: "MarketBase", energy_Wh: float, initial_energy_rate: float
+    ) -> Optional[Bid]:
         """Post first and only bid for the strategy. Will fail if another bid already exists."""
         # It will be safe to remove this check once we remove the event_market_cycle being
         # called twice, but still it is nice to have it here as a precaution. In general, there
@@ -897,8 +1025,10 @@ class BidEnabledStrategy(BaseStrategy):
         # it needs to be updated. If this check is not there, the market cycle event will post
         # one bid twice, which actually happens on the very first market slot cycle.
         if any(bid.buyer.name == self.owner.name for bid in market.get_bids().values()):
-            self.owner.log.debug("There is already another bid posted on the market, therefore"
-                                 " do not repost another first bid.")
+            self.owner.log.debug(
+                "There is already another bid posted on the market, therefore"
+                " do not repost another first bid."
+            )
             return None
         return self.post_bid(
             market,
@@ -907,18 +1037,22 @@ class BidEnabledStrategy(BaseStrategy):
         )
 
     def get_posted_bids(
-            self, market: "MarketBase", time_slot: Optional[DateTime] = None) -> List[Bid]:
+        self, market: "MarketBase", time_slot: Optional[DateTime] = None
+    ) -> List[Bid]:
         """Get list of posted bids from a market"""
         if market.id not in self._bids:
             return []
         return [b for b in self._bids[market.id] if time_slot is None or b.time_slot == time_slot]
 
     def _assert_bid_can_be_posted_on_market(self, market_id):
-        assert (ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value or
-                self.area.is_market_future(market_id) or
-                self.area.is_market_settlement(market_id)), (
+        assert (
+            ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value
+            or self.area.is_market_future(market_id)
+            or self.area.is_market_settlement(market_id)
+        ), (
             "Invalid state, cannot receive a bid if single sided market is globally configured or "
-            "if it is not a future or settlement market bid.")
+            "if it is not a future or settlement market bid."
+        )
 
     def event_bid_deleted(self, *, market_id: str, bid: Bid) -> None:
         self._assert_bid_can_be_posted_on_market(market_id)
@@ -928,8 +1062,9 @@ class BidEnabledStrategy(BaseStrategy):
         self.remove_bid_from_pending(market_id, bid.id)
 
     # pylint: disable=unused-argument
-    def event_bid_split(self, *, market_id: str, original_bid: Bid, accepted_bid: Bid,
-                        residual_bid: Bid) -> None:
+    def event_bid_split(
+        self, *, market_id: str, original_bid: Bid, accepted_bid: Bid, residual_bid: Bid
+    ) -> None:
         self._assert_bid_can_be_posted_on_market(market_id)
 
         if accepted_bid.buyer.name != self.owner.name:
@@ -958,8 +1093,7 @@ class BidEnabledStrategy(BaseStrategy):
         updated_bids_dict = {}
         for market_id, bids in existing_bids.items():
             if market_id == self.area.future_markets.id:
-                updated_bids_dict.update(
-                    {market_id: self._get_future_bids_from_list(bids)})
+                updated_bids_dict.update({market_id: self._get_future_bids_from_list(bids)})
         return updated_bids_dict
 
     def event_market_cycle(self) -> None:
@@ -976,8 +1110,11 @@ class BidEnabledStrategy(BaseStrategy):
         the bid.
         """
         if trade.is_bid_trade and trade.buyer.name == self.owner.name:
-            bid = [bid for bid in self.get_posted_bids(market)
-                   if bid.id == trade.match_details["bid"].id]
+            bid = [
+                bid
+                for bid in self.get_posted_bids(market)
+                if bid.id == trade.match_details["bid"].id
+            ]
             if not bid:
                 return
             assert trade.trade_rate <= bid[0].energy_rate + FLOATING_POINT_TOLERANCE

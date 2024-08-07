@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
 import json
 import logging
 from typing import TYPE_CHECKING, Callable, Dict, List, Union
@@ -25,10 +26,16 @@ from pendulum import duration
 
 from gsy_e.gsy_e_core.exceptions import GSyException
 from gsy_e.models.strategy.energy_parameters.load import (
-    LoadProfileForecastEnergyParams, LoadHoursForecastEnergyParams)
-from gsy_e.models.strategy.external_strategies import (CommandTypeNotSupported, ExternalMixin,
-                                                       ExternalStrategyConnectionManager,
-                                                       IncomingRequest, OrderCanNotBePosted)
+    LoadProfileForecastEnergyParams,
+    LoadHoursForecastEnergyParams,
+)
+from gsy_e.models.strategy.external_strategies import (
+    CommandTypeNotSupported,
+    ExternalMixin,
+    ExternalStrategyConnectionManager,
+    IncomingRequest,
+    OrderCanNotBePosted,
+)
 from gsy_e.models.strategy.external_strategies.forecast_mixin import ForecastExternalMixin
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy
@@ -58,11 +65,12 @@ class LoadExternalMixin(ExternalMixin):
     @property
     def channel_dict(self) -> Dict:
         """Bid-related Redis API channels."""
-        return {**super().channel_dict,
-                self.channel_names.bid: self.bid,
-                self.channel_names.delete_bid: self.delete_bid,
-                self.channel_names.list_bids: self.list_bids,
-                }
+        return {
+            **super().channel_dict,
+            self.channel_names.bid: self.bid,
+            self.channel_names.delete_bid: self.delete_bid,
+            self.channel_names.list_bids: self.list_bids,
+        }
 
     def filtered_market_bids(self, market: "TwoSidedMarket") -> List[Dict]:
         """
@@ -77,7 +85,8 @@ class LoadExternalMixin(ExternalMixin):
         return [
             {"id": bid.id, "price": bid.price, "energy": bid.energy}
             for _, bid in market.get_bids().items()
-            if bid.buyer.name == self.device.name]
+            if bid.buyer.name == self.device.name
+        ]
 
     def event_activate(self, **kwargs):
         """Activate the device."""
@@ -89,26 +98,31 @@ class LoadExternalMixin(ExternalMixin):
         self._get_transaction_id(payload)
         response_channel = self.channel_names.list_bids_response
         if not ExternalStrategyConnectionManager.check_for_connected_and_reply(
-                self.redis, response_channel, self.connected):
+            self.redis, response_channel, self.connected
+        ):
             return
         arguments = json.loads(payload["data"])
-        self.pending_requests.append(
-            IncomingRequest("list_bids", arguments, response_channel))
+        self.pending_requests.append(IncomingRequest("list_bids", arguments, response_channel))
 
     def _list_bids_impl(self, arguments: Dict, response_channel: str) -> None:
         """Implementation for the list_bids callback, publish this device bids."""
         try:
             market = self._get_market_from_command_argument(arguments)
             response = {
-                    "command": "list_bids", "status": "ready",
-                    "bid_list": self.filtered_market_bids(market),
-                    "transaction_id": arguments.get("transaction_id")}
+                "command": "list_bids",
+                "status": "ready",
+                "bid_list": self.filtered_market_bids(market),
+                "transaction_id": arguments.get("transaction_id"),
+            }
         except GSyException:
             error_message = f"Error when handling list bids on area {self.device.name}"
             logger.exception(error_message)
-            response = {"command": "list_bids", "status": "error",
-                        "error_message": error_message,
-                        "transaction_id": arguments.get("transaction_id")}
+            response = {
+                "command": "list_bids",
+                "status": "error",
+                "error_message": error_message,
+                "transaction_id": arguments.get("transaction_id"),
+            }
         self.redis.publish_json(response_channel, response)
 
     def delete_bid(self, payload: Dict) -> None:
@@ -116,7 +130,8 @@ class LoadExternalMixin(ExternalMixin):
         transaction_id = self._get_transaction_id(payload)
         response_channel = self.channel_names.delete_bid_response
         if not ExternalStrategyConnectionManager.check_for_connected_and_reply(
-                self.redis, response_channel, self.connected):
+            self.redis, response_channel, self.connected
+        ):
             return
         try:
             arguments = json.loads(payload["data"])
@@ -126,13 +141,17 @@ class LoadExternalMixin(ExternalMixin):
         except (GSyException, json.JSONDecodeError) as exception:
             self.redis.publish_json(
                 response_channel,
-                {"command": "bid_delete",
-                 "error": f"Incorrect delete bid request. Available parameters: (bid)."
-                          f"Exception: {str(exception)}",
-                 "transaction_id": transaction_id})
+                {
+                    "command": "bid_delete",
+                    "error": f"Incorrect delete bid request. Available parameters: (bid)."
+                    f"Exception: {str(exception)}",
+                    "transaction_id": transaction_id,
+                },
+            )
         else:
             self.pending_requests.append(
-                IncomingRequest("delete_bid", arguments, response_channel))
+                IncomingRequest("delete_bid", arguments, response_channel)
+            )
 
     def _delete_bid_impl(self, arguments: Dict, response_channel: str) -> None:
         """Implementation for the delete_bid callback, delete the received bid from market."""
@@ -140,47 +159,60 @@ class LoadExternalMixin(ExternalMixin):
             market = self._get_market_from_command_argument(arguments)
             to_delete_bid_id = arguments.get("bid")
             deleted_bids = self.remove_bid_from_pending(market.id, bid_id=to_delete_bid_id)
-            response = {"command": "bid_delete", "status": "ready", "deleted_bids": deleted_bids,
-                        "transaction_id": arguments.get("transaction_id")}
+            response = {
+                "command": "bid_delete",
+                "status": "ready",
+                "deleted_bids": deleted_bids,
+                "transaction_id": arguments.get("transaction_id"),
+            }
         except GSyException:
-            error_message = (f"Error when handling bid delete on area {self.device.name}: "
-                             f"Bid Arguments: {arguments}, "
-                             "Bid does not exist on the current market.")
+            error_message = (
+                f"Error when handling bid delete on area {self.device.name}: "
+                f"Bid Arguments: {arguments}, "
+                "Bid does not exist on the current market."
+            )
             logger.exception(error_message)
-            response = {"command": "bid_delete", "status": "error",
-                        "error_message": error_message,
-                        "transaction_id": arguments.get("transaction_id")}
+            response = {
+                "command": "bid_delete",
+                "status": "error",
+                "error_message": error_message,
+                "transaction_id": arguments.get("transaction_id"),
+            }
         self.redis.publish_json(response_channel, response)
 
     def bid(self, payload: Dict) -> None:
         """Callback for bid Redis endpoint."""
         transaction_id = self._get_transaction_id(payload)
         required_args = {"price", "energy", "transaction_id"}
-        allowed_args = required_args.union({"replace_existing",
-                                            "time_slot",
-                                            "attributes",
-                                            "requirements"})
+        allowed_args = required_args.union(
+            {"replace_existing", "time_slot", "attributes", "requirements"}
+        )
 
         response_channel = self.channel_names.bid_response
         if not ExternalStrategyConnectionManager.check_for_connected_and_reply(
-                self.redis, response_channel, self.connected):
+            self.redis, response_channel, self.connected
+        ):
             return
         arguments = json.loads(payload["data"])
         if (  # Check that all required arguments have been provided
-              all(arg in arguments.keys() for arg in required_args)
-              # Check that every provided argument is allowed
-              and all(arg in allowed_args for arg in arguments.keys())):
-            self.pending_requests.append(
-                IncomingRequest("bid", arguments, response_channel))
+            all(arg in arguments.keys() for arg in required_args)
+            # Check that every provided argument is allowed
+            and all(arg in allowed_args for arg in arguments.keys())
+        ):
+            self.pending_requests.append(IncomingRequest("bid", arguments, response_channel))
         else:
             self.redis.publish_json(
                 response_channel,
-                {"command": "bid",
-                 "error": (
-                     "Incorrect bid request. ",
-                     f"Required parameters: {required_args}"
-                     f"Available parameters: {allowed_args}."),
-                 "transaction_id": transaction_id})
+                {
+                    "command": "bid",
+                    "error": (
+                        "Incorrect bid request. ",
+                        f"Required parameters: {required_args}"
+                        f"Available parameters: {allowed_args}.",
+                    ),
+                    "transaction_id": transaction_id,
+                },
+            )
 
     def _bid_impl(self, arguments: Dict, bid_response_channel: str) -> None:
         """Implementation for the bid callback, post the bid in the market."""
@@ -190,7 +222,8 @@ class LoadExternalMixin(ExternalMixin):
             if filtered_fields:
                 response_message = (
                     "The following arguments are not supported for this market and have been "
-                    f"removed from your order: {filtered_fields}.")
+                    f"removed from your order: {filtered_fields}."
+                )
 
             market = self._get_market_from_command_argument(arguments)
             replace_existing = arguments.get("replace_existing", True)
@@ -199,27 +232,33 @@ class LoadExternalMixin(ExternalMixin):
                 arguments["price"],
                 self.get_energy_requirement_kWh_from_market(market),
                 market,
-                replace_existing=replace_existing)
+                replace_existing=replace_existing,
+            )
 
             bid = self.post_bid(
-                market,
-                arguments["price"],
-                arguments["energy"],
-                replace_existing=replace_existing)
+                market, arguments["price"], arguments["energy"], replace_existing=replace_existing
+            )
             response = {
-                    "command": "bid", "status": "ready",
-                    "bid": bid.to_json_string(),
-                    "market_type": market.type_name,
-                    "transaction_id": arguments.get("transaction_id"),
-                    "message": response_message}
+                "command": "bid",
+                "status": "ready",
+                "bid": bid.to_json_string(),
+                "market_type": market.type_name,
+                "transaction_id": arguments.get("transaction_id"),
+                "message": response_message,
+            }
         except (AssertionError, GSyException):
-            error_message = (f"Error when handling bid create on area {self.device.name}: "
-                             f"Bid Arguments: {arguments}")
+            error_message = (
+                f"Error when handling bid create on area {self.device.name}: "
+                f"Bid Arguments: {arguments}"
+            )
             logger.exception(error_message)
-            response = {"command": "bid", "status": "error",
-                        "error_message": error_message,
-                        "market_type": market.type_name,
-                        "transaction_id": arguments.get("transaction_id")}
+            response = {
+                "command": "bid",
+                "status": "error",
+                "error_message": error_message,
+                "market_type": market.type_name,
+                "transaction_id": arguments.get("transaction_id"),
+            }
         self.redis.publish_json(bid_response_channel, response)
 
     @property
@@ -227,8 +266,10 @@ class LoadExternalMixin(ExternalMixin):
         """Return the asset info."""
         return {
             **super()._device_info_dict,
-            "energy_requirement_kWh":
-                self.state.get_energy_requirement_Wh(self.spot_market.time_slot) / 1000.0,
+            "energy_requirement_kWh": self.state.get_energy_requirement_Wh(
+                self.spot_market.time_slot
+            )
+            / 1000.0,
             "energy_active_in_bids": self.posted_bid_energy(self.spot_market.id),
             "energy_traded": self.energy_traded(self.spot_market.id),
             "total_cost": self.energy_traded_costs(self.spot_market.id),
@@ -284,25 +325,30 @@ class LoadExternalMixin(ExternalMixin):
             market = self._get_market_from_command_argument(arguments)
             if self.area.is_market_settlement(market.id):
                 if not self.state.can_post_settlement_offer(market.time_slot):
-                    raise OrderCanNotBePosted("The load did not consume too much energy, ",
-                                              "settlement offer can not be posted")
-                response = (
-                    self._offer_aggregator_impl(
-                        arguments, market, self._get_time_slot_from_external_arguments(arguments),
-                        self.state.get_unsettled_deviation_kWh(
-                            market.time_slot)))
+                    raise OrderCanNotBePosted(
+                        "The load did not consume too much energy, ",
+                        "settlement offer can not be posted",
+                    )
+                response = self._offer_aggregator_impl(
+                    arguments,
+                    market,
+                    self._get_time_slot_from_external_arguments(arguments),
+                    self.state.get_unsettled_deviation_kWh(market.time_slot),
+                )
             else:
                 raise CommandTypeNotSupported("Offer not supported for Loads on spot markets.")
 
         except (OrderCanNotBePosted, CommandTypeNotSupported) as ex:
             response = {
-                "command": "offer", "status": "error",
+                "command": "offer",
+                "status": "error",
                 "market_type": market.type_name,
                 "area_uuid": self.device.uuid,
                 "error_message": "Error when handling offer create "
-                                 f"on area {self.device.name} with arguments {arguments}:"
-                                 f"{ex}",
-                "transaction_id": arguments.get("transaction_id")}
+                f"on area {self.device.name} with arguments {arguments}:"
+                f"{ex}",
+                "transaction_id": arguments.get("transaction_id"),
+            }
 
         return response
 
@@ -312,34 +358,48 @@ class LoadExternalMixin(ExternalMixin):
             market = self._get_market_from_command_argument(arguments)
             if self.area.is_market_settlement(market.id):
                 if not self.state.can_post_settlement_bid(market.time_slot):
-                    raise OrderCanNotBePosted("The load did not consume to little energy, "
-                                              "settlement bid can not be posted.")
+                    raise OrderCanNotBePosted(
+                        "The load did not consume to little energy, "
+                        "settlement bid can not be posted."
+                    )
                 required_energy_kWh = self.state.get_unsettled_deviation_kWh(market.time_slot)
             elif self.area.is_market_future(market.id):
-                required_energy_kWh = self.state.get_energy_requirement_Wh(
-                    str_to_pendulum_datetime(arguments["time_slot"])) / 1000.
+                required_energy_kWh = (
+                    self.state.get_energy_requirement_Wh(
+                        str_to_pendulum_datetime(arguments["time_slot"])
+                    )
+                    / 1000.0
+                )
             elif self.area.is_market_spot(market.id):
                 required_energy_kWh = (
-                        self.state.get_energy_requirement_Wh(market.time_slot) / 1000.)
+                    self.state.get_energy_requirement_Wh(market.time_slot) / 1000.0
+                )
             else:
-                logger.debug("The order cannot be posted on the market. "
-                             "(arguments: %s, market_id: %s", arguments, market.id)
+                logger.debug(
+                    "The order cannot be posted on the market (arguments: %s, market_id: %s)",
+                    arguments,
+                    market.id,
+                )
                 raise OrderCanNotBePosted("The order cannot be posted on the market.")
 
-            response = (
-                self._bid_aggregator_impl(arguments, market,
-                                          self._get_time_slot_from_external_arguments(arguments),
-                                          required_energy_kWh))
+            response = self._bid_aggregator_impl(
+                arguments,
+                market,
+                self._get_time_slot_from_external_arguments(arguments),
+                required_energy_kWh,
+            )
 
         except OrderCanNotBePosted as ex:
             response = {
-                "command": "offer", "status": "error",
+                "command": "offer",
+                "status": "error",
                 "market_type": market.type_name,
                 "area_uuid": self.device.uuid,
                 "error_message": "Error when handling bid create "
-                                 f"on area {self.device.name} with arguments {arguments}:"
-                                 f"{ex}",
-                "transaction_id": arguments.get("transaction_id")}
+                f"on area {self.device.name} with arguments {arguments}:"
+                f"{ex}",
+                "transaction_id": arguments.get("transaction_id"),
+            }
 
         return response
 
@@ -348,21 +408,25 @@ class LoadExternalMixin(ExternalMixin):
         try:
             market = self._get_market_from_command_argument(arguments)
             to_delete_bid_id = arguments.get("bid")
-            deleted_bids = (
-                self.remove_bid_from_pending(market.id, bid_id=to_delete_bid_id))
+            deleted_bids = self.remove_bid_from_pending(market.id, bid_id=to_delete_bid_id)
             response = {
-                "command": "bid_delete", "status": "ready", "deleted_bids": deleted_bids,
+                "command": "bid_delete",
+                "status": "ready",
+                "deleted_bids": deleted_bids,
                 "area_uuid": self.device.uuid,
-                "transaction_id": arguments.get("transaction_id")}
+                "transaction_id": arguments.get("transaction_id"),
+            }
         except GSyException:
             logger.exception("Error when handling delete bid on area %s", self.device.name)
             response = {
-                "command": "bid_delete", "status": "error",
+                "command": "bid_delete",
+                "status": "error",
                 "area_uuid": self.device.uuid,
                 "error_message": "Error when handling bid delete "
-                                 f"on area {self.device.name} with arguments {arguments}. "
-                                 "Bid does not exist on the current market.",
-                "transaction_id": arguments.get("transaction_id")}
+                f"on area {self.device.name} with arguments {arguments}. "
+                "Bid does not exist on the current market.",
+                "transaction_id": arguments.get("transaction_id"),
+            }
         return response
 
     def _list_bids_aggregator(self, arguments: Dict) -> Dict:
@@ -370,17 +434,21 @@ class LoadExternalMixin(ExternalMixin):
         try:
             market = self._get_market_from_command_argument(arguments)
             response = {
-                "command": "list_bids", "status": "ready",
+                "command": "list_bids",
+                "status": "ready",
                 "bid_list": self.filtered_market_bids(market),
                 "area_uuid": self.device.uuid,
-                "transaction_id": arguments.get("transaction_id")}
+                "transaction_id": arguments.get("transaction_id"),
+            }
         except GSyException:
             logger.exception("Error when handling list bids on area %s", self.device.name)
             response = {
-                "command": "list_bids", "status": "error",
+                "command": "list_bids",
+                "status": "error",
                 "area_uuid": self.device.uuid,
                 "error_message": f"Error when listing bids on area {self.device.name}.",
-                "transaction_id": arguments.get("transaction_id")}
+                "transaction_id": arguments.get("transaction_id"),
+            }
         return response
 
 
@@ -394,7 +462,7 @@ class LoadProfileExternalStrategy(LoadExternalMixin, DefinedLoadStrategy):
 
 class LoadForecastExternalStrategyMixin(ForecastExternalMixin):
     """
-        Strategy responsible for reading forecast and measurement consumption data via hardware API
+    Strategy responsible for reading forecast and measurement consumption data via hardware API
     """
 
     def update_energy_forecast(self) -> None:
@@ -422,82 +490,113 @@ class LoadForecastExternalStrategyMixin(ForecastExternalMixin):
 
 
 class LoadProfileForecastExternalStrategy(
-        LoadForecastExternalStrategyMixin, LoadProfileExternalStrategy):
+    LoadForecastExternalStrategyMixin, LoadProfileExternalStrategy
+):
     """
-        Strategy responsible for reading forecast and measurement consumption data via hardware
-        API. In case the hardware API is not available the normal profile strategy will be used
-        instead.
+    Strategy responsible for reading forecast and measurement consumption data via hardware
+    API. In case the hardware API is not available the normal profile strategy will be used
+    instead.
     """
+
     # pylint: disable=too-many-arguments
-    def __init__(self, fit_to_limit=True, energy_rate_increase_per_update=None,
-                 update_interval=None,
-                 initial_buying_rate: Union[float, dict, str] =
-                 ConstSettings.LoadSettings.BUYING_RATE_RANGE.initial,
-                 final_buying_rate: Union[float, dict, str] =
-                 ConstSettings.LoadSettings.BUYING_RATE_RANGE.final,
-                 balancing_energy_ratio: tuple =
-                 (ConstSettings.BalancingSettings.OFFER_DEMAND_RATIO,
-                  ConstSettings.BalancingSettings.OFFER_SUPPLY_RATIO),
-                 use_market_maker_rate: bool = False,
-                 daily_load_profile=None,
-                 daily_load_profile_uuid=None):
+    def __init__(
+        self,
+        fit_to_limit=True,
+        energy_rate_increase_per_update=None,
+        update_interval=None,
+        initial_buying_rate: Union[
+            float, dict, str
+        ] = ConstSettings.LoadSettings.BUYING_RATE_RANGE.initial,
+        final_buying_rate: Union[
+            float, dict, str
+        ] = ConstSettings.LoadSettings.BUYING_RATE_RANGE.final,
+        balancing_energy_ratio: tuple = (
+            ConstSettings.BalancingSettings.OFFER_DEMAND_RATIO,
+            ConstSettings.BalancingSettings.OFFER_SUPPLY_RATIO,
+        ),
+        use_market_maker_rate: bool = False,
+        daily_load_profile=None,
+        daily_load_profile_uuid=None,
+        **kwargs,
+    ):
         """
         Constructor of LoadForecastStrategy
         """
+        if kwargs.get("linear_pricing") is not None:
+            fit_to_limit = kwargs.get("linear_pricing")
+
         if update_interval is None:
             update_interval = duration(
-                minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
+                minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL
+            )
 
-        super().__init__(daily_load_profile=None,
-                         fit_to_limit=fit_to_limit,
-                         energy_rate_increase_per_update=energy_rate_increase_per_update,
-                         update_interval=update_interval,
-                         final_buying_rate=final_buying_rate,
-                         initial_buying_rate=initial_buying_rate,
-                         balancing_energy_ratio=balancing_energy_ratio,
-                         use_market_maker_rate=use_market_maker_rate,
-                         daily_load_profile_uuid=daily_load_profile_uuid,
-                         )
+        super().__init__(
+            daily_load_profile=None,
+            fit_to_limit=fit_to_limit,
+            energy_rate_increase_per_update=energy_rate_increase_per_update,
+            update_interval=update_interval,
+            final_buying_rate=final_buying_rate,
+            initial_buying_rate=initial_buying_rate,
+            balancing_energy_ratio=balancing_energy_ratio,
+            use_market_maker_rate=use_market_maker_rate,
+            daily_load_profile_uuid=daily_load_profile_uuid,
+        )
 
         self._energy_params = LoadProfileForecastEnergyParams(
-            daily_load_profile, daily_load_profile_uuid)
+            daily_load_profile, daily_load_profile_uuid
+        )
 
 
 class LoadHoursForecastExternalStrategy(
-        LoadForecastExternalStrategyMixin, LoadHoursExternalStrategy):
+    LoadForecastExternalStrategyMixin, LoadHoursExternalStrategy
+):
     """
-        Strategy responsible for reading forecast and measurement consumption data via hardware
-        API. In case the hardware API is not available the normal load hours strategy will be used
-        instead.
+    Strategy responsible for reading forecast and measurement consumption data via hardware
+    API. In case the hardware API is not available the normal load hours strategy will be used
+    instead.
     """
+
     # pylint: disable=too-many-arguments,unused-argument
-    def __init__(self, fit_to_limit=True, energy_rate_increase_per_update=None,
-                 update_interval=None,
-                 initial_buying_rate: Union[float, dict, str] =
-                 ConstSettings.LoadSettings.BUYING_RATE_RANGE.initial,
-                 final_buying_rate: Union[float, dict, str] =
-                 ConstSettings.LoadSettings.BUYING_RATE_RANGE.final,
-                 balancing_energy_ratio: tuple =
-                 (ConstSettings.BalancingSettings.OFFER_DEMAND_RATIO,
-                  ConstSettings.BalancingSettings.OFFER_SUPPLY_RATIO),
-                 use_market_maker_rate: bool = False,
-                 avg_power_W=0,
-                 hrs_of_day=None):
+    def __init__(
+        self,
+        fit_to_limit=True,
+        energy_rate_increase_per_update=None,
+        update_interval=None,
+        initial_buying_rate: Union[
+            float, dict, str
+        ] = ConstSettings.LoadSettings.BUYING_RATE_RANGE.initial,
+        final_buying_rate: Union[
+            float, dict, str
+        ] = ConstSettings.LoadSettings.BUYING_RATE_RANGE.final,
+        balancing_energy_ratio: tuple = (
+            ConstSettings.BalancingSettings.OFFER_DEMAND_RATIO,
+            ConstSettings.BalancingSettings.OFFER_SUPPLY_RATIO,
+        ),
+        use_market_maker_rate: bool = False,
+        avg_power_W=0,
+        hrs_of_day=None,
+        **kwargs,
+    ):
         """
         Constructor of LoadForecastStrategy
         """
+        if kwargs.get("linear_pricing") is not None:
+            fit_to_limit = kwargs.get("linear_pricing")
+
         if update_interval is None:
             update_interval = duration(
-                minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
+                minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL
+            )
 
-        super().__init__(None,
-                         fit_to_limit=fit_to_limit,
-                         energy_rate_increase_per_update=energy_rate_increase_per_update,
-                         update_interval=update_interval,
-                         final_buying_rate=final_buying_rate,
-                         initial_buying_rate=initial_buying_rate,
-                         balancing_energy_ratio=balancing_energy_ratio,
-                         use_market_maker_rate=use_market_maker_rate)
+        super().__init__(
+            None,
+            fit_to_limit=fit_to_limit,
+            energy_rate_increase_per_update=energy_rate_increase_per_update,
+            update_interval=update_interval,
+            final_buying_rate=final_buying_rate,
+            initial_buying_rate=initial_buying_rate,
+            balancing_energy_ratio=balancing_energy_ratio,
+            use_market_maker_rate=use_market_maker_rate,
+        )
 
-        self._energy_params = LoadHoursForecastEnergyParams(
-            avg_power_W, hrs_of_day)
+        self._energy_params = LoadHoursForecastEnergyParams(avg_power_W, hrs_of_day)

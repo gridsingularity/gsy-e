@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
 from collections import namedtuple
 from typing import Union, Dict
 
@@ -24,8 +25,10 @@ from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.exceptions import GSyDeviceException
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from gsy_framework.utils import (
-    limit_float_precision, get_from_profile_same_weekday_and_time,
-    is_time_slot_in_simulation_duration)
+    limit_float_precision,
+    get_from_profile_same_weekday_and_time,
+    is_time_slot_in_simulation_duration,
+)
 from gsy_framework.validators.load_validator import LoadValidator
 from numpy import random
 from pendulum import duration
@@ -56,21 +59,30 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
             **self._energy_params.serialize(),
             **self.bid_update.serialize(),
             "balancing_energy_ratio": self.balancing_energy_ratio,
-            "use_market_maker_rate": self.use_market_maker_rate
+            "use_market_maker_rate": self.use_market_maker_rate,
         }
 
     # pylint: disable=too-many-arguments
-    def __init__(self, avg_power_W, hrs_of_day=None,
-                 fit_to_limit=True, energy_rate_increase_per_update=None,
-                 update_interval=None,
-                 initial_buying_rate: Union[float, Dict, str] =
-                 ConstSettings.LoadSettings.BUYING_RATE_RANGE.initial,
-                 final_buying_rate: Union[float, Dict, str] =
-                 ConstSettings.LoadSettings.BUYING_RATE_RANGE.final,
-                 balancing_energy_ratio: tuple =
-                 (ConstSettings.BalancingSettings.OFFER_DEMAND_RATIO,
-                  ConstSettings.BalancingSettings.OFFER_SUPPLY_RATIO),
-                 use_market_maker_rate: bool = False):
+    def __init__(
+        self,
+        avg_power_W,
+        hrs_of_day=None,
+        fit_to_limit=True,
+        energy_rate_increase_per_update=None,
+        update_interval=None,
+        initial_buying_rate: Union[
+            float, Dict, str
+        ] = ConstSettings.LoadSettings.BUYING_RATE_RANGE.initial,
+        final_buying_rate: Union[
+            float, Dict, str
+        ] = ConstSettings.LoadSettings.BUYING_RATE_RANGE.final,
+        balancing_energy_ratio: tuple = (
+            ConstSettings.BalancingSettings.OFFER_DEMAND_RATIO,
+            ConstSettings.BalancingSettings.OFFER_SUPPLY_RATIO,
+        ),
+        use_market_maker_rate: bool = False,
+        **kwargs
+    ):
         """
         Constructor of LoadHoursStrategy
         :param avg_power_W: Power rating of load device
@@ -84,13 +96,20 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         :param use_market_maker_rate: If set to True, Load would track its final buying rate
         as per utility's trading rate
         """
+        if kwargs.get("linear_pricing") is not None:
+            fit_to_limit = kwargs.get("linear_pricing")
         super().__init__()
         self._energy_params = LoadHoursEnergyParameters(avg_power_W, hrs_of_day)
 
         self.balancing_energy_ratio = BalancingRatio(*balancing_energy_ratio)
         self.use_market_maker_rate = use_market_maker_rate
-        self._init_price_update(fit_to_limit, energy_rate_increase_per_update, update_interval,
-                                initial_buying_rate, final_buying_rate)
+        self._init_price_update(
+            fit_to_limit,
+            energy_rate_increase_per_update,
+            update_interval,
+            initial_buying_rate,
+            final_buying_rate,
+        )
 
         self._calculate_active_markets()
         self._cycled_market = set()
@@ -107,46 +126,65 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
     def _create_future_market_strategy(self):
         return future_market_strategy_factory(self.asset_type)
 
-    def _init_price_update(self, fit_to_limit, energy_rate_increase_per_update, update_interval,
-                           initial_buying_rate, final_buying_rate):
+    def _init_price_update(
+        self,
+        fit_to_limit,
+        energy_rate_increase_per_update,
+        update_interval,
+        initial_buying_rate,
+        final_buying_rate,
+    ):
 
         LoadValidator.validate_rate(
             fit_to_limit=fit_to_limit,
-            energy_rate_increase_per_update=energy_rate_increase_per_update)
+            energy_rate_increase_per_update=energy_rate_increase_per_update,
+        )
 
         if update_interval is None:
             update_interval = duration(
-                minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
+                minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL
+            )
 
         if isinstance(update_interval, int):
             update_interval = duration(minutes=update_interval)
 
         BidEnabledStrategy.__init__(self)
         self.bid_update = TemplateStrategyBidUpdater(
-            initial_rate=initial_buying_rate, final_rate=final_buying_rate,
+            initial_rate=initial_buying_rate,
+            final_rate=final_buying_rate,
             fit_to_limit=fit_to_limit,
             energy_rate_change_per_update=energy_rate_increase_per_update,
-            update_interval=update_interval, rate_limit_object=min)
+            update_interval=update_interval,
+            rate_limit_object=min,
+        )
 
-    def _validate_rates(self, initial_rate, final_rate, energy_rate_change_per_update,
-                        fit_to_limit):
+    def _validate_rates(
+        self, initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit
+    ):
         # all parameters have to be validated for each time slot starting from the current time
         for time_slot in initial_rate.keys():
             if not is_time_slot_in_simulation_duration(time_slot, self.area.config):
                 continue
 
-            if (self.area and
-                    self.area.current_market
-                    and time_slot < self.area.current_market.time_slot):
+            if (
+                self.area
+                and self.area.current_market
+                and time_slot < self.area.current_market.time_slot
+            ):
                 continue
-            rate_change = (None if fit_to_limit else
-                           get_from_profile_same_weekday_and_time(
-                               energy_rate_change_per_update, time_slot))
+            rate_change = (
+                None
+                if fit_to_limit
+                else get_from_profile_same_weekday_and_time(
+                    energy_rate_change_per_update, time_slot
+                )
+            )
             LoadValidator.validate_rate(
                 initial_buying_rate=initial_rate[time_slot],
                 energy_rate_increase_per_update=rate_change,
                 final_buying_rate=get_from_profile_same_weekday_and_time(final_rate, time_slot),
-                fit_to_limit=fit_to_limit)
+                fit_to_limit=fit_to_limit,
+            )
 
     def event_activate(self, **kwargs):
         self._energy_params.event_activate_energy(self.area)
@@ -185,32 +223,37 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
             self._energy_params.set_energy_measurement_kWh(self.area.current_market.time_slot)
 
     def _delete_past_state(self):
-        if (constants.RETAIN_PAST_MARKET_STRATEGIES_STATE is True or
-                self.area.current_market is None):
+        if (
+            constants.RETAIN_PAST_MARKET_STRATEGIES_STATE is True
+            or self.area.current_market is None
+        ):
             return
 
         self.state.delete_past_state_values(self.area.current_market.time_slot)
         self.bid_update.delete_past_state_values(self.area.current_market.time_slot)
-        self._future_market_strategy.delete_past_state_values(
-            self.area.current_market.time_slot)
+        self._future_market_strategy.delete_past_state_values(self.area.current_market.time_slot)
 
     def _area_reconfigure_prices(self, **kwargs):
         if kwargs.get("initial_buying_rate") is not None:
-            initial_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                  kwargs["initial_buying_rate"])
+            initial_rate = read_arbitrary_profile(
+                InputProfileTypes.IDENTITY, kwargs["initial_buying_rate"]
+            )
         else:
             initial_rate = self.bid_update.initial_rate_profile_buffer
         if kwargs.get("final_buying_rate") is not None:
-            final_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                kwargs["final_buying_rate"])
+            final_rate = read_arbitrary_profile(
+                InputProfileTypes.IDENTITY, kwargs["final_buying_rate"]
+            )
         else:
             final_rate = self.bid_update.final_rate_profile_buffer
         if kwargs.get("energy_rate_increase_per_update") is not None:
             energy_rate_change_per_update = read_arbitrary_profile(
-                InputProfileTypes.IDENTITY, kwargs["energy_rate_increase_per_update"])
+                InputProfileTypes.IDENTITY, kwargs["energy_rate_increase_per_update"]
+            )
         else:
-            energy_rate_change_per_update = (self.bid_update.
-                                             energy_rate_change_per_update_profile_buffer)
+            energy_rate_change_per_update = (
+                self.bid_update.energy_rate_change_per_update_profile_buffer
+            )
         if kwargs.get("fit_to_limit") is not None:
             fit_to_limit = kwargs["fit_to_limit"]
         else:
@@ -219,7 +262,8 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
             update_interval = (
                 duration(minutes=kwargs["update_interval"])
                 if isinstance(kwargs["update_interval"], int)
-                else kwargs["update_interval"])
+                else kwargs["update_interval"]
+            )
         else:
             update_interval = self.bid_update.update_interval
 
@@ -227,8 +271,9 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
             self.use_market_maker_rate = kwargs["use_market_maker_rate"]
 
         try:
-            self._validate_rates(initial_rate, final_rate, energy_rate_change_per_update,
-                                 fit_to_limit)
+            self._validate_rates(
+                initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit
+            )
         except GSyDeviceException:
             self.log.exception("LoadHours._area_reconfigure_prices failed. Exception: ")
             return
@@ -238,7 +283,7 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
             final_rate=final_rate,
             energy_rate_change_per_update=energy_rate_change_per_update,
             fit_to_limit=fit_to_limit,
-            update_interval=update_interval
+            update_interval=update_interval,
         )
 
     def area_reconfigure_event(self, *args, **kwargs):
@@ -252,10 +297,12 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         """Update the strategy prices upon the activation and validate them afterwards."""
         self._replace_rates_with_market_maker_rates()
 
-        self._validate_rates(self.bid_update.initial_rate_profile_buffer,
-                             self.bid_update.final_rate_profile_buffer,
-                             self.bid_update.energy_rate_change_per_update_profile_buffer,
-                             self.bid_update.fit_to_limit)
+        self._validate_rates(
+            self.bid_update.initial_rate_profile_buffer,
+            self.bid_update.final_rate_profile_buffer,
+            self.bid_update.energy_rate_change_per_update_profile_buffer,
+            self.bid_update.fit_to_limit,
+        )
 
     @staticmethod
     def _find_acceptable_offer(market):
@@ -267,7 +314,8 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         max_affordable_offer_rate = self.bid_update.get_updated_rate(market_slot.time_slot)
         return (
             limit_float_precision(offer.energy_rate)
-            <= max_affordable_offer_rate + FLOATING_POINT_TOLERANCE)
+            <= max_affordable_offer_rate + FLOATING_POINT_TOLERANCE
+        )
 
     def _one_sided_market_event_tick(self, market, offer=None):
         if not self.state.can_buy_more_energy(market.time_slot):
@@ -284,20 +332,26 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
                 acceptable_offer = offer
 
             time_slot = market.time_slot
-            if (acceptable_offer and self._energy_params.allowed_operating_hours(time_slot)
-                    and self._offer_rate_can_be_accepted(acceptable_offer, market)):
+            if (
+                acceptable_offer
+                and self._energy_params.allowed_operating_hours(time_slot)
+                and self._offer_rate_can_be_accepted(acceptable_offer, market)
+            ):
                 energy_Wh = self.state.calculate_energy_to_accept(
-                    acceptable_offer.energy * 1000.0, time_slot)
-                self.accept_offer(market, acceptable_offer,
-                                  buyer=TraderDetails(
-                                      self.owner.name, self.owner.uuid,
-                                      self.owner.name, self.owner.uuid),
-                                  energy=energy_Wh / 1000.0)
+                    acceptable_offer.energy * 1000.0, time_slot
+                )
+                self.accept_offer(
+                    market,
+                    acceptable_offer,
+                    buyer=TraderDetails(
+                        self.owner.name, self.owner.uuid, self.owner.name, self.owner.uuid
+                    ),
+                    energy=energy_Wh / 1000.0,
+                )
 
                 self._energy_params.decrement_energy_requirement(
-                    energy_kWh=energy_Wh / 1000,
-                    time_slot=time_slot,
-                    area_name=self.owner.name)
+                    energy_kWh=energy_Wh / 1000, time_slot=time_slot, area_name=self.owner.name
+                )
 
         except MarketException:
             self.log.exception("An Error occurred while buying an offer")
@@ -347,16 +401,21 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
             return
         for market in self.active_markets:
-            if (self.state.can_buy_more_energy(market.time_slot) and
-                    self._energy_params.allowed_operating_hours(market.time_slot)
-                    and not self.are_bids_posted(market.id)):
+            if (
+                self.state.can_buy_more_energy(market.time_slot)
+                and self._energy_params.allowed_operating_hours(market.time_slot)
+                and not self.are_bids_posted(market.id)
+            ):
                 bid_energy = self.state.get_energy_requirement_Wh(market.time_slot)
                 if self._is_eligible_for_balancing_market:
-                    bid_energy -= (self.state.get_desired_energy_Wh(market.time_slot) *
-                                   self.balancing_energy_ratio.demand)
+                    bid_energy -= (
+                        self.state.get_desired_energy_Wh(market.time_slot)
+                        * self.balancing_energy_ratio.demand
+                    )
                 try:
-                    self.post_first_bid(market, bid_energy,
-                                        self.bid_update.initial_rate[market.time_slot])
+                    self.post_first_bid(
+                        market, bid_energy, self.bid_update.initial_rate[market.time_slot]
+                    )
                 except MarketException:
                     pass
 
@@ -380,7 +439,8 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
             self._energy_params.decrement_energy_requirement(
                 energy_kWh=bid_trade.traded_energy,
                 time_slot=bid_trade.time_slot,
-                area_name=self.owner.name)
+                area_name=self.owner.name,
+            )
 
     def event_offer_traded(self, *, market_id, trade):
         """Register the offer traded by the device and its effects. Extends the superclass method.
@@ -406,19 +466,21 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         if not self._is_eligible_for_balancing_market:
             return
 
-        ramp_up_energy = (self.balancing_energy_ratio.demand *
-                          self.state.get_desired_energy_Wh(market.time_slot))
+        ramp_up_energy = self.balancing_energy_ratio.demand * self.state.get_desired_energy_Wh(
+            market.time_slot
+        )
 
         self._energy_params.decrement_energy_requirement(
-            energy_kWh=ramp_up_energy / 1000,
-            time_slot=market.time_slot,
-            area_name=self.owner.name)
+            energy_kWh=ramp_up_energy / 1000, time_slot=market.time_slot, area_name=self.owner.name
+        )
 
         ramp_up_price = DeviceRegistry.REGISTRY[self.owner.name][0] * ramp_up_energy
         if ramp_up_energy != 0 and ramp_up_price != 0:
             self.area.get_balancing_market(market.time_slot).balancing_offer(
-                ramp_up_price, -ramp_up_energy, TraderDetails(
-                    self.owner.name, self.owner.uuid, self.owner.name, self.owner.uuid))
+                ramp_up_price,
+                -ramp_up_energy,
+                TraderDetails(self.owner.name, self.owner.uuid, self.owner.name, self.owner.uuid),
+            )
 
     # committing to reduce its consumption when required
     def _supply_balancing_offer(self, market, trade):
@@ -429,8 +491,10 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         ramp_down_energy = self.balancing_energy_ratio.supply * trade.traded_energy
         ramp_down_price = DeviceRegistry.REGISTRY[self.owner.name][1] * ramp_down_energy
         self.area.get_balancing_market(market.time_slot).balancing_offer(
-            ramp_down_price, ramp_down_energy, TraderDetails(
-                self.owner.name, self.owner.uuid, self.owner.name, self.owner.uuid))
+            ramp_down_price,
+            ramp_down_energy,
+            TraderDetails(self.owner.name, self.owner.uuid, self.owner.name, self.owner.uuid),
+        )
 
     @property
     def active_markets(self):
@@ -442,16 +506,21 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         return self._active_markets
 
     def _calculate_active_markets(self):
-        self._active_markets = [
-            market for market in self.area.all_markets
-            if self._is_market_active(market)
-        ] if self.area else []
+        self._active_markets = (
+            [market for market in self.area.all_markets if self._is_market_active(market)]
+            if self.area
+            else []
+        )
 
     def _is_market_active(self, market):
-        return (self._energy_params.allowed_operating_hours(market.time_slot) and
-                market.in_sim_duration and
-                (not self.area.current_market or
-                 market.time_slot >= self.area.current_market.time_slot))
+        return (
+            self._energy_params.allowed_operating_hours(market.time_slot)
+            and market.in_sim_duration
+            and (
+                not self.area.current_market
+                or market.time_slot >= self.area.current_market.time_slot
+            )
+        )
 
     def _update_energy_requirement_future_markets(self):
         if not ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS:
