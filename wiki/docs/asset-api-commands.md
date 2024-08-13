@@ -15,7 +15,7 @@ It sends an energy bid to the exchange. This command receives 4 arguments :
     - energy: energy quantity (expressed in kWh) that the bid prefers to consume
     - price: trade price (expressed in Euro cents) that the bid prefers to accept
 
-* **time_slot (optional)**: the time slot where the bid is going to be posted (to be used to trade post-delivery in the [Settlement Market](settlement-market-structure.md))
+* **time_slot (optional)**: the time slot where the bid is going to be posted (to be used to trade post-delivery in the [Settlement Market](market-types.md#settlement-market-structure))
 
 Here is an example:
 
@@ -40,7 +40,7 @@ It sends an energy bid to the exchange. This batch command receives 4 arguments 
     - energy: energy quantity (expressed in kWh) that the bid prefers to consume
     - price: trade price (expressed in Euro cents) that the bid prefers to accept
 
-* **time_slot (optional)**: the time slot where the bid is going to be posted (to be used to trade post-delivery in the [Settlement Market](settlement-market-structure.md))
+* **time_slot (optional)**: the time slot where the bid is going to be posted (to be used to trade post-delivery in the [Settlement Market](market-types.md#settlement-market-structure))
 
 Here is an example:
 
@@ -84,7 +84,7 @@ It sends an energy offer to the exchange. This command receives 4 arguments :
 
     - energy_type: energy type of the offer (e.g. solar)
 
-* **time_slot (optional)**: the time slot where the bid is going to be posted (to be used to trade post-delivery in the [Settlement Market](settlement-market-structure.md))
+* **time_slot (optional)**: the time slot where the bid is going to be posted (to be used to trade post-delivery in the [Settlement Market](market-types.md#settlement-market-structure))
 
 Here is an example:
 
@@ -105,7 +105,7 @@ It sends an energy offer to the exchange. This command receives four arguments :
 
     - energy_type: energy type of the offer (e.g. solar)
 
-* **time_slot (optional)**: the time slot where the bid is going to be posted (to be used to trade post-delivery in the [Settlement Market](settlement-market-structure.md))
+* **time_slot (optional)**: the time slot where the bid is going to be posted (to be used to trade post-delivery in the [Settlement Market](market-types.md#settlement-market-structure))
 
 Here is an example:
 

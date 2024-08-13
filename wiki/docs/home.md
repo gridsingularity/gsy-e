@@ -24,7 +24,7 @@ As a default setting, a home functions as a market, where multiple assets can tr
 In the advanced mode, the following settings are available
 
 1. Exchange mechanism: select a [market types](market-types.md) for clearing bids and offers (note: at the moment only the spot market is available)
-2. Grid fees: choose to switch on ✅ or off 🆇. If switched on, users can enter a [constant grid fee](constant-fees.md) value expressed in cents/kWh (note: this value will then function as a fee that will be applied to each trade that passes through or is cleared in this market to account for grid cost)
+2. Grid fees: choose to switch on ✅ or off 🆇. If switched on, users can enter a [constant grid fee](grid-fee-accounting.md#constant-grid-fee-calculation) value expressed in cents/kWh (note: this value will then function as a fee that will be applied to each trade that passes through or is cleared in this market to account for grid cost)
 3. Energy peak percentage: choose to switch on ✅ or off 🆇.  if switched on, set baseline peak import and export rates to calculate the [peak percentage](trade-profile.md)
 
 <figure markdown>

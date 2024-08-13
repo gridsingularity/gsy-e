@@ -47,7 +47,7 @@ For example, a user can input 5 hrs_per_day and give a wider range for hrs_of_da
 - If there is sufficient energy at affordable rates, the load will consume in the first 5 hours, i.e. from 02:00 until 07:00, with no energy demand unmatched.
 - In case energy prices are too high during the time-interval from 04:00 to 16:00, the load will consume from 02:00 until 04:00, turn off, and consume from 16:00 until 18:00, resulting in one hour of energy demand unmatched.
 
-For information on changes in buying and selling rates, please see: [Trading strategies](default-trading-strategy.md)
+For information on changes in buying and selling rates, please see: [Trading strategies](trading-agents-and-strategies)
 
 ## Batteries
 

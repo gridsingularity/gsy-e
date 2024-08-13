@@ -30,7 +30,7 @@ Each control strategy has specific purposes and features and can be categorized 
 
 The differences between the primary, secondary and tertiary frequency control is the time the production and response can be activated, and the remuneration for each. Primary frequency control is symmetrical as the capacity for control has been scheduled and usually balances between ramping up and down the production and therefore not remunerated. Secondary and tertiary control are not symmetrical as the capacity can be used only for ramping up or down the production to restore the frequency and are remunerated.
 
-##Review of the three levels of regulation
+#### Review of the three levels of regulation
 
 <table class="table">
   <tr>

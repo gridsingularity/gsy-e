@@ -30,7 +30,7 @@ Users who would like to model a local energy market (an energy community partici
     * Feed-in-tariff
     * Conventional (utility) energy price (profile) per community member
     * Grid tariffs (fixed value or profile)
-- **Market Mechanism Data:** User, simulating the role of community manager, selects preferred buying and selling prices (default setting to buy at the best available price between utility and fee-in-tariff rate) based on a [pay-as-bid mechanism](two-sided-pay-as-bid.md) (other mechanisms in development).
+- **Market Mechanism Data:** User, simulating the role of community manager, selects preferred buying and selling prices (default setting to buy at the best available price between utility and fee-in-tariff rate) based on a [pay-as-bid mechanism](market-types.md#two-sided-pay-as-bid-market) (other mechanisms in development).
 
 For the upload format, Grid Singularity Exchange currently only supports Comma Separated Values files (.csv).
 

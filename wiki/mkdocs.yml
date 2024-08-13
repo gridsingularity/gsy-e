@@ -54,28 +54,9 @@ nav:
     - 'Results Download': 'results-download.md'
     - 'Duplicating simulations': 'duplicating-simulations'
 - 'Market Mechanisms':
-    - 'Market Types':
-      - 'Market Types Overview': 'market-types.md'
-      - 'Spot Market':
-          - 'Spot Market Types': 'spot-market-types.md'
-          - 'One-Sided Pay-as-Offer Market': 'one-sided-pay-as-offer.md'
-          - 'Two-Sided Pay-as-Bid Market': 'two-sided-pay-as-bid.md'
-          - 'Two-Sided Pay-as-Clear Market': 'two-sided-pay-as-clear.md'
-      - 'Balancing Market':
-          - 'Balancing Market Structure': 'balancing-market.md'
-          - 'Balancing Market Implementation': 'balancing-implementation.md'
-      - 'Settlement Market':
-          - 'Settlement Market Structure': 'settlement-market-structure.md'
-          - 'Settlement Market Implementation' :
-              - 'Markets and rotation' : 'markets-rotation.md'
-              - 'Assets strategies' : 'assets-strategies.md'
-    - 'Bids/Offers Process and Hierarchical Market Structure': 'market-agent.md'
-    - 'Trading Strategies': 'default-trading-strategy.md'
-    - 'Grid Fee Accounting':
-        - 'Grid Fee Objectives': 'grid-fees.md'
-        - 'Constant Grid Fee Calculation': 'constant-fees.md'
-        - 'Percentage Grid Fee Calculation': 'percentage-fees.md'
-    - 'Degrees of Freedom' : 'degrees-of-freedom.md'
+    - 'Grid Singularity Exchange Trading Agents and Strategies': 'trading-agents-and-strategies.md'
+    - 'Grid Singularity Exchange Market Types': 'market-types.md'
+    - 'Grid Fee Accounting': 'grid-fee-accounting.md'
 - 'Collaborations and APIs':
     - 'Create a Grid Singularity Collaboration': 'collaboration.md'
     - 'Connect to the Grid Singularity APIs':
@@ -128,8 +109,6 @@ nav:
             ## - 'Market Settings': 'model-markets.md'
             ## - 'Energy Assets Configuration':
                 ## - 'Market Maker and Infinite Bus': 'model-market-maker.md'
-                ## - 'Load': 'model-load.md'
-                ## - 'PV': 'model-pv.md'
                 ## - 'Storage': 'model-storage.md'
                 ## - 'Power Plant': 'model-power-plant.md'
             ## - 'Map': 'map.md'
