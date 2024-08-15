@@ -74,27 +74,6 @@ class TankEnergyParameters:
         """Increase the tank temperature from temperature delta."""
         self._state.update_temp_increase_K(time_slot, temp_diff)
 
-    def decrease_tank_temp_vhp(self, heat_energy: float, time_slot: DateTime):
-        """
-        Decrease the tank temperature. Return True if the operation incurs in unmatched demand.
-        """
-        temp_differential_per_sec = -heat_energy / (
-            WATER_DENSITY * WATER_SPECIFIC_HEAT_CAPACITY * self._parameters.tank_volume_L
-        )
-        temp_decrease_C = temp_differential_per_sec * GlobalConfig.slot_length.total_seconds()
-        # Temp decrease is a negative value, therefore we need to add it to the current temp.
-        new_temperature_without_operation_C = (
-            self._state.get_storage_temp_C(time_slot) + temp_decrease_C
-        )
-        if new_temperature_without_operation_C < self._parameters.min_temp_C:
-            # Tank temp drops below minimum. Setting zero to tank temperature and reporting the
-            # unmatched heat demand event in order to be calculated and tracked.
-            self._state.set_temp_decrease_K(time_slot, 0.0)
-            return True
-        assert temp_decrease_C <= 0.0
-        self._state.set_temp_decrease_K(time_slot, abs(temp_decrease_C))
-        return False
-
     def get_max_energy_consumption(self, cop: float, time_slot: DateTime):
         """Calculate max energy consumption that a heatpump with provided COP can consume."""
         max_temp_diff = (
@@ -120,6 +99,40 @@ class TankEnergyParameters:
         if temp_balance < FLOATING_POINT_TOLERANCE:
             return self._temp_diff_to_Q_kWh(abs(temp_balance))
         return 0.0
+
+    def _temp_diff_to_Q_kWh(self, diff_temp_K: float) -> float:
+        return diff_temp_K * self._Q_specific
+
+    def _Q_kWh_to_temp_diff(self, energy_kWh: float) -> float:
+        return energy_kWh / self._Q_specific
+
+
+class VirtualHeatpumpTankEnergyParameters(TankEnergyParameters):
+    """
+    Individual tank energy parameters, for operation with the virtual heatpump.
+    Uses the sympy solver in order to model the water tank.
+    """
+
+    def decrease_tank_temp_vhp(self, heat_energy: float, time_slot: DateTime):
+        """
+        Decrease the tank temperature. Return True if the operation incurs in unmatched demand.
+        """
+        temp_differential_per_sec = -heat_energy / (
+            WATER_DENSITY * WATER_SPECIFIC_HEAT_CAPACITY * self._parameters.tank_volume_L
+        )
+        temp_decrease_C = temp_differential_per_sec * GlobalConfig.slot_length.total_seconds()
+        # Temp decrease is a negative value, therefore we need to add it to the current temp.
+        new_temperature_without_operation_C = (
+            self._state.get_storage_temp_C(time_slot) + temp_decrease_C
+        )
+        if new_temperature_without_operation_C < self._parameters.min_temp_C:
+            # Tank temp drops below minimum. Setting zero to tank temperature and reporting the
+            # unmatched heat demand event in order to be calculated and tracked.
+            self._state.set_temp_decrease_K(time_slot, 0.0)
+            return True
+        assert temp_decrease_C <= 0.0
+        self._state.set_temp_decrease_K(time_slot, abs(temp_decrease_C))
+        return False
 
     def create_tank_parameters_for_maintaining_tank_temp(
         self, time_slot: DateTime
@@ -173,12 +186,6 @@ class TankEnergyParameters:
             current_storage_temp_C=current_storage_temp_C,
         )
 
-    def _temp_diff_to_Q_kWh(self, diff_temp_K: float) -> float:
-        return diff_temp_K * self._Q_specific
-
-    def _Q_kWh_to_temp_diff(self, energy_kWh: float) -> float:
-        return energy_kWh / self._Q_specific
-
 
 class AllTanksEnergyParameters:
     """Manage the operation of heating and extracting temperature from multiple tanks."""
@@ -200,22 +207,6 @@ class AllTanksEnergyParameters:
         heat_energy_per_tank = heat_energy / len(self._tanks_energy_parameters)
         for tank in self._tanks_energy_parameters:
             tank.decrease_tank_temp_from_heat_energy(heat_energy_per_tank, time_slot)
-
-    def set_temp_decrease_vhp(
-        self, heat_energy: float, time_slot: DateTime
-    ) -> List[TankSolverParameters]:
-        """
-        Decrease the temperature of all tanks according to the heat energy produced.
-        Returns true if there is unmatched heat demand in any of the tanks.
-        """
-        heat_energy_per_tank = heat_energy / len(self._tanks_energy_parameters)
-        unmatched_heat_demand = [
-            tank.decrease_tank_temp_vhp(heat_energy_per_tank, time_slot)
-            for tank in self._tanks_energy_parameters
-        ]
-        if any(unmatched_heat_demand):
-            return self.create_tank_solver_for_maintaining_tank_temperature(time_slot)
-        return []
 
     def update_tanks_temperature(self, time_slot: DateTime):
         """
@@ -255,6 +246,70 @@ class AllTanksEnergyParameters:
         return sum(
             tank.get_unmatched_demand_kWh(time_slot) for tank in self._tanks_energy_parameters
         )
+
+    def serialize(self) -> Union[Dict, List]:
+        """Serializable dict with the parameters of all water tanks."""
+        if len(self._tanks_energy_parameters) == 1:
+            # Return a dict for the case of one tank, in order to not break other services that
+            # support one single tank.
+            return self._tanks_energy_parameters[0].serialize()
+        return [tank.serialize() for tank in self._tanks_energy_parameters]
+
+    def get_results_dict(self, current_time_slot: DateTime):
+        """Results dict with the results from all water tanks."""
+        if len(self._tanks_energy_parameters) == 1:
+            # Return a dict for the case of one tank, in order to not break other services that
+            # support one single tank.
+            return self._tanks_energy_parameters[0].get_results_dict(current_time_slot)
+        return [tank.get_results_dict(current_time_slot) for tank in self._tanks_energy_parameters]
+
+    def get_state(self) -> Union[List, Dict]:
+        """Get all tanks state."""
+        # pylint: disable=protected-access
+        if len(self._tanks_energy_parameters) == 1:
+            # Return a dict for the case of one tank, in order to not break other services that
+            # support one single tank.
+            return self._tanks_energy_parameters[0]._state.get_state()
+        return [tank._state.get_state() for tank in self._tanks_energy_parameters]
+
+    def restore_state(self, state_dict: dict):
+        """Restore all tanks state."""
+        # pylint: disable=protected-access
+        for tank in self._tanks_energy_parameters:
+            tank._state.restore_state(state_dict)
+
+    def delete_past_state_values(self, current_time_slot: DateTime):
+        """Delete previous state from all tanks."""
+        # pylint: disable=protected-access
+        for tank in self._tanks_energy_parameters:
+            tank._state.delete_past_state_values(current_time_slot)
+
+
+class VirtualHeatpumpAllTanksEnergyParameters(AllTanksEnergyParameters):
+    """Manage the operation of all tanks for the virtual heatpump. Uses sympy solver."""
+
+    # pylint: disable=super-init-not-called
+    def __init__(self, tank_parameters: List[TankParameters]):
+        self._tanks_energy_parameters = [
+            VirtualHeatpumpTankEnergyParameters(tank, GlobalConfig.slot_length)
+            for tank in tank_parameters
+        ]
+
+    def set_temp_decrease_vhp(
+        self, heat_energy: float, time_slot: DateTime
+    ) -> List[TankSolverParameters]:
+        """
+        Decrease the temperature of all tanks according to the heat energy produced.
+        Returns true if there is unmatched heat demand in any of the tanks.
+        """
+        heat_energy_per_tank = heat_energy / len(self._tanks_energy_parameters)
+        unmatched_heat_demand = [
+            tank.decrease_tank_temp_vhp(heat_energy_per_tank, time_slot)
+            for tank in self._tanks_energy_parameters
+        ]
+        if any(unmatched_heat_demand):
+            return self.create_tank_solver_for_maintaining_tank_temperature(time_slot)
+        return []
 
     def create_tank_solver_for_maintaining_tank_temperature(
         self, time_slot: DateTime
@@ -302,40 +357,3 @@ class AllTanksEnergyParameters:
             )
 
         return solver
-
-    def serialize(self) -> Union[Dict, List]:
-        """Serializable dict with the parameters of all water tanks."""
-        if len(self._tanks_energy_parameters) == 1:
-            # Return a dict for the case of one tank, in order to not break other services that
-            # support one single tank.
-            return self._tanks_energy_parameters[0].serialize()
-        return [tank.serialize() for tank in self._tanks_energy_parameters]
-
-    def get_results_dict(self, current_time_slot: DateTime):
-        """Results dict with the results from all water tanks."""
-        if len(self._tanks_energy_parameters) == 1:
-            # Return a dict for the case of one tank, in order to not break other services that
-            # support one single tank.
-            return self._tanks_energy_parameters[0].get_results_dict(current_time_slot)
-        return [tank.get_results_dict(current_time_slot) for tank in self._tanks_energy_parameters]
-
-    def get_state(self) -> Union[List, Dict]:
-        """Get all tanks state."""
-        # pylint: disable=protected-access
-        if len(self._tanks_energy_parameters) == 1:
-            # Return a dict for the case of one tank, in order to not break other services that
-            # support one single tank.
-            return self._tanks_energy_parameters[0]._state.get_state()
-        return [tank._state.get_state() for tank in self._tanks_energy_parameters]
-
-    def restore_state(self, state_dict: dict):
-        """Restore all tanks state."""
-        # pylint: disable=protected-access
-        for tank in self._tanks_energy_parameters:
-            tank._state.restore_state(state_dict)
-
-    def delete_past_state_values(self, current_time_slot: DateTime):
-        """Delete previous state from all tanks."""
-        # pylint: disable=protected-access
-        for tank in self._tanks_energy_parameters:
-            tank._state.delete_past_state_values(current_time_slot)

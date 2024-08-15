@@ -8,8 +8,8 @@ from pendulum import DateTime
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.models.strategy.energy_parameters.heatpump.heat_pump import HeatPumpEnergyParametersBase
 from gsy_e.models.strategy.energy_parameters.heatpump.tank import (
+    VirtualHeatpumpAllTanksEnergyParameters,
     TankParameters,
-    AllTanksEnergyParameters,
 )
 from gsy_e.models.strategy.energy_parameters.heatpump.constants import (
     WATER_SPECIFIC_HEAT_CAPACITY,
@@ -48,7 +48,7 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
         if not tank_parameters:
             tank_parameters = [TankParameters()]
 
-        self._tanks = AllTanksEnergyParameters(tank_parameters)
+        self._tanks = VirtualHeatpumpAllTanksEnergyParameters(tank_parameters)
 
         self._water_supply_temp_C: [DateTime, float] = StrategyProfile(
             water_supply_temp_C_profile,
