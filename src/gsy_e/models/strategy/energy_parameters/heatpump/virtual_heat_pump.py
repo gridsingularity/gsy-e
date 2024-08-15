@@ -73,7 +73,6 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
             source_temp_C_profile_uuid,
             profile_type=InputProfileTypes.IDENTITY,
         )
-        print("self.source_temp_C_profile.profile", self._source_temp_C_profile.profile)
 
         self.calibration_coefficient = (
             calibration_coefficient

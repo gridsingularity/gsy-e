@@ -141,7 +141,6 @@ class VirtualHeatpumpStorageEnergySolver:
                 sum(tank.target_storage_temp_C for tank in self.tank_parameters)
                 / len(self.tank_parameters)
             )
-            print("self.source_temp_C", self.source_temp_C)
             self.cop = self.calibration_coefficient * (
                 self.condenser_temp_C
                 / (self.condenser_temp_C - self.heatpump_parameters.source_temp_C)
@@ -177,6 +176,12 @@ class VirtualHeatpumpStorageEnergySolver:
             *[tank_symbols[2 * tank_index] for tank_index, _ in enumerate(self.tank_parameters)]
         )
 
+        # Heat demand is shared equally across tanks
+        for tank_index, tank in enumerate(self.tank_parameters[:-1]):
+            equation_list.append(
+                sp.Eq(tank_symbols[2 * tank_index + 1], tank_symbols[2 * (tank_index + 1) + 1])
+            )
+
         sum_of_tanks_heat_demand_expr = sp.Add(
             *[
                 (
@@ -188,7 +193,6 @@ class VirtualHeatpumpStorageEnergySolver:
                 for tank_index, tank in enumerate(self.tank_parameters)
             ]
         )
-        print("ff", self.heatpump_parameters.source_temp_C)
         ans = sp.solve(
             [
                 *equation_list,
