@@ -6,18 +6,18 @@ from gsy_framework.read_user_profile import InputProfileTypes
 from pendulum import DateTime
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
-from gsy_e.models.strategy.energy_parameters.heatpump.heat_pump import HeatPumpEnergyParametersBase
-from gsy_e.models.strategy.energy_parameters.heatpump.tank import (
-    VirtualHeatpumpAllTanksEnergyParameters,
-    TankParameters,
-)
 from gsy_e.models.strategy.energy_parameters.heatpump.constants import (
     WATER_SPECIFIC_HEAT_CAPACITY,
     DEFAULT_SOURCE_TEMPERATURE_C,
 )
+from gsy_e.models.strategy.energy_parameters.heatpump.heat_pump import HeatPumpEnergyParametersBase
+from gsy_e.models.strategy.energy_parameters.heatpump.tank import TankParameters
 from gsy_e.models.strategy.energy_parameters.heatpump.virtual_heatpump_solver import (
     VirtualHeatpumpSolverParameters,
     VirtualHeatpumpStorageEnergySolver,
+)
+from gsy_e.models.strategy.energy_parameters.heatpump.virtual_heatpump_tank import (
+    VirtualHeatpumpAllTanksEnergyParameters,
 )
 from gsy_e.models.strategy.strategy_profile import StrategyProfile
 

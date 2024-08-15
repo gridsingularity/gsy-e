@@ -6,8 +6,10 @@ from pendulum import datetime
 
 from gsy_e.models.strategy.energy_parameters.heatpump.tank import (
     AllTanksEnergyParameters,
-    VirtualHeatpumpAllTanksEnergyParameters,
     TankParameters,
+)
+from gsy_e.models.strategy.energy_parameters.heatpump.virtual_heatpump_tank import (
+    VirtualHeatpumpAllTanksEnergyParameters,
     VirtualHeatpumpSolverParameters,
 )
 
