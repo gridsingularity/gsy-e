@@ -81,7 +81,7 @@ results_field_to_json_filename_mapping = {
     "random_seed": "random_seed",
     "simulation_state": "simulation_state",
     "status": "status",
-    "energy_trade_profile": "energy_trade_profile",
+    "trade_profile": "trade_profile",
     "imported_exported_energy": "imported_exported_energy",
 }
 
