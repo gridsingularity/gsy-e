@@ -6,10 +6,10 @@ from gsy_framework.constants_limits import GlobalConfig, TIME_ZONE
 from gsy_framework.utils import generate_market_slot_list
 from pendulum import duration, today
 
-from gsy_e.models.strategy.energy_parameters.virtual_heat_pump import (
+from gsy_e.models.strategy.energy_parameters.heatpump.virtual_heat_pump import (
     VirtualHeatpumpEnergyParameters,
 )
-from gsy_e.models.strategy.energy_parameters.heat_pump_tank import TankParameters
+from gsy_e.models.strategy.energy_parameters.heatpump.tank import TankParameters
 
 CURRENT_MARKET_SLOT = today(tz=TIME_ZONE)
 

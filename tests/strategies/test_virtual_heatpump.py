@@ -17,7 +17,6 @@ class TestVirtualHeatpumpStrategy:
         self._datetime = DateTime(year=2022, month=7, day=1, tzinfo=UTC)
         self._default_start_date = GlobalConfig.start_date
         GlobalConfig.start_date = DateTime(year=2022, month=7, day=1, tzinfo=UTC)
-        # print(start init)
         self._virtual_hp = VirtualHeatpumpStrategy(
             10,
             10,
@@ -63,7 +62,6 @@ class TestVirtualHeatpumpStrategy:
     def test_energy_from_max_tank_temp(
         self, water_supply_temp, water_return_temp, water_flow, energy
     ):
-        print("start test")
         self._virtual_hp._energy_params._water_supply_temp_C.profile = {
             self._datetime: water_supply_temp
         }

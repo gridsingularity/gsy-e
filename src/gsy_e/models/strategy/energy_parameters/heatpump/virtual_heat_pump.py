@@ -6,18 +6,18 @@ from gsy_framework.read_user_profile import InputProfileTypes
 from pendulum import DateTime
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
-from gsy_e.models.strategy.energy_parameters.heat_pump import HeatPumpEnergyParametersBase
-from gsy_e.models.strategy.energy_parameters.heat_pump_tank import (
-    TankParameters,
-    AllTanksEnergyParameters,
-)
-from gsy_e.models.strategy.energy_parameters.heatpump_constants import (
+from gsy_e.models.strategy.energy_parameters.heatpump.constants import (
     WATER_SPECIFIC_HEAT_CAPACITY,
     DEFAULT_SOURCE_TEMPERATURE_C,
 )
-from gsy_e.models.strategy.energy_parameters.virtual_heatpump_solver import (
+from gsy_e.models.strategy.energy_parameters.heatpump.heat_pump import HeatPumpEnergyParametersBase
+from gsy_e.models.strategy.energy_parameters.heatpump.tank import TankParameters
+from gsy_e.models.strategy.energy_parameters.heatpump.virtual_heatpump_solver import (
     VirtualHeatpumpSolverParameters,
     VirtualHeatpumpStorageEnergySolver,
+)
+from gsy_e.models.strategy.energy_parameters.heatpump.virtual_heatpump_tank import (
+    VirtualHeatpumpAllTanksEnergyParameters,
 )
 from gsy_e.models.strategy.strategy_profile import StrategyProfile
 
@@ -48,7 +48,7 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
         if not tank_parameters:
             tank_parameters = [TankParameters()]
 
-        self._tanks = AllTanksEnergyParameters(tank_parameters)
+        self._tanks = VirtualHeatpumpAllTanksEnergyParameters(tank_parameters)
 
         self._water_supply_temp_C: [DateTime, float] = StrategyProfile(
             water_supply_temp_C_profile,
@@ -73,7 +73,6 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
             source_temp_C_profile_uuid,
             profile_type=InputProfileTypes.IDENTITY,
         )
-        print("self.source_temp_C_profile.profile", self._source_temp_C_profile.profile)
 
         self.calibration_coefficient = (
             calibration_coefficient

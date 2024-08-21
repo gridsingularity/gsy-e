@@ -7,7 +7,7 @@ from gsy_framework.read_user_profile import InputProfileTypes
 from pendulum import DateTime
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
-from gsy_e.models.strategy.energy_parameters.heat_pump_tank import (
+from gsy_e.models.strategy.energy_parameters.heatpump.tank import (
     TankParameters,
     AllTanksEnergyParameters,
 )
