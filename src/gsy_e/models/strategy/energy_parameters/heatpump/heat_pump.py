@@ -36,10 +36,13 @@ class CombinedHeatpumpTanksState:
 
     def get_results_dict(self, current_time_slot: DateTime) -> dict:
         """Results dict for all heatpump and tanks results."""
-        return {
-            **self._hp_state.get_results_dict(current_time_slot),
-            **self._tanks_state.get_results_dict(current_time_slot),
-        }
+        tanks_state = self._tanks_state.get_results_dict(current_time_slot)
+        if isinstance(tanks_state, list):
+            return {
+                "tanks": tanks_state,
+                **self._hp_state.get_results_dict(current_time_slot),
+            }
+        return {**self._hp_state.get_results_dict(current_time_slot), **tanks_state}
 
     def get_state(self) -> Dict:
         """Return the current state of the device."""
