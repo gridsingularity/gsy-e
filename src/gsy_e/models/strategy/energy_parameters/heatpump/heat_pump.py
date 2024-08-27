@@ -48,7 +48,7 @@ class CombinedHeatpumpTanksState:
         """Return the current state of the device."""
         return {
             **self._hp_state.get_state(),
-            **self._tanks_state.get_state(),
+            "tanks": self._tanks_state.get_state(),
         }
 
     def restore_state(self, state_dict: Dict):
@@ -207,7 +207,7 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
     def serialize(self):
         """Return dict with the current energy parameter values."""
         return {
-            **self._state.tanks.serialize(),
+            "tanks": self._state.tanks.serialize(),
             "max_energy_consumption_kWh": self._max_energy_consumption_kWh,
             "maximum_power_rating_kW": self._maximum_power_rating_kW,
             "consumption_kWh": self._consumption_kWh.input_profile,
