@@ -20,4 +20,4 @@ Trading process through the Matching API:
 
 It is important to note that the Matching API is **asynchronous** towards the exchange, meaning  that [it can request bids and offers](matching-api-commands.md) and send recommendations at any time during the [market slots]('market-types.md').
 
-_The GSy Matching API code is currently available in Python, with Rust implementation in development._
+_The GSy Matching API code is currently available in Python, as well as in Rust for the [GSY DEX Matching API](blockchain-matching-engine.md#gsy-dex-matching-api) Implementation._
