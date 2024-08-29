@@ -47,16 +47,12 @@ Spot and futures trading requires predictions of energy used at both the asset a
 - Implement final gate closure time one day after delivery, allowing post-delivery trading for balance responsible parties to trade imbalances in real-time, and/or
 - Allow post-delivery trading for all market participants.
 
-Grid Singularity will serve as the Execution Engine operator for the GSY DEX.
-
 _The GSY DEX Execution Engine system component is in development._
 
 ### GSY DEX Analytics Engine
 The GSY DEX Analytics Engine collects and processes live trading data (bids, offers, trades) and related energy asset information, providing valuable insights and market intelligence to the exchange platform users and / or operators by generating key performance indicators. This information helps users make informed decisions and identify trends, which can lead to more efficient energy trading strategies and improved market dynamics.
 
 A list of currently supported key performance indicators can be found [here](results-dashboard.md){target=_blank}, with more under development. The [GSY DEX API Gateway](#gsy-dex-api-gateway) provides REST endpoints in order to facilitate access for authenticated customers to the calculated key performance indicators overview. In addition, the full dataset pertaining to the performance indicators can be [downloaded](results-download.md) in JSON format for detailed analysis.
-
-Grid Singularity will serve as the Analytics Engine operator for the GSY DEX.
 
 _The GSY DEX Analytics Engine system component is in development._
 
