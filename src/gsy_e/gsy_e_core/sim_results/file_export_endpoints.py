@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
 from abc import ABC, abstractmethod
 from statistics import mean
 from typing import TYPE_CHECKING, Dict, List
@@ -31,9 +32,12 @@ from gsy_e.models.strategy.scm.load import SCMLoadHoursStrategy, SCMLoadProfileS
 from gsy_e.models.strategy.scm.heat_pump import ScmHeatPumpStrategy
 from gsy_e.models.strategy.scm.pv import SCMPVUserProfile
 from gsy_e.models.strategy.storage import StorageStrategy
-from gsy_e.models.strategy.heat_pump import HeatPumpStrategy
+from gsy_e.models.strategy.heat_pump import HeatPumpStrategy, MultipleTankHeatPumpStrategy
 from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
-from gsy_e.models.strategy.virtual_heatpump import VirtualHeatpumpStrategy
+from gsy_e.models.strategy.virtual_heatpump import (
+    VirtualHeatpumpStrategy,
+    MultipleTankVirtualHeatpumpStrategy,
+)
 
 if TYPE_CHECKING:
     from gsy_e.models.area import CoefficientArea
@@ -56,18 +60,21 @@ class BaseDataExporter(ABC):
 
 class UpperLevelDataExporter(BaseDataExporter):
     """Data exporter for areas higher in the grid tree."""
+
     def __init__(self, past_markets):
         self.past_markets = past_markets
 
     @property
     def labels(self) -> List:
-        return ["slot",
-                "avg trade rate [ct./kWh]",
-                "min trade rate [ct./kWh]",
-                "max trade rate [ct./kWh]",
-                "# trades",
-                "total energy traded [kWh]",
-                "total trade volume [EURO ct.]"]
+        return [
+            "slot",
+            "avg trade rate [ct./kWh]",
+            "min trade rate [ct./kWh]",
+            "max trade rate [ct./kWh]",
+            "# trades",
+            "total energy traded [kWh]",
+            "total trade volume [EURO ct.]",
+        ]
 
     @property
     def rows(self):
@@ -75,13 +82,15 @@ class UpperLevelDataExporter(BaseDataExporter):
 
     @staticmethod
     def _row(slot, market):
-        return [slot,
-                market.avg_trade_price,
-                market.min_trade_price,
-                market.max_trade_price,
-                len(market.trades),
-                sum(trade.traded_energy for trade in market.trades),
-                sum(trade.trade_price for trade in market.trades)]
+        return [
+            slot,
+            market.avg_trade_price,
+            market.min_trade_price,
+            market.max_trade_price,
+            len(market.trades),
+            sum(trade.traded_energy for trade in market.trades),
+            sum(trade.trade_price for trade in market.trades),
+        ]
 
 
 class FutureMarketsDataExporter(BaseDataExporter):
@@ -92,10 +101,7 @@ class FutureMarketsDataExporter(BaseDataExporter):
 
     @property
     def labels(self) -> List:
-        return ["slot",
-                "# trades",
-                "total energy traded [kWh]",
-                "total trade volume [EURO ct.]"]
+        return ["slot", "# trades", "total energy traded [kWh]", "total trade volume [EURO ct.]"]
 
     @property
     def rows(self):
@@ -106,10 +112,12 @@ class FutureMarketsDataExporter(BaseDataExporter):
 
     def _row(self, slot):
         trades = self.future_markets.slot_trade_mapping[slot]
-        return [slot,
-                len(trades),
-                sum(trade.traded_energy for trade in trades),
-                sum(trade.trade_price for trade in trades)]
+        return [
+            slot,
+            len(trades),
+            sum(trade.traded_energy for trade in trades),
+            sum(trade.trade_price for trade in trades),
+        ]
 
 
 class BalancingDataExporter(BaseDataExporter):
@@ -120,9 +128,11 @@ class BalancingDataExporter(BaseDataExporter):
 
     @property
     def labels(self) -> List:
-        return ["slot",
-                "avg supply balancing trade rate [ct./kWh]",
-                "avg demand balancing trade rate [ct./kWh]"]
+        return [
+            "slot",
+            "avg supply balancing trade rate [ct./kWh]",
+            "avg demand balancing trade rate [ct./kWh]",
+        ]
 
     @property
     def rows(self):
@@ -130,9 +140,11 @@ class BalancingDataExporter(BaseDataExporter):
 
     @staticmethod
     def _row(slot, market):
-        return [slot,
-                market.avg_supply_balancing_trade_rate,
-                market.avg_demand_balancing_trade_rate]
+        return [
+            slot,
+            market.avg_supply_balancing_trade_rate,
+            market.avg_demand_balancing_trade_rate,
+        ]
 
 
 class LeafDataExporter(BaseDataExporter):
@@ -144,9 +156,10 @@ class LeafDataExporter(BaseDataExporter):
 
     @property
     def labels(self) -> List:
-        return ["slot",
-                "energy traded [kWh]",
-                ] + self._specific_labels()
+        return [
+            "slot",
+            "energy traded [kWh]",
+        ] + self._specific_labels()
 
     def _specific_labels(self):
         if isinstance(self.area.strategy, StorageStrategy):
@@ -158,13 +171,35 @@ class LeafDataExporter(BaseDataExporter):
         # pylint: disable=unidiomatic-typecheck
         if type(self.area.strategy) == HeatPumpStrategy:
             return [
-                "unmatched demand [kWh]", "storage temperature C", "temp decrease K",
-                "temp increase K", "COP"]
+                "unmatched demand [kWh]",
+                "storage temperature C",
+                "temp decrease K",
+                "temp increase K",
+                "COP",
+            ]
         # pylint: disable=unidiomatic-typecheck
         if type(self.area.strategy) == VirtualHeatpumpStrategy:
             return [
-                "unmatched demand [kWh]", "storage temperature C", "temp decrease K",
-                "temp increase K", "COP", "heat demand J", "condenser temperature C"]
+                "unmatched demand [kWh]",
+                "storage temperature C",
+                "temp decrease K",
+                "temp increase K",
+                "COP",
+                "heat demand J",
+                "condenser temperature C",
+            ]
+        if type(self.area.strategy) == MultipleTankHeatPumpStrategy:
+            return ["unmatched demand [kWh]", "storage temperature C", "heat demand kWh", "COP"]
+        # pylint: disable=unidiomatic-typecheck
+        if type(self.area.strategy) == MultipleTankVirtualHeatpumpStrategy:
+            return [
+                "unmatched demand [kWh]",
+                "storage temperature C",
+                "heat demand kWh",
+                "COP",
+                "condenser temperature C",
+            ]
+
         return []
 
     @property
@@ -172,22 +207,26 @@ class LeafDataExporter(BaseDataExporter):
         return [self._row(market.time_slot, market) for market in self.past_markets]
 
     def _traded(self, market):
-        return (market.traded_energy[self.area.name]
-                if self.area.name in market.traded_energy else 0)
+        return (
+            market.traded_energy[self.area.name] if self.area.name in market.traded_energy else 0
+        )
 
     def _row(self, slot, market):
-        return [slot,
-                self._traded(market),
-                ] + self._specific_row(slot, market)
+        return [
+            slot,
+            self._traded(market),
+        ] + self._specific_row(slot, market)
 
     def _specific_row(self, slot, market):
         if isinstance(self.area.strategy, StorageStrategy):
             s = self.area.strategy.state
-            return [market.bought_energy(self.area.name),
-                    market.sold_energy(self.area.name),
-                    s.charge_history_kWh[slot],
-                    s.offered_history[slot],
-                    s.charge_history[slot]]
+            return [
+                market.bought_energy(self.area.name),
+                market.sold_energy(self.area.name),
+                s.charge_history_kWh[slot],
+                s.offered_history[slot],
+                s.charge_history[slot],
+            ]
         if isinstance(self.area.strategy, LoadHoursStrategy):
             desired = self.area.strategy.state.get_desired_energy_Wh(slot) / 1000
             return [desired, self._traded(market) + desired]
@@ -197,24 +236,60 @@ class LeafDataExporter(BaseDataExporter):
             return [produced, not_sold]
         # pylint: disable=unidiomatic-typecheck
         if type(self.area.strategy) == HeatPumpStrategy:
-            return [round(self.area.strategy.state.get_unmatched_demand_kWh(slot),
-                          ROUND_TOLERANCE),
-                    round(self.area.strategy.state.get_storage_temp_C(slot), ROUND_TOLERANCE),
-                    round(self.area.strategy.state.get_temp_decrease_K(slot), ROUND_TOLERANCE),
-                    round(self.area.strategy.state.get_temp_increase_K(slot), ROUND_TOLERANCE),
-                    round(self.area.strategy.state.get_cop(slot), ROUND_TOLERANCE)
-                    ]
+            return [
+                round(self.area.strategy.state.get_unmatched_demand_kWh(slot), ROUND_TOLERANCE),
+                round(self.area.strategy.state.get_storage_temp_C(slot), ROUND_TOLERANCE),
+                round(self.area.strategy.state.get_temp_decrease_K(slot), ROUND_TOLERANCE),
+                round(self.area.strategy.state.get_temp_increase_K(slot), ROUND_TOLERANCE),
+                round(self.area.strategy.state.get_cop(slot), ROUND_TOLERANCE),
+            ]
         # pylint: disable=unidiomatic-typecheck
         if type(self.area.strategy) == VirtualHeatpumpStrategy:
-            return [round(self.area.strategy.state.get_unmatched_demand_kWh(slot),
-                          ROUND_TOLERANCE),
-                    round(self.area.strategy.state.get_storage_temp_C(slot), ROUND_TOLERANCE),
-                    round(self.area.strategy.state.get_temp_decrease_K(slot), ROUND_TOLERANCE),
-                    round(self.area.strategy.state.get_temp_increase_K(slot), ROUND_TOLERANCE),
-                    round(self.area.strategy.state.get_cop(slot), ROUND_TOLERANCE),
-                    round(self.area.strategy.state.get_heat_demand(slot), ROUND_TOLERANCE),
-                    round(self.area.strategy.state.get_condenser_temp(slot), ROUND_TOLERANCE),
-                    ]
+            return [
+                round(self.area.strategy.state.get_unmatched_demand_kWh(slot), ROUND_TOLERANCE),
+                round(self.area.strategy.state.get_storage_temp_C(slot), ROUND_TOLERANCE),
+                round(self.area.strategy.state.get_temp_decrease_K(slot), ROUND_TOLERANCE),
+                round(self.area.strategy.state.get_temp_increase_K(slot), ROUND_TOLERANCE),
+                round(self.area.strategy.state.get_cop(slot), ROUND_TOLERANCE),
+                round(self.area.strategy.state.get_heat_demand(slot), ROUND_TOLERANCE),
+                round(self.area.strategy.state.get_condenser_temp(slot), ROUND_TOLERANCE),
+            ]
+        # pylint: disable=unidiomatic-typecheck
+        if type(self.area.strategy) == MultipleTankHeatPumpStrategy:
+            cop = self.area.strategy.state.heatpump.get_cop(slot)
+            return [
+                round(
+                    self.area.strategy.state.tanks.get_unmatched_demand_kWh(slot), ROUND_TOLERANCE
+                ),
+                round(
+                    self.area.strategy.state.tanks.get_average_tank_temperature(slot),
+                    ROUND_TOLERANCE,
+                ),
+                round(
+                    self.area.strategy.state.tanks.get_min_energy_consumption(cop, slot),
+                    ROUND_TOLERANCE,
+                ),
+                round(cop, ROUND_TOLERANCE),
+            ]
+        # pylint: disable=unidiomatic-typecheck
+        if type(self.area.strategy) == MultipleTankVirtualHeatpumpStrategy:
+            cop = self.area.strategy.state.heatpump.get_cop(slot)
+            return [
+                round(
+                    self.area.strategy.state.tanks.get_unmatched_demand_kWh(slot), ROUND_TOLERANCE
+                ),
+                round(
+                    self.area.strategy.state.tanks.get_average_tank_temperature(slot),
+                    ROUND_TOLERANCE,
+                ),
+                round(
+                    self.area.strategy.state.tanks.get_min_energy_consumption(cop, slot),
+                    ROUND_TOLERANCE,
+                ),
+                round(cop, ROUND_TOLERANCE),
+                round(self.area.strategy.state.heatpump.get_condenser_temp(slot), ROUND_TOLERANCE),
+            ]
+
         return []
 
 
@@ -240,25 +315,30 @@ class FileExportEndpoints:
 
     @staticmethod
     def export_data_factory(
-            area: Area, past_market_type: AvailableMarketTypes
+        area: Area, past_market_type: AvailableMarketTypes
     ) -> BaseDataExporter:
         """Decide which data acquisition class to use."""
         if past_market_type == AvailableMarketTypes.SPOT:
-            return (UpperLevelDataExporter(area.past_markets)
-                    if len(area.children) > 0
-                    else LeafDataExporter(area, area.parent.past_markets))
+            return (
+                UpperLevelDataExporter(area.past_markets)
+                if len(area.children) > 0
+                else LeafDataExporter(area, area.parent.past_markets)
+            )
         if past_market_type == AvailableMarketTypes.BALANCING:
             return BalancingDataExporter(area.past_balancing_markets)
         if past_market_type == AvailableMarketTypes.SETTLEMENT:
-            return (UpperLevelDataExporter(area.past_settlement_markets.values())
-                    if len(area.children) > 0
-                    else LeafDataExporter(area, area.parent.past_settlement_markets.values()))
+            return (
+                UpperLevelDataExporter(area.past_settlement_markets.values())
+                if len(area.children) > 0
+                else LeafDataExporter(area, area.parent.past_settlement_markets.values())
+            )
         if past_market_type == AvailableMarketTypes.FUTURE and area.future_markets:
             return FutureMarketsDataExporter(area.future_markets)
         raise Exception("past_market_type not compatible")
 
-    def _get_stats_from_market_data(self, out_dict: Dict, area: Area,
-                                    past_market_type: AvailableMarketTypes) -> None:
+    def _get_stats_from_market_data(
+        self, out_dict: Dict, area: Area, past_market_type: AvailableMarketTypes
+    ) -> None:
         """Get statistics and write them to out_dict."""
         data = self.export_data_factory(area, past_market_type)
         if area.slug not in out_dict:
@@ -268,9 +348,11 @@ class FileExportEndpoints:
                 out_dict[area.slug][label].append(row[ii])
 
     def _populate_plots_stats_for_supply_demand_curve(self, area: Area) -> None:
-        if (ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value and
-                ConstSettings.MASettings.BID_OFFER_MATCH_TYPE ==
-                BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value):
+        if (
+            ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value
+            and ConstSettings.MASettings.BID_OFFER_MATCH_TYPE
+            == BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
+        ):
             if len(area.past_markets) == 0:
                 return
             market = area.past_markets[-1]
@@ -284,18 +366,20 @@ class FileExportEndpoints:
                 self.clearing[area.slug][market.time_slot] = {}
                 clearing_state = bid_offer_matcher.matcher.match_algorithm.state
             self.cumulative_offers[area.slug][market.time_slot] = (
-                clearing_state.cumulative_offers.get(market.id, {}))
-            self.cumulative_bids[area.slug][market.time_slot] = (
-                clearing_state.cumulative_bids.get(market.id, {}))
-            self.clearing[area.slug][market.time_slot] = (
-                clearing_state.clearing.get(market.id, ()))
+                clearing_state.cumulative_offers.get(market.id, {})
+            )
+            self.cumulative_bids[area.slug][market.time_slot] = clearing_state.cumulative_bids.get(
+                market.id, {}
+            )
+            self.clearing[area.slug][market.time_slot] = clearing_state.clearing.get(market.id, ())
 
     def _update_plot_stats(self, area: Area) -> None:
         """Populate the statistics for the plots into self.plot_stats."""
         self._get_stats_from_market_data(self.plot_stats, area, AvailableMarketTypes.SPOT)
         if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
-            self._get_stats_from_market_data(self.plot_balancing_stats, area,
-                                             AvailableMarketTypes.BALANCING)
+            self._get_stats_from_market_data(
+                self.plot_balancing_stats, area, AvailableMarketTypes.BALANCING
+            )
         if ConstSettings.GeneralSettings.EXPORT_SUPPLY_DEMAND_PLOTS:
             self._populate_plots_stats_for_supply_demand_curve(area)
 
@@ -321,13 +405,15 @@ class CoefficientFileExportEndpoints(FileExportEndpoints):
         super().__call__(area)
 
     def export_data_factory(
-            self, area: "CoefficientArea", past_market_type: AvailableMarketTypes
+        self, area: "CoefficientArea", past_market_type: AvailableMarketTypes
     ) -> BaseDataExporter:
         """Decide which data acquisition class to use."""
         assert past_market_type == AvailableMarketTypes.SPOT, "SCM supports only spot market."
-        return (CoefficientDataExporter(area, self._scm_manager)
-                if len(area.children) > 0
-                else CoefficientLeafDataExporter(area))
+        return (
+            CoefficientDataExporter(area, self._scm_manager)
+            if len(area.children) > 0
+            else CoefficientLeafDataExporter(area)
+        )
 
     def _update_plot_stats(self, area: Area) -> None:
         """
@@ -353,13 +439,15 @@ class CoefficientDataExporter(BaseDataExporter):
 
     @property
     def labels(self) -> List:
-        return ["slot",
-                "avg trade rate [ct./kWh]",
-                "min trade rate [ct./kWh]",
-                "max trade rate [ct./kWh]",
-                "# trades",
-                "total energy traded [kWh]",
-                "total trade volume [EURO ct.]"]
+        return [
+            "slot",
+            "avg trade rate [ct./kWh]",
+            "min trade rate [ct./kWh]",
+            "max trade rate [ct./kWh]",
+            "# trades",
+            "total energy traded [kWh]",
+            "total trade volume [EURO ct.]",
+        ]
 
     @property
     def rows(self) -> List:
@@ -369,25 +457,20 @@ class CoefficientDataExporter(BaseDataExporter):
         area_results = self._scm.get_area_results(self._area.uuid, serializable=False)
         if not area_results["after_meter_data"]:
             return []
-        trade_rates = [
-            t.trade_rate
-            for t in area_results["after_meter_data"]["trades"]
+        trade_rates = [t.trade_rate for t in area_results["after_meter_data"]["trades"]]
+        trade_prices = [t.trade_price for t in area_results["after_meter_data"]["trades"]]
+        trades_energy = [t.traded_energy for t in area_results["after_meter_data"]["trades"]]
+        return [
+            [
+                self._area.current_market_time_slot,
+                mean(trade_rates) if trade_rates else 0.0,
+                min(trade_rates) if trade_rates else 0.0,
+                max(trade_rates) if trade_rates else 0.0,
+                len(trade_rates) if trade_rates else 0.0,
+                sum(trades_energy) if trades_energy else 0.0,
+                sum(trade_prices) if trade_prices else 0.0,
+            ]
         ]
-        trade_prices = [
-            t.trade_price
-            for t in area_results["after_meter_data"]["trades"]
-        ]
-        trades_energy = [
-            t.traded_energy
-            for t in area_results["after_meter_data"]["trades"]
-        ]
-        return [[self._area.current_market_time_slot,
-                mean(trade_rates) if trade_rates else 0.,
-                min(trade_rates) if trade_rates else 0.,
-                max(trade_rates) if trade_rates else 0.,
-                len(trade_rates) if trade_rates else 0.,
-                sum(trades_energy) if trades_energy else 0.,
-                sum(trade_prices) if trade_prices else 0.]]
 
 
 class CoefficientLeafDataExporter(BaseDataExporter):
@@ -415,11 +498,13 @@ class CoefficientLeafDataExporter(BaseDataExporter):
         if isinstance(self._area.strategy, SCMStorageStrategy):
             traded = self._area.strategy._energy_params.energy_profile.profile[slot]
             return [[slot, traded]]
-        if isinstance(self._area.strategy,
-                      (SCMLoadHoursStrategy, SCMLoadProfileStrategy, ScmHeatPumpStrategy)):
+        if isinstance(
+            self._area.strategy,
+            (SCMLoadHoursStrategy, SCMLoadProfileStrategy, ScmHeatPumpStrategy),
+        ):
             desired = self._area.strategy.state.get_desired_energy_Wh(slot) / 1000
             # All energy is traded in SCM
-            return [[slot, desired, 0.]]
+            return [[slot, desired, 0.0]]
         if isinstance(self._area.strategy, SCMPVUserProfile):
             not_sold = self._area.strategy.state.get_available_energy_kWh(slot)
             produced = self._area.strategy.state.get_energy_production_forecast_kWh(slot, 0.0)
