@@ -214,8 +214,6 @@ def read_settings_from_file(settings_file):
                             if slot_length else GlobalConfig.slot_length),
             "tick_length": (IntervalType("M:S")(tick_length)
                             if tick_length else GlobalConfig.tick_length),
-            "cloud_coverage": settings["basic_settings"].get(
-                "cloud_coverage", advanced_settings["PVSettings"]["DEFAULT_POWER_PROFILE"]),
             "enable_degrees_of_freedom": settings["basic_settings"].get(
                 "enable_degrees_of_freedom", GlobalConfig.enable_degrees_of_freedom)
         }
@@ -309,7 +307,7 @@ def change_global_config(**kwargs):
         if hasattr(GlobalConfig, arg):
             setattr(GlobalConfig, arg, value)
         else:
-            # continue, if config setting is not member of GlobalConfig, e.g. pv_user_profile
+            # continue, if config setting is not member of GlobalConfig, e.g. capacity_kW
             pass
 
 
@@ -398,7 +396,6 @@ def export_default_settings_to_json_file():
             "sim_duration": f"{GlobalConfig.DURATION_D*24}h",
             "slot_length": f"{GlobalConfig.SLOT_LENGTH_M}m",
             "tick_length": f"{GlobalConfig.TICK_LENGTH_S}s",
-            "cloud_coverage": GlobalConfig.CLOUD_COVERAGE,
             "start_date": instance(GlobalConfig.start_date).format(gsy_e.constants.DATE_FORMAT),
     }
     all_settings = {"basic_settings": base_settings, "advanced_settings": constsettings_to_dict()}

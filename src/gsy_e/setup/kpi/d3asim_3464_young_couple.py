@@ -16,8 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from gsy_e.models.area import Area
 from gsy_framework.constants_limits import ConstSettings
+from gsy_e.models.area import Area
 from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_e.models.strategy.pv import PVStrategy
@@ -39,7 +39,7 @@ def get_setup(config):
                     Area("Young Couple House",
                          [
                             Area("YC General Load", strategy=LoadHoursStrategy(
-                                avg_power_W=3147, hrs_of_day=list(range(24)), hrs_per_day=24,
+                                avg_power_W=3147, hrs_of_day=list(range(24)),
                                 initial_buying_rate=25, final_buying_rate=25,
                                 fit_to_limit=True)),
                          ]),
@@ -47,7 +47,7 @@ def get_setup(config):
                         capacity_kW=4, panel_count=1,
                         initial_selling_rate=8, final_selling_rate=8)),
                     Area("Community Load", strategy=LoadHoursStrategy(
-                        avg_power_W=400, hrs_of_day=list(range(24)), hrs_per_day=24,
+                        avg_power_W=400, hrs_of_day=list(range(24)),
                         initial_buying_rate=25.5, final_buying_rate=25.5,
                         fit_to_limit=True)),
                     Area("Community PP", strategy=FinitePowerPlant(

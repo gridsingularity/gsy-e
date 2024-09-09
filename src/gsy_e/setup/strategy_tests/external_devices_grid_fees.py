@@ -15,13 +15,15 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from gsy_framework.constants_limits import ConstSettings
+
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.storage import StorageStrategy
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_e.models.strategy.external_strategies.pv import PVExternalStrategy
 from gsy_e.models.strategy.external_strategies.load import LoadHoursExternalStrategy
 from gsy_e.models.strategy.market_maker_strategy import MarketMakerStrategy
-from gsy_framework.constants_limits import ConstSettings
+
 
 ConstSettings.MASettings.MARKET_TYPE = 2
 
@@ -36,7 +38,6 @@ def get_setup(config):
                 "House 1",
                 [
                     Area("H1 General Load", strategy=LoadHoursStrategy(avg_power_W=200,
-                                                                       hrs_per_day=6,
                                                                        hrs_of_day=list(
                                                                            range(12, 18)),
                                                                        final_buying_rate=35)
@@ -53,7 +54,7 @@ def get_setup(config):
                 "House 2",
                 [
                     Area("load", strategy=LoadHoursExternalStrategy(
-                        avg_power_W=200, hrs_per_day=24, hrs_of_day=list(range(0, 24)),
+                        avg_power_W=200, hrs_of_day=list(range(0, 24)),
                         final_buying_rate=35)
                          ),
                     Area("pv", strategy=PVExternalStrategy(panel_count=4)

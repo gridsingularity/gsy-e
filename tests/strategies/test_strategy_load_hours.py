@@ -203,20 +203,6 @@ class TestLoadHoursStrategyInput(unittest.TestCase):
         area.markets = {TIME: FakeMarket(0)}
         return area
 
-    def Mock_LoadHoursStrategy(self, avg_power_W, hrs_per_day, hrs_of_day):
-        strategy = LoadHoursStrategy(avg_power_W=avg_power_W,
-                                     hrs_per_day=hrs_per_day,
-                                     hrs_of_day=hrs_of_day)
-        strategy.area = self.area_test()
-        strategy.owner = self.area_test()
-        strategy.event_activate()
-        return strategy
-
-    def test_LoadHoursStrategy_input(self):
-        power_W = 620
-        with self.assertRaises(GSyDeviceException):
-            self.Mock_LoadHoursStrategy(power_W, 4, [1, 2])
-
 
 @pytest.fixture()
 def area_test1(market_test1):
@@ -246,7 +232,7 @@ def market_test2():
 @pytest.fixture
 def load_hours_strategy_test(called):
     strategy = LoadHoursStrategy(
-        avg_power_W=620, hrs_per_day=4, hrs_of_day=[8, 9, 10, 12],
+        avg_power_W=620, hrs_of_day=[8, 9, 10, 12],
         initial_buying_rate=10)
     strategy.accept_offer = called
     return strategy
@@ -269,7 +255,7 @@ def load_hours_strategy_test2(load_hours_strategy_test, area_test2):
 @pytest.fixture
 def load_hours_strategy_test4():
     strategy = LoadHoursStrategy(
-        avg_power_W=620, hrs_per_day=4, hrs_of_day=[8, 9, 10, 12],
+        avg_power_W=620, hrs_of_day=[8, 9, 10, 12],
         initial_buying_rate=10)
     strategy.accept_offer = Mock()
     return strategy
@@ -355,22 +341,6 @@ def test_event_tick_one_sided_market_no_energy_required(load_hours_strategy_test
     load_hours_strategy_test1.event_tick()
     load_hours_strategy_test1.accept_offer.assert_not_called()
     load_hours_strategy_test1.state.decrement_energy_requirement.assert_not_called()
-
-
-def test_event_tick_one_sided_market_energy_required(load_hours_strategy_test1, market_test1):
-    """The load makes offers on tick events in one-sided markets when it can buy energy."""
-    load_hours_strategy_test1.state.can_buy_more_energy = Mock(return_value=True)
-    load_hours_strategy_test1.accept_offer = Mock()
-    load_hours_strategy_test1.state.decrement_energy_requirement = Mock()
-
-    load_hours_strategy_test1.event_activate()
-    assert load_hours_strategy_test1._energy_params.hrs_per_day == {0: 4}
-    load_hours_strategy_test1.event_market_cycle()
-    load_hours_strategy_test1.event_tick()
-    load_hours_strategy_test1.accept_offer.assert_called()
-    load_hours_strategy_test1.state.decrement_energy_requirement.assert_called()
-    # The amount of operating hours has decreased
-    assert load_hours_strategy_test1._energy_params.hrs_per_day == {0: 3.25}
 
 
 def test_event_tick(load_hours_strategy_test1, market_test1):

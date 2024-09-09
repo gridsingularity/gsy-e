@@ -68,8 +68,6 @@ def _create_config(settings=None):
         "market_maker_rate":
             settings.get("market_maker_rate",
                          ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE),
-        "cloud_coverage": settings.get("cloud_coverage", GlobalConfig.cloud_coverage),
-        "pv_user_profile": settings.get("pv_user_profile", None),
         "capacity_kW": settings.get("capacity_kW",
                                     ConstSettings.PVSettings.DEFAULT_CAPACITY_KW),
         "grid_fee_type": settings.get("grid_fee_type", GlobalConfig.grid_fee_type),

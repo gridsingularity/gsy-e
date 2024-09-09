@@ -35,17 +35,17 @@ class HomeAfterMeterData:
 
     home_uuid: str
     home_name: str
-    sharing_coefficient_percent: float = 0.
+    sharing_coefficient_percent: float = 0.0
     # market_maker_rate and feed_in_tariff units are the selected currency (e.g. Euro)
-    market_maker_rate: float = 0.
-    feed_in_tariff: float = 0.
-    consumption_kWh: float = 0.
-    production_kWh: float = 0.
-    self_consumed_energy_kWh: float = 0.
-    energy_surplus_kWh: float = 0.
-    energy_need_kWh: float = 0.
-    community_total_production_kWh: float = 0.
-    _self_production_for_community_kWh: float = 0.
+    market_maker_rate: float = 0.0
+    feed_in_tariff: float = 0.0
+    consumption_kWh: float = 0.0
+    production_kWh: float = 0.0
+    self_consumed_energy_kWh: float = 0.0
+    energy_surplus_kWh: float = 0.0
+    energy_need_kWh: float = 0.0
+    community_total_production_kWh: float = 0.0
+    _self_production_for_community_kWh: float = 0.0
     trades: List[Trade] = None
     fee_properties: FeeProperties = field(default_factory=FeeProperties)
     asset_energy_requirements_kWh: Dict[str, float] = field(default_factory=dict)
@@ -53,25 +53,33 @@ class HomeAfterMeterData:
     def to_dict(self) -> Dict:
         """Dict representation of the home after meter data."""
         output_dict = asdict(self)
-        output_dict.update({
-            "allocated_community_energy_kWh": self.allocated_community_energy_kWh,
-            "energy_bought_from_community_kWh": self.energy_bought_from_community_kWh,
-            "energy_sold_to_grid_kWh": self.energy_sold_to_grid_kWh,
-        })
+        output_dict.update(
+            {
+                "allocated_community_energy_kWh": self.allocated_community_energy_kWh,
+                "energy_bought_from_community_kWh": self.energy_bought_from_community_kWh,
+                "energy_sold_to_grid_kWh": self.energy_sold_to_grid_kWh,
+            }
+        )
         return output_dict
 
     def serializable_dict(self) -> Dict:
         """Dict representation that can be serialized."""
         if not isclose(
-                self.energy_surplus_kWh,
-                self.energy_sold_to_grid_kWh + self.self_production_for_community_kWh):
+            self.energy_surplus_kWh,
+            self.energy_sold_to_grid_kWh + self.self_production_for_community_kWh,
+        ):
             logging.error(
                 "Incorrect calculation of sold to grid and self production for community. "
-                "Home details: %s", self.to_dict())
+                "Home details: %s",
+                self.to_dict(),
+            )
         if abs(self.energy_sold_to_grid_kWh) > 1000.0:
-            logging.error("Energy sold %s. Configuration %s, area %s.",
-                          self.energy_sold_to_grid_kWh, gsy_e.constants.CONFIGURATION_ID,
-                          self.home_uuid)
+            logging.error(
+                "Energy sold %s. Configuration %s, area %s.",
+                self.energy_sold_to_grid_kWh,
+                gsy_e.constants.CONFIGURATION_ID,
+                self.home_uuid,
+            )
         output_dict = self.to_dict()
         output_dict["trades"] = [trade.serializable_dict() for trade in self.trades]
         return output_dict
@@ -86,8 +94,10 @@ class HomeAfterMeterData:
         self.self_consumed_energy_kWh = min(self.consumption_kWh, self.production_kWh)
         self.energy_surplus_kWh = self.production_kWh - self.self_consumed_energy_kWh
         self.energy_need_kWh = self.consumption_kWh - self.self_consumed_energy_kWh
-        assert not (self.energy_surplus_kWh > FLOATING_POINT_TOLERANCE and
-                    self.energy_need_kWh > FLOATING_POINT_TOLERANCE)
+        assert not (
+            self.energy_surplus_kWh > FLOATING_POINT_TOLERANCE
+            and self.energy_need_kWh > FLOATING_POINT_TOLERANCE
+        )
         if self.trades is None:
             self.trades = []
 
@@ -103,12 +113,12 @@ class HomeAfterMeterData:
 
         if is_no_community_self_consumption():
             self._self_production_for_community_kWh = 0
-            return 0.
+            return 0.0
         if self.energy_surplus_kWh <= unassigned_energy_production_kWh:
             self._self_production_for_community_kWh = self.energy_surplus_kWh
             return unassigned_energy_production_kWh - self.energy_surplus_kWh
         self._self_production_for_community_kWh = unassigned_energy_production_kWh
-        return 0.
+        return 0.0
 
     @property
     def self_production_for_community_kWh(self):
@@ -135,43 +145,73 @@ class HomeAfterMeterData:
     def energy_sold_to_grid_kWh(self) -> float:
         """Amount of energy sold by the home to the grid."""
         if not isclose(
-                self.production_kWh, (
-                        self.self_production_for_community_kWh +
-                        self.self_production_for_grid_kWh +
-                        self.self_consumed_energy_kWh)):
+            self.production_kWh,
+            (
+                self.self_production_for_community_kWh
+                + self.self_production_for_grid_kWh
+                + self.self_consumed_energy_kWh
+            ),
+        ):
             logging.error(
                 "Incorrect SCM calculation of sold to grid. Asset information: %s, "
-                "Self production for grid: %s", asdict(self), self.self_production_for_grid_kWh)
+                "Self production for grid: %s",
+                asdict(self),
+                self.self_production_for_grid_kWh,
+            )
         return self.self_production_for_grid_kWh
 
-    def create_buy_trade(self, current_time_slot: DateTime, seller_name: str,
-                         traded_energy_kWh: float, trade_price_cents: float) -> None:
+    def create_buy_trade(
+        self,
+        current_time_slot: DateTime,
+        seller_name: str,
+        traded_energy_kWh: float,
+        trade_price_cents: float,
+    ) -> None:
         """Create and save a trade object for buying energy."""
-        assert 0. < traded_energy_kWh <= self.energy_need_kWh, \
-            f"Cannot buy more energy ({traded_energy_kWh}) than the energy need (" \
+        assert 0.0 < traded_energy_kWh <= self.energy_need_kWh, (
+            f"Cannot buy more energy ({traded_energy_kWh}) than the energy need ("
             f"{self.energy_need_kWh}) of the home ({self.home_name})."
+        )
 
         trade = Trade(
-            str(uuid4()), current_time_slot,
+            str(uuid4()),
+            current_time_slot,
             TraderDetails(seller_name, None, seller_name, None),
             TraderDetails(self.home_name, self.home_uuid, self.home_name, self.home_uuid),
-            traded_energy=traded_energy_kWh, trade_price=trade_price_cents, residual=None,
-            offer_bid_trade_info=None, fee_price=0., time_slot=current_time_slot)
+            traded_energy=traded_energy_kWh,
+            trade_price=trade_price_cents,
+            residual=None,
+            offer_bid_trade_info=None,
+            fee_price=0.0,
+            time_slot=current_time_slot,
+        )
         self.trades.append(trade)
         logging.info("[SCM][TRADE][BID] [%s] [%s] %s", self.home_name, trade.time_slot, trade)
 
-    def create_sell_trade(self, current_time_slot: DateTime, buyer_name: str,
-                          traded_energy_kWh: float, trade_price_cents: float):
+    def create_sell_trade(
+        self,
+        current_time_slot: DateTime,
+        buyer_name: str,
+        traded_energy_kWh: float,
+        trade_price_cents: float,
+    ):
         """Create and save a trade object for selling energy."""
-        assert traded_energy_kWh <= self.energy_surplus_kWh, \
-            f"Cannot sell more energy ({traded_energy_kWh}) than the energy surplus (" \
+        assert traded_energy_kWh <= self.energy_surplus_kWh, (
+            f"Cannot sell more energy ({traded_energy_kWh}) than the energy surplus ("
             f"{self.energy_surplus_kWh}) of the home ({self.home_name})."
+        )
         trade = Trade(
-            str(uuid4()), current_time_slot,
+            str(uuid4()),
+            current_time_slot,
             TraderDetails(self.home_name, self.home_uuid, self.home_name, self.home_uuid),
             TraderDetails(buyer_name, None, buyer_name, None),
-            traded_energy=traded_energy_kWh, trade_price=trade_price_cents, residual=None,
-            offer_bid_trade_info=None, fee_price=0., time_slot=current_time_slot)
+            traded_energy=traded_energy_kWh,
+            trade_price=trade_price_cents,
+            residual=None,
+            offer_bid_trade_info=None,
+            fee_price=0.0,
+            time_slot=current_time_slot,
+        )
         self.trades.append(trade)
         logging.info("[SCM][TRADE][OFFER] [%s] [%s] %s", self.home_name, trade.time_slot, trade)
 
@@ -182,13 +222,13 @@ class CommunityData:
     """Represent the energy related statistics of a community."""
 
     community_uuid: str
-    consumption_kWh: float = 0.
-    production_kWh: float = 0.
-    self_consumed_energy_kWh: float = 0.
-    energy_surplus_kWh: float = 0.
-    energy_need_kWh: float = 0.
-    energy_bought_from_community_kWh: float = 0.
-    energy_sold_to_grid_kWh: float = 0.
+    consumption_kWh: float = 0.0
+    production_kWh: float = 0.0
+    self_consumed_energy_kWh: float = 0.0
+    energy_surplus_kWh: float = 0.0
+    energy_need_kWh: float = 0.0
+    energy_bought_from_community_kWh: float = 0.0
+    energy_sold_to_grid_kWh: float = 0.0
     trades: List[Trade] = field(default_factory=list)
 
     def to_dict(self) -> Dict:
@@ -209,25 +249,24 @@ class FeeContainer:
     over areas (price).
     """
 
-    value: float = 0.
-    price: float = 0.
+    value: float = 0.0
+    price: float = 0.0
 
 
 @dataclass
 class AreaFees:
     """Dataclass that contains all fees and their accumulated values"""
 
-    grid_import_fee_const: float = 0.
-    grid_export_fee_const: float = 0.
-    grid_fees_reduction: float = 0.
+    grid_import_fee_const: float = 0.0
+    grid_export_fee_const: float = 0.0
+    grid_fees_reduction: float = 0.0
     per_kWh_fees: Dict[str, FeeContainer] = field(default_factory=dict)
     monthly_fees: Dict[str, FeeContainer] = field(default_factory=dict)
 
     def prices_as_dict(self) -> Dict:
         """Return all prices (accumulated values) for the fees in a dictionary."""
         return {
-            name: fee.price
-            for name, fee in {**self.per_kWh_fees, **self.monthly_fees}.items()
+            name: fee.price for name, fee in {**self.per_kWh_fees, **self.monthly_fees}.items()
         }
 
     @property
@@ -265,21 +304,24 @@ class AreaEnergyRates:
     """Dataclass that holds the area fees and rates."""
 
     area_fees: AreaFees = field(default_factory=AreaFees)
-    utility_rate: float = 0.
-    intracommunity_base_rate: float = 0.
-    feed_in_tariff: float = 0.
+    utility_rate: float = 0.0
+    intracommunity_base_rate: float = 0.0
+    feed_in_tariff: float = 0.0
 
     @property
     def intracommunity_rate(self):
         """Return the rate that is used for trades inside of the community."""
         return self.area_fees.add_fees_to_energy_rate(
-            self.intracommunity_base_rate + self.area_fees.decreased_grid_fee)
+            self.intracommunity_base_rate + self.area_fees.decreased_grid_fee
+        )
 
     @property
     def utility_rate_incl_fees(self):
         """Return the utility rate including all fees."""
-        return (self.area_fees.add_fees_to_energy_rate(self.utility_rate) +
-                self.area_fees.grid_import_fee_const)
+        return (
+            self.area_fees.add_fees_to_energy_rate(self.utility_rate)
+            + self.area_fees.grid_import_fee_const
+        )
 
     def accumulate_fees_in_community(self, area_fees=AreaFees):
         """Add prices from provided area_fees input to the self.area_fees;
@@ -297,43 +339,46 @@ class AreaEnergyRates:
 @dataclass
 class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
     """Represents home energy bills."""
+
     energy_rates: AreaEnergyRates = field(default_factory=AreaEnergyRates)
-    base_energy_bill: float = 0.
-    base_energy_bill_excl_revenue: float = 0.
-    base_energy_bill_revenue: float = 0.
-    gsy_energy_bill: float = 0.
-    grid_fees: float = 0.
-    bought_from_community: float = 0.
-    spent_to_community: float = 0.
-    sold_to_community: float = 0.
-    earned_from_community: float = 0.
-    bought_from_grid: float = 0.
-    spent_to_grid: float = 0.
-    sold_to_grid: float = 0.
-    earned_from_grid: float = 0.
-    self_consumed_savings: float = 0.
-    export_grid_fees: float = 0.
-    _min_community_savings_percent: float = 0.
-    _max_community_savings_percent: float = 0.
+    base_energy_bill: float = 0.0
+    base_energy_bill_excl_revenue: float = 0.0
+    base_energy_bill_revenue: float = 0.0
+    gsy_energy_bill: float = 0.0
+    bought_from_community: float = 0.0
+    spent_to_community: float = 0.0
+    sold_to_community: float = 0.0
+    earned_from_community: float = 0.0
+    bought_from_grid: float = 0.0
+    spent_to_grid: float = 0.0
+    sold_to_grid: float = 0.0
+    earned_from_grid: float = 0.0
+    self_consumed_savings: float = 0.0
+    import_grid_fees: float = 0.0
+    export_grid_fees: float = 0.0
+    _min_community_savings_percent: float = 0.0
+    _max_community_savings_percent: float = 0.0
 
     def to_dict(self) -> Dict:
         """Dict representation of the area energy bills."""
         output_dict = asdict(self)
         del output_dict["energy_rates"]
-        output_dict.update({
-            "fees": self.energy_rates.area_fees.prices_as_dict(),
-            "savings": self.savings,
-            "savings_percent": self.savings_percent,
-            "energy_benchmark": self.energy_benchmark,
-            "home_balance_kWh": self.home_balance_kWh,
-            "home_balance": self.home_balance,
-            "gsy_energy_bill_excl_revenue": self.gsy_energy_bill_excl_revenue,
-            "gsy_energy_bill_excl_revenue_without_fees":
-                self.gsy_energy_bill_excl_revenue_without_fees,
-            "gsy_energy_bill_excl_fees": self.gsy_energy_bill_excl_fees,
-            "gsy_energy_bill_revenue": self.gsy_energy_bill_revenue,
-            "gsy_total_benefit": self.gsy_total_benefit
-        })
+        output_dict.update(
+            {
+                "fees": self.energy_rates.area_fees.prices_as_dict(),
+                "savings": self.savings,
+                "savings_percent": self.savings_percent,
+                "energy_benchmark": self.energy_benchmark,
+                "home_balance_kWh": self.home_balance_kWh,
+                "home_balance": self.home_balance,
+                "gsy_energy_bill_excl_revenue": self.gsy_energy_bill_excl_revenue,
+                "gsy_energy_bill_excl_"
+                "revenue_without_fees": self.gsy_energy_bill_excl_revenue_without_fees,
+                "gsy_energy_bill_excl_fees": self.gsy_energy_bill_excl_fees,
+                "gsy_energy_bill_revenue": self.gsy_energy_bill_revenue,
+                "gsy_total_benefit": self.gsy_total_benefit,
+            }
+        )
         return output_dict
 
     def set_bought_from_community(self, energy_kWh):
@@ -342,7 +387,7 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
         self.spent_to_community += energy_kWh * self.energy_rates.intracommunity_rate
         self.gsy_energy_bill += energy_kWh * self.energy_rates.intracommunity_rate
         self.energy_rates.area_fees.add_price_to_fees(energy_kWh)
-        self.grid_fees += energy_kWh * self.energy_rates.area_fees.decreased_grid_fee
+        self.import_grid_fees += energy_kWh * self.energy_rates.area_fees.decreased_grid_fee
 
     def set_sold_to_community(self, energy_kWh, energy_rate):
         """Update price and energy counters after buying energy from the community."""
@@ -356,7 +401,7 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
         self.spent_to_grid += energy_kWh * self.energy_rates.utility_rate_incl_fees
         self.gsy_energy_bill += energy_kWh * self.energy_rates.utility_rate_incl_fees
         self.energy_rates.area_fees.add_price_to_fees(energy_kWh)
-        self.grid_fees += energy_kWh * self.energy_rates.area_fees.grid_import_fee_const
+        self.import_grid_fees += energy_kWh * self.energy_rates.area_fees.grid_import_fee_const
 
     def set_sold_to_grid(self, energy_kWh, energy_rate):
         """Update price and energy counters after selling energy to the grid."""
@@ -365,11 +410,13 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
         self.gsy_energy_bill -= energy_kWh * energy_rate
 
     def set_export_grid_fees(self, energy_kWh: float):
+        """Set export grid fees."""
         export_price = energy_kWh * self.energy_rates.area_fees.grid_export_fee_const
         self.export_grid_fees += export_price
 
     def set_min_max_community_savings(
-            self, min_savings_percent: float, max_savings_percent: float):
+        self, min_savings_percent: float, max_savings_percent: float
+    ):
         """
         Update the minimum and maximum saving of a home in the community.
         Used in order to calculate the energy benchmark.
@@ -388,7 +435,8 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
         if is_no_community_self_consumption():
             return self.self_consumed_savings + self.gsy_energy_bill_revenue
         savings_absolute = KPICalculationHelper().saving_absolute(
-            self.base_energy_bill_excl_revenue, self.gsy_energy_bill_excl_revenue)
+            self.base_energy_bill_excl_revenue, self.gsy_energy_bill_excl_revenue
+        )
         assert savings_absolute > -FLOATING_POINT_TOLERANCE
         return savings_absolute
 
@@ -396,14 +444,17 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
     def savings_percent(self):
         """Percentage of the price savings of the home, compared to the base energy bill."""
         return KPICalculationHelper().saving_percentage(
-            self.savings, self.base_energy_bill_excl_revenue)
+            self.savings, self.base_energy_bill_excl_revenue
+        )
 
     @property
     def energy_benchmark(self):
         """Savings ranking compared to the homes with the min and max savings."""
         return KPICalculationHelper().energy_benchmark(
-            self.savings_percent, self._min_community_savings_percent,
-            self._max_community_savings_percent)
+            self.savings_percent,
+            self._min_community_savings_percent,
+            self._max_community_savings_percent,
+        )
 
     @property
     def gsy_energy_bill_excl_revenue(self):
@@ -413,10 +464,12 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
     @property
     def gsy_energy_bill_excl_revenue_without_fees(self):
         """Energy bill of the home excluding revenue and excluding all fees."""
-        return (self.gsy_energy_bill_excl_revenue
-                - self.grid_fees
-                - self.energy_rates.area_fees.total_per_kWh_fee_price
-                - self.energy_rates.area_fees.total_monthly_fee_price)
+        return (
+            self.gsy_energy_bill_excl_revenue
+            - self.import_grid_fees
+            - self.energy_rates.area_fees.total_per_kWh_fee_price
+            - self.energy_rates.area_fees.total_monthly_fee_price
+        )
 
     @property
     def gsy_energy_bill_revenue(self):
@@ -426,10 +479,12 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
     @property
     def gsy_energy_bill_excl_fees(self):
         """Energy bill of the home excluding fees."""
-        return (self.gsy_energy_bill
-                - self.grid_fees
-                - self.energy_rates.area_fees.total_per_kWh_fee_price
-                - self.energy_rates.area_fees.total_monthly_fee_price)
+        return (
+            self.gsy_energy_bill
+            - self.import_grid_fees
+            - self.energy_rates.area_fees.total_per_kWh_fee_price
+            - self.energy_rates.area_fees.total_monthly_fee_price
+        )
 
     @property
     def gsy_total_benefit(self):
@@ -439,29 +494,43 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
     @property
     def home_balance_kWh(self):
         """Energy balance of the home. Equals to energy bought minus energy sold."""
-        return (self.bought_from_grid + self.bought_from_community
-                - self.sold_to_grid - self.sold_to_community)
+        return (
+            self.bought_from_grid
+            + self.bought_from_community
+            - self.sold_to_grid
+            - self.sold_to_community
+        )
 
     @property
     def home_balance(self):
         """Price balance of the home. Equals to currency spent minus currency earned."""
-        return (self.spent_to_grid + self.spent_to_community
-                - self.earned_from_grid - self.earned_from_community)
+        return (
+            self.spent_to_grid
+            + self.spent_to_community
+            - self.earned_from_grid
+            - self.earned_from_community
+        )
 
     def calculate_base_energy_bill(
-            self, home_data: HomeAfterMeterData, area_rates: AreaEnergyRates):
+        self, home_data: HomeAfterMeterData, area_rates: AreaEnergyRates
+    ):
         """Calculate the base (not with GSy improvements) energy bill for the home."""
         if is_no_community_self_consumption():
             self.base_energy_bill_excl_revenue = (
-                    home_data.consumption_kWh * area_rates.utility_rate_incl_fees)
+                home_data.consumption_kWh * area_rates.utility_rate_incl_fees
+            )
             self.base_energy_bill_revenue = home_data.production_kWh * area_rates.feed_in_tariff
             self.base_energy_bill = (
-                    self.base_energy_bill_excl_revenue - self.base_energy_bill_revenue)
+                self.base_energy_bill_excl_revenue - self.base_energy_bill_revenue
+            )
         else:
             self.base_energy_bill_revenue = (
-                    home_data.energy_surplus_kWh * area_rates.feed_in_tariff)
+                home_data.energy_surplus_kWh * area_rates.feed_in_tariff
+            )
             self.base_energy_bill_excl_revenue = (
-                    home_data.energy_need_kWh * area_rates.utility_rate_incl_fees +
-                    area_rates.area_fees.total_monthly_fees)
+                home_data.energy_need_kWh * area_rates.utility_rate_incl_fees
+                + area_rates.area_fees.total_monthly_fees
+            )
             self.base_energy_bill = (
-                    self.base_energy_bill_excl_revenue - self.base_energy_bill_revenue)
+                self.base_energy_bill_excl_revenue - self.base_energy_bill_revenue
+            )

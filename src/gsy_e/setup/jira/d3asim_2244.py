@@ -38,7 +38,6 @@ def get_setup(config):
                                                                 use_market_maker_rate=True)
                          ),
                     Area("H1 General Load", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                                       hrs_per_day=9,
                                                                        hrs_of_day=list(
                                                                            range(15, 24)),
                                                                        final_buying_rate=0,

@@ -70,9 +70,6 @@ _setup_modules = available_simulation_scenarios
               help="Length of a market slot")
 @click.option("--slot-length-realtime", type=IntervalType("M:S"), default="0m",
               show_default=True, help="Desired duration of slot in realtime")
-@click.option("-c", "--cloud-coverage", type=int,
-              default=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE, show_default=True,
-              help="Cloud coverage, 0 for sunny, 1 for partial coverage, 2 for clouds.")
 @click.option("--setup", "setup_module_name", default="default_2a",
               help=("Simulation setup module use. "
                     f"Available modules: [{', '.join(_setup_modules)}]"))
@@ -109,7 +106,7 @@ _setup_modules = available_simulation_scenarios
               help="Market type. 1 for one-sided market, 2 for two-sided market, "
                    "3 for coefficient-based trading.")
 def run(setup_module_name, settings_file, duration, slot_length, tick_length,
-        cloud_coverage, enable_external_connection, start_date,
+        enable_external_connection, start_date,
         pause_at, incremental, slot_length_realtime, enable_dof: bool,
         market_type: int, **kwargs):
     """Configure settings and run a simulation."""
@@ -130,12 +127,11 @@ def run(setup_module_name, settings_file, duration, slot_length, tick_length,
             global_settings = {"sim_duration": duration,
                                "slot_length": slot_length,
                                "tick_length": tick_length,
-                               "cloud_coverage": cloud_coverage,
                                "enable_degrees_of_freedom": enable_dof}
 
             validate_global_settings(global_settings)
             simulation_config = SimulationConfig(
-                duration, slot_length, tick_length, cloud_coverage, start_date=start_date,
+                duration, slot_length, tick_length, start_date=start_date,
                 external_connection_enabled=enable_external_connection,
                 enable_degrees_of_freedom=enable_dof)
 
