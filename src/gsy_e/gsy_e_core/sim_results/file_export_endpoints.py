@@ -176,6 +176,7 @@ class LeafDataExporter(BaseDataExporter):
                 "temp decrease K",
                 "temp increase K",
                 "COP",
+                "heat demand J",
             ]
         # pylint: disable=unidiomatic-typecheck
         if type(self.area.strategy) == VirtualHeatpumpStrategy:
@@ -189,13 +190,19 @@ class LeafDataExporter(BaseDataExporter):
                 "condenser temperature C",
             ]
         if type(self.area.strategy) == MultipleTankHeatPumpStrategy:
-            return ["unmatched demand [kWh]", "storage temperature C", "heat demand kWh", "COP"]
+            return [
+                "unmatched demand [kWh]",
+                "storage temperature C",
+                "energy demand kWh",
+                "COP",
+                "heat demand J",
+            ]
         # pylint: disable=unidiomatic-typecheck
         if type(self.area.strategy) == MultipleTankVirtualHeatpumpStrategy:
             return [
                 "unmatched demand [kWh]",
                 "storage temperature C",
-                "heat demand kWh",
+                "energy demand kWh",
                 "COP",
                 "condenser temperature C",
             ]
@@ -242,6 +249,7 @@ class LeafDataExporter(BaseDataExporter):
                 round(self.area.strategy.state.get_temp_decrease_K(slot), ROUND_TOLERANCE),
                 round(self.area.strategy.state.get_temp_increase_K(slot), ROUND_TOLERANCE),
                 round(self.area.strategy.state.get_cop(slot), ROUND_TOLERANCE),
+                round(self.area.strategy.state.get_heat_demand(slot), ROUND_TOLERANCE),
             ]
         # pylint: disable=unidiomatic-typecheck
         if type(self.area.strategy) == VirtualHeatpumpStrategy:
@@ -270,6 +278,7 @@ class LeafDataExporter(BaseDataExporter):
                     ROUND_TOLERANCE,
                 ),
                 round(cop, ROUND_TOLERANCE),
+                round(self.area.strategy.state.heatpump.get_heat_demand(slot), ROUND_TOLERANCE),
             ]
         # pylint: disable=unidiomatic-typecheck
         if type(self.area.strategy) == MultipleTankVirtualHeatpumpStrategy:
