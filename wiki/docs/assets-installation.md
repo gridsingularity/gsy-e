@@ -141,6 +141,23 @@ The **HeatPumpStrategy** parameters can be set as follows:
   * **preferred_buying_rate**: (default=15); rate in cts/kWh that determines the [trading strategy](heat-pump.md#heat-pump-asset-trading-strategy);
   * **source_type**:  set how the heat exchange is conducted, either via air or water/ground, as it determines the COP calculation;
   * **order_updater_parameters**: of type **HeatPumpOrderUpdaterParameters**. A template configuration can be seen [below](#heat-pump-price-strategy-configuration)
+  * **heat_demand_Q_profile**: (optional user input); time-series profile of the heat demand that the heat pump has to produce, in Joules. Overrides consumption_kWh parameter.
+
+The initial GSY heat pump strategy assumes that the heat pump is connected to a single water tank. In order to simulate a heat pump that is connected to multiple water tanks, a dedicated strategy, namely MultipleTankHeatPumpStrategy is also available:
+```
+Asset(name="Heat Pump", strategy=MultipleTankHeatPumpStrategy())
+```
+The MultipleTankHeatPumpStrategy parameters can be set as follows:
+
+  * **tank_parameters**: (mandatory user input, list of TankParameters); list of parameters for each water tank connected to the heat pump. The parameters for each water tank are min_temp_C, max_temp_C, initial_temp_C, tank_volume_l with the same default values and behaviour as the corresponding parameters of the HeatPumpStrategy;
+  * **maximum_power_rating_kW**: same as HeatPumpStrategy;
+  * **external_temp_C_profile**: same as HeatPumpStrategy;
+  * **consumption_kWh**: same as HeatPumpStrategy;
+  * **preferred_buying_rate**: same as HeatPumpStrategy;
+  * **source_type**: same as HeatPumpStrategy;
+  * **order_updater_parameters**: same as HeatPumpStrategy;
+  * **heat_demand_Q_profile**: same as HeatPumpStrategy
+
 
 #### Heat Pump Price Strategy Configuration
 
@@ -173,14 +190,30 @@ Asset(name="Virtual Heat Pump", strategy=VirtualHeatPumpStrategy())
 
 The **VirtualHeatPumpStrategy** parameters can be set as follows:
 
-  * **maximum_power_rating_kW**: default=3; the maximum power that the VHP will consume
-  * **min_temp_C**: (default=50); minimum temperature of the VHP storage. If the temperature drops below this point, the HP buys energy at any cost
-  * **max_temp_C**: (default=60); maximum temperature of the VHP storage. If the temperature rises above this point, the HP does not buy any energy
-  * **initial_temp_C**: (default=50); initial temperature of the VHP storage
-  * **water_supply_temp_C_profile**: (mandatory user input); supply temperature of the water that flows from the district heating network (used to calculate the heat demand of the building)
-  * **water_return_temp_C_profile**: (mandatory user input); return temperature of the water that flows from the district heating network (used to calculate the heat demand of the building)
-  * **dh_water_flow_m3_profile**: (mandatory user input); water flow from the district heating network, in aggregated cubic metres per market slot (used to calculate the heat demand of the building)
-  * **tank_volume_l**: (default=50); volume of the storage tank
-  * **calibration_coefficient**: (default=0.6); empirical calibration coefficient for water-to-water heat pumps
-  * **preferred_buying_rate**: (default=15); rate in cts/kWh that determines [the trading strategy](heat-pump.md#heat-pump-asset-trading-strategy)
+  * **maximum_power_rating_kW**: default=3; the maximum power that the VHP will consume;
+  * **min_temp_C**: (default=50); minimum temperature of the VHP storage. If the temperature drops below this point, the HP buys energy at any cost;
+  * **max_temp_C**: (default=60); maximum temperature of the VHP storage. If the temperature rises above this point, the HP does not buy any energy;
+  * **initial_temp_C**: (default=50); initial temperature of the VHP storage;
+  * **water_supply_temp_C_profile**: (mandatory user input); supply temperature of the water that flows from the district heating network (used to calculate the heat demand of the building);
+  * **water_return_temp_C_profile**: (mandatory user input); return temperature of the water that flows from the district heating network (used to calculate the heat demand of the building);
+  * **dh_water_flow_m3_profile**: (mandatory user input); water flow from the district heating network, in aggregated cubic metres per market slot (used to calculate the heat demand of the building);
+  * **tank_volume_l**: (default=50); volume of the storage tank;
+  * **calibration_coefficient**: (default=0.6); empirical calibration coefficient for water-to-water heat pumps;
+  * **preferred_buying_rate**: (default=15); rate in cts/kWh that determines [the trading strategy](heat-pump.md#heat-pump-asset-trading-strategy);
   * **order_updater_parameters**: of type **HeatPumpOrderUpdaterParameters**. A template configuration can be seen [below](#heat-pump-price-strategy-configuration)
+
+The initial GSY virtual heat pump strategy assumes that the heat pump is connected to a single water tank. In order to simulate a virtual heat pump that is connected to multiple water tanks, a dedicated strategy, namely MultipleTankVirtualHeatPumpStrategy is also available:
+```
+Asset(name="Heat Pump", strategy=MultipleTankVirtualHeatPumpStrategy())
+```
+
+The MultipleTankVirtualHeatPumpStrategy parameters can be set as follows:
+
+* **tank_parameters**: (mandatory user input, list of TankParameters); list of parameters for each water tank connected to the virtual heat pump. The parameters for each water tank are min_temp_C, max_temp_C, initial_temp_C, tank_volume_l with the same default values and behaviour as the corresponding parameters of the VirtualHeatPumpStrategy;
+* **maximum_power_rating_kW**: same as VirtualHeatPumpStrategy;
+* **water_supply_temp_C_profile**: same as VirtualHeatPumpStrategy;
+* **water_return_temp_C_profile**: same as VirtualHeatPumpStrategy;
+* **dh_water_flow_m3_profile**: same as VirtualHeatPumpStrategy;
+* **calibration_coefficient**: same as VirtualHeatPumpStrategy;
+* **preferred_buying_rate**: same as VirtualHeatPumpStrategy;
+* **order_updater_parameters**: same as VirtualHeatPumpStrategy
