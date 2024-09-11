@@ -2031,6 +2031,22 @@ Market(&quot;Power Plant&quot;, strategy=FinitePowerPlant(energy_rate=31.3, max_
 <li><strong>preferred_buying_rate</strong>: (default=15); rate in cts/kWh that determines the <a href="../heat-pump/#heat-pump-asset-trading-strategy">trading strategy</a>;</li>
 <li><strong>source_type</strong>:  set how the heat exchange is conducted, either via air or water/ground, as it determines the COP calculation;</li>
 <li><strong>order_updater_parameters</strong>: of type <strong>HeatPumpOrderUpdaterParameters</strong>. A template configuration can be seen <a href="#heat-pump-price-strategy-configuration">below</a></li>
+<li><strong>heat_demand_Q_profile</strong>: (optional user input); time-series profile of the heat demand that the heat pump has to produce, in Joules. Overrides consumption_kWh parameter.</li>
+</ul>
+<p>The initial GSY heat pump strategy assumes that the heat pump is connected to a single water tank. In order to simulate a heat pump that is connected to multiple water tanks, a dedicated strategy, namely MultipleTankHeatPumpStrategy is also available:</p>
+<pre class="codehilite"><code>Asset(name=&quot;Heat Pump&quot;, strategy=MultipleTankHeatPumpStrategy())</code></pre>
+
+
+<p>The MultipleTankHeatPumpStrategy parameters can be set as follows:</p>
+<ul>
+<li><strong>tank_parameters</strong>: (mandatory user input, list of TankParameters); list of parameters for each water tank connected to the heat pump. The parameters for each water tank are min_temp_C, max_temp_C, initial_temp_C, tank_volume_l with the same default values and behaviour as the corresponding parameters of the HeatPumpStrategy;</li>
+<li><strong>maximum_power_rating_kW</strong>: same as HeatPumpStrategy;</li>
+<li><strong>external_temp_C_profile</strong>: same as HeatPumpStrategy;</li>
+<li><strong>consumption_kWh</strong>: same as HeatPumpStrategy;</li>
+<li><strong>preferred_buying_rate</strong>: same as HeatPumpStrategy;</li>
+<li><strong>source_type</strong>: same as HeatPumpStrategy;</li>
+<li><strong>order_updater_parameters</strong>: same as HeatPumpStrategy;</li>
+<li><strong>heat_demand_Q_profile</strong>: same as HeatPumpStrategy</li>
 </ul>
 <h4 id="heat-pump-price-strategy-configuration">Heat Pump Price Strategy Configuration<a class="headerlink" href="#heat-pump-price-strategy-configuration" title="Permanent link">&para;</a></h4>
 <p>In order to configure the heat pump bid pricing, the <strong>order_updater_parameters</strong>  should be set by assigning the <strong>HeatPumpOrderUpdaterParameters</strong> data class and its parameters to it:</p>
@@ -2058,17 +2074,32 @@ If not set by the user, the following default values are used:</p>
 
 <p>The <strong>VirtualHeatPumpStrategy</strong> parameters can be set as follows:</p>
 <ul>
-<li><strong>maximum_power_rating_kW</strong>: default=3; the maximum power that the VHP will consume</li>
-<li><strong>min_temp_C</strong>: (default=50); minimum temperature of the VHP storage. If the temperature drops below this point, the HP buys energy at any cost</li>
-<li><strong>max_temp_C</strong>: (default=60); maximum temperature of the VHP storage. If the temperature rises above this point, the HP does not buy any energy</li>
-<li><strong>initial_temp_C</strong>: (default=50); initial temperature of the VHP storage</li>
-<li><strong>water_supply_temp_C_profile</strong>: (mandatory user input); supply temperature of the water that flows from the district heating network (used to calculate the heat demand of the building)</li>
-<li><strong>water_return_temp_C_profile</strong>: (mandatory user input); return temperature of the water that flows from the district heating network (used to calculate the heat demand of the building)</li>
-<li><strong>dh_water_flow_m3_profile</strong>: (mandatory user input); water flow from the district heating network, in aggregated cubic metres per market slot (used to calculate the heat demand of the building)</li>
-<li><strong>tank_volume_l</strong>: (default=50); volume of the storage tank</li>
-<li><strong>calibration_coefficient</strong>: (default=0.6); empirical calibration coefficient for water-to-water heat pumps</li>
-<li><strong>preferred_buying_rate</strong>: (default=15); rate in cts/kWh that determines <a href="../heat-pump/#heat-pump-asset-trading-strategy">the trading strategy</a></li>
+<li><strong>maximum_power_rating_kW</strong>: default=3; the maximum power that the VHP will consume;</li>
+<li><strong>min_temp_C</strong>: (default=50); minimum temperature of the VHP storage. If the temperature drops below this point, the HP buys energy at any cost;</li>
+<li><strong>max_temp_C</strong>: (default=60); maximum temperature of the VHP storage. If the temperature rises above this point, the HP does not buy any energy;</li>
+<li><strong>initial_temp_C</strong>: (default=50); initial temperature of the VHP storage;</li>
+<li><strong>water_supply_temp_C_profile</strong>: (mandatory user input); supply temperature of the water that flows from the district heating network (used to calculate the heat demand of the building);</li>
+<li><strong>water_return_temp_C_profile</strong>: (mandatory user input); return temperature of the water that flows from the district heating network (used to calculate the heat demand of the building);</li>
+<li><strong>dh_water_flow_m3_profile</strong>: (mandatory user input); water flow from the district heating network, in aggregated cubic metres per market slot (used to calculate the heat demand of the building);</li>
+<li><strong>tank_volume_l</strong>: (default=50); volume of the storage tank;</li>
+<li><strong>calibration_coefficient</strong>: (default=0.6); empirical calibration coefficient for water-to-water heat pumps;</li>
+<li><strong>preferred_buying_rate</strong>: (default=15); rate in cts/kWh that determines <a href="../heat-pump/#heat-pump-asset-trading-strategy">the trading strategy</a>;</li>
 <li><strong>order_updater_parameters</strong>: of type <strong>HeatPumpOrderUpdaterParameters</strong>. A template configuration can be seen <a href="#heat-pump-price-strategy-configuration">below</a></li>
+</ul>
+<p>The initial GSY virtual heat pump strategy assumes that the heat pump is connected to a single water tank. In order to simulate a virtual heat pump that is connected to multiple water tanks, a dedicated strategy, namely MultipleTankVirtualHeatPumpStrategy is also available:</p>
+<pre class="codehilite"><code>Asset(name=&quot;Heat Pump&quot;, strategy=MultipleTankVirtualHeatPumpStrategy())</code></pre>
+
+
+<p>The MultipleTankVirtualHeatPumpStrategy parameters can be set as follows:</p>
+<ul>
+<li><strong>tank_parameters</strong>: (mandatory user input, list of TankParameters); list of parameters for each water tank connected to the virtual heat pump. The parameters for each water tank are min_temp_C, max_temp_C, initial_temp_C, tank_volume_l with the same default values and behaviour as the corresponding parameters of the VirtualHeatPumpStrategy;</li>
+<li><strong>maximum_power_rating_kW</strong>: same as VirtualHeatPumpStrategy;</li>
+<li><strong>water_supply_temp_C_profile</strong>: same as VirtualHeatPumpStrategy;</li>
+<li><strong>water_return_temp_C_profile</strong>: same as VirtualHeatPumpStrategy;</li>
+<li><strong>dh_water_flow_m3_profile</strong>: same as VirtualHeatPumpStrategy;</li>
+<li><strong>calibration_coefficient</strong>: same as VirtualHeatPumpStrategy;</li>
+<li><strong>preferred_buying_rate</strong>: same as VirtualHeatPumpStrategy;</li>
+<li><strong>order_updater_parameters</strong>: same as VirtualHeatPumpStrategy</li>
 </ul>
                 
                   
