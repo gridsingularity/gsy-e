@@ -23,7 +23,7 @@ from gsy_framework.constants_limits import (
     DATE_TIME_FORMAT, DATE_TIME_UI_FORMAT, ConstSettings, GlobalConfig)
 from gsy_framework.enums import AvailableMarketTypes
 from gsy_framework.schema.validators import get_schema_validator
-from gsy_framework.sim_results.all_results import ResultsHandler
+from gsy_framework.sim_results.all_results import ResultsHandler, SCMResultsHandler
 from gsy_framework.utils import get_json_dict_memory_allocation_size
 from pendulum import DateTime
 
@@ -429,8 +429,9 @@ class CoefficientEndpointBuffer(SimulationEndpointBuffer):
     def _create_results_validator(self):
         self.results_validator = SimulationResultValidator(is_scm=True)
 
-    def _create_endpoint_buffer(self, should_export_plots):
-        return ResultsHandler(should_export_plots, is_scm=True)
+    @staticmethod
+    def _create_endpoint_buffer(_should_export_plots):
+        return SCMResultsHandler()
 
     def _calculate_and_update_last_market_time_slot(self, area):
         pass
