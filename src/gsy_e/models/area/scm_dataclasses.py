@@ -14,12 +14,13 @@ from gsy_e.constants import FLOATING_POINT_TOLERANCE
 
 
 @dataclass
-class FeeProperties:
+class SCMAreaProperties:
     """Holds all fee properties of a coefficient area"""
 
     GRID_FEES: Dict = field(default_factory=dict)
     PER_KWH_FEES: Dict = field(default_factory=dict)
     MONTHLY_FEES: Dict = field(default_factory=dict)
+    AREA_PROPERTIES: Dict = field(default_factory=dict)
 
     def validate(self):
         """Validate if all fee values are not None."""
@@ -35,10 +36,6 @@ class HomeAfterMeterData:
 
     home_uuid: str
     home_name: str
-    sharing_coefficient_percent: float = 0.0
-    # market_maker_rate and feed_in_tariff units are the selected currency (e.g. Euro)
-    market_maker_rate: float = 0.0
-    feed_in_tariff: float = 0.0
     consumption_kWh: float = 0.0
     production_kWh: float = 0.0
     self_consumed_energy_kWh: float = 0.0
@@ -47,7 +44,7 @@ class HomeAfterMeterData:
     community_total_production_kWh: float = 0.0
     _self_production_for_community_kWh: float = 0.0
     trades: List[Trade] = None
-    fee_properties: FeeProperties = field(default_factory=FeeProperties)
+    area_properties: SCMAreaProperties = field(default_factory=SCMAreaProperties)
     asset_energy_requirements_kWh: Dict[str, float] = field(default_factory=dict)
 
     def to_dict(self) -> Dict:
@@ -134,7 +131,10 @@ class HomeAfterMeterData:
     @property
     def allocated_community_energy_kWh(self) -> float:
         """Amount of community energy allocated to the home."""
-        return self.community_total_production_kWh * self.sharing_coefficient_percent
+        return (
+            self.community_total_production_kWh
+            * self.area_properties.AREA_PROPERTIES["coefficient_percentage"]
+        )
 
     @property
     def energy_bought_from_community_kWh(self) -> float:

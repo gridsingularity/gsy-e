@@ -20,10 +20,9 @@ import json
 from logging import getLogger
 
 from gsy_framework.utils import convert_pendulum_to_str_in_dict, key_in_dict_and_not_none
-from gsy_framework.constants_limits import ConstSettings, SpotMarketTypeEnum, GlobalConfig
 from pendulum import Duration
 
-from gsy_e.models.area import CoefficientArea, Area, Market, Asset # NOQA
+from gsy_e.models.area import CoefficientArea, Area, Market, Asset  # NOQA
 from gsy_e.models.strategy import BaseStrategy
 from gsy_e.models.area.throughput_parameters import ThroughputParameters
 
@@ -31,14 +30,18 @@ from gsy_e.models.strategy.market_maker_strategy import MarketMakerStrategy  # N
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy  # NOQA
 from gsy_e.models.strategy.pv import PVStrategy  # NOQA
 from gsy_e.models.strategy.storage import StorageStrategy  # NOQA
-from gsy_e.models.strategy.load_hours import LoadHoursStrategy # NOQA
-from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy # NOQA
+from gsy_e.models.strategy.load_hours import LoadHoursStrategy  # NOQA
+from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy  # NOQA
 from gsy_e.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy  # NOQA
-from gsy_e.models.strategy.finite_power_plant import FinitePowerPlant # NOQA
+from gsy_e.models.strategy.finite_power_plant import FinitePowerPlant  # NOQA
 from gsy_e.models.strategy.scm import SCMStrategy
 
 from gsy_e.models.leaves import (
-    Leaf, scm_leaf_mapping, CoefficientLeaf, forward_leaf_mapping) # NOQA
+    Leaf,
+    scm_leaf_mapping,
+    CoefficientLeaf,
+    forward_leaf_mapping,
+)  # NOQA
 from gsy_e.models.leaves import *  # NOQA  # pylint: disable=wildcard-import
 from gsy_e.models.strategy.trading_strategy_base import TradingStrategyBase
 
@@ -47,6 +50,7 @@ logger = getLogger(__name__)
 
 class AreaEncoder(json.JSONEncoder):
     """Convert the Area class hierarchy to json dict."""
+
     def default(self, o):
         # Leaf classes are Areas too, therefore the Area/AreaBase classes need to be handled
         # separately.
@@ -86,9 +90,11 @@ class AreaEncoder(json.JSONEncoder):
 
     @staticmethod
     def _encode_leaf(obj):
-        description = {"name": obj.name,
-                       "type": obj.__class__.__name__,
-                       "display_type": obj.display_type}
+        description = {
+            "name": obj.name,
+            "type": obj.__class__.__name__,
+            "display_type": obj.display_type,
+        }
         description.update(obj.parameters)
         description = _convert_member_dt_to_string(description)
         return description
@@ -155,8 +161,10 @@ def _leaf_from_dict(description, config):
 
 def area_from_dict(description, config):
     """Create Area tree from JSON dict."""
+
     def optional(attr):
         return _instance_from_dict(description[attr]) if attr in description else None
+
     try:
         if "type" in description:
             return _leaf_from_dict(description, config)  # Area is a Leaf
@@ -174,33 +182,34 @@ def area_from_dict(description, config):
 
         if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
             # For the SCM only use the CoefficientArea strategy.
-            area = CoefficientArea(
-                name, children, uuid, optional("strategy"), config,
-                coefficient_percentage=description.get("coefficient_percentage", 0.0),
-                market_maker_rate=description.get(
-                    "market_maker_rate",
-                    ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE / 100.),
-                feed_in_tariff=description.get(
-                    "feed_in_tariff", GlobalConfig.FEED_IN_TARIFF / 100.,))
+            area = CoefficientArea(name, children, uuid, optional("strategy"), config)
         else:
             grid_fee_percentage = description.get("grid_fee_percentage", None)
             grid_fee_constant = description.get("grid_fee_constant", None)
-            area = Area(name, children, uuid, optional("strategy"), config,
-                        grid_fee_percentage=grid_fee_percentage,
-                        grid_fee_constant=grid_fee_constant,
-                        external_connection_available=external_connection_available and
-                        config.external_connection_enabled,
-                        throughput=ThroughputParameters(
-                            baseline_peak_energy_import_kWh=baseline_peak_energy_import_kWh,
-                            baseline_peak_energy_export_kWh=baseline_peak_energy_export_kWh,
-                            import_capacity_kVA=import_capacity_kVA,
-                            export_capacity_kVA=export_capacity_kVA))
+            area = Area(
+                name,
+                children,
+                uuid,
+                optional("strategy"),
+                config,
+                grid_fee_percentage=grid_fee_percentage,
+                grid_fee_constant=grid_fee_constant,
+                external_connection_available=external_connection_available
+                and config.external_connection_enabled,
+                throughput=ThroughputParameters(
+                    baseline_peak_energy_import_kWh=baseline_peak_energy_import_kWh,
+                    baseline_peak_energy_export_kWh=baseline_peak_energy_export_kWh,
+                    import_capacity_kVA=import_capacity_kVA,
+                    export_capacity_kVA=export_capacity_kVA,
+                ),
+            )
         if "display_type" in description:
             area.display_type = description["display_type"]
         return area
     except (json.JSONDecodeError, KeyError, TypeError, ValueError) as error:
-        raise ValueError(f"Input is not a valid area description "
-                         f"({error} {description})") from error
+        raise ValueError(
+            f"Input is not a valid area description " f"({error} {description})"
+        ) from error
 
 
 def area_from_string(string, config):
