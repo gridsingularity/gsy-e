@@ -17,7 +17,7 @@ from gsy_e.models.area.scm_dataclasses import (
     AreaFees,
     AreaEnergyRates,
     FeeContainer,
-    FeeProperties,
+    SCMAreaProperties,
     AreaEnergyBills,
 )
 from gsy_e.models.strategy.scm import SCMStrategy
@@ -62,23 +62,18 @@ class SCMManager:
         self,
         home_uuid: str,
         home_name: str,
-        coefficient_percentage: float,
-        market_maker_rate: float,
-        feed_in_tariff: float,
-        fee_properties: FeeProperties,
+        area_properties: SCMAreaProperties,
         production_kWh: float,
         consumption_kWh: float,
         asset_energy_requirements_kWh: Dict[str, float],
     ):
         # pylint: disable=too-many-arguments
         """Import data for one individual home."""
+
         self._home_data[home_uuid] = HomeAfterMeterData(
             home_uuid,
             home_name,
-            sharing_coefficient_percent=coefficient_percentage,
-            market_maker_rate=market_maker_rate,
-            feed_in_tariff=feed_in_tariff,
-            fee_properties=fee_properties,
+            area_properties=area_properties,
             production_kWh=production_kWh,
             consumption_kWh=consumption_kWh,
             asset_energy_requirements_kWh=asset_energy_requirements_kWh,
@@ -119,29 +114,29 @@ class SCMManager:
         slots_per_month = (duration(days=1) / GlobalConfig.slot_length) * monthrange(
             self._time_slot.year, self._time_slot.month
         )[1]
-
+        market_maker_rate = home_data.area_properties.AREA_PROPERTIES["market_maker_rate"]
         intracommunity_base_rate = (
-            home_data.market_maker_rate
+            market_maker_rate
             if self._intracommunity_base_rate_eur is None
             else self._intracommunity_base_rate_eur
         )
 
         area_fees = AreaFees(
-            **home_data.fee_properties.GRID_FEES,
+            **home_data.area_properties.GRID_FEES,
             grid_fees_reduction=self._grid_fees_reduction,
             per_kWh_fees={
-                k: FeeContainer(value=v) for k, v in home_data.fee_properties.PER_KWH_FEES.items()
+                k: FeeContainer(value=v) for k, v in home_data.area_properties.PER_KWH_FEES.items()
             },
             monthly_fees={
                 k: FeeContainer(value=v / slots_per_month)
-                for k, v in home_data.fee_properties.MONTHLY_FEES.items()
+                for k, v in home_data.area_properties.MONTHLY_FEES.items()
             },
         )
         return AreaEnergyRates(
             area_fees=area_fees,
-            utility_rate=home_data.market_maker_rate,
+            utility_rate=market_maker_rate,
             intracommunity_base_rate=intracommunity_base_rate,
-            feed_in_tariff=home_data.feed_in_tariff,
+            feed_in_tariff=home_data.area_properties.AREA_PROPERTIES["feed_in_tariff"],
         )
 
     def calculate_home_energy_bills(self, home_uuid: str) -> None:
@@ -153,7 +148,8 @@ class SCMManager:
         home_bill = AreaEnergyBills(
             energy_rates=area_rates,
             gsy_energy_bill=area_rates.area_fees.total_monthly_fees,
-            self_consumed_savings=home_data.self_consumed_energy_kWh * home_data.market_maker_rate,
+            self_consumed_savings=home_data.self_consumed_energy_kWh
+            * home_data.area_properties.AREA_PROPERTIES["market_maker_rate"],
         )
         home_bill.calculate_base_energy_bill(home_data, area_rates)
 
@@ -171,7 +167,8 @@ class SCMManager:
                 )
 
             home_bill.set_sold_to_grid(
-                home_data.self_production_for_grid_kWh, home_data.feed_in_tariff
+                home_data.self_production_for_grid_kWh,
+                home_data.area_properties.AREA_PROPERTIES["feed_in_tariff"],
             )
             home_bill.set_export_grid_fees(home_data.self_production_for_grid_kWh)
             if home_data.self_production_for_grid_kWh > FLOATING_POINT_TOLERANCE:
@@ -179,7 +176,8 @@ class SCMManager:
                     self._time_slot,
                     DEFAULT_SCM_GRID_NAME,
                     home_data.self_production_for_grid_kWh,
-                    home_data.self_production_for_grid_kWh * home_data.feed_in_tariff,
+                    home_data.self_production_for_grid_kWh
+                    * home_data.area_properties.AREA_PROPERTIES["feed_in_tariff"],
                 )
 
         # Next case is the consumption. In this case the energy allocated from the community
@@ -304,16 +302,19 @@ class SCMCommunityValidator:
     def validate(cls, community: "CoefficientArea") -> None:
         """Run all validations for the given community."""
         cls._validate_coefficients(community)
-        cls._validate_market_maker_rate(community)
         # Disabled validation due to infinite bus.
         # cls._validate_all_strategies_scm(community)
 
     @classmethod
     def _sum_of_all_coefficients_in_grid(cls, area):
         coefficient_sum = sum(
-            cls._sum_of_all_coefficients_in_grid(child) for child in area.children
+            cls._sum_of_all_coefficients_in_grid(child)
+            for child in area.children
+            if child.children is not None
         )
-        return coefficient_sum + area.coefficient_percentage
+        return coefficient_sum + area.area_properties.AREA_PROPERTIES.get(
+            "coefficient_percentage", 0
+        )
 
     @staticmethod
     def _validate_all_strategies_scm(community):
@@ -327,10 +328,3 @@ class SCMCommunityValidator:
         assert isclose(
             cls._sum_of_all_coefficients_in_grid(community), 1.0
         ), "Coefficients from all homes should sum up to 1."
-
-    @staticmethod
-    def _validate_market_maker_rate(community: "CoefficientArea") -> None:
-        for home in community.children:
-            assert (
-                home.market_maker_rate is not None
-            ), f"Home {home.name} does not define market_maker_rate."

@@ -15,13 +15,14 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
 import uuid
 from math import isclose
 from unittest.mock import MagicMock
 
 import pytest
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.enums import SpotMarketTypeEnum, CoefficientAlgorithm, SCMFeeType
+from gsy_framework.enums import SpotMarketTypeEnum, CoefficientAlgorithm, SCMPropertyType
 from pendulum import duration, today
 from pendulum import now
 
@@ -82,15 +83,27 @@ class TestCoefficientArea:
         strategy.get_energy_to_sell_kWh = MagicMock(return_value=0.0)
         strategy.get_energy_to_buy_kWh = MagicMock(return_value=0.1)
         load2 = CoefficientArea(name="load 2", strategy=strategy)
+        house1 = CoefficientArea(name="House 1", children=[load, pv])
+        house2 = CoefficientArea(name="House 2", children=[load2, pv2])
+        area_properties = {
+            house1.uuid: {
+                SCMPropertyType.AREA_PROPERTIES.name: {
+                    "coefficient_percentage": 0.6,
+                    "feed_in_tariff": 0.1,
+                    "market_maker_rate": 0.3,
+                }
+            },
+            house2.uuid: {
+                SCMPropertyType.AREA_PROPERTIES.name: {
+                    "coefficient_percentage": 0.4,
+                    "feed_in_tariff": 0.05,
+                    "market_maker_rate": 0.24,
+                }
+            },
+        }
+        house1.update_area_properties(area_properties)
+        house2.update_area_properties(area_properties)
 
-        house1 = CoefficientArea(name="House 1", children=[load, pv],
-                                 coefficient_percentage=0.6,
-                                 feed_in_tariff=0.1,
-                                 market_maker_rate=0.3)
-        house2 = CoefficientArea(name="House 2", children=[load2, pv2],
-                                 coefficient_percentage=0.4,
-                                 feed_in_tariff=0.05,
-                                 market_maker_rate=0.24)
         return CoefficientArea(name="Community", children=[house1, house2])
 
     @staticmethod
@@ -101,18 +114,31 @@ class TestCoefficientArea:
         time_slot = now()
         scm = SCMManager(grid_area, time_slot)
         grid_area.calculate_home_after_meter_data(time_slot, scm)
-        assert scm._home_data[house1.uuid].sharing_coefficient_percent == 0.6
-        assert scm._home_data[house1.uuid].feed_in_tariff == 0.1
-        assert scm._home_data[house1.uuid].market_maker_rate == 0.3
+        assert (
+            scm._home_data[house1.uuid].area_properties.AREA_PROPERTIES["coefficient_percentage"]
+            == 0.6
+        )
+        assert scm._home_data[house1.uuid].area_properties.AREA_PROPERTIES["feed_in_tariff"] == 0.1
+        assert (
+            scm._home_data[house1.uuid].area_properties.AREA_PROPERTIES["market_maker_rate"] == 0.3
+        )
         assert isclose(scm._home_data[house1.uuid].consumption_kWh, 0.7)
         assert isclose(scm._home_data[house1.uuid].production_kWh, 0.5)
         assert isclose(scm._home_data[house1.uuid].self_consumed_energy_kWh, 0.5)
         assert isclose(scm._home_data[house1.uuid].energy_surplus_kWh, 0.0)
         assert isclose(scm._home_data[house1.uuid].energy_need_kWh, 0.2)
 
-        assert scm._home_data[house2.uuid].sharing_coefficient_percent == 0.4
-        assert scm._home_data[house2.uuid].feed_in_tariff == 0.05
-        assert scm._home_data[house2.uuid].market_maker_rate == 0.24
+        assert (
+            scm._home_data[house2.uuid].area_properties.AREA_PROPERTIES["coefficient_percentage"]
+            == 0.4
+        )
+        assert (
+            scm._home_data[house2.uuid].area_properties.AREA_PROPERTIES["feed_in_tariff"] == 0.05
+        )
+        assert (
+            scm._home_data[house2.uuid].area_properties.AREA_PROPERTIES["market_maker_rate"]
+            == 0.24
+        )
         assert isclose(scm._home_data[house2.uuid].consumption_kWh, 0.1)
         assert isclose(scm._home_data[house2.uuid].production_kWh, 0.2)
         assert isclose(scm._home_data[house2.uuid].self_consumed_energy_kWh, 0.1)
@@ -155,18 +181,31 @@ class TestCoefficientArea:
         strategy.get_energy_to_sell_kWh = MagicMock(return_value=0.0)
         strategy.get_energy_to_buy_kWh = MagicMock(return_value=0.7)
         load = CoefficientArea(name="load", strategy=strategy)
-        house1 = CoefficientArea(name="House 1", children=[load],
-                                 coefficient_percentage=1.0,
-                                 feed_in_tariff=0.1,
-                                 market_maker_rate=0.3)
+        house1 = CoefficientArea(name="House 1", children=[load])
         strategy = MagicMock(spec=SCMPVUserProfile)
         strategy.get_energy_to_sell_kWh = MagicMock(return_value=20.0)
         strategy.get_energy_to_buy_kWh = MagicMock(return_value=0.0)
         pv2 = CoefficientArea(name="pv 2", strategy=strategy)
-        house2 = CoefficientArea(name="House 2", children=[pv2],
-                                 coefficient_percentage=0.0,
-                                 feed_in_tariff=0.0,
-                                 market_maker_rate=0.3)
+        house2 = CoefficientArea(name="House 2", children=[pv2])
+        area_properties = {
+            house1.uuid: {
+                SCMPropertyType.AREA_PROPERTIES.name: {
+                    "coefficient_percentage": 1.0,
+                    "feed_in_tariff": 0.1,
+                    "market_maker_rate": 0.3,
+                }
+            },
+            house2.uuid: {
+                SCMPropertyType.AREA_PROPERTIES.name: {
+                    "coefficient_percentage": 0.0,
+                    "feed_in_tariff": 0.0,
+                    "market_maker_rate": 0.3,
+                }
+            },
+        }
+        house1.update_area_properties(area_properties)
+        house2.update_area_properties(area_properties)
+
         grid_area = CoefficientArea(name="Community", children=[house1, house2])
 
         time_slot = now()
@@ -174,18 +213,28 @@ class TestCoefficientArea:
         grid_area.calculate_home_after_meter_data(time_slot, scm)
         scm.calculate_community_after_meter_data()
         grid_area.trigger_energy_trades(scm)
-        assert scm._home_data[house1.uuid].sharing_coefficient_percent == 1.0
-        assert scm._home_data[house1.uuid].feed_in_tariff == 0.1
-        assert scm._home_data[house1.uuid].market_maker_rate == 0.3
+        assert (
+            scm._home_data[house1.uuid].area_properties.AREA_PROPERTIES["coefficient_percentage"]
+            == 1.0
+        )
+        assert scm._home_data[house1.uuid].area_properties.AREA_PROPERTIES["feed_in_tariff"] == 0.1
+        assert (
+            scm._home_data[house1.uuid].area_properties.AREA_PROPERTIES["market_maker_rate"] == 0.3
+        )
         assert isclose(scm._home_data[house1.uuid].consumption_kWh, 0.7)
         assert isclose(scm._home_data[house1.uuid].production_kWh, 0.0)
         assert isclose(scm._home_data[house1.uuid].self_consumed_energy_kWh, 0.0)
         assert isclose(scm._home_data[house1.uuid].energy_surplus_kWh, 0.0)
         assert isclose(scm._home_data[house1.uuid].energy_need_kWh, 0.7)
 
-        assert scm._home_data[house2.uuid].sharing_coefficient_percent == 0.0
-        assert scm._home_data[house2.uuid].feed_in_tariff == 0.0
-        assert scm._home_data[house2.uuid].market_maker_rate == 0.3
+        assert (
+            scm._home_data[house2.uuid].area_properties.AREA_PROPERTIES["coefficient_percentage"]
+            == 0.0
+        )
+        assert scm._home_data[house2.uuid].area_properties.AREA_PROPERTIES["feed_in_tariff"] == 0.0
+        assert (
+            scm._home_data[house2.uuid].area_properties.AREA_PROPERTIES["market_maker_rate"] == 0.3
+        )
         assert isclose(scm._home_data[house2.uuid].consumption_kWh, 0.0)
         assert isclose(scm._home_data[house2.uuid].production_kWh, 20.0)
         assert isclose(scm._home_data[house2.uuid].self_consumed_energy_kWh, 0.0)
@@ -247,8 +296,9 @@ class TestCoefficientArea:
             assert isclose(scm._bills[house2.uuid].gsy_energy_bill, -0.02)
         assert isclose(scm._bills[house2.uuid].export_grid_fees, 0.0)
 
-        assert isclose(scm._bills[house2.uuid].savings,
-                       0.0, abs_tol=constants.FLOATING_POINT_TOLERANCE)
+        assert isclose(
+            scm._bills[house2.uuid].savings, 0.0, abs_tol=constants.FLOATING_POINT_TOLERANCE
+        )
         assert isclose(scm._bills[house2.uuid].savings_percent, 0.0)
         assert len(scm._home_data[house1.uuid].trades) == 2
         trades = scm._home_data[house1.uuid].trades
@@ -295,8 +345,8 @@ class TestCoefficientArea:
         grid_area = _create_2_house_grid
         house1 = grid_area.children[0]
         house2 = grid_area.children[1]
-        house1.coefficient_percentage = 0.8
-        house2.coefficient_percentage = 0.2
+        house1.area_properties.AREA_PROPERTIES["coefficient_percentage"] = 0.8
+        house2.area_properties.AREA_PROPERTIES["coefficient_percentage"] = 0.2
 
         time_slot = now()
         scm = SCMManager(grid_area, time_slot)
@@ -307,35 +357,41 @@ class TestCoefficientArea:
         scm._home_data[house2.uuid].energy_need_kWh = 8
         grid_area.change_home_coefficient_percentage(scm)
 
-        assert house1.coefficient_percentage == 0.2
-        assert house2.coefficient_percentage == 0.8
+        assert house1.area_properties.AREA_PROPERTIES["coefficient_percentage"] == 0.2
+        assert house2.area_properties.AREA_PROPERTIES["coefficient_percentage"] == 0.8
 
         scm._home_data[house1.uuid].energy_need_kWh = 10
         scm._home_data[house2.uuid].energy_need_kWh = 0
         grid_area.change_home_coefficient_percentage(scm)
 
-        assert house1.coefficient_percentage == 1.0
-        assert house2.coefficient_percentage == 0.0  # we allow null values
+        assert house1.area_properties.AREA_PROPERTIES["coefficient_percentage"] == 1.0
+        assert house2.area_properties.AREA_PROPERTIES["coefficient_percentage"] == 0.0
 
     @staticmethod
-    @pytest.mark.parametrize("scm_setting", [
-        "coefficient_percentage",
-        "market_maker_rate",
-        "feed_in_tariff",
-    ])
+    @pytest.mark.parametrize(
+        "scm_setting",
+        [
+            "coefficient_percentage",
+            "market_maker_rate",
+            "feed_in_tariff",
+        ],
+    )
     def test_coefficient_area_only_allows_not_none_values_for_settings(scm_setting):
         strategy = MagicMock(spec=SCMLoadHoursStrategy)
         strategy.get_energy_to_sell_kWh = MagicMock(return_value=0.0)
         strategy.get_energy_to_buy_kWh = MagicMock(return_value=0.7)
         load = CoefficientArea(name="load", strategy=strategy)
-        scm_settings = {scm_setting: None}
+
+        area = CoefficientArea(name="House 1", children=[load])
+        scm_settings = {area.uuid: {SCMPropertyType.AREA_PROPERTIES.name: {scm_setting: None}}}
         with pytest.raises(CoefficientAreaException):
             # grid_fee_constant's default value is None, so setting it to 0, it is tested elsewhere
-            CoefficientArea(name="House 1", children=[load], **scm_settings)
-
+            area.update_area_properties(scm_settings)
         # check does not fail for non-House areas
         house = CoefficientArea(name="House 1", children=[load])
-        CoefficientArea(name="Community", children=[house], **scm_settings)
+        community = CoefficientArea(name="Community", children=[house])
+        scm_settings = {area.uuid: {SCMPropertyType.AREA_PROPERTIES.name: {scm_setting: None}}}
+        community.update_area_properties(scm_settings)
 
     @staticmethod
     def test_update_fee_properties_only_allows_non_none_values():
@@ -344,25 +400,11 @@ class TestCoefficientArea:
         strategy.get_energy_to_buy_kWh = MagicMock(return_value=0.7)
         load = CoefficientArea(name="load", strategy=strategy)
         scm_area_uuid = str(uuid.uuid4())
-        scm_area = CoefficientArea(
-            name="House 1", children=[load], uuid=scm_area_uuid)
+        scm_area = CoefficientArea(name="House 1", children=[load], uuid=scm_area_uuid)
 
-        wrong_scm_properties = {scm_area_uuid: {SCMFeeType(0).name: {"some_fee": None}}}
+        wrong_scm_properties = {scm_area_uuid: {SCMPropertyType(0).name: {"some_fee": None}}}
         with pytest.raises(CoefficientAreaException):
-            scm_area.update_fee_properties(wrong_scm_properties)
-
-    @staticmethod
-    def test_area_reconfigure_event_changes_attributes():
-        area = CoefficientArea(name="House")
-        setting_name_attr_mapping = {
-            "coefficient_percentage": "coefficient_percentage",
-            "market_maker_rate": "_market_maker_rate",
-            "feed_in_tariff": "_feed_in_tariff"
-        }
-        for setting_name, attr_name in setting_name_attr_mapping.items():
-            kwargs = {setting_name: "test"}
-            area.area_reconfigure_event(**kwargs)
-            assert getattr(area, attr_name) == "test"
+            scm_area.update_area_properties(wrong_scm_properties)
 
     @staticmethod
     def test_area_reconfigure_event_triggers_strategy_rea_reconfigure_event():
@@ -379,15 +421,13 @@ class TestCoefficientArea:
         house1 = grid_area.children[0]
         house2 = grid_area.children[1]
         property_dict = {
-            house1.uuid:
-                {"GRID_FEES": {"grid_export_fee_const": 0.02}},
-            house2.uuid:
-                {"GRID_FEES": {"grid_export_fee_const": 0.02}}
+            house1.uuid: {"GRID_FEES": {"grid_export_fee_const": 0.02}},
+            house2.uuid: {"GRID_FEES": {"grid_export_fee_const": 0.02}},
         }
-        house1.update_fee_properties(property_dict)
-        house2.update_fee_properties(property_dict)
-        house1.coefficient_percentage = 0.8
-        house2.coefficient_percentage = 0.2
+        house1.update_area_properties(property_dict)
+        house2.update_area_properties(property_dict)
+        house1.area_properties.AREA_PROPERTIES["coefficient_percentage"] = 0.8
+        house2.area_properties.AREA_PROPERTIES["coefficient_percentage"] = 0.2
         time_slot = now()
         scm = SCMManager(grid_area, time_slot)
         grid_area.calculate_home_after_meter_data(time_slot, scm)
