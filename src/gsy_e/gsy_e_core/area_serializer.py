@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import json
 from logging import getLogger
 
+from gsy_framework.constants_limits import ConstSettings, SpotMarketTypeEnum
 from gsy_framework.utils import convert_pendulum_to_str_in_dict, key_in_dict_and_not_none
 from pendulum import Duration
 
@@ -36,12 +37,12 @@ from gsy_e.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProf
 from gsy_e.models.strategy.finite_power_plant import FinitePowerPlant  # NOQA
 from gsy_e.models.strategy.scm import SCMStrategy
 
-from gsy_e.models.leaves import (
+from gsy_e.models.leaves import (  # NOQA
     Leaf,
     scm_leaf_mapping,
     CoefficientLeaf,
     forward_leaf_mapping,
-)  # NOQA
+)
 from gsy_e.models.leaves import *  # NOQA  # pylint: disable=wildcard-import
 from gsy_e.models.strategy.trading_strategy_base import TradingStrategyBase
 

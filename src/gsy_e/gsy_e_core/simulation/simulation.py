@@ -252,9 +252,8 @@ class Simulation:
                     slot_completion=f"{int((tick_no / self.config.ticks_per_slot) * 100)}%",
                     market_slot=self.progress_info.next_slot_str,
                 )
-                (
-                    self.config.external_redis_communicator.publish_aggregator_commands_responses_events()
-                )
+                (self.config.external_redis_communicator.
+                 publish_aggregator_commands_responses_events())
 
                 self._time.handle_slowdown_and_realtime(tick_no, self.config, self.status)
 
@@ -333,6 +332,7 @@ class Simulation:
             self._handle_input(console)
             self.status.handle_pause_after(self._time_since_start)
         paused_flag = False
+        start = None
         if self.status.paused:
             if console:
                 log.critical("Simulation paused. Press 'p' to resume or resume from API.")
@@ -395,7 +395,9 @@ class Simulation:
         if area.uuid not in saved_area_state:
             log.warning(
                 "Area %s is not part of the saved state. "
-                "State not restored. Simulation id: %s", area.uuid, self.simulation_id
+                "State not restored. Simulation id: %s",
+                area.uuid,
+                self.simulation_id,
             )
         else:
             area.restore_state(saved_area_state[area.uuid])
