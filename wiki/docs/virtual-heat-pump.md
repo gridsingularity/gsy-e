@@ -40,7 +40,7 @@ The assumption is that the losses from the heat exchanger between the heat pump 
 
 $$Q_{hp_{out}} = P_{el-hp} \cdot COP = Q_{in} \tag{3}$$
 
-The $COP$ at each time-slot will be calculated as
+The $COP$ at each time slot will be calculated as
 
 $$ COP= \eta T_{condenser} / (T_{condenser} - T_{source}) \tag{4}$$
 
@@ -63,7 +63,7 @@ Where:
   * $Q_{loss,i}$ is the heat loss due to the water tank storage (ignored by the current model)
   * $\rho_i$ ρi  is the water density (constant, $1 kg/l$)
   * $V_i$ is the water tank volume (in $l$)
-  * $C_p$ is the water specific heat capacity (constant, $4182 J/kg°C$)
+  * $C_p$ is the specific heat capacity of water (constant, $4182 J kg^{-1} K^{-1}$)
   * $\frac{dT_i}{dt}$ is the temperature derivative (in $°C/sec$)
 
 The temperature derivative is calculated as the temperature difference between (i) the target temperature of the water tank storage ($T_{storage-target}$, in Celsius, used as the optimization variable of the system, providing flexibility to the heat pump operation) and (ii) the current temperature of the water tank storage ($T_{storage-current}$ in Celsius), divided by the measurement duration ($t_{measurement}$), in seconds; has to be equal to the market slot duration):
@@ -77,7 +77,7 @@ $$Q_{out,i} = \dot{m}_{DH} C_p (T_{s,i} - T_{r,i}) \tag{7}$$
 Where
 
   * $\dot{m}_{DH}$ is the district heating water flow (in $kg/sec$)
-  * $C_p$ is the water specific heat capacity  (constant, $4182 J/kg°C$)
+  * $C_p$ is is the specific heat capacity of water (constant, $4182 J kg^{-1} K^{-1}$)
   * $T_{s,i}$ and $T_{r,i}$ are the district heating supply and return temperatures (in $°C$) respectively.
 
 The $Q_{in,i}$ can be calculated using the following equation:
@@ -87,7 +87,7 @@ $$Q_{in,i} = \dot{m} C_p (T_{condenser} - T_{storagemean}) \tag{8}$$
 Where:
 
   * $\dot{m}$ is the water flow to the tank (in $kg/sec$)
-  * $C_p$ is the water specific heat capacity  (constant, $4182 J/kg°C$)
+  * $C_p$ is the specific heat capacity of water (constant, $4182 J kg^{-1} K^{-1}$)
   * $T_{condenser}$ is the HP condenser setpoint, to be defined by the optimizer at each time step. $T_{condenser}$ is the maximum allowed and not set to a constant value. As an optimization variable input to the system, this value will be changing from the condenser temperature required for the water tank to reach its maximum temperature, to the condenser temperature required to maintain the current temperature, depending on the energy that the heat pump traded / consumed.
   * $T_{storagemean}$ is the volume-averaged water tank storage temperature at the start of the market slot (in $°C$)
 
