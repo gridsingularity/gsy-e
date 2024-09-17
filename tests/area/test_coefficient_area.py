@@ -345,8 +345,8 @@ class TestCoefficientArea:
         grid_area = _create_2_house_grid
         house1 = grid_area.children[0]
         house2 = grid_area.children[1]
-        house1.coefficient_percentage = 0.8
-        house2.coefficient_percentage = 0.2
+        house1.area_properties.AREA_PROPERTIES["coefficient_percentage"] = 0.8
+        house2.area_properties.AREA_PROPERTIES["coefficient_percentage"] = 0.2
 
         time_slot = now()
         scm = SCMManager(grid_area, time_slot)
@@ -357,15 +357,15 @@ class TestCoefficientArea:
         scm._home_data[house2.uuid].energy_need_kWh = 8
         grid_area.change_home_coefficient_percentage(scm)
 
-        assert house1.coefficient_percentage == 0.2
-        assert house2.coefficient_percentage == 0.8
+        assert house1.area_properties.AREA_PROPERTIES["coefficient_percentage"] == 0.2
+        assert house2.area_properties.AREA_PROPERTIES["coefficient_percentage"] == 0.8
 
         scm._home_data[house1.uuid].energy_need_kWh = 10
         scm._home_data[house2.uuid].energy_need_kWh = 0
         grid_area.change_home_coefficient_percentage(scm)
 
-        assert house1.coefficient_percentage == 1.0
-        assert house2.coefficient_percentage == 0.0  # we allow null values
+        assert house1.area_properties.AREA_PROPERTIES["coefficient_percentage"] == 1.0
+        assert house2.area_properties.AREA_PROPERTIES["coefficient_percentage"] == 0.0
 
     @staticmethod
     @pytest.mark.parametrize(
