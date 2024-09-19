@@ -1,17 +1,20 @@
-# pylint: disable=protected-access, no-self-use
+# pylint: disable=protected-access
 import logging
+from collections import defaultdict
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
 
 import pendulum
 import pytest
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
-from gsy_framework.enums import AvailableMarketTypes, SpotMarketTypeEnum
+from gsy_framework.enums import SpotMarketTypeEnum
 from pendulum import datetime
 
 from gsy_e.gsy_e_core.enums import FORWARD_MARKET_TYPES
 from gsy_e.gsy_e_core.sim_results.endpoint_buffer import (
-    SimulationEndpointBuffer, CoefficientEndpointBuffer)
+    SimulationEndpointBuffer,
+    CoefficientEndpointBuffer,
+)
 from gsy_e.models.area.scm_manager import SCMManager
 
 logger = logging.getLogger(__name__)
@@ -33,7 +36,8 @@ def fixture_forward_setup():
         forward_markets=forward_markets,
         config=MagicMock(slot_length=slot_length),
         uuid="AREA",
-        strategy=None)
+        strategy=None,
+    )
     area.name = "area-name"
     area.parent = None
 
@@ -49,12 +53,7 @@ def fixture_general_setup():
     general_market_maker_rate = GlobalConfig.market_maker_rate
     GlobalConfig.market_maker_rate = 30
     slot_length = pendulum.duration(minutes=15)
-    spot_market = AvailableMarketTypes.SPOT
-    area = MagicMock(
-        spot_markets=spot_market,
-        config=MagicMock(slot_length=slot_length),
-        uuid="AREA",
-        strategy=None)
+    area = MagicMock(config=MagicMock(slot_length=slot_length), uuid="AREA", strategy=None)
     area.name = "area-name"
     area.parent = None
 
@@ -74,12 +73,111 @@ def fixture_scm_setup():
         scm=scm,
         config=MagicMock(slot_length=slot_length),
         uuid="AREA",
-        strategy=None)
+        strategy=None,
+    )
     coefficient_area.name = "Community"
     coefficient_area.parent = None
 
     yield coefficient_area, slot_length
     ConstSettings.MASettings.MARKET_TYPE = SpotMarketTypeEnum.ONE_SIDED.value
+
+
+@pytest.fixture(name="setup_multiple_levels")
+def fixture_setup_multiple_levels():
+    """Setup with multiple levels"""
+    area = MagicMock(
+        name="Grid",
+        children=[
+            MagicMock(
+                name="City 1",
+                children=[
+                    MagicMock(
+                        name="Community 1",
+                        children=[
+                            MagicMock(
+                                name="House 1",
+                                children=[
+                                    MagicMock(name="Load", children=[]),
+                                    MagicMock(name="PV", children=[]),
+                                ],
+                            ),
+                            MagicMock(
+                                name="House 2",
+                                children=[
+                                    MagicMock(name="Load", children=[]),
+                                    MagicMock(name="PV", children=[]),
+                                ],
+                            ),
+                        ],
+                    ),
+                    MagicMock(
+                        name="Community 2",
+                        children=[
+                            MagicMock(
+                                name="House 1",
+                                children=[
+                                    MagicMock(name="Load", children=[]),
+                                    MagicMock(name="PV", children=[]),
+                                ],
+                            ),
+                            MagicMock(
+                                name="House 2",
+                                children=[
+                                    MagicMock(name="Load", children=[]),
+                                    MagicMock(name="PV", children=[]),
+                                ],
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+            MagicMock(
+                name="City 2",
+                children=[
+                    MagicMock(
+                        name="Community 3",
+                        children=[
+                            MagicMock(
+                                name="House 1",
+                                children=[
+                                    MagicMock(name="Load", children=[]),
+                                    MagicMock(name="PV", children=[]),
+                                ],
+                            ),
+                            MagicMock(
+                                name="House 2",
+                                children=[
+                                    MagicMock(name="Load", children=[]),
+                                    MagicMock(name="PV", children=[]),
+                                ],
+                            ),
+                        ],
+                    ),
+                    MagicMock(
+                        name="Community 4",
+                        children=[
+                            MagicMock(
+                                name="House 1",
+                                children=[
+                                    MagicMock(name="Load", children=[]),
+                                    MagicMock(name="PV", children=[]),
+                                ],
+                            ),
+                            MagicMock(
+                                name="House 2",
+                                children=[
+                                    MagicMock(name="Load", children=[]),
+                                    MagicMock(name="PV", children=[]),
+                                ],
+                            ),
+                        ],
+                    ),
+                ],
+            ),
+        ],
+    )
+
+    yield area
 
 
 class TestSimulationEndpointBuffer:
@@ -91,16 +189,14 @@ class TestSimulationEndpointBuffer:
         return MagicMock(
             creation_time=creation_time,
             time_slot=time_slot,
-            serializable_dict=lambda: {
-                "creation_time": creation_time, "time_slot": time_slot})
+            serializable_dict=lambda: {"creation_time": creation_time, "time_slot": time_slot},
+        )
 
     def test_prepare_results_for_publish_creates_dict_successfully(self, general_setup):
         area, _ = general_setup
         endpoint_buffer = SimulationEndpointBuffer(
-            job_id="JOB_1",
-            random_seed=41,
-            area=area,
-            should_export_plots=False)
+            job_id="JOB_1", random_seed=41, area=area, should_export_plots=False
+        )
 
         output = endpoint_buffer.prepare_results_for_publish()
 
@@ -123,52 +219,52 @@ class TestSimulationEndpointBuffer:
                 "uuid": "AREA",
                 "parent_uuid": "",
                 "type": "Area",
-                "children": []
-            }
+                "children": [],
+            },
         }
 
     @patch("gsy_e.gsy_e_core.sim_results.endpoint_buffer.get_json_dict_memory_allocation_size")
     def test_prepare_results_for_publish_output_too_big(
-            self, get_json_dict_memory_allocation_size_mock, general_setup, caplog):
+        self, get_json_dict_memory_allocation_size_mock, general_setup, caplog
+    ):
         """The preparation of results fails if the output is too big."""
         area, _ = general_setup
         endpoint_buffer = SimulationEndpointBuffer(
-            job_id="JOB_1",
-            random_seed=41,
-            area=area,
-            should_export_plots=False)
+            job_id="JOB_1", random_seed=41, area=area, should_export_plots=False
+        )
 
         get_json_dict_memory_allocation_size_mock.return_value = 128000
         with caplog.at_level(logging.WARNING):
             output = endpoint_buffer.prepare_results_for_publish()
-            assert "Do not publish message bigger than 64 MB, current message size 128.0 MB." \
+            assert (
+                "Do not publish message bigger than 64 MB, current message size 128.0 MB."
                 in caplog.text
+            )
 
-        assert output == {}
+        assert not output
 
     def test_generate_json_report_returns_successfully(self, general_setup):
         area, _ = general_setup
         endpoint_buffer = SimulationEndpointBuffer(
-            job_id="JOB_1",
-            random_seed=41,
-            area=area,
-            should_export_plots=False)
+            job_id="JOB_1", random_seed=41, area=area, should_export_plots=False
+        )
 
         # The ResultsHandler class should be tested as a different unit, so we just mock its output
         results_handler_mock = MagicMock(all_raw_results={"mocked-results": "some-results"})
         endpoint_buffer.results_handler = results_handler_mock
 
         assert endpoint_buffer.generate_json_report() == {
+            "hierarchy_self_consumption": {},
             "job_id": "JOB_1",
             "random_seed": 41,
             "status": "",
             "progress_info": {
                 "eta_seconds": 0,
                 "elapsed_time_seconds": 0,
-                "percentage_completed": 0
+                "percentage_completed": 0,
             },
             "simulation_state": {"general": {}, "areas": {}},
-            "mocked-results": "some-results"
+            "mocked-results": "some-results",
         }
 
     def test_update_stats_spot_markets_updates_successfully(self, general_setup):
@@ -177,7 +273,8 @@ class TestSimulationEndpointBuffer:
         area.spot_market = MagicMock(
             name="current-market",
             time_slot=pendulum.DateTime(2022, 10, 30),
-            time_slot_str="2021-10-30T00:00:00+00:00")
+            time_slot_str="2021-10-30T00:00:00+00:00",
+        )
 
         # Popoulate strategy and children to update the result_area_uuids dictionary
         child_1 = MagicMock(uuid="child-uuid-1")
@@ -192,10 +289,8 @@ class TestSimulationEndpointBuffer:
         area.children = [child_1, child_2]
 
         endpoint_buffer = SimulationEndpointBuffer(
-            job_id="JOB_1",
-            random_seed=41,
-            area=area,
-            should_export_plots=False)
+            job_id="JOB_1", random_seed=41, area=area, should_export_plots=False
+        )
 
         endpoint_buffer._populate_core_stats_and_sim_state = MagicMock()
 
@@ -204,14 +299,16 @@ class TestSimulationEndpointBuffer:
             name="progress-info",
             eta=pendulum.duration(minutes=15),
             elapsed_time=pendulum.duration(minutes=30),
-            percentage_complete=1)
+            percentage_complete=1,
+        )
 
         endpoint_buffer.update_stats(
             area=area,
             simulation_status="some-state",
             progress_info=progress_info_mock,
             sim_state=sim_state_mock,
-            calculate_results=False)
+            calculate_results=False,
+        )
 
         assert endpoint_buffer.area_result_dict == {
             "name": "area-name",
@@ -224,14 +321,14 @@ class TestSimulationEndpointBuffer:
                     "name": "child_1",
                     "parent_uuid": "AREA",
                     "type": "MagicMock",
-                    "uuid": "child-uuid-1"
+                    "uuid": "child-uuid-1",
                 },
                 {
                     "children": [],
                     "name": "child_2",
                     "parent_uuid": "AREA",
                     "type": "MagicMock",
-                    "uuid": "child-uuid-2"
+                    "uuid": "child-uuid-2",
                 },
             ],
         }
@@ -247,29 +344,53 @@ class TestSimulationEndpointBuffer:
         assert endpoint_buffer.simulation_progress == {
             "eta_seconds": 900,
             "elapsed_time_seconds": 1800,
-            "percentage_completed": 1
+            "percentage_completed": 1,
         }
 
         assert endpoint_buffer.result_area_uuids == {"AREA", "child-uuid-2", "child-uuid-1"}
+
+    @staticmethod
+    def _create_kpis(area):
+        kpis = defaultdict(dict)
+        for n_city, city in enumerate(area.children):
+            kpis[city.uuid]["self_consumption"] = n_city * 10
+            for n_community, community in enumerate(city.children):
+                kpis[community.uuid]["self_consumption"] = (n_community + 1) * 10
+                for n_house, house in enumerate(community.children):
+                    kpis[house.uuid]["self_consumption"] = (n_house + 2) * 10
+        return kpis
+
+    def test_create_hierarchy_stats_returns_correct_results(self, setup_multiple_levels):
+        kpis = self._create_kpis(setup_multiple_levels)
+        endpoint_buffer = SimulationEndpointBuffer(
+            job_id="JOB_1", random_seed=41, should_export_plots=False, area=setup_multiple_levels
+        )
+        endpoint_buffer.results_handler.results_mapping["kpi"].performance_indices_redis = kpis
+        endpoint_buffer.create_hierarchy_stats(setup_multiple_levels)
+
+        assert endpoint_buffer.hierarchy_self_consumption == {0: 5.0, 1: 15.0, 2: 25.0}
 
 
 class TestSimulationEndpointBufferForward:
     """Tests for the SimulationEndpointBuffer class."""
 
-    # pylint: disable=no-self-use
     @staticmethod
     def _generate_order(creation_time, time_slot):
         """Generate one mock order{bid,offer,trade}."""
         return MagicMock(
             creation_time=creation_time,
             time_slot=time_slot,
-            serializable_dict=lambda: {
-                "creation_time": creation_time, "time_slot": time_slot})
+            serializable_dict=lambda: {"creation_time": creation_time, "time_slot": time_slot},
+        )
 
-    @patch("gsy_e.gsy_e_core.sim_results.endpoint_buffer.SimulationResultValidator."
-           "validate_simulation_raw_data", lambda self, data: True)
-    def test_forward_results_are_generated(   # pylint: disable-msg=too-many-locals
-            self, forward_setup):
+    @patch(
+        "gsy_e.gsy_e_core.sim_results.endpoint_buffer.SimulationResultValidator."
+        "validate_simulation_raw_data",
+        lambda self, data: True,
+    )
+    def test_forward_results_are_generated(  # pylint: disable-msg=too-many-locals
+        self, forward_setup
+    ):
         """Test results are being correctly generated with respect to
         forward market timeslots and current market timeslot."""
         area, slot_length = forward_setup
@@ -289,17 +410,21 @@ class TestSimulationEndpointBufferForward:
             for _ in range(3):
                 for i in range(5):
                     market.bids[uuid4()] = self._generate_order(
-                        creation_time=current_time - slot_length,
-                        time_slot=f"TIME_SLOT_{i}")
+                        creation_time=current_time - slot_length, time_slot=f"TIME_SLOT_{i}"
+                    )
 
                     market.offers[uuid4()] = self._generate_order(
-                        creation_time=current_time - slot_length,
-                        time_slot=f"TIME_SLOT_{i}")
+                        creation_time=current_time - slot_length, time_slot=f"TIME_SLOT_{i}"
+                    )
 
-                market.trades.extend([
-                    self._generate_order(
-                        creation_time=current_time - slot_length,
-                        time_slot=f"TIME_SLOT_{i}") for i in range(5)])
+                market.trades.extend(
+                    [
+                        self._generate_order(
+                            creation_time=current_time - slot_length, time_slot=f"TIME_SLOT_{i}"
+                        )
+                        for i in range(5)
+                    ]
+                )
                 current_time += slot_length
 
         # update the endpoint buffer for each of the 3 timeslots and
@@ -320,17 +445,16 @@ class TestSimulationEndpointBufferForward:
                         orders = timeslot_stats[order_type]
                         assert len(orders) == 1
                         assert orders[0]["time_slot"] == f"TIME_SLOT_{i}"
-                        assert (current_time - slot_length <=
-                                orders[0]["creation_time"] < current_time)
+                        assert (
+                            current_time - slot_length <= orders[0]["creation_time"] < current_time
+                        )
             current_time += slot_length
 
     def test_prepare_results_for_publish(self, forward_setup):
         area, _ = forward_setup
         endpoint_buffer = SimulationEndpointBuffer(
-            job_id="JOB_1",
-            random_seed=41,
-            area=area,
-            should_export_plots=False)
+            job_id="JOB_1", random_seed=41, area=area, should_export_plots=False
+        )
 
         output = endpoint_buffer.prepare_results_for_publish()
 
@@ -353,52 +477,52 @@ class TestSimulationEndpointBufferForward:
                 "uuid": "AREA",
                 "parent_uuid": "",
                 "type": "Area",
-                "children": []
-            }
+                "children": [],
+            },
         }
 
     @patch("gsy_e.gsy_e_core.sim_results.endpoint_buffer.get_json_dict_memory_allocation_size")
     def test_prepare_results_for_publish_output_too_big(
-            self, get_json_dict_memory_allocation_size_mock, forward_setup, caplog):
+        self, get_json_dict_memory_allocation_size_mock, forward_setup, caplog
+    ):
         """The preparation of results fails if the output is too big."""
         area, _ = forward_setup
         endpoint_buffer = SimulationEndpointBuffer(
-            job_id="JOB_1",
-            random_seed=41,
-            area=area,
-            should_export_plots=False)
+            job_id="JOB_1", random_seed=41, area=area, should_export_plots=False
+        )
 
         get_json_dict_memory_allocation_size_mock.return_value = 128000
         with caplog.at_level(logging.WARNING):
             output = endpoint_buffer.prepare_results_for_publish()
-            assert "Do not publish message bigger than 64 MB, current message size 128.0 MB." \
+            assert (
+                "Do not publish message bigger than 64 MB, current message size 128.0 MB."
                 in caplog.text
+            )
 
-        assert output == {}
+        assert not output
 
     def test_generate_json_report_returns_successfully(self, forward_setup):
         area, _ = forward_setup
         endpoint_buffer = SimulationEndpointBuffer(
-            job_id="JOB_1",
-            random_seed=41,
-            area=area,
-            should_export_plots=False)
+            job_id="JOB_1", random_seed=41, area=area, should_export_plots=False
+        )
 
         # The ResultsHandler class should be tested as a different unit, so we just mock its output
         results_handler_mock = MagicMock(all_raw_results={"mocked-results": "some-results"})
         endpoint_buffer.results_handler = results_handler_mock
 
         assert endpoint_buffer.generate_json_report() == {
+            "hierarchy_self_consumption": {},
             "job_id": "JOB_1",
             "random_seed": 41,
             "status": "",
             "progress_info": {
                 "eta_seconds": 0,
                 "elapsed_time_seconds": 0,
-                "percentage_completed": 0
+                "percentage_completed": 0,
             },
             "simulation_state": {"general": {}, "areas": {}},
-            "mocked-results": "some-results"
+            "mocked-results": "some-results",
         }
 
     def test_update_stats_forward_markets_updated_successfully(self, forward_setup):
@@ -407,7 +531,8 @@ class TestSimulationEndpointBufferForward:
         area.spot_market = MagicMock(
             name="current-market",
             time_slot=pendulum.DateTime(2022, 10, 30),
-            time_slot_str="2021-10-30T00:00:00+00:00")
+            time_slot_str="2021-10-30T00:00:00+00:00",
+        )
 
         # Popoulate strategy and children to update the result_area_uuids dictionary
         child_1 = MagicMock(uuid="child-uuid-1")
@@ -422,10 +547,8 @@ class TestSimulationEndpointBufferForward:
         area.children = [child_1, child_2]
 
         endpoint_buffer = SimulationEndpointBuffer(
-            job_id="JOB_1",
-            random_seed=41,
-            area=area,
-            should_export_plots=False)
+            job_id="JOB_1", random_seed=41, area=area, should_export_plots=False
+        )
 
         # We mock this method because it would be too complex to test all its conditionals here.
         # It would be good to refactor the method into a class and test it independently for each
@@ -437,14 +560,16 @@ class TestSimulationEndpointBufferForward:
             name="progress-info",
             eta=pendulum.duration(minutes=15),
             elapsed_time=pendulum.duration(minutes=30),
-            percentage_complete=1)
+            percentage_complete=1,
+        )
 
         endpoint_buffer.update_stats(
             area=area,
             simulation_status="some-state",
             progress_info=progress_info_mock,
             sim_state=sim_state_mock,
-            calculate_results=False)
+            calculate_results=False,
+        )
 
         assert endpoint_buffer.area_result_dict == {
             "name": "area-name",
@@ -458,7 +583,7 @@ class TestSimulationEndpointBufferForward:
                     "parent_uuid": "AREA",
                     "type": "MagicMock",
                     "uuid": "child-uuid-1",
-                    "capacity_kW": 2
+                    "capacity_kW": 2,
                 },
                 {
                     "children": [],
@@ -466,7 +591,7 @@ class TestSimulationEndpointBufferForward:
                     "parent_uuid": "AREA",
                     "type": "MagicMock",
                     "uuid": "child-uuid-2",
-                    "capacity_kW": 1.5
+                    "capacity_kW": 1.5,
                 },
             ],
         }
@@ -481,7 +606,7 @@ class TestSimulationEndpointBufferForward:
         assert endpoint_buffer.simulation_progress == {
             "eta_seconds": 900,
             "elapsed_time_seconds": 1800,
-            "percentage_completed": 1
+            "percentage_completed": 1,
         }
 
         assert endpoint_buffer.result_area_uuids == {"AREA", "child-uuid-2", "child-uuid-1"}
@@ -495,10 +620,8 @@ class TestCoefficientEndpointBuffer(TestSimulationEndpointBuffer):
         coefficient_area, _ = scm_setup
 
         endpoint_buffer = CoefficientEndpointBuffer(
-            job_id="JOB_1",
-            random_seed=41,
-            area=coefficient_area,
-            should_export_plots=False)
+            job_id="JOB_1", random_seed=41, area=coefficient_area, should_export_plots=False
+        )
 
         endpoint_buffer._populate_core_stats_and_sim_state = MagicMock()
 
@@ -507,7 +630,8 @@ class TestCoefficientEndpointBuffer(TestSimulationEndpointBuffer):
             name="progress-info",
             eta=pendulum.duration(minutes=15),
             elapsed_time=pendulum.duration(minutes=30),
-            percentage_complete=1)
+            percentage_complete=1,
+        )
 
         endpoint_buffer.update_coefficient_stats(
             area=coefficient_area,
@@ -515,12 +639,13 @@ class TestCoefficientEndpointBuffer(TestSimulationEndpointBuffer):
             progress_info=progress_info_mock,
             sim_state=sim_state_mock,
             scm_manager=SCMManager(area=coefficient_area, time_slot=datetime(2022, 10, 30)),
-            calculate_results=False)
+            calculate_results=False,
+        )
 
         assert isinstance(endpoint_buffer._scm_manager, SCMManager)
-        assert (endpoint_buffer.spot_market_time_slot_str ==
-               progress_info_mock.current_slot_str)
-        assert (endpoint_buffer.spot_market_time_slot ==
-               progress_info_mock.current_slot_time)
-        assert (endpoint_buffer.spot_market_time_slot_unix ==
-               progress_info_mock.current_slot_time.timestamp())
+        assert endpoint_buffer.spot_market_time_slot_str == progress_info_mock.current_slot_str
+        assert endpoint_buffer.spot_market_time_slot == progress_info_mock.current_slot_time
+        assert (
+            endpoint_buffer.spot_market_time_slot_unix
+            == progress_info_mock.current_slot_time.timestamp()
+        )
