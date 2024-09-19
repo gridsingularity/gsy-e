@@ -15,12 +15,17 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
 import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING, Dict, Iterable, List
 
 from gsy_framework.constants_limits import (
-    DATE_TIME_FORMAT, DATE_TIME_UI_FORMAT, ConstSettings, GlobalConfig)
+    DATE_TIME_FORMAT,
+    DATE_TIME_UI_FORMAT,
+    ConstSettings,
+    GlobalConfig,
+)
 from gsy_framework.enums import AvailableMarketTypes
 from gsy_framework.schema.validators import get_schema_validator
 from gsy_framework.sim_results.all_results import ResultsHandler, SCMResultsHandler
@@ -28,8 +33,10 @@ from gsy_framework.utils import get_json_dict_memory_allocation_size
 from pendulum import DateTime
 
 from gsy_e.gsy_e_core.sim_results.offer_bids_trades_hr_stats import OfferBidTradeGraphStats
-from gsy_e.gsy_e_core.util import (get_feed_in_tariff_rate_from_config,
-                                   get_market_maker_rate_from_config)
+from gsy_e.gsy_e_core.util import (
+    get_feed_in_tariff_rate_from_config,
+    get_market_maker_rate_from_config,
+)
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
 from gsy_e.models.strategy.finite_power_plant import FinitePowerPlant
 
@@ -39,26 +46,22 @@ if TYPE_CHECKING:
     from gsy_e.models.area.scm_manager import SCMManager
     from gsy_e.models.market import MarketBase
 
-_NO_VALUE = {
-    "min": None,
-    "avg": None,
-    "max": None
-}
+_NO_VALUE = {"min": None, "avg": None, "max": None}
 
 
 class SimulationResultValidator:
     """Validator class to be used by SimulationEndpointBuffer and CoefficientEndpointBuffer."""
+
     def __init__(self, is_scm: bool):
         self.is_scm = is_scm
 
         if self.is_scm:
-            self.simulation_raw_data_validator = get_schema_validator(
-                "scm_simulation_raw_data")
+            self.simulation_raw_data_validator = get_schema_validator("scm_simulation_raw_data")
         else:
-            self.simulation_raw_data_validator = get_schema_validator(
-                "simulation_raw_data")
+            self.simulation_raw_data_validator = get_schema_validator("simulation_raw_data")
         self.simulation_configuration_tree_validator = get_schema_validator(
-            "results_configuration_tree")
+            "results_configuration_tree"
+        )
         self.simulation_state_validator = get_schema_validator("simulation_state")
 
     def validate_simulation_raw_data(self, data: Dict):
@@ -90,17 +93,20 @@ class SimulationEndpointBuffer:
         self.status = ""
         self.area_result_dict = self._create_area_tree_dict(area)
         self.flattened_area_core_stats_dict = {}
+        self.hierarchy_self_consumption: Dict[int, float] = {}
         self.simulation_progress = {
             "eta_seconds": 0,
             "elapsed_time_seconds": 0,
-            "percentage_completed": 0
+            "percentage_completed": 0,
         }
 
-        self.results_handler = self._create_endpoint_buffer(should_export_plots)
+        self.results_handler = self._create_results_handler(should_export_plots)
         self.simulation_state = {"general": {}, "areas": {}}
 
-        if (ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR or
-                ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR):
+        if (
+            ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR
+            or ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR
+        ):
             self.offer_bid_trade_hr = OfferBidTradeGraphStats()
 
         self.results_validator = None
@@ -112,8 +118,10 @@ class SimulationEndpointBuffer:
 
         message_size = get_json_dict_memory_allocation_size(result_report)
         if message_size > 64000:
-            logging.error("Do not publish message bigger than 64 MB, "
-                          "current message size %s MB.", (message_size / 1000.0))
+            logging.error(
+                "Do not publish message bigger than 64 MB, current message size %s MB.",
+                (message_size / 1000.0),
+            )
             return {}
         logging.debug("Publishing %s KB of data via Redis.", message_size)
         return result_report
@@ -126,12 +134,18 @@ class SimulationEndpointBuffer:
             "status": self.status,
             "progress_info": self.simulation_progress,
             "simulation_state": self.simulation_state,
-            **self.results_handler.all_raw_results
+            "hierarchy_self_consumption": self.hierarchy_self_consumption,
+            **self.results_handler.all_raw_results,
         }
 
-    def update_stats(self, area: "AreaBase", simulation_status: str,
-                     progress_info: "SimulationProgressInfo", sim_state: Dict,
-                     calculate_results: bool) -> None:
+    def update_stats(
+        self,
+        area: "AreaBase",
+        simulation_status: str,
+        progress_info: "SimulationProgressInfo",
+        sim_state: Dict,
+        calculate_results: bool,
+    ) -> None:
         # pylint: disable=too-many-arguments
         """Wrapper for handling of all results."""
         self.area_result_dict = self._create_area_tree_dict(area)
@@ -142,16 +156,20 @@ class SimulationEndpointBuffer:
         self.simulation_progress = {
             "eta_seconds": progress_info.eta.seconds if progress_info.eta else None,
             "elapsed_time_seconds": progress_info.elapsed_time.seconds,
-            "percentage_completed": int(progress_info.percentage_completed)
+            "percentage_completed": int(progress_info.percentage_completed),
         }
 
         if calculate_results:
             self.results_handler.update(
-                self.area_result_dict, self.flattened_area_core_stats_dict,
-                self.spot_market_time_slot_str)
+                self.area_result_dict,
+                self.flattened_area_core_stats_dict,
+                self.spot_market_time_slot_str,
+            )
 
-            if (ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR or
-                    ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR):
+            if (
+                ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR
+                or ConstSettings.GeneralSettings.EXPORT_ENERGY_TRADE_PROFILE_HR
+            ):
                 self.offer_bid_trade_hr.update(area)
 
         self.result_area_uuids = set()
@@ -170,8 +188,33 @@ class SimulationEndpointBuffer:
         self.results_validator = SimulationResultValidator(is_scm=False)
 
     @staticmethod
-    def _create_endpoint_buffer(should_export_plots):
+    def _create_results_handler(should_export_plots):
         return ResultsHandler(should_export_plots)
+
+    def create_hierarchy_stats(self, area: "AreaBase"):
+        """Calculate hierarchy related statistics."""
+        hierarchy_self_consumption_list = {}
+        self._calc_hierarchy_stats(area, 0, hierarchy_self_consumption_list)
+        for level, consumption_list in hierarchy_self_consumption_list.items():
+            if len(consumption_list):
+                self.hierarchy_self_consumption[level] = sum(consumption_list) / len(
+                    consumption_list
+                )
+
+    def _calc_hierarchy_stats(self, area: "AreaBase", level: int, results: Dict):
+        if not area.children:
+            return
+        kpis = self.results_handler.results_mapping["kpi"].ui_formatted_results
+        if not kpis:
+            return
+
+        for child in area.children:
+            if not child.children:
+                continue
+            if level not in results:
+                results[level] = []
+            results[level].append(kpis[child.uuid]["self_consumption"])
+            self._calc_hierarchy_stats(child, level + 1, results)
 
     def _generate_result_report(self) -> Dict:
         """Create dict that contains all statistics that are sent to the gsy-web."""
@@ -185,7 +228,7 @@ class SimulationEndpointBuffer:
             "results_area_uuids": list(self.result_area_uuids),
             "simulation_state": self.simulation_state,
             "simulation_raw_data": self.flattened_area_core_stats_dict,
-            "configuration_tree": self.area_result_dict
+            "configuration_tree": self.area_result_dict,
         }
 
     @staticmethod
@@ -194,14 +237,20 @@ class SimulationEndpointBuffer:
         area_dict = {}
         area_dict["name"] = target_area.name
         area_dict["uuid"] = target_area.uuid
-        area_dict["parent_uuid"] = (target_area.parent.uuid
-                                    if target_area.parent is not None else "")
-        area_dict["type"] = (str(target_area.strategy.__class__.__name__)
-                             if target_area.strategy is not None else "Area")
+        area_dict["parent_uuid"] = (
+            target_area.parent.uuid if target_area.parent is not None else ""
+        )
+        area_dict["type"] = (
+            str(target_area.strategy.__class__.__name__)
+            if target_area.strategy is not None
+            else "Area"
+        )
         area_dict["children"] = []
 
-        if (ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS and
-                target_area.strategy is not None):
+        if (
+            ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS
+            and target_area.strategy is not None
+        ):
             # pylint: disable=protected-access
             area_dict["capacity_kW"] = target_area.strategy._energy_params.capacity_kW
 
@@ -211,9 +260,7 @@ class SimulationEndpointBuffer:
         """Create a tree that mirrors the setup architecture and contains basic information."""
         area_result_dict = self._structure_results_from_area_object(area)
         for child in area.children:
-            area_result_dict["children"].append(
-                self._create_area_tree_dict(child)
-            )
+            area_result_dict["children"].append(self._create_area_tree_dict(child))
         return area_result_dict
 
     def _read_settlement_markets_stats_to_dict(self, area: "Area") -> Dict[str, Dict]:
@@ -228,23 +275,24 @@ class SimulationEndpointBuffer:
 
     @staticmethod
     def _get_future_orders_from_timeslot(future_orders: List, time_slot: DateTime) -> List:
-        return [order.serializable_dict()
-                for order in future_orders
-                if order.time_slot == time_slot]
+        return [
+            order.serializable_dict() for order in future_orders if order.time_slot == time_slot
+        ]
 
     @staticmethod
     def _get_current_forward_orders_from_timeslot(
-            forward_orders: Iterable,
-            market_time_slot: DateTime,
-            area: "Area") -> List:
+        forward_orders: Iterable, market_time_slot: DateTime, area: "Area"
+    ) -> List:
         """Filter orders that have happened in the current simulation time for
         the specified market time slot."""
         current_time_slot = area.now
         last_time_slot = area.now - area.config.slot_length
-        return [order.serializable_dict()
-                for order in forward_orders
-                if order.time_slot == market_time_slot and
-                last_time_slot <= order.creation_time < current_time_slot]
+        return [
+            order.serializable_dict()
+            for order in forward_orders
+            if order.time_slot == market_time_slot
+            and last_time_slot <= order.creation_time < current_time_slot
+        ]
 
     def _read_future_markets_stats_to_dict(self, area: "Area") -> Dict[str, Dict]:
         """Read future markets and return market_stats in a dict."""
@@ -257,24 +305,33 @@ class SimulationEndpointBuffer:
             time_slot_str = time_slot.format(DATE_TIME_FORMAT)
             stats_dict[time_slot_str] = {
                 "bids": self._get_future_orders_from_timeslot(
-                    area.future_markets.bid_history, time_slot),
+                    area.future_markets.bid_history, time_slot
+                ),
                 "offers": self._get_future_orders_from_timeslot(
-                    area.future_markets.offer_history, time_slot),
+                    area.future_markets.offer_history, time_slot
+                ),
                 "trades": self._get_future_orders_from_timeslot(
-                    area.future_markets.trades, time_slot),
+                    area.future_markets.trades, time_slot
+                ),
                 "market_fee": area.future_markets.market_fee,
-                "const_fee_rate": (area.future_markets.const_fee_rate
-                                   if area.future_markets.const_fee_rate is not None else 0.),
-                "feed_in_tariff": get_feed_in_tariff_rate_from_config(area.future_markets,
-                                                                      time_slot=time_slot),
+                "const_fee_rate": (
+                    area.future_markets.const_fee_rate
+                    if area.future_markets.const_fee_rate is not None
+                    else 0.0
+                ),
+                "feed_in_tariff": get_feed_in_tariff_rate_from_config(
+                    area.future_markets, time_slot=time_slot
+                ),
                 "market_maker_rate": get_market_maker_rate_from_config(
-                    area.future_markets, time_slot=time_slot)
+                    area.future_markets, time_slot=time_slot
+                ),
             }
 
         return stats_dict
 
     def _read_forward_markets_stats_to_dict(
-            self, area: "Area") -> Dict[AvailableMarketTypes, Dict[str, Dict]]:
+        self, area: "Area"
+    ) -> Dict[AvailableMarketTypes, Dict[str, Dict]]:
         """Read forward markets and return market_stats in a dict."""
 
         stats_dict = defaultdict(dict)
@@ -287,18 +344,24 @@ class SimulationEndpointBuffer:
                 stats_dict[market_type.value][time_slot_str] = {
                     # only export unmatched open bids/offers
                     "bids": self._get_current_forward_orders_from_timeslot(
-                        market.bids.values(), time_slot, area),
+                        market.bids.values(), time_slot, area
+                    ),
                     "offers": self._get_current_forward_orders_from_timeslot(
-                        market.offers.values(), time_slot, area),
+                        market.offers.values(), time_slot, area
+                    ),
                     "trades": self._get_current_forward_orders_from_timeslot(
-                        market.trades, time_slot, area),
+                        market.trades, time_slot, area
+                    ),
                     "market_fee": market.market_fee,
                     "const_fee_rate": (
-                        market.const_fee_rate if market.const_fee_rate is not None else 0.),
+                        market.const_fee_rate if market.const_fee_rate is not None else 0.0
+                    ),
                     "feed_in_tariff": get_feed_in_tariff_rate_from_config(
-                        market, time_slot=time_slot),
+                        market, time_slot=time_slot
+                    ),
                     "market_maker_rate": get_market_maker_rate_from_config(
-                        market, time_slot=time_slot)
+                        market, time_slot=time_slot
+                    ),
                 }
         return stats_dict
 
@@ -314,8 +377,9 @@ class SimulationEndpointBuffer:
             stats_dict["trades"].append(trade.serializable_dict())
 
         stats_dict["market_fee"] = market.market_fee
-        stats_dict["const_fee_rate"] = (market.const_fee_rate
-                                        if market.const_fee_rate is not None else 0.)
+        stats_dict["const_fee_rate"] = (
+            market.const_fee_rate if market.const_fee_rate is not None else 0.0
+        )
         stats_dict["feed_in_tariff"] = get_feed_in_tariff_rate_from_config(market)
         stats_dict["market_maker_rate"] = get_market_maker_rate_from_config(market)
         return stats_dict
@@ -337,18 +401,21 @@ class SimulationEndpointBuffer:
 
             if ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS:
                 core_stats_dict["settlement_market_stats"] = (
-                    self._read_settlement_markets_stats_to_dict(area))
+                    self._read_settlement_markets_stats_to_dict(area)
+                )
             if ConstSettings.FutureMarketSettings.FUTURE_MARKET_DURATION_HOURS > 0:
-                core_stats_dict["future_market_stats"] = (
-                    self._read_future_markets_stats_to_dict(area)
+                core_stats_dict["future_market_stats"] = self._read_future_markets_stats_to_dict(
+                    area
                 )
             if ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS:
-                core_stats_dict["forward_market_stats"] = (
-                    self._read_forward_markets_stats_to_dict(area)
+                core_stats_dict["forward_market_stats"] = self._read_forward_markets_stats_to_dict(
+                    area
                 )
 
-        if (isinstance(area.strategy, CommercialStrategy) and not
-                ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS):
+        if (
+            isinstance(area.strategy, CommercialStrategy)
+            and not ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS
+        ):
             if isinstance(area.strategy, FinitePowerPlant):
                 core_stats_dict["production_kWh"] = area.strategy.energy_per_slot_kWh
                 if area.parent.spot_market is not None:
@@ -356,8 +423,9 @@ class SimulationEndpointBuffer:
                         core_stats_dict["trades"].append(trade.serializable_dict())
             else:
                 if area.parent.spot_market is not None:
-                    core_stats_dict["energy_rate"] = (
-                        area.strategy.energy_rate.get(area.parent.spot_market.time_slot, None))
+                    core_stats_dict["energy_rate"] = area.strategy.energy_rate.get(
+                        area.parent.spot_market.time_slot, None
+                    )
                     for trade in area.strategy.trades[area.parent.spot_market]:
                         core_stats_dict["trades"].append(trade.serializable_dict())
         elif not ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS:
@@ -374,16 +442,19 @@ class SimulationEndpointBuffer:
             self._populate_core_stats_and_sim_state(child)
 
     def _calculate_and_update_last_market_time_slot(self, area: "Area"):
-        is_initial_spot_market_on_cn = (
-                GlobalConfig.is_canary_network() and
-                (area.spot_market is None or
-                 (area.spot_market and
-                  area.spot_market.time_slot -
-                  area.current_market.time_slot > area.config.slot_length)))
+        is_initial_spot_market_on_cn = GlobalConfig.is_canary_network() and (
+            area.spot_market is None
+            or (
+                area.spot_market
+                and area.spot_market.time_slot - area.current_market.time_slot
+                > area.config.slot_length
+            )
+        )
         if area.spot_market is not None and not is_initial_spot_market_on_cn:
             self.spot_market_time_slot_str = area.spot_market.time_slot_str
-            self.spot_market_ui_time_slot_str = (
-                area.spot_market.time_slot.format(DATE_TIME_UI_FORMAT))
+            self.spot_market_ui_time_slot_str = area.spot_market.time_slot.format(
+                DATE_TIME_UI_FORMAT
+            )
             self.spot_market_time_slot_unix = area.spot_market.time_slot.timestamp()
             self.spot_market_time_slot = area.spot_market.time_slot
 
@@ -406,15 +477,17 @@ class CoefficientEndpointBuffer(SimulationEndpointBuffer):
     def _generate_result_report(self) -> Dict:
         """Create dict that contains all statistics that are sent to the gsy-web."""
         result_dict = super()._generate_result_report()
-        return {
-            "scm_past_slots": self._scm_past_slots,
-            **result_dict
-        }
+        return {"scm_past_slots": self._scm_past_slots, **result_dict}
 
     def update_coefficient_stats(  # pylint: disable=too-many-arguments
-            self, area: "AreaBase", simulation_status: str,
-            progress_info: "SimulationProgressInfo", sim_state: Dict,
-            calculate_results: bool, scm_manager: "SCMManager") -> None:
+        self,
+        area: "AreaBase",
+        simulation_status: str,
+        progress_info: "SimulationProgressInfo",
+        sim_state: Dict,
+        calculate_results: bool,
+        scm_manager: "SCMManager",
+    ) -> None:
         """Update the stats of the SCM endpoint buffer."""
         self._scm_manager = scm_manager
 
@@ -423,14 +496,13 @@ class CoefficientEndpointBuffer(SimulationEndpointBuffer):
             self.spot_market_time_slot = progress_info.current_slot_time
             self.spot_market_time_slot_unix = progress_info.current_slot_time.timestamp()
 
-        super().update_stats(
-            area, simulation_status, progress_info, sim_state, calculate_results)
+        super().update_stats(area, simulation_status, progress_info, sim_state, calculate_results)
 
     def _create_results_validator(self):
         self.results_validator = SimulationResultValidator(is_scm=True)
 
     @staticmethod
-    def _create_endpoint_buffer(_should_export_plots):
+    def _create_results_handler(_should_export_plots):
         return SCMResultsHandler()
 
     def _calculate_and_update_last_market_time_slot(self, area):
@@ -449,11 +521,11 @@ class CoefficientEndpointBuffer(SimulationEndpointBuffer):
                 core_stats_dict["production_kWh"] = area.strategy.energy_per_slot_kWh
             else:
                 if area.parent.spot_market is not None:
-                    core_stats_dict["energy_rate"] = (
-                        area.strategy.energy_rate.get(area.now, None))
+                    core_stats_dict["energy_rate"] = area.strategy.energy_rate.get(area.now, None)
         elif not area.strategy and self._scm_manager is not None:
             core_stats_dict.update(
-                self._scm_manager.get_area_results(area.uuid, serializable=True))
+                self._scm_manager.get_area_results(area.uuid, serializable=True)
+            )
         else:
             core_stats_dict.update(area.get_results_dict())
 

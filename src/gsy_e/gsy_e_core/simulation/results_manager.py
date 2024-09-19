@@ -28,7 +28,9 @@ import gsy_e.constants
 from gsy_e.constants import DATE_TIME_FORMAT, TIME_ZONE
 from gsy_e.gsy_e_core.export import CoefficientExportAndPlot, ExportAndPlot
 from gsy_e.gsy_e_core.sim_results.endpoint_buffer import (
-    CoefficientEndpointBuffer, SimulationEndpointBuffer)
+    CoefficientEndpointBuffer,
+    SimulationEndpointBuffer,
+)
 from gsy_e.models.area.scm_manager import SCMManager
 
 if TYPE_CHECKING:
@@ -42,8 +44,14 @@ log = getLogger(__name__)
 class SimulationResultsManager:
     # pylint: disable=too-many-instance-attributes
     """Maintain and populate the simulation results and the publishing to the message broker."""
-    def __init__(self, export_results_on_finish: bool, export_path: str,
-                 export_subdir: Optional[str], started_from_cli: bool) -> None:
+
+    def __init__(
+        self,
+        export_results_on_finish: bool,
+        export_path: str,
+        export_subdir: Optional[str],
+        started_from_cli: bool,
+    ) -> None:
         self.export_results_on_finish = export_results_on_finish
         self.export_path = export_path
         self.started_from_cli = started_from_cli
@@ -57,22 +65,27 @@ class SimulationResultsManager:
         self._export = None
         self._scm_manager = None
 
-    def init_results(self, redis_job_id: str, area: "AreaBase",
-                     config_params: "SimulationSetup") -> None:
+    def init_results(
+        self, redis_job_id: str, area: "AreaBase", config_params: "SimulationSetup"
+    ) -> None:
         """Construct objects that contain the simulation results for the broker and CSV output."""
         self._endpoint_buffer = SimulationEndpointBuffer(
-            redis_job_id, config_params.seed,
-            area, self.export_results_on_finish)
+            redis_job_id, config_params.seed, area, self.export_results_on_finish
+        )
 
         if self.export_results_on_finish:
-            self._export = ExportAndPlot(area, self.export_path,
-                                         self.export_subdir,
-                                         self._endpoint_buffer)
+            self._export = ExportAndPlot(
+                area, self.export_path, self.export_subdir, self._endpoint_buffer
+            )
 
     @property
     def _should_send_results_to_broker(self) -> None:
         """Flag that decides whether to send results to the gsy-web"""
         return not self.started_from_cli and self.kafka_connection.is_enabled()
+
+    def create_hierarchy_stats(self, area: "AreaBase"):
+        """Trigger calculation of hierarchy related statistics."""
+        self._endpoint_buffer.create_hierarchy_stats(area)
 
     def update_and_send_results(self, simulation: "Simulation"):
         """Update the simulation results.
@@ -89,28 +102,34 @@ class SimulationResultsManager:
                 simulation.status.status,
                 progress_info,
                 current_state,
-                calculate_results=False)
+                calculate_results=False,
+            )
             results = self._endpoint_buffer.prepare_results_for_publish()
             if results is None:
                 return
             self.kafka_connection.publish(results, current_state["simulation_id"])
 
-        elif (gsy_e.constants.RETAIN_PAST_MARKET_STRATEGIES_STATE or
-                self.export_results_on_finish):
+        elif gsy_e.constants.RETAIN_PAST_MARKET_STRATEGIES_STATE or self.export_results_on_finish:
 
             self._endpoint_buffer.update_stats(
-                area, current_state["sim_status"], progress_info, current_state,
-                calculate_results=True)
+                area,
+                current_state["sim_status"],
+                progress_info,
+                current_state,
+                calculate_results=True,
+            )
             self._update_area_stats(area, self._endpoint_buffer)
 
             if self.export_results_on_finish:
                 assert self._export is not None
-                if (area.spot_market is not None
-                        and gsy_e.constants.RETAIN_PAST_MARKET_STRATEGIES_STATE):
+                if (
+                    area.spot_market is not None
+                    and gsy_e.constants.RETAIN_PAST_MARKET_STRATEGIES_STATE
+                ):
                     # for integration tests:
                     self._export.raw_data_to_json(
                         area.spot_market.time_slot_str,
-                        self._endpoint_buffer.flattened_area_core_stats_dict
+                        self._endpoint_buffer.flattened_area_core_stats_dict,
                     )
 
                 self._export.file_stats_endpoint(area)
@@ -122,7 +141,8 @@ class SimulationResultsManager:
         bills = endpoint_buffer.results_handler.all_ui_results["bills"].get(area.uuid, {})
         area.stats.update_aggregated_stats({"bills": bills})
         area.stats.kpi.update(
-            endpoint_buffer.results_handler.all_ui_results["kpi"].get(area.uuid, {}))
+            endpoint_buffer.results_handler.all_ui_results["kpi"].get(area.uuid, {})
+        )
 
     def update_csv_on_market_cycle(self, slot_no: int, area: "Area") -> None:
         """Update the csv results on market cycle."""
@@ -141,17 +161,22 @@ class SimulationResultsManager:
 class CoefficientSimulationResultsManager(SimulationResultsManager):
     """Maintain and populate the SCM simulation results and publishing to the message broker."""
 
-    def init_results(self, redis_job_id: str, area: "CoefficientArea",
-                     config_params: "SimulationSetup") -> None:
+    def init_results(
+        self, redis_job_id: str, area: "CoefficientArea", config_params: "SimulationSetup"
+    ) -> None:
         """Construct objects that contain the simulation results for the broker and CSV output."""
         self._endpoint_buffer = CoefficientEndpointBuffer(
-            redis_job_id, config_params.seed,
-            area, self.export_results_on_finish,
-            scm_past_slots=config_params.config.scm_past_slots)
+            redis_job_id,
+            config_params.seed,
+            area,
+            self.export_results_on_finish,
+            scm_past_slots=config_params.config.scm_past_slots,
+        )
 
         if self.export_results_on_finish:
             self._export = CoefficientExportAndPlot(
-                area, self.export_path, self.export_subdir, self._endpoint_buffer)
+                area, self.export_path, self.export_subdir, self._endpoint_buffer
+            )
 
     def update_scm_manager(self, scm_manager: SCMManager) -> None:
         """Update the scm_manager with the latest instance."""
@@ -159,11 +184,17 @@ class CoefficientSimulationResultsManager(SimulationResultsManager):
 
     @classmethod
     def _update_area_stats(
-            cls, area: "CoefficientArea", endpoint_buffer: "SimulationEndpointBuffer") -> None:
+        cls, area: "CoefficientArea", endpoint_buffer: "SimulationEndpointBuffer"
+    ) -> None:
         return
 
-    def update_csv_files(self, slot_no: int, current_time_slot: DateTime, area: "CoefficientArea",
-                         scm_manager: SCMManager) -> None:
+    def update_csv_files(
+        self,
+        slot_no: int,
+        current_time_slot: DateTime,
+        area: "CoefficientArea",
+        scm_manager: SCMManager,
+    ) -> None:
         """Update the csv results on market cycle."""
         if self.export_results_on_finish:
             self._export.data_to_csv(area, current_time_slot, slot_no == 0, scm_manager)
@@ -189,30 +220,36 @@ class CoefficientSimulationResultsManager(SimulationResultsManager):
 
         if self._should_send_results_to_broker:
             self._endpoint_buffer.update_coefficient_stats(
-                area, simulation_status, progress_info, current_state,
-                False, self._scm_manager)
+                area, simulation_status, progress_info, current_state, False, self._scm_manager
+            )
             self._endpoint_buffer.simulation_progress["scm_past_slots"] = scm_past_slots
             results = self._endpoint_buffer.prepare_results_for_publish()
             if results is None:
                 return
             self.kafka_connection.publish(results, current_state["simulation_id"])
 
-        elif (gsy_e.constants.RETAIN_PAST_MARKET_STRATEGIES_STATE or
-              self.export_results_on_finish):
+        elif gsy_e.constants.RETAIN_PAST_MARKET_STRATEGIES_STATE or self.export_results_on_finish:
 
             self._endpoint_buffer.update_coefficient_stats(
-                area, current_state["sim_status"], progress_info, current_state,
-                True, self._scm_manager)
+                area,
+                current_state["sim_status"],
+                progress_info,
+                current_state,
+                True,
+                self._scm_manager,
+            )
             self._update_area_stats(area, self._endpoint_buffer)
 
             if self.export_results_on_finish:
                 assert self._export is not None
-                if (progress_info.current_slot_time is not None
-                        and gsy_e.constants.RETAIN_PAST_MARKET_STRATEGIES_STATE):
+                if (
+                    progress_info.current_slot_time is not None
+                    and gsy_e.constants.RETAIN_PAST_MARKET_STRATEGIES_STATE
+                ):
                     # for integration tests:
                     self._export.raw_data_to_json(
                         progress_info.current_slot_str,
-                        self._endpoint_buffer.flattened_area_core_stats_dict
+                        self._endpoint_buffer.flattened_area_core_stats_dict,
                     )
 
                 self._export.file_stats_endpoint(area, self._scm_manager)
