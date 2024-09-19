@@ -28,6 +28,7 @@ class ForwardOrderUpdaterParameters(OrderUpdaterParameters):
     Parameters of the order updater class. Includes start / end energy rate and time interval
     between each price update.
     """
+
     capacity_percent: float
 
     def __post_init__(self):
@@ -39,8 +40,9 @@ class ForwardOrderUpdater(OrderUpdater):
     Calculate whether the price of the template strategy orders needs to be updated.
     Uses linear increase / decrease in price along the duration of a market slot.
     """
-    def __init__(self, parameters: ForwardOrderUpdaterParameters,
-                 market_params: MarketSlotParams):
+
+    def __init__(self, parameters: ForwardOrderUpdaterParameters, market_params: MarketSlotParams):
+        self._parameters = parameters
         super().__init__(parameters=parameters, market_params=market_params)
 
     @property
