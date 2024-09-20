@@ -605,8 +605,8 @@ class PlotlyGraph:
 
         return go.Layout(
             autosize=False,
-            width=1200,
-            height=1000,
+            width=1250,
+            height=1050,
             barmode=barmode,
             title=title,
             xaxis=dict(
@@ -619,7 +619,7 @@ class PlotlyGraph:
                                  )
             ),
             font=dict(
-                size=12
+                size=16
             ),
             showlegend=True,
             legend=dict(x=1.1, y=1),
