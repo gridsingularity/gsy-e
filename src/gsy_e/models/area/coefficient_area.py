@@ -96,9 +96,6 @@ class CoefficientArea(AreaBase):
         if self.strategy is not None:
             self.strategy.area_reconfigure_event(**kwargs)
 
-    def _is_home_area(self):
-        return self.children and all(child.strategy for child in self.children)
-
     def _calculate_home_after_meter_data(
         self, current_time_slot: DateTime, scm_manager: "SCMManager"
     ) -> None:
@@ -130,14 +127,14 @@ class CoefficientArea(AreaBase):
         self, current_time_slot: DateTime, scm_manager: "SCMManager"
     ) -> None:
         """Recursive function that calculates the home after meter data."""
-        if self._is_home_area():
+        if self.is_home_area:
             self._calculate_home_after_meter_data(current_time_slot, scm_manager)
         for child in sorted(self.children, key=lambda _: random()):
             child.calculate_home_after_meter_data(current_time_slot, scm_manager)
 
     def trigger_energy_trades(self, scm_manager: "SCMManager") -> None:
         """Recursive function that triggers energy trading on all children of the root area."""
-        if self._is_home_area():
+        if self.is_home_area:
             scm_manager.calculate_home_energy_bills(self.uuid)
         for child in sorted(self.children, key=lambda _: random()):
             child.trigger_energy_trades(scm_manager)
@@ -159,7 +156,7 @@ class CoefficientArea(AreaBase):
         """Recursive function that change home coefficient percentage based on energy need.
         This method is for dynamic energy allocation algorithm.
         """
-        if self._is_home_area():
+        if self.is_home_area:
             self._change_home_coefficient_percentage(scm_manager)
         for child in self.children:
             child.change_home_coefficient_percentage(scm_manager)
