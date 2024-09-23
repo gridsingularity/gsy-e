@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
 from typing import Union
 
 from gsy_framework.constants_limits import ConstSettings
@@ -26,23 +27,32 @@ from gsy_e.models.strategy.energy_parameters.load import DefinedLoadEnergyParame
 
 class DefinedLoadStrategy(LoadHoursStrategy):
     """
-        Strategy for creating a load profile. It accepts as an input a load csv file or a
-        dictionary that contains the load values for each time point
+    Strategy for creating a load profile. It accepts as an input a load csv file or a
+    dictionary that contains the load values for each time point
     """
+
     # pylint: disable=too-many-arguments
-    def __init__(self, daily_load_profile=None,
-                 fit_to_limit=True, energy_rate_increase_per_update=None,
-                 update_interval=None,
-                 initial_buying_rate: Union[float, dict, str] =
-                 ConstSettings.LoadSettings.BUYING_RATE_RANGE.initial,
-                 final_buying_rate: Union[float, dict, str] =
-                 ConstSettings.LoadSettings.BUYING_RATE_RANGE.final,
-                 balancing_energy_ratio: tuple =
-                 (ConstSettings.BalancingSettings.OFFER_DEMAND_RATIO,
-                  ConstSettings.BalancingSettings.OFFER_SUPPLY_RATIO),
-                 use_market_maker_rate: bool = False,
-                 daily_load_profile_uuid: str = None,
-                 daily_load_measurement_uuid: str = None):
+    def __init__(
+        self,
+        daily_load_profile=None,
+        fit_to_limit=True,
+        energy_rate_increase_per_update=None,
+        update_interval=None,
+        initial_buying_rate: Union[
+            float, dict, str
+        ] = ConstSettings.LoadSettings.BUYING_RATE_RANGE.initial,
+        final_buying_rate: Union[
+            float, dict, str
+        ] = ConstSettings.LoadSettings.BUYING_RATE_RANGE.final,
+        balancing_energy_ratio: tuple = (
+            ConstSettings.BalancingSettings.OFFER_DEMAND_RATIO,
+            ConstSettings.BalancingSettings.OFFER_SUPPLY_RATIO,
+        ),
+        use_market_maker_rate: bool = False,
+        daily_load_profile_uuid: str = None,
+        daily_load_measurement_uuid: str = None,
+        **kwargs
+    ):
         """
         Constructor of DefinedLoadStrategy
         :param daily_load_profile: input profile for a day. Can be either a csv file path,
@@ -58,20 +68,28 @@ class DefinedLoadStrategy(LoadHoursStrategy):
         :param use_market_maker_rate: If set to True, Load would track its final buying rate
         as per utility's trading rate
         """
-        if update_interval is None:
-            update_interval = \
-                duration(minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
+        if kwargs.get("linear_pricing") is not None:
+            fit_to_limit = kwargs.get("linear_pricing")
 
-        super().__init__(avg_power_W=0, hrs_of_day=list(range(0, 24)),
-                         fit_to_limit=fit_to_limit,
-                         energy_rate_increase_per_update=energy_rate_increase_per_update,
-                         update_interval=update_interval,
-                         final_buying_rate=final_buying_rate,
-                         initial_buying_rate=initial_buying_rate,
-                         balancing_energy_ratio=balancing_energy_ratio,
-                         use_market_maker_rate=use_market_maker_rate)
+        if update_interval is None:
+            update_interval = duration(
+                minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL
+            )
+
+        super().__init__(
+            avg_power_W=0,
+            hrs_of_day=list(range(0, 24)),
+            fit_to_limit=fit_to_limit,
+            energy_rate_increase_per_update=energy_rate_increase_per_update,
+            update_interval=update_interval,
+            final_buying_rate=final_buying_rate,
+            initial_buying_rate=initial_buying_rate,
+            balancing_energy_ratio=balancing_energy_ratio,
+            use_market_maker_rate=use_market_maker_rate,
+        )
         self._energy_params = DefinedLoadEnergyParameters(
-            daily_load_profile, daily_load_profile_uuid, daily_load_measurement_uuid)
+            daily_load_profile, daily_load_profile_uuid, daily_load_measurement_uuid
+        )
 
         # needed for profile_handler
         self.daily_load_profile_uuid = daily_load_profile_uuid

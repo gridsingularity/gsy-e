@@ -20,26 +20,31 @@ from gsy_framework.constants_limits import ConstSettings
 from pendulum import duration
 
 from gsy_e.models.strategy.energy_parameters.pv import (
-    PVPredefinedEnergyParameters, PVUserProfileEnergyParameters)
+    PVPredefinedEnergyParameters,
+    PVUserProfileEnergyParameters,
+)
 from gsy_e.models.strategy.pv import PVStrategy
 
 
 class PVPredefinedStrategy(PVStrategy):
     """
-        Strategy responsible for using one of the predefined PV profiles.
+    Strategy responsible for using one of the predefined PV profiles.
     """
+
     # pylint: disable=too-many-arguments
     def __init__(
-            self, panel_count: int = 1,
-            initial_selling_rate: float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
-            final_selling_rate: float = ConstSettings.PVSettings.SELLING_RATE_RANGE.final,
-            cloud_coverage: int = None,
-            fit_to_limit: bool = True,
-            update_interval=None,
-            energy_rate_decrease_per_update=None,
-            use_market_maker_rate: bool = False,
-            capacity_kW: float = None,
-            ):
+        self,
+        panel_count: int = 1,
+        initial_selling_rate: float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
+        final_selling_rate: float = ConstSettings.PVSettings.SELLING_RATE_RANGE.final,
+        cloud_coverage: int = None,
+        fit_to_limit: bool = True,
+        update_interval=None,
+        energy_rate_decrease_per_update=None,
+        use_market_maker_rate: bool = False,
+        capacity_kW: float = None,
+        **kwargs
+    ):
         """
         Constructor of PVPredefinedStrategy
         Args:
@@ -57,23 +62,28 @@ class PVPredefinedStrategy(PVStrategy):
             energy_rate_decrease_per_update: Slope of PV Offer change per update
             capacity_kW: power rating of the predefined profiles
         """
+        if kwargs.get("linear_pricing") is not None:
+            fit_to_limit = kwargs.get("linear_pricing")
 
         if update_interval is None:
-            update_interval = \
-                duration(minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
+            update_interval = duration(
+                minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL
+            )
 
-        super().__init__(panel_count=panel_count,
-                         initial_selling_rate=initial_selling_rate,
-                         final_selling_rate=final_selling_rate,
-                         fit_to_limit=fit_to_limit,
-                         update_interval=update_interval,
-                         energy_rate_decrease_per_update=energy_rate_decrease_per_update,
-                         capacity_kW=capacity_kW,
-                         use_market_maker_rate=use_market_maker_rate
-                         )
+        super().__init__(
+            panel_count=panel_count,
+            initial_selling_rate=initial_selling_rate,
+            final_selling_rate=final_selling_rate,
+            fit_to_limit=fit_to_limit,
+            update_interval=update_interval,
+            energy_rate_decrease_per_update=energy_rate_decrease_per_update,
+            capacity_kW=capacity_kW,
+            use_market_maker_rate=use_market_maker_rate,
+        )
 
         self._energy_params = PVPredefinedEnergyParameters(
-            panel_count, cloud_coverage, capacity_kW)
+            panel_count, cloud_coverage, capacity_kW
+        )
 
     def read_config_event(self):
         # this is to trigger to read from self.simulation_config.cloud_coverage:
@@ -102,20 +112,23 @@ class PVPredefinedStrategy(PVStrategy):
 
 class PVUserProfileStrategy(PVStrategy):
     """
-        Strategy responsible for reading a profile in the form of a dict of values.
+    Strategy responsible for reading a profile in the form of a dict of values.
     """
+
     # pylint: disable=too-many-arguments
     def __init__(
-            self, power_profile=None, panel_count: int = 1,
-            initial_selling_rate: float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
-            final_selling_rate: float = ConstSettings.PVSettings.SELLING_RATE_RANGE.final,
-            fit_to_limit: bool = True,
-            update_interval=duration(
-                minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
-            energy_rate_decrease_per_update=None,
-            use_market_maker_rate: bool = False,
-            power_profile_uuid: str = None,
-            power_measurement_uuid: str = None
+        self,
+        power_profile=None,
+        panel_count: int = 1,
+        initial_selling_rate: float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
+        final_selling_rate: float = ConstSettings.PVSettings.SELLING_RATE_RANGE.final,
+        fit_to_limit: bool = True,
+        update_interval=duration(minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL),
+        energy_rate_decrease_per_update=None,
+        use_market_maker_rate: bool = False,
+        power_profile_uuid: str = None,
+        power_measurement_uuid: str = None,
+        **kwargs
     ):
         """
         Constructor of PVUserProfileStrategy
@@ -126,15 +139,21 @@ class PVUserProfileStrategy(PVStrategy):
             panel_count: number of solar panels for this PV plant
             final_selling_rate: lower threshold for the PV sale price
         """
-        super().__init__(panel_count=panel_count,
-                         initial_selling_rate=initial_selling_rate,
-                         final_selling_rate=final_selling_rate,
-                         fit_to_limit=fit_to_limit,
-                         update_interval=update_interval,
-                         energy_rate_decrease_per_update=energy_rate_decrease_per_update,
-                         use_market_maker_rate=use_market_maker_rate)
+        if kwargs.get("linear_pricing") is not None:
+            fit_to_limit = kwargs.get("linear_pricing")
+
+        super().__init__(
+            panel_count=panel_count,
+            initial_selling_rate=initial_selling_rate,
+            final_selling_rate=final_selling_rate,
+            fit_to_limit=fit_to_limit,
+            update_interval=update_interval,
+            energy_rate_decrease_per_update=energy_rate_decrease_per_update,
+            use_market_maker_rate=use_market_maker_rate,
+        )
         self._energy_params = PVUserProfileEnergyParameters(
-            panel_count, power_profile, power_profile_uuid, power_measurement_uuid)
+            panel_count, power_profile, power_profile_uuid, power_measurement_uuid
+        )
 
         # needed for profile_handler
         self.power_profile_uuid = power_profile_uuid
