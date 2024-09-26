@@ -516,8 +516,7 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
     def _create_settlement_market_strategy(cls):
         return SettlementMarketStrategyInterface()
 
-    @classmethod
-    def _create_future_market_strategy(cls):
+    def _create_future_market_strategy(self):
         return FutureMarketStrategyInterface()
 
     def energy_traded(self, market_id: str, time_slot: DateTime = None) -> float:

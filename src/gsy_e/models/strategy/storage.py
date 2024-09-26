@@ -166,9 +166,8 @@ class StorageStrategy(BidEnabledStrategy):
             )
         return constructor_args
 
-    @classmethod
-    def _create_future_market_strategy(cls):
-        return future_market_strategy_factory(cls.asset_type)
+    def _create_future_market_strategy(self):
+        return future_market_strategy_factory(self.asset_type)
 
     @property
     def state(self) -> StorageState:
