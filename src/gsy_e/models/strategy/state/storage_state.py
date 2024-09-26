@@ -449,8 +449,6 @@ class StorageState(StateInterface):
         self.offered_buy_kWh[time_slot] -= energy
         self._track_energy_bought_type(energy, energy_origin)
         self._clamp_energy_to_buy_kWh([time_slot])
-        # if self.charging_loss_per_kWh > 0:
-        #     print("register_energy_from_bid_trade", self._used_storage)
 
     def register_energy_from_offer_trade(self, energy: float, time_slot: DateTime):
         """Register energy from an offer trade event."""
@@ -484,8 +482,6 @@ class StorageState(StateInterface):
 
         self._clamp_energy_to_buy_kWh([time_slot])
         energy_kWh = self.energy_to_buy_dict[time_slot]
-        # if self.charging_loss_per_kWh >0 and energy_kWh:
-        #     print("available_energy_to_buy_kWh", energy_kWh, "used_storage", self._used_storage)
         if self._has_battery_reached_max_charge_power(abs(energy_kWh), time_slot):
             return 0.0
         assert energy_kWh > -FLOATING_POINT_TOLERANCE
