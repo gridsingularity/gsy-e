@@ -42,8 +42,8 @@ def get_setup(config):
                         "Storage with losses",
                         strategy=StorageStrategy(
                             losses=StorageLosses(
-                                charging_loss_per_kWh=0.05,
-                                discharging_loss_per_kWh=0.01,
+                                charging_loss_percent=0.05,
+                                discharging_loss_percent=0.01,
                                 self_discharge_per_day_kWh=0.003,
                             ),
                             initial_soc=50,

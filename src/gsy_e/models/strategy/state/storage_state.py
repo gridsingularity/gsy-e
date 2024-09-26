@@ -53,8 +53,8 @@ EnergyOrigin = namedtuple("EnergyOrigin", ("origin", "value"))
 class StorageLosses:
     """Container for all loss related Storage settings."""
 
-    charging_loss_per_kWh: float = 0.0
-    discharging_loss_per_kWh: float = 0.0
+    charging_loss_percent: float = 0.0
+    discharging_loss_percent: float = 0.0
     self_discharge_per_day_kWh: float = 0.0
 
 
@@ -359,8 +359,8 @@ class StorageState(StateInterface):
 
     def _apply_losses_at_market_cycle(self, sold_energy_kWh: float, bought_energy_kWh: float):
 
-        charging_loss_kWh = bought_energy_kWh * self.losses.charging_loss_per_kWh
-        discharging_loss_kWh = sold_energy_kWh * self.losses.discharging_loss_per_kWh
+        charging_loss_kWh = bought_energy_kWh * self.losses.charging_loss_percent
+        discharging_loss_kWh = sold_energy_kWh * self.losses.discharging_loss_percent
         self_discharging_kWh = (
             self.losses.self_discharge_per_day_kWh * GlobalConfig.slot_length.total_days()
         )

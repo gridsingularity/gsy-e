@@ -160,8 +160,8 @@ class StorageStrategy(BidEnabledStrategy):
         """Deserialize the constructor arguments for the HeatPump strategy."""
         if "losses" not in constructor_args:
             constructor_args["losses"] = StorageLosses(
-                charging_loss_per_kWh=constructor_args.get("charging_loss_per_kWh", 0.0),
-                discharging_loss_per_kWh=constructor_args.get("discharging_loss_per_kWh", 0.0),
+                charging_loss_percent=constructor_args.get("charging_loss_percent", 0.0),
+                discharging_loss_percent=constructor_args.get("discharging_loss_percent", 0.0),
                 self_discharge_per_day_kWh=constructor_args.get("self_discharge_per_day", 0.0),
             )
         return constructor_args
