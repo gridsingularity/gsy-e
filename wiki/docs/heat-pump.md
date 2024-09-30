@@ -71,6 +71,9 @@ Under the Trading Strategy tab, the following parameters can be defined, describ
 
 <span style="font-size:0.9em;">_Note: The thermal losses of the water tank are not accounted for separately in the current model but considered as part of the heat demand._</span>
 
+Other heat pump configuration parameters can be modified to suit a particular use case in the backend, as described in the [Heat Pump Code Configuration](assets-installation.md#heat-pump-code-configuration) section.
+
+
 ## Heat Pump Asset Trading Strategy
 The heat hump places bids for electrical energy ranging from an initial to final buying rate, with prices increasing incrementally within the market slot upon the update interval. Asset owners (or managers) can either set the final rate as a default preferred buying rate or select a preferred buying rate based on a smart trading algorithm.
 
