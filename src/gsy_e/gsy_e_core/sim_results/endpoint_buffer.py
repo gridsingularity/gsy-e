@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING, Dict, Iterable, List
+from math import isclose
 
 from gsy_framework.constants_limits import (
     DATE_TIME_FORMAT,
@@ -94,7 +95,7 @@ class SimulationEndpointBuffer:
         self.status = ""
         self.area_result_dict = self._create_area_tree_dict(area)
         self.flattened_area_core_stats_dict = {}
-        self.hierarchy_self_consumption: Dict[int, float] = {}
+        self.hierarchy_self_consumption_percent: Dict[int, float] = {}
         self.simulation_progress = {
             "eta_seconds": 0,
             "elapsed_time_seconds": 0,
@@ -135,7 +136,7 @@ class SimulationEndpointBuffer:
             "status": self.status,
             "progress_info": self.simulation_progress,
             "simulation_state": self.simulation_state,
-            "hierarchy_self_consumption": self.hierarchy_self_consumption,
+            "hierarchy_self_consumption_percent": self.hierarchy_self_consumption_percent,
             **self.results_handler.all_raw_results,
         }
 
@@ -195,14 +196,28 @@ class SimulationEndpointBuffer:
     def create_hierarchy_stats(self, area: "AreaBase"):
         """Calculate hierarchy related statistics."""
         hierarchy_self_consumption_list = {}
-        self._calc_hierarchy_stats(area, 0, hierarchy_self_consumption_list)
+        hierarchy_self_consumption = {}
+        self._calc_hierarchy_self_consumption(area, 0, hierarchy_self_consumption_list)
         for level, consumption_list in hierarchy_self_consumption_list.items():
             if len(consumption_list):
-                self.hierarchy_self_consumption[level] = sum(consumption_list) / len(
-                    consumption_list
-                )
+                hierarchy_self_consumption[level] = sum(consumption_list) / len(consumption_list)
+        for level, self_consumption in hierarchy_self_consumption.items():
+            if level + 1 not in hierarchy_self_consumption:
+                # lowest level case:
+                self.hierarchy_self_consumption_percent[level] = (
+                    self_consumption / hierarchy_self_consumption[0]
+                ) * 100
+            else:
+                self.hierarchy_self_consumption_percent[level] = (
+                    (self_consumption - hierarchy_self_consumption[level + 1])
+                    / hierarchy_self_consumption[0]
+                ) * 100
+        if self.hierarchy_self_consumption_percent:
+            assert isclose(
+                sum(self.hierarchy_self_consumption_percent.values()), 100
+            ), "Self consumption percentages do not sum up to 100%"
 
-    def _calc_hierarchy_stats(self, area: "AreaBase", level: int, results: Dict):
+    def _calc_hierarchy_self_consumption(self, area: "AreaBase", level: int, results: Dict):
         if not area.children:
             return
         kpis = self.results_handler.results_mapping["kpi"].ui_formatted_results
@@ -215,7 +230,7 @@ class SimulationEndpointBuffer:
             if level not in results:
                 results[level] = []
             results[level].append(kpis[child.uuid]["self_consumption"])
-            self._calc_hierarchy_stats(child, level + 1, results)
+            self._calc_hierarchy_self_consumption(child, level + 1, results)
 
     def _generate_result_report(self) -> Dict:
         """Create dict that contains all statistics that are sent to the gsy-web."""

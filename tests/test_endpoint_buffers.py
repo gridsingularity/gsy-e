@@ -254,7 +254,7 @@ class TestSimulationEndpointBuffer:
         endpoint_buffer.results_handler = results_handler_mock
 
         assert endpoint_buffer.generate_json_report() == {
-            "hierarchy_self_consumption": {},
+            "hierarchy_self_consumption_percent": {},
             "job_id": "JOB_1",
             "random_seed": 41,
             "status": "",
@@ -353,11 +353,11 @@ class TestSimulationEndpointBuffer:
     def _create_kpis(area):
         kpis = defaultdict(dict)
         for n_city, city in enumerate(area.children):
-            kpis[city.uuid]["self_consumption"] = n_city * 10
+            kpis[city.uuid]["self_consumption"] = (n_city + 2) * 10
             for n_community, community in enumerate(city.children):
                 kpis[community.uuid]["self_consumption"] = (n_community + 1) * 10
                 for n_house, house in enumerate(community.children):
-                    kpis[house.uuid]["self_consumption"] = (n_house + 2) * 10
+                    kpis[house.uuid]["self_consumption"] = n_house * 10
         return kpis
 
     def test_create_hierarchy_stats_returns_correct_results(self, setup_multiple_levels):
@@ -368,7 +368,7 @@ class TestSimulationEndpointBuffer:
         endpoint_buffer.results_handler.results_mapping["kpi"].performance_indices_redis = kpis
         endpoint_buffer.create_hierarchy_stats(setup_multiple_levels)
 
-        assert endpoint_buffer.hierarchy_self_consumption == {0: 5.0, 1: 15.0, 2: 25.0}
+        assert endpoint_buffer.hierarchy_self_consumption_percent == {0: 40, 1: 40, 2: 20}
 
 
 class TestSimulationEndpointBufferForward:
@@ -512,7 +512,7 @@ class TestSimulationEndpointBufferForward:
         endpoint_buffer.results_handler = results_handler_mock
 
         assert endpoint_buffer.generate_json_report() == {
-            "hierarchy_self_consumption": {},
+            "hierarchy_self_consumption_percent": {},
             "job_id": "JOB_1",
             "random_seed": 41,
             "status": "",
