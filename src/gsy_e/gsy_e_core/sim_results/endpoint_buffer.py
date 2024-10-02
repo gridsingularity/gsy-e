@@ -32,6 +32,7 @@ from gsy_framework.sim_results.all_results import ResultsHandler, SCMResultsHand
 from gsy_framework.utils import get_json_dict_memory_allocation_size
 from pendulum import DateTime
 
+import gsy_e.constants
 from gsy_e.gsy_e_core.sim_results.offer_bids_trades_hr_stats import OfferBidTradeGraphStats
 from gsy_e.gsy_e_core.util import (
     get_feed_in_tariff_rate_from_config,
@@ -237,6 +238,8 @@ class SimulationEndpointBuffer:
         area_dict = {}
         area_dict["name"] = target_area.name
         area_dict["uuid"] = target_area.uuid
+        if target_area.is_home_area and gsy_e.constants.RUN_IN_NON_P2P_MODE:
+            area_dict["non_p2p"] = True
         area_dict["parent_uuid"] = (
             target_area.parent.uuid if target_area.parent is not None else ""
         )
