@@ -31,7 +31,6 @@ class TestNonP2PHandler:
     @staticmethod
     def test_handle_non_p2p_scenario_adds_market_makers_to_homes():
         handler = NonP2PHandler(SCENARIO)
-        print(handler.non_p2p_scenario)
         assert handler.non_p2p_scenario == {
             "name": "Grid",
             "children": [
