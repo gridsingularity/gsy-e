@@ -201,6 +201,11 @@ class SimulationEndpointBuffer:
         for level, consumption_list in hierarchy_self_consumption_list.items():
             if len(consumption_list):
                 hierarchy_self_consumption[level] = sum(consumption_list) / len(consumption_list)
+
+        if len(hierarchy_self_consumption) > 0 and next(iter(hierarchy_self_consumption)) == 0:
+            # early return in case there is no self consumpton at all (in order to not devide by 0)
+            return
+
         for level, self_consumption in hierarchy_self_consumption.items():
             if level + 1 not in hierarchy_self_consumption:
                 # lowest level case:
