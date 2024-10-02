@@ -93,6 +93,7 @@ class StorageState(StateInterface):
         self.time_series_ess_share = {}
 
         self.charge_history = {}
+        self.loss_history = {}
         self.charge_history_kWh = {}
         self.offered_history = {}
         self.energy_to_buy_dict = {}
@@ -344,8 +345,12 @@ class StorageState(StateInterface):
             self._used_storage -= self.pledged_sell_kWh[past_time_slot]
             self._used_storage += self.pledged_buy_kWh[past_time_slot]
             self._apply_losses_at_market_cycle(
-                self.pledged_sell_kWh[past_time_slot], self.pledged_buy_kWh[past_time_slot]
+                self.pledged_sell_kWh[past_time_slot],
+                self.pledged_buy_kWh[past_time_slot],
+                past_time_slot,
             )
+        # else:
+        #     self.loss_history[current_time_slot] = 0
 
         self._clamp_energy_to_sell_kWh([current_time_slot, *all_future_time_slots])
         self._clamp_energy_to_buy_kWh([current_time_slot, *all_future_time_slots])
@@ -357,7 +362,9 @@ class StorageState(StateInterface):
             for energy_type in self._used_storage_share:
                 self.time_series_ess_share[past_time_slot][energy_type.origin] += energy_type.value
 
-    def _apply_losses_at_market_cycle(self, sold_energy_kWh: float, bought_energy_kWh: float):
+    def _apply_losses_at_market_cycle(
+        self, sold_energy_kWh: float, bought_energy_kWh: float, time_slot: DateTime
+    ):
 
         charging_loss_kWh = bought_energy_kWh * self.losses.charging_loss_percent
         discharging_loss_kWh = sold_energy_kWh * self.losses.discharging_loss_percent
@@ -367,7 +374,7 @@ class StorageState(StateInterface):
             * self.capacity
         )
         total_loss_kWh = charging_loss_kWh + discharging_loss_kWh + self_discharging_kWh
-
+        self.loss_history[time_slot] = total_loss_kWh
         self._used_storage -= total_loss_kWh
 
     def delete_past_state_values(self, current_time_slot: DateTime):
@@ -385,6 +392,7 @@ class StorageState(StateInterface):
             self.pledged_buy_kWh.pop(market_slot, None)
             self.offered_buy_kWh.pop(market_slot, None)
             self.charge_history.pop(market_slot, None)
+            self.loss_history.pop(market_slot, None)
             self.charge_history_kWh.pop(market_slot, None)
             self.offered_history.pop(market_slot, None)
             self.energy_to_buy_dict.pop(market_slot, None)
