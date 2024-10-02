@@ -55,7 +55,7 @@ class StorageLosses:
 
     charging_loss_percent: float = 0.0
     discharging_loss_percent: float = 0.0
-    self_discharge_per_day_kWh: float = 0.0
+    self_discharge_per_day_percent: float = 0.0
 
 
 # pylint: disable= too-many-instance-attributes, too-many-arguments, too-many-public-methods
@@ -69,7 +69,7 @@ class StorageState(StateInterface):
         capacity=StorageSettings.CAPACITY,
         max_abs_battery_power_kW=StorageSettings.MAX_ABS_POWER,
         min_allowed_soc=StorageSettings.MIN_ALLOWED_SOC,
-        losses: Optional[StorageLosses] = StorageLosses(),
+        losses: Optional[StorageLosses] = None,
     ):
 
         self.initial_soc = initial_soc
@@ -80,7 +80,7 @@ class StorageState(StateInterface):
         self.capacity = capacity
         self.max_abs_battery_power_kW = max_abs_battery_power_kW
 
-        self.losses = losses
+        self.losses = StorageLosses() if not losses else losses
 
         # storage capacity, that is already sold:
         self.pledged_sell_kWh = {}
@@ -362,7 +362,9 @@ class StorageState(StateInterface):
         charging_loss_kWh = bought_energy_kWh * self.losses.charging_loss_percent
         discharging_loss_kWh = sold_energy_kWh * self.losses.discharging_loss_percent
         self_discharging_kWh = (
-            self.losses.self_discharge_per_day_kWh * GlobalConfig.slot_length.total_days()
+            self.losses.self_discharge_per_day_percent
+            * GlobalConfig.slot_length.total_days()
+            * self.capacity
         )
         total_loss_kWh = charging_loss_kWh + discharging_loss_kWh + self_discharging_kWh
 

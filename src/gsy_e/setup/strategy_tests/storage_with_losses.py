@@ -44,7 +44,7 @@ def get_setup(config):
                             losses=StorageLosses(
                                 charging_loss_percent=0.05,
                                 discharging_loss_percent=0.01,
-                                self_discharge_per_day_kWh=0.003,
+                                self_discharge_per_day_percent=0.003,
                             ),
                             initial_soc=50,
                             battery_capacity_kWh=30,

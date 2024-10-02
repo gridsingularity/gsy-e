@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from collections import namedtuple
 from enum import Enum
 from logging import getLogger
-from typing import Union, Optional, Dict
+from typing import Union, Optional
 
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import TraderDetails
@@ -84,7 +84,7 @@ class StorageStrategy(BidEnabledStrategy):
         energy_rate_decrease_per_update=None,
         update_interval=None,
         initial_energy_origin: Enum = ESSEnergyOrigin.EXTERNAL,
-        losses: Optional[StorageLosses] = StorageLosses(),
+        losses: Optional[StorageLosses] = None,
         balancing_energy_ratio: tuple = (
             BalancingSettings.OFFER_DEMAND_RATIO,
             BalancingSettings.OFFER_SUPPLY_RATIO,
@@ -154,17 +154,6 @@ class StorageStrategy(BidEnabledStrategy):
         )
         self.cap_price_strategy = cap_price_strategy
         self.balancing_energy_ratio = BalancingRatio(*balancing_energy_ratio)
-
-    @staticmethod
-    def deserialize_args(constructor_args: Dict) -> Dict:
-        """Deserialize the constructor arguments for the HeatPump strategy."""
-        if "losses" not in constructor_args:
-            constructor_args["losses"] = StorageLosses(
-                charging_loss_percent=constructor_args.get("charging_loss_percent", 0.0),
-                discharging_loss_percent=constructor_args.get("discharging_loss_percent", 0.0),
-                self_discharge_per_day_kWh=constructor_args.get("self_discharge_per_day", 0.0),
-            )
-        return constructor_args
 
     def _create_future_market_strategy(self):
         return future_market_strategy_factory(self.asset_type)
