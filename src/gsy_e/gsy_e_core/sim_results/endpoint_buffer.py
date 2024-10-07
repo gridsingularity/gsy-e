@@ -195,21 +195,18 @@ class SimulationEndpointBuffer:
 
     def create_hierarchy_stats(self, area: "AreaBase"):
         """Calculate hierarchy related statistics."""
-        hierarchy_self_consumption_list = {}
-        hierarchy_self_consumption = {}
-        self._calc_hierarchy_self_consumption(area, 0, hierarchy_self_consumption_list)
-        for level, consumption_list in hierarchy_self_consumption_list.items():
+        hierarchy_self_consumption_lists = {}
+        hierarchy_self_consumption = []
+        self._calc_hierarchy_self_consumption(area, 0, hierarchy_self_consumption_lists)
+        for level, consumption_list in hierarchy_self_consumption_lists.items():
             if len(consumption_list):
-                hierarchy_self_consumption[level] = sum(consumption_list) / len(consumption_list)
-        if (
-            len(hierarchy_self_consumption) > 0
-            and hierarchy_self_consumption[next(iter(hierarchy_self_consumption))] == 0
-        ):
-            # early return in case there is no self consumpton at all (in order to not devide by 0)
+                hierarchy_self_consumption.append(sum(consumption_list) / len(consumption_list))
+        if len(hierarchy_self_consumption) > 0 and hierarchy_self_consumption[0] == 0:
+            # early return in case there is no self consumption at all (not devide by 0)
             return
 
-        for level, self_consumption in hierarchy_self_consumption.items():
-            if level + 1 not in hierarchy_self_consumption:
+        for level, self_consumption in enumerate(hierarchy_self_consumption):
+            if level + 1 >= len(hierarchy_self_consumption):
                 # lowest level case:
                 self.hierarchy_self_consumption_percent[level] = (
                     self_consumption / hierarchy_self_consumption[0]
