@@ -265,9 +265,11 @@ class AreaFees:
 
     def prices_as_dict(self) -> Dict:
         """Return all prices (accumulated values) for the fees in a dictionary."""
-        return {
-            name: fee.price for name, fee in {**self.per_kWh_fees, **self.monthly_fees}.items()
-        }
+        # monthly fees are not accumulated but already set for the market slot,
+        # hence we only report the value of the FeeContainer here
+        monthly_prices = {name: fee.value for name, fee in self.monthly_fees.items()}
+        per_kwh_prices = {name: fee.price for name, fee in self.per_kWh_fees.items()}
+        return {**monthly_prices, **per_kwh_prices}
 
     @property
     def total_per_kWh_fee_price(self):
