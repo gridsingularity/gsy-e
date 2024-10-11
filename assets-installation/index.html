@@ -770,6 +770,19 @@
     Batteries
   </a>
   
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#storage-losses" title="Storage Losses" class="md-nav__link">
+    Storage Losses
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1833,6 +1846,19 @@
     Batteries
   </a>
   
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#storage-losses" title="Storage Losses" class="md-nav__link">
+    Storage Losses
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1920,7 +1946,7 @@
                 <h2 id="solar-panels">Solar Panels<a class="headerlink" href="#solar-panels" title="Permanent link">&para;</a></h2>
 <p>There are two options to implement a PV in a backend:</p>
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/pv.py" target="_blank">Solar Profile</a> (for template generation profile):</p>
-<pre class="codehilite"><code class="language-python">Market(
+<pre class="codehilite"><code class="language-python">Asset(
     &quot;H2 PV&quot;,
     strategy=PVStrategy(
         panel_count=4,
@@ -1932,13 +1958,13 @@
 
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/predefined_pv.py" target="_blank">User Profile</a> (for uploaded generation profile):</p>
 <pre class="codehilite"><code class="language-python">user_profile_path = os.path.join(gsy_e_path, &quot;assets/Solar_Curve_W_sunny.csv&quot;)
-Market('H1 PV', strategy=PVUserProfileStrategy(power_profile=user_profile_path, panel_count=4))</code></pre>
+Asset('H1 PV', strategy=PVUserProfileStrategy(power_profile=user_profile_path, panel_count=4))</code></pre>
 
 
 <h2 id="consumption">Consumption<a class="headerlink" href="#consumption" title="Permanent link">&para;</a></h2>
 <p>To implement the consumption profile (load) in a backend simulation, two options are available:</p>
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/load_hours.py" target="_blank">User configure Profile</a>:</p>
-<pre class="codehilite"><code class="language-python">Market(
+<pre class="codehilite"><code class="language-python">Asset(
     'Load',
     strategy=LoadHoursStrategy(
         avg_power_W=200, hrs_per_day=6,hrs_of_day=list(range(12, 18)), initial_buying_rate=0,
@@ -1948,7 +1974,7 @@ Market('H1 PV', strategy=PVUserProfileStrategy(power_profile=user_profile_path, 
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/predefined_load.py" target="_blank">User upload Profile</a>:</p>
 <pre class="codehilite"><code class="language-python">user_profile_path = os.path.join(gsy_e_path,&quot;assets/load.csv&quot;)
 
-Market('Load', strategy=LoadProfileStrategy(daily_load_profile=user_profile_path, initial_buying_rate)</code></pre>
+Asset('Load', strategy=LoadProfileStrategy(daily_load_profile=user_profile_path, initial_buying_rate)</code></pre>
 
 
 <h3 id="addendum-hrs_of_day-and-hrs_per_day">Addendum: <code>hrs_of_day</code> and <code>hrs_per_day</code><a class="headerlink" href="#addendum-hrs_of_day-and-hrs_per_day" title="Permanent link">&para;</a></h3>
@@ -1960,13 +1986,21 @@ Market('Load', strategy=LoadProfileStrategy(daily_load_profile=user_profile_path
 <h2 id="batteries">Batteries<a class="headerlink" href="#batteries" title="Permanent link">&para;</a></h2>
 <p>To implement a battery in a backend simulation one option is available:</p>
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/storage.py" target="_blank">Energy Storage System</a></p>
-<pre class="codehilite"><code class="language-python">Market(
+<pre class="codehilite"><code class="language-python">Asset(
     'Storage',
     strategy=StorageStrategy(
         initial_soc=50, energy_rate_decrease_per_update=3, battery_capacity_kWh=1.2,
-        max_abs_battery_power_kW=5, final_buying_rate=16.99, final_selling_rate= 17.01))</code></pre>
+        max_abs_battery_power_kW=5, final_buying_rate=16.99, final_selling_rate= 17.01, 
+        losses=StorageLosses(charging_loss_percent=0.05, discharging_loss_percent=0.01, self_discharge_per_day_percent=0.0003)))</code></pre>
 
 
+<h3 id="storage-losses">Storage Losses<a class="headerlink" href="#storage-losses" title="Permanent link">&para;</a></h3>
+<p>Losses consist of three components:</p>
+<ul>
+<li>charging_loss_percent: reduction in charged energy due to charging (buying of energy) in percent of the charged energy in one market slot</li>
+<li>discharge_loss_percent: reduction in charged energy due to discharging (selling of energy) in percent of the charged energy in one market slot</li>
+<li>self_discharge_per_day_percent: reduction in charged energy due to self-discharge in one day in percent of the battery capacity </li>
+</ul>
 <h2 id="power-plant">Power Plant<a class="headerlink" href="#power-plant" title="Permanent link">&para;</a></h2>
 <p>To implement the power plant in a backend simulation one option is available:</p>
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/finite_power_plant.py" target="_blank">Finite Power Plant</a></p>
@@ -1977,7 +2011,7 @@ Market('Load', strategy=LoadProfileStrategy(daily_load_profile=user_profile_path
 19: 0.15,
 22: 0.1
 }
-Market(
+Asset(
     &quot;Power Plant&quot;,
     strategy=FinitePowerPlant(energy_rate=31.3, max_available_power_kW=profile_kW))</code></pre>
 
@@ -2010,7 +2044,7 @@ To implement a power plant in a backend simulation, one option is available:</p>
     19: 0.15,
     22: 0.1
 }
-Market(&quot;Power Plant&quot;, strategy=FinitePowerPlant(energy_rate=31.3, max_available_power_kW=profile_kW))</code></pre>
+Asset(&quot;Power Plant&quot;, strategy=FinitePowerPlant(energy_rate=31.3, max_available_power_kW=profile_kW))</code></pre>
 
 
 <h3 id="heat-pumps">Heat pumps<a class="headerlink" href="#heat-pumps" title="Permanent link">&para;</a></h3>
