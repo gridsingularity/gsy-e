@@ -54,56 +54,34 @@ nav:
     - 'Results Download': 'results-download.md'
     - 'Duplicating simulations': 'duplicating-simulations'
 - 'Market Mechanisms':
-    - 'Market Types':
-      - 'Market Types Overview': 'market-types.md'
-      - 'Spot Market':
-          - 'Spot Market Types': 'spot-market-types.md'
-          - 'One-Sided Pay-as-Offer Market': 'one-sided-pay-as-offer.md'
-          - 'Two-Sided Pay-as-Bid Market': 'two-sided-pay-as-bid.md'
-          - 'Two-Sided Pay-as-Clear Market': 'two-sided-pay-as-clear.md'
-      - 'Balancing Market':
-          - 'Balancing Market Structure': 'balancing-market.md'
-          - 'Balancing Market Implementation': 'balancing-implementation.md'
-      - 'Settlement Market':
-          - 'Settlement Market Structure': 'settlement-market-structure.md'
-          - 'Settlement Market Implementation' :
-              - 'Markets and rotation' : 'markets-rotation.md'
-              - 'Assets strategies' : 'assets-strategies.md'
-    - 'Bids/Offers Process and Hierarchical Market Structure': 'market-agent.md'
-    - 'Trading Strategies': 'default-trading-strategy.md'
-    - 'Grid Fee Accounting':
-        - 'Grid Fee Objectives': 'grid-fees.md'
-        - 'Constant Grid Fee Calculation': 'constant-fees.md'
-        - 'Percentage Grid Fee Calculation': 'percentage-fees.md'
-    - 'Degrees of Freedom' : 'degrees-of-freedom.md'
+    - 'Grid Singularity Exchange Trading Agents and Strategies': 'trading-agents-and-strategies.md'
+    - 'Grid Singularity Exchange Market Types': 'market-types.md'
+    - 'Grid Fee Accounting': 'grid-fee-accounting.md'
 - 'Collaborations and APIs':
     - 'Create a Grid Singularity Collaboration': 'collaboration.md'
     - 'Connect to the Grid Singularity APIs':
         - 'Introduction': 'APIs-introduction.md'
-        - 'Configure trading strategies through the Grid Singularity Asset API':
+        - 'Create custom trading agents using the Grid Singularity Asset API':
             - 'Grid Singularity Asset API Overview': 'configure-trading-strategies-walkthrough.md'
-            - 'Asset API':
-                - 'Asset API Events': 'asset-api-events.md'
-                - 'Asset API Commands': 'asset-api-commands.md'
-                - 'Asset API Template Script': 'asset-api-template-script.md'
+            - 'Asset API Events': 'asset-api-events.md'
+            - 'Asset API Commands': 'asset-api-commands.md'
+            - 'Asset API Template Script': 'asset-api-template-script.md'
             - 'Launch the Asset API':
                 - 'Registration - Simulations run on the User-Interface': 'registration-asset-api-user-interface.md'
                 - 'Registration - Simulations run on the Backend': 'registration-asset-api-backend.md'
         - 'Implement dynamic grid fees through the Grid Singularity Grid Operator API':
             - 'Grid Singularity Grid Operator API Overview': 'implement-grid-fees-walkthrough.md'
-            - 'Grid Operator API.':
-                - 'Grid Operator API Events': 'grid-operator-api-events.md'
-                - 'Grid Operator API Commands': 'grid-operator-api-commands.md'
-                - 'Grid Operator API Template Script': 'grid-operator-api-template-script.md'
+            - 'Grid Operator API Events': 'grid-operator-api-events.md'
+            - 'Grid Operator API Commands': 'grid-operator-api-commands.md'
+            - 'Grid Operator API Template Script': 'grid-operator-api-template-script.md'
             - 'Launch the Grid Operator API':
                 - 'Registration - Simulations run on the User-Interface': 'registration-grid-operator-api-user-interface.md'
                 - 'Registration - Simulations run on the Backend': 'registration-grid-operator-api-backend.md'
-        - 'Customise the clearing algorithm through the Grid Singularity Matching API':
+        - 'Customize the clearing algorithm through the Grid Singularity Matching API':
             - 'Grid Singularity Matching API Overview': 'matching-api-walkthrough.md'
-            - 'Matching API':
-                - 'Matching API Events': 'matching-api-events.md'
-                - 'Matching API Commands': 'matching-api-commands.md'
-                - 'Matching API Template Script': 'matching-api-template-script.md'
+            - 'Matching API Events': 'matching-api-events.md'
+            - 'Matching API Commands': 'matching-api-commands.md'
+            - 'Matching API Template Script': 'matching-api-template-script.md'
             - 'Launch the Matching API':
                 - 'Registration - Simulations run on the User-Interface': 'registration-matching-api-user-interface.md'
                 - 'Registration - Simulations run on the Backend': 'registration-matching-api-backend.md'
@@ -119,6 +97,7 @@ nav:
   - 'GSY DEX System Components Overview': 'blockchain-system-components-overview.md'
   - 'GSY DEX Node Installation, Operation and Development': 'blockchain-installation.md'
   - 'GSY DEX Off-Chain Storage': 'blockchain-off-chain-storage.md'
+  - 'GSY DEX Matching Engine': 'blockchain-matching-engine.md'
 - 'References': 'references.md'
 - 'Releases Archive': 'releases.md'
 ## - 'Not included':
@@ -131,8 +110,6 @@ nav:
             ## - 'Market Settings': 'model-markets.md'
             ## - 'Energy Assets Configuration':
                 ## - 'Market Maker and Infinite Bus': 'model-market-maker.md'
-                ## - 'Load': 'model-load.md'
-                ## - 'PV': 'model-pv.md'
                 ## - 'Storage': 'model-storage.md'
                 ## - 'Power Plant': 'model-power-plant.md'
             ## - 'Map': 'map.md'
@@ -213,7 +190,9 @@ markdown_extensions:
 plugins:
     - search:
         lang: en
-
+    - exclude-search:
+        exclude:
+          - canary-network.md
     - redirects:
         redirect_maps:
             # When trying to reach the root page, redirect to the documentation page

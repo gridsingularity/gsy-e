@@ -64,7 +64,6 @@ def get_setup(config):
                          "Load",
                          strategy=LoadHoursStrategy(
                              avg_power_W=100000,
-                             hrs_per_day=24,
                              hrs_of_day=list(range(0, 24)),
                              initial_buying_rate=3,
                              final_buying_rate=24,

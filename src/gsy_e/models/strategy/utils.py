@@ -16,6 +16,7 @@ see <http://www.gnu.org/licenses/>.
 import random
 
 from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.utils import limit_float_precision
 
 
@@ -41,3 +42,8 @@ def compute_altered_energy(
         return 0
 
     return limit_float_precision(altered_energy_kWh)
+
+
+def is_scm_simulation():
+    """Return true if simulation is an SCM one, false otherwise."""
+    return ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value

@@ -25,7 +25,6 @@ def get_setup(config):
         "Grid",
         [
             Area("Load", strategy=LoadHoursStrategy(avg_power_W=200,
-                                                    hrs_per_day=24,
                                                     hrs_of_day=list(
                                                         range(0, 24)),
                                                     final_buying_rate=40)

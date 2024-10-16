@@ -71,6 +71,9 @@ Under the Trading Strategy tab, the following parameters can be defined, describ
 
 <span style="font-size:0.9em;">_Note: The thermal losses of the water tank are not accounted for separately in the current model but considered as part of the heat demand._</span>
 
+Other heat pump configuration parameters can be modified to suit a particular use case in the backend, as described in the [Heat Pump Code Configuration](assets-installation.md#heat-pump-code-configuration) section.
+
+
 ## Heat Pump Asset Trading Strategy
 The heat hump places bids for electrical energy ranging from an initial to final buying rate, with prices increasing incrementally within the market slot upon the update interval. Asset owners (or managers) can either set the final rate as a default preferred buying rate or select a preferred buying rate based on a smart trading algorithm.
 
@@ -93,6 +96,15 @@ where
   * $V_{tank}$ is the volume of the storage tank
   * $\rho_{water}$ is the density of water
   * $COP$ is the coefficient of performance of the heat pump; depends on the heat pump type, and $\Delta T = T_{curr} - T_{ambient}$
+
+
+Note: $COP$ calculation follows the model proposed by [Ruhnau et al.](https://www.nature.com/articles/s41597-019-0199-y){target=_blank} using the following input parameters:
+
+  * Ambient temperature (temperature of the source of the heat, dependent on the type; this could be water (brine) or air)
+  * Comfort temperature (temperature of the sink i.e. the current temperature of the heat pump storage)
+  * Heat pump type (water-to-water or air-to-water)
+
+To determine the [heat pump trading strategy](heat-pump.md#heat-pump-asset-trading-strategy), the COP is calculated for each market slot taking into account the current storage temperature and the ambient temperature.
 
 
 ### b. Bid rate > Preferred buying rate

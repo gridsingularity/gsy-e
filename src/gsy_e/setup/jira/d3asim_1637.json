@@ -14,9 +14,11 @@
               "name": "Load",
               "type": "LoadHours",
               "uuid": "6e49cb58-2cb2-4971-a212-a203548c5203",
-              "hrs_of_day": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23],
+              "hrs_of_day": [
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
+                18, 19, 20, 21, 22, 23
+              ],
               "avg_power_W": 100,
-              "hrs_per_day": 24,
               "libraryUUID": null,
               "fit_to_limit": true,
               "update_interval": 1,
@@ -56,9 +58,11 @@
               "name": "Load 2",
               "type": "LoadHours",
               "uuid": "6be5c526-eb5a-4139-977b-0546f9f4be30",
-              "hrs_of_day": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23],
+              "hrs_of_day": [
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
+                18, 19, 20, 21, 22, 23
+              ],
               "avg_power_W": 100,
-              "hrs_per_day": 24,
               "libraryUUID": null,
               "fit_to_limit": true,
               "update_interval": 1,
@@ -98,9 +102,11 @@
               "name": "Load 3",
               "type": "LoadHours",
               "uuid": "1813f780-d051-465c-9786-8f5a074f7929",
-              "hrs_of_day": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23],
+              "hrs_of_day": [
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
+                18, 19, 20, 21, 22, 23
+              ],
               "avg_power_W": 100,
-              "hrs_per_day": 24,
               "libraryUUID": null,
               "fit_to_limit": true,
               "update_interval": 1,
@@ -140,9 +146,11 @@
               "name": "Load 4",
               "type": "LoadHours",
               "uuid": "7f48f4e7-4a36-4bd2-b222-47db4fb1dda7",
-              "hrs_of_day": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23],
+              "hrs_of_day": [
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
+                18, 19, 20, 21, 22, 23
+              ],
               "avg_power_W": 100,
-              "hrs_per_day": 24,
               "libraryUUID": null,
               "fit_to_limit": true,
               "update_interval": 1,
@@ -182,9 +190,11 @@
               "name": "Load 5",
               "type": "LoadHours",
               "uuid": "abd1e6f5-46e4-4b6e-85df-2c1a8c2577a1",
-              "hrs_of_day": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23],
+              "hrs_of_day": [
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
+                18, 19, 20, 21, 22, 23
+              ],
               "avg_power_W": 100,
-              "hrs_per_day": 24,
               "libraryUUID": null,
               "fit_to_limit": true,
               "update_interval": 1,
@@ -255,9 +265,11 @@
       "name": "Feed In Tariff",
       "type": "LoadHours",
       "uuid": "0caec639-ba2f-475c-9cc5-086e0bc3cddc",
-      "hrs_of_day": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23],
+      "hrs_of_day": [
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+        20, 21, 22, 23
+      ],
       "avg_power_W": 10000,
-      "hrs_per_day": 24,
       "libraryUUID": null,
       "fit_to_limit": true,
       "update_interval": 1,

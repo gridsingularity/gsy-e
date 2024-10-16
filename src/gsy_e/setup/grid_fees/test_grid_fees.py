@@ -36,7 +36,6 @@ def get_setup(config):
                             name="H1 General Load",
                             strategy=LoadHoursStrategy(
                                 avg_power_W=200,
-                                hrs_per_day=24,
                                 hrs_of_day=list(
                                     range(0, 24)),
                                 use_market_maker_rate=True),

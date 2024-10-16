@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
 from logging import getLogger
 from typing import TYPE_CHECKING, List, Union, Optional
 from uuid import uuid4
@@ -80,16 +81,19 @@ class AreaBase:
     Base class for the Area model. Contains common behavior for both coefficient trading and
     market trading.
     """
+
     # pylint: disable=too-many-arguments,too-many-instance-attributes
-    def __init__(self, name: str = None,
-                 children: List["Area"] = None,
-                 uuid: str = None,
-                 strategy: Optional[Union["BaseStrategy", "TradingStrategyBase"]] = None,
-                 config: SimulationConfig = None,
-                 grid_fee_percentage: float = None,
-                 grid_fee_constant: float = None):
-        validate_area(grid_fee_constant=grid_fee_constant,
-                      grid_fee_percentage=grid_fee_percentage)
+    def __init__(
+        self,
+        name: str = None,
+        children: List["Area"] = None,
+        uuid: str = None,
+        strategy: Optional[Union["BaseStrategy", "TradingStrategyBase"]] = None,
+        config: SimulationConfig = None,
+        grid_fee_percentage: float = None,
+        grid_fee_constant: float = None,
+    ):
+        validate_area(grid_fee_constant=grid_fee_constant, grid_fee_percentage=grid_fee_percentage)
         self.active = False
         self.log = TaggedLogWrapper(log, name)
         self.__name = name
@@ -100,9 +104,8 @@ class AreaBase:
             children = []
         children = [child for child in children if child is not None]
         self.children = (
-            AreaChildrenList(self, children)
-            if children is not None
-            else AreaChildrenList(self))
+            AreaChildrenList(self, children) if children is not None else AreaChildrenList(self)
+        )
         for child in self.children:
             child.parent = self
 
@@ -124,9 +127,11 @@ class AreaBase:
         return self.strategy.trades
 
     def _set_grid_fees(self, grid_fee_const, grid_fee_percentage):
-        grid_fee_type = self.config.grid_fee_type \
-            if self.config is not None \
+        grid_fee_type = (
+            self.config.grid_fee_type
+            if self.config is not None
             else ConstSettings.MASettings.GRID_FEE_TYPE
+        )
         if grid_fee_type == 1:
             grid_fee_percentage = None
         elif grid_fee_type == 2:
@@ -165,8 +170,10 @@ class AreaBase:
     def get_grid_fee(self):
         """Return the current grid fee for the area."""
         grid_fee_type = (
-            self.config.grid_fee_type if self.config is not None
-            else ConstSettings.MASettings.GRID_FEE_TYPE)
+            self.config.grid_fee_type
+            if self.config is not None
+            else ConstSettings.MASettings.GRID_FEE_TYPE
+        )
 
         return self.grid_fee_constant if grid_fee_type == 1 else self.grid_fee_percentage
 
@@ -202,15 +209,18 @@ class AreaBase:
         grid_fee_constant = (
             kwargs["grid_fee_constant"]
             if key_in_dict_and_not_none(kwargs, "grid_fee_constant")
-            else self.grid_fee_constant)
+            else self.grid_fee_constant
+        )
         grid_fee_percentage = (
             kwargs["grid_fee_percentage"]
             if key_in_dict_and_not_none(kwargs, "grid_fee_percentage")
-            else self.grid_fee_percentage)
+            else self.grid_fee_percentage
+        )
 
         try:
-            validate_area(grid_fee_constant=grid_fee_constant,
-                          grid_fee_percentage=grid_fee_percentage)
+            validate_area(
+                grid_fee_constant=grid_fee_constant, grid_fee_percentage=grid_fee_percentage
+            )
 
         except (GSyAreaException, GSyDeviceException) as ex:
             log.error(ex)
@@ -228,10 +238,14 @@ class AreaBase:
                 child.update_descendants_strategy_prices()
         except GSyException:
             log.exception("area.update_descendants_strategy_prices failed.")
-            return
 
     def get_results_dict(self):
         """Calculate the results dict for the coefficients trading."""
         if self.strategy is not None:
             return self.strategy.state.get_results_dict(self.current_market_time_slot)
         return {}
+
+    @property
+    def is_home_area(self):
+        "Return if the area is a home area."
+        return self.children and all(child.strategy for child in self.children)

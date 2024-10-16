@@ -1,4 +1,4 @@
-##Historical Data API
+## Historical Data API
 
 The Historical Data API has been developed by Grid Singularity to allow users to retrieve the assets’ historical data in a given simulation, such as loads (consumption profiles) or generation profiles. This information can be used, for instance, by trading agents to adapt the assets’ trading settings to optimise the asset owner’s savings / revenue from these assets.
 
@@ -12,7 +12,7 @@ You can then connect to the API with the following URL, which divides the parame
 
 _https://gsyweb.gridsingularity.com/historical-data/assets/{simulation_id}/{market_uuid}/{start_time}/{end_time}_
 
-##Grid Data API
+## Grid Data API
 Grid Singularity has developed the Grid Data API to provide information about the topology of a simulated energy community, listing the relevant attributes and connections for each energy asset.
 
 This API requires the following parameters:

@@ -15,7 +15,7 @@ It sends an energy bid to the exchange. This command receives 4 arguments :
     - energy: energy quantity (expressed in kWh) that the bid prefers to consume
     - price: trade price (expressed in Euro cents) that the bid prefers to accept
 
-* **time_slot (optional)**: the time slot where the bid is going to be posted (to be used to trade post-delivery in the [Settlement Market](settlement-market-structure.md))
+* **time_slot (optional)**: the time slot where the bid is going to be posted (to be used to trade post-delivery in the [Settlement Market](market-types.md#settlement-market-structure))
 
 Here is an example:
 
@@ -40,7 +40,7 @@ It sends an energy bid to the exchange. This batch command receives 4 arguments 
     - energy: energy quantity (expressed in kWh) that the bid prefers to consume
     - price: trade price (expressed in Euro cents) that the bid prefers to accept
 
-* **time_slot (optional)**: the time slot where the bid is going to be posted (to be used to trade post-delivery in the [Settlement Market](settlement-market-structure.md))
+* **time_slot (optional)**: the time slot where the bid is going to be posted (to be used to trade post-delivery in the [Settlement Market](market-types.md#settlement-market-structure))
 
 Here is an example:
 
@@ -84,7 +84,7 @@ It sends an energy offer to the exchange. This command receives 4 arguments :
 
     - energy_type: energy type of the offer (e.g. solar)
 
-* **time_slot (optional)**: the time slot where the bid is going to be posted (to be used to trade post-delivery in the [Settlement Market](settlement-market-structure.md))
+* **time_slot (optional)**: the time slot where the bid is going to be posted (to be used to trade post-delivery in the [Settlement Market](market-types.md#settlement-market-structure))
 
 Here is an example:
 
@@ -105,7 +105,7 @@ It sends an energy offer to the exchange. This command receives four arguments :
 
     - energy_type: energy type of the offer (e.g. solar)
 
-* **time_slot (optional)**: the time slot where the bid is going to be posted (to be used to trade post-delivery in the [Settlement Market](settlement-market-structure.md))
+* **time_slot (optional)**: the time slot where the bid is going to be posted (to be used to trade post-delivery in the [Settlement Market](market-types.md#settlement-market-structure))
 
 Here is an example:
 
@@ -133,15 +133,6 @@ Here is an example:
 
 ```
 self.add_to_batch_commands.delete_offer(asset_uuid="62f827ec-ef86-4782-b5c3-88327751d97d", bid_id = "2e7866d8-3dg6-49ad-afe8-fd5876a3e679")
-```
-
-###asset_info()
-
-It gets asset information(returns required energy for Loads, available energy for PVs and energy to buy/sell for storages). This command receives one argument: asset_uuid, which is the Universal Unique Identifier of the selected asset.
-Here is an example:
-
-```
-self.add_to_batch_commands.asset_info(asset_uuid="62f827ec-ef86-4782-b5c3-88327751d97d")
 ```
 
 After adding all the wanted commands in the batch, the API can execute it with the following command:

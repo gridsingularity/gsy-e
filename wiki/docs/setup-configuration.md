@@ -1,6 +1,6 @@
 ##Backend Simulation Configuration
 
-In the backend, the simulation process is slightly different compared to the user interface simulations. There is no need to login to set up a simulation. The user first needs to download the code from our Github Repository (Installation Instructions for [Linux](linux-installation-instructions.md), [Mac](ios-installation-instructions.md) and [Windows](vm-installation-instructions.md)). In the setup-file (in Python programming language), general and [trading strategy](default-trading-strategy.md) settings can be defined. Examples can be found in the relevant [Grid Singularity GitHub](https://github.com/gridsingularity/gsy-e/tree/master/src/gsy_e/setup){target=_blank} folder.
+In the backend, the simulation process is slightly different compared to the user interface simulations. There is no need to login to set up a simulation. The user first needs to download the code from our Github Repository (Installation Instructions for [Linux](linux-installation-instructions.md), [Mac](ios-installation-instructions.md) and [Windows](vm-installation-instructions.md)). In the setup-file (in Python programming language), general and [trading strategy](trading-agents-and-strategies) settings can be defined. Examples can be found in the relevant [Grid Singularity GitHub](https://github.com/gridsingularity/gsy-e/tree/master/src/gsy_e/setup){target=_blank} folder.
 
 This is the most basic skeleton for a setup-file:
 
@@ -22,7 +22,7 @@ The user can add more nested submarkets recursively by adding more instances of 
     *   Home 2
         *   H2 General Load
 
-Bold instances in the outline above are markets. For each of these markets, a [market-agent](market-agent.md) is created in the background to execute offer/bid forwarding and matching.
+Bold instances in the outline above are markets. For each of these markets, a [market agent](trading-agents-and-strategies.md) is created in the background to execute offer/bid forwarding and matching.
 
 In the following, the corresponding setup-file is shown.
 
@@ -87,10 +87,10 @@ Additionally, the user has the possibility to change the default general setting
 
 The user can overwrite the configuration settings by changing variables of the [ConstSettings](https://github.com/gridsingularity/gsy-framework/blob/master/gsy_framework/constants_limits.py){target=_blank} class in the setup-file. This class defines the default values for various parameters (general simulation settings, market settings and energy asset configuration). For instance, the user can define multiple configuration parameters in the get_setup function by overwriting the[ ConstSettings](https://github.com/gridsingularity/gsy-framework/blob/master/gsy_framework/constants_limits.py){target=_blank} default values. For example, the following parameters can be set :
 
-* Market_type (if equal to 1: [One-Sided Pay-as-Offer](one-sided-pay-as-offer.md), if equal to 2 : [Two-Sided Pay-as-Bid](two-sided-pay-as-bid.md), if equal to 3 : [Two-Sided Pay-as-Clear](two-sided-pay-as-clear.md))
-* Grid_fee_type (if equal to 1: [Constant grid fee](constant-fees.md), if equal to 2 : [Percentage grid fee](percentage-fees.md))
+* Market_type (if equal to 1: [One-Sided Pay-as-Offer](market-types.md#one-sided-pay-as-offer-market), if equal to 2 : [Two-Sided Pay-as-Bid](market-types.md#two-sided-pay-as-bid-market), if equal to 3 : [Two-Sided Pay-as-Clear](market-types.md#two-sided-pay-as-clear-market))
+* Grid_fee_type (if equal to 1: [Constant grid fee](grid-fee-accounting.md#constant-grid-fee-calculation), if equal to 2 : [Percentage grid fee](grid-fee-accounting.md#percentage-grid-fee-calculation))
 
-Here is an example to setup a simulation with the Two-Sided Pay-as-Bid market type, constant grid fee and default min (0cts/kWh) and max to (35cts/kWh) energy rate for all [loads](model-load.md):
+Here is an example to setup a simulation with the Two-Sided Pay-as-Bid market type, constant grid fee and default min (0cts/kWh) and max to (35cts/kWh) energy rate for all [loads](consumption.md):
 
 ```python
 from gsy_framework.constants_limits import ConstSettings

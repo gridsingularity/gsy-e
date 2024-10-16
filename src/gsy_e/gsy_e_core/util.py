@@ -15,9 +15,9 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
 import inspect
 import json
-import logging
 import os
 import select
 import sys
@@ -25,15 +25,18 @@ import termios
 import tty
 from functools import wraps
 from logging import LoggerAdapter, getLogger, getLoggerClass, addLevelName, setLoggerClass, NOTSET
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from click.types import ParamType
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig, RangeLimit
 from gsy_framework.enums import BidOfferMatchAlgoEnum
 from gsy_framework.exceptions import GSyException
 from gsy_framework.utils import (
-    area_name_from_area_or_ma_name, iterate_over_all_modules, str_to_pendulum_datetime,
-    get_from_profile_same_weekday_and_time)
+    area_name_from_area_or_ma_name,
+    iterate_over_all_modules,
+    str_to_pendulum_datetime,
+    get_from_profile_same_weekday_and_time,
+)
 from pendulum import duration, from_format, instance, DateTime
 from rex import rex
 
@@ -44,9 +47,7 @@ from gsy_e import setup as d3a_setup
 if TYPE_CHECKING:
     from gsy_e.models.market import MarketBase
 
-
 gsye_root_path = os.path.dirname(inspect.getsourcefile(gsy_e))
-
 
 INTERVAL_DH_RE = rex("/^(?:(?P<days>[0-9]{1,4})[d:])?(?:(?P<hours>[0-9]{1,2})[h:])?$/")
 INTERVAL_HM_RE = rex("/^(?:(?P<hours>[0-9]{1,4})[h:])?(?:(?P<minutes>[0-9]{1,2})m?)?$/")
@@ -58,6 +59,7 @@ TRACE = 5
 
 class TraceLogger(getLoggerClass()):
     """TraceLogger"""
+
     def __init__(self, name, level=NOTSET):
         super().__init__(name, level)
 
@@ -97,6 +99,7 @@ class TaggedLogWrapper(LoggerAdapter):
 
 class DateType(ParamType):
     """DateType"""
+
     name = "date"
 
     def __init__(self, date_type: gsy_e.constants.DATE_FORMAT):
@@ -109,13 +112,13 @@ class DateType(ParamType):
         try:
             converted_format = from_format(value, gsy_e.constants.DATE_FORMAT)
         except ValueError:
-            self.fail(
-                f"'{value}' is not a valid date. Allowed formats: {self.allowed_formats}")
+            self.fail(f"'{value}' is not a valid date. Allowed formats: {self.allowed_formats}")
         return converted_format
 
 
 class IntervalType(ParamType):
     """IntervalType"""
+
     name = "interval"
 
     def __init__(self, interval_type):
@@ -136,20 +139,20 @@ class IntervalType(ParamType):
         match = self.re(value)
         if match:
             try:
-                converted_duration = duration(**{
-                    k: int(v) if v else 0
-                    for k, v in match.items()
-                    if isinstance(k, str)
-                })
+                converted_duration = duration(
+                    **{k: int(v) if v else 0 for k, v in match.items() if isinstance(k, str)}
+                )
             except ValueError:
                 self.fail(
-                    f"'{value}' is not a valid duration. Allowed formats: {self.allowed_formats}")
+                    f"'{value}' is not a valid duration. Allowed formats: {self.allowed_formats}"
+                )
         return converted_duration
 
 
 # pylint: disable=attribute-defined-outside-init
 class NonBlockingConsole:
     """NonBlockingConsole"""
+
     def __enter__(self):
         if os.isatty(sys.stdin.fileno()):
             self.old_settings = termios.tcgetattr(sys.stdin)
@@ -177,9 +180,11 @@ def format_interval(interval, show_day=True):
     return template.format(i=interval)
 
 
-d3a_modules_path = d3a_setup.__path__ \
-        if ConstSettings.GeneralSettings.SETUP_FILE_PATH is None \
-        else [ConstSettings.GeneralSettings.SETUP_FILE_PATH]
+d3a_modules_path = (
+    d3a_setup.__path__
+    if ConstSettings.GeneralSettings.SETUP_FILE_PATH is None
+    else [ConstSettings.GeneralSettings.SETUP_FILE_PATH]
+)
 available_simulation_scenarios = iterate_over_all_modules(d3a_modules_path)
 
 
@@ -208,16 +213,18 @@ def read_settings_from_file(settings_file):
         tick_length = settings["basic_settings"].get("tick_length")
         simulation_settings = {
             # pylint: disable=used-before-assignment
-            "sim_duration": (IntervalType("H:M")(sim_duration)
-                             if sim_duration else GlobalConfig.sim_duration),
-            "slot_length": (IntervalType("M:S")(slot_length)
-                            if slot_length else GlobalConfig.slot_length),
-            "tick_length": (IntervalType("M:S")(tick_length)
-                            if tick_length else GlobalConfig.tick_length),
-            "cloud_coverage": settings["basic_settings"].get(
-                "cloud_coverage", advanced_settings["PVSettings"]["DEFAULT_POWER_PROFILE"]),
+            "sim_duration": (
+                IntervalType("H:M")(sim_duration) if sim_duration else GlobalConfig.sim_duration
+            ),
+            "slot_length": (
+                IntervalType("M:S")(slot_length) if slot_length else GlobalConfig.slot_length
+            ),
+            "tick_length": (
+                IntervalType("M:S")(tick_length) if tick_length else GlobalConfig.tick_length
+            ),
             "enable_degrees_of_freedom": settings["basic_settings"].get(
-                "enable_degrees_of_freedom", GlobalConfig.enable_degrees_of_freedom)
+                "enable_degrees_of_freedom", GlobalConfig.enable_degrees_of_freedom
+            ),
         }
         return simulation_settings, advanced_settings
 
@@ -276,18 +283,22 @@ def constsettings_to_dict():
             convert_nested_settings(settings_class, settings_class_name, const_settings)
         return const_settings
     except Exception as ex:
-        raise SyntaxError("Error when serializing the const settings file. Incorrect "
-                          "setting structure.") from ex
+        raise SyntaxError(
+            "Error when serializing the const settings file. Incorrect setting structure."
+        ) from ex
 
 
 def retry_function(max_retries=3):
     """Decorator that retries the execution of the function until it returns without
     raising an exception."""
+
     def decorator_with_max_retries(f):
         @wraps(f)
         def wrapped(*args, **kwargs):
             return recursive_retry(f, 0, max_retries, *args, **kwargs)
+
         return wrapped
+
     return decorator_with_max_retries
 
 
@@ -297,10 +308,10 @@ def recursive_retry(functor, retry_count, max_retries, *args, **kwargs):
     try:
         return functor(*args, **kwargs)
     except (AssertionError, GSyException) as e:
-        log.debug("Retrying action %s for the %s time.", functor.__name__, retry_count+1)
+        log.debug("Retrying action %s for the %s time.", functor.__name__, retry_count + 1)
         if retry_count >= max_retries:
             raise e
-        return recursive_retry(functor, retry_count+1, max_retries, *args, **kwargs)
+        return recursive_retry(functor, retry_count + 1, max_retries, *args, **kwargs)
 
 
 def change_global_config(**kwargs):
@@ -309,7 +320,7 @@ def change_global_config(**kwargs):
         if hasattr(GlobalConfig, arg):
             setattr(GlobalConfig, arg, value)
         else:
-            # continue, if config setting is not member of GlobalConfig, e.g. pv_user_profile
+            # continue, if config setting is not member of GlobalConfig, e.g. capacity_kW
             pass
 
 
@@ -395,11 +406,10 @@ def short_offer_bid_log_str(offer_or_bid):
 def export_default_settings_to_json_file():
     """Export default settings to json file."""
     base_settings = {
-            "sim_duration": f"{GlobalConfig.DURATION_D*24}h",
-            "slot_length": f"{GlobalConfig.SLOT_LENGTH_M}m",
-            "tick_length": f"{GlobalConfig.TICK_LENGTH_S}s",
-            "cloud_coverage": GlobalConfig.CLOUD_COVERAGE,
-            "start_date": instance(GlobalConfig.start_date).format(gsy_e.constants.DATE_FORMAT),
+        "sim_duration": f"{GlobalConfig.DURATION_D * 24}h",
+        "slot_length": f"{GlobalConfig.SLOT_LENGTH_M}m",
+        "tick_length": f"{GlobalConfig.TICK_LENGTH_S}s",
+        "start_date": instance(GlobalConfig.start_date).format(gsy_e.constants.DATE_FORMAT),
     }
     all_settings = {"basic_settings": base_settings, "advanced_settings": constsettings_to_dict()}
     settings_filename = os.path.join(gsye_root_path, "setup", "gsy_e_settings.json")
@@ -411,14 +421,16 @@ def area_sells_to_child(trade, area_name, child_names):
     """Area sells to child."""
     return (
         area_name_from_area_or_ma_name(trade.seller.name) == area_name
-        and area_name_from_area_or_ma_name(trade.buyer.name) in child_names)
+        and area_name_from_area_or_ma_name(trade.buyer.name) in child_names
+    )
 
 
 def child_buys_from_area(trade, area_name, child_names):
     """Child buys from area."""
     return (
         area_name_from_area_or_ma_name(trade.buyer.name) == area_name
-        and area_name_from_area_or_ma_name(trade.seller.name) in child_names)
+        and area_name_from_area_or_ma_name(trade.seller.name) in child_names
+    )
 
 
 def if_not_in_list_append(target_list, obj):
@@ -431,36 +443,47 @@ def get_market_maker_rate_from_config(next_market, default_value=None, time_slot
     """Get market maker rate from config."""
     if next_market is None:
         return default_value
+    return get_market_maker_rate_from_time_slot(
+        next_market.time_slot if time_slot is None else time_slot
+    )
+
+
+def get_market_maker_rate_from_time_slot(time_slot: Optional[DateTime]) -> float:
+    """Return market maker rate by passing time slot (if available)."""
     if isinstance(GlobalConfig.market_maker_rate, dict):
         if time_slot is None:
-            try:
-                time_slot = next_market.time_slot
-            except AttributeError as e:
-                logging.exception("time_slot parameter is required for future markets.")
-                raise e
-        return get_from_profile_same_weekday_and_time(GlobalConfig.market_maker_rate,
-                                                      time_slot)
+            assert time_slot, "time_slot parameter is missing to get market_maker"
+        return get_from_profile_same_weekday_and_time(GlobalConfig.market_maker_rate, time_slot)
     return GlobalConfig.market_maker_rate
 
 
 def get_feed_in_tariff_rate_from_config(next_market: "MarketBase", time_slot=None):
     """Get feed in tariff rate from config."""
     if next_market is None:
-        return 0.
+        return 0.0
+    return get_feed_in_tariff_rate_from_time_slot(
+        next_market.time_slot if time_slot is None else time_slot
+    )
+
+
+def get_feed_in_tariff_rate_from_time_slot(time_slot: Optional[DateTime]) -> float:
+    """Return market feed in tariff by passing time slot (if available)."""
     if isinstance(GlobalConfig.FEED_IN_TARIFF, dict):
         if time_slot is None:
-            time_slot = next_market.time_slot
             assert time_slot, "time_slot parameter is missing to get feed-in tariff"
-
-        return get_from_profile_same_weekday_and_time(GlobalConfig.FEED_IN_TARIFF,
-                                                      time_slot) or 0.
+        return (
+            get_from_profile_same_weekday_and_time(GlobalConfig.FEED_IN_TARIFF, time_slot) or 0.0
+        )
     return GlobalConfig.FEED_IN_TARIFF
 
 
 def convert_area_throughput_kVA_to_kWh(transfer_capacity_kWA, slot_length):
     """Convert area throughput frm kVA to kWh."""
-    return transfer_capacity_kWA * slot_length.total_minutes() / 60.0 \
-        if transfer_capacity_kWA is not None else 0.
+    return (
+        transfer_capacity_kWA * slot_length.total_minutes() / 60.0
+        if transfer_capacity_kWA is not None
+        else 0.0
+    )
 
 
 def should_read_profile_from_db(profile_uuid):
@@ -472,8 +495,7 @@ def is_external_matching_enabled():
     """Checks if the bid offer match type is set to external
     Returns True if both are matched
     """
-    return (ConstSettings.MASettings.BID_OFFER_MATCH_TYPE ==
-            BidOfferMatchAlgoEnum.EXTERNAL.value)
+    return ConstSettings.MASettings.BID_OFFER_MATCH_TYPE == BidOfferMatchAlgoEnum.EXTERNAL.value
 
 
 class StrategyProfileConfigurationException(Exception):
@@ -483,8 +505,9 @@ class StrategyProfileConfigurationException(Exception):
 def is_time_slot_in_past_markets(time_slot: DateTime, current_time_slot: DateTime):
     """Checks if the time_slot should be in the area.past_markets."""
     if ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS:
-        return (time_slot < current_time_slot.subtract(
-            hours=ConstSettings.SettlementMarketSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS))
+        return time_slot < current_time_slot.subtract(
+            hours=ConstSettings.SettlementMarketSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS
+        )
     return time_slot < current_time_slot
 
 

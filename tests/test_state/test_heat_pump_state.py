@@ -10,7 +10,7 @@ CURRENT_MARKET_SLOT = today(tz=TIME_ZONE)
 
 @pytest.fixture(name="hp_state")
 def fixture_heatpump_state() -> HeatPumpState:
-    return HeatPumpState(10, duration(minutes=15), min_storage_temp_C=20)
+    return HeatPumpState(duration(minutes=15))
 
 
 class TestHeatPumpState:

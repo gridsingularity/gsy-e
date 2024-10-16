@@ -15,18 +15,18 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
 from collections import namedtuple
 from enum import Enum
 from logging import getLogger
-from typing import Union
+from typing import Union, Optional
 
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import TraderDetails
 from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.exceptions import GSyException
 from gsy_framework.read_user_profile import InputProfileTypes, read_arbitrary_profile
-from gsy_framework.utils import (
-    get_from_profile_same_weekday_and_time, key_in_dict_and_not_none)
+from gsy_framework.utils import get_from_profile_same_weekday_and_time, key_in_dict_and_not_none
 from gsy_framework.validators import StorageValidator
 from pendulum import duration
 
@@ -35,11 +35,13 @@ from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.exceptions import MarketException
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.models.base import AssetType
-from gsy_e.models.strategy.state import ESSEnergyOrigin, StorageState
+from gsy_e.models.strategy.state import ESSEnergyOrigin, StorageState, StorageLosses
 from gsy_e.models.strategy import BidEnabledStrategy
 from gsy_e.models.strategy.future.strategy import future_market_strategy_factory
 from gsy_e.models.strategy.update_frequency import (
-    TemplateStrategyBidUpdater, TemplateStrategyOfferUpdater)
+    TemplateStrategyBidUpdater,
+    TemplateStrategyOfferUpdater,
+)
 
 log = getLogger(__name__)
 
@@ -67,41 +69,46 @@ class StorageStrategy(BidEnabledStrategy):
         }
 
     def __init__(  # pylint: disable=too-many-arguments, too-many-locals
-        self, initial_soc: float = StorageSettings.MIN_ALLOWED_SOC,
+        self,
+        initial_soc: float = StorageSettings.MIN_ALLOWED_SOC,
         min_allowed_soc=StorageSettings.MIN_ALLOWED_SOC,
         battery_capacity_kWh: float = StorageSettings.CAPACITY,
         max_abs_battery_power_kW: float = StorageSettings.MAX_ABS_POWER,
         cap_price_strategy: bool = False,
-        initial_selling_rate: Union[float, dict] =
-        StorageSettings.SELLING_RATE_RANGE.initial,
-        final_selling_rate: Union[float, dict] =
-        StorageSettings.SELLING_RATE_RANGE.final,
-        initial_buying_rate: Union[float, dict] =
-        StorageSettings.BUYING_RATE_RANGE.initial,
-        final_buying_rate: Union[float, dict] =
-        StorageSettings.BUYING_RATE_RANGE.final,
-        fit_to_limit=True, energy_rate_increase_per_update=None,
+        initial_selling_rate: Union[float, dict] = StorageSettings.SELLING_RATE_RANGE.initial,
+        final_selling_rate: Union[float, dict] = StorageSettings.SELLING_RATE_RANGE.final,
+        initial_buying_rate: Union[float, dict] = StorageSettings.BUYING_RATE_RANGE.initial,
+        final_buying_rate: Union[float, dict] = StorageSettings.BUYING_RATE_RANGE.final,
+        fit_to_limit=True,
+        energy_rate_increase_per_update=None,
         energy_rate_decrease_per_update=None,
         update_interval=None,
         initial_energy_origin: Enum = ESSEnergyOrigin.EXTERNAL,
+        losses: Optional[StorageLosses] = None,
         balancing_energy_ratio: tuple = (
-            BalancingSettings.OFFER_DEMAND_RATIO, BalancingSettings.OFFER_SUPPLY_RATIO)):
+            BalancingSettings.OFFER_DEMAND_RATIO,
+            BalancingSettings.OFFER_SUPPLY_RATIO,
+        ),
+    ):
 
         if update_interval is None:
             update_interval = duration(
-                minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
+                minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL
+            )
 
         if min_allowed_soc is None:
             min_allowed_soc = StorageSettings.MIN_ALLOWED_SOC
         self.initial_soc = initial_soc
 
         StorageValidator.validate(
-            initial_soc=initial_soc, min_allowed_soc=min_allowed_soc,
+            initial_soc=initial_soc,
+            min_allowed_soc=min_allowed_soc,
             battery_capacity_kWh=battery_capacity_kWh,
             max_abs_battery_power_kW=max_abs_battery_power_kW,
             fit_to_limit=fit_to_limit,
             energy_rate_increase_per_update=energy_rate_increase_per_update,
-            energy_rate_decrease_per_update=energy_rate_decrease_per_update)
+            energy_rate_decrease_per_update=energy_rate_decrease_per_update,
+        )
 
         if isinstance(update_interval, int):
             update_interval = duration(minutes=update_interval)
@@ -109,30 +116,42 @@ class StorageStrategy(BidEnabledStrategy):
         super().__init__()
 
         self.offer_update = TemplateStrategyOfferUpdater(
-            initial_rate=initial_selling_rate, final_rate=final_selling_rate,
+            initial_rate=initial_selling_rate,
+            final_rate=final_selling_rate,
             fit_to_limit=fit_to_limit,
             energy_rate_change_per_update=energy_rate_decrease_per_update,
-            update_interval=update_interval)
+            update_interval=update_interval,
+        )
         for time_slot in self.offer_update.initial_rate_profile_buffer.keys():
             StorageValidator.validate(
                 initial_selling_rate=self.offer_update.initial_rate_profile_buffer[time_slot],
                 final_selling_rate=get_from_profile_same_weekday_and_time(
-                    self.offer_update.final_rate_profile_buffer, time_slot))
+                    self.offer_update.final_rate_profile_buffer, time_slot
+                ),
+            )
         self.bid_update = TemplateStrategyBidUpdater(
-            initial_rate=initial_buying_rate, final_rate=final_buying_rate,
+            initial_rate=initial_buying_rate,
+            final_rate=final_buying_rate,
             fit_to_limit=fit_to_limit,
             energy_rate_change_per_update=energy_rate_increase_per_update,
-            update_interval=update_interval, rate_limit_object=min
+            update_interval=update_interval,
+            rate_limit_object=min,
         )
         for time_slot in self.bid_update.initial_rate_profile_buffer.keys():
             StorageValidator.validate(
                 initial_buying_rate=self.bid_update.initial_rate_profile_buffer[time_slot],
                 final_buying_rate=get_from_profile_same_weekday_and_time(
-                    self.bid_update.final_rate_profile_buffer, time_slot))
+                    self.bid_update.final_rate_profile_buffer, time_slot
+                ),
+            )
         self._state = StorageState(
-            initial_soc=initial_soc, initial_energy_origin=initial_energy_origin,
-            capacity=battery_capacity_kWh, max_abs_battery_power_kW=max_abs_battery_power_kW,
-            min_allowed_soc=min_allowed_soc)
+            initial_soc=initial_soc,
+            initial_energy_origin=initial_energy_origin,
+            capacity=battery_capacity_kWh,
+            max_abs_battery_power_kW=max_abs_battery_power_kW,
+            min_allowed_soc=min_allowed_soc,
+            losses=losses,
+        )
         self.cap_price_strategy = cap_price_strategy
         self.balancing_energy_ratio = BalancingRatio(*balancing_energy_ratio)
 
@@ -145,37 +164,45 @@ class StorageStrategy(BidEnabledStrategy):
 
     def _area_reconfigure_prices(self, **kwargs):  # pylint: disable=too-many-branches
         if key_in_dict_and_not_none(kwargs, "initial_selling_rate"):
-            initial_selling_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                          kwargs["initial_selling_rate"])
+            initial_selling_rate = read_arbitrary_profile(
+                InputProfileTypes.IDENTITY, kwargs["initial_selling_rate"]
+            )
         else:
             initial_selling_rate = self.offer_update.initial_rate_profile_buffer
         if key_in_dict_and_not_none(kwargs, "final_selling_rate"):
-            final_selling_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                        kwargs["final_selling_rate"])
+            final_selling_rate = read_arbitrary_profile(
+                InputProfileTypes.IDENTITY, kwargs["final_selling_rate"]
+            )
         else:
             final_selling_rate = self.offer_update.final_rate_profile_buffer
         if key_in_dict_and_not_none(kwargs, "initial_buying_rate"):
-            initial_buying_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                         kwargs["initial_buying_rate"])
+            initial_buying_rate = read_arbitrary_profile(
+                InputProfileTypes.IDENTITY, kwargs["initial_buying_rate"]
+            )
         else:
             initial_buying_rate = self.bid_update.initial_rate_profile_buffer
         if key_in_dict_and_not_none(kwargs, "final_buying_rate"):
-            final_buying_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                       kwargs["final_buying_rate"])
+            final_buying_rate = read_arbitrary_profile(
+                InputProfileTypes.IDENTITY, kwargs["final_buying_rate"]
+            )
         else:
             final_buying_rate = self.bid_update.final_rate_profile_buffer
         if key_in_dict_and_not_none(kwargs, "energy_rate_decrease_per_update"):
             energy_rate_decrease_per_update = read_arbitrary_profile(
-                InputProfileTypes.IDENTITY, kwargs["energy_rate_decrease_per_update"])
+                InputProfileTypes.IDENTITY, kwargs["energy_rate_decrease_per_update"]
+            )
         else:
-            energy_rate_decrease_per_update = (self.offer_update.
-                                               energy_rate_change_per_update_profile_buffer)
+            energy_rate_decrease_per_update = (
+                self.offer_update.energy_rate_change_per_update_profile_buffer
+            )
         if key_in_dict_and_not_none(kwargs, "energy_rate_increase_per_update"):
             energy_rate_increase_per_update = read_arbitrary_profile(
-                InputProfileTypes.IDENTITY, kwargs["energy_rate_increase_per_update"])
+                InputProfileTypes.IDENTITY, kwargs["energy_rate_increase_per_update"]
+            )
         else:
             energy_rate_increase_per_update = (
-                self.bid_update.energy_rate_change_per_update_profile_buffer)
+                self.bid_update.energy_rate_change_per_update_profile_buffer
+            )
         if key_in_dict_and_not_none(kwargs, "fit_to_limit"):
             bid_fit_to_limit = kwargs["fit_to_limit"]
             offer_fit_to_limit = kwargs["fit_to_limit"]
@@ -191,10 +218,16 @@ class StorageStrategy(BidEnabledStrategy):
             update_interval = self.bid_update.update_interval
 
         try:
-            self._validate_rates(initial_selling_rate, final_selling_rate,
-                                 initial_buying_rate, final_buying_rate,
-                                 energy_rate_increase_per_update, energy_rate_decrease_per_update,
-                                 bid_fit_to_limit, offer_fit_to_limit)
+            self._validate_rates(
+                initial_selling_rate,
+                final_selling_rate,
+                initial_buying_rate,
+                final_buying_rate,
+                energy_rate_increase_per_update,
+                energy_rate_decrease_per_update,
+                bid_fit_to_limit,
+                offer_fit_to_limit,
+            )
         except GSyException as ex:
             log.exception("StorageStrategy._area_reconfigure_prices failed. Exception: %s.", ex)
             return
@@ -204,14 +237,14 @@ class StorageStrategy(BidEnabledStrategy):
             final_rate=final_selling_rate,
             energy_rate_change_per_update=energy_rate_decrease_per_update,
             fit_to_limit=offer_fit_to_limit,
-            update_interval=update_interval
+            update_interval=update_interval,
         )
         self.bid_update.set_parameters(
             initial_rate=initial_buying_rate,
             final_rate=final_buying_rate,
             energy_rate_change_per_update=energy_rate_increase_per_update,
             fit_to_limit=bid_fit_to_limit,
-            update_interval=update_interval
+            update_interval=update_interval,
         )
 
     def area_reconfigure_event(self, *args, **kwargs):
@@ -220,52 +253,80 @@ class StorageStrategy(BidEnabledStrategy):
         self._update_profiles_with_default_values()
 
     def _validate_rates(  # pylint: disable=too-many-arguments
-            self, initial_selling_rate, final_selling_rate,
-            initial_buying_rate, final_buying_rate,
-            energy_rate_increase_per_update, energy_rate_decrease_per_update,
-            bid_fit_to_limit, offer_fit_to_limit):
+        self,
+        initial_selling_rate,
+        final_selling_rate,
+        initial_buying_rate,
+        final_buying_rate,
+        energy_rate_increase_per_update,
+        energy_rate_decrease_per_update,
+        bid_fit_to_limit,
+        offer_fit_to_limit,
+    ):
 
         for time_slot in initial_selling_rate.keys():
-            if self.area and \
-                    self.area.current_market and time_slot < self.area.current_market.time_slot:
+            if (
+                self.area
+                and self.area.current_market
+                and time_slot < self.area.current_market.time_slot
+            ):
                 continue
 
-            bid_rate_change = (None if bid_fit_to_limit else
-                               get_from_profile_same_weekday_and_time(
-                                   energy_rate_increase_per_update, time_slot))
-            offer_rate_change = (None if offer_fit_to_limit else
-                                 get_from_profile_same_weekday_and_time(
-                                     energy_rate_decrease_per_update, time_slot))
+            bid_rate_change = (
+                None
+                if bid_fit_to_limit
+                else get_from_profile_same_weekday_and_time(
+                    energy_rate_increase_per_update, time_slot
+                )
+            )
+            offer_rate_change = (
+                None
+                if offer_fit_to_limit
+                else get_from_profile_same_weekday_and_time(
+                    energy_rate_decrease_per_update, time_slot
+                )
+            )
             StorageValidator.validate(
                 initial_selling_rate=initial_selling_rate[time_slot],
                 final_selling_rate=get_from_profile_same_weekday_and_time(
-                    final_selling_rate, time_slot),
+                    final_selling_rate, time_slot
+                ),
                 initial_buying_rate=get_from_profile_same_weekday_and_time(
-                    initial_buying_rate, time_slot),
+                    initial_buying_rate, time_slot
+                ),
                 final_buying_rate=get_from_profile_same_weekday_and_time(
-                    final_buying_rate, time_slot),
+                    final_buying_rate, time_slot
+                ),
                 energy_rate_increase_per_update=bid_rate_change,
-                energy_rate_decrease_per_update=offer_rate_change)
+                energy_rate_decrease_per_update=offer_rate_change,
+            )
 
     def event_on_disabled_area(self):
         self.state.check_state(self.area.spot_market.time_slot)
 
     def event_activate_price(self):
         """Validate rates of offers and bids when the ACTIVATE event is triggered."""
-        self._validate_rates(self.offer_update.initial_rate_profile_buffer,
-                             self.offer_update.final_rate_profile_buffer,
-                             self.bid_update.initial_rate_profile_buffer,
-                             self.bid_update.final_rate_profile_buffer,
-                             self.bid_update.energy_rate_change_per_update_profile_buffer,
-                             self.offer_update.energy_rate_change_per_update_profile_buffer,
-                             self.bid_update.fit_to_limit, self.offer_update.fit_to_limit)
+        self._validate_rates(
+            self.offer_update.initial_rate_profile_buffer,
+            self.offer_update.final_rate_profile_buffer,
+            self.bid_update.initial_rate_profile_buffer,
+            self.bid_update.final_rate_profile_buffer,
+            self.bid_update.energy_rate_change_per_update_profile_buffer,
+            self.offer_update.energy_rate_change_per_update_profile_buffer,
+            self.bid_update.fit_to_limit,
+            self.offer_update.fit_to_limit,
+        )
 
     def event_activate_energy(self):
         """Set the battery energy for each slot when the ACTIVATE event is triggered."""
         self.state.activate(
             self.simulation_config.slot_length,
-            self.area.current_market.time_slot
-            if self.area.current_market else self.area.config.start_date)
+            (
+                self.area.current_market.time_slot
+                if self.area.current_market
+                else self.area.config.start_date
+            ),
+        )
 
     def event_activate(self, **kwargs):
         self._update_profiles_with_default_values()
@@ -274,9 +335,16 @@ class StorageStrategy(BidEnabledStrategy):
 
     @staticmethod
     def _validate_constructor_arguments(  # pylint: disable=too-many-arguments, too-many-branches
-            initial_soc=None, min_allowed_soc=None, battery_capacity_kWh=None,
-            max_abs_battery_power_kW=None, initial_selling_rate=None, final_selling_rate=None,
-            initial_buying_rate=None, final_buying_rate=None, energy_rate_change_per_update=None):
+        initial_soc=None,
+        min_allowed_soc=None,
+        battery_capacity_kWh=None,
+        max_abs_battery_power_kW=None,
+        initial_selling_rate=None,
+        final_selling_rate=None,
+        initial_buying_rate=None,
+        final_buying_rate=None,
+        energy_rate_change_per_update=None,
+    ):
 
         if battery_capacity_kWh is not None and battery_capacity_kWh < 0:
             raise ValueError("Battery capacity should be a positive integer")
@@ -286,47 +354,64 @@ class StorageStrategy(BidEnabledStrategy):
             raise ValueError("initial SOC must be in between 0-100 %")
         if min_allowed_soc is not None and 0 < min_allowed_soc > 100:
             raise ValueError("initial SOC must be in between 0-100 %")
-        if (initial_soc is not None and min_allowed_soc is not None and
-                initial_soc < min_allowed_soc):
+        if (
+            initial_soc is not None
+            and min_allowed_soc is not None
+            and initial_soc < min_allowed_soc
+        ):
             raise ValueError("Initial charge must be more than the minimum allowed soc.")
         if initial_selling_rate is not None and initial_selling_rate < 0:
             raise ValueError("Initial selling rate must be greater equal 0.")
         if final_selling_rate is not None:
             if isinstance(final_selling_rate, float) and final_selling_rate < 0:
                 raise ValueError("Final selling rate must be greater equal 0.")
-            if (isinstance(final_selling_rate, dict) and
-                    any(rate < 0 for _, rate in final_selling_rate.items())):
+            if isinstance(final_selling_rate, dict) and any(
+                rate < 0 for _, rate in final_selling_rate.items()
+            ):
                 raise ValueError("Final selling rate must be greater equal 0.")
         if initial_selling_rate is not None and final_selling_rate is not None:
-            initial_selling_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                          initial_selling_rate)
-            final_selling_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                        final_selling_rate)
-            if any(initial_selling_rate[hour] < final_selling_rate[hour]
-                   for hour, _ in initial_selling_rate.items()):
+            initial_selling_rate = read_arbitrary_profile(
+                InputProfileTypes.IDENTITY, initial_selling_rate
+            )
+            final_selling_rate = read_arbitrary_profile(
+                InputProfileTypes.IDENTITY, final_selling_rate
+            )
+            if any(
+                initial_selling_rate[hour] < final_selling_rate[hour]
+                for hour, _ in initial_selling_rate.items()
+            ):
                 raise ValueError("Initial selling rate must be greater than final selling rate.")
         if initial_buying_rate is not None and initial_buying_rate < 0:
             raise ValueError("Initial buying rate must be greater equal 0.")
         if final_buying_rate is not None:
-            final_buying_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                       final_buying_rate)
+            final_buying_rate = read_arbitrary_profile(
+                InputProfileTypes.IDENTITY, final_buying_rate
+            )
             if any(rate < 0 for _, rate in final_buying_rate.items()):
                 raise ValueError("Final buying rate must be greater equal 0.")
         if initial_buying_rate is not None and final_buying_rate is not None:
-            initial_buying_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                         initial_buying_rate)
-            final_buying_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                       final_buying_rate)
-            if any(initial_buying_rate[hour] > final_buying_rate[hour]
-                   for hour, _ in initial_buying_rate.items()):
+            initial_buying_rate = read_arbitrary_profile(
+                InputProfileTypes.IDENTITY, initial_buying_rate
+            )
+            final_buying_rate = read_arbitrary_profile(
+                InputProfileTypes.IDENTITY, final_buying_rate
+            )
+            if any(
+                initial_buying_rate[hour] > final_buying_rate[hour]
+                for hour, _ in initial_buying_rate.items()
+            ):
                 raise ValueError("Initial buying rate must be less than final buying rate.")
         if final_selling_rate is not None and final_buying_rate is not None:
-            final_selling_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                        final_selling_rate)
-            final_buying_rate = read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                                       final_buying_rate)
-            if any(final_buying_rate[hour] >= final_selling_rate[hour]
-                   for hour, _ in final_selling_rate.items()):
+            final_selling_rate = read_arbitrary_profile(
+                InputProfileTypes.IDENTITY, final_selling_rate
+            )
+            final_buying_rate = read_arbitrary_profile(
+                InputProfileTypes.IDENTITY, final_buying_rate
+            )
+            if any(
+                final_buying_rate[hour] >= final_selling_rate[hour]
+                for hour, _ in final_selling_rate.items()
+            ):
                 raise ValueError("final_buying_rate should be higher than final_selling_rate.")
         if energy_rate_change_per_update is not None and energy_rate_change_per_update < 0:
             raise ValueError("energy_rate_change_per_update should be a non-negative value.")
@@ -380,8 +465,10 @@ class StorageStrategy(BidEnabledStrategy):
 
         if bid_trade.buyer.name == self.owner.name:
             self.state.register_energy_from_bid_trade(
-                bid_trade.traded_energy, bid_trade.time_slot,
-                self._track_bought_energy_origin(bid_trade.seller.name))
+                bid_trade.traded_energy,
+                bid_trade.time_slot,
+                self._track_bought_energy_origin(bid_trade.seller.name),
+            )
 
     def _cycle_state(self):
         current_market = self.area.spot_market
@@ -390,7 +477,7 @@ class StorageStrategy(BidEnabledStrategy):
         self.state.market_cycle(
             past_market.time_slot if past_market else None,
             current_market.time_slot,
-            self.area.future_market_time_slots
+            self.area.future_market_time_slots,
         )
 
     def event_market_cycle(self):
@@ -412,23 +499,24 @@ class StorageStrategy(BidEnabledStrategy):
         current_market = self.area.spot_market
         free_storage = self.state.free_storage(current_market.time_slot)
         seller_details = TraderDetails(
-            self.owner.name, self.owner.uuid, self.owner.name, self.owner.uuid)
+            self.owner.name, self.owner.uuid, self.owner.name, self.owner.uuid
+        )
         if free_storage > 0:
             charge_energy = self.balancing_energy_ratio.demand * free_storage
             charge_price = DeviceRegistry.REGISTRY[self.owner.name][0] * charge_energy
             if charge_energy != 0 and charge_price != 0:
                 # committing to start charging when required
-                self.area.get_balancing_market(self.area.now).balancing_offer(charge_price,
-                                                                              -charge_energy,
-                                                                              seller_details)
+                self.area.get_balancing_market(self.area.now).balancing_offer(
+                    charge_price, -charge_energy, seller_details
+                )
         if self.state.used_storage > 0:
             discharge_energy = self.balancing_energy_ratio.supply * self.state.used_storage
             discharge_price = DeviceRegistry.REGISTRY[self.owner.name][1] * discharge_energy
             # committing to start discharging when required
             if discharge_energy != 0 and discharge_price != 0:
-                self.area.get_balancing_market(self.area.now).balancing_offer(discharge_price,
-                                                                              discharge_energy,
-                                                                              seller_details)
+                self.area.get_balancing_market(self.area.now).balancing_offer(
+                    discharge_price, discharge_energy, seller_details
+                )
 
     def _try_to_buy_offer(self, offer, market, max_affordable_offer_rate):
         if offer.seller.name == self.owner.name:
@@ -445,11 +533,18 @@ class StorageStrategy(BidEnabledStrategy):
             max_energy = min(offer.energy, max_energy)
             if max_energy > FLOATING_POINT_TOLERANCE:
                 self.state.register_energy_from_one_sided_market_accept_offer(
-                    max_energy, market.time_slot,
-                    self._track_bought_energy_origin(offer.seller.name))
-                self.accept_offer(market, offer, buyer=TraderDetails(
-                    self.owner.name, self.owner.uuid, self.owner.name, self.owner.uuid),
-                    energy=max_energy)
+                    max_energy,
+                    market.time_slot,
+                    self._track_bought_energy_origin(offer.seller.name),
+                )
+                self.accept_offer(
+                    market,
+                    offer,
+                    buyer=TraderDetails(
+                        self.owner.name, self.owner.uuid, self.owner.name, self.owner.uuid
+                    ),
+                    energy=max_energy,
+                )
             return None
         except MarketException:
             # Offer already gone etc., try next one.
@@ -466,8 +561,10 @@ class StorageStrategy(BidEnabledStrategy):
             self._try_to_buy_offer(offer, market, max_affordable_offer_rate)
         else:
             for market_offer in market.sorted_offers:
-                if self._try_to_buy_offer(
-                        market_offer, market, max_affordable_offer_rate) is False:
+                if (
+                    self._try_to_buy_offer(market_offer, market, max_affordable_offer_rate)
+                    is False
+                ):
                     return
 
     def _sell_energy_to_spot_market(self):
@@ -475,9 +572,7 @@ class StorageStrategy(BidEnabledStrategy):
         selling_rate = self.calculate_selling_rate(self.area.spot_market)
         energy_kWh = self.state.get_available_energy_to_sell_kWh(time_slot)
         if energy_kWh > FLOATING_POINT_TOLERANCE:
-            offer = self.post_first_offer(
-                self.area.spot_market, energy_kWh, selling_rate
-            )
+            offer = self.post_first_offer(self.area.spot_market, energy_kWh, selling_rate)
             self.state.register_energy_from_posted_offer(offer.energy, time_slot)
 
     def _buy_energy_two_sided_spot_market(self):
@@ -520,27 +615,35 @@ class StorageStrategy(BidEnabledStrategy):
     def _update_profiles_with_default_values(self):
         self.offer_update.update_and_populate_price_settings(self.area)
         self.bid_update.update_and_populate_price_settings(self.area)
-        self.state.add_default_values_to_state_profiles([
-            self.spot_market_time_slot, *self.area.future_market_time_slots])
+        self.state.add_default_values_to_state_profiles(
+            [self.spot_market_time_slot, *self.area.future_market_time_slots]
+        )
         self._future_market_strategy.update_and_populate_price_settings(self)
 
     def event_offer(self, *, market_id, offer):
         super().event_offer(market_id=market_id, offer=offer)
-        if (ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value
-                and not self.area.is_market_future(market_id)):
+        if (
+            ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value
+            and not self.area.is_market_future(market_id)
+        ):
             market = self.area.get_spot_or_future_market_by_id(market_id)
             if not market:
                 return
             # sometimes the offer event arrives earlier than the market_cycle event,
             # so the default values have to be written here too:
             self._update_profiles_with_default_values()
-            if (offer.id in market.offers and offer.seller.name != self.owner.name and
-                    offer.seller.name != self.area.name):
+            if (
+                offer.id in market.offers
+                and offer.seller.name != self.owner.name
+                and offer.seller.name != self.area.name
+            ):
                 self._buy_energy_one_sided_spot_market(market, offer)
 
     def _delete_past_state(self):
-        if (constants.RETAIN_PAST_MARKET_STRATEGIES_STATE is True or
-                self.area.current_market is None):
+        if (
+            constants.RETAIN_PAST_MARKET_STRATEGIES_STATE is True
+            or self.area.current_market is None
+        ):
             return
 
         self.offer_update.delete_past_state_values(self.area.current_market.time_slot)
@@ -548,8 +651,7 @@ class StorageStrategy(BidEnabledStrategy):
         self.state.delete_past_state_values(self.area.current_market.time_slot)
 
         # Delete the state of the current slot from the future market cache
-        self._future_market_strategy.delete_past_state_values(
-            self.area.current_market.time_slot)
+        self._future_market_strategy.delete_past_state_values(self.area.current_market.time_slot)
 
     @property
     def asset_type(self):

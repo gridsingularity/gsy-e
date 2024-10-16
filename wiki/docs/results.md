@@ -85,7 +85,7 @@ This graph is a market slot level breakdown of the energy trade profile. With th
 
 In this plot, energy pricing is shown. Depending on market design and grid configuration, there could be different price settlements in the same market slot. In this case, a `minimum`, `maximum`, and `average` of the trade price is shown.
 
-If no trade occurred during a certain market interval, no lines are plotted. If [grid fees](grid-fees.md) are set in that market as a constant value, a fourth line is plotted to reflect its price.
+If no trade occurred during a certain market interval, no lines are plotted. If [grid fees](grid-fee-accounting.md) are set in that market as a constant value, a fourth line is plotted to reflect its price.
 
 ###Bids, Offers, and Trades per Market Slot
 

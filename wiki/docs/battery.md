@@ -43,15 +43,15 @@ Note: The default setting of the battery component is 100% energy conversion eff
 
 In general all bids and offers follow the physical constraint of the set `max_abs_battery_power_kW value. The accumulated energy per market slot cannot exceed this power value times the length of the market slot, in hours. Energy sold and bought cancel each other out, meaning that if 2kWh are both sold and bought in the same market slot, the relative power remains 0kW.
 
-For the buying rate increase and selling rate decrease behaviour, please see the [Trading Strategies page](default-trading-strategy.md).
+For the buying rate increase and selling rate decrease behaviour, please see the [Trading Strategies page](trading-agents-and-strategies).
 
-###Buying energy in the [One-Sided Market](one-sided-pay-as-offer.md)
+###Buying energy in the [One-Sided Market](market-types.md#one-sided-pay-as-offer-market)
 
 On each tick, the storage scans the connected market for affordable offers* if there is storage space to be filled (if the current SOC is lower than 100%). Once an offer is found, it is either fully or partially accepted, depending on the demand. The storage always seeks 100% SOC when buying energy.
 
 *affordable offers are offers that have a price lower or equal to the current acceptable energy rate. The acceptable energy rate changes during a market slot depending on the `initial_buying_rate, final_buying_rate, energy_rate_decrease_per_update` and `update_interval setting.
 
-###Buying energy in the [Two-Sided Market](two-sided-pay-as-bid.md)
+###Buying energy in the [Two-Sided Market](market-types.md#two-sided-pay-as-bid-market)
 
 On each tick, the storage either places a bid for the quantity of energy it needs to reach 100% SOC or updates the price of an existing bid in the market where the bid rate depends on the initial_buying_rate, final_buying_rate, energy_rate_decrease_per_update and update_interval setting.
 

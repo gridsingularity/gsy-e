@@ -100,7 +100,6 @@ class TestD3ACoreUtil:
                 assert file_contents["basic_settings"]["sim_duration"] == "24h"
                 assert file_contents["basic_settings"]["slot_length"] == "15m"
                 assert file_contents["basic_settings"]["tick_length"] == "15s"
-                assert file_contents["basic_settings"]["cloud_coverage"] == 0
                 assert "advanced_settings" in file_contents
 
     @staticmethod

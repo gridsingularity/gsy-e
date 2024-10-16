@@ -19,7 +19,7 @@ The map includes a search bar in the top left corner, a list of simulations in t
 
 ![alt_text](img/icon-7.png) This icon allows the user to see their assets in a list view and to click on the items in the list in order to navigate the map and results views
 
-![alt_text](img/icon-6.png) This icon allows the user to request upgrading their simulation to Grid Singularity’s [Canary Test Network](canary-network.md), which is a paid service.
+![alt_text](img/icon-6.png) This icon allows the user to request upgrading their simulation to Grid Singularity’s [Canary Test Network](connect-ctn.md), which is a paid service.
 
 **Legend**
 

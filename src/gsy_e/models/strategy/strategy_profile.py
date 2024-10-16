@@ -8,6 +8,7 @@ from gsy_framework.utils import get_from_profile_same_weekday_and_time
 
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.gsy_e_core.util import should_read_profile_from_db
+from gsy_e.models.strategy.utils import is_scm_simulation
 
 log = logging.getLogger(__name__)
 
@@ -80,14 +81,16 @@ class StrategyProfile(StrategyProfileBase):
     def get_value(self, time_slot: DateTime) -> float:
         if time_slot in self.profile:
             return self.profile[time_slot]
-        if GlobalConfig.is_canary_network():
+        if GlobalConfig.is_canary_network() or is_scm_simulation():
             value = get_from_profile_same_weekday_and_time(self.profile, time_slot)
             if value is None:
-                log.error("Value for time_slot %s could not be found in profile in "
-                          "Canary Network, returning 0", time_slot)
+                log.error("Value for time_slot %s could not be found in profile %s in "
+                          "Canary Network, returning 0", time_slot, self.input_profile_uuid)
                 return 0
             return value
-        raise KeyError(f"Value for time_slot {time_slot} could not be found in profile.")
+        log.error("Value for time_slot %s could not be found in profile "
+                  "%s.", time_slot, self.input_profile_uuid)
+        return 0
 
     def _read_input_profile_type(self):
         if self.input_profile_uuid:

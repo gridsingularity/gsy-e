@@ -15,7 +15,7 @@ This configuration is simulated for one day using the Pay-as-Bid market type and
 </figure>
 
 
-The bid and the offer are forwarded to the higher-level Grid market and are matched in this market with a clearing price (and trade price) of €0.45. For more information on how grid fees are calculated, please read the [grid fees documentation](grid-fees.md).
+The bid and the offer are forwarded to the higher-level Grid market and are matched in this market with a clearing price (and trade price) of €0.45. For more information on how grid fees are calculated, please read the [grid fees documentation](grid-fee-accounting.md).
 
 In the bills.json file, the cash flow in each market is reported as follows:
 

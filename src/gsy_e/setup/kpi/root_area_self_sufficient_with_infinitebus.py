@@ -42,7 +42,7 @@ def get_setup(config):
                         [
                             Area("H1 General Load", strategy=LoadHoursStrategy(
                                 avg_power_W=100,
-                                hrs_per_day=5, hrs_of_day=[9, 10, 11, 12, 13, 14, 15, 16],
+                                hrs_of_day=[9, 10, 11, 12, 13, 14, 15, 16],
                                 initial_buying_rate=Houses_initial_buying_rate,
                                 final_buying_rate=Houses_final_buying_rate)
                                  ),
@@ -62,7 +62,7 @@ def get_setup(config):
                         [
                             Area("H2 General Load", strategy=LoadHoursStrategy(
                                 avg_power_W=100,
-                                hrs_per_day=5, hrs_of_day=[9, 10, 11, 12, 13, 14, 15, 16],
+                                hrs_of_day=[9, 10, 11, 12, 13, 14, 15, 16],
                                 initial_buying_rate=Houses_initial_buying_rate,
                                 final_buying_rate=Houses_final_buying_rate)
                                  ),

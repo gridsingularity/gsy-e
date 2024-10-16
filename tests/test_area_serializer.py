@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
 import json
 from datetime import datetime
 
@@ -26,8 +27,15 @@ from gsy_e.gsy_e_core.area_serializer import are_all_areas_unique, area_from_str
 from gsy_e.models.area import Area
 from gsy_e.models.config import SimulationConfig
 from gsy_e.models.leaves import (
-    PV, LoadHours, SmartMeter, Storage,
-    SCMLoadHours, SCMLoadProfile, SCMPVProfile, SCMStorage)
+    PV,
+    LoadHours,
+    SmartMeter,
+    Storage,
+    SCMLoadHours,
+    SCMLoadProfile,
+    SCMPVProfile,
+    SCMStorage,
+)
 from gsy_e.models.strategy.external_strategies.load import LoadHoursExternalStrategy
 from gsy_e.models.strategy.external_strategies.pv import PVExternalStrategy
 from gsy_e.models.strategy.external_strategies.storage import StorageExternalStrategy
@@ -53,28 +61,33 @@ def _create_config(settings=None):
     if not settings:
         settings = {}
     config_settings = {
-        "start_date":
+        "start_date": (
             instance(datetime.combine(settings.get("start_date"), datetime.min.time()))
-            if "start_date" in settings else GlobalConfig.start_date,
-        "sim_duration":
+            if "start_date" in settings
+            else GlobalConfig.start_date
+        ),
+        "sim_duration": (
             duration(days=settings["duration"].days)
-            if "duration" in settings else GlobalConfig.sim_duration,
-        "slot_length":
+            if "duration" in settings
+            else GlobalConfig.sim_duration
+        ),
+        "slot_length": (
             duration(seconds=settings["slot_length"].seconds)
-            if "slot_length" in settings else GlobalConfig.slot_length,
-        "tick_length":
+            if "slot_length" in settings
+            else GlobalConfig.slot_length
+        ),
+        "tick_length": (
             duration(seconds=settings["tick_length"].seconds)
-            if "tick_length" in settings else GlobalConfig.tick_length,
-        "market_maker_rate":
-            settings.get("market_maker_rate",
-                         ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE),
-        "cloud_coverage": settings.get("cloud_coverage", GlobalConfig.cloud_coverage),
-        "pv_user_profile": settings.get("pv_user_profile", None),
-        "capacity_kW": settings.get("capacity_kW",
-                                    ConstSettings.PVSettings.DEFAULT_CAPACITY_KW),
+            if "tick_length" in settings
+            else GlobalConfig.tick_length
+        ),
+        "market_maker_rate": settings.get(
+            "market_maker_rate", ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
+        ),
+        "capacity_kW": settings.get("capacity_kW", ConstSettings.PVSettings.DEFAULT_CAPACITY_KW),
         "grid_fee_type": settings.get("grid_fee_type", GlobalConfig.grid_fee_type),
         "external_connection_enabled": settings.get("external_connection_enabled", False),
-        "aggregator_device_mapping": None
+        "aggregator_device_mapping": None,
     }
     return SimulationConfig(**config_settings)
 
@@ -106,13 +119,15 @@ def test_non_attr_param():
     area1 = Area("area1", [], None, PVStrategy())
     recovered1 = area_from_string(area_to_string(area1), _create_config())
     assert recovered1.strategy._energy_params.capacity_kW is None
-    assert recovered1.strategy.offer_update.final_rate_profile_buffer[area1.config.start_date] == \
-        ConstSettings.PVSettings.SELLING_RATE_RANGE.final
+    assert (
+        recovered1.strategy.offer_update.final_rate_profile_buffer[area1.config.start_date]
+        == ConstSettings.PVSettings.SELLING_RATE_RANGE.final
+    )
 
 
 def test_leaf_deserialization():
     recovered = area_from_string(
-        '''{
+        """{
              "name": "house",
              "children":[
                  {"name": "pv1", "type": "PV", "panel_count": 4, "display_type": "PV"},
@@ -121,8 +136,8 @@ def test_leaf_deserialization():
                   "smart_meter_profile": "some_path.csv"}
              ]
            }
-        ''',
-        config=_create_config()
+        """,
+        config=_create_config(),
     )
     pv1, pv2, smart_meter = recovered.children
     assert isinstance(pv1, PV)
@@ -136,7 +151,7 @@ def test_leaf_deserialization():
 
 def test_leaf_external_connection_deserialization():
     recovered = area_from_string(
-        '''{
+        """{
              "name": "house",
              "children":[
                  {"name": "pv1", "type": "PV", "panel_count": 4, "display_type": "PV",
@@ -147,8 +162,8 @@ def test_leaf_external_connection_deserialization():
                  "allow_external_connection": true}
              ]
            }
-        ''',
-        _create_config({"external_connection_enabled": True})
+        """,
+        _create_config({"external_connection_enabled": True}),
     )
 
     pv1, load1, storage1 = recovered.children
@@ -167,7 +182,7 @@ def test_leaf_external_connection_deserialization():
 
 def test_leaf_deserialization_does_not_deserialize_invalid_args():
     recovered = area_from_string(
-        '''{
+        """{
              "name": "house",
              "children":[
                  {"name": "pv1", "type": "PV", "panel_count": 4,
@@ -178,8 +193,8 @@ def test_leaf_deserialization_does_not_deserialize_invalid_args():
                  "allow_external_connection": true}
              ]
            }
-        ''',
-        _create_config()
+        """,
+        _create_config(),
     )
 
     assert isinstance(recovered.children[0], PV)
@@ -190,11 +205,8 @@ def test_leaf_deserialization_does_not_deserialize_invalid_args():
 def test_leaf_deserialization_scm():
     ConstSettings.MASettings.MARKET_TYPE = SpotMarketTypeEnum.COEFFICIENTS.value
     recovered = area_from_string(
-        '''{
+        """{
              "name": "house",
-             "coefficient_percentage": 0.4,
-             "feed_in_tariff": 0.8,
-             "market_maker_rate": 0.9,
              "children":[
                  {"name": "pv1", "type": "PVProfile", "power_profile": "test1.csv",
                   "power_profile_uuid": "fedcba"},
@@ -204,21 +216,17 @@ def test_leaf_deserialization_scm():
                  {"name": "storage1", "type": "ScmStorage", "initial_soc": 34}
              ]
            }
-        ''',
-        _create_config()
+        """,
+        _create_config(),
     )
-
-    assert recovered.coefficient_percentage == 0.4
-    assert recovered._feed_in_tariff == 0.8
-    assert recovered.market_maker_rate == 0.9
 
     assert isinstance(recovered.children[0], SCMPVProfile)
     assert isinstance(recovered.children[0].strategy, SCMPVUserProfile)
 
-    assert recovered.children[0].strategy._energy_params.\
-        energy_profile.input_profile == "test1.csv"
-    assert recovered.children[0].strategy._energy_params.\
-        energy_profile.input_profile_uuid is None
+    assert (
+        recovered.children[0].strategy._energy_params.energy_profile.input_profile == "test1.csv"
+    )
+    assert recovered.children[0].strategy._energy_params.energy_profile.input_profile_uuid is None
 
     assert isinstance(recovered.children[1], SCMLoadHours)
     assert isinstance(recovered.children[1].strategy, SCMLoadHoursStrategy)
@@ -226,10 +234,8 @@ def test_leaf_deserialization_scm():
 
     assert isinstance(recovered.children[2], SCMLoadProfile)
     assert isinstance(recovered.children[2].strategy, SCMLoadProfileStrategy)
-    assert recovered.children[2].strategy._energy_params.\
-        energy_profile.input_profile == "test.csv"
-    assert recovered.children[2].strategy._energy_params.\
-        energy_profile.input_profile_uuid is None
+    assert recovered.children[2].strategy._energy_params.energy_profile.input_profile == "test.csv"
+    assert recovered.children[2].strategy._energy_params.energy_profile.input_profile_uuid is None
 
     assert isinstance(recovered.children[3], SCMStorage)
     assert isinstance(recovered.children[3].strategy, SCMStorageStrategy)
@@ -237,11 +243,16 @@ def test_leaf_deserialization_scm():
 
 @pytest.fixture
 def _fixture_with_leaves():
-    area = Area("house", [
-        PV("pv1", panel_count=1, config=_create_config()),
-        PV("pv2", panel_count=4, config=_create_config()),
-        SmartMeter("smart meter", smart_meter_profile="some_path.csv", config=_create_config()),
-    ])
+    area = Area(
+        "house",
+        [
+            PV("pv1", panel_count=1, config=_create_config()),
+            PV("pv2", panel_count=4, config=_create_config()),
+            SmartMeter(
+                "smart meter", smart_meter_profile="some_path.csv", config=_create_config()
+            ),
+        ],
+    )
     return area_to_string(area)
 
 
@@ -265,8 +276,10 @@ def test_roundtrip_with_leaf(_fixture_with_leaves):
 def test_area_does_not_allow_duplicate_subarea_names():
     area = Area(
         "Grid",
-        [Area("House 1", children=[Area("H1 General Load"), Area("H1 PV1")]),
-         Area("House 1", children=[Area("H2 General Load"), Area("H2 PV1")])],
+        [
+            Area("House 1", children=[Area("H1 General Load"), Area("H1 PV1")]),
+            Area("House 1", children=[Area("H2 General Load"), Area("H2 PV1")]),
+        ],
     )
 
     with pytest.raises(AssertionError):
@@ -274,8 +287,10 @@ def test_area_does_not_allow_duplicate_subarea_names():
 
     area = Area(
         "Grid",
-        [Area("House 1", children=[Area("H1 General Load"), Area("H1 PV1")]),
-         Area("House 2", children=[Area("H1 General Load"), Area("H2 PV1")])],
+        [
+            Area("House 1", children=[Area("H1 General Load"), Area("H1 PV1")]),
+            Area("House 2", children=[Area("H1 General Load"), Area("H2 PV1")]),
+        ],
     )
 
     with pytest.raises(AssertionError):
@@ -283,8 +298,10 @@ def test_area_does_not_allow_duplicate_subarea_names():
 
     area = Area(
         "Grid",
-        [Area("House 1", children=[Area("H1 General Load"), Area("H1 PV1")]),
-         Area("House 2", children=[Area("H2 General Load"), Area("H2 PV1")])],
+        [
+            Area("House 1", children=[Area("H1 General Load"), Area("H1 PV1")]),
+            Area("House 2", children=[Area("H2 General Load"), Area("H2 PV1")]),
+        ],
     )
 
     # Does not raise an assertion
@@ -300,7 +317,7 @@ def _forward_fixture():
 
 def test_leaf_deserialization_works_for_forward_strategies(_forward_fixture):
     deserialized_area = area_from_string(
-        '''
+        """
         {
              "name": "house",
              "children": [
@@ -308,8 +325,8 @@ def test_leaf_deserialization_works_for_forward_strategies(_forward_fixture):
                  {"name": "load1", "type": "LoadHours", "capacity_kW": 2000}
              ]
         }
-        ''',
-        _create_config()
+        """,
+        _create_config(),
     )
 
     assert deserialized_area.children[0].strategy is not None

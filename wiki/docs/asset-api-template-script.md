@@ -1,9 +1,9 @@
-Asset API template scripts are flexible and versatile Python scripts that can be easily modified for the implementation of custom smart trading strategies, integration of trading preferences ([Degrees of Freedom](degrees-of-freedom.md)), interaction with the [Settlement Market](settlement-market-structure.md) and other uses.
+Asset API template scripts are flexible and versatile Python scripts that can be easily modified for the implementation of custom smart trading strategies, integration of trading preferences ([Degrees of Freedom](trading-agents-and-strategies.md#bidoffer-attributes-and-requirements-for-trading-preferences-degrees-of-freedom)), interaction with the [Settlement Market](market-types.md#settlement-market-structure) and other uses.
 
 In this section, each script will be described along with its functionalities, in order of complexity.
 
 ##Post bids and offers to the Grid Singularity Exchange
-The key functionality of the Asset API is to post bids or offers to the Grid Singularity Exchange on behalf of energy asset owners based on their preferences. A template script can be found [here](https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/asset_api_scripts/rest_bid_offer_posting.py){target=_blank}.
+The key functionality of the Asset API is to post bids or offers to the Grid Singularity Exchange on behalf of energy asset owners based on their preferences. A template script can be found [here](https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/asset_api_scripts/rest_basic_strategies.py){target=_blank}.
 
 Users need to list the names of the assets to be connected with the Asset API, as shown in the following example. For simulations launched from the user-interface (UI), the CONNECT_TO_ALL_ASSETS parameter is available. If set to True, the Asset API connects automatically to all the assets the aggregator is connected to.
 
@@ -123,7 +123,7 @@ market_maker_rate = market_info["market_maker_rate"]
 med_price = (market_maker_rate - fit_rate) / 2 + fit_rate
 ```
 
-Then, the script creates the _asset_strategy_ dictionary, which contains various information for each asset, such as its name, its type (load, PV or storage) and the [grid fees](grid-fees.md) between the assets and the market maker. To calculate the grid fees between two assets or markets in the grid, the  _[calculate_grid_fee](https://github.com/gridsingularity/gsy-e-sdk/blob/3dea1f42e283736ccbaaac6e51f4127e2bbfb020/gsy_e_sdk/aggregator.py#L194)_ function is used,which takes 3 arguments:
+Then, the script creates the _asset_strategy_ dictionary, which contains various information for each asset, such as its name, its type (load, PV or storage) and the [grid fees](grid-fee-accounting.md) between the assets and the market maker. To calculate the grid fees between two assets or markets in the grid, the  _[calculate_grid_fee](https://github.com/gridsingularity/gsy-e-sdk/blob/3dea1f42e283736ccbaaac6e51f4127e2bbfb020/gsy_e_sdk/aggregator.py#L194)_ function is used,which takes 3 arguments:
 
 * _start_market_or_asset_name_: UUID of the started market/asset
 * _target_market_or_asset_name_: UUID of the targeted market/asset
@@ -147,7 +147,7 @@ for area_uuid, area_dict in self.latest_grid_tree_flat.items():
 ```
 Lastly, in the _asset_strategy_ dictionary, the pricing strategy is defined for each asset individually. This allows assets to have independent strategies depending on the available market information and their location in the grid.
 
-The current pricing strategies are deterministic, representing a linear function bounded between the Feed-in Tariff-grid fee (lower boundary) and the Market Maker price + grid fee (upper boundary). Since the Asset API can post up to 10 bids/offers per market slot, the strategies incrementally ramp up (bids) or down (offers) for a total of 10 prices per energy asset. The final bid/offer price is set at least 2 ticks before the end of the market slot (9th and 10th tick in the example). The load strategy, the PV strategy and the storage strategy, as assets that can charge and discharge and therefore place bids and offers at the same time, are designed as follows.
+The current pricing strategies are deterministic, representing a linear function bounded between the Feed-in Tariff - grid fee (lower boundary) and the Market Maker price + grid fee (upper boundary). Since the Asset API can post bids/offers at every tick, the number of posts is limited to the number of ticks in the market slot. In the template strategy, bids are ramped up and offers are ramped down for a total of 10 prices per energy asset. This can be configured by setting the `TICK_DISPATCH_FREQUENCY_PERCENT` parameter (at the top of the script). The final bid/offer price is set at 80% market slot completion in order for the update to be visible by all other market participants. The load strategy, the PV strategy and the storage strategy, representing assets that can charge and discharge and therefore place bids and offers at the same time, are designed as follows.
 
 ```python
 # Consumption strategy
@@ -259,7 +259,7 @@ The rest of the script functionality has been covered in the [previous section](
 
 ##Introduce trading preferences with the Degrees of Freedom
 
-With the Asset API, users also have the option to specify trading preferences for each asset, such as preferred trading partners, energy type, energy amount and rate. An example of such a script can be found [here](https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/asset_api_scripts/degrees_of_freedom.py){target=_blank}. These preferences are also known as requirements and attributes or “degrees of freedom”, as explained [here](degrees-of-freedom.md).
+With the Asset API, users also have the option to specify trading preferences for each asset, such as preferred trading partners, energy type, energy amount and rate. An example of such a script can be found [here](https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/asset_api_scripts/degrees_of_freedom.py){target=_blank}. These preferences are also known as requirements and attributes or “degrees of freedom”, as explained [here](trading-agents-and-strategies.md#bidoffer-attributes-and-requirements-for-trading-preferences-degrees-of-freedom).
 
 Requirements are uploaded to the template script via a JSON file (an example can be found [here](https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/asset_api_scripts/resources/requirements.json){target=_blank}), which has the following structure:
 
@@ -376,7 +376,7 @@ The rest of the script functionality has been covered in the [previous section](
 
 ##Post energy deviations in the Settlement Market
 
-Finally, the Asset API can also be used to post energy deviations between forecasts (namely the values of consumption or generation that an asset was expected to consume or produce) and measurements (namely the actual consumption or generation values) in the [Settlement Market](markets-rotation.md). A template script can be found [here](https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/asset_api_scripts/redis_settle_energy_deviations.py).
+Finally, the Asset API can also be used to post energy deviations between forecasts (namely the values of consumption or generation that an asset was expected to consume or produce) and measurements (namely the actual consumption or generation values) in the [Settlement Market](market-types.md#settlement-market-structure). A template script can be found [here](https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/asset_api_scripts/redis_settle_energy_deviations.py).
 
 As noted in the previous section, users can send forecasts (generated by assets or other data source) to the Grid Singularity Exchange by  using the Asset API. To settle energy deviations in the Settlement Market, further action is needed, which is to send measurements to the Exchange at each market slot by using the following function:
 
@@ -433,4 +433,4 @@ def settle_energy_deviations(self):
 ```
 The rest of the script functionality has been covered in the [previous section](setup-configuration.md). It is important to note that currently there is no available template script for interacting with the Settlement Market from the UI, but solely from the [backend](setup-configuration.md).
 
-The next step is to adapt the Asset API template scripts developed by Grid Singularity to customize your trading strategies, whether to send live data to the Grid Singularity [Canary Test Network](connect-ctn.md) or to interact with the [Settlement Market](settlement-market-structure.md).
+The next step is to adapt the Asset API template scripts developed by Grid Singularity to customize your trading strategies, whether to send live data to the Grid Singularity [Canary Test Network](connect-ctn.md) or to interact with the [Settlement Market](market-types.md#settlement-market-structure).
