@@ -94,10 +94,11 @@ class HomeAfterMeterData:
             self.self_consumed_energy_kWh = min(self.consumption_kWh, self.production_kWh)
         self.energy_surplus_kWh = self.production_kWh - self.self_consumed_energy_kWh
         self.energy_need_kWh = self.consumption_kWh - self.self_consumed_energy_kWh
-        assert not (
-            self.energy_surplus_kWh > FLOATING_POINT_TOLERANCE
-            and self.energy_need_kWh > FLOATING_POINT_TOLERANCE
-        )
+        if not gsy_e.constants.SCM_DISABLE_HOME_SELF_CONSUMPTION:
+            assert not (
+                self.energy_surplus_kWh > FLOATING_POINT_TOLERANCE
+                and self.energy_need_kWh > FLOATING_POINT_TOLERANCE
+            )
         if self.trades is None:
             self.trades = []
 
@@ -328,9 +329,7 @@ class AreaEnergyRates:
     @property
     def intracommunity_rate(self):
         """Return the rate that is used for trades inside of the community."""
-        return self.area_fees.add_fees_to_energy_rate(
-            self.intracommunity_base_rate + self.area_fees.decreased_grid_fee
-        )
+        return self.intracommunity_base_rate + self.area_fees.decreased_grid_fee
 
     @property
     def utility_rate_incl_fees(self):
