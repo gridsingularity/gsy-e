@@ -88,7 +88,10 @@ class HomeAfterMeterData:
         # self consumed energy will be equal to the production. Hence, the upper limit of the
         # self consumed energy is the minimum of the production and consumption energy values
         # of the home.
-        self.self_consumed_energy_kWh = min(self.consumption_kWh, self.production_kWh)
+        if gsy_e.constants.SCM_DISABLE_HOME_SELF_CONSUMPTION:
+            self.self_consumed_energy_kWh = 0.0
+        else:
+            self.self_consumed_energy_kWh = min(self.consumption_kWh, self.production_kWh)
         self.energy_surplus_kWh = self.production_kWh - self.self_consumed_energy_kWh
         self.energy_need_kWh = self.consumption_kWh - self.self_consumed_energy_kWh
         assert not (
@@ -254,6 +257,17 @@ class FeeContainer:
 
 
 @dataclass
+class ContractedPowerFeeContainer:
+    """
+    Dataclass that holds the value of the fee and the accumulated value over time and
+    over areas (price).
+    """
+
+    value: float = 0.0
+    price: float = 0.0
+
+
+@dataclass
 class AreaFees:
     """Dataclass that contains all fees and their accumulated values"""
 
@@ -261,6 +275,7 @@ class AreaFees:
     grid_export_fee_const: float = 0.0
     grid_fees_reduction: float = 0.0
     per_kWh_fees: Dict[str, FeeContainer] = field(default_factory=dict)
+    per_kW_fees: Dict[str, ContractedPowerFeeContainer] = field(default_factory=dict)
     monthly_fees: Dict[str, FeeContainer] = field(default_factory=dict)
 
     def prices_as_dict(self) -> Dict:

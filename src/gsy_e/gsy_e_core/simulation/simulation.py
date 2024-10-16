@@ -252,8 +252,8 @@ class Simulation:
                     slot_completion=f"{int((tick_no / self.config.ticks_per_slot) * 100)}%",
                     market_slot=self.progress_info.next_slot_str,
                 )
-                (self.config.external_redis_communicator.
-                 publish_aggregator_commands_responses_events())
+                redis_comm = self.config.external_redis_communicator
+                redis_comm.publish_aggregator_commands_responses_events()
 
                 self._time.handle_slowdown_and_realtime(tick_no, self.config, self.status)
 
@@ -395,8 +395,7 @@ class Simulation:
     def _restore_area_state(self, area: "Area", saved_area_state: dict) -> None:
         if area.uuid not in saved_area_state:
             log.warning(
-                "Area %s is not part of the saved state. "
-                "State not restored. Simulation id: %s",
+                "Area %s is not part of the saved state. State not restored. Simulation id: %s",
                 area.uuid,
                 self.simulation_id,
             )
@@ -542,7 +541,10 @@ class CoefficientSimulation(Simulation):
             self._get_current_market_time_slot(slot_no), area=self.area
         )
 
-        self.area.cycle_coefficients_trading(self.progress_info.current_slot_time)
+        self.area.cycle_coefficients_trading(
+            self.progress_info.current_slot_time,
+            global_objects.profiles_handler.current_scm_profiles,
+        )
 
     def _execute_simulation(
         self, slot_resume: int, _tick_resume: int, console: NonBlockingConsole = None
