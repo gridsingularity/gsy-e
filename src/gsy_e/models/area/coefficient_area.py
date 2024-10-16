@@ -80,16 +80,38 @@ class CoefficientArea(AreaBase):
         for child in self.children:
             child.activate_energy_parameters(current_time_slot)
 
-    def cycle_coefficients_trading(self, current_time_slot: DateTime) -> None:
+    def _handle_area_parameters_from_profiles(self, area_profiles: dict) -> None:
+        if self.uuid not in area_profiles:
+            return
+        area_profile = area_profiles[self.uuid]
+        if area_profile.feed_in_tariff:
+            self.area_properties.AREA_PROPERTIES["feed_in_tariff"] = area_profile.feed_in_tariff
+        if area_profile.utility_rate:
+            self.area_properties.AREA_PROPERTIES["market_maker_rate"] = area_profile.utility_rate
+        if area_profile.energy_fee:
+            self.area_properties.GRID_FEES["grid_import_fee_const"] = area_profile.energy_fee
+        if area_profile.energy_cargo_fee:
+            self.area_properties.PER_KWH_FEES["energy_cargo_fee"] = area_profile.energy_cargo_fee
+        if area_profile.power_fee:
+            self.area_properties.MONTHLY_FEES["power_fee"] = (
+                area_profile.power_fee * area_profile.contracted_power_kw
+            )
+        if area_profile.power_cargo_fee:
+            self.area_properties.MONTHLY_FEES["power_cargo_fee"] = (
+                area_profile.power_cargo_fee * area_profile.contracted_power_kw
+            )
+
+    def cycle_coefficients_trading(self, current_time_slot: DateTime, area_profiles: dict) -> None:
         """Perform operations that should be executed on coefficients trading cycle."""
         self.past_market_time_slot = self.current_market_time_slot
         self.current_market_time_slot = current_time_slot
 
+        self._handle_area_parameters_from_profiles(area_profiles)
         if self.strategy:
             self.strategy.market_cycle(self)
 
         for child in self.children:
-            child.cycle_coefficients_trading(current_time_slot)
+            child.cycle_coefficients_trading(current_time_slot, area_profiles)
 
     def area_reconfigure_event(self, **kwargs):
         """Reconfigure the device properties at runtime using the provided arguments."""

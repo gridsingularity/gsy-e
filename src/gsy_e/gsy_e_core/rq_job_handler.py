@@ -38,6 +38,7 @@ def launch_simulation_from_rq_job(
     gsy_e.constants.CONFIGURATION_ID = scenario.pop("configuration_uuid", None)
     try:
         if not gsy_e.constants.CONFIGURATION_ID:
+            # pylint: disable=broad-exception-raised
             raise Exception(
                 "configuration_uuid was not provided"
             )  # pylint disable=broad-exception-raised
@@ -205,6 +206,9 @@ def _configure_constants_constsettings(
         ConstSettings.SCMSettings.GRID_FEES_REDUCTION = settings["scm"]["grid_fees_reduction"]
         ConstSettings.SCMSettings.INTRACOMMUNITY_BASE_RATE_EUR = settings["scm"][
             "intracommunity_rate_base_eur"
+        ]
+        gsy_e.constants.SCM_DISABLE_HOME_SELF_CONSUMPTION = settings["scm"][
+            "disable_home_self_consumption"
         ]
     else:
         assert spot_market_type is not SpotMarketTypeEnum.COEFFICIENTS.value
