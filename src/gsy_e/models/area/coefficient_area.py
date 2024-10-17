@@ -28,6 +28,7 @@ from gsy_e.models.config import SimulationConfig
 from gsy_e.models.strategy.external_strategies import ExternalMixin
 from gsy_e.models.strategy.scm import SCMStrategy
 from gsy_e.models.area.scm_dataclasses import SCMAreaProperties
+from gsy_e.gsy_e_core.util import get_slots_per_month
 
 log = getLogger(__name__)
 
@@ -80,7 +81,9 @@ class CoefficientArea(AreaBase):
         for child in self.children:
             child.activate_energy_parameters(current_time_slot)
 
-    def _handle_area_parameters_from_profiles(self, area_profiles: dict) -> None:
+    def _handle_area_parameters_from_profiles(
+        self, current_time_slot: DateTime, area_profiles: dict
+    ) -> None:
         if self.uuid not in area_profiles:
             return
         area_profile = area_profiles[self.uuid]
@@ -94,11 +97,15 @@ class CoefficientArea(AreaBase):
             self.area_properties.PER_KWH_FEES["energy_cargo_fee"] = area_profile.energy_cargo_fee
         if area_profile.power_fee:
             self.area_properties.MONTHLY_FEES["power_fee"] = (
-                area_profile.power_fee * area_profile.contracted_power_kw
+                area_profile.power_fee
+                * area_profile.contracted_power_kw
+                / get_slots_per_month(current_time_slot)
             )
         if area_profile.power_cargo_fee:
             self.area_properties.MONTHLY_FEES["power_cargo_fee"] = (
-                area_profile.power_cargo_fee * area_profile.contracted_power_kw
+                area_profile.power_cargo_fee
+                * area_profile.contracted_power_kw
+                / get_slots_per_month(current_time_slot)
             )
 
     def cycle_coefficients_trading(self, current_time_slot: DateTime, area_profiles: dict) -> None:
@@ -106,7 +113,7 @@ class CoefficientArea(AreaBase):
         self.past_market_time_slot = self.current_market_time_slot
         self.current_market_time_slot = current_time_slot
 
-        self._handle_area_parameters_from_profiles(area_profiles)
+        self._handle_area_parameters_from_profiles(current_time_slot, area_profiles)
         if self.strategy:
             self.strategy.market_cycle(self)
 

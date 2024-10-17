@@ -276,7 +276,6 @@ class AreaFees:
     grid_export_fee_const: float = 0.0
     grid_fees_reduction: float = 0.0
     per_kWh_fees: Dict[str, FeeContainer] = field(default_factory=dict)
-    per_kW_fees: Dict[str, ContractedPowerFeeContainer] = field(default_factory=dict)
     monthly_fees: Dict[str, FeeContainer] = field(default_factory=dict)
 
     def prices_as_dict(self) -> Dict:

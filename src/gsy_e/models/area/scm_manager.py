@@ -1,9 +1,8 @@
-from calendar import monthrange
 from math import isclose
 from typing import TYPE_CHECKING, Dict, Optional
 
-from gsy_framework.constants_limits import ConstSettings, GlobalConfig
-from pendulum import DateTime, duration
+from gsy_framework.constants_limits import ConstSettings
+from pendulum import DateTime
 
 import gsy_e.constants
 from gsy_e.constants import (
@@ -11,6 +10,7 @@ from gsy_e.constants import (
     DEFAULT_SCM_GRID_NAME,
     FLOATING_POINT_TOLERANCE,
 )
+from gsy_e.gsy_e_core.util import get_slots_per_month
 from gsy_e.models.area.scm_dataclasses import (
     HomeAfterMeterData,
     CommunityData,
@@ -111,9 +111,7 @@ class SCMManager:
             )
 
     def _init_area_energy_rates(self, home_data: HomeAfterMeterData) -> AreaEnergyRates:
-        slots_per_month = (duration(days=1) / GlobalConfig.slot_length) * monthrange(
-            self._time_slot.year, self._time_slot.month
-        )[1]
+        slots_per_month = get_slots_per_month(self._time_slot)
         market_maker_rate = home_data.area_properties.AREA_PROPERTIES["market_maker_rate"]
         intracommunity_base_rate = (
             market_maker_rate
