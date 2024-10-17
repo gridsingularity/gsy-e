@@ -23,6 +23,7 @@ import select
 import sys
 import termios
 import tty
+from calendar import monthrange
 from functools import wraps
 from logging import LoggerAdapter, getLogger, getLoggerClass, addLevelName, setLoggerClass, NOTSET
 from typing import TYPE_CHECKING, Optional
@@ -529,3 +530,10 @@ def memory_usage_percent():
         return 0
 
     return round(int(mem_usage) / int(mem_limit) * 100)
+
+
+def get_slots_per_month(time_slot: DateTime) -> int:
+    """Get number of slots for the month defined by the time_slot."""
+    return (duration(days=1) / GlobalConfig.slot_length) * monthrange(
+        time_slot.year, time_slot.month
+    )[1]
