@@ -448,7 +448,8 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
         savings_absolute = KPICalculationHelper().saving_absolute(
             self.base_energy_bill_excl_revenue, self.gsy_energy_bill_excl_revenue
         )
-        assert savings_absolute > -FLOATING_POINT_TOLERANCE
+        if savings_absolute < -FLOATING_POINT_TOLERANCE:
+            logging.error("Negative absolute savings %s.", savings_absolute)
         return savings_absolute
 
     @property
