@@ -83,6 +83,7 @@ class TestRqJobHandler:
                 "intracommunity_rate_base_eur": 12,
                 "scm_cn_hours_of_delay": 4,
                 "disable_home_self_consumption": True,
+                "self_consumption_type": 1,
             },
         }
         scenario = {"configuration_uuid": "config_uuid"}
@@ -95,7 +96,7 @@ class TestRqJobHandler:
         assert ConstSettings.SCMSettings.GRID_FEES_REDUCTION == 0.45
         assert ConstSettings.MASettings.MARKET_TYPE == 3
         assert ConstSettings.MASettings.BID_OFFER_MATCH_TYPE == 2
-        assert gsy_e.constants.SCM_DISABLE_HOME_SELF_CONSUMPTION is True
+        assert ConstSettings.SCMSettings.SELF_CONSUMPTION_TYPE == 1
 
     @staticmethod
     @patch("gsy_e.gsy_e_core.rq_job_handler.run_simulation")

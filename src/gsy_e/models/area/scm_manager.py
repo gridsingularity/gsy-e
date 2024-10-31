@@ -2,6 +2,7 @@ from math import isclose
 from typing import TYPE_CHECKING, Dict, Optional
 
 from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.enums import SCMSelfConsumptionType
 from pendulum import DateTime
 
 import gsy_e.constants
@@ -19,6 +20,8 @@ from gsy_e.models.area.scm_dataclasses import (
     FeeContainer,
     SCMAreaProperties,
     AreaEnergyBills,
+    AreaEnergyBillsWithoutSurplusTrade,
+    HomeAfterMeterDataWithoutSurplusTrade,
 )
 from gsy_e.models.strategy.scm import SCMStrategy
 
@@ -40,6 +43,15 @@ class SCMManager:
         self._bills: Dict[str, AreaEnergyBills] = {}
         self._grid_fees_reduction = ConstSettings.SCMSettings.GRID_FEES_REDUCTION
         self._intracommunity_base_rate_eur = ConstSettings.SCMSettings.INTRACOMMUNITY_BASE_RATE_EUR
+
+    @property
+    def _home_after_meter_data_class(self) -> type[HomeAfterMeterData]:
+        if (
+            ConstSettings.SCMSettings.SELF_CONSUMPTION_TYPE
+            == SCMSelfConsumptionType.SIMPLIFIED_COLLECTIVE_SELF_CONSUMPTION_41.value
+        ):
+            return HomeAfterMeterDataWithoutSurplusTrade
+        return HomeAfterMeterData
 
     @staticmethod
     def _get_community_uuid_from_area(area):
@@ -65,7 +77,6 @@ class SCMManager:
         area_properties: SCMAreaProperties,
         production_kWh: float,
         consumption_kWh: float,
-        asset_energy_requirements_kWh: Dict[str, float],
     ):
         # pylint: disable=too-many-arguments
         """Import data for one individual home."""
@@ -76,7 +87,6 @@ class SCMManager:
             area_properties=area_properties,
             production_kWh=production_kWh,
             consumption_kWh=consumption_kWh,
-            asset_energy_requirements_kWh=asset_energy_requirements_kWh,
         )
 
     def calculate_community_after_meter_data(self):
@@ -291,6 +301,71 @@ class SCMManager:
             community_bills.export_grid_fees += data.export_grid_fees
 
         return community_bills.to_dict()
+
+
+class SCMManagerWithoutSurplusTrade(SCMManager):
+    """Dedicated SCMManager class, specific for the non-suplus trade SCM."""
+
+    def add_home_data(
+        self,
+        home_uuid: str,
+        home_name: str,
+        area_properties: SCMAreaProperties,
+        production_kWh: float,
+        consumption_kWh: float,
+    ):
+        # pylint: disable=too-many-arguments
+        """Import data for one individual home."""
+        self._home_data[home_uuid] = HomeAfterMeterDataWithoutSurplusTrade(
+            home_uuid,
+            home_name,
+            area_properties=area_properties,
+            production_kWh=production_kWh,
+            consumption_kWh=consumption_kWh,
+        )
+
+    def calculate_home_energy_bills(self, home_uuid: str) -> None:
+        """Calculate energy bills for one home."""
+        assert home_uuid in self._home_data
+        home_data = self._home_data[home_uuid]
+
+        area_rates = self._init_area_energy_rates(home_data)
+        home_bill = AreaEnergyBillsWithoutSurplusTrade(
+            energy_rates=area_rates,
+            gsy_energy_bill=area_rates.area_fees.total_monthly_fees,
+            self_consumed_savings=home_data.self_consumed_energy_kWh
+            * home_data.area_properties.AREA_PROPERTIES["market_maker_rate"],
+        )
+        home_bill.calculate_base_energy_bill(home_data, area_rates)
+
+        # First handle the sold energy case. This case occurs in case of energy surplus of a home.
+        if home_data.energy_surplus_kWh > 0.0:
+            home_bill.set_sold_to_grid(
+                home_data.energy_surplus_kWh,
+                home_data.area_properties.AREA_PROPERTIES["feed_in_tariff"],
+            )
+            home_bill.set_export_grid_fees(home_data.energy_surplus_kWh)
+            if home_data.energy_surplus_kWh > FLOATING_POINT_TOLERANCE:
+                home_data.create_sell_trade(
+                    self._time_slot,
+                    DEFAULT_SCM_GRID_NAME,
+                    home_data.energy_surplus_kWh,
+                    home_data.energy_surplus_kWh
+                    * home_data.area_properties.AREA_PROPERTIES["feed_in_tariff"],
+                )
+
+        if home_data.energy_need_kWh > 0.0:
+            home_bill.set_bought_from_grid(home_data.energy_need_kWh)
+
+            if home_data.energy_need_kWh > FLOATING_POINT_TOLERANCE:
+                home_data.create_buy_trade(
+                    self._time_slot,
+                    DEFAULT_SCM_GRID_NAME,
+                    home_data.energy_need_kWh,
+                    home_data.energy_need_kWh * area_rates.utility_rate_incl_fees,
+                )
+
+        self._bills[home_uuid] = home_bill
 
 
 class SCMCommunityValidator:
