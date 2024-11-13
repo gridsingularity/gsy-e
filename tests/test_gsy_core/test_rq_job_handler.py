@@ -82,7 +82,6 @@ class TestRqJobHandler:
                 "grid_fees_reduction": 0.45,
                 "intracommunity_rate_base_eur": 12,
                 "scm_cn_hours_of_delay": 4,
-                "disable_home_self_consumption": True,
                 "self_consumption_type": 1,
             },
         }
