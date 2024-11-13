@@ -207,9 +207,6 @@ def _configure_constants_constsettings(
         ConstSettings.SCMSettings.INTRACOMMUNITY_BASE_RATE_EUR = settings["scm"][
             "intracommunity_rate_base_eur"
         ]
-        gsy_e.constants.SCM_DISABLE_HOME_SELF_CONSUMPTION = settings["scm"][
-            "disable_home_self_consumption"
-        ]
         ConstSettings.SCMSettings.SELF_CONSUMPTION_TYPE = settings["scm"]["self_consumption_type"]
     else:
         assert spot_market_type is not SpotMarketTypeEnum.COEFFICIENTS.value
