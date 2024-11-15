@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Optional, Dict, Union, List
 
+
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
-from gsy_framework.enums import HeatPumpSourceType
 from gsy_framework.read_user_profile import InputProfileTypes
 from pendulum import DateTime
 
@@ -13,6 +13,7 @@ from gsy_e.models.strategy.energy_parameters.heatpump.tank import (
 )
 from gsy_e.models.strategy.state import HeatPumpState
 from gsy_e.models.strategy.strategy_profile import profile_factory
+from gsy_e.models.strategy.energy_parameters.heatpump.cop_models import COPModelType, COPModels
 
 # pylint: disable=pointless-string-statement
 """
@@ -176,6 +177,7 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
         consumption_kWh_profile_uuid: Optional[str] = None,
         consumption_kWh_measurement_uuid: Optional[str] = None,
         source_type: int = ConstSettings.HeatPumpSettings.SOURCE_TYPE,
+        cop_model_type: COPModelType = COPModelType.UNIVERSAL,
     ):
 
         super().__init__(maximum_power_rating_kW, tank_parameters)
@@ -202,7 +204,7 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
             None, source_temp_C_measurement_uuid, profile_type=InputProfileTypes.IDENTITY
         )
 
-        # self.min_temp_C = min_temp_C  # for usage in the strategy
+        self._cop_model = COPModels(cop_model_type, source_type)
 
     def serialize(self):
         """Return dict with the current energy parameter values."""
@@ -273,20 +275,11 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
         Generally, the higher the temperature difference between the source and the sink,
         the lower the efficiency of the heat pump (the lower COP).
         """
-        return self._cop_model(
-            self._state.tanks.get_average_tank_temperature(time_slot),
-            self._source_temp_C.get_value(time_slot),
+        return self._cop_model.get_cop(
+            source_temp=self._source_temp_C.get_value(time_slot),
+            tank_temp=self._state.tanks.get_average_tank_temperature(time_slot),
+            energy_consumption=self._consumption_kWh.get_value(time_slot),
         )
-
-    def _cop_model(self, temp_current: float, temp_ambient: float) -> float:
-        """COP model following https://www.nature.com/articles/s41597-019-0199-y"""
-        delta_temp = temp_current - temp_ambient
-        if self._source_type == HeatPumpSourceType.AIR.value:
-            return 6.08 - 0.09 * delta_temp + 0.0005 * delta_temp**2
-        if self._source_type == HeatPumpSourceType.GROUND.value:
-            return 10.29 - 0.21 * delta_temp + 0.0012 * delta_temp**2
-
-        raise HeatPumpEnergyParametersException("HeatPumpSourceType not supported")
 
     def _calculate_and_set_unmatched_demand(self, time_slot: DateTime) -> None:
         unmatched_energy_demand = self._state.tanks.get_unmatched_demand_kWh(time_slot)
