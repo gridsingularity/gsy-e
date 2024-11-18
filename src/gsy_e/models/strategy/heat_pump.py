@@ -91,6 +91,7 @@ class MultipleTankHeatPumpStrategy(TradingStrategyBase):
             AvailableMarketTypes, HeatPumpOrderUpdaterParameters
         ] = None,
         preferred_buying_rate: float = ConstSettings.HeatPumpSettings.PREFERRED_BUYING_RATE,
+        heat_demand_Q_profile: Optional[Union[str, float, Dict]] = None,
     ):
 
         assert (
@@ -107,6 +108,7 @@ class MultipleTankHeatPumpStrategy(TradingStrategyBase):
             consumption_kWh_profile=consumption_kWh_profile,
             consumption_kWh_profile_uuid=consumption_kWh_profile_uuid,
             source_type=source_type,
+            heat_demand_Q_profile=heat_demand_Q_profile,
         )
 
         for tank in tank_parameters:
