@@ -48,7 +48,7 @@ class CombinedHeatpumpTanksState:
         """Return the current state of the device."""
         return {
             **self._hp_state.get_state(),
-            **self._tanks_state.get_state(),
+            "tanks": self._tanks_state.get_state(),
         }
 
     def restore_state(self, state_dict: Dict):
@@ -176,6 +176,7 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
         consumption_kWh_profile_uuid: Optional[str] = None,
         consumption_kWh_measurement_uuid: Optional[str] = None,
         source_type: int = ConstSettings.HeatPumpSettings.SOURCE_TYPE,
+        heat_demand_Q_profile: Optional[Union[str, float, Dict]] = None,
     ):
 
         super().__init__(maximum_power_rating_kW, tank_parameters)
@@ -187,6 +188,13 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
             consumption_kWh_profile_uuid,
             profile_type=InputProfileTypes.ENERGY_KWH,
         )
+
+        if heat_demand_Q_profile:
+            self._heat_demand_Q_J: [DateTime, float] = profile_factory(
+                heat_demand_Q_profile, None, profile_type=InputProfileTypes.IDENTITY
+            )
+        else:
+            self._heat_demand_Q_J = None
 
         self._source_temp_C: [DateTime, float] = profile_factory(
             source_temp_C_profile,
@@ -207,7 +215,7 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
     def serialize(self):
         """Return dict with the current energy parameter values."""
         return {
-            **self._state.tanks.serialize(),
+            "tanks": self._state.tanks.serialize(),
             "max_energy_consumption_kWh": self._max_energy_consumption_kWh,
             "maximum_power_rating_kW": self._maximum_power_rating_kW,
             "consumption_kWh": self._consumption_kWh.input_profile,
@@ -234,6 +242,8 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
         super()._rotate_profiles(current_time_slot)
         self._consumption_kWh.read_or_rotate_profiles()
         self._source_temp_C.read_or_rotate_profiles()
+        if self._heat_demand_Q_J:
+            self._heat_demand_Q_J.read_or_rotate_profiles()
 
     def _calc_energy_to_buy_maximum(self, time_slot: DateTime) -> float:
         cop = self._state.heatpump.get_cop(time_slot)
@@ -253,10 +263,18 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
     def _populate_state(self, time_slot: DateTime):
         self._state.tanks.update_tanks_temperature(time_slot)
         self._state.heatpump.set_cop(time_slot, self._calc_cop(time_slot))
-        produced_heat_energy = self._calc_Q_from_energy_kWh(
-            time_slot, self._consumption_kWh.profile[time_slot]
-        )
-        self._state.tanks.decrease_tanks_temp_from_heat_energy(produced_heat_energy, time_slot)
+
+        if not self._heat_demand_Q_J:
+            produced_heat_energy_KJ = self._calc_Q_from_energy_kWh(
+                time_slot, self._consumption_kWh.profile[time_slot]
+            )
+        else:
+            produced_heat_energy_KJ = self._heat_demand_Q_J.get_value(time_slot) / 1000.0
+            energy_demand_kWh = self._calc_energy_kWh_from_Q(time_slot, produced_heat_energy_KJ)
+            self._consumption_kWh.profile[time_slot] = energy_demand_kWh
+
+        self._state.heatpump.set_heat_demand(time_slot, produced_heat_energy_KJ * 1000)
+        self._state.tanks.decrease_tanks_temp_from_heat_energy(produced_heat_energy_KJ, time_slot)
         super()._populate_state(time_slot)
         self._state.heatpump.set_energy_consumption_kWh(
             time_slot, self._consumption_kWh.get_value(time_slot)
@@ -264,6 +282,9 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
 
     def _calc_Q_from_energy_kWh(self, time_slot: DateTime, energy_kWh: float) -> float:
         return self._state.heatpump.get_cop(time_slot) * energy_kWh
+
+    def _calc_energy_kWh_from_Q(self, time_slot: DateTime, Q_energy_KJ: float) -> float:
+        return Q_energy_KJ / self._state.heatpump.get_cop(time_slot)
 
     def _calc_cop(self, time_slot: DateTime) -> float:
         """
