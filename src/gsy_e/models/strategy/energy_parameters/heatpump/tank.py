@@ -164,12 +164,11 @@ class AllTanksEnergyParameters:
     def serialize(self) -> Union[Dict, List]:
         """Serializable dict with the parameters of all water tanks."""
         # TODO: Convert the AVRO schemas to be able to serialize multiple tanks
-        return self._tanks_energy_parameters[0].serialize()
-        # if len(self._tanks_energy_parameters) == 1:
-        #     # Return a dict for the case of one tank, in order to not break other services that
-        #     # support one single tank.
-        #     return self._tanks_energy_parameters[0].serialize()
-        # return [tank.serialize() for tank in self._tanks_energy_parameters]
+        if len(self._tanks_energy_parameters) == 1:
+            # Return a dict for the case of one tank, in order to not break other services that
+            # support one single tank.
+            return self._tanks_energy_parameters[0].serialize()
+        return [tank.serialize() for tank in self._tanks_energy_parameters]
 
     def get_results_dict(self, current_time_slot: DateTime):
         """Results dict with the results from all water tanks."""
