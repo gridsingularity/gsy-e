@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
 # Need to import required settings from gsy-framework in order to be available in d3a,
 # thus avoiding accessing the gsy-framework constants.
 # pylint: disable=unused-import
@@ -66,14 +67,21 @@ RUN_IN_REALTIME = False
 CONNECT_TO_PROFILES_DB = False
 SEND_EVENTS_RESPONSES_TO_SDK_VIA_RQ = False
 
+RUN_IN_NON_P2P_MODE = False
+
 DEFAULT_SCM_COMMUNITY_NAME = "Community"
 DEFAULT_SCM_GRID_NAME = "Grid"
+SCM_DISABLE_HOME_SELF_CONSUMPTION = False
+
 
 FORWARD_MARKET_MAX_DURATION_YEARS = 6
+
+MIN_OFFER_BID_AGE_P2P_DISABLED = 360
 
 
 class SettlementTemplateStrategiesConstants:
     """Constants related to the configuration of settlement template strategies"""
+
     INITIAL_BUYING_RATE = 0
     FINAL_BUYING_RATE = 50
     INITIAL_SELLING_RATE = 50

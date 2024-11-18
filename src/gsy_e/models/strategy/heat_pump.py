@@ -1,16 +1,18 @@
 from dataclasses import dataclass
 from typing import Dict, TYPE_CHECKING, Optional, Union, List
 
+from pendulum import DateTime, duration
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Trade, TraderDetails
 from gsy_framework.enums import AvailableMarketTypes
+from gsy_framework.exceptions import GSyException
+from gsy_framework.utils import convert_pendulum_to_str_in_dict
 from gsy_framework.validators.heat_pump_validator import HeatPumpValidator
-from pendulum import DateTime, duration
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.util import (
-    get_market_maker_rate_from_config,
-    get_feed_in_tariff_rate_from_config,
+    get_market_maker_rate_from_time_slot,
+    get_feed_in_tariff_rate_from_time_slot,
 )
 from gsy_e.models.strategy.energy_parameters.heatpump.heat_pump import (
     HeatPumpEnergyParameters,
@@ -29,26 +31,43 @@ class HeatPumpOrderUpdaterParameters(OrderUpdaterParameters):
     """Order updater parameters for the HeatPump"""
 
     update_interval: Optional[duration] = None
-    initial_rate: Optional[float] = None
-    final_rate: Optional[float] = None
+    initial_rate: Optional[Union[dict[DateTime, float], float, int]] = None
+    final_rate: Optional[Union[dict[DateTime, float], float, int]] = None
     use_market_maker_rate: bool = False
 
-    def update(self, market: "MarketBase", use_default: bool = False):
-        """Update class members if set to None or if global default values should be used."""
-        if use_default or self.update_interval is None:
-            self.update_interval = duration(
-                minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL
-            )
-        if use_default or self.final_rate is None or self.use_market_maker_rate:
-            self.final_rate = get_market_maker_rate_from_config(market)
-        if use_default or self.initial_rate is None:
-            self.initial_rate = get_feed_in_tariff_rate_from_config(market)
+    @staticmethod
+    def _get_default_value_initial_rate(time_slot: DateTime):
+        return get_feed_in_tariff_rate_from_time_slot(time_slot)
+
+    @staticmethod
+    def _get_default_value_final_rate(time_slot: DateTime):
+        return get_market_maker_rate_from_time_slot(time_slot)
+
+    def get_final_rate(self, time_slot: DateTime):
+        if self.final_rate is None or self.use_market_maker_rate:
+            return self._get_default_value_final_rate(time_slot)
+        if isinstance(self.final_rate, (float, int)):
+            return self.final_rate
+        try:
+            return self.final_rate[time_slot]
+        except KeyError as exc:
+            raise GSyException(
+                f"Final rate profile does not contain timestamp {time_slot}"
+            ) from exc
 
     def serialize(self):
         return {
             "update_interval": self.update_interval,
-            "initial_buying_rate": self.initial_rate,
-            "final_buying_rate": self.final_rate,
+            "initial_buying_rate": (
+                self.initial_rate
+                if isinstance(self.initial_rate, (type(None), float))
+                else convert_pendulum_to_str_in_dict(self.initial_rate)
+            ),
+            "final_buying_rate": (
+                self.final_rate
+                if isinstance(self.final_rate, (type(None), float))
+                else convert_pendulum_to_str_in_dict(self.final_rate)
+            ),
             "use_market_maker_rate": self.use_market_maker_rate,
         }
 
@@ -247,7 +266,6 @@ class MultipleTankHeatPumpStrategy(TradingStrategyBase):
         if not self._order_updater_for_market_slot_exists(market, market_slot):
             if market not in self._order_updaters:
                 self._order_updaters[market] = {}
-            self._order_updater_params[market_type].update(market, self.use_default_updater_params)
             self._order_updaters[market][market_slot] = OrderUpdater(
                 self._order_updater_params[market_type],
                 market.get_market_parameters_for_market_slot(market_slot),
@@ -264,6 +282,8 @@ class MultipleTankHeatPumpStrategy(TradingStrategyBase):
 
     def _update_open_orders(self):
         for market, market_slot_updater_dict in self._order_updaters.items():
+            if market is None:
+                continue
             for market_slot, updater in market_slot_updater_dict.items():
                 if updater.is_time_for_update(self.area.now):
                     self.remove_open_orders(market, market_slot)
@@ -273,7 +293,7 @@ class MultipleTankHeatPumpStrategy(TradingStrategyBase):
 class HeatPumpStrategy(MultipleTankHeatPumpStrategy):
     """Strategy for heat pumps with a single storage tank."""
 
-    # pylint: disable=too-many-arguments,super-init-not-called
+    # pylint: disable=too-many-arguments, super-init-not-called, too-many-locals
     def __init__(
         self,
         maximum_power_rating_kW: float = ConstSettings.HeatPumpSettings.MAX_POWER_RATING_KW,

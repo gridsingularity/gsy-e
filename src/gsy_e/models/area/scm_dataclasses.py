@@ -4,7 +4,6 @@ from math import isclose
 from typing import Dict, List
 from uuid import uuid4
 
-from gsy_framework.constants_limits import is_no_community_self_consumption
 from gsy_framework.data_classes import Trade, TraderDetails
 from gsy_framework.sim_results.kpi_calculation_helper import KPICalculationHelper
 from pendulum import DateTime
@@ -14,12 +13,13 @@ from gsy_e.constants import FLOATING_POINT_TOLERANCE
 
 
 @dataclass
-class FeeProperties:
+class SCMAreaProperties:
     """Holds all fee properties of a coefficient area"""
 
     GRID_FEES: Dict = field(default_factory=dict)
     PER_KWH_FEES: Dict = field(default_factory=dict)
     MONTHLY_FEES: Dict = field(default_factory=dict)
+    AREA_PROPERTIES: Dict = field(default_factory=dict)
 
     def validate(self):
         """Validate if all fee values are not None."""
@@ -35,10 +35,6 @@ class HomeAfterMeterData:
 
     home_uuid: str
     home_name: str
-    sharing_coefficient_percent: float = 0.0
-    # market_maker_rate and feed_in_tariff units are the selected currency (e.g. Euro)
-    market_maker_rate: float = 0.0
-    feed_in_tariff: float = 0.0
     consumption_kWh: float = 0.0
     production_kWh: float = 0.0
     self_consumed_energy_kWh: float = 0.0
@@ -47,8 +43,7 @@ class HomeAfterMeterData:
     community_total_production_kWh: float = 0.0
     _self_production_for_community_kWh: float = 0.0
     trades: List[Trade] = None
-    fee_properties: FeeProperties = field(default_factory=FeeProperties)
-    asset_energy_requirements_kWh: Dict[str, float] = field(default_factory=dict)
+    area_properties: SCMAreaProperties = field(default_factory=SCMAreaProperties)
 
     def to_dict(self) -> Dict:
         """Dict representation of the home after meter data."""
@@ -91,13 +86,17 @@ class HomeAfterMeterData:
         # self consumed energy will be equal to the production. Hence, the upper limit of the
         # self consumed energy is the minimum of the production and consumption energy values
         # of the home.
-        self.self_consumed_energy_kWh = min(self.consumption_kWh, self.production_kWh)
+        if gsy_e.constants.SCM_DISABLE_HOME_SELF_CONSUMPTION:
+            self.self_consumed_energy_kWh = 0.0
+        else:
+            self.self_consumed_energy_kWh = min(self.consumption_kWh, self.production_kWh)
         self.energy_surplus_kWh = self.production_kWh - self.self_consumed_energy_kWh
         self.energy_need_kWh = self.consumption_kWh - self.self_consumed_energy_kWh
-        assert not (
-            self.energy_surplus_kWh > FLOATING_POINT_TOLERANCE
-            and self.energy_need_kWh > FLOATING_POINT_TOLERANCE
-        )
+        if not gsy_e.constants.SCM_DISABLE_HOME_SELF_CONSUMPTION:
+            assert not (
+                self.energy_surplus_kWh > FLOATING_POINT_TOLERANCE
+                and self.energy_need_kWh > FLOATING_POINT_TOLERANCE
+            )
         if self.trades is None:
             self.trades = []
 
@@ -110,10 +109,6 @@ class HomeAfterMeterData:
 
     def set_production_for_community(self, unassigned_energy_production_kWh: float):
         """Assign the energy surplus of the home to be consumed by the community."""
-
-        if is_no_community_self_consumption():
-            self._self_production_for_community_kWh = 0
-            return 0.0
         if self.energy_surplus_kWh <= unassigned_energy_production_kWh:
             self._self_production_for_community_kWh = self.energy_surplus_kWh
             return unassigned_energy_production_kWh - self.energy_surplus_kWh
@@ -134,7 +129,10 @@ class HomeAfterMeterData:
     @property
     def allocated_community_energy_kWh(self) -> float:
         """Amount of community energy allocated to the home."""
-        return self.community_total_production_kWh * self.sharing_coefficient_percent
+        return (
+            self.community_total_production_kWh
+            * self.area_properties.AREA_PROPERTIES["coefficient_percentage"]
+        )
 
     @property
     def energy_bought_from_community_kWh(self) -> float:
@@ -216,6 +214,15 @@ class HomeAfterMeterData:
         logging.info("[SCM][TRADE][OFFER] [%s] [%s] %s", self.home_name, trade.time_slot, trade)
 
 
+class HomeAfterMeterDataWithoutSurplusTrade(HomeAfterMeterData):
+    """Dedicated HomeAfterMeterData class, specific for the non-suplus trade SCM."""
+
+    def set_production_for_community(self, unassigned_energy_production_kWh: float):
+        """Assign the energy surplus of the home to be consumed by the community."""
+        self._self_production_for_community_kWh = 0
+        return 0.0
+
+
 @dataclass
 class CommunityData:
     # pylint: disable=too-many-instance-attributes
@@ -254,6 +261,17 @@ class FeeContainer:
 
 
 @dataclass
+class ContractedPowerFeeContainer:
+    """
+    Dataclass that holds the value of the fee and the accumulated value over time and
+    over areas (price).
+    """
+
+    value: float = 0.0
+    price: float = 0.0
+
+
+@dataclass
 class AreaFees:
     """Dataclass that contains all fees and their accumulated values"""
 
@@ -265,9 +283,11 @@ class AreaFees:
 
     def prices_as_dict(self) -> Dict:
         """Return all prices (accumulated values) for the fees in a dictionary."""
-        return {
-            name: fee.price for name, fee in {**self.per_kWh_fees, **self.monthly_fees}.items()
-        }
+        # monthly fees are not accumulated but already set for the market slot,
+        # hence we only report the value of the FeeContainer here
+        monthly_prices = {name: fee.value for name, fee in self.monthly_fees.items()}
+        per_kwh_prices = {name: fee.price for name, fee in self.per_kWh_fees.items()}
+        return {**monthly_prices, **per_kwh_prices}
 
     @property
     def total_per_kWh_fee_price(self):
@@ -311,9 +331,7 @@ class AreaEnergyRates:
     @property
     def intracommunity_rate(self):
         """Return the rate that is used for trades inside of the community."""
-        return self.area_fees.add_fees_to_energy_rate(
-            self.intracommunity_base_rate + self.area_fees.decreased_grid_fee
-        )
+        return self.intracommunity_base_rate + self.area_fees.decreased_grid_fee
 
     @property
     def utility_rate_incl_fees(self):
@@ -427,13 +445,6 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
     @property
     def savings(self):
         """Absolute price savings of the home, compared to the base energy bill."""
-        # The savings and the percentage might produce negative and huge percentage values
-        # in cases of production. This is due to the fact that the energy bill in these cases
-        # will be negative, and the producer will not have "savings". For a more realistic case
-        # the revenue should be omitted from the calculation of the savings, however this needs
-        # to be discussed.
-        if is_no_community_self_consumption():
-            return self.self_consumed_savings + self.gsy_energy_bill_revenue
         savings_absolute = KPICalculationHelper().saving_absolute(
             self.base_energy_bill_excl_revenue, self.gsy_energy_bill_excl_revenue
         )
@@ -515,22 +526,35 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
         self, home_data: HomeAfterMeterData, area_rates: AreaEnergyRates
     ):
         """Calculate the base (not with GSy improvements) energy bill for the home."""
-        if is_no_community_self_consumption():
-            self.base_energy_bill_excl_revenue = (
-                home_data.consumption_kWh * area_rates.utility_rate_incl_fees
-            )
-            self.base_energy_bill_revenue = home_data.production_kWh * area_rates.feed_in_tariff
-            self.base_energy_bill = (
-                self.base_energy_bill_excl_revenue - self.base_energy_bill_revenue
-            )
-        else:
-            self.base_energy_bill_revenue = (
-                home_data.energy_surplus_kWh * area_rates.feed_in_tariff
-            )
-            self.base_energy_bill_excl_revenue = (
-                home_data.energy_need_kWh * area_rates.utility_rate_incl_fees
-                + area_rates.area_fees.total_monthly_fees
-            )
-            self.base_energy_bill = (
-                self.base_energy_bill_excl_revenue - self.base_energy_bill_revenue
-            )
+        self.base_energy_bill_revenue = home_data.energy_surplus_kWh * area_rates.feed_in_tariff
+        self.base_energy_bill_excl_revenue = (
+            home_data.energy_need_kWh * area_rates.utility_rate_incl_fees
+            + area_rates.area_fees.total_monthly_fees
+        )
+        self.base_energy_bill = self.base_energy_bill_excl_revenue - self.base_energy_bill_revenue
+
+
+class AreaEnergyBillsWithoutSurplusTrade(AreaEnergyBills):
+    """Dedicated AreaEnergyBills class, specific for the non-suplus trade SCM."""
+
+    @property
+    def savings(self):
+        """Absolute price savings of the home, compared to the base energy bill."""
+        # The savings and the percentage might produce negative and huge percentage values
+        # in cases of production. This is due to the fact that the energy bill in these cases
+        # will be negative, and the producer will not have "savings". For a more realistic case
+        # the revenue should be omitted from the calculation of the savings, however this needs
+        # to be discussed.
+        return self.self_consumed_savings + self.gsy_energy_bill_revenue
+
+    def calculate_base_energy_bill(
+        self, home_data: HomeAfterMeterData, area_rates: AreaEnergyRates
+    ):
+        """Calculate the base (not with GSy improvements) energy bill for the home."""
+
+        self.base_energy_bill_excl_revenue = (
+            home_data.consumption_kWh * area_rates.utility_rate_incl_fees
+            + area_rates.area_fees.total_monthly_fees
+        )
+        self.base_energy_bill_revenue = 0.0
+        self.base_energy_bill = self.base_energy_bill_excl_revenue

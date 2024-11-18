@@ -83,6 +83,7 @@ results_field_to_json_filename_mapping = {
     "status": "status",
     "trade_profile": "trade_profile",
     "imported_exported_energy": "imported_exported_energy",
+    "hierarchy_self_consumption_percent": "hierarchy_self_consumption_percent",
 }
 
 
@@ -205,7 +206,7 @@ class ExportAndPlot:
         old_dir = os.path.join(self.plot_dir, self.area.slug)
         if not os.path.isdir(old_dir):
             _log.error(
-                "PLOT ERROR: No plots were generated for %s " "under %s",
+                "PLOT ERROR: No plots were generated for %s under %s",
                 self.area.slug,
                 self.plot_dir,
             )
@@ -459,7 +460,7 @@ class CoefficientExportAndPlot(ExportAndPlot):
         time_slot: DateTime,
         is_first: bool = True,
         scm_manager: "SCMManager" = None,
-    ):
+    ):  # pylint: disable=arguments-renamed
         self._time_slot = time_slot
         self._scm_manager = scm_manager
         self._export_area_with_children(area, self.directory, is_first)

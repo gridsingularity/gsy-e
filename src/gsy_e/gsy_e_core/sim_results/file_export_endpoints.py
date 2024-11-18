@@ -163,7 +163,13 @@ class LeafDataExporter(BaseDataExporter):
 
     def _specific_labels(self):
         if isinstance(self.area.strategy, StorageStrategy):
-            return ["bought [kWh]", "sold [kWh]", "charge [kWh]", "offered [kWh]", "charge [%]"]
+            return [
+                "bought [kWh]",
+                "sold [kWh]",
+                "charge [kWh]",
+                "offered [kWh]",
+                "charge [%], losses[kWh]",
+            ]
         if isinstance(self.area.strategy, LoadHoursStrategy):
             return ["desired energy [kWh]", "deficit [kWh]"]
         if isinstance(self.area.strategy, PVStrategy):
@@ -233,6 +239,7 @@ class LeafDataExporter(BaseDataExporter):
                 s.charge_history_kWh[slot],
                 s.offered_history[slot],
                 s.charge_history[slot],
+                s.loss_history.get(slot, 0),
             ]
         if isinstance(self.area.strategy, LoadHoursStrategy):
             desired = self.area.strategy.state.get_desired_energy_Wh(slot) / 1000
@@ -343,7 +350,9 @@ class FileExportEndpoints:
             )
         if past_market_type == AvailableMarketTypes.FUTURE and area.future_markets:
             return FutureMarketsDataExporter(area.future_markets)
-        raise Exception("past_market_type not compatible")
+        raise Exception(
+            "past_market_type not compatible"
+        )  # pylint: disable=broad-exception-raised
 
     def _get_stats_from_market_data(
         self, out_dict: Dict, area: Area, past_market_type: AvailableMarketTypes
@@ -374,6 +383,7 @@ class FileExportEndpoints:
                 self.cumulative_bids[area.slug][market.time_slot] = {}
                 self.clearing[area.slug][market.time_slot] = {}
                 clearing_state = bid_offer_matcher.matcher.match_algorithm.state
+
             self.cumulative_offers[area.slug][market.time_slot] = (
                 clearing_state.cumulative_offers.get(market.id, {})
             )
