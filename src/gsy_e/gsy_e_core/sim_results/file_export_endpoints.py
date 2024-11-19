@@ -180,8 +180,6 @@ class LeafDataExporter(BaseDataExporter):
             return [
                 "unmatched demand [kWh]",
                 "storage temperature C",
-                "temp decrease K",
-                "temp increase K",
                 "COP",
                 "heat demand J",
             ]
@@ -190,8 +188,6 @@ class LeafDataExporter(BaseDataExporter):
             return [
                 "unmatched demand [kWh]",
                 "storage temperature C",
-                "temp decrease K",
-                "temp increase K",
                 "COP",
                 "heat demand J",
                 "condenser temperature C",
@@ -253,22 +249,23 @@ class LeafDataExporter(BaseDataExporter):
         if type(self.area.strategy) == HeatPumpStrategy:
             return [
                 round(
-                    self.area.strategy.state.heatpump.get_unmatched_demand_kWh(slot),
+                    self.area.strategy.state.tanks.get_unmatched_demand_kWh(slot),
                     ROUND_TOLERANCE,
                 ),
-                round(self.area.strategy.state.get_storage_temp_C(slot), ROUND_TOLERANCE),
-                round(self.area.strategy.state.get_temp_decrease_K(slot), ROUND_TOLERANCE),
-                round(self.area.strategy.state.get_temp_increase_K(slot), ROUND_TOLERANCE),
+                round(
+                    self.area.strategy.state.tanks.get_average_tank_temperature(slot),
+                    ROUND_TOLERANCE,
+                ),
                 round(self.area.strategy.state.heatpump.get_cop(slot), ROUND_TOLERANCE),
                 round(self.area.strategy.state.heatpump.get_heat_demand(slot), ROUND_TOLERANCE),
             ]
         # pylint: disable=unidiomatic-typecheck
         if type(self.area.strategy) == VirtualHeatpumpStrategy:
             return [
-                round(self.area.strategy.state.get_unmatched_demand_kWh(slot), ROUND_TOLERANCE),
+                round(
+                    self.area.strategy.state.tanks.get_unmatched_demand_kWh(slot), ROUND_TOLERANCE
+                ),
                 round(self.area.strategy.state.get_storage_temp_C(slot), ROUND_TOLERANCE),
-                round(self.area.strategy.state.get_temp_decrease_K(slot), ROUND_TOLERANCE),
-                round(self.area.strategy.state.get_temp_increase_K(slot), ROUND_TOLERANCE),
                 round(self.area.strategy.state.get_cop(slot), ROUND_TOLERANCE),
                 round(self.area.strategy.state.get_heat_demand(slot), ROUND_TOLERANCE),
                 round(self.area.strategy.state.get_condenser_temp(slot), ROUND_TOLERANCE),
