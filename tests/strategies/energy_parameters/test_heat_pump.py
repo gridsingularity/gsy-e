@@ -11,6 +11,7 @@ from gsy_e.models.strategy.energy_parameters.heatpump.heat_pump import (
     HeatPumpEnergyParameters,
     TankParameters,
 )
+from gsy_e.models.strategy.energy_parameters.heatpump.cop_models import COPModelType
 
 CURRENT_MARKET_SLOT = today(tz=TIME_ZONE)
 
@@ -42,6 +43,41 @@ def fixture_heatpump_energy_params() -> HeatPumpEnergyParameters:
         ],
         source_temp_C_profile=source_temp_profile,
         consumption_kWh_profile=consumption_profile,
+    )
+    yield energy_params
+    GlobalConfig.start_date = original_start_date
+    GlobalConfig.sim_duration = original_sim_duration
+    GlobalConfig.slot_length = original_slot_length
+
+
+@pytest.fixture(name="energy_params_heat_profile")
+def fixture_heatpump_energy_params_heat_profile() -> HeatPumpEnergyParameters:
+    original_start_date = GlobalConfig.start_date
+    original_sim_duration = GlobalConfig.sim_duration
+    original_slot_length = GlobalConfig.slot_length
+    GlobalConfig.start_date = CURRENT_MARKET_SLOT
+    GlobalConfig.sim_duration = duration(days=1)
+    GlobalConfig.slot_length = duration(minutes=60)
+
+    source_temp_profile = {
+        timestamp: 25 for timestamp in generate_market_slot_list(CURRENT_MARKET_SLOT)
+    }
+    consumption_profile = {
+        timestamp: 15 for timestamp in generate_market_slot_list(CURRENT_MARKET_SLOT)
+    }
+    energy_params = HeatPumpEnergyParameters(
+        maximum_power_rating_kW=30,
+        tank_parameters=[
+            TankParameters(
+                min_temp_C=10,
+                max_temp_C=60,
+                initial_temp_C=20,
+                tank_volume_L=500,
+            )
+        ],
+        source_temp_C_profile=source_temp_profile,
+        heat_demand_Q_profile=consumption_profile,
+        cop_model_type=COPModelType.HOVAL_ULTRASOURCE_B_COMFORT_C11,
     )
     yield energy_params
     GlobalConfig.start_date = original_start_date
@@ -142,3 +178,13 @@ class TestHeatPumpEnergyParameters:
         energy_params._consumption_kWh.read_or_rotate_profiles.assert_called_once()
         energy_params._source_temp_C.read_or_rotate_profiles.assert_called_once()
         energy_params._populate_state.assert_called_once()
+
+    @staticmethod
+    def test_cop_model_is_correctly_selected(energy_params_heat_profile):
+        energy_params_heat_profile._source_temp_C.read_or_rotate_profiles = Mock()
+        energy_params_heat_profile.event_market_cycle(CURRENT_MARKET_SLOT)
+        assert isclose(
+            energy_params_heat_profile._state.heatpump.get_cop(CURRENT_MARKET_SLOT),
+            5.138,
+            abs_tol=0.001,
+        )

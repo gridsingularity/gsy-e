@@ -1,7 +1,7 @@
 from gsy_e.models.strategy.energy_parameters.heatpump.cop_models.cop_models import (
     COPModelType,
-    COPModels,
+    cop_model_factory,
 )
 
 
-__all__ = ["COPModelType", "COPModels"]
+__all__ = ["COPModelType", "cop_model_factory"]

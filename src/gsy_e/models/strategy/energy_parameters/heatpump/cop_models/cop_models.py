@@ -1,16 +1,22 @@
 import json
+import os
+from abc import abstractmethod
 from enum import Enum
+from typing import Optional
 
 from gsy_framework.enums import HeatPumpSourceType
-from gsy_framework.utils import convert_kWh_to_W
 
 
 class COPModelType(Enum):
+    """Selection of supported COP models"""
+
     UNIVERSAL = 0
     ELCO_AEROTOP_S09_IR = 1
     ELCO_AEROTOP_G07_14M = 2
     HOVAL_ULTRASOURCE_B_COMFORT_C11 = 3
 
+
+MODEL_FILE_DIR = os.path.join(os.path.dirname(__file__), "model_data")
 
 MODEL_TYPE_FILENAME_MAPPING = {
     COPModelType.ELCO_AEROTOP_S09_IR: "Elco_Aerotop_S09M-IR_model_parameters.json",
@@ -20,29 +26,42 @@ MODEL_TYPE_FILENAME_MAPPING = {
 }
 
 
-class IndividualCOPModel:
+class BaseCOPModel:
+    """Base clas for COP models"""
 
-    def __init__(self, model_data_filename: str):
-        with open(model_data_filename, "r") as fp:
+    @abstractmethod
+    def calc_cop(self, source_temp_C: float, tank_temp_C: float, heat_demand_kW: Optional[float]):
+        """Return COP value for provided inputs"""
+
+
+class IndividualCOPModel(BaseCOPModel):
+    """Handles cop models for specific heat pump models"""
+
+    def __init__(self, model_type: COPModelType):
+        with open(
+            os.path.join(MODEL_FILE_DIR, MODEL_TYPE_FILENAME_MAPPING[model_type]),
+            "r",
+            encoding="utf-8",
+        ) as fp:
             self._model = json.load(fp)
 
-    def _calc_power(self, T_evap: float, T_cond: float, heat_demand_kW: float):
+    def _calc_power(self, source_temp_C: float, tank_temp_C: float, heat_demand_kW: float):
         CAPFT = (
             self._model["CAPFT"][0]
-            + self._model["CAPFT"][1] * T_evap
-            + self._model["CAPFT"][3] * T_evap**2
-            + self._model["CAPFT"][2] * T_cond
-            + self._model["CAPFT"][5] * T_cond**2
-            + self._model["CAPFT"][4] * T_evap * T_cond
+            + self._model["CAPFT"][1] * source_temp_C
+            + self._model["CAPFT"][3] * source_temp_C**2
+            + self._model["CAPFT"][2] * tank_temp_C
+            + self._model["CAPFT"][5] * tank_temp_C**2
+            + self._model["CAPFT"][4] * source_temp_C * tank_temp_C
         )
 
         HEIRFT = (
             self._model["HEIRFT"][0]
-            + self._model["HEIRFT"][1] * T_evap
-            + self._model["HEIRFT"][3] * T_evap**2
-            + self._model["HEIRFT"][2] * T_cond
-            + self._model["HEIRFT"][5] * T_cond**2
-            + self._model["HEIRFT"][4] * T_evap * T_cond
+            + self._model["HEIRFT"][1] * source_temp_C
+            + self._model["HEIRFT"][3] * source_temp_C**2
+            + self._model["HEIRFT"][2] * tank_temp_C
+            + self._model["HEIRFT"][5] * tank_temp_C**2
+            + self._model["HEIRFT"][4] * source_temp_C * tank_temp_C
         )
 
         # Partial Load Ratio (PLR)
@@ -58,38 +77,36 @@ class IndividualCOPModel:
         # Power consumption (P) calculation
         return self._model["Pref"] * CAPFT * HEIRFT * HEIRFPLR
 
-    def _calc_q(self, T_evap: float, T_cond: float, power_kW: float):
-        return 0.0
+    def calc_cop(self, source_temp_C: float, tank_temp_C: float, heat_demand_kW: float):
+        electrical_power_kW = self._calc_power(source_temp_C, tank_temp_C, heat_demand_kW)
+        cop = heat_demand_kW / electrical_power_kW
+        if cop < 0:  # on the boundaries of the training DS, this can happen
+            return 1
+        return heat_demand_kW / electrical_power_kW
 
-    def calc_cop(self, source_temp: float, tank_temp: float, energy_consumption: float):
-        power_consumption = convert_kWh_to_W(energy_consumption) / 1000
-        heat_demanded = self._calc_q(source_temp, tank_temp, power_consumption)
-        return heat_demanded / power_consumption
 
+class UniversalCOPModel(BaseCOPModel):
+    """Handle cop calculation independent of the heat pump model"""
 
-class COPModels:
-
-    def __init__(self, model_type: COPModelType, source_type: int = HeatPumpSourceType.AIR.value):
-
-        self._model_type = model_type
+    def __init__(self, source_type: int = HeatPumpSourceType.AIR.value):
         self._source_type = source_type
-        self.individual_model: IndividualCOPModel = (
-            None
-            if model_type != COPModelType.UNIVERSAL.value
-            else IndividualCOPModel(MODEL_TYPE_FILENAME_MAPPING[model_type])
-        )
 
-    def get_cop(self, source_temp: float, tank_temp: float, energy_consumption: float) -> float:
-
-        if self._model_type == COPModelType.UNIVERSAL:
-            return self._get_universal_cop(source_temp, tank_temp)
-        else:
-            return self.individual_model.calc_cop(source_temp, tank_temp, energy_consumption)
-
-    def _get_universal_cop(self, source_temp: float, tank_temp: float) -> float:
+    def calc_cop(
+        self, source_temp_C: float, tank_temp_C: float, heat_demand_kW: Optional[float]
+    ) -> float:
         """COP model following https://www.nature.com/articles/s41597-019-0199-y"""
-        delta_temp = tank_temp - source_temp
+        delta_temp = tank_temp_C - source_temp_C
         if self._source_type == HeatPumpSourceType.AIR.value:
             return 6.08 - 0.09 * delta_temp + 0.0005 * delta_temp**2
         if self._source_type == HeatPumpSourceType.GROUND.value:
             return 10.29 - 0.21 * delta_temp + 0.0012 * delta_temp**2
+        assert False, "Source type not supported"
+
+
+def cop_model_factory(
+    model_type: COPModelType, source_type: int = HeatPumpSourceType.AIR.value
+) -> BaseCOPModel:
+    """Return the correct COP model."""
+    if model_type == COPModelType.UNIVERSAL:
+        return UniversalCOPModel(source_type)
+    return IndividualCOPModel(model_type)
