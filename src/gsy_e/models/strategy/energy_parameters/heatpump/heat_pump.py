@@ -75,6 +75,18 @@ class CombinedHeatpumpTanksState:
         """Exposes the tanks state."""
         return self._tanks_state
 
+    def get_storage_temp_C(self, time_slot: DateTime):
+        """Return current storage temp for the single-tank case"""
+        return self._tanks_state.get_results_dict(time_slot).get("storage_temp_C", 0.0)
+
+    def get_temp_decrease_K(self, time_slot: DateTime):
+        """Return temperature decrease for the single-tank case"""
+        return self._tanks_state.get_results_dict(time_slot).get("temp_decrease_K", 0.0)
+
+    def get_temp_increase_K(self, time_slot: DateTime):
+        """Return temperature increase for the single-tank case"""
+        return self._tanks_state.get_results_dict(time_slot).get("temp_increase_K", 0.0)
+
 
 class HeatPumpEnergyParametersBase(ABC):
     """

@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+# pylint: disable=too-many-return-statements, broad-exception-raised
 from abc import ABC, abstractmethod
 from statistics import mean
 from typing import TYPE_CHECKING, Dict, List
@@ -251,12 +252,15 @@ class LeafDataExporter(BaseDataExporter):
         # pylint: disable=unidiomatic-typecheck
         if type(self.area.strategy) == HeatPumpStrategy:
             return [
-                round(self.area.strategy.state.get_unmatched_demand_kWh(slot), ROUND_TOLERANCE),
+                round(
+                    self.area.strategy.state.heatpump.get_unmatched_demand_kWh(slot),
+                    ROUND_TOLERANCE,
+                ),
                 round(self.area.strategy.state.get_storage_temp_C(slot), ROUND_TOLERANCE),
                 round(self.area.strategy.state.get_temp_decrease_K(slot), ROUND_TOLERANCE),
                 round(self.area.strategy.state.get_temp_increase_K(slot), ROUND_TOLERANCE),
-                round(self.area.strategy.state.get_cop(slot), ROUND_TOLERANCE),
-                round(self.area.strategy.state.get_heat_demand(slot), ROUND_TOLERANCE),
+                round(self.area.strategy.state.heatpump.get_cop(slot), ROUND_TOLERANCE),
+                round(self.area.strategy.state.heatpump.get_heat_demand(slot), ROUND_TOLERANCE),
             ]
         # pylint: disable=unidiomatic-typecheck
         if type(self.area.strategy) == VirtualHeatpumpStrategy:

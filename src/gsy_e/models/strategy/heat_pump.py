@@ -17,9 +17,9 @@ from gsy_e.gsy_e_core.util import (
 from gsy_e.models.strategy.energy_parameters.heatpump.heat_pump import (
     HeatPumpEnergyParameters,
     TankParameters,
+    CombinedHeatpumpTanksState,
 )
 from gsy_e.models.strategy.order_updater import OrderUpdaterParameters, OrderUpdater
-from gsy_e.models.strategy.state import HeatPumpState
 from gsy_e.models.strategy.trading_strategy_base import TradingStrategyBase
 
 if TYPE_CHECKING:
@@ -60,12 +60,12 @@ class HeatPumpOrderUpdaterParameters(OrderUpdaterParameters):
             "update_interval": self.update_interval,
             "initial_buying_rate": (
                 self.initial_rate
-                if isinstance(self.initial_rate, (type(None), float))
+                if isinstance(self.initial_rate, (type(None), int, float))
                 else convert_pendulum_to_str_in_dict(self.initial_rate)
             ),
             "final_buying_rate": (
                 self.final_rate
-                if isinstance(self.final_rate, (type(None), float))
+                if isinstance(self.final_rate, (type(None), int, float))
                 else convert_pendulum_to_str_in_dict(self.final_rate)
             ),
             "use_market_maker_rate": self.use_market_maker_rate,
@@ -186,7 +186,7 @@ class MultipleTankHeatPumpStrategy(TradingStrategyBase):
         return constructor_args
 
     @property
-    def state(self) -> HeatPumpState:
+    def state(self) -> CombinedHeatpumpTanksState:
         return self._energy_params.combined_state
 
     def event_activate(self, **kwargs):
