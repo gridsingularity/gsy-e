@@ -6,13 +6,13 @@ from gsy_framework.enums import SCMSelfConsumptionType
 from pendulum import DateTime
 
 import gsy_e.constants
-from gsy_e.constants import (
+from gsy_e.constants import FLOATING_POINT_TOLERANCE
+from gsy_e.gsy_e_core.util import get_slots_per_month
+from scm.constants import (
     DEFAULT_SCM_COMMUNITY_NAME,
     DEFAULT_SCM_GRID_NAME,
-    FLOATING_POINT_TOLERANCE,
 )
-from gsy_e.gsy_e_core.util import get_slots_per_month
-from gsy_e.models.area.scm_dataclasses import (
+from scm.scm_dataclasses import (
     HomeAfterMeterData,
     CommunityData,
     AreaFees,
@@ -23,7 +23,7 @@ from gsy_e.models.area.scm_dataclasses import (
     AreaEnergyBillsWithoutSurplusTrade,
     HomeAfterMeterDataWithoutSurplusTrade,
 )
-from gsy_e.models.strategy.scm import SCMStrategy
+from scm.strategies import SCMStrategy
 
 if TYPE_CHECKING:
     from gsy_e.models.area import CoefficientArea

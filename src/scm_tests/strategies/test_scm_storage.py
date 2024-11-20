@@ -31,8 +31,7 @@ class TestScmStorage:
         assert scm_storage._energy_params.energy_profile.profile == {}
         scm_storage.market_cycle(area)
         assert len(list(scm_storage._energy_params.energy_profile.profile.keys())) == 24
-        assert all(
-            abs(v) == 1 for v in scm_storage._energy_params.energy_profile.profile.values())
+        assert all(abs(v) == 1 for v in scm_storage._energy_params.energy_profile.profile.values())
 
     @staticmethod
     def test_get_energy_to_sell_kWh_returns_correctly(scm_storage):

@@ -32,16 +32,16 @@ from pendulum import duration, today
 from pendulum import now
 
 from gsy_e import constants
-from gsy_e.models.area import CoefficientArea, CoefficientAreaException
-from gsy_e.models.area.scm_manager import (
+from scm.coefficient_area import CoefficientArea, CoefficientAreaException
+from scm.scm_manager import (
     SCMManager,
     HomeAfterMeterData,
     AreaEnergyBills,
     SCMManagerWithoutSurplusTrade,
 )
 from gsy_e.models.config import SimulationConfig
-from gsy_e.models.strategy.scm.load import SCMLoadHoursStrategy
-from gsy_e.models.strategy.scm.pv import SCMPVUserProfile
+from scm.strategies.load import SCMLoadHoursStrategy
+from scm.strategies.pv import SCMPVUserProfile
 
 
 class TestCoefficientArea:

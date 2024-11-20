@@ -24,15 +24,15 @@ from pendulum import DateTime
 
 from gsy_e.gsy_e_core.util import get_slots_per_month
 from gsy_e.models.area.area_base import AreaBase
-from gsy_e.models.area.scm_dataclasses import SCMAreaProperties
+from scm.scm_dataclasses import SCMAreaProperties
 from gsy_e.models.config import SimulationConfig
 from gsy_e.models.strategy.external_strategies import ExternalMixin
-from gsy_e.models.strategy.scm import SCMStrategy
+from scm.strategies import SCMStrategy
 
 log = getLogger(__name__)
 
 if TYPE_CHECKING:
-    from gsy_e.models.area.scm_manager import SCMManager
+    from scm.scm_manager import SCMManager
 
 
 class CoefficientAreaException(Exception):

@@ -1,4 +1,4 @@
-from gsy_e.models.area.scm_dataclasses import AreaFees, FeeContainer
+from scm.scm_dataclasses import AreaFees, FeeContainer
 
 
 class TestAreaFees:

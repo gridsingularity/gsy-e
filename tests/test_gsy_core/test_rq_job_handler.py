@@ -9,7 +9,7 @@ from gsy_framework.constants_limits import GlobalConfig, ConstSettings
 from gsy_framework.enums import ConfigurationType, CoefficientAlgorithm
 
 import gsy_e.constants
-from gsy_e.gsy_e_core.rq_job_handler import launch_simulation_from_rq_job
+from gsy_e.gsy_e_core.rq_job_handler import SimulationJobHandler
 
 
 class TestRqJobHandler:
@@ -61,7 +61,9 @@ class TestRqJobHandler:
             "gsy_e.gsy_e_core.rq_job_handler._adapt_settings",
             Mock(return_value=settings),
         ):
-            launch_simulation_from_rq_job(scenario, settings, None, {}, {}, {}, "id")
+            SimulationJobHandler.launch_simulation_from_rq_job(
+                scenario, settings, None, {}, {}, {}, "id"
+            )
         assert GlobalConfig.CONFIG_TYPE == config_type.value
         assert gsy_e.constants.EXTERNAL_CONNECTION_WEB is True
         if config_type == ConfigurationType.CANARY_NETWORK:
@@ -86,7 +88,9 @@ class TestRqJobHandler:
             },
         }
         scenario = {"configuration_uuid": "config_uuid"}
-        launch_simulation_from_rq_job(scenario, settings, None, {}, {}, {}, "id")
+        SimulationJobHandler.launch_simulation_from_rq_job(
+            scenario, settings, None, {}, {}, {}, "id"
+        )
         assert (
             ConstSettings.SCMSettings.MARKET_ALGORITHM
             == CoefficientAlgorithm.NO_COMMUNITY_SELF_CONSUMPTION.value
@@ -110,7 +114,7 @@ class TestRqJobHandler:
             }""",
         }
         scenario = {"configuration_uuid": "config_uuid"}
-        launch_simulation_from_rq_job(
+        SimulationJobHandler.launch_simulation_from_rq_job(
             scenario, settings, None, {}, {"scm_past_slots": True}, {}, "id"
         )
         assert run_sim_mock.call_count == 2
@@ -141,7 +145,9 @@ class TestRqJobHandler:
         }
         scenario = {"configuration_uuid": "config_uuid"}
         with pytest.raises(Exception):
-            launch_simulation_from_rq_job(scenario, settings, None, {}, {}, {}, "id")
+            SimulationJobHandler.launch_simulation_from_rq_job(
+                scenario, settings, None, {}, {}, {}, "id"
+            )
         assert publish_job_error_mock.call_count == 1
         assert publish_job_error_mock.call_args_list[0][0][0] == "id"
         assert "Fake Error" in publish_job_error_mock.call_args_list[0][0][1]
@@ -153,4 +159,6 @@ class TestRqJobHandler:
         }
         scenario = {}
         with pytest.raises(Exception):
-            launch_simulation_from_rq_job(scenario, settings, None, {}, {}, {}, "id")
+            SimulationJobHandler.launch_simulation_from_rq_job(
+                scenario, settings, None, {}, {}, {}, "id"
+            )

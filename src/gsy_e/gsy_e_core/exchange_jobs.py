@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
 import logging
 from os import environ, getpid
 
@@ -32,20 +33,23 @@ logger = logging.getLogger()
 def start(payload):
     """Start a simulation with a Redis job."""
     # pylint: disable-next=import-outside-toplevel
-    from gsy_e.gsy_e_core.rq_job_handler import launch_simulation_from_rq_job
+    from gsy_e.gsy_e_core.rq_job_handler import SimulationJobHandler
+
     current_job = get_current_job()
     current_job.save_meta()
     payload = DataSerializer.decompress_and_decode(payload)
-    launch_simulation_from_rq_job(**payload, job_id=current_job.id)
+    SimulationJobHandler.launch_simulation_from_rq_job(**payload, job_id=current_job.id)
 
 
 def main():
     """Main entrypoint for running the exchange jobs."""
     with Connection(
-            Redis.from_url(environ.get("REDIS_URL", "redis://localhost"), retry_on_timeout=True)):
+        Redis.from_url(environ.get("REDIS_URL", "redis://localhost"), retry_on_timeout=True)
+    ):
         worker = Worker(
             [QueueNames().gsy_e_queue_name],
-            name=f"simulation.{getpid()}.{now().timestamp()}", log_job_description=False
+            name=f"simulation.{getpid()}.{now().timestamp()}",
+            log_job_description=False,
         )
         try:
             worker.work(max_jobs=1, burst=True, logging_level="ERROR")

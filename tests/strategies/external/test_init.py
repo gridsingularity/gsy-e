@@ -33,7 +33,8 @@ from redis.exceptions import RedisError
 import gsy_e.constants
 import gsy_e.gsy_e_core.util
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
-from gsy_e.models.area import Area, CoefficientArea
+from gsy_e.models.area import Area
+from scm.coefficient_area import CoefficientArea
 from gsy_e.models.strategy import BidEnabledStrategy
 from gsy_e.models.strategy.external_strategies import (
     IncomingRequest,

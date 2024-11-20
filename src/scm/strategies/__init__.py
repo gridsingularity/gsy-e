@@ -39,7 +39,8 @@ class SCMStrategy(ABC):
         except AttributeError as ex:
             raise GSyException(
                 "Strategy does not have a state. "
-                "State is required to support save state functionality.") from ex
+                "State is required to support save state functionality."
+            ) from ex
 
     def restore_state(self, saved_state: Dict) -> None:
         """Restore the current state object of the strategy from dict format."""
@@ -48,16 +49,17 @@ class SCMStrategy(ABC):
         except AttributeError as ex:
             raise GSyException(
                 "Strategy does not have a state. "
-                "State is required to support load state functionality.") from ex
+                "State is required to support load state functionality."
+            ) from ex
 
     # pylint: disable=unused-argument,no-self-use
     def get_energy_to_sell_kWh(self, time_slot: DateTime) -> float:
         """Get the available energy for production for the specified time slot."""
-        return 0.
+        return 0.0
 
     def get_energy_to_buy_kWh(self, time_slot: DateTime) -> float:
         """Get the available energy for consumption for the specified time slot."""
-        return 0.
+        return 0.0
 
     def deactivate(self):
         """Should be called when the simulation is ended."""

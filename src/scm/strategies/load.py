@@ -4,7 +4,9 @@ from pendulum import DateTime
 from gsy_framework.constants_limits import GlobalConfig
 
 from gsy_e.models.strategy.energy_parameters.load import (
-    LoadHoursEnergyParameters, DefinedLoadEnergyParameters)
+    LoadHoursEnergyParameters,
+    DefinedLoadEnergyParameters,
+)
 from gsy_e.models.strategy.scm import SCMStrategy
 
 if TYPE_CHECKING:
@@ -13,6 +15,7 @@ if TYPE_CHECKING:
 
 class SCMLoadHoursStrategy(SCMStrategy):
     """Load SCM strategy with constant power production."""
+
     def __init__(self, avg_power_W, hrs_of_day=None):
         self._energy_params = LoadHoursEnergyParameters(avg_power_W, hrs_of_day)
         self._simulation_start_timestamp = None
@@ -57,10 +60,11 @@ class SCMLoadHoursStrategy(SCMStrategy):
 
 class SCMLoadProfileStrategy(SCMStrategy):
     """Load SCM strategy with power consumption dictated by a profile."""
-    def __init__(self, daily_load_profile=None,
-                 daily_load_profile_uuid: str = None):
+
+    def __init__(self, daily_load_profile=None, daily_load_profile_uuid: str = None):
         self._energy_params = DefinedLoadEnergyParameters(
-            daily_load_profile, daily_load_profile_uuid)
+            daily_load_profile, daily_load_profile_uuid
+        )
 
         # needed for profile_handler
         self.daily_load_profile_uuid = daily_load_profile_uuid

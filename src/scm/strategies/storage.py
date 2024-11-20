@@ -11,11 +11,14 @@ class SCMStorageStrategy(SCMStrategy):
     """Storage SCM strategy."""
 
     def __init__(
-            self, prosumption_kWh_profile: Union[str, Dict[int, float], Dict[str, float]] = None,
-            prosumption_kWh_profile_uuid: str = None):
+        self,
+        prosumption_kWh_profile: Union[str, Dict[int, float], Dict[str, float]] = None,
+        prosumption_kWh_profile_uuid: str = None,
+    ):
 
         self._energy_params = StorageProfileEnergyParameters(
-            prosumption_kWh_profile, prosumption_kWh_profile_uuid)
+            prosumption_kWh_profile, prosumption_kWh_profile_uuid
+        )
 
         # needed for profile_handler
         self.prosumption_kWh_profile_uuid = prosumption_kWh_profile_uuid

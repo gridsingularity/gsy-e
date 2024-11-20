@@ -19,41 +19,32 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import json
 from logging import getLogger
 
-from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.utils import convert_pendulum_to_str_in_dict, key_in_dict_and_not_none
 from pendulum import Duration
 
-from gsy_e.models.area import Area, Market, Asset  # NOQA
-from gsy_e.models.area.throughput_parameters import ThroughputParameters
+from gsy_e.models.area import CoefficientArea, Market, Asset  # NOQA
 from gsy_e.models.leaves import *  # NOQA  # pylint: disable=wildcard-import
-from gsy_e.models.leaves import (  # NOQA
-    Leaf,
-    forward_leaf_mapping,
+from scm.deserialization.leaves import (  # NOQA
+    scm_leaf_mapping,
+    CoefficientLeaf,
 )
-from gsy_e.models.strategy.commercial_producer import CommercialStrategy  # NOQA
-from gsy_e.models.strategy.finite_power_plant import FinitePowerPlant  # NOQA
-from gsy_e.models.strategy.load_hours import LoadHoursStrategy  # NOQA
-from gsy_e.models.strategy.market_maker_strategy import MarketMakerStrategy  # NOQA
-from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy  # NOQA
-from gsy_e.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy  # NOQA
-from gsy_e.models.strategy.pv import PVStrategy  # NOQA
-from gsy_e.models.strategy.storage import StorageStrategy  # NOQA
-from gsy_e.models.strategy.trading_strategy_base import TradingStrategyBase
+from gsy_e.models.strategy import BaseStrategy
+from scm.strategies import SCMStrategy
 
 logger = getLogger(__name__)
 
 
-class AreaEncoder(json.JSONEncoder):
+class CoefficientAreaEncoder(json.JSONEncoder):
     """Convert the Area class hierarchy to json dict."""
 
     def default(self, o):
         # Leaf classes are Areas too, therefore the Area/AreaBase classes need to be handled
         # separately.
-        if type(o) in [Area, Market, Asset]:
+        if type(o) in [CoefficientArea, Market, Asset]:
             return self._encode_area(o)
-        if isinstance(o, Leaf):
+        if isinstance(o, CoefficientLeaf):
             return self._encode_leaf(o)
-        if isinstance(o, TradingStrategyBase):
+        if isinstance(o, (BaseStrategy, SCMStrategy)):
             return self._encode_subobject(o)
         if isinstance(o, Duration):
             return o.seconds
@@ -107,7 +98,7 @@ def _convert_member_dt_to_string(in_dict):
 
 def area_to_string(area):
     """Create a json string representation of an Area"""
-    return json.dumps(area, cls=AreaEncoder)
+    return json.dumps(area, cls=CoefficientAreaEncoder)
 
 
 def _instance_from_dict(description):
@@ -120,17 +111,12 @@ def _instance_from_dict(description):
 
 
 def _leaf_from_dict(description, config):
-    if ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS:
-        strategy_type = description.pop("type")
-        leaf_type = forward_leaf_mapping.get(strategy_type)
-        if not leaf_type:
-            return None
-        if not issubclass(leaf_type, Leaf):
-            raise ValueError(f"Unknown forward leaf type '{leaf_type}'")
-    else:
-        leaf_type = globals().get(description.pop("type"), type(None))
-        if not issubclass(leaf_type, Leaf):
-            raise ValueError(f"Unknown leaf type '{leaf_type}'")
+    strategy_type = description.pop("type")
+    leaf_type = scm_leaf_mapping.get(strategy_type)
+    if not leaf_type:
+        return None
+    if not issubclass(leaf_type, CoefficientLeaf):
+        raise ValueError(f"Unknown coefficient leaf type '{leaf_type}'")
     description = leaf_type.strategy_type.deserialize_args(description)
     display_type = description.pop("display_type", None)
     try:
@@ -156,35 +142,13 @@ def area_from_dict(description, config):
             return _leaf_from_dict(description, config)  # Area is a Leaf
         name = description["name"]
         uuid = description.get("uuid", None)
-        external_connection_available = description.get("allow_external_connection", False)
-        baseline_peak_energy_import_kWh = description.get("baseline_peak_energy_import_kWh", None)
-        baseline_peak_energy_export_kWh = description.get("baseline_peak_energy_export_kWh", None)
-        import_capacity_kVA = description.get("import_capacity_kVA", None)
-        export_capacity_kVA = description.get("export_capacity_kVA", None)
         if key_in_dict_and_not_none(description, "children"):
             children = [area_from_dict(child, config) for child in description["children"]]
         else:
             children = None
 
-        grid_fee_percentage = description.get("grid_fee_percentage", None)
-        grid_fee_constant = description.get("grid_fee_constant", None)
-        area = Area(
-            name,
-            children,
-            uuid,
-            optional("strategy"),
-            config,
-            grid_fee_percentage=grid_fee_percentage,
-            grid_fee_constant=grid_fee_constant,
-            external_connection_available=external_connection_available
-            and config.external_connection_enabled,
-            throughput=ThroughputParameters(
-                baseline_peak_energy_import_kWh=baseline_peak_energy_import_kWh,
-                baseline_peak_energy_export_kWh=baseline_peak_energy_export_kWh,
-                import_capacity_kVA=import_capacity_kVA,
-                export_capacity_kVA=export_capacity_kVA,
-            ),
-        )
+        # For the SCM only use the CoefficientArea strategy.
+        area = CoefficientArea(name, children, uuid, optional("strategy"), config)
         if "display_type" in description:
             area.display_type = description["display_type"]
         return area
@@ -197,16 +161,3 @@ def area_from_dict(description, config):
 def area_from_string(string, config):
     """Recover area from its json string representation"""
     return area_from_dict(json.loads(string), config)
-
-
-def are_all_areas_unique(area, set_of_areas=None):
-    """Assert that all areas have unique names. Currently disabled."""
-    if not set_of_areas:
-        set_of_areas = set()
-    assert area.name not in set_of_areas
-    set_of_areas.add(area.name)
-
-    for child in area.children:
-        set_of_areas = are_all_areas_unique(child, set_of_areas)
-
-    return set_of_areas
