@@ -3,7 +3,7 @@ from typing import Optional, Dict, Union, List
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.read_user_profile import InputProfileTypes
-from gsy_framework.utils import convert_kWh_to_W
+from gsy_framework.utils import convert_kJ_to_kWh, convert_kWh_to_kJ
 from pendulum import DateTime
 
 from gsy_e.constants import FLOATING_POINT_TOLERANCE
@@ -238,8 +238,8 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
         """React to an event_traded_energy."""
         self._decrement_posted_energy(time_slot, energy_kWh)
 
-        traded_heat_energy = self._calc_Q_from_energy_kWh(time_slot, energy_kWh)
-        self._state.tanks.increase_tanks_temp_from_heat_energy(traded_heat_energy, time_slot)
+        traded_heat_energy_kJ = self._calc_Q_kJ_from_energy_kWh(time_slot, energy_kWh)
+        self._state.tanks.increase_tanks_temp_from_heat_energy(traded_heat_energy_kJ, time_slot)
 
         self._calculate_and_set_unmatched_demand(time_slot)
 
@@ -270,26 +270,26 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
         self._state.heatpump.set_cop(time_slot, self._calc_cop(time_slot))
 
         if not self._heat_demand_Q_J:
-            produced_heat_energy_KJ = self._calc_Q_from_energy_kWh(
+            produced_heat_energy_kJ = self._calc_Q_kJ_from_energy_kWh(
                 time_slot, self._consumption_kWh.profile[time_slot]
             )
         else:
-            produced_heat_energy_KJ = self._heat_demand_Q_J.get_value(time_slot) / 1000.0
-            energy_demand_kWh = self._calc_energy_kWh_from_Q(time_slot, produced_heat_energy_KJ)
+            produced_heat_energy_kJ = self._heat_demand_Q_J.get_value(time_slot) / 1000.0
+            energy_demand_kWh = self._calc_energy_kWh_from_Q_kJ(time_slot, produced_heat_energy_kJ)
             self._consumption_kWh.profile[time_slot] = energy_demand_kWh
 
-        self._state.heatpump.set_heat_demand(time_slot, produced_heat_energy_KJ * 1000)
-        self._state.tanks.decrease_tanks_temp_from_heat_energy(produced_heat_energy_KJ, time_slot)
+        self._state.heatpump.set_heat_demand(time_slot, produced_heat_energy_kJ * 1000)
+        self._state.tanks.decrease_tanks_temp_from_heat_energy(produced_heat_energy_kJ, time_slot)
         super()._populate_state(time_slot)
         self._state.heatpump.set_energy_consumption_kWh(
             time_slot, self._consumption_kWh.get_value(time_slot)
         )
 
-    def _calc_Q_from_energy_kWh(self, time_slot: DateTime, energy_kWh: float) -> float:
-        return self._state.heatpump.get_cop(time_slot) * energy_kWh
+    def _calc_Q_kJ_from_energy_kWh(self, time_slot: DateTime, energy_kWh: float) -> float:
+        return convert_kWh_to_kJ(self._state.heatpump.get_cop(time_slot) * energy_kWh)
 
-    def _calc_energy_kWh_from_Q(self, time_slot: DateTime, Q_energy_KJ: float) -> float:
-        return Q_energy_KJ / self._state.heatpump.get_cop(time_slot)
+    def _calc_energy_kWh_from_Q_kJ(self, time_slot: DateTime, Q_energy_kJ: float) -> float:
+        return convert_kJ_to_kWh(Q_energy_kJ / self._state.heatpump.get_cop(time_slot))
 
     def _calc_cop(self, time_slot: DateTime) -> float:
         """
@@ -299,16 +299,16 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
         Generally, the higher the temperature difference between the source and the sink,
         the lower the efficiency of the heat pump (the lower COP).
         """
+        # 1 J = 1 W s
+        heat_demand_kW = (
+            self._heat_demand_Q_J.get_value(time_slot) / self._slot_length.total_seconds() / 1000
+            if self._heat_demand_Q_J
+            else None
+        )
         return self._cop_model.calc_cop(
             source_temp_C=self._source_temp_C.get_value(time_slot),
             tank_temp_C=self._state.tanks.get_average_tank_temperature(time_slot),
-            heat_demand_kW=(
-                convert_kWh_to_W(
-                    self._heat_demand_Q_J.get_value(time_slot) / 1000, self._slot_length
-                )
-                if self._heat_demand_Q_J
-                else None
-            ),
+            heat_demand_kW=heat_demand_kW,
         )
 
     def _calculate_and_set_unmatched_demand(self, time_slot: DateTime) -> None:

@@ -21,6 +21,7 @@ from gsy_e.models.strategy.energy_parameters.heatpump.heat_pump import (
 )
 from gsy_e.models.strategy.order_updater import OrderUpdaterParameters, OrderUpdater
 from gsy_e.models.strategy.trading_strategy_base import TradingStrategyBase
+from gsy_e.models.strategy.energy_parameters.heatpump.cop_models import COPModelType
 
 if TYPE_CHECKING:
     from gsy_e.models.market import MarketBase
@@ -92,6 +93,7 @@ class MultipleTankHeatPumpStrategy(TradingStrategyBase):
         ] = None,
         preferred_buying_rate: float = ConstSettings.HeatPumpSettings.PREFERRED_BUYING_RATE,
         heat_demand_Q_profile: Optional[Union[str, float, Dict]] = None,
+        cop_model_type: COPModelType = COPModelType.UNIVERSAL,
     ):
 
         assert (
@@ -109,6 +111,7 @@ class MultipleTankHeatPumpStrategy(TradingStrategyBase):
             consumption_kWh_profile_uuid=consumption_kWh_profile_uuid,
             source_type=source_type,
             heat_demand_Q_profile=heat_demand_Q_profile,
+            cop_model_type=cop_model_type,
         )
 
         for tank in tank_parameters:
@@ -123,6 +126,7 @@ class MultipleTankHeatPumpStrategy(TradingStrategyBase):
                 consumption_kWh_profile=consumption_kWh_profile,
                 consumption_kWh_profile_uuid=consumption_kWh_profile_uuid,
                 source_type=source_type,
+                heat_demand_Q_profile=heat_demand_Q_profile,
             )
 
         # needed for profile_handler
@@ -312,6 +316,7 @@ class HeatPumpStrategy(MultipleTankHeatPumpStrategy):
             AvailableMarketTypes, HeatPumpOrderUpdaterParameters
         ] = None,
         preferred_buying_rate: float = ConstSettings.HeatPumpSettings.PREFERRED_BUYING_RATE,
+        cop_model_type: COPModelType = COPModelType.UNIVERSAL,
     ):
         tank_parameters = [
             TankParameters(
@@ -333,4 +338,5 @@ class HeatPumpStrategy(MultipleTankHeatPumpStrategy):
             source_type,
             order_updater_parameters,
             preferred_buying_rate,
+            cop_model_type=cop_model_type,
         )
