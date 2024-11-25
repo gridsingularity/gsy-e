@@ -143,7 +143,7 @@ _setup_modules = available_simulation_scenarios
 @click.option(
     "--repl/--no-repl", default=False, show_default=True, help="Start REPL after simulation run."
 )
-@click.option("--no-export", is_flag=True, default=False, help="Skip export of results plots")
+@click.option("--no-export", is_flag=True, default=False, help="Skip export of simulation data")
 @click.option(
     "--export-path",
     type=str,
