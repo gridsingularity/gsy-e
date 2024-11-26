@@ -145,6 +145,8 @@ class AllTanksEnergyParameters:
 
     def get_min_energy_consumption(self, cop: float, time_slot: DateTime):
         """Get min energy consumption from all water tanks."""
+        if cop == 0:
+            return 0
         min_energy_consumption_kWh = sum(
             tank.get_min_energy_consumption(cop, time_slot)
             for tank in self._tanks_energy_parameters

@@ -252,6 +252,8 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
 
     def _calc_energy_to_buy_maximum(self, time_slot: DateTime) -> float:
         cop = self._state.heatpump.get_cop(time_slot)
+        if cop == 0:
+            return 0
         max_energy_consumption_kWh = self._state.tanks.get_max_energy_consumption(cop, time_slot)
         assert max_energy_consumption_kWh > -FLOATING_POINT_TOLERANCE
         if max_energy_consumption_kWh > self._max_energy_consumption_kWh:
@@ -260,6 +262,8 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
 
     def _calc_energy_to_buy_minimum(self, time_slot: DateTime) -> float:
         cop = self._state.heatpump.get_cop(time_slot)
+        if cop == 0:
+            return 0
         min_energy_consumption_kWh = self._state.tanks.get_min_energy_consumption(cop, time_slot)
         if min_energy_consumption_kWh > self._max_energy_consumption_kWh:
             return self._max_energy_consumption_kWh
@@ -289,6 +293,9 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
         return convert_kWh_to_kJ(self._state.heatpump.get_cop(time_slot) * energy_kWh)
 
     def _calc_energy_kWh_from_Q_kJ(self, time_slot: DateTime, Q_energy_kJ: float) -> float:
+        cop = self._state.heatpump.get_cop(time_slot)
+        if cop == 0:
+            return 0
         return convert_kJ_to_kWh(Q_energy_kJ / self._state.heatpump.get_cop(time_slot))
 
     def _calc_cop(self, time_slot: DateTime) -> float:

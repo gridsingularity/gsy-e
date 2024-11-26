@@ -3,8 +3,11 @@ import os
 from abc import abstractmethod
 from enum import Enum
 from typing import Optional
+from logging import getLogger
 
 from gsy_framework.enums import HeatPumpSourceType
+
+log = getLogger(__name__)
 
 
 class COPModelType(Enum):
@@ -44,6 +47,7 @@ class IndividualCOPModel(BaseCOPModel):
             encoding="utf-8",
         ) as fp:
             self._model = json.load(fp)
+        self.model_type = model_type
 
     def _calc_power(self, source_temp_C: float, tank_temp_C: float, heat_demand_kW: float):
         CAPFT = (
@@ -78,11 +82,36 @@ class IndividualCOPModel(BaseCOPModel):
         return self._model["Pref"] * CAPFT * HEIRFT * HEIRFPLR
 
     def calc_cop(self, source_temp_C: float, tank_temp_C: float, heat_demand_kW: float):
+        assert heat_demand_kW is not None, "heat demand should be provided"
+        if heat_demand_kW == 0:
+            return 0
         electrical_power_kW = self._calc_power(source_temp_C, tank_temp_C, heat_demand_kW)
+        if electrical_power_kW <= 0:
+            log.debug(
+                "calculated power is negative: "
+                "hp model: %s  source_temp: %s, "
+                "tank_temp: %s, heat_demand_kW: %s, calculated power: %s",
+                self.model_type.name,
+                round(source_temp_C, 2),
+                round(tank_temp_C, 2),
+                round(heat_demand_kW, 2),
+                round(electrical_power_kW, 2),
+            )
+            return 0
         cop = heat_demand_kW / electrical_power_kW
-        if cop < 0:  # on the boundaries of the training DS, this can happen
-            return 1
-        return heat_demand_kW / electrical_power_kW
+        if cop > 6:
+            log.debug(
+                "calculated COP (%s) is unrealistic: "
+                "hp model: %s  source_temp: %s, "
+                "tank_temp: %s, heat_demand_kW: %s, calculated power: %s",
+                round(cop, 2),
+                self.model_type.name,
+                round(source_temp_C, 2),
+                round(tank_temp_C, 2),
+                round(heat_demand_kW, 2),
+                round(electrical_power_kW, 2),
+            )
+        return cop
 
 
 class UniversalCOPModel(BaseCOPModel):
