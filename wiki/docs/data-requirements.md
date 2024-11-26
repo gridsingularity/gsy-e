@@ -15,9 +15,9 @@ Users who would like to model a local energy market (an energy community partici
     * **Storage (Battery)**
         * Name (can be anonymous, e.g. Battery1) and location
         * Capacity in kWh
-        * Power delivery in kW
-        * Maximum charge/discharge rate per time interval in kW
-        * Minimum SOC in % and/or actual SOC per time interval (optional)
+        * Charge / discharge power in kW
+        * Maximum charge/discharge power in kW
+        * Minimum SOC in % and/or actual SOC in timeseries (optional)
     * **Heat Pumps**
         * Name (can be anonymous, e.g. HP1) and location
         * Maximum power rating (based on nameplate)
