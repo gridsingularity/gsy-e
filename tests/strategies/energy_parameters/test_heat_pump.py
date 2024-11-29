@@ -60,10 +60,10 @@ def fixture_heatpump_energy_params_heat_profile() -> HeatPumpEnergyParameters:
     GlobalConfig.slot_length = duration(minutes=60)
 
     source_temp_profile = {
-        timestamp: 25 for timestamp in generate_market_slot_list(CURRENT_MARKET_SLOT)
+        timestamp: 12 for timestamp in generate_market_slot_list(CURRENT_MARKET_SLOT)
     }
-    consumption_profile = {
-        timestamp: 15 for timestamp in generate_market_slot_list(CURRENT_MARKET_SLOT)
+    heat_demand_profile = {
+        timestamp: 9000000 for timestamp in generate_market_slot_list(CURRENT_MARKET_SLOT)
     }
     energy_params = HeatPumpEnergyParameters(
         maximum_power_rating_kW=30,
@@ -71,12 +71,12 @@ def fixture_heatpump_energy_params_heat_profile() -> HeatPumpEnergyParameters:
             TankParameters(
                 min_temp_C=10,
                 max_temp_C=60,
-                initial_temp_C=20,
+                initial_temp_C=45,
                 tank_volume_L=500,
             )
         ],
         source_temp_C_profile=source_temp_profile,
-        heat_demand_Q_profile=consumption_profile,
+        heat_demand_Q_profile=heat_demand_profile,
         cop_model_type=COPModelType.HOVAL_ULTRASOURCE_B_COMFORT_C11,
     )
     yield energy_params
@@ -185,6 +185,6 @@ class TestHeatPumpEnergyParameters:
         energy_params_heat_profile.event_market_cycle(CURRENT_MARKET_SLOT)
         assert isclose(
             energy_params_heat_profile._state.heatpump.get_cop(CURRENT_MARKET_SLOT),
-            5.138,
+            4.8941,
             abs_tol=0.001,
         )
