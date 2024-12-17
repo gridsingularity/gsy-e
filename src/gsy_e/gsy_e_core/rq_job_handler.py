@@ -194,7 +194,7 @@ def _configure_constants_constsettings(
     )
     gsy_e.constants.CONNECT_TO_PROFILES_DB = connect_to_profiles_db
 
-    if settings.get("p2p_enabled", True) is False:
+    if spot_market_type == SpotMarketTypeEnum.NO_MARKET.value:
         ConstSettings.MASettings.MIN_BID_AGE = gsy_e.constants.MIN_OFFER_BID_AGE_P2P_DISABLED
         ConstSettings.MASettings.MIN_OFFER_AGE = gsy_e.constants.MIN_OFFER_BID_AGE_P2P_DISABLED
         gsy_e.constants.RUN_IN_NON_P2P_MODE = True
