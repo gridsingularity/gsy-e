@@ -87,7 +87,7 @@ class IndividualCOPModel(BaseCOPModel):
             return 0
         electrical_power_kW = self._calc_power(source_temp_C, tank_temp_C, heat_demand_kW)
         if electrical_power_kW <= 0:
-            log.debug(
+            log.error(
                 "calculated power is negative: "
                 "hp model: %s  source_temp: %s, "
                 "tank_temp: %s, heat_demand_kW: %s, calculated power: %s",
@@ -100,7 +100,7 @@ class IndividualCOPModel(BaseCOPModel):
             return 0
         cop = heat_demand_kW / electrical_power_kW
         if cop > 6:
-            log.debug(
+            log.error(
                 "calculated COP (%s) is unrealistic: "
                 "hp model: %s  source_temp: %s, "
                 "tank_temp: %s, heat_demand_kW: %s, calculated power: %s",
