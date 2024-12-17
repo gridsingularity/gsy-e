@@ -5,18 +5,18 @@ To create a 5 day Profile, run:
 ./create_profile.py -i ./LOAD_DATA_1.csv -o ./LOAD_DATA_1_5d.csv -d 5
 """
 
-from pendulum import from_format, DateTime
-import csv
 import argparse
+import csv
 
-from gsy_e.constants import TIME_FORMAT, DATE_TIME_FORMAT
+from gsy_framework.constants_limits import TIME_FORMAT, DATE_TIME_FORMAT
+from pendulum import from_format, DateTime
 
 
 def read_daily_profile_todict(daily_profile_fn, separator):
     outdict = {}
     header = []
     firstline = True
-    with open(daily_profile_fn, 'r') as csv_file:
+    with open(daily_profile_fn, "r") as csv_file:
         file_reader = csv.reader(csv_file, delimiter=separator)
         for row in file_reader:
             if firstline:
@@ -29,15 +29,16 @@ def read_daily_profile_todict(daily_profile_fn, separator):
 
 
 def write_profile_todict(profile_dict, header, outfile, separator):
-    with open(outfile, 'w') as csv_file:
+    with open(outfile, "w") as csv_file:
         writer = csv.writer(csv_file, delimiter=separator)
         writer.writerow(header)
         for time, value in profile_dict.items():
             writer.writerow([time.format(DATE_TIME_FORMAT), value])
 
 
-def create_profile_from_daily_profile(n_days=365, year=2019, daily_profile_fn=None, out_fn=None,
-                                      separator=","):
+def create_profile_from_daily_profile(
+    n_days=365, year=2019, daily_profile_fn=None, out_fn=None, separator=","
+):
 
     if daily_profile_fn is None:
         raise ValueError("No daily_profile_fn was provided")
@@ -45,8 +46,9 @@ def create_profile_from_daily_profile(n_days=365, year=2019, daily_profile_fn=No
     profile_dict = {}
     for day in range(1, n_days):
         for time, value in daily_profile_dict.items():
-            profile_dict[DateTime(year, 1, 1).add(
-                days=day - 1, hours=time.hour, minutes=time.minute)] = value
+            profile_dict[
+                DateTime(year, 1, 1).add(days=day - 1, hours=time.hour, minutes=time.minute)
+            ] = value
 
     if out_fn is None:
         out_fn = daily_profile_fn.replace(".csv", "_year.csv")
@@ -54,14 +56,20 @@ def create_profile_from_daily_profile(n_days=365, year=2019, daily_profile_fn=No
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Creates a Load/Generation profile for a set'
-                                                 'number of days from a daily profile')
-    parser.add_argument('-y', '--year', help='year for timestamp', type=int, default=2019)
-    parser.add_argument('-d', '--n-days', help='number of days', type=int, default=365)
-    parser.add_argument('-s', '--separator', help='separator of csv colums', type=str, default=";")
-    parser.add_argument('-i', '--input-file', help='daily profile file', type=str, required=True)
-    parser.add_argument('-o', '--output-file', help='output profile file', type=str)
+    parser = argparse.ArgumentParser(
+        description="Creates a Load/Generation profile for a set"
+        "number of days from a daily profile"
+    )
+    parser.add_argument("-y", "--year", help="year for timestamp", type=int, default=2019)
+    parser.add_argument("-d", "--n-days", help="number of days", type=int, default=365)
+    parser.add_argument("-s", "--separator", help="separator of csv colums", type=str, default=";")
+    parser.add_argument("-i", "--input-file", help="daily profile file", type=str, required=True)
+    parser.add_argument("-o", "--output-file", help="output profile file", type=str)
     args = vars(parser.parse_args())
-    create_profile_from_daily_profile(n_days=args["n_days"], year=args["year"],
-                                      daily_profile_fn=args["input_file"],
-                                      out_fn=args["output_file"], separator=args["separator"])
+    create_profile_from_daily_profile(
+        n_days=args["n_days"],
+        year=args["year"],
+        daily_profile_fn=args["input_file"],
+        out_fn=args["output_file"],
+        separator=args["separator"],
+    )

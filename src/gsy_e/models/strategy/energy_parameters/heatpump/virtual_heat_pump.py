@@ -1,11 +1,11 @@
 import logging
 from typing import Optional, Union, Dict, List
 
+from pendulum import DateTime
+from gsy_framework.constants_limits import FLOATING_POINT_TOLERANCE
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.read_user_profile import InputProfileTypes
-from pendulum import DateTime
 
-from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.models.strategy.energy_parameters.heatpump.constants import (
     WATER_SPECIFIC_HEAT_CAPACITY,
     DEFAULT_SOURCE_TEMPERATURE_C,

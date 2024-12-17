@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
 import sys
 from uuid import uuid4
 
@@ -23,7 +24,7 @@ import pytest
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.data_classes import Offer, Trade, BalancingOffer, TraderDetails
 
-from gsy_e.constants import TIME_ZONE, TIME_FORMAT
+from gsy_framework.constants_limits import TIME_ZONE, TIME_FORMAT
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.util import change_global_config
 from gsy_e.models.config import create_simulation_config_from_global_config
@@ -50,6 +51,7 @@ def auto_fixture():
 
 class FakeArea:
     """Fake class that mimics the Area class."""
+
     # pylint: disable=too-many-instance-attributes,missing-function-docstring
     def __init__(self, _count):
         self.current_tick = 2
@@ -89,6 +91,7 @@ class FakeArea:
 
 class FakeMarket:
     """Fake class that mimics the Market class."""
+
     # pylint: disable=missing-function-docstring,too-many-arguments
     def __init__(self, count):
         self.id = str(count)
@@ -97,8 +100,7 @@ class FakeMarket:
         self.created_balancing_offers = []
 
     def offer(self, price, energy, seller, original_price=None):
-        offer = Offer(
-            "id", pendulum.now(), price, energy, seller, original_price)
+        offer = Offer("id", pendulum.now(), price, energy, seller, original_price)
         self.created_offers.append(offer)
         offer.id = "id"
         return offer
@@ -140,14 +142,16 @@ def test_offer_is_created_at_first_market_not_on_activate(commercial_test1, area
 
 
 def test_balancing_offers_are_not_sent_to_all_markets_if_device_not_in_registry(
-        commercial_test1, area_test1):
+    commercial_test1, area_test1
+):
     DeviceRegistry.REGISTRY = {}
     commercial_test1.event_activate()
     assert len(area_test1.test_balancing_market.created_balancing_offers) == 0
 
 
 def test_balancing_offers_are_sent_to_all_markets_if_device_in_registry(
-        commercial_test1, area_test1):
+    commercial_test1, area_test1
+):
 
     ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
     DeviceRegistry.REGISTRY = {"FakeArea": (30, 40)}
@@ -164,7 +168,8 @@ def test_balancing_offers_are_sent_to_all_markets_if_device_in_registry(
 
 
 def test_event_market_cycle_does_not_create_balancing_offer_if_not_in_registry(
-        commercial_test1, area_test1):
+    commercial_test1, area_test1
+):
     DeviceRegistry.REGISTRY = {}
     commercial_test1.event_activate()
     commercial_test1.event_market_cycle()
@@ -173,17 +178,16 @@ def test_event_market_cycle_does_not_create_balancing_offer_if_not_in_registry(
 
 
 def test_event_market_cycle_creates_balancing_offer_on_last_market_if_in_registry(
-        commercial_test1, area_test1):
+    commercial_test1, area_test1
+):
     ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
     DeviceRegistry.REGISTRY = {"FakeArea": (40, 50)}
     commercial_test1.event_activate()
     commercial_test1.event_market_cycle()
     assert len(area_test1.test_balancing_market.created_balancing_offers) == 1
     assert len(area_test1.test_balancing_market_2.created_balancing_offers) == 1
-    assert area_test1.test_balancing_market_2.created_balancing_offers[0].energy == \
-        sys.maxsize
-    assert area_test1.test_balancing_market_2.created_balancing_offers[0].price == \
-        sys.maxsize * 50
+    assert area_test1.test_balancing_market_2.created_balancing_offers[0].energy == sys.maxsize
+    assert area_test1.test_balancing_market_2.created_balancing_offers[0].price == sys.maxsize * 50
 
     DeviceRegistry.REGISTRY = {}
 
@@ -205,59 +209,105 @@ def test_event_trade(area_test2, commercial_test2):
     commercial_test2.event_activate()
     commercial_test2.event_market_cycle()
     traded_offer = Offer(
-        id="id", creation_time=pendulum.now(), price=20, energy=1,
-        seller=TraderDetails("FakeArea", ""))
-    commercial_test2.event_offer_traded(market_id=area_test2.test_market.id,
-                                        trade=Trade(id="id",
-                                                    offer=traded_offer,
-                                                    creation_time=pendulum.now(),
-                                                    seller=TraderDetails("FakeArea", ""),
-                                                    buyer=TraderDetails("buyer", ""),
-                                                    traded_energy=1, trade_price=1)
-                                        )
+        id="id",
+        creation_time=pendulum.now(),
+        price=20,
+        energy=1,
+        seller=TraderDetails("FakeArea", ""),
+    )
+    commercial_test2.event_offer_traded(
+        market_id=area_test2.test_market.id,
+        trade=Trade(
+            id="id",
+            offer=traded_offer,
+            creation_time=pendulum.now(),
+            seller=TraderDetails("FakeArea", ""),
+            buyer=TraderDetails("buyer", ""),
+            traded_energy=1,
+            trade_price=1,
+        ),
+    )
     assert len(area_test2.test_market.created_offers) == 1
     assert area_test2.test_market.created_offers[-1].energy == sys.maxsize
 
 
 def test_on_offer_split(area_test2, commercial_test2):
     commercial_test2.event_activate()
-    original_offer = Offer(id="id", creation_time=pendulum.now(), price=20,
-                           energy=1, seller=TraderDetails("FakeArea", ""))
-    accepted_offer = Offer(id="new_id", creation_time=pendulum.now(), price=15,
-                           energy=0.75, seller=TraderDetails("FakeArea", ""))
-    residual_offer = Offer(id="res_id", creation_time=pendulum.now(), price=55,
-                           energy=0.25, seller=TraderDetails("FakeArea", ""))
+    original_offer = Offer(
+        id="id",
+        creation_time=pendulum.now(),
+        price=20,
+        energy=1,
+        seller=TraderDetails("FakeArea", ""),
+    )
+    accepted_offer = Offer(
+        id="new_id",
+        creation_time=pendulum.now(),
+        price=15,
+        energy=0.75,
+        seller=TraderDetails("FakeArea", ""),
+    )
+    residual_offer = Offer(
+        id="res_id",
+        creation_time=pendulum.now(),
+        price=55,
+        energy=0.25,
+        seller=TraderDetails("FakeArea", ""),
+    )
     commercial_test2.offers.post(original_offer, area_test2.test_market.id)
-    commercial_test2.event_offer_split(market_id=area_test2.test_market.id,
-                                       original_offer=original_offer,
-                                       accepted_offer=accepted_offer,
-                                       residual_offer=residual_offer)
+    commercial_test2.event_offer_split(
+        market_id=area_test2.test_market.id,
+        original_offer=original_offer,
+        accepted_offer=accepted_offer,
+        residual_offer=residual_offer,
+    )
     assert original_offer.id in commercial_test2.offers.split
     assert commercial_test2.offers.split[original_offer.id] == accepted_offer
 
 
 def test_event_trade_after_offer_changed_partial_offer(area_test2, commercial_test2):
-    original_offer = Offer(id="old_id", creation_time=pendulum.now(),
-                           price=20, energy=1, seller=TraderDetails("FakeArea", ""))
-    accepted_offer = Offer(id="old_id", creation_time=pendulum.now(),
-                           price=15, energy=0.75, seller=TraderDetails("FakeArea", ""))
-    residual_offer = Offer(id="res_id", creation_time=pendulum.now(),
-                           price=5, energy=0.25, seller=TraderDetails("FakeArea", ""))
+    original_offer = Offer(
+        id="old_id",
+        creation_time=pendulum.now(),
+        price=20,
+        energy=1,
+        seller=TraderDetails("FakeArea", ""),
+    )
+    accepted_offer = Offer(
+        id="old_id",
+        creation_time=pendulum.now(),
+        price=15,
+        energy=0.75,
+        seller=TraderDetails("FakeArea", ""),
+    )
+    residual_offer = Offer(
+        id="res_id",
+        creation_time=pendulum.now(),
+        price=5,
+        energy=0.25,
+        seller=TraderDetails("FakeArea", ""),
+    )
     commercial_test2.offers.post(original_offer, area_test2.test_market.id)
-    commercial_test2.event_offer_split(market_id=area_test2.test_market.id,
-                                       original_offer=original_offer,
-                                       accepted_offer=accepted_offer,
-                                       residual_offer=residual_offer)
+    commercial_test2.event_offer_split(
+        market_id=area_test2.test_market.id,
+        original_offer=original_offer,
+        accepted_offer=accepted_offer,
+        residual_offer=residual_offer,
+    )
     assert original_offer.id in commercial_test2.offers.split
     assert commercial_test2.offers.split[original_offer.id] == accepted_offer
-    commercial_test2.event_offer_traded(market_id=area_test2.test_market.id,
-                                        trade=Trade(id="id",
-                                                    offer=original_offer,
-                                                    creation_time=pendulum.now(),
-                                                    seller=TraderDetails("FakeArea", ""),
-                                                    buyer=TraderDetails("buyer", ""),
-                                                    traded_energy=1, trade_price=1)
-                                        )
+    commercial_test2.event_offer_traded(
+        market_id=area_test2.test_market.id,
+        trade=Trade(
+            id="id",
+            offer=original_offer,
+            creation_time=pendulum.now(),
+            seller=TraderDetails("FakeArea", ""),
+            buyer=TraderDetails("buyer", ""),
+            traded_energy=1,
+            trade_price=1,
+        ),
+    )
 
     assert residual_offer in commercial_test2.offers.posted
     assert commercial_test2.offers.posted[residual_offer] == area_test2.test_market.id
@@ -303,5 +353,4 @@ def test_event_market_cycle(commercial_test3, area_test3):
 def test_market_maker_strategy_constructor_modifies_global_market_maker_rate():
     # pylint: disable=no-member
     MarketMakerStrategy(energy_rate=22)
-    assert all(v == 22
-               for v in GlobalConfig.market_maker_rate.values())
+    assert all(v == 22 for v in GlobalConfig.market_maker_rate.values())

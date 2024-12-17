@@ -5,7 +5,7 @@ from copy import deepcopy
 from datetime import datetime, date
 from typing import Dict, Optional
 
-from gsy_framework.constants_limits import GlobalConfig, ConstSettings
+from gsy_framework.constants_limits import GlobalConfig, ConstSettings, TIME_ZONE
 from gsy_framework.enums import ConfigurationType, SpotMarketTypeEnum, CoefficientAlgorithm
 from gsy_framework.settings_validators import validate_global_settings
 from pendulum import duration, instance, now
@@ -94,7 +94,7 @@ def launch_simulation_from_rq_job(
 
         if settings.get("type") == ConfigurationType.CANARY_NETWORK.value:
             config.start_date = instance(
-                datetime.combine(date.today(), datetime.min.time()), tz=gsy_e.constants.TIME_ZONE
+                datetime.combine(date.today(), datetime.min.time()), tz=TIME_ZONE
             )
 
             if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
@@ -220,7 +220,7 @@ def _create_config_settings_object(
         "start_date": (
             instance(
                 datetime.combine(settings.get("start_date"), datetime.min.time()),
-                tz=gsy_e.constants.TIME_ZONE,
+                tz=TIME_ZONE,
             )
             if "start_date" in settings
             else GlobalConfig.start_date
@@ -292,9 +292,7 @@ def _handle_scm_past_slots_simulation_run(
     # Adding 4 hours of extra time to the SCM past slots simulation duration, in order to
     # compensate for the runtime of the SCM past slots simulation and to not have any results gaps
     # after this simulation run and the following Canary Network launch.
-    config.end_date = (
-        now(tz=gsy_e.constants.TIME_ZONE).subtract(hours=config.hours_of_delay).add(hours=4)
-    )
+    config.end_date = now(tz=TIME_ZONE).subtract(hours=config.hours_of_delay).add(hours=4)
     config.sim_duration = config.end_date - config.start_date
     GlobalConfig.sim_duration = config.sim_duration
     gsy_e.constants.RUN_IN_REALTIME = False

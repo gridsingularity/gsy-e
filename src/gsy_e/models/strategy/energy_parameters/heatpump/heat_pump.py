@@ -1,12 +1,11 @@
 from abc import ABC, abstractmethod
 from typing import Optional, Dict, Union, List
 
-from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig, FLOATING_POINT_TOLERANCE
 from gsy_framework.read_user_profile import InputProfileTypes
 from gsy_framework.utils import convert_kJ_to_kWh, convert_kWh_to_kJ
 from pendulum import DateTime
 
-from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.models.strategy.energy_parameters.heatpump.cop_models import (
     COPModelType,
     cop_model_factory,

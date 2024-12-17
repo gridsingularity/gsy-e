@@ -21,7 +21,7 @@ from math import isclose
 from unittest.mock import MagicMock
 
 import pytest
-from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings, FLOATING_POINT_TOLERANCE, TIME_ZONE
 from gsy_framework.enums import (
     SpotMarketTypeEnum,
     CoefficientAlgorithm,
@@ -31,7 +31,6 @@ from gsy_framework.enums import (
 from pendulum import duration, today
 from pendulum import now
 
-from gsy_e import constants
 from gsy_e.models.area import CoefficientArea, CoefficientAreaException
 from gsy_e.models.area.scm_manager import (
     SCMManager,
@@ -56,7 +55,7 @@ class TestCoefficientArea:
         config.slot_length = duration(minutes=15)
         config.tick_length = duration(seconds=15)
         config.ticks_per_slot = int(config.slot_length.seconds / config.tick_length.seconds)
-        config.start_date = today(tz=constants.TIME_ZONE)
+        config.start_date = today(tz=TIME_ZONE)
         config.sim_duration = duration(days=1)
 
         return config
@@ -309,9 +308,7 @@ class TestCoefficientArea:
             assert isclose(scm._bills[house2.uuid].gsy_energy_bill, -0.02)
         assert isclose(scm._bills[house2.uuid].export_grid_fees, 0.0)
 
-        assert isclose(
-            scm._bills[house2.uuid].savings, 0.0, abs_tol=constants.FLOATING_POINT_TOLERANCE
-        )
+        assert isclose(scm._bills[house2.uuid].savings, 0.0, abs_tol=FLOATING_POINT_TOLERANCE)
         assert isclose(scm._bills[house2.uuid].savings_percent, 0.0)
         assert len(scm._home_data[house1.uuid].trades) == 2
         trades = scm._home_data[house1.uuid].trades

@@ -26,14 +26,14 @@ from logging import getLogger
 from typing import TYPE_CHECKING, Callable, Dict, Generator, List, Optional, Union
 from uuid import uuid4
 
-from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings, FLOATING_POINT_TOLERANCE
 from gsy_framework.data_classes import Bid, Offer, Trade, TraderDetails
 from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.utils import limit_float_precision
 from pendulum import DateTime
 
 from gsy_e import constants
-from gsy_e.constants import FLOATING_POINT_TOLERANCE, REDIS_PUBLISH_RESPONSE_TIMEOUT
+from gsy_e.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT
 from gsy_e.events import EventMixin
 from gsy_e.events.event_structures import AreaEvent, MarketEvent
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry

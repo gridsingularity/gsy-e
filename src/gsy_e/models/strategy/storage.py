@@ -21,7 +21,7 @@ from enum import Enum
 from logging import getLogger
 from typing import Union, Optional
 
-from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings, FLOATING_POINT_TOLERANCE
 from gsy_framework.data_classes import TraderDetails
 from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.exceptions import GSyException
@@ -33,7 +33,6 @@ from pendulum import duration
 from gsy_e import constants
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.exceptions import MarketException
-from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.models.base import AssetType
 from gsy_e.models.strategy.state import ESSEnergyOrigin, StorageState, StorageLosses
 from gsy_e.models.strategy import BidEnabledStrategy

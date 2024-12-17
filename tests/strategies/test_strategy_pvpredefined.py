@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
 # pylint: disable=redefined-outer-name, protected-access, missing-function-docstring
 # pylint: disable=missing-class-docstring, pointless-string-statement, no-self-use,global-statement
 import os
@@ -25,7 +26,7 @@ from uuid import uuid4
 
 import pendulum
 import pytest
-from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig, TIME_ZONE, TIME_FORMAT
 from gsy_framework.data_classes import Offer, TraderDetails
 from gsy_framework.exceptions import GSyDeviceException
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
@@ -33,7 +34,6 @@ from gsy_framework.utils import generate_market_slot_list
 from gsy_framework.enums import ConfigurationType
 from pendulum import DateTime, duration, datetime
 
-from gsy_e.constants import TIME_ZONE, TIME_FORMAT
 from gsy_e.gsy_e_core.util import gsye_root_path, change_global_config
 from gsy_e.models.config import create_simulation_config_from_global_config
 from gsy_e.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
@@ -125,13 +125,26 @@ class FakeMarket:
         self.id = str(count)
         self.created_offers = []
         self.offers = {
-            "id": Offer(id="id", creation_time=pendulum.now(), price=10, energy=0.5,
-                        seller=TraderDetails("A", ""))}
+            "id": Offer(
+                id="id",
+                creation_time=pendulum.now(),
+                price=10,
+                energy=0.5,
+                seller=TraderDetails("A", ""),
+            )
+        }
         self._time_slot = TIME
 
     def offer(self, price, energy, seller, original_price=None, time_slot=None):
-        offer = Offer(str(uuid.uuid4()), pendulum.now(), price, energy, seller,
-                      original_price, time_slot=time_slot)
+        offer = Offer(
+            str(uuid.uuid4()),
+            pendulum.now(),
+            price,
+            energy,
+            seller,
+            original_price,
+            time_slot=time_slot,
+        )
         self.created_offers.append(offer)
         self.offers[offer.id] = offer
         return offer
@@ -216,8 +229,11 @@ def pv_test3(area_test3):
     p = PVPredefinedStrategy(cloud_coverage=ConstSettings.PVSettings.DEFAULT_POWER_PROFILE)
     p.area = area_test3
     p.owner = area_test3
-    p.offers.posted = {Offer("id", pendulum.now(), 30, 1,
-                             TraderDetails("FakeArea", "")): area_test3.test_market.id}
+    p.offers.posted = {
+        Offer(
+            "id", pendulum.now(), 30, 1, TraderDetails("FakeArea", "")
+        ): area_test3.test_market.id
+    }
     return p
 
 
@@ -244,8 +260,13 @@ def pv_test4(area_test3, _called):
     p.area = area_test3
     p.owner = area_test3
     p.offers.posted = {
-        Offer(id="id", creation_time=pendulum.now(), price=20, energy=1,
-              seller=TraderDetails("FakeArea", "")): area_test3.test_market.id
+        Offer(
+            id="id",
+            creation_time=pendulum.now(),
+            price=20,
+            energy=1,
+            seller=TraderDetails("FakeArea", ""),
+        ): area_test3.test_market.id
     }
     return p
 
@@ -304,26 +325,33 @@ def testing_produced_energy_forecast_real_data(pv_test66):
             self.total = 0
             self.count = 0
             self.time = time
+
     morning_counts = Counts("morning")
     afternoon_counts = Counts("afternoon")
     evening_counts = Counts("evening")
 
-    for (time, _) in pv_test66.state._energy_production_forecast_kWh.items():
+    for time, _ in pv_test66.state._energy_production_forecast_kWh.items():
         if time < morning_time:
             morning_counts.total += 1
-            morning_counts.count = morning_counts.count + 1 \
-                if pv_test66.state._energy_production_forecast_kWh[time] == 0 \
+            morning_counts.count = (
+                morning_counts.count + 1
+                if pv_test66.state._energy_production_forecast_kWh[time] == 0
                 else morning_counts.count
+            )
         elif morning_time < time < afternoon_time:
             afternoon_counts.total += 1
-            afternoon_counts.count = afternoon_counts.count + 1 \
-                if pv_test66.state._energy_production_forecast_kWh[time] > 0.001 \
+            afternoon_counts.count = (
+                afternoon_counts.count + 1
+                if pv_test66.state._energy_production_forecast_kWh[time] > 0.001
                 else afternoon_counts.count
+            )
         elif time > afternoon_time:
             evening_counts.total += 1
-            evening_counts.count = evening_counts.count + 1 \
-                if pv_test66.state._energy_production_forecast_kWh[time] == 0 \
+            evening_counts.count = (
+                evening_counts.count + 1
+                if pv_test66.state._energy_production_forecast_kWh[time] == 0
                 else evening_counts.count
+            )
 
     total_count = morning_counts.total + afternoon_counts.total + evening_counts.total
     assert len(list(pv_test66.state._energy_production_forecast_kWh.items())) == total_count
@@ -343,12 +371,17 @@ def test_does_not_offer_sold_energy_again(pv_test6, market_test3):
     # pylint: disable = attribute-defined-outside-init
     pv_test6.event_activate()
     pv_test6.event_market_cycle()
-    assert market_test3.created_offers[0].energy == \
-        pv_test6.state._energy_production_forecast_kWh[TIME]
+    assert (
+        market_test3.created_offers[0].energy
+        == pv_test6.state._energy_production_forecast_kWh[TIME]
+    )
     fake_trade = FakeTrade(market_test3.created_offers[0])
     fake_trade.seller = TraderDetails(
-        pv_test6.owner.name, fake_trade.seller.uuid,
-        fake_trade.seller.origin, fake_trade.seller.origin_uuid)
+        pv_test6.owner.name,
+        fake_trade.seller.uuid,
+        fake_trade.seller.origin,
+        fake_trade.seller.origin_uuid,
+    )
     fake_trade.time_slot = market_test3.time_slot
     pv_test6.event_offer_traded(market_id=market_test3.id, trade=fake_trade)
     market_test3.created_offers = []
@@ -396,8 +429,8 @@ def test_correct_interpolation_power_profile():
     profile_path = pathlib.Path(gsye_root_path + "/resources/Solar_Curve_W_sunny.csv")
     profile = read_arbitrary_profile(InputProfileTypes.POWER_W, str(profile_path))
     times = list(profile)
-    for ii in range(len(times)-1):
-        assert abs((times[ii]-times[ii+1]).in_seconds()) == slot_length * 60
+    for ii in range(len(times) - 1):
+        assert abs((times[ii] - times[ii + 1]).in_seconds()) == slot_length * 60
     GlobalConfig.slot_length = original_slot_length
 
 
@@ -418,15 +451,18 @@ def test_pv_user_profile_constructor_rejects_incorrect_parameters():
     with pytest.raises(GSyDeviceException):
         PVUserProfileStrategy(power_profile=user_profile_path, panel_count=-1)
     with pytest.raises(GSyDeviceException):
-        pv = PVUserProfileStrategy(power_profile=user_profile_path,
-                                   initial_selling_rate=5, final_selling_rate=15)
+        pv = PVUserProfileStrategy(
+            power_profile=user_profile_path, initial_selling_rate=5, final_selling_rate=15
+        )
         pv.event_activate()
     with pytest.raises(GSyDeviceException):
-        PVUserProfileStrategy(power_profile=user_profile_path,
-                              fit_to_limit=True, energy_rate_decrease_per_update=1)
+        PVUserProfileStrategy(
+            power_profile=user_profile_path, fit_to_limit=True, energy_rate_decrease_per_update=1
+        )
     with pytest.raises(GSyDeviceException):
-        PVUserProfileStrategy(power_profile=user_profile_path,
-                              fit_to_limit=False, energy_rate_decrease_per_update=-1)
+        PVUserProfileStrategy(
+            power_profile=user_profile_path, fit_to_limit=False, energy_rate_decrease_per_update=-1
+        )
 
 
 @pytest.mark.parametrize("is_canary", [False, True])

@@ -21,14 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # pylint: disable=unused-import
 import os
 
-from gsy_framework.constants_limits import DATE_TIME_FORMAT, DATE_TIME_UI_FORMAT, TIME_ZONE  # NOQA
-from gsy_framework.constants_limits import (  # NOQA
-    TIME_FORMAT,
-    DATE_FORMAT,
-    GlobalConfig,
-    FLOATING_POINT_TOLERANCE,
-)
-
 ROUND_TOLERANCE = 5
 
 # Percentual standard deviation relative to the forecast energy, used to compute the (simulated)

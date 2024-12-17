@@ -24,12 +24,11 @@ import click
 from click.types import Choice
 from click_default_group import DefaultGroup
 from colorlog.colorlog import ColoredFormatter
-from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings, DATE_FORMAT, TIME_FORMAT, TIME_ZONE
 from gsy_framework.exceptions import GSyException
 from gsy_framework.settings_validators import validate_global_settings
 from pendulum import today
 
-import gsy_e.constants
 from gsy_e.gsy_e_core.simulation import run_simulation
 from gsy_e.gsy_e_core.util import (
     DateType,
@@ -130,8 +129,8 @@ _setup_modules = available_simulation_scenarios
     type=str,
     default=None,
     help="Automatically pause at a certain time. "
-    f"Accepted Input formats: ({gsy_e.constants.DATE_FORMAT}, "
-    f"{gsy_e.constants.TIME_FORMAT}) [default: disabled]",
+    f"Accepted Input formats: ({DATE_FORMAT}, "
+    f"{TIME_FORMAT}) [default: disabled]",
 )
 @click.option(
     "--incremental",
@@ -160,10 +159,10 @@ _setup_modules = available_simulation_scenarios
 )
 @click.option(
     "--start-date",
-    type=DateType(gsy_e.constants.DATE_FORMAT),
-    default=today(tz=gsy_e.constants.TIME_ZONE).format(gsy_e.constants.DATE_FORMAT),
+    type=DateType(DATE_FORMAT),
+    default=today(tz=TIME_ZONE).format(DATE_FORMAT),
     show_default=True,
-    help=f"Start date of the Simulation ({gsy_e.constants.DATE_FORMAT})",
+    help=f"Start date of the Simulation ({DATE_FORMAT})",
 )
 @click.option(
     "--enable-dof/--disable-dof",

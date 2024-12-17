@@ -9,7 +9,7 @@ from gsy_framework.exceptions import GSyException
 from gsy_framework.utils import convert_pendulum_to_str_in_dict
 from gsy_framework.validators.heat_pump_validator import HeatPumpValidator
 
-from gsy_e.constants import FLOATING_POINT_TOLERANCE
+from gsy_framework.constants_limits import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.util import (
     get_market_maker_rate_from_time_slot,
     get_feed_in_tariff_rate_from_time_slot,

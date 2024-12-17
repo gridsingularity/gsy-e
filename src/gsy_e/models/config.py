@@ -15,20 +15,21 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
 import json
 
-from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig, TIME_ZONE
 from gsy_framework.exceptions import GSyException
 from gsy_framework.read_user_profile import InputProfileTypes, read_arbitrary_profile
 from pendulum import DateTime, Duration, duration, today
 
-from gsy_e.constants import TIME_ZONE
 from gsy_e.gsy_e_core.redis_connections.area_market import external_redis_communicator_factory
 from gsy_e.gsy_e_core.util import change_global_config, format_interval
 
 
 class SimulationConfig:
     """Class defining parameters that describe the behavior of a simulation."""
+
     # pylint: disable=too-many-instance-attributes, too-many-arguments
     def __init__(
         self,
@@ -73,11 +74,13 @@ class SimulationConfig:
         if self.ticks_per_slot != int(self.ticks_per_slot):
             raise GSyException(
                 f"Non integer ticks per slot ({self.ticks_per_slot}) are not supported. "
-                "Adjust simulation parameters.")
+                "Adjust simulation parameters."
+            )
         self.ticks_per_slot = int(self.ticks_per_slot)
         if self.ticks_per_slot < 10:
             raise GSyException(
-                f"Too few ticks per slot ({self.ticks_per_slot}). Adjust simulation parameters")
+                f"Too few ticks per slot ({self.ticks_per_slot}). Adjust simulation parameters"
+            )
         self.total_ticks = self.sim_duration // self.slot_length * self.ticks_per_slot
 
         self.market_slot_list = []
@@ -88,7 +91,8 @@ class SimulationConfig:
         self.capacity_kW = capacity_kW or ConstSettings.PVSettings.DEFAULT_CAPACITY_KW
         self.external_connection_enabled = external_connection_enabled
         self.external_redis_communicator = external_redis_communicator_factory(
-            external_connection_enabled)
+            external_connection_enabled
+        )
         if aggregator_device_mapping:
             self.external_redis_communicator.aggregator.set_aggregator_device_mapping(
                 aggregator_device_mapping
@@ -100,17 +104,25 @@ class SimulationConfig:
 
     def as_dict(self):
         """Return config parameters as dict."""
-        fields = {"sim_duration", "slot_length", "tick_length", "ticks_per_slot",
-                  "total_ticks", "capacity_kW", "grid_fee_type",
-                  "external_connection_enabled", "enable_degrees_of_freedom", "hours_of_delay"}
+        fields = {
+            "sim_duration",
+            "slot_length",
+            "tick_length",
+            "ticks_per_slot",
+            "total_ticks",
+            "capacity_kW",
+            "grid_fee_type",
+            "external_connection_enabled",
+            "enable_degrees_of_freedom",
+            "hours_of_delay",
+        }
         return {
             k: format_interval(v) if isinstance(v, Duration) else v
             for k, v in self.__dict__.items()
             if k in fields
         }
 
-    def update_config_parameters(self, *,
-                                 market_maker_rate=None, capacity_kW=None):
+    def update_config_parameters(self, *, market_maker_rate=None, capacity_kW=None):
         """Update provided config parameters."""
         if market_maker_rate is not None:
             self.set_market_maker_rate(market_maker_rate)
@@ -122,7 +134,8 @@ class SimulationConfig:
         Reads market_maker_rate from arbitrary input types
         """
         self.market_maker_rate = read_arbitrary_profile(
-            InputProfileTypes.IDENTITY, market_maker_rate)
+            InputProfileTypes.IDENTITY, market_maker_rate
+        )
 
 
 def create_simulation_config_from_global_config():
@@ -141,5 +154,5 @@ def create_simulation_config_from_global_config():
         market_maker_rate=GlobalConfig.market_maker_rate,
         start_date=GlobalConfig.start_date,
         grid_fee_type=GlobalConfig.grid_fee_type,
-        enable_degrees_of_freedom=GlobalConfig.enable_degrees_of_freedom
+        enable_degrees_of_freedom=GlobalConfig.enable_degrees_of_freedom,
     )

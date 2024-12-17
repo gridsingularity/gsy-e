@@ -1,7 +1,7 @@
 from math import isclose
 from typing import TYPE_CHECKING, Dict, Optional
 
-from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings, FLOATING_POINT_TOLERANCE
 from gsy_framework.enums import SCMSelfConsumptionType
 from pendulum import DateTime
 
@@ -9,7 +9,6 @@ import gsy_e.constants
 from gsy_e.constants import (
     DEFAULT_SCM_COMMUNITY_NAME,
     DEFAULT_SCM_GRID_NAME,
-    FLOATING_POINT_TOLERANCE,
 )
 from gsy_e.gsy_e_core.util import get_slots_per_month
 from gsy_e.models.area.scm_dataclasses import (

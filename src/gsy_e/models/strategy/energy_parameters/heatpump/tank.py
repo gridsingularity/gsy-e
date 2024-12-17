@@ -3,11 +3,11 @@ from dataclasses import dataclass
 from statistics import mean
 from typing import Dict, Union, List
 
-from gsy_framework.constants_limits import ConstSettings, GlobalConfig
-from gsy_framework.utils import convert_kJ_to_kWh
 from pendulum import DateTime
 
-from gsy_e.constants import FLOATING_POINT_TOLERANCE
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig, FLOATING_POINT_TOLERANCE
+from gsy_framework.utils import convert_kJ_to_kWh
+
 from gsy_e.models.strategy.energy_parameters.heatpump.constants import (
     WATER_DENSITY,
     SPECIFIC_HEAT_CONST_WATER,
