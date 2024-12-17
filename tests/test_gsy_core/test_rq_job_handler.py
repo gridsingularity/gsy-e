@@ -5,7 +5,7 @@ from unittest.mock import patch, Mock
 import pytest
 from pendulum import duration, now, datetime
 
-from gsy_framework.constants_limits import GlobalConfig, ConstSettings
+from gsy_framework.constants_limits import GlobalConfig, ConstSettings, TIME_ZONE
 from gsy_framework.enums import ConfigurationType, CoefficientAlgorithm
 
 import gsy_e.constants
@@ -119,9 +119,7 @@ class TestRqJobHandler:
         assert config.tick_length == duration(seconds=20)
         assert config.start_date == datetime(2023, 1, 1)
         expected_end_date = (
-            now(tz=gsy_e.constants.TIME_ZONE)
-            .subtract(hours=ConstSettings.SCMSettings.HOURS_OF_DELAY)
-            .add(hours=4)
+            now(tz=TIME_ZONE).subtract(hours=ConstSettings.SCMSettings.HOURS_OF_DELAY).add(hours=4)
         )
         assert config.end_date.replace(second=0, microsecond=0) == expected_end_date.replace(
             second=0, microsecond=0

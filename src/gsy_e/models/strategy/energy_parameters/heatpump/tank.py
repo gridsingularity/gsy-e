@@ -3,10 +3,11 @@ from dataclasses import dataclass
 from statistics import mean
 from typing import Dict, Union, List
 
-from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from pendulum import DateTime
 
-from gsy_e.constants import FLOATING_POINT_TOLERANCE
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig, FLOATING_POINT_TOLERANCE
+from gsy_framework.utils import convert_kJ_to_kWh
+
 from gsy_e.models.strategy.energy_parameters.heatpump.constants import (
     WATER_DENSITY,
     SPECIFIC_HEAT_CONST_WATER,
@@ -54,14 +55,14 @@ class TankEnergyParameters:
         """Results dict with the results from the tank."""
         return self._state.get_results_dict(current_time_slot)
 
-    def increase_tank_temp_from_heat_energy(self, heat_energy: float, time_slot: DateTime):
+    def increase_tank_temp_from_heat_energy(self, heat_energy_kWh: float, time_slot: DateTime):
         """Increase the temperature of the water tank with the provided heat energy."""
-        temp_increase_K = self._Q_kWh_to_temp_diff(heat_energy)
+        temp_increase_K = self._Q_kWh_to_temp_diff(heat_energy_kWh)
         self._state.update_temp_increase_K(time_slot, temp_increase_K)
 
-    def decrease_tank_temp_from_heat_energy(self, heat_energy: float, time_slot: DateTime):
+    def decrease_tank_temp_from_heat_energy(self, heat_energy_kWh: float, time_slot: DateTime):
         """Decrease the temperature of the water tank with the provided heat energy."""
-        temp_decrease_K = self._Q_kWh_to_temp_diff(heat_energy)
+        temp_decrease_K = self._Q_kWh_to_temp_diff(heat_energy_kWh)
         self._state.set_temp_decrease_K(time_slot, temp_decrease_K)
 
     def increase_tank_temp_from_temp_delta(self, temp_diff: float, time_slot: DateTime):
@@ -109,18 +110,20 @@ class AllTanksEnergyParameters:
             TankEnergyParameters(tank, GlobalConfig.slot_length) for tank in tank_parameters
         ]
 
-    def increase_tanks_temp_from_heat_energy(self, heat_energy: float, time_slot: DateTime):
+    def increase_tanks_temp_from_heat_energy(self, heat_energy_kJ: float, time_slot: DateTime):
         """Increase the temperature of the water tanks with the provided heat energy."""
         # Split heat energy equally across tanks
-        heat_energy_per_tank = heat_energy / len(self._tanks_energy_parameters)
+        heat_energy_per_tank_kJ = heat_energy_kJ / len(self._tanks_energy_parameters)
+        heat_energy_per_tank_kWh = convert_kJ_to_kWh(heat_energy_per_tank_kJ)
         for tank in self._tanks_energy_parameters:
-            tank.increase_tank_temp_from_heat_energy(heat_energy_per_tank, time_slot)
+            tank.increase_tank_temp_from_heat_energy(heat_energy_per_tank_kWh, time_slot)
 
-    def decrease_tanks_temp_from_heat_energy(self, heat_energy: float, time_slot: DateTime):
+    def decrease_tanks_temp_from_heat_energy(self, heat_energy_kJ: float, time_slot: DateTime):
         """Decrease the temperature of the water tanks with the provided heat energy."""
-        heat_energy_per_tank = heat_energy / len(self._tanks_energy_parameters)
+        heat_energy_per_tank_kJ = heat_energy_kJ / len(self._tanks_energy_parameters)
+        heat_energy_per_tank_kWh = convert_kJ_to_kWh(heat_energy_per_tank_kJ)
         for tank in self._tanks_energy_parameters:
-            tank.decrease_tank_temp_from_heat_energy(heat_energy_per_tank, time_slot)
+            tank.decrease_tank_temp_from_heat_energy(heat_energy_per_tank_kWh, time_slot)
 
     def update_tanks_temperature(self, time_slot: DateTime):
         """
@@ -142,6 +145,8 @@ class AllTanksEnergyParameters:
 
     def get_min_energy_consumption(self, cop: float, time_slot: DateTime):
         """Get min energy consumption from all water tanks."""
+        if cop == 0:
+            return 0
         min_energy_consumption_kWh = sum(
             tank.get_min_energy_consumption(cop, time_slot)
             for tank in self._tanks_energy_parameters

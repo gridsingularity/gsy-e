@@ -21,13 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # pylint: disable=unused-import
 import os
 
-from gsy_framework.constants_limits import DATE_TIME_FORMAT, DATE_TIME_UI_FORMAT, TIME_ZONE  # NOQA
-from gsy_framework.constants_limits import TIME_FORMAT, DATE_FORMAT, GlobalConfig  # NOQA
-
-# In order to cover conversion and reverse-conversion to 5 decimal points, the tolerance has to be
-# 0.00002. That way off-by-one consecutive rounding errors would not be treated as errors, e.g.
-# when recalculating the original energy rate in trade chains.
-FLOATING_POINT_TOLERANCE = 0.00002
 ROUND_TOLERANCE = 5
 
 # Percentual standard deviation relative to the forecast energy, used to compute the (simulated)

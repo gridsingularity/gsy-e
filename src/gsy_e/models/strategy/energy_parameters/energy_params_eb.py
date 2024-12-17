@@ -26,12 +26,12 @@ from collections import defaultdict
 from typing import Optional, TYPE_CHECKING, DefaultDict
 
 import pendulum
-from gsy_framework.constants_limits import GlobalConfig
+from gsy_framework.constants_limits import GlobalConfig, FLOATING_POINT_TOLERANCE
 from gsy_framework.enums import AvailableMarketTypes
 from gsy_framework.forward_markets.forward_profile import ForwardTradeProfileGenerator
 from gsy_framework.utils import convert_kW_to_kWh
 
-from gsy_e.constants import FLOATING_POINT_TOLERANCE, FORWARD_MARKET_MAX_DURATION_YEARS
+from gsy_e.constants import FORWARD_MARKET_MAX_DURATION_YEARS
 from gsy_e.models.strategy.state import LoadState, PVState
 
 if TYPE_CHECKING:
@@ -45,6 +45,7 @@ class _BaseMarketEnergyParams(ABC):
     The children of these classes should not be instantiated by classes other than the
     ForwardEnergyParams child classes.
     """
+
     def __init__(self, posted_energy_kWh: DefaultDict):
         self._posted_energy_kWh = posted_energy_kWh
         self._area: Optional["AreaBase"] = None
@@ -63,35 +64,35 @@ class _BaseMarketEnergyParams(ABC):
         """Get the already posted energy from the asset for this market slot."""
 
     @abstractmethod
-    def increment_posted_energy(
-            self, market_slot: pendulum.DateTime, posted_energy_kWh: float):
+    def increment_posted_energy(self, market_slot: pendulum.DateTime, posted_energy_kWh: float):
         """Increment the posted energy of the asset."""
 
     @abstractmethod
-    def decrement_posted_energy(
-            self, market_slot: pendulum.DateTime, posted_energy_kWh: float):
+    def decrement_posted_energy(self, market_slot: pendulum.DateTime, posted_energy_kWh: float):
         """Decrement the posted energy of the asset."""
 
     @abstractmethod
     def get_available_load_energy_kWh(
-            self, market_slot: pendulum.DateTime, state: "LoadState",
-            peak_energy_kWh: float) -> float:
+        self, market_slot: pendulum.DateTime, state: "LoadState", peak_energy_kWh: float
+    ) -> float:
         """Get the available (not traded) energy of a load asset."""
 
     @abstractmethod
     def get_available_pv_energy_kWh(
-            self, market_slot: pendulum.DateTime, state: "PVState",
-            peak_energy_kWh: float) -> float:
+        self, market_slot: pendulum.DateTime, state: "PVState", peak_energy_kWh: float
+    ) -> float:
         """Get the available (not traded) energy of a PV asset."""
 
     @abstractmethod
     def event_load_traded_energy(
-            self, energy_kWh: float, market_slot: pendulum.DateTime, state: "LoadState"):
+        self, energy_kWh: float, market_slot: pendulum.DateTime, state: "LoadState"
+    ):
         """Trigger actions on a trade event of a load asset."""
 
     @abstractmethod
     def event_pv_traded_energy(
-            self, energy_kWh: float, market_slot: pendulum.DateTime, state: "PVState"):
+        self, energy_kWh: float, market_slot: pendulum.DateTime, state: "PVState"
+    ):
         """Trigger actions on a trade event of a PV asset."""
 
 
@@ -100,40 +101,39 @@ class _IntradayEnergyParams(_BaseMarketEnergyParams):
     Energy parameters for the intraday market.
     Should only be instantiated by the ForwardEnergyParams and its child classes.
     """
+
     def get_posted_energy_kWh(self, market_slot: pendulum.DateTime) -> float:
         return self._posted_energy_kWh[market_slot]
 
-    def increment_posted_energy(
-            self, market_slot: pendulum.DateTime, posted_energy_kWh: float):
+    def increment_posted_energy(self, market_slot: pendulum.DateTime, posted_energy_kWh: float):
         self._posted_energy_kWh[market_slot] += posted_energy_kWh
 
-    def decrement_posted_energy(
-            self, market_slot: pendulum.DateTime, posted_energy_kWh: float):
+    def decrement_posted_energy(self, market_slot: pendulum.DateTime, posted_energy_kWh: float):
         self._posted_energy_kWh[market_slot] -= posted_energy_kWh
 
     def get_available_load_energy_kWh(
-            self, market_slot: pendulum.DateTime, state: "LoadState",
-            peak_energy_kWh: float) -> float:
+        self, market_slot: pendulum.DateTime, state: "LoadState", peak_energy_kWh: float
+    ) -> float:
         return state.get_energy_requirement_Wh(market_slot) / 1000.0
 
     def get_available_pv_energy_kWh(
-            self, market_slot: pendulum.DateTime, state: "PVState",
-            peak_energy_kWh: float) -> float:
+        self, market_slot: pendulum.DateTime, state: "PVState", peak_energy_kWh: float
+    ) -> float:
         return state.get_available_energy_kWh(market_slot)
 
     def event_load_traded_energy(
-            self, energy_kWh: float, market_slot: pendulum.DateTime, state: "LoadState"):
+        self, energy_kWh: float, market_slot: pendulum.DateTime, state: "LoadState"
+    ):
         state.decrement_energy_requirement(
-            purchased_energy_Wh=energy_kWh * 1000,
-            time_slot=market_slot,
-            area_name=self._area.name)
+            purchased_energy_Wh=energy_kWh * 1000, time_slot=market_slot, area_name=self._area.name
+        )
 
     def event_pv_traded_energy(
-            self, energy_kWh: float, market_slot: pendulum.DateTime, state: "PVState"):
+        self, energy_kWh: float, market_slot: pendulum.DateTime, state: "PVState"
+    ):
         state.decrement_available_energy(
-            sold_energy_kWh=energy_kWh,
-            time_slot=market_slot,
-            area_name=self._area.name)
+            sold_energy_kWh=energy_kWh, time_slot=market_slot, area_name=self._area.name
+        )
 
 
 class _DayForwardEnergyParams(_BaseMarketEnergyParams):
@@ -141,6 +141,7 @@ class _DayForwardEnergyParams(_BaseMarketEnergyParams):
     Energy parameters for the day forward market.
     Should only be instantiated by the ForwardEnergyParams and its child classes.
     """
+
     @staticmethod
     def _day_forward_slots(market_slot: pendulum.DateTime):
         """Get the market slots for the day forward market."""
@@ -148,55 +149,52 @@ class _DayForwardEnergyParams(_BaseMarketEnergyParams):
             market_slot,
             market_slot + pendulum.duration(minutes=15),
             market_slot + pendulum.duration(minutes=30),
-            market_slot + pendulum.duration(minutes=45)]
+            market_slot + pendulum.duration(minutes=45),
+        ]
 
     def get_posted_energy_kWh(self, market_slot: pendulum.DateTime) -> float:
-        return max(
-            self._posted_energy_kWh[slot]
-            for slot in self._day_forward_slots(market_slot)
-        )
+        return max(self._posted_energy_kWh[slot] for slot in self._day_forward_slots(market_slot))
 
     def increment_posted_energy(self, market_slot: pendulum.DateTime, posted_energy_kWh: float):
         slots = self._day_forward_slots(market_slot)
         for slot in slots:
             self._posted_energy_kWh[slot] += posted_energy_kWh
 
-    def decrement_posted_energy(
-            self, market_slot: pendulum.DateTime, posted_energy_kWh: float):
+    def decrement_posted_energy(self, market_slot: pendulum.DateTime, posted_energy_kWh: float):
         for slot in self._day_forward_slots(market_slot):
             self._posted_energy_kWh[slot] -= posted_energy_kWh
 
     def get_available_load_energy_kWh(
-            self, market_slot: pendulum.DateTime, state: "LoadState",
-            peak_energy_kWh: float) -> float:
+        self, market_slot: pendulum.DateTime, state: "LoadState", peak_energy_kWh: float
+    ) -> float:
         return min(
             state.get_energy_requirement_Wh(slot) / 1000.0
             for slot in self._day_forward_slots(market_slot)
         )
 
     def get_available_pv_energy_kWh(
-            self, market_slot: pendulum.DateTime, state: "PVState",
-            peak_energy_kWh: float) -> float:
+        self, market_slot: pendulum.DateTime, state: "PVState", peak_energy_kWh: float
+    ) -> float:
         return min(
             state.get_energy_production_forecast_kWh(slot)
             for slot in self._day_forward_slots(market_slot)
         )
 
     def event_load_traded_energy(
-            self, energy_kWh: float, market_slot: pendulum.DateTime, state: "LoadState"):
+        self, energy_kWh: float, market_slot: pendulum.DateTime, state: "LoadState"
+    ):
         for slot in self._day_forward_slots(market_slot):
             state.decrement_energy_requirement(
-                purchased_energy_Wh=energy_kWh * 1000,
-                time_slot=slot,
-                area_name=self._area.name)
+                purchased_energy_Wh=energy_kWh * 1000, time_slot=slot, area_name=self._area.name
+            )
 
     def event_pv_traded_energy(
-            self, energy_kWh: float, market_slot: pendulum.DateTime, state: "PVState"):
+        self, energy_kWh: float, market_slot: pendulum.DateTime, state: "PVState"
+    ):
         for slot in self._day_forward_slots(market_slot):
             state.decrement_available_energy(
-                sold_energy_kWh=energy_kWh,
-                time_slot=slot,
-                area_name=self._area.name)
+                sold_energy_kWh=energy_kWh, time_slot=slot, area_name=self._area.name
+            )
 
 
 class _LongForwardEnergyParameters(_BaseMarketEnergyParams):
@@ -204,24 +202,23 @@ class _LongForwardEnergyParameters(_BaseMarketEnergyParams):
     Energy parameters for the week / month / year forward markets.
     Should only be instantiated by the ForwardEnergyParams and its child classes.
     """
+
     def __init__(self, posted_energy_kWh: DefaultDict, product_type: AvailableMarketTypes):
         super().__init__(posted_energy_kWh)
         self._product_type = product_type
 
     def get_posted_energy_kWh(self, market_slot: pendulum.DateTime) -> float:
-        return 0.
+        return 0.0
 
-    def increment_posted_energy(
-            self, market_slot: pendulum.DateTime, posted_energy_kWh: float):
+    def increment_posted_energy(self, market_slot: pendulum.DateTime, posted_energy_kWh: float):
         return
 
-    def decrement_posted_energy(
-            self, market_slot: pendulum.DateTime, posted_energy_kWh: float):
+    def decrement_posted_energy(self, market_slot: pendulum.DateTime, posted_energy_kWh: float):
         return
 
     def get_available_load_energy_kWh(
-            self, market_slot: pendulum.DateTime, state: "LoadState",
-            peak_energy_kWh: float) -> float:
+        self, market_slot: pendulum.DateTime, state: "LoadState", peak_energy_kWh: float
+    ) -> float:
 
         # This is the part where the week / month / year forward markets' available energy is
         # calculated. In order for the available energy for a bid to be calculated, the available
@@ -234,16 +231,16 @@ class _LongForwardEnergyParameters(_BaseMarketEnergyParams):
         reference_slot = market_slot.set(hour=12, minute=0)
 
         if state.get_desired_energy_Wh(reference_slot) <= FLOATING_POINT_TOLERANCE:
-            scaling_factor = 0.
+            scaling_factor = 0.0
         else:
-            scaling_factor = (
-                    state.get_energy_requirement_Wh(reference_slot) /
-                    state.get_desired_energy_Wh(reference_slot))
+            scaling_factor = state.get_energy_requirement_Wh(
+                reference_slot
+            ) / state.get_desired_energy_Wh(reference_slot)
         return abs(scaling_factor) * peak_energy_kWh
 
     def get_available_pv_energy_kWh(
-            self, market_slot: pendulum.DateTime, state: "PVState",
-            peak_energy_kWh: float) -> float:
+        self, market_slot: pendulum.DateTime, state: "PVState", peak_energy_kWh: float
+    ) -> float:
 
         # This is the part where the week / month / year forward markets' available energy is
         # calculated. In order for the available energy for a bid to be calculated, the available
@@ -255,88 +252,100 @@ class _LongForwardEnergyParameters(_BaseMarketEnergyParams):
         # multiplying the scaling factor by the already known peak energy of the asset.
         reference_slot = market_slot.set(hour=12, minute=0)
 
-        if state.get_energy_production_forecast_kWh(
-                reference_slot) <= FLOATING_POINT_TOLERANCE:
-            scaling_factor = 0.
+        if state.get_energy_production_forecast_kWh(reference_slot) <= FLOATING_POINT_TOLERANCE:
+            scaling_factor = 0.0
         else:
-            scaling_factor = (
-                    state.get_available_energy_kWh(reference_slot) /
-                    state.get_energy_production_forecast_kWh(reference_slot))
+            scaling_factor = state.get_available_energy_kWh(
+                reference_slot
+            ) / state.get_energy_production_forecast_kWh(reference_slot)
         return abs(scaling_factor) * peak_energy_kWh
 
     def event_load_traded_energy(
-            self, energy_kWh: float, market_slot: pendulum.DateTime, state: "LoadState"):
+        self, energy_kWh: float, market_slot: pendulum.DateTime, state: "LoadState"
+    ):
         trade_profile = self._profile_generator.generate_trade_profile(
-            energy_kWh=energy_kWh,
-            market_slot=market_slot,
-            product_type=self._product_type)
+            energy_kWh=energy_kWh, market_slot=market_slot, product_type=self._product_type
+        )
 
         for time_slot, energy_value_kWh in trade_profile.items():
             state.decrement_energy_requirement(
                 purchased_energy_Wh=energy_value_kWh * 1000,
                 time_slot=time_slot,
-                area_name=self._area.name)
+                area_name=self._area.name,
+            )
 
     def event_pv_traded_energy(
-            self, energy_kWh: float, market_slot: pendulum.DateTime, state: "PVState"):
+        self, energy_kWh: float, market_slot: pendulum.DateTime, state: "PVState"
+    ):
         # Create a new profile that spreads the trade energy across multiple slots. The values
         # of this new profile are obtained by scaling the values of the standard solar profile
         trade_profile = self._profile_generator.generate_trade_profile(
-            energy_kWh=energy_kWh,
-            market_slot=market_slot,
-            product_type=self._product_type)
+            energy_kWh=energy_kWh, market_slot=market_slot, product_type=self._product_type
+        )
 
         for time_slot, energy_value_kWh in trade_profile.items():
             state.decrement_available_energy(
-                sold_energy_kWh=energy_value_kWh,
-                time_slot=time_slot,
-                area_name=self._area.name)
+                sold_energy_kWh=energy_value_kWh, time_slot=time_slot, area_name=self._area.name
+            )
 
 
 class ForwardEnergyParams(ABC):
     """Common abstract base class for the energy parameters of the forward strategies."""
+
     def __init__(self):
-        self._posted_energy_kWh: DefaultDict = defaultdict(lambda: 0.)
+        self._posted_energy_kWh: DefaultDict = defaultdict(lambda: 0.0)
         self._forward_energy_params = {
             AvailableMarketTypes.INTRADAY: _IntradayEnergyParams(self._posted_energy_kWh),
             AvailableMarketTypes.DAY_FORWARD: _DayForwardEnergyParams(self._posted_energy_kWh),
             AvailableMarketTypes.WEEK_FORWARD: _LongForwardEnergyParameters(
-                self._posted_energy_kWh, AvailableMarketTypes.WEEK_FORWARD),
+                self._posted_energy_kWh, AvailableMarketTypes.WEEK_FORWARD
+            ),
             AvailableMarketTypes.MONTH_FORWARD: _LongForwardEnergyParameters(
-                self._posted_energy_kWh, AvailableMarketTypes.MONTH_FORWARD),
+                self._posted_energy_kWh, AvailableMarketTypes.MONTH_FORWARD
+            ),
             AvailableMarketTypes.YEAR_FORWARD: _LongForwardEnergyParameters(
-                self._posted_energy_kWh, AvailableMarketTypes.YEAR_FORWARD)
+                self._posted_energy_kWh, AvailableMarketTypes.YEAR_FORWARD
+            ),
         }
 
         self._area = None
         self._profile_generator: Optional[ForwardTradeProfileGenerator] = None
 
     def get_posted_energy_kWh(
-            self, market_slot: pendulum.DateTime, product_type: AvailableMarketTypes) -> float:
+        self, market_slot: pendulum.DateTime, product_type: AvailableMarketTypes
+    ) -> float:
         """Retrieve the already posted energy on this market slot."""
         return self._forward_energy_params[product_type].get_posted_energy_kWh(market_slot)
 
     def increment_posted_energy(
-            self, market_slot: pendulum.DateTime, posted_energy_kWh: float,
-            market_type: AvailableMarketTypes):
+        self,
+        market_slot: pendulum.DateTime,
+        posted_energy_kWh: float,
+        market_type: AvailableMarketTypes,
+    ):
         """
         Increase the posted energy of the strategy. Needs to handle only intraday and day ahead
         since these are the only 2 market types that can operate at the same market slots
         concurrently.
         """
         self._forward_energy_params[market_type].increment_posted_energy(
-            market_slot, posted_energy_kWh)
+            market_slot, posted_energy_kWh
+        )
 
     def decrement_posted_energy(
-            self, market_slot: pendulum.DateTime, posted_energy_kWh: float,
-            market_type: AvailableMarketTypes):
+        self,
+        market_slot: pendulum.DateTime,
+        posted_energy_kWh: float,
+        market_type: AvailableMarketTypes,
+    ):
         """
         Decrease the posted energy of the strategy. Needs to handle only intraday and day ahead
         since these are the only 2 market types that can operate at the same market slots
         concurrently.
         """
         self._forward_energy_params[market_type].decrement_posted_energy(
-            market_slot, posted_energy_kWh)
+            market_slot, posted_energy_kWh
+        )
 
     @abstractmethod
     def serialize(self):
@@ -344,7 +353,8 @@ class ForwardEnergyParams(ABC):
 
     @abstractmethod
     def get_available_energy_kWh(
-            self, market_slot: pendulum.DateTime, market_type: AvailableMarketTypes):
+        self, market_slot: pendulum.DateTime, market_type: AvailableMarketTypes
+    ):
         """Get the available offer energy of the PV."""
 
     def event_activate_energy(self, area):
@@ -354,8 +364,8 @@ class ForwardEnergyParams(ABC):
 
     @abstractmethod
     def event_traded_energy(
-            self, energy_kWh: float, market_slot: pendulum.DateTime,
-            product_type: AvailableMarketTypes):
+        self, energy_kWh: float, market_slot: pendulum.DateTime, product_type: AvailableMarketTypes
+    ):
         """
         When a trade happens, we want to split the energy through the entire year following a
         standard solar profile.
@@ -388,9 +398,7 @@ class ConsumptionStandardProfileEnergyParameters(ForwardEnergyParams):
 
     def serialize(self):
         """Return dict with the current energy parameter values."""
-        return {
-            "capacity_kW": self.capacity_kW
-        }
+        return {"capacity_kW": self.capacity_kW}
 
     @property
     def peak_energy_kWh(self):
@@ -398,33 +406,35 @@ class ConsumptionStandardProfileEnergyParameters(ForwardEnergyParams):
         return convert_kW_to_kWh(self.capacity_kW, self._area.config.slot_length)
 
     def get_available_energy_kWh(
-            self, market_slot: pendulum.DateTime, market_type: AvailableMarketTypes) -> float:
+        self, market_slot: pendulum.DateTime, market_type: AvailableMarketTypes
+    ) -> float:
         """
         Get the available energy of the Load for one market slot. The available energy is the
         energy that the Load can consumed, but has not been traded yet.
         """
         return self._forward_energy_params[market_type].get_available_load_energy_kWh(
-            market_slot, self.state, self.peak_energy_kWh)
+            market_slot, self.state, self.peak_energy_kWh
+        )
 
     def event_activate_energy(self, area):
         """Initialize values that are required to compute the energy values of the asset."""
         self._area = area
-        self._profile_generator = ForwardTradeProfileGenerator(
-            peak_kWh=self.peak_energy_kWh)
+        self._profile_generator = ForwardTradeProfileGenerator(peak_kWh=self.peak_energy_kWh)
 
         for i in range(FORWARD_MARKET_MAX_DURATION_YEARS + 1):
             capacity_profile = self._profile_generator.generate_trade_profile(
                 energy_kWh=self.peak_energy_kWh,
                 market_slot=GlobalConfig.start_date.start_of("year").add(years=i),
-                product_type=AvailableMarketTypes.YEAR_FORWARD)
+                product_type=AvailableMarketTypes.YEAR_FORWARD,
+            )
             for time_slot, energy_kWh in capacity_profile.items():
                 self.state.set_desired_energy(energy_kWh * 1000, time_slot)
 
         super().event_activate_energy(area)
 
     def event_traded_energy(
-            self, energy_kWh: float, market_slot: pendulum.DateTime,
-            product_type: AvailableMarketTypes):
+        self, energy_kWh: float, market_slot: pendulum.DateTime, product_type: AvailableMarketTypes
+    ):
         """
         When a trade happens, we want to split the energy through the entire year following a
         standard solar profile.
@@ -437,7 +447,8 @@ class ConsumptionStandardProfileEnergyParameters(ForwardEnergyParams):
         """
         assert self._profile_generator is not None
         self._forward_energy_params[product_type].event_load_traded_energy(
-            energy_kWh, market_slot, self.state)
+            energy_kWh, market_slot, self.state
+        )
 
 
 class ProductionStandardProfileEnergyParameters(ForwardEnergyParams):
@@ -458,9 +469,7 @@ class ProductionStandardProfileEnergyParameters(ForwardEnergyParams):
 
     def serialize(self):
         """Return dict with the current energy parameter values."""
-        return {
-            "capacity_kW": self.capacity_kW
-        }
+        return {"capacity_kW": self.capacity_kW}
 
     @property
     def peak_energy_kWh(self):
@@ -468,33 +477,35 @@ class ProductionStandardProfileEnergyParameters(ForwardEnergyParams):
         return convert_kW_to_kWh(self.capacity_kW, self._area.config.slot_length)
 
     def get_available_energy_kWh(
-            self, market_slot: pendulum.DateTime, market_type: AvailableMarketTypes) -> float:
+        self, market_slot: pendulum.DateTime, market_type: AvailableMarketTypes
+    ) -> float:
         """
         Get the available energy of the PV for one market slot. The available energy is the energy
         that the PV can produce, but has not been traded yet.
         """
         return self._forward_energy_params[market_type].get_available_pv_energy_kWh(
-            market_slot, self.state, self.peak_energy_kWh)
+            market_slot, self.state, self.peak_energy_kWh
+        )
 
     def event_activate_energy(self, area):
         """Initialize values that are required to compute the energy values of the asset."""
         self._area = area
-        self._profile_generator = ForwardTradeProfileGenerator(
-            peak_kWh=self.peak_energy_kWh)
+        self._profile_generator = ForwardTradeProfileGenerator(peak_kWh=self.peak_energy_kWh)
 
         for i in range(FORWARD_MARKET_MAX_DURATION_YEARS + 1):
             capacity_profile = self._profile_generator.generate_trade_profile(
                 energy_kWh=self.peak_energy_kWh,
                 market_slot=GlobalConfig.start_date.start_of("year").add(years=i),
-                product_type=AvailableMarketTypes.YEAR_FORWARD)
+                product_type=AvailableMarketTypes.YEAR_FORWARD,
+            )
             for time_slot, energy_kWh in capacity_profile.items():
                 self.state.set_available_energy(energy_kWh, time_slot)
 
         super().event_activate_energy(area)
 
     def event_traded_energy(
-            self, energy_kWh: float, market_slot: pendulum.DateTime,
-            product_type: AvailableMarketTypes):
+        self, energy_kWh: float, market_slot: pendulum.DateTime, product_type: AvailableMarketTypes
+    ):
         """
         Spread the traded energy over the market duration following a standard solar profile.
 
@@ -509,4 +520,5 @@ class ProductionStandardProfileEnergyParameters(ForwardEnergyParams):
         """
         assert self._profile_generator is not None
         self._forward_energy_params[product_type].event_pv_traded_energy(
-            energy_kWh, market_slot, self.state)
+            energy_kWh, market_slot, self.state
+        )

@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
 from collections import namedtuple
 from typing import Dict, Optional  # noqa
 
@@ -23,7 +24,7 @@ from gsy_framework.data_classes import Offer, TraderDetails, TradeBidOfferInfo
 from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.utils import limit_float_precision
 
-from gsy_e.constants import FLOATING_POINT_TOLERANCE
+from gsy_framework.constants_limits import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.exceptions import MarketException, OfferNotFoundException
 from gsy_e.gsy_e_core.util import short_offer_bid_log_str
 
@@ -34,6 +35,7 @@ ResidualInfo = namedtuple("ResidualInfo", ("forwarded", "age"))
 
 class MAEngine:
     """Handle forwarding offers to the connected one-sided market."""
+
     # pylint: disable=too-many-arguments,too-many-instance-attributes
 
     def __init__(self, name: str, market_1, market_2, min_offer_age: int, owner):
@@ -60,9 +62,12 @@ class MAEngine:
             if "price" in updated_requirement:
                 energy = updated_requirement.get("energy") or offer.energy
                 original_offer_price = updated_requirement["price"] + offer.accumulated_grid_fees
-                updated_price = self.markets.target.fee_class.update_forwarded_offer_with_fee(
-                    updated_requirement["price"] / energy,
-                    original_offer_price / energy) * energy
+                updated_price = (
+                    self.markets.target.fee_class.update_forwarded_offer_with_fee(
+                        updated_requirement["price"] / energy, original_offer_price / energy
+                    )
+                    * energy
+                )
                 updated_requirement["price"] = updated_price
             requirements.append(updated_requirement)
         return requirements
@@ -70,18 +75,20 @@ class MAEngine:
     def _offer_in_market(self, offer):
         updated_price = limit_float_precision(
             self.markets.target.fee_class.update_forwarded_offer_with_fee(
-                offer.energy_rate, offer.original_energy_rate) * offer.energy)
+                offer.energy_rate, offer.original_energy_rate
+            )
+            * offer.energy
+        )
 
         kwargs = {
             "price": updated_price,
             "energy": offer.energy,
             "seller": TraderDetails(
-                self.owner.name, self.owner.uuid,
-                offer.seller.origin, offer.seller.origin_uuid
+                self.owner.name, self.owner.uuid, offer.seller.origin, offer.seller.origin_uuid
             ),
             "original_price": offer.original_price,
             "dispatch_event": False,
-            "time_slot": offer.time_slot
+            "time_slot": offer.time_slot,
         }
 
         return self.owner.post_offer(market=self.markets.target, replace_existing=False, **kwargs)
@@ -96,8 +103,10 @@ class MAEngine:
         try:
             forwarded_offer = self._offer_in_market(offer)
         except MarketException:
-            self.owner.log.debug("Offer is not forwarded because grid fees of the target market "
-                                 "lead to a negative offer price.")
+            self.owner.log.debug(
+                "Offer is not forwarded because grid fees of the target market "
+                "lead to a negative offer price."
+            )
             return None
 
         self._add_to_forward_offers(offer, forwarded_offer)
@@ -157,8 +166,10 @@ class MAEngine:
 
             forwarded_offer = self._forward_offer(offer)
             if forwarded_offer:
-                self.owner.log.debug(f"Forwarded offer to {self.markets.source.name} "
-                                     f"{self.owner.name}, {self.name} {forwarded_offer}")
+                self.owner.log.debug(
+                    f"Forwarded offer to {self.markets.source.name} "
+                    f"{self.owner.name}, {self.name} {forwarded_offer}"
+                )
 
     def event_offer_traded(self, *, trade):
         """Perform actions that need to be done when OFFER_TRADED event is triggered."""
@@ -171,22 +182,30 @@ class MAEngine:
             # Offer was accepted in target market - buy in source
             source_rate = offer_info.source_offer.energy_rate
             target_rate = offer_info.target_offer.energy_rate
-            assert abs(source_rate) <= abs(target_rate) + 0.0001, \
-                f"offer: source_rate ({source_rate}) is not lower than target_rate ({target_rate})"
+            assert (
+                abs(source_rate) <= abs(target_rate) + 0.0001
+            ), f"offer: source_rate ({source_rate}) is not lower than target_rate ({target_rate})"
 
-            updated_trade_bid_info = \
+            updated_trade_bid_info = (
                 self.markets.source.fee_class.update_forwarded_offer_trade_original_info(
-                    trade.offer_bid_trade_info, offer_info.source_offer)
+                    trade.offer_bid_trade_info, offer_info.source_offer
+                )
+            )
             try:
                 if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
                     # One sided market should subtract the fees
-                    trade_offer_rate = trade.trade_rate - \
-                                       trade.fee_price / trade.traded_energy
+                    trade_offer_rate = trade.trade_rate - trade.fee_price / trade.traded_energy
                     if not updated_trade_bid_info:
                         updated_trade_bid_info = TradeBidOfferInfo(
-                            None, None, (
-                                offer_info.source_offer.original_price /
-                                offer_info.source_offer.energy), source_rate, 0.)
+                            None,
+                            None,
+                            (
+                                offer_info.source_offer.original_price
+                                / offer_info.source_offer.energy
+                            ),
+                            source_rate,
+                            0.0,
+                        )
                     updated_trade_bid_info.trade_rate = trade_offer_rate
 
                 trade_source = self.owner.accept_offer(
@@ -194,15 +213,19 @@ class MAEngine:
                     offer=offer_info.source_offer,
                     energy=trade.traded_energy,
                     buyer=TraderDetails(
-                        self.owner.name, self.owner.uuid,
-                        trade.buyer.origin, trade.buyer.origin_uuid),
+                        self.owner.name,
+                        self.owner.uuid,
+                        trade.buyer.origin,
+                        trade.buyer.origin_uuid,
+                    ),
                     trade_bid_info=updated_trade_bid_info,
                 )
 
             except OfferNotFoundException as ex:
                 raise OfferNotFoundException() from ex
             self.owner.log.debug(
-                f"[{self.markets.source.time_slot_str}] Offer accepted {trade_source}")
+                f"[{self.markets.source.time_slot_str}] Offer accepted {trade_source}"
+            )
 
             self._delete_forwarded_offer_entries(offer_info.source_offer)
             self.offer_age.pop(offer_info.source_offer.id, None)
@@ -258,12 +281,15 @@ class MAEngine:
             # offer was split in target market, also split in source market
 
             local_offer = self.forwarded_offers[original_offer.id].source_offer
-            original_price = local_offer.original_price \
-                if local_offer.original_price is not None else local_offer.price
+            original_price = (
+                local_offer.original_price
+                if local_offer.original_price is not None
+                else local_offer.price
+            )
 
-            local_split_offer, local_residual_offer = \
-                self.markets.source.split_offer(local_offer, accepted_offer.energy,
-                                                original_price)
+            local_split_offer, local_residual_offer = self.markets.source.split_offer(
+                local_offer, accepted_offer.energy, original_price
+            )
 
             #  add the new offers to forwarded_offers
             self._add_to_forward_offers(local_residual_offer, residual_offer)
@@ -271,18 +297,23 @@ class MAEngine:
 
         elif market == self.markets.source and accepted_offer.id in self.forwarded_offers:
             # offer was split in source market, also split in target market
-            if not self.owner.usable_offer(accepted_offer) or \
-                    self.owner.name == accepted_offer.seller.name:
+            if (
+                not self.owner.usable_offer(accepted_offer)
+                or self.owner.name == accepted_offer.seller.name
+            ):
                 return
 
             local_offer = self.forwarded_offers[original_offer.id].source_offer
 
-            original_price = local_offer.original_price \
-                if local_offer.original_price is not None else local_offer.price
+            original_price = (
+                local_offer.original_price
+                if local_offer.original_price is not None
+                else local_offer.price
+            )
 
-            local_split_offer, local_residual_offer = \
-                self.markets.target.split_offer(local_offer, accepted_offer.energy,
-                                                original_price)
+            local_split_offer, local_residual_offer = self.markets.target.split_offer(
+                local_offer, accepted_offer.energy, original_price
+            )
 
             #  add the new offers to forwarded_offers
             self._add_to_forward_offers(residual_offer, local_residual_offer)
@@ -294,9 +325,11 @@ class MAEngine:
         if original_offer.id in self.offer_age:
             self.offer_age[residual_offer.id] = self.offer_age.pop(original_offer.id)
 
-        self.owner.log.debug(f"Offer {short_offer_bid_log_str(local_offer)} was split into "
-                             f"{short_offer_bid_log_str(local_split_offer)} and "
-                             f"{short_offer_bid_log_str(local_residual_offer)}")
+        self.owner.log.debug(
+            f"Offer {short_offer_bid_log_str(local_offer)} was split into "
+            f"{short_offer_bid_log_str(local_split_offer)} and "
+            f"{short_offer_bid_log_str(local_residual_offer)}"
+        )
 
     def _add_to_forward_offers(self, source_offer, target_offer):
         offer_info = OfferInfo(Offer.copy(source_offer), Offer.copy(target_offer))
@@ -305,8 +338,10 @@ class MAEngine:
 
     def event_offer(self, offer: Offer) -> None:
         """Perform actions on the event of the creation of a new offer."""
-        if (ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value and
-                self.min_offer_age == 0):
+        if (
+            ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value
+            and self.min_offer_age == 0
+        ):
             # Propagate offer immediately if the MIN_OFFER_AGE is set to zero.
             if offer.id not in self.offer_age:
                 self.offer_age[offer.id] = self._current_tick
@@ -330,8 +365,10 @@ class MAEngine:
 
             forwarded_offer = self._forward_offer(offer)
             if forwarded_offer:
-                self.owner.log.debug(f"Forwarded offer to {self.markets.source.name} "
-                                     f"{self.owner.name}, {self.name} {forwarded_offer}")
+                self.owner.log.debug(
+                    f"Forwarded offer to {self.markets.source.name} "
+                    f"{self.owner.name}, {self.name} {forwarded_offer}"
+                )
 
 
 class BalancingEngine(MAEngine):
@@ -339,10 +376,12 @@ class BalancingEngine(MAEngine):
 
     def _forward_offer(self, offer):
         forwarded_balancing_offer = self.markets.target.balancing_offer(
-            offer.price, offer.energy,
+            offer.price,
+            offer.energy,
             TraderDetails(
-                self.owner.name, self.owner.uuid, offer.seller.origin, offer.seller.origin_uuid),
-            from_agent=True
+                self.owner.name, self.owner.uuid, offer.seller.origin, offer.seller.origin_uuid
+            ),
+            from_agent=True,
         )
         self._add_to_forward_offers(offer, forwarded_balancing_offer)
         self.owner.log.trace(f"Forwarding balancing offer {offer} to {forwarded_balancing_offer}")

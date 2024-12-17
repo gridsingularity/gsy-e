@@ -1,12 +1,15 @@
 from abc import ABC, abstractmethod
 from typing import Optional, Dict, Union, List
 
-from gsy_framework.constants_limits import ConstSettings, GlobalConfig
-from gsy_framework.enums import HeatPumpSourceType
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig, FLOATING_POINT_TOLERANCE
 from gsy_framework.read_user_profile import InputProfileTypes
+from gsy_framework.utils import convert_kJ_to_kWh, convert_kWh_to_kJ
 from pendulum import DateTime
 
-from gsy_e.constants import FLOATING_POINT_TOLERANCE
+from gsy_e.models.strategy.energy_parameters.heatpump.cop_models import (
+    COPModelType,
+    cop_model_factory,
+)
 from gsy_e.models.strategy.energy_parameters.heatpump.tank import (
     TankParameters,
     AllTanksEnergyParameters,
@@ -177,6 +180,7 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
         consumption_kWh_measurement_uuid: Optional[str] = None,
         source_type: int = ConstSettings.HeatPumpSettings.SOURCE_TYPE,
         heat_demand_Q_profile: Optional[Union[str, float, Dict]] = None,
+        cop_model_type: COPModelType = COPModelType.UNIVERSAL,
     ):
 
         super().__init__(maximum_power_rating_kW, tank_parameters)
@@ -210,7 +214,7 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
             None, source_temp_C_measurement_uuid, profile_type=InputProfileTypes.IDENTITY
         )
 
-        # self.min_temp_C = min_temp_C  # for usage in the strategy
+        self._cop_model = cop_model_factory(cop_model_type, source_type)
 
     def serialize(self):
         """Return dict with the current energy parameter values."""
@@ -233,8 +237,8 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
         """React to an event_traded_energy."""
         self._decrement_posted_energy(time_slot, energy_kWh)
 
-        traded_heat_energy = self._calc_Q_from_energy_kWh(time_slot, energy_kWh)
-        self._state.tanks.increase_tanks_temp_from_heat_energy(traded_heat_energy, time_slot)
+        traded_heat_energy_kJ = self._calc_Q_kJ_from_energy_kWh(time_slot, energy_kWh)
+        self._state.tanks.increase_tanks_temp_from_heat_energy(traded_heat_energy_kJ, time_slot)
 
         self._calculate_and_set_unmatched_demand(time_slot)
 
@@ -247,6 +251,8 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
 
     def _calc_energy_to_buy_maximum(self, time_slot: DateTime) -> float:
         cop = self._state.heatpump.get_cop(time_slot)
+        if cop == 0:
+            return 0
         max_energy_consumption_kWh = self._state.tanks.get_max_energy_consumption(cop, time_slot)
         assert max_energy_consumption_kWh > -FLOATING_POINT_TOLERANCE
         if max_energy_consumption_kWh > self._max_energy_consumption_kWh:
@@ -255,6 +261,8 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
 
     def _calc_energy_to_buy_minimum(self, time_slot: DateTime) -> float:
         cop = self._state.heatpump.get_cop(time_slot)
+        if cop == 0:
+            return 0
         min_energy_consumption_kWh = self._state.tanks.get_min_energy_consumption(cop, time_slot)
         if min_energy_consumption_kWh > self._max_energy_consumption_kWh:
             return self._max_energy_consumption_kWh
@@ -265,26 +273,29 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
         self._state.heatpump.set_cop(time_slot, self._calc_cop(time_slot))
 
         if not self._heat_demand_Q_J:
-            produced_heat_energy_KJ = self._calc_Q_from_energy_kWh(
+            produced_heat_energy_kJ = self._calc_Q_kJ_from_energy_kWh(
                 time_slot, self._consumption_kWh.profile[time_slot]
             )
         else:
-            produced_heat_energy_KJ = self._heat_demand_Q_J.get_value(time_slot) / 1000.0
-            energy_demand_kWh = self._calc_energy_kWh_from_Q(time_slot, produced_heat_energy_KJ)
+            produced_heat_energy_kJ = self._heat_demand_Q_J.get_value(time_slot) / 1000.0
+            energy_demand_kWh = self._calc_energy_kWh_from_Q_kJ(time_slot, produced_heat_energy_kJ)
             self._consumption_kWh.profile[time_slot] = energy_demand_kWh
 
-        self._state.heatpump.set_heat_demand(time_slot, produced_heat_energy_KJ * 1000)
-        self._state.tanks.decrease_tanks_temp_from_heat_energy(produced_heat_energy_KJ, time_slot)
+        self._state.heatpump.set_heat_demand(time_slot, produced_heat_energy_kJ * 1000)
+        self._state.tanks.decrease_tanks_temp_from_heat_energy(produced_heat_energy_kJ, time_slot)
         super()._populate_state(time_slot)
         self._state.heatpump.set_energy_consumption_kWh(
             time_slot, self._consumption_kWh.get_value(time_slot)
         )
 
-    def _calc_Q_from_energy_kWh(self, time_slot: DateTime, energy_kWh: float) -> float:
-        return self._state.heatpump.get_cop(time_slot) * energy_kWh
+    def _calc_Q_kJ_from_energy_kWh(self, time_slot: DateTime, energy_kWh: float) -> float:
+        return convert_kWh_to_kJ(self._state.heatpump.get_cop(time_slot) * energy_kWh)
 
-    def _calc_energy_kWh_from_Q(self, time_slot: DateTime, Q_energy_KJ: float) -> float:
-        return Q_energy_KJ / self._state.heatpump.get_cop(time_slot)
+    def _calc_energy_kWh_from_Q_kJ(self, time_slot: DateTime, Q_energy_kJ: float) -> float:
+        cop = self._state.heatpump.get_cop(time_slot)
+        if cop == 0:
+            return 0
+        return convert_kJ_to_kWh(Q_energy_kJ / self._state.heatpump.get_cop(time_slot))
 
     def _calc_cop(self, time_slot: DateTime) -> float:
         """
@@ -294,20 +305,17 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
         Generally, the higher the temperature difference between the source and the sink,
         the lower the efficiency of the heat pump (the lower COP).
         """
-        return self._cop_model(
-            self._state.tanks.get_average_tank_temperature(time_slot),
-            self._source_temp_C.get_value(time_slot),
+        # 1 J = 1 W s
+        heat_demand_kW = (
+            self._heat_demand_Q_J.get_value(time_slot) / self._slot_length.total_seconds() / 1000
+            if self._heat_demand_Q_J
+            else None
         )
-
-    def _cop_model(self, temp_current: float, temp_ambient: float) -> float:
-        """COP model following https://www.nature.com/articles/s41597-019-0199-y"""
-        delta_temp = temp_current - temp_ambient
-        if self._source_type == HeatPumpSourceType.AIR.value:
-            return 6.08 - 0.09 * delta_temp + 0.0005 * delta_temp**2
-        if self._source_type == HeatPumpSourceType.GROUND.value:
-            return 10.29 - 0.21 * delta_temp + 0.0012 * delta_temp**2
-
-        raise HeatPumpEnergyParametersException("HeatPumpSourceType not supported")
+        return self._cop_model.calc_cop(
+            source_temp_C=self._source_temp_C.get_value(time_slot),
+            tank_temp_C=self._state.tanks.get_average_tank_temperature(time_slot),
+            heat_demand_kW=heat_demand_kW,
+        )
 
     def _calculate_and_set_unmatched_demand(self, time_slot: DateTime) -> None:
         unmatched_energy_demand = self._state.tanks.get_unmatched_demand_kWh(time_slot)

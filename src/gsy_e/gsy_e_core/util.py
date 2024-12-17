@@ -29,7 +29,7 @@ from logging import LoggerAdapter, getLogger, getLoggerClass, addLevelName, setL
 from typing import TYPE_CHECKING, Optional
 
 from click.types import ParamType
-from gsy_framework.constants_limits import ConstSettings, GlobalConfig, RangeLimit
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig, RangeLimit, DATE_FORMAT
 from gsy_framework.enums import BidOfferMatchAlgoEnum
 from gsy_framework.exceptions import GSyException
 from gsy_framework.utils import (
@@ -103,15 +103,15 @@ class DateType(ParamType):
 
     name = "date"
 
-    def __init__(self, date_type: gsy_e.constants.DATE_FORMAT):
-        if date_type == gsy_e.constants.DATE_FORMAT:
-            self.allowed_formats = gsy_e.constants.DATE_FORMAT
+    def __init__(self, date_type: DATE_FORMAT):
+        if date_type == DATE_FORMAT:
+            self.allowed_formats = DATE_FORMAT
         else:
-            raise ValueError(f"Invalid date_type. Choices: {gsy_e.constants.DATE_FORMAT} ")
+            raise ValueError(f"Invalid date_type. Choices: {DATE_FORMAT} ")
 
     def convert(self, value, param, ctx):
         try:
-            converted_format = from_format(value, gsy_e.constants.DATE_FORMAT)
+            converted_format = from_format(value, DATE_FORMAT)
         except ValueError:
             self.fail(f"'{value}' is not a valid date. Allowed formats: {self.allowed_formats}")
         return converted_format
@@ -410,7 +410,7 @@ def export_default_settings_to_json_file():
         "sim_duration": f"{GlobalConfig.DURATION_D * 24}h",
         "slot_length": f"{GlobalConfig.SLOT_LENGTH_M}m",
         "tick_length": f"{GlobalConfig.TICK_LENGTH_S}s",
-        "start_date": instance(GlobalConfig.start_date).format(gsy_e.constants.DATE_FORMAT),
+        "start_date": instance(GlobalConfig.start_date).format(DATE_FORMAT),
     }
     all_settings = {"basic_settings": base_settings, "advanced_settings": constsettings_to_dict()}
     settings_filename = os.path.join(gsye_root_path, "setup", "gsy_e_settings.json")
