@@ -340,3 +340,8 @@ class HeatPumpStrategy(MultipleTankHeatPumpStrategy):
             preferred_buying_rate,
             cop_model_type=cop_model_type,
         )
+
+
+class PCMHeatPump(HeatPumpStrategy):
+
+    # TODO: needed for passing the source_temp and include the new tank and hp state
