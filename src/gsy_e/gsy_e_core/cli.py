@@ -181,6 +181,12 @@ _setup_modules = available_simulation_scenarios
     help="Market type. 1 for one-sided market, 2 for two-sided market, "
     "3 for coefficient-based trading.",
 )
+@click.option(
+    "--country-code",
+    type=str,
+    default=False,
+    help="Country code according to ISO 3166-1 alpha-2.",
+)
 def run(
     setup_module_name,
     settings_file,

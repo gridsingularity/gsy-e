@@ -35,6 +35,7 @@ from gsy_framework.data_classes import (
 )
 from gsy_framework.enums import AvailableMarketTypes, BidOfferMatchAlgoEnum, SpotMarketTypeEnum
 from gsy_framework.utils import mkdir_from_str
+from gsy_framework.sim_results.carbon_emissions import CarbonEmissionsHandler
 from pendulum import DateTime
 
 import gsy_e.constants
@@ -55,6 +56,7 @@ from gsy_e.gsy_e_core.sim_results.results_plots import (
 )
 from gsy_e.gsy_e_core.util import constsettings_to_dict
 from gsy_e.models.area import Area
+
 
 if TYPE_CHECKING:
     from gsy_e.gsy_e_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
@@ -84,6 +86,7 @@ results_field_to_json_filename_mapping = {
     "trade_profile": "trade_profile",
     "imported_exported_energy": "imported_exported_energy",
     "hierarchy_self_consumption_percent": "hierarchy_self_consumption_percent",
+    "carbon_emissions": "carbon_emissions",
 }
 
 
@@ -93,12 +96,13 @@ class ExportAndPlot:
 
     # pylint: disable=too-many-arguments
     def __init__(
-        self, root_area: Area, path: str, subdir: str, endpoint_buffer: "SimulationEndpointBuffer"
+        self, root_area: Area, path: str, subdir: str, endpoint_buffer: "SimulationEndpointBuffer", country_code: str
     ):
         self.area = root_area
         self.endpoint_buffer = endpoint_buffer
         self.file_stats_endpoint = file_export_endpoints_factory()
         self.raw_data_subdir = None
+        self.country_code = country_code
         try:
             if path is not None:
                 path = os.path.abspath(path)
@@ -126,9 +130,22 @@ class ExportAndPlot:
             json.dump(constsettings_to_dict(), outfile, indent=2)
         for in_key, value in self.endpoint_buffer.generate_json_report().items():
             out_key = results_field_to_json_filename_mapping[in_key]
+
+            # Only to export carbon emissions
+            if in_key == "trade_profile" and self.country_code:
+                carbon_emissions_handler = CarbonEmissionsHandler(
+                    entsoe_api_key=os.environ.get("ENTSOE_API_SECURITY_TOKEN", None)
+                )
+                value = carbon_emissions_handler.calculate_carbon_emissions_from_gsy_trade_profile(
+                    country_code=self.country_code, trade_profile=value
+                )
+                out_key = "carbon_emissions"
+            
             json_file = os.path.join(json_dir, out_key + ".json")
             with open(json_file, "w", encoding="utf-8") as outfile:
                 json.dump(value, outfile, indent=2)
+
+
 
     def _export_setup_json(self) -> None:
 
