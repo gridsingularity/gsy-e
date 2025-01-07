@@ -4,12 +4,13 @@ from math import isclose
 from typing import Dict, List
 from uuid import uuid4
 
-from gsy_framework.data_classes import Trade, TraderDetails
-from gsy_framework.sim_results.kpi_calculation_helper import KPICalculationHelper
 from pendulum import DateTime
 
+from gsy_framework.constants_limits import FLOATING_POINT_TOLERANCE
+from gsy_framework.data_classes import Trade, TraderDetails
+from gsy_framework.sim_results.kpi_calculation_helper import KPICalculationHelper
+
 import gsy_e.constants
-from gsy_e.constants import FLOATING_POINT_TOLERANCE
 
 
 @dataclass

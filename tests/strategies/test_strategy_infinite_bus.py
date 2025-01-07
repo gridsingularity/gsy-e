@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
 # pylint: disable=no-member, redefined-outer-name, missing-function-docstring, protected-access
 # pylint: disable=too-many-instance-attributes, missing-class-docstring, unused-argument
 import os
@@ -24,11 +25,10 @@ from uuid import uuid4
 
 import pendulum
 import pytest
-from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig, TIME_ZONE
 from gsy_framework.data_classes import Offer, Trade, BalancingOffer, Bid, TraderDetails
 
 from gsy_e import constants
-from gsy_e.constants import TIME_ZONE
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.util import gsye_root_path
 from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
@@ -98,8 +98,10 @@ class FakeMarket:
         self.count = count
         self.created_offers = []
         self.created_balancing_offers = []
-        self.sorted_offers = [Offer("id", pendulum.now(), 25., 1., TraderDetails("other", "")),
-                              Offer("id", pendulum.now(), 26., 1., TraderDetails("other", ""))]
+        self.sorted_offers = [
+            Offer("id", pendulum.now(), 25.0, 1.0, TraderDetails("other", "")),
+            Offer("id", pendulum.now(), 26.0, 1.0, TraderDetails("other", "")),
+        ]
         self.traded_offers = []
         self._bids = {TIME: []}
 
@@ -122,16 +124,21 @@ class FakeMarket:
 
     def accept_offer(self, offer_or_id, buyer, *, energy=None, time=None, trade_bid_info=None):
         offer = offer_or_id
-        trade = Trade("trade_id", time, offer.seller,
-                      TraderDetails(buyer, ""),
-                      offer=offer, traded_energy=1, trade_price=1)
+        trade = Trade(
+            "trade_id",
+            time,
+            offer.seller,
+            TraderDetails(buyer, ""),
+            offer=offer,
+            traded_energy=1,
+            trade_price=1,
+        )
         self.traded_offers.append(trade)
         return trade
 
     @staticmethod
     def bid(price, energy, buyer, original_price=None, time_slot=None):
-        bid = Bid("bid_id", pendulum.now(), price, energy, buyer,
-                  time_slot=time_slot)
+        bid = Bid("bid_id", pendulum.now(), price, energy, buyer, time_slot=time_slot)
         return bid
 
 
@@ -170,8 +177,9 @@ def testing_offer_is_created_at_first_market_not_on_activate(bus_test1, area_tes
     assert area_test1.test_market.created_offers[0].energy == sys.maxsize
 
 
-def test_balancing_offers_are_not_sent_to_all_markets_if_device_not_in_registry(bus_test1,
-                                                                                area_test1):
+def test_balancing_offers_are_not_sent_to_all_markets_if_device_not_in_registry(
+    bus_test1, area_test1
+):
     DeviceRegistry.REGISTRY = {}
     bus_test1.event_activate()
     assert len(area_test1.test_balancing_market.created_balancing_offers) == 0
@@ -194,7 +202,8 @@ def test_balancing_offers_are_sent_to_all_markets_if_device_in_registry(bus_test
 
 
 def test_event_market_cycle_does_not_create_balancing_offer_if_not_in_registry(
-        bus_test1, area_test1):
+    bus_test1, area_test1
+):
     DeviceRegistry.REGISTRY = {}
     bus_test1.event_activate()
     bus_test1.event_market_cycle()
@@ -203,17 +212,16 @@ def test_event_market_cycle_does_not_create_balancing_offer_if_not_in_registry(
 
 
 def test_event_market_cycle_creates_balancing_offer_on_last_market_if_in_registry(
-        bus_test1, area_test1):
+    bus_test1, area_test1
+):
     DeviceRegistry.REGISTRY = {"FakeArea": (40, 50)}
     ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET = True
     bus_test1.event_activate()
     bus_test1.event_market_cycle()
     assert len(area_test1.test_balancing_market.created_balancing_offers) == 1
     assert len(area_test1.test_balancing_market_2.created_balancing_offers) == 1
-    assert area_test1.test_balancing_market_2.created_balancing_offers[0].energy == \
-        sys.maxsize
-    assert area_test1.test_balancing_market_2.created_balancing_offers[0].price == \
-        sys.maxsize * 50
+    assert area_test1.test_balancing_market_2.created_balancing_offers[0].energy == sys.maxsize
+    assert area_test1.test_balancing_market_2.created_balancing_offers[0].price == sys.maxsize * 50
 
 
 @pytest.fixture()
@@ -233,16 +241,24 @@ def test_event_trade(area_test2, bus_test2):
     bus_test2.event_activate()
     bus_test2.event_market_cycle()
     traded_offer = Offer(
-        id="id", creation_time=pendulum.now(), price=20, energy=1,
-        seller=TraderDetails("FakeArea", ""))
-    bus_test2.event_offer_traded(market_id=area_test2.test_market.id,
-                                 trade=Trade(id="id",
-                                             creation_time=pendulum.now(),
-                                             offer=traded_offer,
-                                             seller=TraderDetails("FakeArea", ""),
-                                             buyer=TraderDetails("buyer", ""),
-                                             traded_energy=1, trade_price=1)
-                                 )
+        id="id",
+        creation_time=pendulum.now(),
+        price=20,
+        energy=1,
+        seller=TraderDetails("FakeArea", ""),
+    )
+    bus_test2.event_offer_traded(
+        market_id=area_test2.test_market.id,
+        trade=Trade(
+            id="id",
+            creation_time=pendulum.now(),
+            offer=traded_offer,
+            seller=TraderDetails("FakeArea", ""),
+            buyer=TraderDetails("buyer", ""),
+            traded_energy=1,
+            trade_price=1,
+        ),
+    )
     assert len(area_test2.test_market.created_offers) == 1
     assert area_test2.test_market.created_offers[-1].energy == sys.maxsize
 
@@ -250,43 +266,79 @@ def test_event_trade(area_test2, bus_test2):
 def test_on_offer_changed(area_test2, bus_test2):
     bus_test2.event_activate()
     original_offer = Offer(
-        id="id", creation_time=pendulum.now(), price=20, energy=1,
-        seller=TraderDetails("FakeArea", ""))
+        id="id",
+        creation_time=pendulum.now(),
+        price=20,
+        energy=1,
+        seller=TraderDetails("FakeArea", ""),
+    )
     accepted_offer = Offer(
-        id="new", creation_time=pendulum.now(), price=15, energy=0.75,
-        seller=TraderDetails("FakeArea", ""))
-    residual_offer = Offer(id="new_id", creation_time=pendulum.now(), price=5,
-                           energy=0.25, seller=TraderDetails("FakeArea", ""))
-    bus_test2.event_offer_split(market_id=area_test2.test_market.id,
-                                original_offer=original_offer,
-                                accepted_offer=accepted_offer,
-                                residual_offer=residual_offer)
+        id="new",
+        creation_time=pendulum.now(),
+        price=15,
+        energy=0.75,
+        seller=TraderDetails("FakeArea", ""),
+    )
+    residual_offer = Offer(
+        id="new_id",
+        creation_time=pendulum.now(),
+        price=5,
+        energy=0.25,
+        seller=TraderDetails("FakeArea", ""),
+    )
+    bus_test2.event_offer_split(
+        market_id=area_test2.test_market.id,
+        original_offer=original_offer,
+        accepted_offer=accepted_offer,
+        residual_offer=residual_offer,
+    )
     assert original_offer.id in bus_test2.offers.split
     assert bus_test2.offers.split[original_offer.id] == accepted_offer
 
 
 def test_event_trade_after_offer_changed_partial_offer(area_test2, bus_test2):
-    original_offer = Offer(id="old_id", creation_time=pendulum.now(),
-                           price=20, energy=1, seller=TraderDetails("FakeArea", ""))
-    accepted_offer = Offer(id="old_id", creation_time=pendulum.now(),
-                           price=15, energy=0.75, seller=TraderDetails("FakeArea", ""))
-    residual_offer = Offer(id="res_id", creation_time=pendulum.now(),
-                           price=5, energy=0.25, seller=TraderDetails("FakeArea", ""))
+    original_offer = Offer(
+        id="old_id",
+        creation_time=pendulum.now(),
+        price=20,
+        energy=1,
+        seller=TraderDetails("FakeArea", ""),
+    )
+    accepted_offer = Offer(
+        id="old_id",
+        creation_time=pendulum.now(),
+        price=15,
+        energy=0.75,
+        seller=TraderDetails("FakeArea", ""),
+    )
+    residual_offer = Offer(
+        id="res_id",
+        creation_time=pendulum.now(),
+        price=5,
+        energy=0.25,
+        seller=TraderDetails("FakeArea", ""),
+    )
     bus_test2.offers.post(original_offer, area_test2.test_market.id)
-    bus_test2.event_offer_split(market_id=area_test2.test_market.id,
-                                original_offer=original_offer,
-                                accepted_offer=accepted_offer,
-                                residual_offer=residual_offer)
+    bus_test2.event_offer_split(
+        market_id=area_test2.test_market.id,
+        original_offer=original_offer,
+        accepted_offer=accepted_offer,
+        residual_offer=residual_offer,
+    )
     assert original_offer.id in bus_test2.offers.split
     assert bus_test2.offers.split[original_offer.id] == accepted_offer
-    bus_test2.event_offer_traded(market_id=area_test2.test_market.id,
-                                 trade=Trade(id="id",
-                                             creation_time=pendulum.now(),
-                                             offer=original_offer,
-                                             seller=TraderDetails("FakeArea", ""),
-                                             buyer=TraderDetails("buyer", ""),
-                                             traded_energy=1, trade_price=1)
-                                 )
+    bus_test2.event_offer_traded(
+        market_id=area_test2.test_market.id,
+        trade=Trade(
+            id="id",
+            creation_time=pendulum.now(),
+            offer=original_offer,
+            seller=TraderDetails("FakeArea", ""),
+            buyer=TraderDetails("buyer", ""),
+            traded_energy=1,
+            trade_price=1,
+        ),
+    )
 
     assert residual_offer in bus_test2.offers.posted
     assert bus_test2.offers.posted[residual_offer] == area_test2.test_market.id
@@ -352,13 +404,15 @@ def test_global_market_maker_rate_single_value(bus_test4):
     assert isinstance(GlobalConfig.market_maker_rate, dict)
     assert all(
         v == ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
-        for v in GlobalConfig.market_maker_rate.values())
+        for v in GlobalConfig.market_maker_rate.values()
+    )
 
 
 @pytest.fixture()
 def bus_test5(area_test1):
     c = InfiniteBusStrategy(
-        energy_rate_profile=os.path.join(gsye_root_path, "resources", "SAM_SF_Summer.csv"))
+        energy_rate_profile=os.path.join(gsye_root_path, "resources", "SAM_SF_Summer.csv")
+    )
     c.area = area_test1
     c.owner = area_test1
     yield c
@@ -377,7 +431,8 @@ def test_global_market_maker_rate_profile_and_infinite_bus_selling_rate_profile(
 @pytest.fixture()
 def bus_test6(area_test1):
     c = InfiniteBusStrategy(
-        buying_rate_profile=os.path.join(gsye_root_path, "resources", "LOAD_DATA_1.csv"))
+        buying_rate_profile=os.path.join(gsye_root_path, "resources", "LOAD_DATA_1.csv")
+    )
     c.area = area_test1
     c.owner = area_test1
     yield c

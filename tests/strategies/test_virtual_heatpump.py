@@ -1,10 +1,9 @@
 from math import isclose
 
 import pytest
-from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig, FLOATING_POINT_TOLERANCE
 from pendulum import DateTime, UTC
 
-from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.virtual_heatpump import VirtualHeatpumpStrategy
 from src.gsy_e.models.strategy.strategy_profile import global_objects

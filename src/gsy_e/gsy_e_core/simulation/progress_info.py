@@ -19,11 +19,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from logging import getLogger
 from typing import TYPE_CHECKING
 
-from gsy_framework.utils import format_datetime
 from pendulum import DateTime, Duration, duration, now
+from gsy_framework.utils import format_datetime
+from gsy_framework.constants_limits import TIME_ZONE
 
 import gsy_e.constants
-from gsy_e.constants import TIME_ZONE
+
 
 if TYPE_CHECKING:
     from gsy_e.gsy_e_core.simulation.time_manager import SimulationTimeManager
@@ -51,16 +52,18 @@ class SimulationProgressInfo:
 
     @staticmethod
     def _get_market_slot_time(slot_number: int, config: "SimulationConfig") -> DateTime:
-        return config.start_date.add(
-            minutes=config.slot_length.total_minutes() * slot_number
-        )
+        return config.start_date.add(minutes=config.slot_length.total_minutes() * slot_number)
 
-    def update(self, slot_no: int, slot_count: int, time_params: "SimulationTimeManager",
-               config: "SimulationConfig") -> None:
+    def update(
+        self,
+        slot_no: int,
+        slot_count: int,
+        time_params: "SimulationTimeManager",
+        config: "SimulationConfig",
+    ) -> None:
         """Update progress info according to the simulation progress."""
         run_duration = (
-                now(tz=TIME_ZONE) - time_params.start_time -
-                duration(seconds=time_params.paused_time)
+            now(tz=TIME_ZONE) - time_params.start_time - duration(seconds=time_params.paused_time)
         )
 
         if gsy_e.constants.RUN_IN_REALTIME:
@@ -73,20 +76,25 @@ class SimulationProgressInfo:
         self.elapsed_time = run_duration
         self.current_slot_str = self._get_market_slot_time_str(slot_no, config)
         self.current_slot_time = self._get_market_slot_time(slot_no, config)
-        self.next_slot_str = self._get_market_slot_time_str(
-            slot_no + 1, config)
+        self.next_slot_str = self._get_market_slot_time_str(slot_no + 1, config)
         self.current_slot_number = slot_no
 
-        log.warning("Slot %s of %s - (%.1f %%) %s elapsed, ETA: %s", slot_no+1, slot_count,
-                    self.percentage_completed, self.elapsed_time,
-                    self.eta)
+        log.warning(
+            "Slot %s of %s - (%.1f %%) %s elapsed, ETA: %s",
+            slot_no + 1,
+            slot_count,
+            self.percentage_completed,
+            self.elapsed_time,
+            self.eta,
+        )
 
-    def log_simulation_finished(self, paused_duration: Duration, config: "SimulationConfig"
-                                ) -> None:
+    def log_simulation_finished(
+        self, paused_duration: Duration, config: "SimulationConfig"
+    ) -> None:
         """Log that the simulation has finished."""
         log.info(
             "Run finished in %s%s / %.2fx real time",
             self.elapsed_time,
             f" ({paused_duration} paused)" if paused_duration else "",
-            config.sim_duration / (self.elapsed_time - paused_duration)
+            config.sim_duration / (self.elapsed_time - paused_duration),
         )

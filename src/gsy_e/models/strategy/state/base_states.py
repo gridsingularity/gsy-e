@@ -15,15 +15,16 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
 from abc import ABC, abstractmethod
 from math import copysign
 from typing import Dict, Optional
 
-from gsy_framework.utils import (
-    convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict)
 from pendulum import DateTime
 
-from gsy_e.constants import FLOATING_POINT_TOLERANCE
+from gsy_framework.constants_limits import FLOATING_POINT_TOLERANCE
+from gsy_framework.utils import convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict
+
 from gsy_e.gsy_e_core.util import is_time_slot_in_past_markets
 
 
@@ -99,7 +100,8 @@ class ProsumptionInterface(StateInterface, ABC):
 
     # pylint: disable=unused-argument, no-self-use
     def _calculate_unsettled_energy_kWh(
-            self, measured_energy_kWh: float, time_slot: DateTime) -> float:
+        self, measured_energy_kWh: float, time_slot: DateTime
+    ) -> float:
         """
         Calculates the unsettled energy (produced or consumed) in kWh.
         Args:
@@ -123,9 +125,11 @@ class ProsumptionInterface(StateInterface, ABC):
         """
         self._energy_measurement_kWh[time_slot] = energy_kWh
         self._forecast_measurement_deviation_kWh[time_slot] = self._calculate_unsettled_energy_kWh(
-            energy_kWh, time_slot)
-        self._unsettled_deviation_kWh[time_slot] = (
-            abs(self._forecast_measurement_deviation_kWh[time_slot]))
+            energy_kWh, time_slot
+        )
+        self._unsettled_deviation_kWh[time_slot] = abs(
+            self._forecast_measurement_deviation_kWh[time_slot]
+        )
 
     def get_energy_measurement_kWh(self, time_slot: DateTime) -> float:
         """
@@ -186,8 +190,7 @@ class ProsumptionInterface(StateInterface, ABC):
         """
         return self._unsettled_deviation_kWh.get(time_slot)
 
-    def get_signed_unsettled_deviation_kWh(
-            self, time_slot: DateTime) -> Optional[float]:
+    def get_signed_unsettled_deviation_kWh(self, time_slot: DateTime) -> Optional[float]:
         """
         Get the unsettled energy deviation of forecasted energy from measurement by the device
         in the given market slot including the correct sign that shows the direction
@@ -205,7 +208,8 @@ class ProsumptionInterface(StateInterface, ABC):
         return None
 
     def decrement_unsettled_deviation(
-            self, purchased_energy_kWh: float, time_slot: DateTime) -> None:
+        self, purchased_energy_kWh: float, time_slot: DateTime
+    ) -> None:
         """
         Decrease the device unsettled energy in a specific market slot.
         Args:
@@ -218,7 +222,8 @@ class ProsumptionInterface(StateInterface, ABC):
         self._unsettled_deviation_kWh[time_slot] -= purchased_energy_kWh
         assert self._unsettled_deviation_kWh[time_slot] >= -FLOATING_POINT_TOLERANCE, (
             f"Unsettled energy deviation fell below zero "
-            f"({self._unsettled_deviation_kWh[time_slot]}).")
+            f"({self._unsettled_deviation_kWh[time_slot]})."
+        )
 
 
 class ConsumptionState(ProsumptionInterface):
@@ -237,7 +242,8 @@ class ConsumptionState(ProsumptionInterface):
         state = super().get_state()
         consumption_state = {
             "desired_energy_Wh": convert_pendulum_to_str_in_dict(self._desired_energy_Wh),
-            "total_energy_demanded_Wh": self._total_energy_demanded_Wh}
+            "total_energy_demanded_Wh": self._total_energy_demanded_Wh,
+        }
         # The inherited state should not have keys with the same name (to avoid overwriting them)
         conflicting_keys = state.keys() & consumption_state.keys()
         assert not conflicting_keys, f"Conflicting state values found for {conflicting_keys}."
@@ -248,8 +254,9 @@ class ConsumptionState(ProsumptionInterface):
     def restore_state(self, state_dict: Dict):
         super().restore_state(state_dict)
 
-        self._desired_energy_Wh.update(convert_str_to_pendulum_in_dict(
-            state_dict["desired_energy_Wh"]))
+        self._desired_energy_Wh.update(
+            convert_str_to_pendulum_in_dict(state_dict["desired_energy_Wh"])
+        )
         self._total_energy_demanded_Wh = state_dict["total_energy_demanded_Wh"]
 
     def get_energy_requirement_Wh(self, time_slot: DateTime, default_value: float = 0.0) -> float:
@@ -265,7 +272,7 @@ class ConsumptionState(ProsumptionInterface):
 
     def update_total_demanded_energy(self, time_slot: DateTime) -> None:
         """Accumulate the _total_energy_demanded_Wh based on the desired energy per time_slot."""
-        self._total_energy_demanded_Wh += self._desired_energy_Wh.get(time_slot, 0.)
+        self._total_energy_demanded_Wh += self._desired_energy_Wh.get(time_slot, 0.0)
 
     def can_buy_more_energy(self, time_slot: DateTime) -> bool:
         """Check whether the consumer can but more energy in the passed time_slot."""
@@ -282,12 +289,14 @@ class ConsumptionState(ProsumptionInterface):
         return min(offer_energy_Wh, self._energy_requirement_Wh[time_slot])
 
     def decrement_energy_requirement(
-            self, purchased_energy_Wh: float, time_slot: DateTime, area_name: str) -> None:
+        self, purchased_energy_Wh: float, time_slot: DateTime, area_name: str
+    ) -> None:
         """Decrease the energy required by the device in a specific market slot."""
         self._energy_requirement_Wh[time_slot] -= purchased_energy_Wh
         assert self._energy_requirement_Wh[time_slot] >= -FLOATING_POINT_TOLERANCE, (
             f"Energy requirement for device {area_name} fell below zero "
-            f"({self._energy_requirement_Wh[time_slot]}).")
+            f"({self._energy_requirement_Wh[time_slot]})."
+        )
 
     def delete_past_state_values(self, current_time_slot: DateTime):
         """Delete data regarding energy consumption for past market slots."""
@@ -318,8 +327,10 @@ class ProductionState(ProsumptionInterface):
         state = super().get_state()
         production_state = {
             "available_energy_kWh": convert_pendulum_to_str_in_dict(self._available_energy_kWh),
-            "energy_production_forecast_kWh":
-                convert_pendulum_to_str_in_dict(self._energy_production_forecast_kWh)}
+            "energy_production_forecast_kWh": convert_pendulum_to_str_in_dict(
+                self._energy_production_forecast_kWh
+            ),
+        }
         # The inherited state should not have keys with the same name (to avoid overwriting them)
         conflicting_keys = state.keys() & production_state.keys()
         assert not conflicting_keys, f"Conflicting state values found for {conflicting_keys}."
@@ -332,12 +343,15 @@ class ProductionState(ProsumptionInterface):
         super().restore_state(state_dict)
 
         self._available_energy_kWh.update(
-            convert_str_to_pendulum_in_dict(state_dict["available_energy_kWh"]))
+            convert_str_to_pendulum_in_dict(state_dict["available_energy_kWh"])
+        )
         self._energy_production_forecast_kWh.update(
-            convert_str_to_pendulum_in_dict(state_dict["energy_production_forecast_kWh"]))
+            convert_str_to_pendulum_in_dict(state_dict["energy_production_forecast_kWh"])
+        )
 
-    def set_available_energy(self, energy_kWh: float, time_slot: DateTime,
-                             overwrite: bool = False) -> None:
+    def set_available_energy(
+        self, energy_kWh: float, time_slot: DateTime, overwrite: bool = False
+    ) -> None:
         """Set the available energy in the passed time_slot.
 
         If overwrite is True, set the available energy even if the time_slot is already tracked.
@@ -356,13 +370,15 @@ class ProductionState(ProsumptionInterface):
         assert available_energy >= -FLOATING_POINT_TOLERANCE
         return available_energy
 
-    def decrement_available_energy(self, sold_energy_kWh: float, time_slot: DateTime,
-                                   area_name: str) -> None:
+    def decrement_available_energy(
+        self, sold_energy_kWh: float, time_slot: DateTime, area_name: str
+    ) -> None:
         """Decrement the available energy after a successful trade."""
         self._available_energy_kWh[time_slot] -= sold_energy_kWh
         assert self._available_energy_kWh[time_slot] >= -FLOATING_POINT_TOLERANCE, (
             f"Available energy for device {area_name} fell below zero "
-            f"({self._available_energy_kWh[time_slot]}).")
+            f"({self._available_energy_kWh[time_slot]})."
+        )
 
     def delete_past_state_values(self, current_time_slot: DateTime):
         """Delete data regarding energy production for past market slots."""

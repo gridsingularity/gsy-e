@@ -4,7 +4,7 @@ from unittest.mock import patch, MagicMock, PropertyMock
 import pytest
 from pendulum import now, duration
 
-from gsy_e.constants import FLOATING_POINT_TOLERANCE
+from gsy_framework.constants_limits import FLOATING_POINT_TOLERANCE
 from gsy_e.models.strategy.state import StorageState, ESSEnergyOrigin, EnergyOrigin
 
 SAMPLE_STATE = {
@@ -45,21 +45,24 @@ class TestStorageState:
         storage_state.add_default_values_to_state_profiles(active_market_slot_time_list)
         storage_state.offered_buy_kWh[future_time_slots[0]] = 10
         storage_state.offered_sell_kWh[future_time_slots[0]] = 10
-        with patch("gsy_e.models.strategy.state.storage_state.ConstSettings.FutureMarketSettings."
-                   "FUTURE_MARKET_DURATION_HOURS", 5):
+        with patch(
+            "gsy_e.models.strategy.state.storage_state.ConstSettings.FutureMarketSettings."
+            "FUTURE_MARKET_DURATION_HOURS",
+            5,
+        ):
             storage_state.market_cycle(past_time_slot, current_time_slot, future_time_slots)
             # The future_time_slots[0] is in the future, so it won't reset
             assert storage_state.offered_buy_kWh[future_time_slots[0]] == 10
             assert storage_state.offered_sell_kWh[future_time_slots[0]] == 10
             storage_state.market_cycle(
-                current_time_slot, future_time_slots[0], future_time_slots[1:])
+                current_time_slot, future_time_slots[0], future_time_slots[1:]
+            )
             # The future_time_slots[0] is in the spot market, so it has to reset the orders
             assert storage_state.offered_buy_kWh[future_time_slots[0]] == 0
             assert storage_state.offered_sell_kWh[future_time_slots[0]] == 0
 
     def test_market_cycle_update_used_storage(self):
-        storage_state = StorageState(initial_soc=100,
-                                     capacity=100)
+        storage_state = StorageState(initial_soc=100, capacity=100)
         past_time_slot, current_time_slot, future_time_slots = self._initialize_time_slots()
         active_market_slot_time_list = [past_time_slot, current_time_slot, *future_time_slots]
         storage_state.add_default_values_to_state_profiles(active_market_slot_time_list)
@@ -73,93 +76,97 @@ class TestStorageState:
         assert storage_state.used_storage == 100
 
     def test_market_cycle_ess_share_time_series_dict(self):
-        storage_state = StorageState(initial_soc=100,
-                                     capacity=100,
-                                     initial_energy_origin=ESSEnergyOrigin.LOCAL,
-                                     max_abs_battery_power_kW=15)
+        storage_state = StorageState(
+            initial_soc=100,
+            capacity=100,
+            initial_energy_origin=ESSEnergyOrigin.LOCAL,
+            max_abs_battery_power_kW=15,
+        )
         past_time_slot, current_time_slot, future_time_slots = self._initialize_time_slots()
         active_market_slot_time_list = [past_time_slot, current_time_slot, *future_time_slots]
         storage_state.add_default_values_to_state_profiles(active_market_slot_time_list)
         energy = 0.3
         storage_state.activate(
-            slot_length=duration(minutes=15), current_time_slot=current_time_slot)
+            slot_length=duration(minutes=15), current_time_slot=current_time_slot
+        )
         storage_state.register_energy_from_one_sided_market_accept_offer(
-            energy, past_time_slot, ESSEnergyOrigin.LOCAL)
+            energy, past_time_slot, ESSEnergyOrigin.LOCAL
+        )
         storage_state.register_energy_from_one_sided_market_accept_offer(
-            energy, past_time_slot, ESSEnergyOrigin.UNKNOWN)
+            energy, past_time_slot, ESSEnergyOrigin.UNKNOWN
+        )
         storage_state.register_energy_from_one_sided_market_accept_offer(
-            energy, past_time_slot, ESSEnergyOrigin.UNKNOWN)
+            energy, past_time_slot, ESSEnergyOrigin.UNKNOWN
+        )
         storage_state.market_cycle(past_time_slot, current_time_slot, future_time_slots)
         expected_ess_share_last_market = {
             ESSEnergyOrigin.LOCAL: storage_state.initial_capacity_kWh + energy,
             ESSEnergyOrigin.EXTERNAL: 0.0,
-            ESSEnergyOrigin.UNKNOWN: 2 * energy
+            ESSEnergyOrigin.UNKNOWN: 2 * energy,
         }
-        assert (storage_state.time_series_ess_share[past_time_slot] ==
-                expected_ess_share_last_market)
+        assert (
+            storage_state.time_series_ess_share[past_time_slot] == expected_ess_share_last_market
+        )
 
     def test_market_cycle_calculate_and_update_soc_and_set_offer_history(self):
-        storage_state = StorageState(initial_soc=100,
-                                     capacity=100,
-                                     min_allowed_soc=20)
+        storage_state = StorageState(initial_soc=100, capacity=100, min_allowed_soc=20)
         past_time_slot, current_time_slot, future_time_slots = self._initialize_time_slots()
         active_market_slot_time_list = [past_time_slot, current_time_slot, *future_time_slots]
         storage_state.add_default_values_to_state_profiles(active_market_slot_time_list)
         storage_state.activate(
-            slot_length=duration(minutes=15), current_time_slot=current_time_slot)
+            slot_length=duration(minutes=15), current_time_slot=current_time_slot
+        )
         storage_state.pledged_sell_kWh[past_time_slot] = 10
         storage_state.market_cycle(past_time_slot, current_time_slot, future_time_slots)
         assert storage_state.charge_history[current_time_slot] != storage_state.initial_soc
-        assert (storage_state.charge_history_kWh[current_time_slot] !=
-               storage_state.initial_capacity_kWh)
+        assert (
+            storage_state.charge_history_kWh[current_time_slot]
+            != storage_state.initial_capacity_kWh
+        )
         assert storage_state.offered_history[current_time_slot] != "-"
 
     @staticmethod
     def _initialize_time_slots():
         past_time_slot = now()
         current_time_slot = past_time_slot.add(minutes=15)
-        future_time_slots = [current_time_slot.add(minutes=15),
-                             current_time_slot.add(minutes=30)]
+        future_time_slots = [current_time_slot.add(minutes=15), current_time_slot.add(minutes=30)]
         return past_time_slot, current_time_slot, future_time_slots
 
     @staticmethod
     def test_check_state_charge_less_than_min_soc_error():
-        storage_state = StorageState(capacity=100,
-                                     min_allowed_soc=50,
-                                     initial_soc=30)
+        storage_state = StorageState(capacity=100, min_allowed_soc=50, initial_soc=30)
         current_time_slot = now()
         storage_state.add_default_values_to_state_profiles([current_time_slot])
         storage_state.activate(
-            slot_length=duration(minutes=15), current_time_slot=current_time_slot)
+            slot_length=duration(minutes=15), current_time_slot=current_time_slot
+        )
         with pytest.raises(AssertionError) as error:
             storage_state.check_state(current_time_slot)
         assert "less than min soc" in str(error.value)
 
     @staticmethod
     def test_check_state_storage_surpasses_capacity_error():
-        storage_state = StorageState(capacity=100,
-                                     min_allowed_soc=50,
-                                     initial_soc=110)
+        storage_state = StorageState(capacity=100, min_allowed_soc=50, initial_soc=110)
         current_time_slot = now()
         storage_state.add_default_values_to_state_profiles([current_time_slot])
         storage_state.activate(
-            slot_length=duration(minutes=15), current_time_slot=current_time_slot)
+            slot_length=duration(minutes=15), current_time_slot=current_time_slot
+        )
         with pytest.raises(AssertionError) as error:
             storage_state.check_state(current_time_slot)
         assert "surpassed the capacity" in str(error.value)
 
     @staticmethod
     def test_check_state_offered_and_pledged_energy_in_range():
-        storage_state = StorageState(capacity=100,
-                                     min_allowed_soc=20,
-                                     initial_soc=50)
+        storage_state = StorageState(capacity=100, min_allowed_soc=20, initial_soc=50)
 
         current_time_slot = now()
         storage_state.add_default_values_to_state_profiles([current_time_slot])
         max_value = storage_state.capacity * (1 - storage_state.min_allowed_soc_ratio)
         storage_state.max_abs_battery_power_kW = max_value * 15
         storage_state.activate(
-            slot_length=duration(minutes=15), current_time_slot=current_time_slot)
+            slot_length=duration(minutes=15), current_time_slot=current_time_slot
+        )
 
         def set_attribute_value_and_test(attribute):
             attribute[current_time_slot] = -1
@@ -186,10 +193,12 @@ class TestStorageState:
     def _setup_storage_state_for_clamp_energy():
         storage_state = StorageState()
         current_time_slot = now()
-        market_slot_list = [current_time_slot,
-                            current_time_slot + duration(minutes=15),
-                            current_time_slot + duration(minutes=30),
-                            current_time_slot + duration(minutes=45)]
+        market_slot_list = [
+            current_time_slot,
+            current_time_slot + duration(minutes=15),
+            current_time_slot + duration(minutes=30),
+            current_time_slot + duration(minutes=45),
+        ]
         storage_state._current_market_slot = current_time_slot
         storage_state._used_storage = 250.0
         storage_state.capacity = 500.0
@@ -207,8 +216,9 @@ class TestStorageState:
         storage_state._battery_energy_per_slot = storage_state.capacity
         storage_state._clamp_energy_to_sell_kWh(market_slot_list)
         expected_available_energy = (
-                storage_state.used_storage -
-                storage_state.min_allowed_soc_ratio * storage_state.capacity)
+            storage_state.used_storage
+            - storage_state.min_allowed_soc_ratio * storage_state.capacity
+        )
         expected_energy_to_sell = {
             market_slot_list[0]: expected_available_energy,
             market_slot_list[1]: 0.0,
@@ -313,14 +323,13 @@ class TestStorageState:
         assert set(SAMPLE_STATE.keys()).issubset(storage_state.get_state().keys())
 
     def test_restore_state(self):
-        storage_state = StorageState(initial_soc=100,
-                                     capacity=100,
-                                     min_allowed_soc=20)
+        storage_state = StorageState(initial_soc=100, capacity=100, min_allowed_soc=20)
         past_time_slot, current_time_slot, future_time_slots = self._initialize_time_slots()
         active_market_slot_time_list = [past_time_slot, current_time_slot, *future_time_slots]
         storage_state.add_default_values_to_state_profiles(active_market_slot_time_list)
         storage_state.activate(
-            slot_length=duration(minutes=15), current_time_slot=current_time_slot)
+            slot_length=duration(minutes=15), current_time_slot=current_time_slot
+        )
         past_state = storage_state.get_state()
         storage_state.pledged_sell_kWh[current_time_slot] = 50
         modified_state = storage_state.get_state()
@@ -330,9 +339,7 @@ class TestStorageState:
 
     @staticmethod
     def test_free_storage_return_float():
-        storage_state = StorageState(initial_soc=100,
-                                     capacity=100,
-                                     min_allowed_soc=20)
+        storage_state = StorageState(initial_soc=100, capacity=100, min_allowed_soc=20)
         current_time_slot = now()
         storage_state.add_default_values_to_state_profiles([current_time_slot])
         assert isinstance(storage_state.free_storage(current_time_slot), float)
@@ -343,7 +350,8 @@ class TestStorageState:
             storage_state = StorageState()
             current_time_slot = now()
             storage_state.activate(
-                slot_length=duration(minutes=15), current_time_slot=current_time_slot)
+                slot_length=duration(minutes=15), current_time_slot=current_time_slot
+            )
             mocked_func.assert_called()
 
     def test_add_default_values_to_state_profiles_set_values_for_time_slots(self):
@@ -357,27 +365,40 @@ class TestStorageState:
 
         for time_slot in future_time_slots:
             assert_time_slot_in_dict_attribute_with_default_value(
-                storage_state.pledged_sell_kWh, time_slot, 0)
+                storage_state.pledged_sell_kWh, time_slot, 0
+            )
             assert_time_slot_in_dict_attribute_with_default_value(
-                storage_state.pledged_buy_kWh, time_slot, 0)
+                storage_state.pledged_buy_kWh, time_slot, 0
+            )
             assert_time_slot_in_dict_attribute_with_default_value(
-                storage_state.offered_sell_kWh, time_slot, 0)
+                storage_state.offered_sell_kWh, time_slot, 0
+            )
             assert_time_slot_in_dict_attribute_with_default_value(
-                storage_state.offered_buy_kWh, time_slot, 0)
+                storage_state.offered_buy_kWh, time_slot, 0
+            )
             assert_time_slot_in_dict_attribute_with_default_value(
-                storage_state.charge_history, time_slot, storage_state.initial_soc)
+                storage_state.charge_history, time_slot, storage_state.initial_soc
+            )
             assert_time_slot_in_dict_attribute_with_default_value(
-                storage_state.charge_history_kWh, time_slot, storage_state.initial_capacity_kWh)
+                storage_state.charge_history_kWh, time_slot, storage_state.initial_capacity_kWh
+            )
             assert_time_slot_in_dict_attribute_with_default_value(
-                storage_state.energy_to_sell_dict, time_slot, 0)
+                storage_state.energy_to_sell_dict, time_slot, 0
+            )
             assert_time_slot_in_dict_attribute_with_default_value(
-                storage_state.energy_to_buy_dict, time_slot, 0)
+                storage_state.energy_to_buy_dict, time_slot, 0
+            )
             assert_time_slot_in_dict_attribute_with_default_value(
-                storage_state.offered_history, time_slot, "-")
+                storage_state.offered_history, time_slot, "-"
+            )
             assert_time_slot_in_dict_attribute_with_default_value(
-                storage_state.time_series_ess_share, time_slot, {ESSEnergyOrigin.UNKNOWN: 0.,
-                                                                 ESSEnergyOrigin.LOCAL: 0.,
-                                                                 ESSEnergyOrigin.EXTERNAL: 0.}
+                storage_state.time_series_ess_share,
+                time_slot,
+                {
+                    ESSEnergyOrigin.UNKNOWN: 0.0,
+                    ESSEnergyOrigin.LOCAL: 0.0,
+                    ESSEnergyOrigin.EXTERNAL: 0.0,
+                },
             )
 
     def test_delete_past_state_values_market_slot_not_in_past(self):
@@ -385,8 +406,11 @@ class TestStorageState:
         past_time_slot, current_time_slot, future_time_slots = self._initialize_time_slots()
         active_market_slot_time_list = [past_time_slot, current_time_slot, *future_time_slots]
         storage_state.add_default_values_to_state_profiles(active_market_slot_time_list)
-        with patch("gsy_e.gsy_e_core.util.ConstSettings.SettlementMarketSettings."
-                   "ENABLE_SETTLEMENT_MARKETS", True):
+        with patch(
+            "gsy_e.gsy_e_core.util.ConstSettings.SettlementMarketSettings."
+            "ENABLE_SETTLEMENT_MARKETS",
+            True,
+        ):
             storage_state.delete_past_state_values(current_time_slot)
             assert storage_state.pledged_sell_kWh.get(past_time_slot) is not None
 
@@ -395,121 +419,136 @@ class TestStorageState:
         past_time_slot, current_time_slot, future_time_slots = self._initialize_time_slots()
         active_market_slot_time_list = [past_time_slot, current_time_slot, *future_time_slots]
         storage_state.add_default_values_to_state_profiles(active_market_slot_time_list)
-        with patch("gsy_e.gsy_e_core.util.ConstSettings.SettlementMarketSettings."
-                   "ENABLE_SETTLEMENT_MARKETS", False):
+        with patch(
+            "gsy_e.gsy_e_core.util.ConstSettings.SettlementMarketSettings."
+            "ENABLE_SETTLEMENT_MARKETS",
+            False,
+        ):
             storage_state.delete_past_state_values(current_time_slot)
             assert storage_state.pledged_sell_kWh.get(past_time_slot) is None
 
     def test_register_energy_from_posted_bid_negative_energy_raise_error(self):
         storage_state, current_time_slot = self._setup_registration_test()
         self._assert_negative_energy_raise_error(
-            storage_state.register_energy_from_posted_bid, time_slot=current_time_slot)
+            storage_state.register_energy_from_posted_bid, time_slot=current_time_slot
+        )
 
     def test_register_energy_from_posted_bid_energy_add_energy_to_offered_buy_dict(self):
         storage_state, current_time_slot = self._setup_registration_test()
         bid_energy = 1
         storage_state.register_energy_from_posted_bid(
-            energy=bid_energy, time_slot=current_time_slot)
+            energy=bid_energy, time_slot=current_time_slot
+        )
         storage_state.register_energy_from_posted_bid(
-            energy=bid_energy, time_slot=current_time_slot)
+            energy=bid_energy, time_slot=current_time_slot
+        )
         assert storage_state.offered_buy_kWh[current_time_slot] == 2 * bid_energy
 
     def test_register_energy_from_posted_offer_negative_energy_raise_error(self):
         storage_state, current_time_slot = self._setup_registration_test()
         self._assert_negative_energy_raise_error(
-            storage_state.register_energy_from_posted_offer,
-            time_slot=current_time_slot)
+            storage_state.register_energy_from_posted_offer, time_slot=current_time_slot
+        )
 
     def test_register_energy_from_posted_offer_energy_add_energy_to_offer_sell_dict(self):
         storage_state, current_time_slot = self._setup_registration_test()
         offered_energy = 1
         storage_state.register_energy_from_posted_offer(
-            energy=offered_energy, time_slot=current_time_slot)
+            energy=offered_energy, time_slot=current_time_slot
+        )
         storage_state.register_energy_from_posted_offer(
-            energy=offered_energy, time_slot=current_time_slot)
+            energy=offered_energy, time_slot=current_time_slot
+        )
         assert storage_state.offered_sell_kWh[current_time_slot] == 2 * offered_energy
 
     def test_reset_offered_sell_energy_negative_energy_raise_error(self):
         storage_state, current_time_slot = self._setup_registration_test()
         self._assert_negative_energy_raise_error(
-            storage_state.reset_offered_sell_energy, time_slot=current_time_slot)
+            storage_state.reset_offered_sell_energy, time_slot=current_time_slot
+        )
 
     def test_reset_offered_sell_energy_energy_in_offered_sell_dict(self):
         storage_state, current_time_slot = self._setup_registration_test()
         offered_sell_energy = 1
         storage_state.reset_offered_sell_energy(
-            energy=offered_sell_energy, time_slot=current_time_slot)
+            energy=offered_sell_energy, time_slot=current_time_slot
+        )
         assert storage_state.offered_sell_kWh[current_time_slot] == offered_sell_energy
 
     def test_reset_offered_buy_energy_negative_energy_raise_error(self):
         storage_state, current_time_slot = self._setup_registration_test()
         self._assert_negative_energy_raise_error(
-            storage_state.reset_offered_buy_energy, time_slot=current_time_slot)
+            storage_state.reset_offered_buy_energy, time_slot=current_time_slot
+        )
 
     def test_reset_offered_buy_energy_energy_in_offered_buy_dict(self):
         storage_state, current_time_slot = self._setup_registration_test()
         offered_buy_energy = 1
         storage_state.reset_offered_buy_energy(
-            energy=offered_buy_energy, time_slot=current_time_slot)
+            energy=offered_buy_energy, time_slot=current_time_slot
+        )
         assert storage_state.offered_buy_kWh[current_time_slot] == offered_buy_energy
 
     def test_remove_energy_from_deleted_offer_negative_energy_raise_error(self):
         storage_state, current_time_slot = self._setup_registration_test()
         self._assert_negative_energy_raise_error(
-            storage_state.remove_energy_from_deleted_offer, time_slot=current_time_slot)
+            storage_state.remove_energy_from_deleted_offer, time_slot=current_time_slot
+        )
 
     def test_remove_energy_from_deleted_offer_energy_in_offered_buy_dict(self):
         storage_state, current_time_slot = self._setup_registration_test()
         offered_energy = 1
         storage_state.offered_sell_kWh[current_time_slot] = offered_energy
         storage_state.remove_energy_from_deleted_offer(
-            energy=offered_energy, time_slot=current_time_slot)
+            energy=offered_energy, time_slot=current_time_slot
+        )
         assert storage_state.offered_buy_kWh[current_time_slot] == 0
 
     def test_register_energy_from_one_sided_market_accept_offer_negative_energy_raise_error(self):
         storage_state, current_time_slot = self._setup_registration_test()
         self._assert_negative_energy_raise_error(
             storage_state.register_energy_from_one_sided_market_accept_offer,
-            time_slot=current_time_slot)
+            time_slot=current_time_slot,
+        )
 
     def test_register_energy_from_one_sided_market_accept_offer_energy_register_in_dict(self):
         storage_state, current_time_slot = self._setup_registration_test()
         energy = 1
         storage_state.register_energy_from_one_sided_market_accept_offer(
-            energy=energy, time_slot=current_time_slot)
+            energy=energy, time_slot=current_time_slot
+        )
         storage_state.register_energy_from_one_sided_market_accept_offer(
-            energy=energy, time_slot=current_time_slot)
+            energy=energy, time_slot=current_time_slot
+        )
         assert storage_state.pledged_buy_kWh[current_time_slot] == 2 * energy
 
     def test_register_energy_from_bid_trade_negative_energy_raise_error(self):
         storage_state, current_time_slot = self._setup_registration_test()
         self._assert_negative_energy_raise_error(
-            storage_state.register_energy_from_bid_trade, time_slot=current_time_slot)
+            storage_state.register_energy_from_bid_trade, time_slot=current_time_slot
+        )
 
     def test_register_energy_from_bid_trade_energy_register_in_dict(self):
         storage_state, current_time_slot = self._setup_registration_test()
         energy = 1
         storage_state.offered_buy_kWh[current_time_slot] = 2 * energy
-        storage_state.register_energy_from_bid_trade(
-            energy=energy, time_slot=current_time_slot)
-        storage_state.register_energy_from_bid_trade(
-            energy=energy, time_slot=current_time_slot)
+        storage_state.register_energy_from_bid_trade(energy=energy, time_slot=current_time_slot)
+        storage_state.register_energy_from_bid_trade(energy=energy, time_slot=current_time_slot)
         assert storage_state.pledged_buy_kWh[current_time_slot] == 2 * energy
         assert storage_state.offered_buy_kWh[current_time_slot] == 0
 
     def test_register_energy_from_offer_trade_negative_energy_raise_error(self):
         storage_state, current_time_slot = self._setup_registration_test()
         self._assert_negative_energy_raise_error(
-            storage_state.register_energy_from_offer_trade, time_slot=current_time_slot)
+            storage_state.register_energy_from_offer_trade, time_slot=current_time_slot
+        )
 
     def test_register_energy_from_offer_trade_energy_register_in_dict(self):
         storage_state, current_time_slot = self._setup_registration_test()
         energy = 1
         storage_state.offered_sell_kWh[current_time_slot] = 2 * energy
-        storage_state.register_energy_from_offer_trade(
-            energy=energy, time_slot=current_time_slot)
-        storage_state.register_energy_from_offer_trade(
-            energy=energy, time_slot=current_time_slot)
+        storage_state.register_energy_from_offer_trade(energy=energy, time_slot=current_time_slot)
+        storage_state.register_energy_from_offer_trade(energy=energy, time_slot=current_time_slot)
         assert storage_state.pledged_sell_kWh[current_time_slot] == 2 * energy
         assert storage_state.offered_sell_kWh[current_time_slot] == 0
 
@@ -518,7 +557,8 @@ class TestStorageState:
         current_time_slot, _, _ = self._initialize_time_slots()
         storage_state.add_default_values_to_state_profiles([current_time_slot])
         storage_state.activate(
-            slot_length=duration(minutes=15), current_time_slot=current_time_slot)
+            slot_length=duration(minutes=15), current_time_slot=current_time_slot
+        )
         return storage_state, current_time_slot
 
     @staticmethod
@@ -530,9 +570,11 @@ class TestStorageState:
     @staticmethod
     def _setup_storage_state_for_energy_origin_tracking():
         storage_state = StorageState()
-        used_storage_share = [EnergyOrigin(ESSEnergyOrigin.LOCAL, 0.4),
-                              EnergyOrigin(ESSEnergyOrigin.EXTERNAL, 0.5),
-                              EnergyOrigin(ESSEnergyOrigin.UNKNOWN, 0.1)]
+        used_storage_share = [
+            EnergyOrigin(ESSEnergyOrigin.LOCAL, 0.4),
+            EnergyOrigin(ESSEnergyOrigin.EXTERNAL, 0.5),
+            EnergyOrigin(ESSEnergyOrigin.UNKNOWN, 0.1),
+        ]
         storage_state._used_storage_share = used_storage_share
         return storage_state
 
@@ -554,7 +596,8 @@ class TestStorageState:
         storage_state._track_energy_sell_type(energy=available_energy_for_sell)
         if len(storage_state._used_storage_share) != 0:
             assert isclose(
-                storage_state._used_storage_share[0].value, 0, abs_tol=FLOATING_POINT_TOLERANCE)
+                storage_state._used_storage_share[0].value, 0, abs_tol=FLOATING_POINT_TOLERANCE
+            )
         else:
             assert len(storage_state._used_storage_share) == 0
 
@@ -573,22 +616,21 @@ class TestStorageState:
         initial_registry_number = len(storage_state._used_storage_share)
         original_used_storage_share = storage_state._used_storage_share.copy()
         storage_state._track_energy_sell_type(energy=energy_for_sale)
-        assert (len(storage_state._used_storage_share) ==
-                initial_registry_number - 1)
-        assert (storage_state._used_storage_share[0].origin ==
-                original_used_storage_share[1].origin)
+        assert len(storage_state._used_storage_share) == initial_registry_number - 1
+        assert storage_state._used_storage_share[0].origin == original_used_storage_share[1].origin
         assert isclose(
             storage_state._used_storage_share[0].value,
             original_used_storage_share[1].value,
-            abs_tol=FLOATING_POINT_TOLERANCE)
+            abs_tol=FLOATING_POINT_TOLERANCE,
+        )
 
     def test_get_soc_level_default_values_and_custom_values(self):
-        storage_state = StorageState(initial_soc=100,
-                                     capacity=100)
+        storage_state = StorageState(initial_soc=100, capacity=100)
         current_time_slot, _, _ = self._initialize_time_slots()
         storage_state.add_default_values_to_state_profiles([current_time_slot])
         storage_state.activate(
-            slot_length=duration(minutes=15), current_time_slot=current_time_slot)
+            slot_length=duration(minutes=15), current_time_slot=current_time_slot
+        )
         assert storage_state.get_soc_level(current_time_slot) == 1
         storage_state.charge_history[current_time_slot] = 50
         assert storage_state.get_soc_level(current_time_slot) == 0.5
@@ -607,15 +649,15 @@ class TestStorageState:
         storage_state._used_storage = used_storage_mock
 
         assert set(SAMPLE_STATS.keys()).issubset(storage_state.to_dict(current_time_slot).keys())
-        assert (storage_state.to_dict(current_time_slot)["energy_to_sell"] ==
-                "test_energy_to_sell")
-        assert (storage_state.to_dict(current_time_slot)["energy_active_in_bids"] ==
-                "test_energy_active_in_bids")
-        assert (storage_state.to_dict(current_time_slot)["energy_to_buy"] ==
-                "test_energy_to_buy")
-        assert (storage_state.to_dict(current_time_slot)["energy_active_in_offers"] ==
-                "test_energy_active_in_offers")
-        assert (storage_state.to_dict(current_time_slot)["free_storage"] ==
-                "test_free_storage")
-        assert (storage_state.to_dict(current_time_slot)["used_storage"] ==
-                used_storage_mock)
+        assert storage_state.to_dict(current_time_slot)["energy_to_sell"] == "test_energy_to_sell"
+        assert (
+            storage_state.to_dict(current_time_slot)["energy_active_in_bids"]
+            == "test_energy_active_in_bids"
+        )
+        assert storage_state.to_dict(current_time_slot)["energy_to_buy"] == "test_energy_to_buy"
+        assert (
+            storage_state.to_dict(current_time_slot)["energy_active_in_offers"]
+            == "test_energy_active_in_offers"
+        )
+        assert storage_state.to_dict(current_time_slot)["free_storage"] == "test_free_storage"
+        assert storage_state.to_dict(current_time_slot)["used_storage"] == used_storage_mock

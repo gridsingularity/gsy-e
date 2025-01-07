@@ -23,7 +23,7 @@ from collections import deque
 from unittest.mock import MagicMock, Mock, PropertyMock, patch
 
 import pytest
-from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig, DATE_TIME_FORMAT
 from gsy_framework.data_classes import Bid, Offer, Trade, TraderDetails
 from gsy_framework.utils import format_datetime
 from parameterized import parameterized
@@ -31,7 +31,6 @@ from pendulum import datetime, duration, now
 from redis.exceptions import RedisError
 
 import gsy_e.constants
-import gsy_e.gsy_e_core.util
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.models.area import Area, CoefficientArea
 from gsy_e.models.strategy import BidEnabledStrategy
@@ -121,7 +120,7 @@ class TestExternalMixin:
     def test_dispatch_tick_frequency_gets_calculated_correctly(self):
         self.external_strategy = LoadHoursExternalStrategy(100)
         self._create_and_activate_strategy_area(self.external_strategy)
-        gsy_e.gsy_e_core.util.gsy_e.constants.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 20
+        gsy_e.constants.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 20
         self.config.ticks_per_slot = 90
         global_objects.external_global_stats(self.area, self.config.ticks_per_slot)
         assert (
@@ -146,7 +145,7 @@ class TestExternalMixin:
             global_objects.external_global_stats.external_tick_counter._dispatch_tick_frequency
             == 19
         )
-        gsy_e.gsy_e_core.util.gsy_e.constants.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 50
+        gsy_e.constants.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 50
         self.config.ticks_per_slot = 90
         global_objects.external_global_stats(self.area, self.config.ticks_per_slot)
         assert (
@@ -180,7 +179,7 @@ class TestExternalMixin:
         ]
     )
     def test_dispatch_event_tick_to_external_aggregator(self, strategy):
-        gsy_e.gsy_e_core.util.gsy_e.constants.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 20
+        gsy_e.constants.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 20
         self._create_and_activate_strategy_area(strategy)
         strategy.redis.aggregator.is_controlling_device = lambda _: True
         self.config.ticks_per_slot = 90
@@ -204,7 +203,7 @@ class TestExternalMixin:
         )
         result = strategy.redis.aggregator.add_batch_tick_event.call_args_list[0][0][1]
         assert result == {
-            "market_slot": GlobalConfig.start_date.format(gsy_e.constants.DATE_TIME_FORMAT),
+            "market_slot": GlobalConfig.start_date.format(DATE_TIME_FORMAT),
             "slot_completion": "20%",
         }
         strategy.redis.reset_mock()
@@ -221,7 +220,7 @@ class TestExternalMixin:
         )
         result = strategy.redis.aggregator.add_batch_tick_event.call_args_list[0][0][1]
         assert result == {
-            "market_slot": GlobalConfig.start_date.format(gsy_e.constants.DATE_TIME_FORMAT),
+            "market_slot": GlobalConfig.start_date.format(DATE_TIME_FORMAT),
             "slot_completion": "40%",
         }
 
@@ -233,7 +232,7 @@ class TestExternalMixin:
         ]
     )
     def test_dispatch_event_tick_to_external_agent(self, strategy):
-        gsy_e.gsy_e_core.util.gsy_e.constants.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 20
+        gsy_e.constants.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT = 20
         self._create_and_activate_strategy_area(strategy)
         strategy.redis.aggregator.is_controlling_device = lambda _: False
         self.config.ticks_per_slot = 90
@@ -256,7 +255,7 @@ class TestExternalMixin:
         result.pop("area_uuid")
         assert result == {
             "slot_completion": "20%",
-            "market_slot": GlobalConfig.start_date.format(gsy_e.constants.DATE_TIME_FORMAT),
+            "market_slot": GlobalConfig.start_date.format(DATE_TIME_FORMAT),
             "event": "tick",
             "device_info": strategy._device_info_dict,
         }
@@ -274,7 +273,7 @@ class TestExternalMixin:
         result.pop("area_uuid")
         assert result == {
             "slot_completion": "40%",
-            "market_slot": GlobalConfig.start_date.format(gsy_e.constants.DATE_TIME_FORMAT),
+            "market_slot": GlobalConfig.start_date.format(DATE_TIME_FORMAT),
             "event": "tick",
             "device_info": strategy._device_info_dict,
         }
@@ -717,7 +716,7 @@ class TestForecastRelatedFeatures:
     def test_set_energy_forecast_succeeds(ext_strategy_fixture):
         arguments = {
             "transaction_id": transaction_id,
-            "energy_forecast": {now().format(gsy_e.constants.DATE_TIME_FORMAT): 1},
+            "energy_forecast": {now().format(DATE_TIME_FORMAT): 1},
         }
         payload = {"data": json.dumps(arguments)}
         assert ext_strategy_fixture.pending_requests == deque([])
@@ -772,7 +771,7 @@ class TestForecastRelatedFeatures:
     def test_set_energy_measurement_succeeds(ext_strategy_fixture):
         arguments = {
             "transaction_id": transaction_id,
-            "energy_measurement": {now().format(gsy_e.constants.DATE_TIME_FORMAT): 1},
+            "energy_measurement": {now().format(DATE_TIME_FORMAT): 1},
         }
         payload = {"data": json.dumps(arguments)}
         assert ext_strategy_fixture.pending_requests == deque([])
@@ -826,7 +825,7 @@ class TestForecastRelatedFeatures:
         ext_strategy_fixture.redis.publish_json = Mock()
         arguments = {
             "transaction_id": transaction_id,
-            "energy_forecast": {now().format(gsy_e.constants.DATE_TIME_FORMAT): 1},
+            "energy_forecast": {now().format(DATE_TIME_FORMAT): 1},
         }
         response_channel = "response_channel"
         ext_strategy_fixture._set_energy_forecast_impl(arguments, response_channel)
@@ -881,7 +880,7 @@ class TestForecastRelatedFeatures:
         response_channel = "response_channel"
         arguments = {
             "transaction_id": transaction_id,
-            "energy_forecast": {now().format(gsy_e.constants.DATE_TIME_FORMAT): -1},
+            "energy_forecast": {now().format(DATE_TIME_FORMAT): -1},
         }
         ext_strategy_fixture._set_energy_forecast_impl(arguments, response_channel)
         error_message = (
@@ -912,7 +911,7 @@ class TestForecastRelatedFeatures:
         ext_strategy_fixture.redis.publish_json = Mock()
         arguments = {
             "transaction_id": transaction_id,
-            "energy_measurement": {now().format(gsy_e.constants.DATE_TIME_FORMAT): 1},
+            "energy_measurement": {now().format(DATE_TIME_FORMAT): 1},
         }
         response_channel = "response_channel"
         ext_strategy_fixture._set_energy_measurement_impl(arguments, response_channel)
@@ -970,7 +969,7 @@ class TestForecastRelatedFeatures:
         ext_strategy_fixture.redis.publish_json.reset_mock()
         arguments = {
             "transaction_id": transaction_id,
-            "energy_measurement": {now().format(gsy_e.constants.DATE_TIME_FORMAT): -1},
+            "energy_measurement": {now().format(DATE_TIME_FORMAT): -1},
         }
         ext_strategy_fixture._set_energy_measurement_impl(arguments, response_channel)
         error_message = (

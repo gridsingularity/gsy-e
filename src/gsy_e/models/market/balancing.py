@@ -15,21 +15,30 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
 import uuid
 from logging import getLogger
 from typing import Union, Dict, List, Optional  # noqa
 
-from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings, FLOATING_POINT_TOLERANCE
 from gsy_framework.data_classes import (
-    BalancingOffer, BalancingTrade, Offer, TraderDetails, TradeBidOfferInfo)
+    BalancingOffer,
+    BalancingTrade,
+    Offer,
+    TraderDetails,
+    TradeBidOfferInfo,
+)
 from pendulum import DateTime
 
-from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.events.event_structures import MarketEvent
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.exceptions import (
-    InvalidOffer, MarketReadOnlyException,
-    OfferNotFoundException, InvalidBalancingTradeException, DeviceNotInRegistryError)
+    InvalidOffer,
+    MarketReadOnlyException,
+    OfferNotFoundException,
+    InvalidBalancingTradeException,
+    DeviceNotInRegistryError,
+)
 from gsy_e.gsy_e_core.util import short_offer_bid_log_str
 from gsy_e.models.market.one_sided import OneSidedMarket
 
@@ -40,9 +49,16 @@ class BalancingMarket(OneSidedMarket):
     """Market that regulates the supply and demand of energy."""
 
     def __init__(  # pylint: disable=too-many-arguments
-            self, time_slot=None, bc=None, notification_listener=None, readonly=False,
-            grid_fee_type=ConstSettings.MASettings.GRID_FEE_TYPE,
-            grid_fees=None, name=None, in_sim_duration=True):
+        self,
+        time_slot=None,
+        bc=None,
+        notification_listener=None,
+        readonly=False,
+        grid_fee_type=ConstSettings.MASettings.GRID_FEE_TYPE,
+        grid_fees=None,
+        name=None,
+        in_sim_duration=True,
+    ):
         self.unmatched_energy_upward = 0
         self.unmatched_energy_downward = 0
         self.accumulated_supply_balancing_trade_price = 0
@@ -50,28 +66,48 @@ class BalancingMarket(OneSidedMarket):
         self.accumulated_demand_balancing_trade_price = 0
         self.accumulated_demand_balancing_trade_energy = 0
 
-        super().__init__(time_slot, bc, notification_listener, readonly, grid_fee_type,
-                         grid_fees, name, in_sim_duration=in_sim_duration)
+        super().__init__(
+            time_slot,
+            bc,
+            notification_listener,
+            readonly,
+            grid_fee_type,
+            grid_fees,
+            name,
+            in_sim_duration=in_sim_duration,
+        )
 
     def offer(  # pylint: disable=too-many-arguments
-            self, price: float, energy: float, seller: TraderDetails,
-            offer_id: Optional[str] = None,
-            original_price: Optional[float] = None,
-            dispatch_event: bool = True,
-            adapt_price_with_fees: bool = True,
-            add_to_history: bool = True,
-            time_slot: Optional[DateTime] = None):
+        self,
+        price: float,
+        energy: float,
+        seller: TraderDetails,
+        offer_id: Optional[str] = None,
+        original_price: Optional[float] = None,
+        dispatch_event: bool = True,
+        adapt_price_with_fees: bool = True,
+        add_to_history: bool = True,
+        time_slot: Optional[DateTime] = None,
+    ):
         assert False
 
     def balancing_offer(  # pylint: disable=too-many-arguments
-            self, price: float, energy: float, seller: TraderDetails,
-            original_price=None, offer_id=None, from_agent: bool = False,
-            adapt_price_with_fees: bool = False, dispatch_event=True) -> BalancingOffer:
+        self,
+        price: float,
+        energy: float,
+        seller: TraderDetails,
+        original_price=None,
+        offer_id=None,
+        from_agent: bool = False,
+        adapt_price_with_fees: bool = False,
+        dispatch_event=True,
+    ) -> BalancingOffer:
         """Create a balancing offer."""
 
         if seller.name not in DeviceRegistry.REGISTRY.keys() and not from_agent:
-            raise DeviceNotInRegistryError(f"Device {seller.name} "
-                                           f"not in registry ({DeviceRegistry.REGISTRY}).")
+            raise DeviceNotInRegistryError(
+                f"Device {seller.name} " f"not in registry ({DeviceRegistry.REGISTRY})."
+            )
         if self.readonly:
             raise MarketReadOnlyException()
         if energy == 0:
@@ -85,9 +121,7 @@ class BalancingMarket(OneSidedMarket):
         if offer_id is None:
             offer_id = str(uuid.uuid4())
 
-        offer = BalancingOffer(
-            offer_id, self.now, price, energy, seller,
-            time_slot=self.time_slot)
+        offer = BalancingOffer(offer_id, self.now, price, energy, seller, time_slot=self.time_slot)
         self.offers[offer.id] = offer
 
         self.offer_history.append(offer)
@@ -101,33 +135,41 @@ class BalancingMarket(OneSidedMarket):
         self.offers.pop(original_offer.id, None)
         # same offer id is used for the new accepted_offer
 
-        accepted_offer = self.balancing_offer(offer_id=original_offer.id,
-                                              price=original_offer.price *
-                                              (energy / original_offer.energy),
-                                              energy=energy,
-                                              seller=original_offer.seller,
-                                              dispatch_event=False,
-                                              from_agent=True)
+        accepted_offer = self.balancing_offer(
+            offer_id=original_offer.id,
+            price=original_offer.price * (energy / original_offer.energy),
+            energy=energy,
+            seller=original_offer.seller,
+            dispatch_event=False,
+            from_agent=True,
+        )
 
         residual_price = (1 - energy / original_offer.energy) * original_offer.price
         residual_energy = original_offer.energy - energy
         if orig_offer_price is None:
             orig_offer_price = original_offer.original_price or original_offer.price
         original_residual_price = (
-                ((original_offer.energy - energy) / original_offer.energy) * orig_offer_price)
+            (original_offer.energy - energy) / original_offer.energy
+        ) * orig_offer_price
 
-        residual_offer = self.balancing_offer(price=residual_price,
-                                              energy=residual_energy,
-                                              seller=original_offer.seller,
-                                              original_price=original_residual_price,
-                                              dispatch_event=False,
-                                              adapt_price_with_fees=False,
-                                              from_agent=True)
+        residual_offer = self.balancing_offer(
+            price=residual_price,
+            energy=residual_energy,
+            seller=original_offer.seller,
+            original_price=original_residual_price,
+            dispatch_event=False,
+            adapt_price_with_fees=False,
+            from_agent=True,
+        )
 
         log.debug(
             "[BALANCING_OFFER][SPLIT][%s, %s] (%s into %s and %s",
-            self.time_slot_str, self.name, short_offer_bid_log_str(original_offer),
-            short_offer_bid_log_str(accepted_offer), short_offer_bid_log_str(residual_offer))
+            self.time_slot_str,
+            self.name,
+            short_offer_bid_log_str(original_offer),
+            short_offer_bid_log_str(accepted_offer),
+            short_offer_bid_log_str(residual_offer),
+        )
 
         self.bc_interface.change_offer(accepted_offer, original_offer, residual_offer)
 
@@ -135,20 +177,26 @@ class BalancingMarket(OneSidedMarket):
             MarketEvent.BALANCING_OFFER_SPLIT,
             original_offer=original_offer,
             accepted_offer=accepted_offer,
-            residual_offer=residual_offer)
+            residual_offer=residual_offer,
+        )
 
         return accepted_offer, residual_offer
 
     def _determine_offer_price(
-            self, energy_portion, energy, trade_rate,
-            trade_bid_info, orig_offer_price):
+        self, energy_portion, energy, trade_rate, trade_bid_info, orig_offer_price
+    ):
         return self._update_offer_fee_and_calculate_final_price(
-            energy, trade_rate, energy_portion, orig_offer_price)
+            energy, trade_rate, energy_portion, orig_offer_price
+        )
 
     def accept_offer(  # pylint: disable=too-many-locals
-            self, offer_or_id: Union[str, BalancingOffer], buyer: TraderDetails, *,
-            energy: int = None,
-            trade_bid_info: Optional[TradeBidOfferInfo] = None) -> BalancingTrade:
+        self,
+        offer_or_id: Union[str, BalancingOffer],
+        buyer: TraderDetails,
+        *,
+        energy: int = None,
+        trade_bid_info: Optional[TradeBidOfferInfo] = None,
+    ) -> BalancingTrade:
         if self.readonly:
             raise MarketReadOnlyException()
 
@@ -159,8 +207,7 @@ class BalancingMarket(OneSidedMarket):
             raise OfferNotFoundException()
 
         if (offer.energy > 0 > energy) or (offer.energy < 0 < energy):
-            raise InvalidBalancingTradeException("BalancingOffer and energy "
-                                                 "are not compatible")
+            raise InvalidBalancingTradeException("BalancingOffer and energy " "are not compatible")
         if energy is None:
             energy = offer.energy
 
@@ -183,13 +230,15 @@ class BalancingMarket(OneSidedMarket):
                 accepted_offer, residual_offer = self.split_offer(offer, energy, orig_offer_price)
 
                 fees, trade_price = self._determine_offer_price(
-                    energy / offer.energy, energy, trade_rate, trade_bid_info, orig_offer_price)
+                    energy / offer.energy, energy, trade_rate, trade_bid_info, orig_offer_price
+                )
                 offer = accepted_offer
                 offer.update_price(trade_price)
 
             elif abs(energy - offer.energy) > FLOATING_POINT_TOLERANCE:
                 raise InvalidBalancingTradeException(
-                    f"Energy ({energy}) can't be greater than offered energy ({offer.energy}).")
+                    f"Energy ({energy}) can't be greater than offered energy ({offer.energy})."
+                )
             else:
                 # Requested energy is equal to offer's energy - just proceed normally
                 fees, trade_price = self._update_offer_fee_and_calculate_final_price(
@@ -206,14 +255,20 @@ class BalancingMarket(OneSidedMarket):
         self.offers.pop(offer.id, None)
 
         trade_id, residual_offer = self.bc_interface.handle_blockchain_trade_event(
-            offer, buyer, original_offer, residual_offer)
-        trade = BalancingTrade(trade_id, self.now, offer.seller,
-                               buyer=buyer,
-                               offer=offer,
-                               traded_energy=energy, trade_price=trade_price,
-                               residual=residual_offer,
-                               fee_price=fees,
-                               time_slot=offer.time_slot)
+            offer, buyer, original_offer, residual_offer
+        )
+        trade = BalancingTrade(
+            trade_id,
+            self.now,
+            offer.seller,
+            buyer=buyer,
+            offer=offer,
+            traded_energy=energy,
+            trade_price=trade_price,
+            residual=residual_offer,
+            fee_price=fees,
+            time_slot=offer.time_slot,
+        )
         self.bc_interface.track_trade_event(self.time_slot, trade)
 
         if offer.seller != buyer:
