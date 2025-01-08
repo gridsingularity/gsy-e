@@ -184,7 +184,7 @@ _setup_modules = available_simulation_scenarios
 @click.option(
     "--country-code",
     type=str,
-    default=False,
+    default=None,
     help="Country code according to ISO 3166-1 alpha-2.",
 )
 def run(
