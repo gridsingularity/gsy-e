@@ -248,7 +248,7 @@ def _create_config_settings_object(
         "external_connection_enabled": settings.get("external_connection_enabled", False),
         "aggregator_device_mapping": aggregator_device_mapping,
         "hours_of_delay": settings.get("scm", {}).get(
-            "hours_of_delay", ConstSettings.SCMSettings.HOURS_OF_DELAY
+            "scm_cn_hours_of_delay", ConstSettings.SCMSettings.HOURS_OF_DELAY
         ),
     }
 
@@ -287,6 +287,7 @@ def _handle_scm_past_slots_simulation_run(
     config = _create_config_settings_object(
         scenario_copy, settings_copy, aggregator_device_mapping
     )
+
     # We are running SCM Canary Networks with some days of delay compared to realtime in order to
     # compensate for delays in transmission of the asset measurements.
     # Adding 4 hours of extra time to the SCM past slots simulation duration, in order to
@@ -296,6 +297,7 @@ def _handle_scm_past_slots_simulation_run(
     config.sim_duration = config.end_date - config.start_date
     GlobalConfig.sim_duration = config.sim_duration
     gsy_e.constants.RUN_IN_REALTIME = False
+
     simulation_state = run_simulation(
         setup_module_name=scenario_name,
         simulation_config=config,
