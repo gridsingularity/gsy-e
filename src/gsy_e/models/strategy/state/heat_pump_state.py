@@ -29,6 +29,15 @@ from gsy_e.models.strategy.state.base_states import StateInterface
 log = getLogger(__name__)
 
 
+def delete_time_slots_in_state(profile: Dict, current_time_stamp: DateTime):
+    stamps_to_delete = []
+    for time_slot in profile:
+        if time_slot < current_time_stamp:
+            stamps_to_delete.append(time_slot)
+    for stamp in stamps_to_delete:
+        profile.pop(stamp, None)
+
+
 class HeatPumpTankState(StateInterface):
     """State for the heat pump tank."""
 
@@ -115,12 +124,7 @@ class HeatPumpTankState(StateInterface):
 
     @staticmethod
     def _delete_time_slots(profile: Dict, current_time_stamp: DateTime):
-        stamps_to_delete = []
-        for time_slot in profile:
-            if time_slot < current_time_stamp:
-                stamps_to_delete.append(time_slot)
-        for stamp in stamps_to_delete:
-            profile.pop(stamp, None)
+        delete_time_slots_in_state(profile, current_time_stamp)
 
     def __str__(self):
         return self.__class__.__name__
@@ -276,12 +280,7 @@ class HeatPumpState(StateInterface):
 
     @staticmethod
     def _delete_time_slots(profile: Dict, current_time_stamp: DateTime):
-        stamps_to_delete = []
-        for time_slot in profile:
-            if time_slot < current_time_stamp:
-                stamps_to_delete.append(time_slot)
-        for stamp in stamps_to_delete:
-            profile.pop(stamp, None)
+        delete_time_slots_in_state(profile, current_time_stamp)
 
     def __str__(self):
         return self.__class__.__name__
