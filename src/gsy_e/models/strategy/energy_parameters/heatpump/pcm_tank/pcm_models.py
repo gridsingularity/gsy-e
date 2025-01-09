@@ -1,28 +1,41 @@
-class PCMChargeModel:
+from pendulum import duration
 
-    def __init__(self):
-        self._soc_lut = {}
 
-    @classmethod
-    def get_temp_after_charging(
-        cls, current_storage_temps: list, mass_flow_kg_s: float, charging_temp: float
-    ) -> list:
+class PCMModelBase:
+
+    def __init__(self, slot_length: duration, mass_flow_rate_kg_s: float):
+        self._mass_flow_rate = mass_flow_rate_kg_s
+        self._slot_length = slot_length
+
+    @property
+    def _soc_lut(self):
+        return {}
+
+    @property
+    def _soc_lut_key(self) -> str:
+        return ""
+
+    def get_soc(self, current_storage_temps: list):
+        return 50
+
+
+class PCMChargeModel(PCMModelBase):
+
+    @property
+    def _soc_lut(self):
+        return {}
+
+    def get_temp_after_charging(self, current_storage_temps: list, charging_temp: float) -> list:
         return current_storage_temps
 
-    def get_soc(self, current_storage_temps: list) -> float:
-        return 0.5
 
+class PCMDischargeModel(PCMModelBase):
 
-class PCMDischargeModel:
+    @property
+    def _soc_lut(self):
+        return {}
 
-    def __init__(self):
-        self._soc_lut = {}
-
-    @classmethod
     def get_temp_after_discharging(
-        cls, current_storage_temps: list, mass_flow_kg_s: float, discharging_temp: float
+        self, current_storage_temps: list, discharging_temp: float
     ) -> list:
         return current_storage_temps
-
-    def get_soc(self, current_storage_temps: list) -> float:
-        return 0.5
