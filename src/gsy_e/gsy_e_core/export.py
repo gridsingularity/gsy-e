@@ -131,21 +131,18 @@ class ExportAndPlot:
         for in_key, value in self.endpoint_buffer.generate_json_report().items():
             out_key = results_field_to_json_filename_mapping[in_key]
 
-            # Only to export carbon emissions
-            if in_key == "trade_profile" and self.country_code:
+            if in_key == "imported_exported_energy" and self.country_code:
                 carbon_emissions_handler = CarbonEmissionsHandler(
                     entsoe_api_key=os.environ.get("ENTSOE_API_SECURITY_TOKEN", None)
                 )
-                value = carbon_emissions_handler.calculate_carbon_emissions_from_gsy_trade_profile(
-                    country_code=self.country_code, trade_profile=value
+                value = carbon_emissions_handler.calculate_from_gsy_imported_exported_energy(
+                    country_code=self.country_code, imported_exported_energy=value
                 )
                 out_key = "carbon_emissions"
-            
+
             json_file = os.path.join(json_dir, out_key + ".json")
             with open(json_file, "w", encoding="utf-8") as outfile:
                 json.dump(value, outfile, indent=2)
-
-
 
     def _export_setup_json(self) -> None:
 
