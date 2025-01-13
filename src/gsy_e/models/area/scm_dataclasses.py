@@ -385,8 +385,6 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
             {
                 "fees": self.energy_rates.area_fees.prices_as_dict(),
                 "savings": self.savings,
-                "savings_from_sell_to_community": self.savings_from_sell_to_community,
-                "savings_from_buy_from_community": self.savings_from_buy_from_community,
                 "savings_percent": self.savings_percent,
                 "energy_benchmark": self.energy_benchmark,
                 "home_balance_kWh": self.home_balance_kWh,
