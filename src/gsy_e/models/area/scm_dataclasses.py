@@ -278,7 +278,7 @@ class AreaFees:
 
     grid_import_fee_const: float = 0.0
     grid_export_fee_const: float = 0.0
-    grid_fees_reduction: float = 0.0
+    grid_fees_reduction: float = 1.0
     per_kWh_fees: Dict[str, FeeContainer] = field(default_factory=dict)
     monthly_fees: Dict[str, FeeContainer] = field(default_factory=dict)
 
@@ -372,7 +372,6 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
     spent_to_grid: float = 0.0
     sold_to_grid: float = 0.0
     earned_from_grid: float = 0.0
-    self_consumed_savings: float = 0.0
     import_grid_fees: float = 0.0
     export_grid_fees: float = 0.0
     _min_community_savings_percent: float = 0.0
@@ -444,10 +443,27 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
         self._max_community_savings_percent = max_savings_percent
 
     @property
+    def savings_from_buy_from_community(self):
+        """Include to the savings the additional revenue from the intracommunity trading."""
+        return self.bought_from_community * (
+            self.energy_rates.utility_rate_incl_fees - self.energy_rates.intracommunity_rate
+        )
+
+    @property
+    def savings_from_sell_to_community(self):
+        """
+        Include the savings due to the decreased intracommunity rate compared to the feed in
+        tariff.
+        """
+        return self.sold_to_community * (
+            self.energy_rates.intracommunity_rate - self.energy_rates.feed_in_tariff
+        )
+
+    @property
     def savings(self):
         """Absolute price savings of the home, compared to the base energy bill."""
-        savings_absolute = KPICalculationHelper().saving_absolute(
-            self.base_energy_bill_excl_revenue, self.gsy_energy_bill_excl_revenue
+        savings_absolute = (
+            self.savings_from_buy_from_community + self.savings_from_sell_to_community
         )
         assert savings_absolute > -FLOATING_POINT_TOLERANCE
         return savings_absolute
@@ -539,14 +555,17 @@ class AreaEnergyBillsWithoutSurplusTrade(AreaEnergyBills):
     """Dedicated AreaEnergyBills class, specific for the non-suplus trade SCM."""
 
     @property
-    def savings(self):
-        """Absolute price savings of the home, compared to the base energy bill."""
-        # The savings and the percentage might produce negative and huge percentage values
-        # in cases of production. This is due to the fact that the energy bill in these cases
-        # will be negative, and the producer will not have "savings". For a more realistic case
-        # the revenue should be omitted from the calculation of the savings, however this needs
-        # to be discussed.
-        return self.self_consumed_savings + self.gsy_energy_bill_revenue
+    def savings_from_buy_from_community(self):
+        """Include to the savings the additional revenue from the intracommunity trading."""
+        return self.bought_from_community * self.energy_rates.utility_rate_incl_fees
+
+    @property
+    def savings_from_sell_to_community(self):
+        """
+        Include the savings due to the decreased intracommunity rate compared to the feed in
+        tariff.
+        """
+        return self.gsy_energy_bill_revenue
 
     def calculate_base_energy_bill(
         self, home_data: HomeAfterMeterData, area_rates: AreaEnergyRates
