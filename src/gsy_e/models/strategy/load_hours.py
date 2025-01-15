@@ -21,7 +21,6 @@ from typing import Union, Dict
 
 from gsy_framework.constants_limits import ConstSettings, FLOATING_POINT_TOLERANCE
 from gsy_framework.data_classes import Offer, TraderDetails
-from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.exceptions import GSyDeviceException
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from gsy_framework.utils import (
@@ -36,6 +35,7 @@ from pendulum import duration
 from gsy_e import constants
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.exceptions import MarketException
+from gsy_e.gsy_e_core.util import is_two_sided_market_simulation, is_one_sided_market_simulation
 from gsy_e.models.base import AssetType
 from gsy_e.models.market import MarketBase
 from gsy_e.models.strategy import BidEnabledStrategy
@@ -200,7 +200,7 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         super().event_market_cycle()
         self._cycle_energy_parameters()
         self.bid_update.update_and_populate_price_settings(self.area)
-        if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
+        if is_one_sided_market_simulation():
             self.bid_update.reset(self)
         self._post_first_bid()
         self._settlement_market_strategy.event_market_cycle(self)
@@ -352,16 +352,16 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         except MarketException:
             self.log.exception("An Error occurred while buying an offer")
 
-    def _double_sided_market_event_tick(self, market):
+    def _two_sided_market_event_tick(self, market):
         self.bid_update.update(market, self)
 
     def event_tick(self):
         """Post bids on market tick. This method is triggered by the TICK event."""
         for market in self.active_markets:
-            if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
+            if is_one_sided_market_simulation():
                 self._one_sided_market_event_tick(market)
-            elif ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value:
-                self._double_sided_market_event_tick(market)
+            elif is_two_sided_market_simulation():
+                self._two_sided_market_event_tick(market)
 
         self.bid_update.increment_update_counter_all_markets(self)
         self._settlement_market_strategy.event_tick(self)
@@ -394,7 +394,7 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         return offer.seller.name not in [self.owner.name, self.area.name]
 
     def _post_first_bid(self):
-        if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
+        if is_one_sided_market_simulation():
             return
         for market in self.active_markets:
             if (
