@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Optional, Dict, Union, List
+from statistics import mean
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig, FLOATING_POINT_TOLERANCE
 from gsy_framework.read_user_profile import InputProfileTypes
@@ -44,6 +45,7 @@ class CombinedHeatpumpTanksState:
             return {
                 "tanks": tanks_state,
                 **self._hp_state.get_results_dict(current_time_slot),
+                "storage_temp_C": mean([tank["storage_temp_C"] for tank in tanks_state]),
             }
         return {**self._hp_state.get_results_dict(current_time_slot), **tanks_state}
 
