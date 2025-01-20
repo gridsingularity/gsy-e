@@ -128,7 +128,10 @@ class StrategyProfile(StrategyProfileBase):
             profile = self.profile
 
         self.profile = global_objects.profiles_handler.rotate_profile(
-            profile_type=self.profile_type, profile=profile, profile_uuid=self.input_profile_uuid
+            profile_type=self.profile_type,
+            profile=profile,
+            profile_uuid=self.input_profile_uuid,
+            input_profile_path=self.input_profile,
         )
 
 
