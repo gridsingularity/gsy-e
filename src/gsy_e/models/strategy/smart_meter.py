@@ -19,7 +19,6 @@ from typing import Dict, Union
 
 from gsy_framework.constants_limits import ConstSettings, FLOATING_POINT_TOLERANCE
 from gsy_framework.data_classes import Offer, TraderDetails
-from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.read_user_profile import InputProfileTypes, read_arbitrary_profile
 from gsy_framework.utils import get_from_profile_same_weekday_and_time, limit_float_precision
 from gsy_framework.validators.smart_meter_validator import SmartMeterValidator
@@ -28,6 +27,7 @@ from pendulum import duration
 
 from gsy_e import constants
 from gsy_e.gsy_e_core.exceptions import GSyException, MarketException
+from gsy_e.gsy_e_core.util import is_one_sided_market_simulation, is_two_sided_market_simulation
 from gsy_e.models.base import AssetType
 from gsy_e.models.market import MarketBase
 from gsy_e.models.strategy import BidEnabledStrategy
@@ -509,10 +509,10 @@ class SmartMeterStrategy(BidEnabledStrategy, UseMarketMakerMixin):
     def _event_tick_consumption(self):
         for market in self.area.all_markets:
             # One-sided market (only offers are posted)
-            if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
+            if is_one_sided_market_simulation():
                 self._one_sided_market_event_tick(market)
             # Two-sided markets (both offers and bids are posted)
-            elif ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value:
+            elif is_two_sided_market_simulation():
                 # Update the price of existing bids to reflect the new rates
                 self.bid_update.update(market, self)
 

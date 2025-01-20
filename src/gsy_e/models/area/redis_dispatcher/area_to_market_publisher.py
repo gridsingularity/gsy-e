@@ -1,10 +1,9 @@
 from uuid import uuid4
 import json
 from gsy_e.gsy_e_core.exceptions import D3ARedisException
-from gsy_framework.constants_limits import ConstSettings
 from gsy_e.constants import REDIS_PUBLISH_RESPONSE_TIMEOUT
 from gsy_e.gsy_e_core.redis_connections.area_market import BlockingCommunicator
-from gsy_framework.enums import SpotMarketTypeEnum
+from gsy_e.gsy_e_core.util import is_one_sided_market_simulation
 
 
 class AreaToMarketEventPublisher:
@@ -26,7 +25,7 @@ class AreaToMarketEventPublisher:
         self.event_response_uuids.append(response["transaction_uuid"])
 
     def publish_markets_clearing(self):
-        if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
+        if is_one_sided_market_simulation():
             return
         for market in self.area._markets.markets.values():
             response_channel = f"{market.id}/CLEAR/RESPONSE"
@@ -44,6 +43,7 @@ class AreaToMarketEventPublisher:
             if data["transaction_uuid"] not in self.event_response_uuids:
                 self.area.log.error(
                     f"Transaction ID not found after {REDIS_PUBLISH_RESPONSE_TIMEOUT} "
-                    f"seconds: Clearing event on {self.area.name}, {market.id}")
+                    f"seconds: Clearing event on {self.area.name}, {market.id}"
+                )
             else:
                 self.event_response_uuids.remove(data["transaction_uuid"])
