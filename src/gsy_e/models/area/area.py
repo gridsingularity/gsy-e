@@ -15,12 +15,13 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
 from logging import getLogger
 from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
 from gsy_framework.area_validator import validate_area
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.enums import AvailableMarketTypes, SpotMarketTypeEnum
+from gsy_framework.enums import AvailableMarketTypes
 from gsy_framework.exceptions import GSyAreaException, GSyDeviceException
 from gsy_framework.utils import key_in_dict_and_not_none
 from pendulum import DateTime
@@ -30,7 +31,7 @@ from gsy_e.gsy_e_core.blockchain_interface import blockchain_interface_factory
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.exceptions import AreaException
 from gsy_e.gsy_e_core.matching_engine_singleton import bid_offer_matcher
-from gsy_e.gsy_e_core.util import is_external_matching_enabled
+from gsy_e.gsy_e_core.util import is_external_matching_enabled, is_two_sided_market_simulation
 from gsy_e.models.area.area_base import AreaBase
 from gsy_e.models.area.event_dispatcher import DispatcherFactory
 from gsy_e.models.area.events import Events
@@ -60,21 +61,25 @@ class Area(AreaBase):
     """
 
     # pylint: disable=too-many-arguments,too-many-instance-attributes
-    def __init__(self, name: str = None, children: List["Area"] = None,
-                 uuid: str = None,
-                 strategy: Optional[Union["BaseStrategy", "TradingStrategyBase"]] = None,
-                 config: SimulationConfig = None,
-                 balancing_spot_trade_ratio=ConstSettings.BalancingSettings.SPOT_TRADE_RATIO,
-                 event_list=None,
-                 grid_fee_percentage: float = None,
-                 grid_fee_constant: float = None,
-                 external_connection_available: bool = False,
-                 throughput: ThroughputParameters = ThroughputParameters(),
-                 min_offer_age: int = None,
-                 min_bid_age: int = None,
-                 ):
-        super().__init__(name, children, uuid, strategy, config, grid_fee_percentage,
-                         grid_fee_constant)
+    def __init__(
+        self,
+        name: str = None,
+        children: List["Area"] = None,
+        uuid: str = None,
+        strategy: Optional[Union["BaseStrategy", "TradingStrategyBase"]] = None,
+        config: SimulationConfig = None,
+        balancing_spot_trade_ratio=ConstSettings.BalancingSettings.SPOT_TRADE_RATIO,
+        event_list=None,
+        grid_fee_percentage: float = None,
+        grid_fee_constant: float = None,
+        external_connection_available: bool = False,
+        throughput: ThroughputParameters = ThroughputParameters(),
+        min_offer_age: int = None,
+        min_bid_age: int = None,
+    ):
+        super().__init__(
+            name, children, uuid, strategy, config, grid_fee_percentage, grid_fee_constant
+        )
         self.display_type = "Area" if self.strategy is None else self.strategy.__class__.__name__
         self.current_tick = 0
         self.throughput = throughput
@@ -85,14 +90,19 @@ class Area(AreaBase):
         self._markets = AreaMarkets(self.log)
         self.stats = AreaStats(self._markets, self)
         log.debug("External connection %s for area %s", external_connection_available, self.name)
-        self.redis_ext_conn = RedisMarketExternalConnection(self) \
-            if external_connection_available and self.strategy is None else None
+        self.redis_ext_conn = (
+            RedisMarketExternalConnection(self)
+            if external_connection_available and self.strategy is None
+            else None
+        )
         self.external_connection_available = external_connection_available
         self.balancing_spot_trade_ratio = balancing_spot_trade_ratio
         self._min_offer_age = (
-            min_offer_age if min_offer_age is not None else ConstSettings.MASettings.MIN_OFFER_AGE)
+            min_offer_age if min_offer_age is not None else ConstSettings.MASettings.MIN_OFFER_AGE
+        )
         self._min_bid_age = (
-            min_bid_age if min_bid_age is not None else ConstSettings.MASettings.MIN_BID_AGE)
+            min_bid_age if min_bid_age is not None else ConstSettings.MASettings.MIN_BID_AGE
+        )
 
     def get_state(self):
         """Get the current state of the area."""
@@ -117,43 +127,48 @@ class Area(AreaBase):
         grid_fee_constant = (
             kwargs["grid_fee_constant"]
             if key_in_dict_and_not_none(kwargs, "grid_fee_constant")
-            else self.grid_fee_constant)
+            else self.grid_fee_constant
+        )
         grid_fee_percentage = (
             kwargs["grid_fee_percentage"]
             if key_in_dict_and_not_none(kwargs, "grid_fee_percentage")
-            else self.grid_fee_percentage)
+            else self.grid_fee_percentage
+        )
 
         baseline_peak_energy_import_kWh = (
             kwargs["baseline_peak_energy_import_kWh"]
-            if key_in_dict_and_not_none(
-                kwargs, "baseline_peak_energy_import_kWh")
-            else self.throughput.baseline_peak_energy_import_kWh)
+            if key_in_dict_and_not_none(kwargs, "baseline_peak_energy_import_kWh")
+            else self.throughput.baseline_peak_energy_import_kWh
+        )
 
         baseline_peak_energy_export_kWh = (
             kwargs["baseline_peak_energy_export_kWh"]
-            if key_in_dict_and_not_none(
-                kwargs, "baseline_peak_energy_export_kWh")
-            else self.throughput.baseline_peak_energy_export_kWh)
+            if key_in_dict_and_not_none(kwargs, "baseline_peak_energy_export_kWh")
+            else self.throughput.baseline_peak_energy_export_kWh
+        )
 
         import_capacity_kVA = (
             kwargs["import_capacity_kVA"]
             if key_in_dict_and_not_none(kwargs, "import_capacity_kVA")
-            else self.throughput.import_capacity_kVA)
+            else self.throughput.import_capacity_kVA
+        )
 
         export_capacity_kVA = (
             kwargs["export_capacity_kVA"]
             if key_in_dict_and_not_none(kwargs, "export_capacity_kVA")
-            else self.throughput.import_capacity_kVA)
+            else self.throughput.import_capacity_kVA
+        )
 
         try:
-            validate_area(grid_fee_constant=grid_fee_constant,
-                          grid_fee_percentage=grid_fee_percentage)
+            validate_area(
+                grid_fee_constant=grid_fee_constant, grid_fee_percentage=grid_fee_percentage
+            )
             throughput = ThroughputParameters(
-                            baseline_peak_energy_import_kWh=baseline_peak_energy_import_kWh,
-                            baseline_peak_energy_export_kWh=baseline_peak_energy_export_kWh,
-                            import_capacity_kVA=import_capacity_kVA,
-                            export_capacity_kVA=export_capacity_kVA
-                        )
+                baseline_peak_energy_import_kWh=baseline_peak_energy_import_kWh,
+                baseline_peak_energy_export_kWh=baseline_peak_energy_export_kWh,
+                import_capacity_kVA=import_capacity_kVA,
+                export_capacity_kVA=export_capacity_kVA,
+            )
 
         except (GSyAreaException, GSyDeviceException) as ex:
             log.error(ex)
@@ -183,7 +198,7 @@ class Area(AreaBase):
             else:
                 raise AreaException(
                     f"Strategy {self.strategy.__class__.__name__} on area {self} without parent!"
-                    )
+                )
         else:
             self._markets.activate_future_markets(self)
             self._markets.activate_market_rotators()
@@ -195,8 +210,9 @@ class Area(AreaBase):
             self.log.debug("No strategy. Using inter area agent.")
         self.log.debug("Activating area")
         self.active = True
-        self.dispatcher.broadcast_activate(bc=bc, current_tick=self.current_tick,
-                                           simulation_id=simulation_id)
+        self.dispatcher.broadcast_activate(
+            bc=bc, current_tick=self.current_tick, simulation_id=simulation_id
+        )
         if self.redis_ext_conn is not None:
             self.redis_ext_conn.sub_to_external_channels()
 
@@ -264,14 +280,19 @@ class Area(AreaBase):
         changed = self._markets.create_new_spot_market(now_value, AvailableMarketTypes.SPOT, self)
 
         # create new settlement market
-        if (self.last_past_market and
-                ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS):
+        if (
+            self.last_past_market
+            and ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS
+        ):
             self._markets.create_settlement_market(self.last_past_market.time_slot, self)
 
-        if ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET and \
-                len(DeviceRegistry.REGISTRY.keys()) != 0:
+        if (
+            ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET
+            and len(DeviceRegistry.REGISTRY.keys()) != 0
+        ):
             changed_balancing_market = self._markets.create_new_spot_market(
-                now_value, AvailableMarketTypes.BALANCING, self)
+                now_value, AvailableMarketTypes.BALANCING, self
+            )
         else:
             changed_balancing_market = None
 
@@ -282,8 +303,11 @@ class Area(AreaBase):
             self.dispatcher.broadcast_market_cycle()
 
         # Force balancing_market cycle event in case this is the first market slot
-        if (changed_balancing_market or len(self._markets.past_balancing_markets.keys()) == 0) \
-                and _trigger_event and ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET:
+        if (
+            (changed_balancing_market or len(self._markets.past_balancing_markets.keys()) == 0)
+            and _trigger_event
+            and ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET
+        ):
             self.dispatcher.broadcast_balancing_market_cycle()
         self.stats.calculate_energy_deviances()
 
@@ -298,14 +322,17 @@ class Area(AreaBase):
 
     def _consume_commands_from_aggregator(self):
         if self.redis_ext_conn is not None and self.redis_ext_conn.is_aggregator_controlled:
-            (self.redis_ext_conn.aggregator.
-             consume_all_area_commands(self.uuid,
-                                       self.redis_ext_conn.trigger_aggregator_commands))
-        elif (self.strategy
-              and getattr(self.strategy, "is_aggregator_controlled", False)):
-            (self.strategy.redis.aggregator.
-             consume_all_area_commands(self.uuid,
-                                       self.strategy.trigger_aggregator_commands))
+            (
+                self.redis_ext_conn.aggregator.consume_all_area_commands(
+                    self.uuid, self.redis_ext_conn.trigger_aggregator_commands
+                )
+            )
+        elif self.strategy and getattr(self.strategy, "is_aggregator_controlled", False):
+            (
+                self.strategy.redis.aggregator.consume_all_area_commands(
+                    self.uuid, self.strategy.trigger_aggregator_commands
+                )
+            )
 
     def tick(self):
         """Tick event handler.
@@ -313,8 +340,7 @@ class Area(AreaBase):
         Invoke aggregator commands consumer, publish market clearing, update events,
         update cached matching engine matcher markets and match trades recommendations.
         """
-        if (ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value
-                and not self.strategy):
+        if is_two_sided_market_simulation() and not self.strategy:
             if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
                 self.dispatcher.publish_market_clearing()
             elif is_external_matching_enabled():
@@ -334,29 +360,35 @@ class Area(AreaBase):
             "current_time": self.now,
             AvailableMarketTypes.SPOT: [self.spot_market],
             AvailableMarketTypes.SETTLEMENT: list(self.settlement_markets.values()),
-            AvailableMarketTypes.FUTURE: self.future_markets}
+            AvailableMarketTypes.FUTURE: self.future_markets,
+        }
 
         bid_offer_matcher.update_area_uuid_spot_markets_mapping(
-            area_uuid_markets_mapping={self.uuid: markets_mapping})
+            area_uuid_markets_mapping={self.uuid: markets_mapping}
+        )
 
         if not ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS:
             return
 
         forward_markets_mapping = {
             "current_time": self.now,
-            AvailableMarketTypes.INTRADAY:
-                self.forward_markets.get(AvailableMarketTypes.INTRADAY),
-            AvailableMarketTypes.DAY_FORWARD:
-                self.forward_markets.get(AvailableMarketTypes.DAY_FORWARD),
-            AvailableMarketTypes.WEEK_FORWARD:
-                self.forward_markets.get(AvailableMarketTypes.WEEK_FORWARD),
-            AvailableMarketTypes.MONTH_FORWARD:
-                self.forward_markets.get(AvailableMarketTypes.MONTH_FORWARD),
-            AvailableMarketTypes.YEAR_FORWARD:
-                self.forward_markets.get(AvailableMarketTypes.YEAR_FORWARD)
+            AvailableMarketTypes.INTRADAY: self.forward_markets.get(AvailableMarketTypes.INTRADAY),
+            AvailableMarketTypes.DAY_FORWARD: self.forward_markets.get(
+                AvailableMarketTypes.DAY_FORWARD
+            ),
+            AvailableMarketTypes.WEEK_FORWARD: self.forward_markets.get(
+                AvailableMarketTypes.WEEK_FORWARD
+            ),
+            AvailableMarketTypes.MONTH_FORWARD: self.forward_markets.get(
+                AvailableMarketTypes.MONTH_FORWARD
+            ),
+            AvailableMarketTypes.YEAR_FORWARD: self.forward_markets.get(
+                AvailableMarketTypes.YEAR_FORWARD
+            ),
         }
         bid_offer_matcher.update_area_uuid_forward_markets_mapping(
-            area_uuid_markets_mapping={self.uuid: forward_markets_mapping})
+            area_uuid_markets_mapping={self.uuid: forward_markets_mapping}
+        )
 
     def execute_actions_after_tick_event(self) -> None:
         """
@@ -390,7 +422,8 @@ class Area(AreaBase):
     def __repr__(self):
         return (
             f"<Area '{self.name}' markets: "
-            f"{[t.format(gsy_e.constants.TIME_FORMAT) for t in self._markets.markets]}>")
+            f"{[t.format(gsy_e.constants.TIME_FORMAT) for t in self._markets.markets]}>"
+        )
 
     @property
     def all_markets(self):
@@ -581,13 +614,20 @@ class Area(AreaBase):
                 "baseline_peak_energy_export_kWh": self.throughput.baseline_peak_energy_export_kWh,
                 "import_capacity_kWh": self.throughput.import_capacity_kWh,
                 "export_capacity_kWh": self.throughput.export_capacity_kWh,
-                "imported_energy_kWh": self.stats.imported_traded_energy_kwh.get(
-                    self.current_market.time_slot, 0.) if self.current_market is not None else 0.,
-                "exported_energy_kWh": self.stats.exported_traded_energy_kwh.get(
-                    self.current_market.time_slot, 0.) if self.current_market is not None else 0.,
+                "imported_energy_kWh": (
+                    self.stats.imported_traded_energy_kwh.get(self.current_market.time_slot, 0.0)
+                    if self.current_market is not None
+                    else 0.0
+                ),
+                "exported_energy_kWh": (
+                    self.stats.exported_traded_energy_kwh.get(self.current_market.time_slot, 0.0)
+                    if self.current_market is not None
+                    else 0.0
+                ),
             },
             "grid_fee_constant": (
-                self.current_market.const_fee_rate if self.current_market is not None else 0.)
+                self.current_market.const_fee_rate if self.current_market is not None else 0.0
+            ),
         }
 
 

@@ -28,6 +28,7 @@ from gsy_framework.constants_limits import ConstSettings, DATE_FORMAT, TIME_FORM
 from gsy_framework.exceptions import GSyException
 from gsy_framework.settings_validators import validate_global_settings
 from pendulum import today
+from gsy_e.gsy_e_core.non_p2p_handler import set_non_p2p_settings
 
 from gsy_e.gsy_e_core.simulation import run_simulation
 from gsy_e.gsy_e_core.util import (
@@ -178,7 +179,7 @@ _setup_modules = available_simulation_scenarios
     type=int,
     default=ConstSettings.MASettings.MARKET_TYPE,
     show_default=True,
-    help="Market type. 1 for one-sided market, 2 for two-sided market, "
+    help="Market type. 0 for no-market, 1 for one-sided market, 2 for two-sided market, "
     "3 for coefficient-based trading.",
 )
 def run(
@@ -209,8 +210,9 @@ def run(
             simulation_settings["external_connection_enabled"] = False
             simulation_config = SimulationConfig(**simulation_settings)
         else:
-            assert 1 <= market_type <= 3, "Market type should be an integer between 1 and 3."
+            assert 0 <= market_type <= 3, "Market type should be an integer between 0 and 3."
             ConstSettings.MASettings.MARKET_TYPE = market_type
+            set_non_p2p_settings(market_type)
             global_settings = {
                 "sim_duration": duration,
                 "slot_length": slot_length,

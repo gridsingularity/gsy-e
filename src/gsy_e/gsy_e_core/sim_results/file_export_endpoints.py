@@ -26,6 +26,7 @@ from gsy_framework.enums import AvailableMarketTypes, BidOfferMatchAlgoEnum, Spo
 
 from gsy_e.constants import ROUND_TOLERANCE
 from gsy_e.gsy_e_core.matching_engine_singleton import bid_offer_matcher
+from gsy_e.gsy_e_core.util import is_two_sided_market_simulation
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_e.models.strategy.pv import PVStrategy
@@ -368,7 +369,7 @@ class FileExportEndpoints:
 
     def _populate_plots_stats_for_supply_demand_curve(self, area: Area) -> None:
         if (
-            ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value
+            is_two_sided_market_simulation()
             and ConstSettings.MASettings.BID_OFFER_MATCH_TYPE
             == BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
         ):
