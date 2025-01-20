@@ -91,14 +91,6 @@ class FakeArea:
         except IndexError:
             return None
 
-    # def is_market_future(self, market_id: str) -> bool:
-    #     """Return True if market_id belongs to a FUTURE market."""
-    #     return False
-    #
-    # def is_market_settlement(self, market_id: str) -> bool:
-    #     """Return True if market_id belongs to a FUTURE market."""
-    #     return False
-
 
 class FakeMarket:
     def __init__(self, count):
