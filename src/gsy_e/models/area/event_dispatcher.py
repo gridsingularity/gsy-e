@@ -15,12 +15,12 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
 from logging import getLogger
 from typing import Union, Dict, TYPE_CHECKING, Optional
 
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.enums import AvailableMarketTypes
-from gsy_framework.enums import SpotMarketTypeEnum
 from numpy.random import random
 from pendulum import DateTime
 
@@ -28,12 +28,15 @@ from gsy_e.events.event_structures import MarketEvent, AreaEvent
 from gsy_e.gsy_e_core.enums import FORWARD_MARKET_TYPES
 from gsy_e.gsy_e_core.exceptions import WrongMarketTypeException
 from gsy_e.gsy_e_core.redis_connections.area_market import RedisCommunicator
+from gsy_e.gsy_e_core.util import is_one_sided_market_simulation, is_two_sided_market_simulation
 from gsy_e.models.area.redis_dispatcher.area_event_dispatcher import RedisAreaEventDispatcher
 from gsy_e.models.area.redis_dispatcher.area_to_market_publisher import AreaToMarketEventPublisher
 from gsy_e.models.area.redis_dispatcher.market_event_dispatcher import (
-    AreaRedisMarketEventDispatcher)
+    AreaRedisMarketEventDispatcher,
+)
 from gsy_e.models.area.redis_dispatcher.market_notify_event_subscriber import (
-    MarketNotifyEventSubscriber)
+    MarketNotifyEventSubscriber,
+)
 from gsy_e.models.market import MarketBase
 from gsy_e.models.strategy.market_agents.balancing_agent import BalancingAgent
 from gsy_e.models.strategy.market_agents.future_agent import FutureAgent
@@ -56,6 +59,7 @@ class AreaDispatcher:
     if the area has no strategy, to broadcast the events to the children of the area. Maintain
     dicts with market agents for each market type.
     """
+
     def __init__(self, area: "Area"):
         self._spot_agents: Dict[DateTime, OneSidedAgent] = {}
         self._balancing_agents: Dict[DateTime, BalancingAgent] = {}
@@ -118,24 +122,30 @@ class AreaDispatcher:
         self.broadcast_notification(AreaEvent.BALANCING_MARKET_CYCLE, **kwargs)
 
     def _broadcast_notification_to_single_agent(
-            self, agent_area: "Area", market_type: AvailableMarketTypes,
-            event_type: AreaEvent, **kwargs) -> None:
+        self,
+        agent_area: "Area",
+        market_type: AvailableMarketTypes,
+        event_type: AreaEvent,
+        **kwargs,
+    ) -> None:
 
         if market_type == AvailableMarketTypes.FUTURE and agent_area.dispatcher.future_agent:
             agent_area.dispatcher.future_agent.event_listener(event_type, **kwargs)
         elif market_type != AvailableMarketTypes.FUTURE:
             agent_dict = self._get_agents_for_market_type(agent_area.dispatcher, market_type)
             for time_slot, agent in agent_dict.items():
-                if time_slot not in agent_area.get_market_instances_from_class_type(
-                        market_type):
+                if time_slot not in agent_area.get_market_instances_from_class_type(market_type):
                     # exclude past MAs
                     continue
 
                 agent.event_listener(event_type, **kwargs)
 
     def _broadcast_notification_to_area_and_child_agents(
-            self, market_type: AvailableMarketTypes,
-            event_type: Union[MarketEvent, AreaEvent], **kwargs) -> None:
+        self,
+        market_type: AvailableMarketTypes,
+        event_type: Union[MarketEvent, AreaEvent],
+        **kwargs,
+    ) -> None:
 
         if not self.area.events.is_connected:
             return
@@ -143,14 +153,11 @@ class AreaDispatcher:
         for child in sorted(self.area.children, key=lambda _: random()):
             if not child.children:
                 continue
-            self._broadcast_notification_to_single_agent(
-                child, market_type, event_type, **kwargs)
+            self._broadcast_notification_to_single_agent(child, market_type, event_type, **kwargs)
 
-        self._broadcast_notification_to_single_agent(
-            self.area, market_type, event_type, **kwargs)
+        self._broadcast_notification_to_single_agent(self.area, market_type, event_type, **kwargs)
 
-    def broadcast_notification(
-            self, event_type: Union[MarketEvent, AreaEvent], **kwargs) -> None:
+    def broadcast_notification(self, event_type: Union[MarketEvent, AreaEvent], **kwargs) -> None:
         """
         Broadcast all market and area events to the event_listener methods of the
         child dispatcher classes first (in order to propagate the event to the children of the
@@ -170,8 +177,10 @@ class AreaDispatcher:
         Returns: None
 
         """
-        if (not self.area.events.is_enabled and
-                event_type not in [AreaEvent.ACTIVATE, AreaEvent.MARKET_CYCLE]):
+        if not self.area.events.is_enabled and event_type not in [
+            AreaEvent.ACTIVATE,
+            AreaEvent.MARKET_CYCLE,
+        ]:
             return
 
         # Broadcast to children in random order to ensure fairness
@@ -188,21 +197,27 @@ class AreaDispatcher:
         market_id = kwargs.get("market_id")
         if not market_id and isinstance(event_type, MarketEvent):
             assert False, "MarketEvent should always provide a market_id."
-        if (isinstance(event_type, AreaEvent)
-                or self.area.is_market_spot(market_id)
-                or self.area.is_market_balancing(market_id)):
+        if (
+            isinstance(event_type, AreaEvent)
+            or self.area.is_market_spot(market_id)
+            or self.area.is_market_balancing(market_id)
+        ):
             # Both spot and balancing agents need to be informed about each others events.
             # To be changed when updating the balancing market feature.
             self._broadcast_notification_to_area_and_child_agents(
-                AvailableMarketTypes.SPOT, event_type, **kwargs)
+                AvailableMarketTypes.SPOT, event_type, **kwargs
+            )
             self._broadcast_notification_to_area_and_child_agents(
-                AvailableMarketTypes.BALANCING, event_type, **kwargs)
+                AvailableMarketTypes.BALANCING, event_type, **kwargs
+            )
         if isinstance(event_type, AreaEvent) or self.area.is_market_settlement(market_id):
             self._broadcast_notification_to_area_and_child_agents(
-                AvailableMarketTypes.SETTLEMENT, event_type, **kwargs)
+                AvailableMarketTypes.SETTLEMENT, event_type, **kwargs
+            )
         if isinstance(event_type, AreaEvent) or self.area.is_market_future(market_id):
             self._broadcast_notification_to_area_and_child_agents(
-                AvailableMarketTypes.FUTURE, event_type, **kwargs)
+                AvailableMarketTypes.FUTURE, event_type, **kwargs
+            )
 
     def _should_dispatch_to_strategies(self, event_type: Union[AreaEvent, MarketEvent]) -> bool:
         if event_type is AreaEvent.ACTIVATE:
@@ -229,32 +244,35 @@ class AreaDispatcher:
         if self._should_dispatch_to_strategies(event_type):
             if self.area.strategy:
                 self.area.strategy.event_listener(event_type, **kwargs)
-        elif ((not self.area.events.is_enabled or not self.area.events.is_connected)
-              and event_type == AreaEvent.MARKET_CYCLE and self.area.strategy is not None):
+        elif (
+            (not self.area.events.is_enabled or not self.area.events.is_connected)
+            and event_type == AreaEvent.MARKET_CYCLE
+            and self.area.strategy is not None
+        ):
             self.area.strategy.event_on_disabled_area()
 
     @staticmethod
-    def _create_agent_object(owner: "Area", higher_market: MarketBase,
-                             lower_market: MarketBase, market_type: AvailableMarketTypes
-                             ) -> Union[OneSidedAgent, SettlementAgent,
-                                        BalancingAgent, FutureAgent]:
+    def _create_agent_object(
+        owner: "Area",
+        higher_market: MarketBase,
+        lower_market: MarketBase,
+        market_type: AvailableMarketTypes,
+    ) -> Union[OneSidedAgent, SettlementAgent, BalancingAgent, FutureAgent]:
         agent_constructor_arguments = {
             "owner": owner,
             "higher_market": higher_market,
             "lower_market": lower_market,
-            "min_offer_age": owner._min_offer_age
+            "min_offer_age": owner._min_offer_age,
         }
 
         if market_type == AvailableMarketTypes.SPOT:
-            if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
+            if is_one_sided_market_simulation():
                 return OneSidedAgent(**agent_constructor_arguments)
-            if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value:
-                return TwoSidedAgent(
-                    **agent_constructor_arguments,
-                    min_bid_age=owner._min_bid_age
-                )
-            raise WrongMarketTypeException("Wrong market type setting flag "
-                                           f"{ConstSettings.MASettings.MARKET_TYPE}")
+            if is_two_sided_market_simulation():
+                return TwoSidedAgent(**agent_constructor_arguments, min_bid_age=owner._min_bid_age)
+            raise WrongMarketTypeException(
+                "Wrong market type setting flag " f"{ConstSettings.MASettings.MARKET_TYPE}"
+            )
         if market_type == AvailableMarketTypes.SETTLEMENT:
             return SettlementAgent(**agent_constructor_arguments)
         if market_type == AvailableMarketTypes.BALANCING:
@@ -266,7 +284,7 @@ class AreaDispatcher:
 
     @staticmethod
     def _get_agents_for_market_type(
-            dispatcher_object, market_type: AvailableMarketTypes
+        dispatcher_object, market_type: AvailableMarketTypes
     ) -> Dict[DateTime, Union[OneSidedAgent, BalancingAgent, SettlementAgent]]:
         if market_type == AvailableMarketTypes.SPOT:
             return dispatcher_object.spot_agents
@@ -289,7 +307,7 @@ class AreaDispatcher:
         return True
 
     def create_market_agents_for_forward_markets(
-            self, market: MarketBase, market_type: AvailableMarketTypes
+        self, market: MarketBase, market_type: AvailableMarketTypes
     ) -> None:
         """Create area agents for future markets; There should only be one per Area at any time."""
         if not self._should_agent_be_created:
@@ -302,7 +320,7 @@ class AreaDispatcher:
             owner=self.area,
             higher_market=higher_market,
             lower_market=market,
-            market_type=market_type
+            market_type=market_type,
         )
         self._forward_agents[market_type] = market_agent
 
@@ -315,7 +333,7 @@ class AreaDispatcher:
             owner=self.area,
             higher_market=self.area.parent.future_markets,
             lower_market=market,
-            market_type=AvailableMarketTypes.FUTURE
+            market_type=AvailableMarketTypes.FUTURE,
         )
 
         self._future_agent = market_agent
@@ -335,8 +353,7 @@ class AreaDispatcher:
             return
 
         market_agents = self._get_agents_for_market_type(self, market_type)
-        parent_markets = self.area.parent.get_market_instances_from_class_type(
-            market_type)
+        parent_markets = self.area.parent.get_market_instances_from_class_type(market_type)
         if market.time_slot in market_agents or market.time_slot not in parent_markets:
             return
 
@@ -344,7 +361,7 @@ class AreaDispatcher:
             owner=self.area,
             higher_market=parent_markets[market.time_slot],
             lower_market=market,
-            market_type=market_type
+            market_type=market_type,
         )
 
         # Attach agent to own MA dict
@@ -359,10 +376,14 @@ class AreaDispatcher:
             self._future_agent.delete_engines()
 
     def _delete_past_agents(
-            self, market_agent_member: Dict[DateTime, Union[
-                OneSidedAgent, BalancingAgent, SettlementAgent]]) -> None:
-        delete_agents = [(pm, agents_list) for pm, agents_list in market_agent_member.items() if
-                         self.area.current_market and pm < self.area.current_market.time_slot]
+        self,
+        market_agent_member: Dict[DateTime, Union[OneSidedAgent, BalancingAgent, SettlementAgent]],
+    ) -> None:
+        delete_agents = [
+            (pm, agents_list)
+            for pm, agents_list in market_agent_member.items()
+            if self.area.current_market and pm < self.area.current_market.time_slot
+        ]
         for pm, agent in delete_agents:
             if hasattr(agent, "engines"):
                 agent.delete_engines()
@@ -378,8 +399,10 @@ class RedisAreaDispatcher(AreaDispatcher):
     Should be used together with EVENT_DISPATCHING_VIA_REDIS parameter, and in modes where
     parts of the grid configuration are running on different machines.
     """
-    def __init__(self, area: "Area",
-                 redis_area: RedisCommunicator, redis_market: RedisCommunicator):
+
+    def __init__(
+        self, area: "Area", redis_area: RedisCommunicator, redis_market: RedisCommunicator
+    ):
         super().__init__(area)
         self.area_event_dispatcher = RedisAreaEventDispatcher(area, self, redis_area)
         self.market_event_dispatcher = AreaRedisMarketEventDispatcher(area, self, redis_market)
@@ -430,13 +453,16 @@ class DispatcherFactory:
     Factory class for constructing AreaDispatcher or RedisAreaDispatcher class according to
     configuration
     """
+
     def __init__(self, area: "Area"):
-        self.event_dispatching_via_redis = \
+        self.event_dispatching_via_redis = (
             ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS
-        self.dispatcher = \
-            RedisAreaDispatcher(area, RedisCommunicator(), RedisCommunicator()) \
-            if self.event_dispatching_via_redis \
+        )
+        self.dispatcher = (
+            RedisAreaDispatcher(area, RedisCommunicator(), RedisCommunicator())
+            if self.event_dispatching_via_redis
             else AreaDispatcher(area)
+        )
 
     def __call__(self) -> AreaDispatcher:
         return self.dispatcher

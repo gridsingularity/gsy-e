@@ -33,7 +33,7 @@ from gsy_framework.data_classes import (
     Offer,
     Trade,
 )
-from gsy_framework.enums import AvailableMarketTypes, BidOfferMatchAlgoEnum, SpotMarketTypeEnum
+from gsy_framework.enums import AvailableMarketTypes, BidOfferMatchAlgoEnum
 from gsy_framework.utils import mkdir_from_str
 from gsy_framework.sim_results.carbon_emissions import CarbonEmissionsHandler
 from pendulum import DateTime
@@ -54,7 +54,7 @@ from gsy_e.gsy_e_core.sim_results.results_plots import (
     PlotSupplyDemandCurve,
     PlotUnmatchedLoads,
 )
-from gsy_e.gsy_e_core.util import constsettings_to_dict
+from gsy_e.gsy_e_core.util import constsettings_to_dict, is_two_sided_market_simulation
 from gsy_e.models.area import Area
 
 
@@ -186,7 +186,7 @@ class ExportAndPlot:
                 self.area, self.plot_dir
             )
         if (
-            ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value
+            is_two_sided_market_simulation()
             and ConstSettings.MASettings.BID_OFFER_MATCH_TYPE
             == BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
             and ConstSettings.GeneralSettings.EXPORT_SUPPLY_DEMAND_PLOTS is True
@@ -367,7 +367,7 @@ class ExportAndPlot:
 
         if area.children:
             if (
-                ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED
+                is_two_sided_market_simulation()
                 and ConstSettings.MASettings.BID_OFFER_MATCH_TYPE
                 == BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
             ):

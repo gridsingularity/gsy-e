@@ -15,13 +15,14 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.data_classes import TraderDetails
-from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.read_user_profile import InputProfileTypes
-from gsy_framework.utils import (convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict)
+from gsy_framework.utils import convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict
 
 from gsy_e.gsy_e_core.exceptions import MarketException
+from gsy_e.gsy_e_core.util import is_two_sided_market_simulation, is_one_sided_market_simulation
 from gsy_e.models.base import AssetType
 from gsy_e.models.strategy import INF_ENERGY, BidEnabledStrategy
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
@@ -32,29 +33,44 @@ from gsy_e.models.strategy.strategy_profile import StrategyProfile
 class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
     """Implementation for infinite bus to participate in GSy Exchange."""
 
-    def __init__(self, energy_sell_rate=None, energy_rate_profile=None, energy_buy_rate=None,
-                 buying_rate_profile=None, buying_rate_profile_uuid=None,
-                 energy_rate_profile_uuid=None):
+    def __init__(
+        self,
+        energy_sell_rate=None,
+        energy_rate_profile=None,
+        energy_buy_rate=None,
+        buying_rate_profile=None,
+        buying_rate_profile_uuid=None,
+        energy_rate_profile_uuid=None,
+    ):
         super().__init__()
         self.energy_per_slot_kWh = INF_ENERGY
         self.energy_rate_profile_uuid = energy_rate_profile_uuid  # needed for profile_handler
         self.buying_rate_profile_uuid = buying_rate_profile_uuid  # needed for profile_handler
 
         # buy
-        if all(arg is None for arg in [
-               buying_rate_profile, buying_rate_profile_uuid, energy_buy_rate]):
+        if all(
+            arg is None for arg in [buying_rate_profile, buying_rate_profile_uuid, energy_buy_rate]
+        ):
             energy_buy_rate = ConstSettings.GeneralSettings.DEFAULT_FEED_IN_TARIFF
         self.energy_buy_profile = StrategyProfile(
-            buying_rate_profile, buying_rate_profile_uuid, energy_buy_rate,
-            profile_type=InputProfileTypes.IDENTITY)
+            buying_rate_profile,
+            buying_rate_profile_uuid,
+            energy_buy_rate,
+            profile_type=InputProfileTypes.IDENTITY,
+        )
 
         # sell
-        if all(arg is None for arg in [
-               energy_rate_profile, energy_rate_profile_uuid, energy_sell_rate]):
+        if all(
+            arg is None
+            for arg in [energy_rate_profile, energy_rate_profile_uuid, energy_sell_rate]
+        ):
             energy_sell_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
         self._sell_energy_profile = StrategyProfile(
-            energy_rate_profile, energy_rate_profile_uuid, energy_sell_rate,
-            profile_type=InputProfileTypes.IDENTITY)
+            energy_rate_profile,
+            energy_rate_profile_uuid,
+            energy_sell_rate,
+            profile_type=InputProfileTypes.IDENTITY,
+        )
 
         # This is done to support the UI which handles the Infinite Bus only as a Market Maker.
         # If one plans to allow multiple Infinite Bus devices in the grid, this should be
@@ -98,27 +114,30 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
                 continue
             if offer.energy_rate <= self.energy_buy_profile.get_value(market.time_slot):
                 try:
-                    self.accept_offer(market, offer, buyer=TraderDetails(
-                        self.owner.name, self.owner.uuid, self.owner.name, self.owner.uuid))
+                    self.accept_offer(
+                        market,
+                        offer,
+                        buyer=TraderDetails(
+                            self.owner.name, self.owner.uuid, self.owner.name, self.owner.uuid
+                        ),
+                    )
                 except MarketException:
                     # Offer already gone etc., try next one.
                     continue
 
     def event_tick(self):
         """Buy energy on market tick. This method is triggered by the TICK event."""
-        if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
+        if is_one_sided_market_simulation():
             for market in self.area.all_markets:
                 self.buy_energy(market)
 
     def event_market_cycle(self):
         super().event_market_cycle()
-        if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value:
+        if is_two_sided_market_simulation():
             for market in self.area.all_markets:
                 try:
                     buy_rate = self.energy_buy_profile.get_value(market.time_slot)
-                    self.post_bid(market,
-                                  buy_rate * INF_ENERGY,
-                                  INF_ENERGY)
+                    self.post_bid(market, buy_rate * INF_ENERGY, INF_ENERGY)
                 except MarketException:
                     pass
 
@@ -130,9 +149,11 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
 
     def restore_state(self, saved_state):
         self.energy_buy_profile.profile = convert_str_to_pendulum_in_dict(
-            saved_state["energy_buy_rate"])
+            saved_state["energy_buy_rate"]
+        )
         self._sell_energy_profile.profile = convert_str_to_pendulum_in_dict(
-            saved_state["energy_rate"])
+            saved_state["energy_rate"]
+        )
 
     @property
     def asset_type(self):
