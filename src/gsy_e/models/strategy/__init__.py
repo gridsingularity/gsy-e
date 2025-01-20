@@ -25,10 +25,8 @@ from dataclasses import dataclass
 from logging import getLogger
 from typing import TYPE_CHECKING, Callable, Dict, Generator, List, Optional, Union
 from uuid import uuid4
-
 from gsy_framework.constants_limits import ConstSettings, FLOATING_POINT_TOLERANCE
 from gsy_framework.data_classes import Bid, Offer, Trade, TraderDetails
-from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.utils import limit_float_precision
 from pendulum import DateTime
 
@@ -39,7 +37,7 @@ from gsy_e.events.event_structures import AreaEvent, MarketEvent
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.exceptions import D3ARedisException, MarketException, SimulationException
 from gsy_e.gsy_e_core.redis_connections.area_market import BlockingCommunicator
-from gsy_e.gsy_e_core.util import append_or_create_key
+from gsy_e.gsy_e_core.util import append_or_create_key, is_two_sided_market_simulation
 from gsy_e.models.base import AreaBehaviorBase
 from gsy_e.models.config import SimulationConfig
 from gsy_e.models.market import MarketBase
@@ -1047,7 +1045,7 @@ class BidEnabledStrategy(BaseStrategy):
 
     def _assert_bid_can_be_posted_on_market(self, market_id):
         assert (
-            ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value
+            is_two_sided_market_simulation()
             or self.area.is_market_future(market_id)
             or self.area.is_market_settlement(market_id)
         ), (

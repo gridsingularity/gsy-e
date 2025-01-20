@@ -18,10 +18,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import uuid
 from math import isclose
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
-import pytest
-from gsy_framework.constants_limits import ConstSettings, FLOATING_POINT_TOLERANCE, TIME_ZONE
+from gsy_framework.constants_limits import ConstSettings, TIME_ZONE
 from gsy_framework.enums import (
     SpotMarketTypeEnum,
     CoefficientAlgorithm,
@@ -30,6 +29,7 @@ from gsy_framework.enums import (
 )
 from pendulum import duration, today
 from pendulum import now
+import pytest
 
 from gsy_e.models.area import CoefficientArea, CoefficientAreaException
 from gsy_e.models.area.scm_manager import (
@@ -308,8 +308,12 @@ class TestCoefficientArea:
             assert isclose(scm._bills[house2.uuid].gsy_energy_bill, -0.02)
         assert isclose(scm._bills[house2.uuid].export_grid_fees, 0.0)
 
-        assert isclose(scm._bills[house2.uuid].savings, 0.0, abs_tol=FLOATING_POINT_TOLERANCE)
-        assert isclose(scm._bills[house2.uuid].savings_percent, 0.0)
+        if intracommunity_base_rate is None:
+            assert isclose(scm._bills[house2.uuid].savings, 0.0114)
+            assert isclose(scm._bills[house2.uuid].savings_percent, 0.0)
+        else:
+            assert isclose(scm._bills[house2.uuid].savings, 0.015)
+            assert isclose(scm._bills[house2.uuid].savings_percent, 0.0)
         assert len(scm._home_data[house1.uuid].trades) == 2
         trades = scm._home_data[house1.uuid].trades
         assert isclose(trades[0].trade_rate, 0.3)
@@ -336,12 +340,15 @@ class TestCoefficientArea:
 
     @staticmethod
     def test_calculate_energy_benchmark():
-        bills = AreaEnergyBills()
-        bills.set_min_max_community_savings(10, 90)
-        bills.base_energy_bill_excl_revenue = 1.0
-        bills.gsy_energy_bill = 0.4
-        assert isclose(bills.savings_percent, 60.0)
-        assert isclose(bills.energy_benchmark, (60 - 10) / (90 - 10))
+        with patch(
+            "gsy_e.models.area.scm_manager.AreaEnergyBills.savings_from_buy_from_community", 0.6
+        ):
+            bills = AreaEnergyBills()
+            bills.set_min_max_community_savings(10, 90)
+            bills.base_energy_bill_excl_revenue = 1.0
+            bills.gsy_energy_bill = 0.4
+            assert isclose(bills.savings_percent, 60.0)
+            assert isclose(bills.energy_benchmark, (60 - 10) / (90 - 10))
 
     @staticmethod
     @pytest.fixture()

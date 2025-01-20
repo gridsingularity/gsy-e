@@ -27,6 +27,7 @@ from gsy_framework.constants_limits import ConstSettings
 from numpy import random
 
 from gsy_e.gsy_e_core.exceptions import SimulationException
+from gsy_e.gsy_e_core.non_p2p_handler import NonP2PHandler
 from gsy_e.models.config import SimulationConfig
 
 if TYPE_CHECKING:
@@ -39,6 +40,7 @@ RANDOM_SEED_MAX_VALUE = 1000000
 @dataclass
 class SimulationSetup:
     """Static simulation configuration."""
+
     seed: int = 0
     enable_bc: bool = False
     use_repl: bool = False
@@ -53,6 +55,7 @@ class SimulationSetup:
         """Load setup module and create areas that are described on the setup."""
         loaded_python_module = self._import_setup_module(self.setup_module_name)
         area = loaded_python_module.get_setup(self.config)
+        NonP2PHandler(area)
         self._log_traversal_length(area)
         return area
 
@@ -69,15 +72,18 @@ class SimulationSetup:
     def _log_traversal_length(self, area: "Area") -> None:
         no_of_levels = self._get_setup_levels(area) + 1
         num_ticks_to_propagate = no_of_levels * 2
-        time_to_propagate_minutes = (num_ticks_to_propagate *
-                                     self.config.tick_length.seconds / 60.)
-        log.info("Setup has %s levels, offers/bids need at least %s minutes to propagate.",
-                 no_of_levels, time_to_propagate_minutes)
+        time_to_propagate_minutes = num_ticks_to_propagate * self.config.tick_length.seconds / 60.0
+        log.info(
+            "Setup has %s levels, offers/bids need at least %s minutes to propagate.",
+            no_of_levels,
+            time_to_propagate_minutes,
+        )
 
     def _get_setup_levels(self, area: "Area", level_count: int = 0) -> int:
         level_count += 1
-        count_list = [self._get_setup_levels(child, level_count)
-                      for child in area.children if child.children]
+        count_list = [
+            self._get_setup_levels(child, level_count) for child in area.children if child.children
+        ]
         return max(count_list) if len(count_list) > 0 else level_count
 
     @staticmethod
@@ -89,7 +95,6 @@ class SimulationSetup:
             return import_module(f"{setup_module_name}")
         except (ModuleNotFoundError, ImportError) as ex:
             log.error("Loading the simulation setup module failed: %s", str(ex))
-            raise SimulationException(
-                f"Invalid setup module '{setup_module_name}'") from ex
+            raise SimulationException(f"Invalid setup module '{setup_module_name}'") from ex
         finally:
             log.debug("Using setup module '%s'", setup_module_name)

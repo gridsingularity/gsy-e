@@ -480,7 +480,11 @@ class ProfilesHandler:
         )
 
     def rotate_profile(
-        self, profile_type: InputProfileTypes, profile, profile_uuid: str = None
+        self,
+        profile_type: InputProfileTypes,
+        profile,
+        profile_uuid: str = None,
+        input_profile_path: str = None,
     ) -> Dict[DateTime, float]:
         """Reads a new chunk of profile if the buffer does not contain the current time stamp
         Profile chunks are either generated from single values, input daily profiles or profiles
@@ -491,11 +495,14 @@ class ProfilesHandler:
             profile (any of str, dict, float): Any arbitrary input
                                                (same input as for read_arbitrary_profile)
             profile_uuid (str): optional, if set the profiles is read from the DB
+            input_profile_path (str), optional, for profiles provided by files
 
         Returns: Profile chunk as dictionary
 
         """
         if profile_uuid is None and self.should_create_profile(profile):
+            if input_profile_path:
+                profile = input_profile_path
             return read_arbitrary_profile(
                 profile_type, profile, current_timestamp=self.current_timestamp
             )

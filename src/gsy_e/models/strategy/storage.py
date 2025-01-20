@@ -23,7 +23,6 @@ from typing import Union, Optional
 
 from gsy_framework.constants_limits import ConstSettings, FLOATING_POINT_TOLERANCE
 from gsy_framework.data_classes import TraderDetails
-from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.exceptions import GSyException
 from gsy_framework.read_user_profile import InputProfileTypes, read_arbitrary_profile
 from gsy_framework.utils import get_from_profile_same_weekday_and_time, key_in_dict_and_not_none
@@ -33,6 +32,7 @@ from pendulum import duration
 from gsy_e import constants
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.exceptions import MarketException
+from gsy_e.gsy_e_core.util import is_one_sided_market_simulation, is_two_sided_market_simulation
 from gsy_e.models.base import AssetType
 from gsy_e.models.strategy.state import ESSEnergyOrigin, StorageState, StorageLosses
 from gsy_e.models.strategy import BidEnabledStrategy
@@ -552,7 +552,7 @@ class StorageStrategy(BidEnabledStrategy):
     def _buy_energy_one_sided_spot_market(self, market, offer=None):
         if not market:
             return
-        if ConstSettings.MASettings.MARKET_TYPE != SpotMarketTypeEnum.ONE_SIDED.value:
+        if not is_one_sided_market_simulation():
             return
         max_affordable_offer_rate = self.bid_update.get_updated_rate(market.time_slot)
 
@@ -575,7 +575,7 @@ class StorageStrategy(BidEnabledStrategy):
             self.state.register_energy_from_posted_offer(offer.energy, time_slot)
 
     def _buy_energy_two_sided_spot_market(self):
-        if ConstSettings.MASettings.MARKET_TYPE != SpotMarketTypeEnum.TWO_SIDED.value:
+        if not is_two_sided_market_simulation():
             return
         market = self.area.spot_market
         time_slot = self.spot_market_time_slot
@@ -621,10 +621,7 @@ class StorageStrategy(BidEnabledStrategy):
 
     def event_offer(self, *, market_id, offer):
         super().event_offer(market_id=market_id, offer=offer)
-        if (
-            ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value
-            and not self.area.is_market_future(market_id)
-        ):
+        if is_one_sided_market_simulation() and not self.area.is_market_future(market_id):
             market = self.area.get_spot_or_future_market_by_id(market_id)
             if not market:
                 return
