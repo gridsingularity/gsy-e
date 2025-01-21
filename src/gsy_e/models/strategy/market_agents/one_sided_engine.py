@@ -19,14 +19,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from collections import namedtuple
 from typing import Dict, Optional  # noqa
 
-from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Offer, TraderDetails, TradeBidOfferInfo
-from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.utils import limit_float_precision
 
 from gsy_framework.constants_limits import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.exceptions import MarketException, OfferNotFoundException
-from gsy_e.gsy_e_core.util import short_offer_bid_log_str
+from gsy_e.gsy_e_core.util import (
+    short_offer_bid_log_str,
+    is_two_sided_market_simulation,
+    is_one_sided_market_simulation,
+)
 
 OfferInfo = namedtuple("OfferInfo", ("source_offer", "target_offer"))
 Markets = namedtuple("Markets", ("source", "target"))
@@ -192,7 +194,7 @@ class MAEngine:
                 )
             )
             try:
-                if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
+                if is_one_sided_market_simulation():
                     # One sided market should subtract the fees
                     trade_offer_rate = trade.trade_rate - trade.fee_price / trade.traded_energy
                     if not updated_trade_bid_info:
@@ -338,10 +340,7 @@ class MAEngine:
 
     def event_offer(self, offer: Offer) -> None:
         """Perform actions on the event of the creation of a new offer."""
-        if (
-            ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value
-            and self.min_offer_age == 0
-        ):
+        if is_two_sided_market_simulation() and self.min_offer_age == 0:
             # Propagate offer immediately if the MIN_OFFER_AGE is set to zero.
             if offer.id not in self.offer_age:
                 self.offer_age[offer.id] = self._current_tick
