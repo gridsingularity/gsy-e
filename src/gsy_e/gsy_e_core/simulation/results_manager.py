@@ -75,7 +75,11 @@ class SimulationResultsManager:
         )
         if self.export_results_on_finish:
             self._export = ExportAndPlot(
-                area, self.export_path, self.export_subdir, self._endpoint_buffer, self.country_code
+                area,
+                self.export_path,
+                self.export_subdir,
+                self._endpoint_buffer,
+                self.country_code,
             )
 
     @property

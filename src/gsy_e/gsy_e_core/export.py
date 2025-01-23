@@ -96,7 +96,12 @@ class ExportAndPlot:
 
     # pylint: disable=too-many-arguments
     def __init__(
-        self, root_area: Area, path: str, subdir: str, endpoint_buffer: "SimulationEndpointBuffer", country_code: str
+        self,
+        root_area: Area,
+        path: str,
+        subdir: str,
+        endpoint_buffer: "SimulationEndpointBuffer",
+        country_code: str,
     ):
         self.area = root_area
         self.endpoint_buffer = endpoint_buffer
