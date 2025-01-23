@@ -1,18 +1,18 @@
-# Individual COP model integration
+# Custom COP model integration
 
-This document describes how COP of arbitrary heat pump models can be modelled and integrated. The COP model used is developed by  [Tekniker](https://www.tekniker.es/en/) by deploying the [DOE-2](https://www.doe2.com/) building energy analysis program, to yield a statistical model by leveraging measurements of select heat pump manufacturers under predefined operational conditions.
+This document describes how COP of arbitrary heat pump models can be modelled and integrated, based on the model developed by  [Tekniker](https://www.tekniker.es/en/) by deploying the [DOE-2](https://www.doe2.com/) building energy analysis program, to yield a statistical model by leveraging measurements of select heat pump manufacturers under predefined operational conditions.
 
 ## COP model training
 
-The training of the COP model produces a JSON file that contains the COP model parameters for a specific heat pump. This will later be used by the HeatPumpStrategy model, in order to more accurately approximate the select heat pump model.
-For training the COP model, performance data for the selected heat pump is needed, that comply to the characteristics listed in the following section.
+The training of the Tekniker COP model produces a JSON file that contains the COP model parameters for a specific heat pump. This file will subsequently be used by the HeatPumpStrategy model in the Grid Singularity Exchange, in order to more accurately approximate the select heat pump COP model.
+To train the COP model, performance data for the selected heat pump is required, pursuant to the characteristics described in the following section.
 
 ### Heat Pump performance data characteristics
 #### Heat production data
 
 A table of heat production (Q) in kW needs to be provided for the full load operation of the heat pump. The heat production is represented as a function of air temperature and condenser temperature.
 The COP model will produce valid data only for the provided temperature range.
-Consequently, a large range and a high resolution of input data will result in more realistic output values.
+Consequently, a wide range and a high resolution of input data will result in more realistic output values.
 
 **Example heat production table**
 
@@ -27,7 +27,7 @@ Consequently, a large range and a high resolution of input data will result in m
 
 #### Electric power consumption data
 
-For the same data points as the heat production data, the corresponding electrical power consumption (P) in kW under full load needs to be provided:
+For the same data points as for the heat production data, the corresponding electrical power consumption (P) in kW under full load needs to be provided:
 
 **Example electric consumption table**
 
@@ -56,8 +56,8 @@ There must be a minimum of three distinct partial-load data points for the same 
 
 ### How to train COP model for the heat pump strategy
 1. Install the software requirements with `pip install -r requirements.txt`
-2. Create an excel file in the `input_data` folder with 3 tabs each containing tables listed in the former section. Example files can be found in the `input_data` folder.
-2. Run `python cop_model_fitter.py` that will read all input data in excel files and, fits the models and saves the model parameters into JSON files.
+2. Create an Excel file in the `input_data` folder with 3 tabs each containing tables listed in the former section. Example files can be found in the `input_data` folder.
+2. Run `python cop_model_fitter.py` that will read all input data in excel files, fits the models and saves the model parameters into JSON files.
 
 
 ## How to integrate the COP model into the gsy-e
