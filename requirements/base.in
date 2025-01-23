@@ -10,7 +10,7 @@ plotly
 python-rex
 redis
 rq
-pytz
+pytz==2024.2
 sortedcontainers
 sympy
 pony
