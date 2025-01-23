@@ -1,19 +1,20 @@
 # Individual COP model integration
 
-This document describes to train COP models, developed by [Tekniker](https://www.tekniker.es/en/) by deploying the [DOE-2](https://www.doe2.com/) building energy analysis program, to yield a statistical model by leveraging measurements of select heat pump manufacturers under predefined operational conditions.
+This document describes how COP of arbitrary heat pump models can be modelled and integrated. The COP model used is developed by  [Tekniker](https://www.tekniker.es/en/) by deploying the [DOE-2](https://www.doe2.com/) building energy analysis program, to yield a statistical model by leveraging measurements of select heat pump manufacturers under predefined operational conditions.
 
 ## COP model training
 
-The goal of training the COP model is to produce a JSON file that contains the COP model parameters for a specific heat pump.
+The training of the COP model produces a JSON file that contains the COP model parameters for a specific heat pump. This will later be used by the HeatPumpStrategy model, in order to more accurately approximate the select heat pump model.
 For training the COP model, performance data for the selected heat pump is needed, that comply to the characteristics listed in the following section.
 
 ### Heat Pump performance data characteristics
 #### Heat production data
 
-A table of heat production (Q) in kW as a function of air temperature and condensor temperature needs to be provided for the full load operation of the heat pump.
-The temperature range that is provided, is the range that the COP model will produce valid data.
+A table of heat production (Q) in kW needs to be provided for the full load operation of the heat pump. The heat production is represented as a function of air temperature and condenser temperature.
+The COP model will produce valid data only for the provided temperature range.
 Consequently, a large range and a high resolution of input data will result in more realistic output values.
-In the following, an example table is shown.
+
+**Example heat production table**
 
 | Q_heating [kW]                      |    | Condenser <br/>outlet <br/>temperature <br/>ºC |    |    |    |
 |-------------------------------------|----|------------------------------------------------|----|----|----|
@@ -28,6 +29,8 @@ In the following, an example table is shown.
 
 For the same data points as the heat production data, the corresponding electrical power consumption (P) in kW under full load needs to be provided:
 
+**Example electric consumption table**
+
 | P_elec [kW]                         |    | Condenser <br/>outlet <br/>temperature <br/>ºC |    |    |    |
 |-------------------------------------|----|------------------------------------------------|----|----|----|
 |                                     |    | 35                                             | 40 | 45 | 50 |
@@ -36,14 +39,15 @@ For the same data points as the heat production data, the corresponding electric
 |                                     | 5  |                                                |    |    |    |
 |                                     | 15 |                                                |    |    |    |
 
-#### Partial load data
+#### Partial-load data
 
-The partial load data represents the full range of load to be simulated by the model.
+The partial-load data represents the full range of load to be simulated by the model.
 A combination of Q and P for different loads of the heat pump needs tp be provided in table form.
-There must be a minimum of three distinct part-load data points for the same temperature conbination.
+There must be a minimum of three distinct partial-load data points for the same temperature combination.
 
+**Example partial-load data table**
 
-| % partial load | Condenser <br/>outlet <br/>temperature <br/>ºC | Air <br/>supply <br/>temperature ºC | Q_heating [kW] | P_elec [kW] |
+| % partial-load | Condenser <br/>outlet <br/>temperature <br/>ºC | Air <br/>supply <br/>temperature ºC | Q_heating [kW] | P_elec [kW] |
 |----------------|------------------------------------------------|-------------------------------------|----------------|-------------|
 | 100            | 45                                             | 11                                  |                |             |
 | 75             | 45                                             | 11                                  |                |             |
