@@ -4,7 +4,7 @@ cached_property
 click
 click-default-group
 colorlog==4.7.2
-numpy
+numpy==1.24.4
 pendulum==2.1.2
 plotly
 python-rex
