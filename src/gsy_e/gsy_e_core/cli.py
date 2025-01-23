@@ -186,7 +186,7 @@ _setup_modules = available_simulation_scenarios
     "--country-code",
     type=str,
     default=None,
-    help="Country code according to ISO 3166-1 alpha-2.",
+    help="Country code according to ISO 3166-1 alpha-2. Only used for calculating carbon emissions.",
 )
 def run(
     setup_module_name,
