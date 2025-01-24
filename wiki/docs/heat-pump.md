@@ -105,7 +105,7 @@ Note: $COP$ calculation generally follows the model proposed by [Ruhnau et al.](
   * Comfort temperature (temperature of the sink i.e. the current temperature of the heat pump storage)
   * Heat pump type (water-to-water or air-to-water)
 
-Alternatively, the user can select one of two pre-trained COP models developed by [Tekniker](https://www.tekniker.es/en/){target=_blank} deploying the [DOE-2](https://www.doe2.com/){target=_blank} building energy analysis program to yield a statistical model by leveraging measurements of select heat pump manufacturers under predefined operational conditions: a) ELCO_AEROTOP_G07_14M or b) HOVAL_ULTRASOURCE_B_COMFORT_C11. To train additional models, please find the guidelines and scripts [here](https://github.com/gridsingularity/gsy-e/tree/66d1812b68cef6052b2c2f38d65db2bc28e1d02b/src/gsy_e/setup/tekniker_cop_model#readme){target=_blank}.
+Alternatively, the user can select one of two pre-trained COP models developed by [Tekniker](https://www.tekniker.es/en/){target=_blank} deploying the [DOE-2](https://www.doe2.com/){target=_blank} building energy analysis program to yield a statistical model by leveraging measurements of select heat pump manufacturers under predefined operational conditions: a) ELCO_AEROTOP_G07_14M or b) HOVAL_ULTRASOURCE_B_COMFORT_C11. To train additional models, please find the guidelines and scripts [here](https://github.com/gridsingularity/gsy-e/tree/master/src/gsy_e/setup/tekniker_cop_model){target=_blank}.
 
 
 To determine the [heat pump trading strategy](heat-pump.md#heat-pump-asset-trading-strategy), the COP is calculated for each market slot taking into account the current storage temperature and the ambient temperature.
