@@ -42,7 +42,7 @@ For the same data points as for the heat production data, the corresponding elec
 #### Partial-load data
 
 The partial-load data represents the full range of load to be simulated by the model.
-A combination of Q and P for different loads of the heat pump needs tp be provided in table form.
+A combination of Q and P for different loads of the heat pump needs to be provided in table form.
 There must be a minimum of three distinct partial-load data points for the same temperature combination.
 
 **Example partial-load data table**
@@ -57,7 +57,7 @@ There must be a minimum of three distinct partial-load data points for the same 
 ### How to train COP model for the heat pump strategy
 1. Install the software requirements with `pip install -r requirements.txt`
 2. Create an Excel file in the `input_data` folder with 3 tabs each containing tables listed in the former section. Example files can be found in the `input_data` folder.
-2. Run `python cop_model_fitter.py` that will read all input data in excel files, fits the models and saves the model parameters into JSON files.
+2. Run `python cop_model_fitter.py` that will read all input data in excel files, fit the models and save the model parameters into JSON files.
 
 
 ## How to integrate the COP model into the gsy-e
