@@ -123,9 +123,9 @@ pony==0.7.17
     # via -r requirements/base.in
 pre-commit==3.5.0
     # via gsy-framework
-psycopg2==2.9.9
+psycopg2==2.9.10
     # via -r requirements/base.in
-psycopg2-binary==2.9.9
+psycopg2-binary==2.9.10
     # via -r requirements/base.in
 pyproject-api==1.6.1
     # via

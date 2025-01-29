@@ -35,7 +35,7 @@ from gsy_framework.data_classes import (
 )
 from gsy_framework.enums import AvailableMarketTypes, BidOfferMatchAlgoEnum
 from gsy_framework.utils import mkdir_from_str
-from gsy_framework.sim_results.carbon_emissions import CarbonEmissionsHandler
+from gsy_framework.sim_results.carbon_emissions.results import CarbonEmissionsHandler
 from pendulum import DateTime
 
 import gsy_e.constants
