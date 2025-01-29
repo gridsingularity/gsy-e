@@ -10,10 +10,6 @@ astroid==3.2.1
     # via
     #   -r requirements/dev.txt
     #   pylint
-async-timeout==4.0.3
-    # via
-    #   -r requirements/dev.txt
-    #   gsy-framework
 attrs==23.2.0
     # via
     #   -r requirements/dev.txt
@@ -31,6 +27,11 @@ bcrypt==4.1.3
     # via
     #   -r requirements/dev.txt
     #   paramiko
+beautifulsoup4==4.12.3
+    # via
+    #   -r requirements/dev.txt
+    #   entsoe-py
+    #   gsy-framework
 behave==1.2.6
     # via behavex
 behavex==3.2.0
@@ -116,6 +117,10 @@ distlib==0.3.8
     #   -r requirements/dev.txt
     #   gsy-framework
     #   virtualenv
+entsoe-py==0.6.2
+    # via
+    #   -r requirements/dev.txt
+    #   gsy-framework
 et-xmlfile==1.1.0
     # via
     #   -r requirements/dev.txt
@@ -131,16 +136,16 @@ filelock==3.14.0
     #   gsy-framework
     #   tox
     #   virtualenv
-flake8==4.0.1
-    # via
-    #   -r requirements/dev.txt
-    #   flake8-tuple
-    #   gsy-framework
-flake8-tuple==0.4.1
-    # via
-    #   -r requirements/dev.txt
-    #   gsy-framework
 geocoder==1.17.5
+    # via
+    #   -r requirements/dev.txt
+    #   gsy-framework
+geographiclib==2.0
+    # via
+    #   -r requirements/dev.txt
+    #   geopy
+    #   gsy-framework
+geopy==2.4.1
     # via
     #   -r requirements/dev.txt
     #   gsy-framework
@@ -158,16 +163,16 @@ idna==3.7
     #   -r requirements/dev.txt
     #   gsy-framework
     #   requests
-importlib-resources==6.4.0
-    # via
-    #   -r requirements/dev.txt
-    #   gsy-framework
 iniconfig==2.0.0
     # via pytest
 invoke==2.2.0
     # via
     #   -r requirements/dev.txt
     #   fabric
+iso3166==2.1.1
+    # via
+    #   -r requirements/dev.txt
+    #   gsy-framework
 isort==5.13.2
     # via
     #   -r requirements/dev.txt
@@ -193,8 +198,6 @@ markupsafe==2.1.5
 mccabe==0.6.1
     # via
     #   -r requirements/dev.txt
-    #   flake8
-    #   gsy-framework
     #   pylint
 mpmath==1.3.0
     # via
@@ -205,8 +208,11 @@ nodeenv==1.8.0
     #   -r requirements/dev.txt
     #   gsy-framework
     #   pre-commit
-numpy==1.26.4
-    # via -r requirements/dev.txt
+numpy==1.24.4
+    # via
+    #   -r requirements/dev.txt
+    #   gsy-framework
+    #   pandas
 openpyxl==3.0.10
     # via
     #   -r requirements/dev.txt
@@ -221,6 +227,11 @@ packaging==24.0
     #   pyproject-api
     #   pytest
     #   tox
+pandas==1.4.2
+    # via
+    #   -r requirements/dev.txt
+    #   entsoe-py
+    #   gsy-framework
 parameterized==0.9.0
     # via -r requirements/tests.in
 paramiko==3.4.0
@@ -234,10 +245,6 @@ parse==1.20.1
 parse-type==0.6.2
     # via behave
 pendulum==2.1.2
-    # via
-    #   -r requirements/dev.txt
-    #   gsy-framework
-pkgutil-resolve-name==1.3.10
     # via
     #   -r requirements/dev.txt
     #   gsy-framework
@@ -264,24 +271,14 @@ pre-commit==3.5.0
     #   gsy-framework
 psutil==5.9.8
     # via -r requirements/dev.txt
-psycopg2==2.9.9
+psycopg2==2.9.10
     # via -r requirements/dev.txt
-psycopg2-binary==2.9.9
+psycopg2-binary==2.9.10
     # via -r requirements/dev.txt
-pycodestyle==2.8.0
-    # via
-    #   -r requirements/dev.txt
-    #   flake8
-    #   gsy-framework
 pycparser==2.22
     # via
     #   -r requirements/dev.txt
     #   cffi
-pyflakes==2.4.0
-    # via
-    #   -r requirements/dev.txt
-    #   flake8
-    #   gsy-framework
 pylint==3.2.0
     # via -r requirements/dev.txt
 pynacl==1.5.0
@@ -309,11 +306,16 @@ python-dateutil==2.9.0.post0
     # via
     #   -r requirements/dev.txt
     #   gsy-framework
+    #   pandas
     #   pendulum
 python-rex==0.4
     # via -r requirements/dev.txt
-pytz==2024.1
-    # via -r requirements/dev.txt
+pytz==2024.2
+    # via
+    #   -r requirements/dev.txt
+    #   entsoe-py
+    #   gsy-framework
+    #   pandas
 pytzdata==2020.1
     # via
     #   -r requirements/dev.txt
@@ -347,6 +349,7 @@ regex==2024.5.15
 requests==2.31.0
     # via
     #   -r requirements/dev.txt
+    #   entsoe-py
     #   geocoder
     #   gsy-framework
     #   requests-mock
@@ -365,7 +368,6 @@ six==1.16.0
     #   -r requirements/dev.txt
     #   behave
     #   configobj
-    #   flake8-tuple
     #   geocoder
     #   gsy-framework
     #   parse-type
@@ -373,6 +375,11 @@ six==1.16.0
     #   python-rex
 sortedcontainers==2.4.0
     # via -r requirements/dev.txt
+soupsieve==2.6
+    # via
+    #   -r requirements/dev.txt
+    #   beautifulsoup4
+    #   gsy-framework
 sympy==1.12
     # via -r requirements/dev.txt
 tabulate==0.9.0
@@ -383,10 +390,6 @@ tenacity==8.3.0
     # via
     #   -r requirements/dev.txt
     #   plotly
-tomli==2.0.1
-    # via
-    #   -r requirements/dev.txt
-    #   gsy-framework
 tomlkit==0.12.5
     # via
     #   -r requirements/dev.txt
@@ -418,10 +421,6 @@ wrapt==1.16.0
     # via
     #   -r requirements/dev.txt
     #   deprecated
-zipp==3.18.2
-    # via
-    #   -r requirements/dev.txt
-    #   gsy-framework
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools
