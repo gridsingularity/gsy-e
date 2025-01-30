@@ -11,3 +11,4 @@ pytest
 pytest-cov
 pytest-random-order
 requests-mock
+flake8==4.0.1
