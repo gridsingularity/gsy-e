@@ -35,6 +35,7 @@ from gsy_framework.data_classes import (
 )
 from gsy_framework.enums import AvailableMarketTypes, BidOfferMatchAlgoEnum
 from gsy_framework.utils import mkdir_from_str
+from gsy_framework.sim_results.carbon_emissions.results import CarbonEmissionsHandler
 from pendulum import DateTime
 
 import gsy_e.constants
@@ -93,12 +94,18 @@ class ExportAndPlot:
 
     # pylint: disable=too-many-arguments
     def __init__(
-        self, root_area: Area, path: str, subdir: str, endpoint_buffer: "SimulationEndpointBuffer"
+        self,
+        root_area: Area,
+        path: str,
+        subdir: str,
+        endpoint_buffer: "SimulationEndpointBuffer",
+        country_code: str,
     ):
         self.area = root_area
         self.endpoint_buffer = endpoint_buffer
         self.file_stats_endpoint = file_export_endpoints_factory()
         self.raw_data_subdir = None
+        self.country_code = country_code
         try:
             if path is not None:
                 path = os.path.abspath(path)
@@ -124,11 +131,30 @@ class ExportAndPlot:
         settings_file = os.path.join(json_dir, "const_settings.json")
         with open(settings_file, "w", encoding="utf-8") as outfile:
             json.dump(constsettings_to_dict(), outfile, indent=2)
-        for in_key, value in self.endpoint_buffer.generate_json_report().items():
+
+        json_report = self.endpoint_buffer.generate_json_report()
+        for in_key, value in json_report.items():
             out_key = results_field_to_json_filename_mapping[in_key]
+
             json_file = os.path.join(json_dir, out_key + ".json")
             with open(json_file, "w", encoding="utf-8") as outfile:
                 json.dump(value, outfile, indent=2)
+
+        if self.country_code:
+            carbon_emissions_handler = CarbonEmissionsHandler()
+
+            imported_exported_energy = json_report.get("imported_exported_energy")
+            carbon_emissions = {}
+            if imported_exported_energy != {}:
+                carbon_emissions = (
+                    carbon_emissions_handler.calculate_from_gsy_imported_exported_energy(
+                        country_code=self.country_code,
+                        imported_exported_energy=imported_exported_energy,
+                    )
+                )
+            json_file = os.path.join(json_dir, "carbon_emissions.json")
+            with open(json_file, "w", encoding="utf-8") as outfile:
+                json.dump(carbon_emissions, outfile, indent=2)
 
     def _export_setup_json(self) -> None:
 

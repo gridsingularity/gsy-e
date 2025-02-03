@@ -50,6 +50,7 @@ class SimulationResultsManager:
         export_path: str,
         export_subdir: Optional[str],
         started_from_cli: bool,
+        country_code: str = None,
     ) -> None:
         self.export_results_on_finish = export_results_on_finish
         self.export_path = export_path
@@ -63,6 +64,7 @@ class SimulationResultsManager:
         self._endpoint_buffer = None
         self._export = None
         self._scm_manager = None
+        self.country_code = country_code
 
     def init_results(
         self, redis_job_id: str, area: "AreaBase", config_params: "SimulationSetup"
@@ -74,7 +76,11 @@ class SimulationResultsManager:
 
         if self.export_results_on_finish:
             self._export = ExportAndPlot(
-                area, self.export_path, self.export_subdir, self._endpoint_buffer
+                area,
+                self.export_path,
+                self.export_subdir,
+                self._endpoint_buffer,
+                self.country_code,
             )
 
     @property
