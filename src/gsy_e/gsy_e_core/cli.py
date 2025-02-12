@@ -183,11 +183,12 @@ _setup_modules = available_simulation_scenarios
     "3 for coefficient-based trading.",
 )
 @click.option(
-    "--country-code",
+    "--carbon-ratio-file",
     type=str,
     default=None,
-    help="Country code according to ISO 3166-1 alpha-2. Only used for "
-    "calculating carbon emissions.",
+    show_default=False,
+    help="Specify a path for the carbon ratio (gCO2eq/kWh) csv file, "
+    "(example: ./src/gsy_e/resources/carbon_ratio_g_per_kWh.csv)",
 )
 def run(
     setup_module_name,

@@ -34,6 +34,7 @@ from gsy_framework.data_classes import (
     Trade,
 )
 from gsy_framework.enums import AvailableMarketTypes, BidOfferMatchAlgoEnum
+from gsy_framework.read_user_profile import InputProfileTypes
 from gsy_framework.utils import mkdir_from_str
 from gsy_framework.sim_results.carbon_emissions.results import CarbonEmissionsHandler
 from pendulum import DateTime
@@ -55,6 +56,7 @@ from gsy_e.gsy_e_core.sim_results.results_plots import (
     PlotUnmatchedLoads,
 )
 from gsy_e.gsy_e_core.util import constsettings_to_dict, is_two_sided_market_simulation
+from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.models.area import Area
 
 if TYPE_CHECKING:
@@ -99,13 +101,13 @@ class ExportAndPlot:
         path: str,
         subdir: str,
         endpoint_buffer: "SimulationEndpointBuffer",
-        country_code: str,
+        carbon_ratio_file: str,
     ):
         self.area = root_area
         self.endpoint_buffer = endpoint_buffer
         self.file_stats_endpoint = file_export_endpoints_factory()
         self.raw_data_subdir = None
-        self.country_code = country_code
+        self.carbon_ratio_file = carbon_ratio_file
         try:
             if path is not None:
                 path = os.path.abspath(path)
@@ -140,17 +142,22 @@ class ExportAndPlot:
             with open(json_file, "w", encoding="utf-8") as outfile:
                 json.dump(value, outfile, indent=2)
 
-        if self.country_code:
+        if self.carbon_ratio_file:
             carbon_emissions_handler = CarbonEmissionsHandler()
-
+            carbon_ratio = (
+                global_objects.profiles_handler._read_new_datapoints_from_buffer_or_rotate_profile(
+                    self.carbon_ratio_file, None, InputProfileTypes.CARBON_RATIO_G_KWH
+                )
+            )
+            carbon_ratio = [
+                {"Ratio (gCO2eq/kWh)": ratio, "time": time} for time, ratio in carbon_ratio.items()
+            ]
             imported_exported_energy = json_report.get("imported_exported_energy")
             carbon_emissions = {}
             if imported_exported_energy != {}:
-                carbon_emissions = (
-                    carbon_emissions_handler.calculate_from_gsy_imported_exported_energy(
-                        country_code=self.country_code,
-                        imported_exported_energy=imported_exported_energy,
-                    )
+                carbon_emissions = carbon_emissions_handler.calculate_from_gsy_imported_exported_energy_with_carbon_ratio(  # noqa: E501 pylint: disable=line-too-long
+                    carbon_ratio=carbon_ratio,
+                    imported_exported_energy=imported_exported_energy,
                 )
             json_file = os.path.join(json_dir, "carbon_emissions.json")
             with open(json_file, "w", encoding="utf-8") as outfile:
