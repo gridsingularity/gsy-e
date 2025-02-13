@@ -182,6 +182,14 @@ _setup_modules = available_simulation_scenarios
     help="Market type. 0 for no-market, 1 for one-sided market, 2 for two-sided market, "
     "3 for coefficient-based trading.",
 )
+@click.option(
+    "--carbon-ratio-file",
+    type=str,
+    default=None,
+    show_default=False,
+    help="Specify a path for the carbon ratio (gCO2eq/kWh) csv file, "
+    "(example: ./src/gsy_e/resources/carbon_ratio_g_per_kWh.csv)",
+)
 def run(
     setup_module_name,
     settings_file,
