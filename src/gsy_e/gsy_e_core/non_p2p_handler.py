@@ -5,6 +5,10 @@ from gsy_framework.exceptions import GSyException
 import gsy_e.constants
 from gsy_e.models.area.area import Area
 from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
+from gsy_e.models.strategy.load_hours import LoadHoursStrategy
+from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy
+from gsy_e.models.strategy.pv import PVStrategy
+from gsy_e.models.strategy.predefined_pv import PVUserProfileStrategy
 
 
 def set_non_p2p_settings(spot_market_type: int):
@@ -43,15 +47,31 @@ class NonP2PHandler:
     def _is_home_area(area: Area):
         return area.children and all(child.strategy is not None for child in area.children)
 
+    def _get_rates_from_home_assets(self, home_area: Area):
+        mmr = None
+        fit = None
+        for area in home_area.children:
+            if isinstance(area.strategy, (LoadHoursStrategy, DefinedLoadStrategy)):
+                mmr = area.strategy.bid_update.final_rate_input
+            if isinstance(area.strategy, (PVStrategy, PVUserProfileStrategy)):
+                fit = area.strategy.offer_update.final_rate_input
+
+        energy_sell_rate = self._energy_sell_rate if mmr is None else mmr
+        energy_buy_rate = self._energy_buy_rate if fit is None else fit
+        return energy_sell_rate, energy_buy_rate
+
     def _add_market_maker_to_home(self, area: Area):
         if not area.children:
             return
         if not self._is_home_area(area):
             return
+
+        energy_sell_rate, energy_buy_rate = self._get_rates_from_home_assets(area)
+
         market_maker_area = Area(
             name="MarketMaker",
             strategy=InfiniteBusStrategy(
-                energy_buy_rate=self._energy_buy_rate, energy_sell_rate=self._energy_sell_rate
+                energy_buy_rate=energy_buy_rate, energy_sell_rate=energy_sell_rate
             ),
         )
         market_maker_area.parent = area
