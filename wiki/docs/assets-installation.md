@@ -4,7 +4,7 @@ There are two options to implement a PV in a backend:
 
 [Solar Profile](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/pv.py){target=_blank} (for template generation profile):
 ```python
-Market(
+Asset(
     "H2 PV",
     strategy=PVStrategy(
         panel_count=4,
@@ -17,7 +17,7 @@ Market(
 [User Profile](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/predefined_pv.py){target=_blank} (for uploaded generation profile):
 ```python
 user_profile_path = os.path.join(gsy_e_path, "assets/Solar_Curve_W_sunny.csv")
-Market('H1 PV', strategy=PVUserProfileStrategy(power_profile=user_profile_path, panel_count=4))
+Asset('H1 PV', strategy=PVUserProfileStrategy(power_profile=user_profile_path, panel_count=4))
 ```
 
 ## Consumption
@@ -26,7 +26,7 @@ To implement the consumption profile (load) in a backend simulation, two options
 
 [User configure Profile](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/load_hours.py){target=_blank}:
 ```python
-Market(
+Asset(
     'Load',
     strategy=LoadHoursStrategy(
         avg_power_W=200, hrs_per_day=6,hrs_of_day=list(range(12, 18)), initial_buying_rate=0,
@@ -37,7 +37,7 @@ Market(
 ```python
 user_profile_path = os.path.join(gsy_e_path,"assets/load.csv")
 
-Market('Load', strategy=LoadProfileStrategy(daily_load_profile=user_profile_path, initial_buying_rate)
+Asset('Load', strategy=LoadProfileStrategy(daily_load_profile=user_profile_path, initial_buying_rate)
 ```
 ### Addendum: `hrs_of_day` and `hrs_per_day`
 
@@ -55,12 +55,21 @@ To implement a battery in a backend simulation one option is available:
 
 [Energy Storage System](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/storage.py){target=_blank}
 ```python
-Market(
+Asset(
     'Storage',
     strategy=StorageStrategy(
         initial_soc=50, energy_rate_decrease_per_update=3, battery_capacity_kWh=1.2,
-        max_abs_battery_power_kW=5, final_buying_rate=16.99, final_selling_rate= 17.01))
+        max_abs_battery_power_kW=5, final_buying_rate=16.99, final_selling_rate= 17.01,
+        losses=StorageLosses(charging_loss_percent=0.05, discharging_loss_percent=0.01, self_discharge_per_day_percent=0.0003)))
 ```
+### Storage Losses
+Losses consist of three components:
+
+- charging_loss_percent: reduction in charged energy due to charging (buying of energy) in percent of the charged energy in one market slot
+- discharge_loss_percent: reduction in charged energy due to discharging (selling of energy) in percent of the charged energy in one market slot
+- self_discharge_per_day_percent: reduction in charged energy due to self-discharge in one day in percent of the battery capacity
+
+
 
 ## Power Plant
 
@@ -75,7 +84,7 @@ profile_kW = {
 19: 0.15,
 22: 0.1
 }
-Market(
+Asset(
     "Power Plant",
     strategy=FinitePowerPlant(energy_rate=31.3, max_available_power_kW=profile_kW))
 ```
@@ -117,7 +126,7 @@ profile_kW = {
     19: 0.15,
     22: 0.1
 }
-Market("Power Plant", strategy=FinitePowerPlant(energy_rate=31.3, max_available_power_kW=profile_kW))
+Asset("Power Plant", strategy=FinitePowerPlant(energy_rate=31.3, max_available_power_kW=profile_kW))
 ```
 
 ### Heat pumps
