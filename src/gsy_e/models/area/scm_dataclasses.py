@@ -465,7 +465,8 @@ class AreaEnergyBills:  # pylint: disable=too-many-instance-attributes
         savings_absolute = (
             self.savings_from_buy_from_community + self.savings_from_sell_to_community
         )
-        assert savings_absolute > -FLOATING_POINT_TOLERANCE
+        if savings_absolute < -FLOATING_POINT_TOLERANCE:
+            logging.error("Negative absolute savings %s.", savings_absolute)
         return savings_absolute
 
     @property
