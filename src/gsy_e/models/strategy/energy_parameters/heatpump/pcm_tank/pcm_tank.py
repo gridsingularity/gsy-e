@@ -93,23 +93,17 @@ class PCMTankState(StateInterface):
         """Return consumed_energy for the provided time_slot"""
         return self._consumed_energy.get(time_slot, 0.0)
 
-    def init_storage_temps(self, time_slot: DateTime):
+    def init_storage_temps(self):
         """
-        Initiate the storage temperatures with the initial temperature of the storge if the
-        _storage_temp_C dict is empty
+        Initiate the storage temperatures with the initial temperature of the storge
         """
-        if len(self._storage_temp_C.keys()) == 0:
-            self._storage_temp_C[time_slot] = [
-                self._initial_temp_C for _ in range(NUMBER_OF_PCM_ELEMENTS)
-            ]
+        self._storage_temp_C[GlobalConfig.start_date] = [
+            self._initial_temp_C for _ in range(NUMBER_OF_PCM_ELEMENTS)
+        ]
 
     def is_time_slot_available(self, time_slot: DateTime) -> bool:
         """Return True if the provided time_slot is part of the _storage_temp_C dict."""
         return time_slot in self._storage_temp_C
-
-    def set_storage_temp_C(self, storage_temp_C: list[float], time_slot: DateTime) -> None:
-        """Set storage_temp_C for specific time_slot."""
-        self._storage_temp_C[time_slot] = storage_temp_C
 
     def get_storage_temp_C(self, time_slot: DateTime) -> Optional[list]:
         """Get storage_temp_C for specific time_slot."""
@@ -289,7 +283,7 @@ class PCMHeatPumpEnergyParameters(HeatPumpEnergyParameters):
         source_type: int = ConstSettings.HeatPumpSettings.SOURCE_TYPE,
         heat_demand_Q_profile: Optional[Union[str, float, Dict]] = None,
         cop_model_type: COPModelType = COPModelType.UNIVERSAL,
-    ):
+    ):  # pylint: disable=super-init-not-called)
 
         hp_state = HeatPumpState(GlobalConfig.slot_length)
         tank_state = PCMTankState(
@@ -360,6 +354,9 @@ class PCMHeatPumpEnergyParameters(HeatPumpEnergyParameters):
         """Combined heatpump and tanks state."""
         return self._state
 
+    def event_activate(self):
+        self._state.tank.init_storage_temps()
+
     def event_traded_energy(self, time_slot: DateTime, energy_kWh: float):
         """React to an event_traded_energy."""
         self._decrement_posted_energy(time_slot, energy_kWh)
@@ -368,8 +365,6 @@ class PCMHeatPumpEnergyParameters(HeatPumpEnergyParameters):
 
     def _populate_state(self, time_slot: DateTime):
         # Order matters a lot here!
-        self._state.tank.init_storage_temps(time_slot)
-
         # Adapt the storage temps according to the trading in the last market slot:
         self._adapt_storage_temps(time_slot)
 

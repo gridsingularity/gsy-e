@@ -272,7 +272,6 @@ class LeafDataExporter(BaseDataExporter):
                 round(self.area.strategy.state.heatpump.get_heat_demand(slot), ROUND_TOLERANCE),
             ]
         if type(self.area.strategy) == PCMHeatPump:
-            print()
             return [
                 round(
                     self.area.strategy.state.heatpump.get_unmatched_demand_kWh(slot),
