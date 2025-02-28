@@ -155,8 +155,6 @@ class SCMManager:
         home_bill = AreaEnergyBills(
             energy_rates=area_rates,
             gsy_energy_bill=area_rates.area_fees.total_monthly_fees,
-            self_consumed_savings=home_data.self_consumed_energy_kWh
-            * home_data.area_properties.AREA_PROPERTIES["market_maker_rate"],
         )
         home_bill.calculate_base_energy_bill(home_data, area_rates)
 
@@ -279,6 +277,9 @@ class SCMManager:
     def community_bills(self) -> Dict:
         """Calculate bills for the community."""
         community_bills = AreaEnergyBills()
+        savings_from_buy_from_community = 0.0
+        savings_from_sell_to_community = 0.0
+        savings = 0.0
         for data in self._bills.values():
             community_bills.base_energy_bill += data.base_energy_bill
             community_bills.base_energy_bill_revenue += data.base_energy_bill_revenue
@@ -299,7 +300,15 @@ class SCMManager:
             community_bills.import_grid_fees += data.import_grid_fees
             community_bills.export_grid_fees += data.export_grid_fees
 
-        return community_bills.to_dict()
+            savings_from_buy_from_community += data.savings_from_buy_from_community
+            savings_from_sell_to_community += data.savings_from_sell_to_community
+            savings += data.savings
+
+        comm_bills = community_bills.to_dict()
+        comm_bills["savings"] = savings
+        comm_bills["savings_from_buy_from_community"] = savings_from_buy_from_community
+        comm_bills["savings_from_sell_to_community"] = savings_from_sell_to_community
+        return comm_bills
 
 
 class SCMManagerWithoutSurplusTrade(SCMManager):
@@ -332,8 +341,6 @@ class SCMManagerWithoutSurplusTrade(SCMManager):
         home_bill = AreaEnergyBillsWithoutSurplusTrade(
             energy_rates=area_rates,
             gsy_energy_bill=area_rates.area_fees.total_monthly_fees,
-            self_consumed_savings=home_data.self_consumed_energy_kWh
-            * home_data.area_properties.AREA_PROPERTIES["market_maker_rate"],
         )
         home_bill.calculate_base_energy_bill(home_data, area_rates)
 

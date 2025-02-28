@@ -30,7 +30,7 @@ from typing import TYPE_CHECKING, Optional
 
 from click.types import ParamType
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig, RangeLimit, DATE_FORMAT
-from gsy_framework.enums import BidOfferMatchAlgoEnum
+from gsy_framework.enums import BidOfferMatchAlgoEnum, SpotMarketTypeEnum
 from gsy_framework.exceptions import GSyException
 from gsy_framework.utils import (
     area_name_from_area_or_ma_name,
@@ -537,3 +537,16 @@ def get_slots_per_month(time_slot: DateTime) -> int:
     return (duration(days=1) / GlobalConfig.slot_length) * monthrange(
         time_slot.year, time_slot.month
     )[1]
+
+
+def is_two_sided_market_simulation():
+    """Return if the two-sided market is set."""
+    return ConstSettings.MASettings.MARKET_TYPE in [
+        SpotMarketTypeEnum.TWO_SIDED.value,
+        SpotMarketTypeEnum.NO_MARKET.value,
+    ]
+
+
+def is_one_sided_market_simulation():
+    """Return if the one-sided market is set."""
+    return ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value

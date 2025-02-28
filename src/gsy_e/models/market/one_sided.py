@@ -35,7 +35,7 @@ from gsy_e.gsy_e_core.exceptions import (
     NegativePriceOrdersException,
     NegativeEnergyOrderException,
 )
-from gsy_e.gsy_e_core.util import short_offer_bid_log_str
+from gsy_e.gsy_e_core.util import short_offer_bid_log_str, is_one_sided_market_simulation
 from gsy_e.models.market import MarketBase, lock_market_action, GridFee
 
 log = getLogger(__name__)
@@ -267,7 +267,7 @@ class OneSidedMarket(MarketBase):
     def _determine_offer_price(  # pylint: disable=too-many-arguments
         self, energy_portion, energy, trade_rate, trade_bid_info, orig_offer_price
     ):
-        if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value:
+        if is_one_sided_market_simulation():
             return self._update_offer_fee_and_calculate_final_price(
                 energy, trade_rate, energy_portion, orig_offer_price
             )

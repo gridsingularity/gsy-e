@@ -31,12 +31,15 @@ from gsy_framework.constants_limits import (
     DATE_TIME_FORMAT,
 )
 from gsy_framework.data_classes import Offer, Trade, Bid
-from gsy_framework.enums import SpotMarketTypeEnum
 from numpy.random import random
 from pendulum import DateTime, duration
 
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
-from gsy_e.gsy_e_core.util import add_or_create_key, subtract_or_create_key
+from gsy_e.gsy_e_core.util import (
+    add_or_create_key,
+    subtract_or_create_key,
+    is_one_sided_market_simulation,
+)
 from gsy_e.models.market.grid_fees.base_model import GridFees
 from gsy_e.models.market.grid_fees.constant_grid_fees import ConstantGridFees
 from gsy_e.models.market.market_redis_connection import (
@@ -138,7 +141,7 @@ class MarketBase:  # pylint: disable=too-many-instance-attributes
         if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
             self.redis_api = (
                 MarketRedisEventSubscriber(self)
-                if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value
+                if is_one_sided_market_simulation()
                 else TwoSidedMarketRedisEventSubscriber(self)
             )
         setattr(self, RLOCK_MEMBER_NAME, RLock())
