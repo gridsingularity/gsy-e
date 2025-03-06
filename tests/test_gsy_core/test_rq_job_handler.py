@@ -18,7 +18,7 @@ class TestRqJobHandler:
     def setup_method(self):
         self.original_config_type = GlobalConfig.CONFIG_TYPE
         self.original_external_connection_web = gsy_e.constants.EXTERNAL_CONNECTION_WEB
-        self.original_run_in_realtime = gsy_e.constants.RUN_IN_REALTIME
+        self.original_run_in_realtime = GlobalConfig.RUN_IN_REALTIME
         self.original_sertsvr = gsy_e.constants.SEND_EVENTS_RESPONSES_TO_SDK_VIA_RQ
         self.original_connect_to_profiles_db = gsy_e.constants.CONNECT_TO_PROFILES_DB
         self.original_config_id = gsy_e.constants.CONFIGURATION_ID
@@ -30,7 +30,7 @@ class TestRqJobHandler:
         GlobalConfig.start_date = self.original_start_date
         GlobalConfig.slot_length = self.original_slot_length
         gsy_e.constants.EXTERNAL_CONNECTION_WEB = self.original_external_connection_web
-        gsy_e.constants.RUN_IN_REALTIME = self.original_run_in_realtime
+        GlobalConfig.RUN_IN_REALTIME = self.original_run_in_realtime
         gsy_e.constants.SEND_EVENTS_RESPONSES_TO_SDK_VIA_RQ = self.original_sertsvr
         gsy_e.constants.CONNECT_TO_PROFILES_DB = self.original_connect_to_profiles_db
         gsy_e.constants.CONFIGURATION_ID = self.original_config_id
@@ -38,7 +38,7 @@ class TestRqJobHandler:
         ConstSettings.SCMSettings.INTRACOMMUNITY_BASE_RATE_EUR = None
         ConstSettings.SCMSettings.GRID_FEES_REDUCTION = 0.28
         gsy_e.constants.EXTERNAL_CONNECTION_WEB = False
-        gsy_e.constants.RUN_IN_REALTIME = False
+        GlobalConfig.RUN_IN_REALTIME = False
         ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS = False
         ConstSettings.MASettings.MARKET_TYPE = 1
         ConstSettings.MASettings.BID_OFFER_MATCH_TYPE = 1
@@ -65,7 +65,7 @@ class TestRqJobHandler:
         assert GlobalConfig.CONFIG_TYPE == config_type.value
         assert gsy_e.constants.EXTERNAL_CONNECTION_WEB is True
         if config_type == ConfigurationType.CANARY_NETWORK:
-            assert gsy_e.constants.RUN_IN_REALTIME is True
+            assert GlobalConfig.RUN_IN_REALTIME is True
         if config_type == ConfigurationType.B2B:
             assert ConstSettings.ForwardMarketSettings.ENABLE_FORWARD_MARKETS is True
             assert ConstSettings.ForwardMarketSettings.FULLY_AUTO_TRADING is False

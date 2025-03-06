@@ -160,7 +160,7 @@ def _configure_constants_constsettings(
         ConfigurationType.B2B.value,
     ]:
         gsy_e.constants.EXTERNAL_CONNECTION_WEB = True
-        gsy_e.constants.RUN_IN_REALTIME = (
+        GlobalConfig.RUN_IN_REALTIME = (
             settings.get("type") == ConfigurationType.CANARY_NETWORK.value
         )
 
@@ -290,7 +290,7 @@ def _handle_scm_past_slots_simulation_run(
     config.end_date = now(tz=TIME_ZONE).subtract(hours=config.hours_of_delay).add(hours=4)
     config.sim_duration = config.end_date - config.start_date
     GlobalConfig.sim_duration = config.sim_duration
-    gsy_e.constants.RUN_IN_REALTIME = False
+    GlobalConfig.RUN_IN_REALTIME = False
 
     simulation_state = run_simulation(
         setup_module_name=scenario_name,
@@ -301,5 +301,5 @@ def _handle_scm_past_slots_simulation_run(
         slot_length_realtime=slot_length_realtime,
         kwargs=kwargs,
     )
-    gsy_e.constants.RUN_IN_REALTIME = True
+    GlobalConfig.RUN_IN_REALTIME = True
     return simulation_state

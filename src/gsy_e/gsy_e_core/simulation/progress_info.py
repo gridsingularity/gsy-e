@@ -21,9 +21,7 @@ from typing import TYPE_CHECKING
 
 from pendulum import DateTime, Duration, duration, now
 from gsy_framework.utils import format_datetime
-from gsy_framework.constants_limits import TIME_ZONE
-
-import gsy_e.constants
+from gsy_framework.constants_limits import TIME_ZONE, GlobalConfig
 
 
 if TYPE_CHECKING:
@@ -66,7 +64,7 @@ class SimulationProgressInfo:
             now(tz=TIME_ZONE) - time_params.start_time - duration(seconds=time_params.paused_time)
         )
 
-        if gsy_e.constants.RUN_IN_REALTIME:
+        if GlobalConfig.RUN_IN_REALTIME:
             self.eta = None
             self.percentage_completed = 0.0
         else:

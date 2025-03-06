@@ -24,11 +24,9 @@ from time import mktime, sleep, time
 from typing import TYPE_CHECKING, Tuple
 
 import pendulum
-from gsy_framework.constants_limits import ConstSettings, TIME_ZONE
+from gsy_framework.constants_limits import ConstSettings, TIME_ZONE, GlobalConfig
 from gsy_framework.enums import SpotMarketTypeEnum
 from pendulum import DateTime, duration, now
-
-import gsy_e.constants
 
 if TYPE_CHECKING:
     from gsy_e.models.area import Area, AreaBase
@@ -93,7 +91,7 @@ class SimulationTimeManager(TimeManagerBase):
         """Calculate the initial slot and tick of the simulation, and the total slot count."""
         slot_count = int(config.sim_duration / config.slot_length)
 
-        if gsy_e.constants.RUN_IN_REALTIME:
+        if GlobalConfig.RUN_IN_REALTIME:
             slot_count = sys.maxsize
 
             today = datetime.date.today()
@@ -123,7 +121,7 @@ class SimulationTimeManager(TimeManagerBase):
         Handle simulation slowdown and simulation realtime mode, and sleep the simulation
         accordingly.
         """
-        if gsy_e.constants.RUN_IN_REALTIME:
+        if GlobalConfig.RUN_IN_REALTIME:
             tick_runtime_s = time() - self.tick_time_counter
             sleep_time_s = config.tick_length.seconds - tick_runtime_s
             self._sleep_and_wake_up_if_stopped(sleep_time_s, status)
@@ -187,7 +185,7 @@ class SimulationTimeManagerScm(TimeManagerBase):
             self.slot_length_realtime.total_seconds() if self.slot_length_realtime else None
         )
 
-        if gsy_e.constants.RUN_IN_REALTIME:
+        if GlobalConfig.RUN_IN_REALTIME:
             slot_runtime_s = time() - self.slot_time_counter
             sleep_time_s = config.slot_length.total_seconds() - slot_runtime_s
             self._sleep_and_wake_up_if_stopped(sleep_time_s, status)
@@ -208,7 +206,7 @@ class SimulationTimeManagerScm(TimeManagerBase):
     @staticmethod
     def get_start_time_on_init(config: "SimulationConfig") -> DateTime:
         """Return the start tim of the simulation."""
-        if gsy_e.constants.RUN_IN_REALTIME:
+        if GlobalConfig.RUN_IN_REALTIME:
             today = pendulum.today(tz=TIME_ZONE)
             seconds_since_midnight = time() - today.int_timestamp
             slot_no = int(seconds_since_midnight // config.slot_length.seconds) + 1
@@ -223,7 +221,7 @@ class SimulationTimeManagerScm(TimeManagerBase):
         """Calculate total slot count and the slot where to resume the realtime simulation."""
         slot_count = int(config.sim_duration / config.slot_length)
 
-        if gsy_e.constants.RUN_IN_REALTIME:
+        if GlobalConfig.RUN_IN_REALTIME:
             slot_count = sys.maxsize
 
             today = pendulum.today(tz=TIME_ZONE)
