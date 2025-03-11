@@ -47,7 +47,7 @@ class PCMTankParameters:
     min_temp_C: float = ConstSettings.HeatPumpSettings.MIN_TEMP_C
     max_temp_C: float = ConstSettings.HeatPumpSettings.MAX_TEMP_C
     initial_temp_C: float = ConstSettings.HeatPumpSettings.INIT_TEMP_C
-    max_capacity_kWh: float = 6.0  # todo: put default value somewhere
+    max_capacity_kWh: float = 6.0
 
 
 class PCMTankState(StateInterface):
@@ -62,7 +62,8 @@ class PCMTankState(StateInterface):
         max_storage_temp_C: float,
         max_capacity_kWh: float,
     ):
-        self._storage_temp_C: Dict[DateTime, list[float]] = {}
+        self._htf_temps_C: Dict[DateTime, list[float]] = {}
+        self._pcm_temps_C: Dict[DateTime, list[float]] = {}
         self._initial_temp_C = initial_temp_C
         self._consumed_energy: Dict[DateTime, float] = defaultdict(lambda: 0)
         self.min_storage_temp_C = min_storage_temp_C
@@ -97,25 +98,30 @@ class PCMTankState(StateInterface):
         """
         Initiate the storage temperatures with the initial temperature of the storge
         """
-        self._storage_temp_C[GlobalConfig.start_date] = [
-            self._initial_temp_C for _ in range(NUMBER_OF_PCM_ELEMENTS)
+        self._htf_temps_C[GlobalConfig.start_date] = [
+            self._initial_temp_C for _ in range(int(NUMBER_OF_PCM_ELEMENTS / 2))
+        ]
+        self._pcm_temps_C[GlobalConfig.start_date] = [
+            self._initial_temp_C for _ in range(int(NUMBER_OF_PCM_ELEMENTS / 2))
         ]
 
     def is_time_slot_available(self, time_slot: DateTime) -> bool:
         """Return True if the provided time_slot is part of the _storage_temp_C dict."""
-        return time_slot in self._storage_temp_C
+        return time_slot in self._htf_temps_C
 
-    def get_storage_temp_C(self, time_slot: DateTime) -> Optional[list]:
-        """Get storage_temp_C for specific time_slot."""
-        return self._storage_temp_C.get(time_slot, None)
+    def _get_htf_temps_C(self, time_slot: DateTime) -> Optional[list]:
+        return self._htf_temps_C.get(time_slot)
 
-    def set_soc_after_charging(self, time_slot: DateTime):
+    def _get_pcm_temps_C(self, time_slot: DateTime) -> Optional[list]:
+        return self._pcm_temps_C.get(time_slot)
+
+    def _set_soc_after_charging(self, time_slot: DateTime):
         """Calculate and set SOC level after charging."""
-        self._soc[time_slot] = self._pcm_charge_model.get_soc(self._storage_temp_C[time_slot])
+        self._soc[time_slot] = self._pcm_charge_model.get_soc(self._get_pcm_temps_C(time_slot))
 
-    def set_soc_after_discharging(self, time_slot: DateTime):
+    def _set_soc_after_discharging(self, time_slot: DateTime):
         """Calculate and set SOC level after discharging."""
-        self._soc[time_slot] = self._pcm_discharge_model.get_soc(self._storage_temp_C[time_slot])
+        self._soc[time_slot] = self._pcm_discharge_model.get_soc(self._get_pcm_temps_C(time_slot))
 
     def get_soc(self, time_slot: DateTime) -> float:
         """Return SOC level."""
@@ -123,17 +129,13 @@ class PCMTankState(StateInterface):
 
     def get_htf_temp_C(self, time_slot: DateTime) -> Optional[float]:
         """Return mean temperature of the heat transfer fluid"""
-        storage_temps = self.get_storage_temp_C(time_slot)
-        if storage_temps is None:
-            return None
-        return mean(storage_temps[0:-2:2])
+        htf_temps = self._get_htf_temps_C(time_slot)
+        return None if htf_temps is None else mean(htf_temps)
 
     def get_pcm_temp_C(self, time_slot: DateTime) -> Optional[float]:
         """Return the mean temperature of the PCM."""
-        storage_temps = self.get_storage_temp_C(time_slot)
-        if storage_temps is None:
-            return None
-        return mean(storage_temps[1:-1:2])
+        pcm_temps = self._get_pcm_temps_C(time_slot)
+        return None if pcm_temps is None else mean(pcm_temps)
 
     def get_maximum_available_storage_energy_kWh(self, time_slot: DateTime):
         """Return the maximum available energy that can be stored in the storage."""
@@ -156,35 +158,44 @@ class PCMTankState(StateInterface):
         self, condensor_temp_C: float, time_slot: DateTime
     ):
         """Increase storage temperatures for provided condensor temperature."""
+        next_market_slot = time_slot + GlobalConfig.slot_length
         if not self._is_temp_limit_respected(condensor_temp_C):
-            self._storage_temp_C[time_slot + GlobalConfig.slot_length] = self.get_storage_temp_C(
-                time_slot
-            )
+            self._htf_temps_C[next_market_slot] = self._get_htf_temps_C(time_slot)
+            self._pcm_temps_C[next_market_slot] = self._get_pcm_temps_C(time_slot)
+            self._soc[next_market_slot] = self.get_soc(time_slot)
             return
-        temperatures_after_charging = self._pcm_charge_model.get_temp_after_charging(
-            current_storage_temps=self.get_storage_temp_C(time_slot),
+        htf_temps, pcm_temps = self._pcm_charge_model.get_temp_after_charging(
+            current_htf_temps_C=self._get_htf_temps_C(time_slot),
+            current_pcm_temps_C=self._get_pcm_temps_C(time_slot),
             charging_temp=condensor_temp_C,
         )
-        self._storage_temp_C[time_slot + GlobalConfig.slot_length] = temperatures_after_charging
+        self._htf_temps_C[next_market_slot] = htf_temps
+        self._pcm_temps_C[next_market_slot] = pcm_temps
+
+        self._set_soc_after_charging(next_market_slot)
 
     def decrease_storage_temp_from_condensor_temp(
         self, condensor_temp_C: float, time_slot: DateTime
     ):
         """Decrease storage temperatures for provided condensor temperature."""
+        next_market_slot = time_slot + GlobalConfig.slot_length
         if not self._is_temp_limit_respected(condensor_temp_C):
-            self._storage_temp_C[time_slot + GlobalConfig.slot_length] = self.get_storage_temp_C(
-                time_slot
-            )
+            self._htf_temps_C[next_market_slot] = self._get_htf_temps_C(time_slot)
+            self._pcm_temps_C[next_market_slot] = self._get_pcm_temps_C(time_slot)
+            self._soc[next_market_slot] = self.get_soc(time_slot)
             return
-        temperatures_after_discharging = self._pcm_discharge_model.get_temp_after_discharging(
-            current_storage_temps=self.get_storage_temp_C(time_slot),
+        htf_temps, pcm_temps = self._pcm_discharge_model.get_temp_after_discharging(
+            current_htf_temps_C=self._get_htf_temps_C(time_slot),
+            current_pcm_temps_C=self._get_pcm_temps_C(time_slot),
             discharging_temp=condensor_temp_C,
         )
-        self._storage_temp_C[time_slot + GlobalConfig.slot_length] = temperatures_after_discharging
+        self._htf_temps_C[next_market_slot] = htf_temps
+        self._pcm_temps_C[next_market_slot] = pcm_temps
+
+        self._set_soc_after_discharging(next_market_slot)
 
     def get_results_dict(self, current_time_slot: DateTime) -> dict:
         return {
-            "storage_temp_C": self._storage_temp_C.get(current_time_slot, []),
             "consumed_energy": self._consumed_energy.get(current_time_slot, 0),
             "soc": self._soc.get(current_time_slot, 0),
             "htf_temp_C": self.get_htf_temp_C(current_time_slot),
@@ -193,7 +204,8 @@ class PCMTankState(StateInterface):
 
     def get_state(self) -> Dict:
         return {
-            "storage_temp_C": convert_pendulum_to_str_in_dict(self._storage_temp_C),
+            "htf_temps_C": convert_pendulum_to_str_in_dict(self._htf_temps_C),
+            "pcm_temps_C": convert_pendulum_to_str_in_dict(self._pcm_temps_C),
             "consumed_energy": convert_pendulum_to_str_in_dict(self._consumed_energy),
             "soc": convert_pendulum_to_str_in_dict(self._soc),
             "min_storage_temp_C": self.min_storage_temp_C,
@@ -203,7 +215,8 @@ class PCMTankState(StateInterface):
         }
 
     def restore_state(self, state_dict: Dict):
-        self._storage_temp_C = convert_str_to_pendulum_in_dict(state_dict["storage_temp_C"])
+        self._htf_temps_C = convert_str_to_pendulum_in_dict(state_dict["htf_temps_C"])
+        self._pcm_temps_C = convert_str_to_pendulum_in_dict(state_dict["pcm_temps_C"])
         self._consumed_energy = convert_str_to_pendulum_in_dict(state_dict["consumed_energy"])
         self._soc = convert_str_to_pendulum_in_dict(state_dict["soc"])
         self.min_storage_temp_C = state_dict["min_storage_temp_C"]
@@ -215,7 +228,8 @@ class PCMTankState(StateInterface):
         if not current_time_slot or constants.RETAIN_PAST_MARKET_STRATEGIES_STATE:
             return
         last_time_slot = self._last_time_slot(current_time_slot)
-        delete_time_slots_in_state(self._storage_temp_C, last_time_slot)
+        delete_time_slots_in_state(self._htf_temps_C, last_time_slot)
+        delete_time_slots_in_state(self._pcm_temps_C, last_time_slot)
         delete_time_slots_in_state(self._soc, last_time_slot)
         delete_time_slots_in_state(self._consumed_energy, last_time_slot)
 

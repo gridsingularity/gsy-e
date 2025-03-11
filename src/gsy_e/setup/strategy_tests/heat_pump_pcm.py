@@ -41,7 +41,7 @@ def get_setup(config):
                         "PCM",
                         strategy=PCMHeatPump(
                             initial_temp_C=35,
-                            max_temp_C=60,
+                            max_temp_C=45,
                             min_temp_C=30,
                             maximum_power_rating_kW=6,
                             # preferred_buying_rate=12,

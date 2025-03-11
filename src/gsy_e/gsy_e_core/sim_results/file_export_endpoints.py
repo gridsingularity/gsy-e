@@ -196,6 +196,7 @@ class LeafDataExporter(BaseDataExporter):
                 "heat demand J",
                 "HTF temp C",
                 "PCM temp C",
+                "SOC %",
             ]
         if type(self.area.strategy) == VirtualHeatpumpStrategy:
             return [
@@ -282,6 +283,7 @@ class LeafDataExporter(BaseDataExporter):
                 round(self.area.strategy.state.heatpump.get_heat_demand(slot), ROUND_TOLERANCE),
                 round(self.area.strategy.state.tank.get_htf_temp_C(slot), ROUND_TOLERANCE),
                 round(self.area.strategy.state.tank.get_pcm_temp_C(slot), ROUND_TOLERANCE),
+                round(self.area.strategy.state.tank.get_soc(slot), 2) * 100,
             ]
         # pylint: disable=unidiomatic-typecheck
         if type(self.area.strategy) == VirtualHeatpumpStrategy:
