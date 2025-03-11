@@ -75,6 +75,14 @@ class HeatPumpTankState(StateInterface):
         """Return the temperature decrease for a given time slot."""
         return self._temp_decrease_K.get(time_slot, 0)
 
+    def get_current_diff_to_min_temp_K(self, time_slot: DateTime) -> float:
+        """
+        Return the temperature difference between the current storage temp and the minimum
+        storage temperature
+        """
+        min_temp_decrease_K = self.get_storage_temp_C(time_slot) - self._min_storage_temp_C
+        return min_temp_decrease_K
+
     def get_temp_increase_K(self, time_slot: DateTime) -> float:
         """Return the temperature increase for a given time slot."""
         return self._temp_increase_K.get(time_slot, 0)

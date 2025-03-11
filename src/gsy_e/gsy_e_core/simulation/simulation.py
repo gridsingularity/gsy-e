@@ -77,9 +77,12 @@ class Simulation:
         enable_bc=False,
         slot_length_realtime: Duration = None,
         incremental: bool = False,
+        carbon_ratio_file: str = None,
     ):
         self.status = SimulationStatusManager(
-            paused=paused, pause_after=pause_after, incremental=incremental
+            paused=paused,
+            pause_after=pause_after,
+            incremental=incremental,
         )
         self._time = simulation_time_manager_factory(
             slot_length_realtime=slot_length_realtime,
@@ -100,6 +103,7 @@ class Simulation:
             export_path=export_path,
             export_subdir=export_subdir,
             started_from_cli=redis_job_id is None,
+            carbon_ratio_file=carbon_ratio_file,
         )
 
         self.area = None
