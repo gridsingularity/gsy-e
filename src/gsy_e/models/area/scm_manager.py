@@ -108,7 +108,9 @@ class SCMManager:
             home_data.energy_bought_from_community_kWh for home_data in self._home_data.values()
         )
         for home_data in self._home_data.values():
-            home_data.set_production_for_community(unassigned_energy_production_kWh)
+            unassigned_energy_production_kWh = home_data.set_production_for_community(
+                unassigned_energy_production_kWh
+            )
             self.community_data.energy_bought_from_community_kWh += (
                 home_data.energy_bought_from_community_kWh
             )
