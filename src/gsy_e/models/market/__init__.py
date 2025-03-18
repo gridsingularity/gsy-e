@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
 import uuid
 from collections import namedtuple
 from dataclasses import dataclass
@@ -23,20 +24,29 @@ from logging import getLogger
 from threading import RLock
 from typing import Dict, List, Union, Optional, Callable, TYPE_CHECKING
 
-from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.constants_limits import (
+    ConstSettings,
+    GlobalConfig,
+    FLOATING_POINT_TOLERANCE,
+    DATE_TIME_FORMAT,
+)
 from gsy_framework.data_classes import Offer, Trade, Bid
-from gsy_framework.enums import SpotMarketTypeEnum
 from numpy.random import random
 from pendulum import DateTime, duration
 
-from gsy_e.constants import FLOATING_POINT_TOLERANCE, DATE_TIME_FORMAT
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
-from gsy_e.gsy_e_core.util import add_or_create_key, subtract_or_create_key
+from gsy_e.gsy_e_core.util import (
+    add_or_create_key,
+    subtract_or_create_key,
+    is_one_sided_market_simulation,
+)
 from gsy_e.models.market.grid_fees.base_model import GridFees
 from gsy_e.models.market.grid_fees.constant_grid_fees import ConstantGridFees
 from gsy_e.models.market.market_redis_connection import (
-    MarketRedisEventSubscriber, MarketRedisEventPublisher,
-    TwoSidedMarketRedisEventSubscriber)
+    MarketRedisEventSubscriber,
+    MarketRedisEventPublisher,
+    TwoSidedMarketRedisEventSubscriber,
+)
 
 if TYPE_CHECKING:
     from gsy_e.models.config import SimulationConfig
@@ -61,12 +71,14 @@ def lock_market_action(function):
 
         with lock_object:
             return function(self, *args, **kwargs)
+
     return wrapper
 
 
 @dataclass(frozen=True)
 class MarketSlotParams:
     """Parameters that describe a market slot."""
+
     opening_time: DateTime
     closing_time: DateTime
     delivery_start_time: DateTime
@@ -87,10 +99,15 @@ class MarketBase:  # pylint: disable=too-many-instance-attributes
     """
 
     def __init__(  # pylint: disable=too-many-arguments
-            self, time_slot: Optional[DateTime] = None, bc=None,
-            notification_listener: Optional[Callable] = None, readonly: bool = False,
-            grid_fee_type: int = ConstSettings.MASettings.GRID_FEE_TYPE,
-            grid_fees: Optional[GridFee] = None, name: Optional[str] = None):
+        self,
+        time_slot: Optional[DateTime] = None,
+        bc=None,
+        notification_listener: Optional[Callable] = None,
+        readonly: bool = False,
+        grid_fee_type: int = ConstSettings.MASettings.GRID_FEE_TYPE,
+        grid_fees: Optional[GridFee] = None,
+        name: Optional[str] = None,
+    ):
         self.name = name
         self.bc_interface = bc
         self.id = str(uuid.uuid4())
@@ -124,8 +141,9 @@ class MarketBase:  # pylint: disable=too-many-instance-attributes
         if ConstSettings.GeneralSettings.EVENT_DISPATCHING_VIA_REDIS:
             self.redis_api = (
                 MarketRedisEventSubscriber(self)
-                if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.ONE_SIDED.value
-                else TwoSidedMarketRedisEventSubscriber(self))
+                if is_one_sided_market_simulation()
+                else TwoSidedMarketRedisEventSubscriber(self)
+            )
         setattr(self, RLOCK_MEMBER_NAME, RLock())
 
         self._open_market_slot_parameters: Dict[DateTime, MarketSlotParams] = {}
@@ -145,7 +163,8 @@ class MarketBase:  # pylint: disable=too-many-instance-attributes
             "start_time": self.time_slot_str,
             "duration_min": GlobalConfig.slot_length.minutes,
             "time_slots": [self.time_slot_str],  # Use a list for compatibility with future markets
-            "type_name": self.type_name}
+            "type_name": self.type_name,
+        }
 
     @property
     def type_name(self) -> str:
@@ -173,8 +192,9 @@ class MarketBase:  # pylint: disable=too-many-instance-attributes
         """Return the offers with the least energy_rate value."""
         cheapest_offer = self.sorted_offers[0]
         rate = cheapest_offer.energy_rate
-        return [o for o in self.sorted_offers if
-                abs(o.energy_rate - rate) < FLOATING_POINT_TOLERANCE]
+        return [
+            o for o in self.sorted_offers if abs(o.energy_rate - rate) < FLOATING_POINT_TOLERANCE
+        ]
 
     def _create_fee_handler(self, grid_fee_type: int, grid_fees: GridFee) -> None:
         if not grid_fees:
@@ -216,16 +236,15 @@ class MarketBase:  # pylint: disable=too-many-instance-attributes
             for listener in sorted(self.notification_listeners, key=lambda l: random()):
                 listener(event, market_id=self.id, **kwargs)
 
-    def _update_stats_after_trade(
-            self, trade: Trade, order: Union[Offer, Bid]) -> None:
+    def _update_stats_after_trade(self, trade: Trade, order: Union[Offer, Bid]) -> None:
         """Update the instance state in response to an occurring trade."""
         self.trades.append(trade)
         self.market_fee += trade.fee_price
         self._update_accumulated_trade_price_energy(trade)
-        self.traded_energy = add_or_create_key(
-            self.traded_energy, trade.seller.name, order.energy)
+        self.traded_energy = add_or_create_key(self.traded_energy, trade.seller.name, order.energy)
         self.traded_energy = subtract_or_create_key(
-            self.traded_energy, trade.buyer.name, order.energy)
+            self.traded_energy, trade.buyer.name, order.energy
+        )
         self._update_min_max_avg_trade_prices(order.energy_rate)
 
     def _update_accumulated_trade_price_energy(self, trade: Trade):
@@ -233,10 +252,12 @@ class MarketBase:  # pylint: disable=too-many-instance-attributes
         self.accumulated_trade_energy += trade.traded_energy
 
     def _update_min_max_avg_trade_prices(self, price):
-        self.max_trade_price = round(
-            max(self.max_trade_price, price), 4) if self.max_trade_price else round(price, 4)
-        self.min_trade_price = round(
-            min(self.min_trade_price, price), 4) if self.min_trade_price else round(price, 4)
+        self.max_trade_price = (
+            round(max(self.max_trade_price, price), 4) if self.max_trade_price else round(price, 4)
+        )
+        self.min_trade_price = (
+            round(min(self.min_trade_price, price), 4) if self.min_trade_price else round(price, 4)
+        )
         self._avg_trade_price = None
 
     def __repr__(self):
@@ -245,19 +266,16 @@ class MarketBase:  # pylint: disable=too-many-instance-attributes
             f" (E: {sum(o.energy for o in self.offers.values())} kWh"
             f" V: {sum(o.price for o in self.offers.values())})"
             f" trades: {len(self.trades)} (E: {self.accumulated_trade_energy} kWh,"
-            f" V: {self.accumulated_trade_price})>")
+            f" V: {self.accumulated_trade_price})>"
+        )
 
     @staticmethod
     def sorting(offers_bids: Dict, reverse_order=False) -> List[Union[Bid, Offer]]:
         """Sort a list of bids or offers by their energy_rate attribute."""
         if reverse_order:
             # Sorted bids in descending order
-            return list(reversed(sorted(
-                offers_bids.values(),
-                key=lambda obj: obj.energy_rate)))
-        return sorted(offers_bids.values(),
-                      key=lambda obj: obj.energy_rate,
-                      reverse=reverse_order)
+            return list(reversed(sorted(offers_bids.values(), key=lambda obj: obj.energy_rate)))
+        return sorted(offers_bids.values(), key=lambda obj: obj.energy_rate, reverse=reverse_order)
 
     def update_clock(self, now: DateTime) -> None:
         """
@@ -302,8 +320,7 @@ class MarketBase:  # pylint: disable=too-many-instance-attributes
             return config.slot_length
         return GlobalConfig.slot_length
 
-    def get_market_parameters_for_market_slot(
-            self, market_slot: DateTime) -> MarketSlotParams:
+    def get_market_parameters_for_market_slot(self, market_slot: DateTime) -> MarketSlotParams:
         """Retrieve the parameters for the selected market slot."""
         return self._open_market_slot_parameters.get(market_slot)
 
@@ -313,7 +330,8 @@ class MarketBase:  # pylint: disable=too-many-instance-attributes
         return self._open_market_slot_parameters
 
     def set_open_market_slot_parameters(
-            self, current_market_slot: DateTime, created_market_slots: Optional[List[DateTime]]):
+        self, current_market_slot: DateTime, created_market_slots: Optional[List[DateTime]]
+    ):
         """Update the parameters of the newly opened market slots."""
         for market_slot in created_market_slots:
             if market_slot in self._open_market_slot_parameters:
@@ -321,8 +339,8 @@ class MarketBase:  # pylint: disable=too-many-instance-attributes
 
             self._open_market_slot_parameters[market_slot] = MarketSlotParams(
                 delivery_start_time=self._calculate_closing_time(market_slot),
-                delivery_end_time=self._calculate_closing_time(market_slot) +
-                self._get_market_slot_duration(None),
+                delivery_end_time=self._calculate_closing_time(market_slot)
+                + self._get_market_slot_duration(None),
                 opening_time=current_market_slot,
-                closing_time=self._calculate_closing_time(market_slot)
+                closing_time=self._calculate_closing_time(market_slot),
             )

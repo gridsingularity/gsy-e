@@ -22,7 +22,7 @@ from math import isclose
 from typing import Dict, List, Optional
 from dataclasses import dataclass
 
-from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig, FLOATING_POINT_TOLERANCE
 from gsy_framework.utils import (
     convert_pendulum_to_str_in_dict,
     convert_str_to_pendulum_in_dict,
@@ -31,7 +31,6 @@ from gsy_framework.utils import (
 )
 from pendulum import DateTime
 
-from gsy_e.constants import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.util import is_time_slot_in_past_markets, write_default_to_dict
 from gsy_e.models.strategy.state.base_states import StateInterface
 

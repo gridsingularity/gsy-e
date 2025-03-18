@@ -22,6 +22,7 @@ from unittest.mock import MagicMock, Mock
 from uuid import uuid4
 
 import pytest
+from gsy_framework.constants_limits import TIME_ZONE, DATE_TIME_FORMAT
 from gsy_framework.data_classes import Trade, TraderDetails
 from gsy_framework.sim_results.bills import MarketEnergyBills
 from gsy_framework.unit_test_utils import (
@@ -93,13 +94,11 @@ class FakeMarket:
     def __init__(self, trades, name="Area", fees=0.0):
         self.name = name
         self.trades = trades
-        self.time_slot = today(tz=constants.TIME_ZONE)
+        self.time_slot = today(tz=TIME_ZONE)
         self.market_fee = fees
         self.const_fee_rate = fees
         self.time_slot_str = (
-            self.time_slot.format(constants.DATE_TIME_FORMAT)
-            if self.time_slot is not None
-            else None
+            self.time_slot.format(DATE_TIME_FORMAT) if self.time_slot is not None else None
         )
         self.offer_history = []
         self.bid_history = []
@@ -123,7 +122,7 @@ class FakeOffer:
 def _trade(price, buyer, energy=1, seller=None, fee_price=0.0):
     return Trade(
         "id",
-        now(tz=constants.TIME_ZONE),
+        now(tz=TIME_ZONE),
         TraderDetails(seller, ""),
         TraderDetails(buyer, ""),
         energy,

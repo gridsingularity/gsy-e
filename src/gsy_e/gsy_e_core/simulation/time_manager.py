@@ -24,12 +24,11 @@ from time import mktime, sleep, time
 from typing import TYPE_CHECKING, Tuple
 
 import pendulum
-from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings, TIME_ZONE
 from gsy_framework.enums import SpotMarketTypeEnum
 from pendulum import DateTime, duration, now
 
 import gsy_e.constants
-from gsy_e.constants import TIME_ZONE
 
 if TYPE_CHECKING:
     from gsy_e.models.area import Area, AreaBase
@@ -44,7 +43,8 @@ class TimeManagerBase:
 
     @staticmethod
     def _sleep_and_wake_up_if_stopped(
-            sleep_time_s: float, status: "SimulationStatusManager") -> None:
+        sleep_time_s: float, status: "SimulationStatusManager"
+    ) -> None:
         if sleep_time_s > 0:
             start_time = time()
             while time() - start_time < sleep_time_s and not status.stopped:
@@ -82,8 +82,12 @@ class SimulationTimeManager(TimeManagerBase):
             self._set_area_current_tick(child, current_tick)
 
     def calculate_total_initial_ticks_slots(
-            self, config: "SimulationConfig", slot_resume: int, tick_resume: int, area: "AreaBase",
-            status: "SimulationStatusManager"
+        self,
+        config: "SimulationConfig",
+        slot_resume: int,
+        tick_resume: int,
+        area: "AreaBase",
+        status: "SimulationStatusManager",
     ) -> Tuple[int, int, int]:
         # pylint: disable = too-many-arguments
         """Calculate the initial slot and tick of the simulation, and the total slot count."""
@@ -109,13 +113,11 @@ class SimulationTimeManager(TimeManagerBase):
             self._sleep_and_wake_up_if_stopped(seconds_until_next_tick, status)
 
         if self.slot_length_realtime:
-            self.tick_length_realtime_s = (
-                    self.slot_length_realtime.seconds /
-                    config.ticks_per_slot)
+            self.tick_length_realtime_s = self.slot_length_realtime.seconds / config.ticks_per_slot
         return slot_count, slot_resume, tick_resume
 
     def handle_slowdown_and_realtime(
-            self, tick_no: int, config: "SimulationConfig", status: "SimulationStatusManager"
+        self, tick_no: int, config: "SimulationConfig", status: "SimulationStatusManager"
     ) -> None:
         """
         Handle simulation slowdown and simulation realtime mode, and sleep the simulation
@@ -133,8 +135,12 @@ class SimulationTimeManager(TimeManagerBase):
             return
 
         if sleep_time_s > 0:
-            log.debug("Tick %s/%s: Sleep time of %s s was applied",
-                      tick_no + 1, config.ticks_per_slot, sleep_time_s)
+            log.debug(
+                "Tick %s/%s: Sleep time of %s s was applied",
+                tick_no + 1,
+                config.ticks_per_slot,
+                sleep_time_s,
+            )
 
         self.tick_time_counter = time()
 
@@ -142,6 +148,7 @@ class SimulationTimeManager(TimeManagerBase):
 @dataclass
 class SimulationTimeManagerScm(TimeManagerBase):
     """Handles simulation time management."""
+
     start_time: DateTime = None
     paused_time: int = 0  # Time spent in paused state, in seconds
     slot_length_realtime: duration = None
@@ -166,14 +173,19 @@ class SimulationTimeManagerScm(TimeManagerBase):
             self.paused_time = 0
 
     def handle_slowdown_and_realtime_scm(
-            self, slot_no: int, slot_count: int,
-            config: "SimulationConfig", status: "SimulationStatusManager") -> None:
+        self,
+        slot_no: int,
+        slot_count: int,
+        config: "SimulationConfig",
+        status: "SimulationStatusManager",
+    ) -> None:
         """
         Handle simulation slowdown and simulation realtime mode, and sleep the simulation
         accordingly for SCM simulations.
         """
         slot_length_realtime_s = (
-            self.slot_length_realtime.total_seconds() if self.slot_length_realtime else None)
+            self.slot_length_realtime.total_seconds() if self.slot_length_realtime else None
+        )
 
         if gsy_e.constants.RUN_IN_REALTIME:
             slot_runtime_s = time() - self.slot_time_counter
@@ -187,8 +199,9 @@ class SimulationTimeManagerScm(TimeManagerBase):
             return
 
         if sleep_time_s > 0:
-            log.debug("Slot %s/%s: Sleep time of %s s was applied",
-                      slot_no, slot_count, sleep_time_s)
+            log.debug(
+                "Slot %s/%s: Sleep time of %s s was applied", slot_no, slot_count, sleep_time_s
+            )
 
         self.slot_time_counter = int(time())
 
@@ -199,13 +212,13 @@ class SimulationTimeManagerScm(TimeManagerBase):
             today = pendulum.today(tz=TIME_ZONE)
             seconds_since_midnight = time() - today.int_timestamp
             slot_no = int(seconds_since_midnight // config.slot_length.seconds) + 1
-            start_time = config.start_date + duration(seconds=slot_no*config.slot_length.seconds)
+            start_time = config.start_date + duration(seconds=slot_no * config.slot_length.seconds)
         else:
             start_time = config.start_date
         return start_time
 
     def calc_resume_slot_and_count_realtime(
-            self, config: "SimulationConfig", slot_resume: int, status: "SimulationStatusManager"
+        self, config: "SimulationConfig", slot_resume: int, status: "SimulationStatusManager"
     ) -> Tuple[int, int]:
         """Calculate total slot count and the slot where to resume the realtime simulation."""
         slot_count = int(config.sim_duration / config.slot_length)
@@ -219,8 +232,12 @@ class SimulationTimeManagerScm(TimeManagerBase):
             seconds_elapsed_in_slot = seconds_since_midnight % config.slot_length.seconds
             sleep_time_s = config.slot_length.total_seconds() - seconds_elapsed_in_slot
             self._sleep_and_wake_up_if_stopped(sleep_time_s, status)
-            log.debug("Resume Slot %s/%s: Sleep time of %s s was applied",
-                      slot_resume, slot_count, sleep_time_s)
+            log.debug(
+                "Resume Slot %s/%s: Sleep time of %s s was applied",
+                slot_resume,
+                slot_count,
+                sleep_time_s,
+            )
 
         return slot_count, slot_resume
 
@@ -228,6 +245,7 @@ class SimulationTimeManagerScm(TimeManagerBase):
 def simulation_time_manager_factory(slot_length_realtime: duration, hours_of_delay: int):
     """Factory for time manager objects."""
     if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
-        return SimulationTimeManagerScm(slot_length_realtime=slot_length_realtime,
-                                        hours_of_delay=hours_of_delay)
+        return SimulationTimeManagerScm(
+            slot_length_realtime=slot_length_realtime, hours_of_delay=hours_of_delay
+        )
     return SimulationTimeManager(slot_length_realtime=slot_length_realtime)

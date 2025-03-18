@@ -5,16 +5,16 @@ from copy import deepcopy
 from datetime import datetime, date
 from typing import Dict, Optional
 
-from gsy_framework.constants_limits import GlobalConfig, ConstSettings
+from gsy_framework.constants_limits import GlobalConfig, ConstSettings, TIME_ZONE
 from gsy_framework.enums import ConfigurationType, SpotMarketTypeEnum, CoefficientAlgorithm
 from gsy_framework.settings_validators import validate_global_settings
 from pendulum import duration, instance, now
 
 import gsy_e.constants
+from gsy_e.gsy_e_core.non_p2p_handler import set_non_p2p_settings
 from gsy_e.gsy_e_core.simulation import run_simulation
 from gsy_e.gsy_e_core.util import update_advanced_settings
 from gsy_e.models.config import SimulationConfig
-from gsy_e.gsy_e_core.non_p2p_handler import NonP2PHandler
 
 logging.getLogger().setLevel(logging.ERROR)
 logger = logging.getLogger(__name__)
@@ -38,6 +38,7 @@ def launch_simulation_from_rq_job(
     gsy_e.constants.CONFIGURATION_ID = scenario.pop("configuration_uuid", None)
     try:
         if not gsy_e.constants.CONFIGURATION_ID:
+            # pylint: disable=broad-exception-raised
             raise Exception(
                 "configuration_uuid was not provided"
             )  # pylint disable=broad-exception-raised
@@ -54,9 +55,6 @@ def launch_simulation_from_rq_job(
             events = ast.literal_eval(events)
 
         _configure_constants_constsettings(scenario, settings, connect_to_profiles_db)
-
-        if gsy_e.constants.RUN_IN_NON_P2P_MODE:
-            scenario = NonP2PHandler(scenario).non_p2p_scenario
 
         slot_length_realtime = (
             duration(seconds=settings["slot_length_realtime"].seconds)
@@ -93,7 +91,7 @@ def launch_simulation_from_rq_job(
 
         if settings.get("type") == ConfigurationType.CANARY_NETWORK.value:
             config.start_date = instance(
-                datetime.combine(date.today(), datetime.min.time()), tz=gsy_e.constants.TIME_ZONE
+                datetime.combine(date.today(), datetime.min.time()), tz=TIME_ZONE
             )
 
             if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
@@ -177,7 +175,7 @@ def _configure_constants_constsettings(
     spot_market_type = settings.get("spot_market_type")
     bid_offer_match_algo = settings.get("bid_offer_match_algo")
 
-    if spot_market_type:
+    if spot_market_type is not None:
         ConstSettings.MASettings.MARKET_TYPE = spot_market_type
     if bid_offer_match_algo:
         ConstSettings.MASettings.BID_OFFER_MATCH_TYPE = bid_offer_match_algo
@@ -193,10 +191,7 @@ def _configure_constants_constsettings(
     )
     gsy_e.constants.CONNECT_TO_PROFILES_DB = connect_to_profiles_db
 
-    if settings.get("p2p_enabled", True) is False:
-        ConstSettings.MASettings.MIN_BID_AGE = gsy_e.constants.MIN_OFFER_BID_AGE_P2P_DISABLED
-        ConstSettings.MASettings.MIN_OFFER_AGE = gsy_e.constants.MIN_OFFER_BID_AGE_P2P_DISABLED
-        gsy_e.constants.RUN_IN_NON_P2P_MODE = True
+    set_non_p2p_settings(spot_market_type)
 
     if settings.get("scm"):
         ConstSettings.SCMSettings.MARKET_ALGORITHM = CoefficientAlgorithm(
@@ -206,6 +201,7 @@ def _configure_constants_constsettings(
         ConstSettings.SCMSettings.INTRACOMMUNITY_BASE_RATE_EUR = settings["scm"][
             "intracommunity_rate_base_eur"
         ]
+        ConstSettings.SCMSettings.SELF_CONSUMPTION_TYPE = settings["scm"]["self_consumption_type"]
     else:
         assert spot_market_type is not SpotMarketTypeEnum.COEFFICIENTS.value
 
@@ -218,7 +214,7 @@ def _create_config_settings_object(
         "start_date": (
             instance(
                 datetime.combine(settings.get("start_date"), datetime.min.time()),
-                tz=gsy_e.constants.TIME_ZONE,
+                tz=TIME_ZONE,
             )
             if "start_date" in settings
             else GlobalConfig.start_date
@@ -246,7 +242,7 @@ def _create_config_settings_object(
         "external_connection_enabled": settings.get("external_connection_enabled", False),
         "aggregator_device_mapping": aggregator_device_mapping,
         "hours_of_delay": settings.get("scm", {}).get(
-            "hours_of_delay", ConstSettings.SCMSettings.HOURS_OF_DELAY
+            "scm_cn_hours_of_delay", ConstSettings.SCMSettings.HOURS_OF_DELAY
         ),
     }
 
@@ -285,17 +281,17 @@ def _handle_scm_past_slots_simulation_run(
     config = _create_config_settings_object(
         scenario_copy, settings_copy, aggregator_device_mapping
     )
+
     # We are running SCM Canary Networks with some days of delay compared to realtime in order to
     # compensate for delays in transmission of the asset measurements.
     # Adding 4 hours of extra time to the SCM past slots simulation duration, in order to
     # compensate for the runtime of the SCM past slots simulation and to not have any results gaps
     # after this simulation run and the following Canary Network launch.
-    config.end_date = (
-        now(tz=gsy_e.constants.TIME_ZONE).subtract(hours=config.hours_of_delay).add(hours=4)
-    )
+    config.end_date = now(tz=TIME_ZONE).subtract(hours=config.hours_of_delay).add(hours=4)
     config.sim_duration = config.end_date - config.start_date
     GlobalConfig.sim_duration = config.sim_duration
     gsy_e.constants.RUN_IN_REALTIME = False
+
     simulation_state = run_simulation(
         setup_module_name=scenario_name,
         simulation_config=config,

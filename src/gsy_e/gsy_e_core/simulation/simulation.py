@@ -24,7 +24,7 @@ from typing import TYPE_CHECKING, Dict, Optional
 
 import psutil
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
-from gsy_framework.enums import CoefficientAlgorithm, SpotMarketTypeEnum
+from gsy_framework.enums import CoefficientAlgorithm, SpotMarketTypeEnum, SCMSelfConsumptionType
 from gsy_framework.utils import format_datetime, str_to_pendulum_datetime
 from pendulum import DateTime, Duration, duration
 
@@ -43,8 +43,9 @@ from gsy_e.gsy_e_core.simulation.status_manager import SimulationStatusManager
 from gsy_e.gsy_e_core.simulation.time_manager import simulation_time_manager_factory
 from gsy_e.gsy_e_core.util import NonBlockingConsole
 from gsy_e.models.area.event_deserializer import deserialize_events_to_areas
-from gsy_e.models.area.scm_manager import SCMManager
+from gsy_e.models.area.scm_manager import SCMManager, SCMManagerWithoutSurplusTrade
 from gsy_e.models.config import SimulationConfig
+
 
 if TYPE_CHECKING:
     from gsy_e.models.area import Area, AreaBase, CoefficientArea
@@ -76,9 +77,12 @@ class Simulation:
         enable_bc=False,
         slot_length_realtime: Duration = None,
         incremental: bool = False,
+        carbon_ratio_file: str = None,
     ):
         self.status = SimulationStatusManager(
-            paused=paused, pause_after=pause_after, incremental=incremental
+            paused=paused,
+            pause_after=pause_after,
+            incremental=incremental,
         )
         self._time = simulation_time_manager_factory(
             slot_length_realtime=slot_length_realtime,
@@ -99,6 +103,7 @@ class Simulation:
             export_path=export_path,
             export_subdir=export_subdir,
             started_from_cli=redis_job_id is None,
+            carbon_ratio_file=carbon_ratio_file,
         )
 
         self.area = None
@@ -252,8 +257,8 @@ class Simulation:
                     slot_completion=f"{int((tick_no / self.config.ticks_per_slot) * 100)}%",
                     market_slot=self.progress_info.next_slot_str,
                 )
-                (self.config.external_redis_communicator.
-                 publish_aggregator_commands_responses_events())
+                redis_comm = self.config.external_redis_communicator
+                redis_comm.publish_aggregator_commands_responses_events()
 
                 self._time.handle_slowdown_and_realtime(tick_no, self.config, self.status)
 
@@ -395,8 +400,7 @@ class Simulation:
     def _restore_area_state(self, area: "Area", saved_area_state: dict) -> None:
         if area.uuid not in saved_area_state:
             log.warning(
-                "Area %s is not part of the saved state. "
-                "State not restored. Simulation id: %s",
+                "Area %s is not part of the saved state. State not restored. Simulation id: %s",
                 area.uuid,
                 self.simulation_id,
             )
@@ -542,7 +546,38 @@ class CoefficientSimulation(Simulation):
             self._get_current_market_time_slot(slot_no), area=self.area
         )
 
-        self.area.cycle_coefficients_trading(self.progress_info.current_slot_time)
+        self.area.cycle_coefficients_trading(
+            self.progress_info.current_slot_time,
+            global_objects.profiles_handler.current_scm_profiles,
+        )
+
+    def _execute_scm_manager_cycle(self, slot_no: int) -> SCMManager:
+        if (
+            ConstSettings.SCMSettings.SELF_CONSUMPTION_TYPE
+            == SCMSelfConsumptionType.SIMPLIFIED_COLLECTIVE_SELF_CONSUMPTION_41.value
+        ):
+            scm_manager = SCMManagerWithoutSurplusTrade(
+                self.area, self._get_current_market_time_slot(slot_no)
+            )
+            production_kwh = self.area.aggregate_production_from_all_homes(
+                self.progress_info.current_slot_time
+            )
+            self.area.calculate_home_after_meter_data_for_collective_self_consumption(
+                self.progress_info.current_slot_time, scm_manager, production_kwh
+            )
+        else:
+            scm_manager = SCMManager(self.area, self._get_current_market_time_slot(slot_no))
+            self.area.calculate_home_after_meter_data(
+                self.progress_info.current_slot_time, scm_manager
+            )
+
+        scm_manager.calculate_community_after_meter_data()
+        self.area.trigger_energy_trades(scm_manager)
+        scm_manager.accumulate_community_trades()
+
+        if ConstSettings.SCMSettings.MARKET_ALGORITHM == CoefficientAlgorithm.DYNAMIC.value:
+            self.area.change_home_coefficient_percentage(scm_manager)
+        return scm_manager
 
     def _execute_simulation(
         self, slot_resume: int, _tick_resume: int, console: NonBlockingConsole = None
@@ -564,18 +599,7 @@ class CoefficientSimulation(Simulation):
 
             self._handle_external_communication()
 
-            scm_manager = SCMManager(self.area, self._get_current_market_time_slot(slot_no))
-
-            self.area.calculate_home_after_meter_data(
-                self.progress_info.current_slot_time, scm_manager
-            )
-
-            scm_manager.calculate_community_after_meter_data()
-            self.area.trigger_energy_trades(scm_manager)
-            scm_manager.accumulate_community_trades()
-
-            if ConstSettings.SCMSettings.MARKET_ALGORITHM == CoefficientAlgorithm.DYNAMIC.value:
-                self.area.change_home_coefficient_percentage(scm_manager)
+            scm_manager = self._execute_scm_manager_cycle(slot_no)
 
             # important: SCM manager has to be updated before sending the results
             self._results.update_scm_manager(scm_manager)

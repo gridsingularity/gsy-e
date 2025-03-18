@@ -29,6 +29,15 @@ from gsy_e.models.strategy.state.base_states import StateInterface
 log = getLogger(__name__)
 
 
+def delete_time_slots_in_state(profile: Dict, current_time_stamp: DateTime):
+    stamps_to_delete = []
+    for time_slot in profile:
+        if time_slot < current_time_stamp:
+            stamps_to_delete.append(time_slot)
+    for stamp in stamps_to_delete:
+        profile.pop(stamp, None)
+
+
 class HeatPumpTankState(StateInterface):
     """State for the heat pump tank."""
 
@@ -65,6 +74,14 @@ class HeatPumpTankState(StateInterface):
     def get_temp_decrease_K(self, time_slot: DateTime) -> float:
         """Return the temperature decrease for a given time slot."""
         return self._temp_decrease_K.get(time_slot, 0)
+
+    def get_current_diff_to_min_temp_K(self, time_slot: DateTime) -> float:
+        """
+        Return the temperature difference between the current storage temp and the minimum
+        storage temperature
+        """
+        min_temp_decrease_K = self.get_storage_temp_C(time_slot) - self._min_storage_temp_C
+        return min_temp_decrease_K
 
     def get_temp_increase_K(self, time_slot: DateTime) -> float:
         """Return the temperature increase for a given time slot."""
@@ -115,12 +132,7 @@ class HeatPumpTankState(StateInterface):
 
     @staticmethod
     def _delete_time_slots(profile: Dict, current_time_stamp: DateTime):
-        stamps_to_delete = []
-        for time_slot in profile:
-            if time_slot < current_time_stamp:
-                stamps_to_delete.append(time_slot)
-        for stamp in stamps_to_delete:
-            profile.pop(stamp, None)
+        delete_time_slots_in_state(profile, current_time_stamp)
 
     def __str__(self):
         return self.__class__.__name__
@@ -276,12 +288,7 @@ class HeatPumpState(StateInterface):
 
     @staticmethod
     def _delete_time_slots(profile: Dict, current_time_stamp: DateTime):
-        stamps_to_delete = []
-        for time_slot in profile:
-            if time_slot < current_time_stamp:
-                stamps_to_delete.append(time_slot)
-        for stamp in stamps_to_delete:
-            profile.pop(stamp, None)
+        delete_time_slots_in_state(profile, current_time_stamp)
 
     def __str__(self):
         return self.__class__.__name__

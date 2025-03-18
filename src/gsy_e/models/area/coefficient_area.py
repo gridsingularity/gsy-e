@@ -16,18 +16,18 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from collections import defaultdict
 from logging import getLogger
 from typing import TYPE_CHECKING, List, Dict
 
 from numpy.random import random
 from pendulum import DateTime
 
+from gsy_e.gsy_e_core.util import get_slots_per_month
 from gsy_e.models.area.area_base import AreaBase
+from gsy_e.models.area.scm_dataclasses import SCMAreaProperties
 from gsy_e.models.config import SimulationConfig
 from gsy_e.models.strategy.external_strategies import ExternalMixin
 from gsy_e.models.strategy.scm import SCMStrategy
-from gsy_e.models.area.scm_dataclasses import SCMAreaProperties
 
 log = getLogger(__name__)
 
@@ -80,16 +80,44 @@ class CoefficientArea(AreaBase):
         for child in self.children:
             child.activate_energy_parameters(current_time_slot)
 
-    def cycle_coefficients_trading(self, current_time_slot: DateTime) -> None:
+    def _handle_area_parameters_from_profiles(
+        self, current_time_slot: DateTime, area_profiles: dict
+    ) -> None:
+        if self.uuid not in area_profiles:
+            return
+        area_profile = area_profiles[self.uuid]
+        if area_profile.feed_in_tariff:
+            self.area_properties.AREA_PROPERTIES["feed_in_tariff"] = area_profile.feed_in_tariff
+        if area_profile.utility_rate:
+            self.area_properties.AREA_PROPERTIES["market_maker_rate"] = area_profile.utility_rate
+        if area_profile.energy_fee:
+            self.area_properties.GRID_FEES["grid_import_fee_const"] = area_profile.energy_fee
+        if area_profile.energy_cargo_fee:
+            self.area_properties.PER_KWH_FEES["energy_cargo_fee"] = area_profile.energy_cargo_fee
+        if area_profile.power_fee:
+            self.area_properties.MONTHLY_FEES["power_fee"] = (
+                area_profile.power_fee
+                * area_profile.contracted_power_kw
+                / get_slots_per_month(current_time_slot)
+            )
+        if area_profile.power_cargo_fee:
+            self.area_properties.MONTHLY_FEES["power_cargo_fee"] = (
+                area_profile.power_cargo_fee
+                * area_profile.contracted_power_kw
+                / get_slots_per_month(current_time_slot)
+            )
+
+    def cycle_coefficients_trading(self, current_time_slot: DateTime, area_profiles: dict) -> None:
         """Perform operations that should be executed on coefficients trading cycle."""
         self.past_market_time_slot = self.current_market_time_slot
         self.current_market_time_slot = current_time_slot
 
+        self._handle_area_parameters_from_profiles(current_time_slot, area_profiles)
         if self.strategy:
             self.strategy.market_cycle(self)
 
         for child in self.children:
-            child.cycle_coefficients_trading(current_time_slot)
+            child.cycle_coefficients_trading(current_time_slot, area_profiles)
 
     def area_reconfigure_event(self, **kwargs):
         """Reconfigure the device properties at runtime using the provided arguments."""
@@ -102,17 +130,11 @@ class CoefficientArea(AreaBase):
         home_production_kWh = 0
         home_consumption_kWh = 0
 
-        asset_energy_requirements_kWh = defaultdict(lambda: 0)
-
         for child in self.children:
             # import
-            consumption_kWh = child.strategy.get_energy_to_buy_kWh(current_time_slot)
-            asset_energy_requirements_kWh[child.uuid] += consumption_kWh
-            home_consumption_kWh += consumption_kWh
+            home_consumption_kWh += child.strategy.get_energy_to_buy_kWh(current_time_slot)
             # export
-            production_kWh = child.strategy.get_energy_to_sell_kWh(current_time_slot)
-            asset_energy_requirements_kWh[child.uuid] -= production_kWh
-            home_production_kWh += production_kWh
+            home_production_kWh += child.strategy.get_energy_to_sell_kWh(current_time_slot)
 
         scm_manager.add_home_data(
             self.uuid,
@@ -120,8 +142,45 @@ class CoefficientArea(AreaBase):
             self.area_properties,
             home_production_kWh,
             home_consumption_kWh,
-            dict(asset_energy_requirements_kWh),
         )
+
+    def aggregate_production_from_all_homes(self, current_time_slot: DateTime) -> float:
+        """Aggregate energy production from all homes, in kWh."""
+        if self.is_home_area:
+            return sum(
+                child.strategy.get_energy_to_sell_kWh(current_time_slot) for child in self.children
+            )
+        return sum(
+            child.aggregate_production_from_all_homes(current_time_slot)
+            for child in sorted(self.children, key=lambda _: random())
+        )
+
+    def calculate_home_after_meter_data_for_collective_self_consumption(
+        self,
+        current_time_slot: DateTime,
+        scm_manager: "SCMManager",
+        community_production_kwh: float,
+    ):
+        """Recursive function that calculates the home after meter data."""
+        if self.is_home_area:
+            home_consumption_kwh = sum(
+                child.strategy.get_energy_to_buy_kWh(current_time_slot) for child in self.children
+            )
+            home_production_kwh = (
+                community_production_kwh
+                * self.area_properties.AREA_PROPERTIES["coefficient_percentage"]
+            )
+            scm_manager.add_home_data(
+                self.uuid,
+                self.name,
+                self.area_properties,
+                home_production_kwh,
+                home_consumption_kwh,
+            )
+        for child in sorted(self.children, key=lambda _: random()):
+            child.calculate_home_after_meter_data_for_collective_self_consumption(
+                current_time_slot, scm_manager, community_production_kwh
+            )
 
     def calculate_home_after_meter_data(
         self, current_time_slot: DateTime, scm_manager: "SCMManager"

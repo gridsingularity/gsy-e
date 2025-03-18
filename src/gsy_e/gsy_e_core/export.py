@@ -33,8 +33,10 @@ from gsy_framework.data_classes import (
     Offer,
     Trade,
 )
-from gsy_framework.enums import AvailableMarketTypes, BidOfferMatchAlgoEnum, SpotMarketTypeEnum
+from gsy_framework.enums import AvailableMarketTypes, BidOfferMatchAlgoEnum
+from gsy_framework.read_user_profile import InputProfileTypes
 from gsy_framework.utils import mkdir_from_str
+from gsy_framework.sim_results.carbon_emissions.results import CarbonEmissionsHandler
 from pendulum import DateTime
 
 import gsy_e.constants
@@ -53,7 +55,8 @@ from gsy_e.gsy_e_core.sim_results.results_plots import (
     PlotSupplyDemandCurve,
     PlotUnmatchedLoads,
 )
-from gsy_e.gsy_e_core.util import constsettings_to_dict
+from gsy_e.gsy_e_core.util import constsettings_to_dict, is_two_sided_market_simulation
+from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.models.area import Area
 
 if TYPE_CHECKING:
@@ -93,12 +96,18 @@ class ExportAndPlot:
 
     # pylint: disable=too-many-arguments
     def __init__(
-        self, root_area: Area, path: str, subdir: str, endpoint_buffer: "SimulationEndpointBuffer"
+        self,
+        root_area: Area,
+        path: str,
+        subdir: str,
+        endpoint_buffer: "SimulationEndpointBuffer",
+        carbon_ratio_file: str,
     ):
         self.area = root_area
         self.endpoint_buffer = endpoint_buffer
         self.file_stats_endpoint = file_export_endpoints_factory()
         self.raw_data_subdir = None
+        self.carbon_ratio_file = carbon_ratio_file
         try:
             if path is not None:
                 path = os.path.abspath(path)
@@ -124,11 +133,35 @@ class ExportAndPlot:
         settings_file = os.path.join(json_dir, "const_settings.json")
         with open(settings_file, "w", encoding="utf-8") as outfile:
             json.dump(constsettings_to_dict(), outfile, indent=2)
-        for in_key, value in self.endpoint_buffer.generate_json_report().items():
+
+        json_report = self.endpoint_buffer.generate_json_report()
+        for in_key, value in json_report.items():
             out_key = results_field_to_json_filename_mapping[in_key]
+
             json_file = os.path.join(json_dir, out_key + ".json")
             with open(json_file, "w", encoding="utf-8") as outfile:
                 json.dump(value, outfile, indent=2)
+
+        if self.carbon_ratio_file:
+            carbon_emissions_handler = CarbonEmissionsHandler()
+            carbon_ratio = (
+                global_objects.profiles_handler._read_new_datapoints_from_buffer_or_rotate_profile(
+                    self.carbon_ratio_file, None, InputProfileTypes.CARBON_RATIO_G_KWH
+                )
+            )
+            carbon_ratio = [
+                {"Ratio (gCO2eq/kWh)": ratio, "time": time} for time, ratio in carbon_ratio.items()
+            ]
+            imported_exported_energy = json_report.get("imported_exported_energy")
+            carbon_emissions = {}
+            if imported_exported_energy != {}:
+                carbon_emissions = carbon_emissions_handler.calculate_from_gsy_imported_exported_energy_with_carbon_ratio(  # noqa: E501 pylint: disable=line-too-long
+                    carbon_ratio=carbon_ratio,
+                    imported_exported_energy=imported_exported_energy,
+                )
+            json_file = os.path.join(json_dir, "carbon_emissions.json")
+            with open(json_file, "w", encoding="utf-8") as outfile:
+                json.dump(carbon_emissions, outfile, indent=2)
 
     def _export_setup_json(self) -> None:
 
@@ -172,7 +205,7 @@ class ExportAndPlot:
                 self.area, self.plot_dir
             )
         if (
-            ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED.value
+            is_two_sided_market_simulation()
             and ConstSettings.MASettings.BID_OFFER_MATCH_TYPE
             == BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
             and ConstSettings.GeneralSettings.EXPORT_SUPPLY_DEMAND_PLOTS is True
@@ -353,7 +386,7 @@ class ExportAndPlot:
 
         if area.children:
             if (
-                ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.TWO_SIDED
+                is_two_sided_market_simulation()
                 and ConstSettings.MASettings.BID_OFFER_MATCH_TYPE
                 == BidOfferMatchAlgoEnum.PAY_AS_CLEAR.value
             ):

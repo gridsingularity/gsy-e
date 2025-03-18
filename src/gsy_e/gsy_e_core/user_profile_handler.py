@@ -16,18 +16,19 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from dataclasses import dataclass
 import logging
 import os
 import uuid
 from datetime import datetime
-from typing import Dict, TYPE_CHECKING, List, Optional
+from typing import Dict, TYPE_CHECKING, List
 
 import pytz
 from gsy_framework.constants_limits import GlobalConfig
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from gsy_framework.utils import generate_market_slot_list
 from pendulum import DateTime, instance, duration
-from pony.orm import Database, Required, db_session, select
+from pony.orm import Database, Required, db_session, select, Optional
 from pony.orm.core import Query
 
 import gsy_e.constants
@@ -61,6 +62,21 @@ PROFILE_UUID_NAMES = [
 ]
 
 
+@dataclass
+class SCMFeesRatesProfileDatapoint:
+    """Data point for profiles of energy rates and fees. Applicable only to SCM."""
+
+    # pylint: disable=too-many-instance-attributes
+    area_uuid: str
+    feed_in_tariff: float
+    utility_rate: float
+    power_fee: float
+    power_cargo_fee: float
+    energy_fee: float
+    energy_cargo_fee: float
+    contracted_power_kw: float
+
+
 class ProfileDBConnectionHandler:
     """
     Handles connection and interaction with the user-profiles postgres DB via pony ORM
@@ -88,11 +104,25 @@ class ProfileDBConnectionHandler:
         profile_uuid = Required(uuid.UUID)
         profile_type = Required(int)  # values of InputProfileTypes
 
+    class Profile_Database_SCMCommunityMemberProfiles(_db.Entity):
+        """Model for the SCM community member profile data"""
+
+        config_uuid = Required(uuid.UUID)
+        area_uuid = Required(uuid.UUID)
+        time = Required(datetime)
+        feed_in_tariff = Optional(float)
+        utility_rate = Optional(float)
+        power_fee = Optional(float)
+        power_cargo_fee = Optional(float)
+        energy_fee = Optional(float)
+        energy_cargo_fee = Optional(float)
+        contracted_power_kw = Optional(float)
+
     def __init__(self):
         self._user_profiles: Dict[uuid.UUID, Dict[DateTime, float]] = {}
         self._profile_types: Dict[uuid.UUID, InputProfileTypes] = {}
         self._buffered_times: List[DateTime] = []
-        self._profile_uuids: Optional[List[uuid.UUID]] = []
+        self._profile_uuids: List[uuid.UUID] | None = []
 
     @staticmethod
     def _convert_pendulum_to_datetime(time_stamp):
@@ -127,6 +157,29 @@ class ProfileDBConnectionHandler:
     def _buffer_duration(self) -> duration:
         # For canary networks, the DB should be checked for new data every market slot
         return GlobalConfig.slot_length if GlobalConfig.is_canary_network() else duration(days=7)
+
+    @db_session
+    def get_scm_data_profiles(self, timestamp: DateTime, config_uuid: str):
+        """Retrieve the SCM-related profiles."""
+        profile_datapoints = select(
+            datapoint
+            for datapoint in self.Profile_Database_SCMCommunityMemberProfiles
+            if datapoint.config_uuid == uuid.UUID(config_uuid)
+            and datapoint.time == self._convert_pendulum_to_datetime(timestamp)
+        )
+        return {
+            str(datapoint.area_uuid): SCMFeesRatesProfileDatapoint(
+                area_uuid=datapoint.area_uuid,
+                feed_in_tariff=datapoint.feed_in_tariff,
+                utility_rate=datapoint.utility_rate,
+                power_fee=datapoint.power_fee,
+                power_cargo_fee=datapoint.power_cargo_fee,
+                energy_fee=datapoint.energy_fee,
+                energy_cargo_fee=datapoint.energy_cargo_fee,
+                contracted_power_kw=datapoint.contracted_power_kw,
+            )
+            for datapoint in profile_datapoints
+        }
 
     @db_session
     def get_first_data_from_profile(self, profile_uuid, current_timestamp) -> dict:
@@ -364,6 +417,7 @@ class ProfilesHandler:
         self._current_timestamp = GlobalConfig.start_date
         self._start_date = GlobalConfig.start_date
         self._duration = GlobalConfig.sim_duration
+        self._scm_data_profiles = {}
 
     def activate(self):
         """Connect to DB, update current timestamp and get the first chunk of data from the DB"""
@@ -385,12 +439,29 @@ class ProfilesHandler:
     def _update_current_time(self, timestamp: DateTime):
         self._current_timestamp = timestamp
 
+    @property
+    def current_scm_profiles(self) -> Dict[str, SCMFeesRatesProfileDatapoint]:
+        """
+        Get SCM profiles for all areas for current timestamp. Return empty dict for simulations
+        and non-SCM Canary Networks.
+        """
+        return self._scm_data_profiles
+
     def update_time_and_buffer_profiles(self, timestamp: DateTime, area: "Area") -> None:
         """Update current timestamp and get the first chunk of data from the DB"""
         self._update_current_time(timestamp)
         if self.db:
             uuids_used_in_setup = self._get_profile_uuids_from_setup(area)
             self.db.buffer_profiles_from_db(timestamp, uuids_used_in_setup)
+            # To avoid circular import, this lazy import is required.
+            # Proper fix would include moving this method to gsy_e_core/util.py.
+            # pylint: disable=import-outside-toplevel
+            from gsy_e.models.strategy.utils import is_scm_simulation
+
+            if is_scm_simulation() and GlobalConfig.is_canary_network():
+                self._scm_data_profiles = self.db.get_scm_data_profiles(
+                    timestamp, gsy_e.constants.CONFIGURATION_ID
+                )
 
     def _read_new_datapoints_from_buffer_or_rotate_profile(
         self, profile, profile_uuid, profile_type
@@ -409,7 +480,11 @@ class ProfilesHandler:
         )
 
     def rotate_profile(
-        self, profile_type: InputProfileTypes, profile, profile_uuid: str = None
+        self,
+        profile_type: InputProfileTypes,
+        profile,
+        profile_uuid: str = None,
+        input_profile_path: str = None,
     ) -> Dict[DateTime, float]:
         """Reads a new chunk of profile if the buffer does not contain the current time stamp
         Profile chunks are either generated from single values, input daily profiles or profiles
@@ -420,11 +495,14 @@ class ProfilesHandler:
             profile (any of str, dict, float): Any arbitrary input
                                                (same input as for read_arbitrary_profile)
             profile_uuid (str): optional, if set the profiles is read from the DB
+            input_profile_path (str), optional, for profiles provided by files
 
         Returns: Profile chunk as dictionary
 
         """
         if profile_uuid is None and self.should_create_profile(profile):
+            if input_profile_path:
+                profile = input_profile_path
             return read_arbitrary_profile(
                 profile_type, profile, current_timestamp=self.current_timestamp
             )

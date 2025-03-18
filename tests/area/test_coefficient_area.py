@@ -18,17 +18,26 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import uuid
 from math import isclose
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
-import pytest
-from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.enums import SpotMarketTypeEnum, CoefficientAlgorithm, SCMPropertyType
+from gsy_framework.constants_limits import ConstSettings, TIME_ZONE
+from gsy_framework.enums import (
+    SpotMarketTypeEnum,
+    CoefficientAlgorithm,
+    SCMPropertyType,
+    SCMSelfConsumptionType,
+)
 from pendulum import duration, today
 from pendulum import now
+import pytest
 
-from gsy_e import constants
 from gsy_e.models.area import CoefficientArea, CoefficientAreaException
-from gsy_e.models.area.scm_manager import SCMManager, HomeAfterMeterData, AreaEnergyBills
+from gsy_e.models.area.scm_manager import (
+    SCMManager,
+    HomeAfterMeterData,
+    AreaEnergyBills,
+    SCMManagerWithoutSurplusTrade,
+)
 from gsy_e.models.config import SimulationConfig
 from gsy_e.models.strategy.scm.load import SCMLoadHoursStrategy
 from gsy_e.models.strategy.scm.pv import SCMPVUserProfile
@@ -46,7 +55,7 @@ class TestCoefficientArea:
         config.slot_length = duration(minutes=15)
         config.tick_length = duration(seconds=15)
         config.ticks_per_slot = int(config.slot_length.seconds / config.tick_length.seconds)
-        config.start_date = today(tz=constants.TIME_ZONE)
+        config.start_date = today(tz=TIME_ZONE)
         config.sim_duration = duration(days=1)
 
         return config
@@ -59,6 +68,9 @@ class TestCoefficientArea:
     @staticmethod
     def teardown_method():
         ConstSettings.SCMSettings.MARKET_ALGORITHM = 3
+        ConstSettings.SCMSettings.SELF_CONSUMPTION_TYPE = (
+            SCMSelfConsumptionType.COLLECTIVE_SELF_CONSUMPTION_SURPLUS_42.value
+        )
         ConstSettings.MASettings.MARKET_TYPE = SpotMarketTypeEnum.ONE_SIDED.value
 
     @staticmethod
@@ -296,10 +308,12 @@ class TestCoefficientArea:
             assert isclose(scm._bills[house2.uuid].gsy_energy_bill, -0.02)
         assert isclose(scm._bills[house2.uuid].export_grid_fees, 0.0)
 
-        assert isclose(
-            scm._bills[house2.uuid].savings, 0.0, abs_tol=constants.FLOATING_POINT_TOLERANCE
-        )
-        assert isclose(scm._bills[house2.uuid].savings_percent, 0.0)
+        if intracommunity_base_rate is None:
+            assert isclose(scm._bills[house2.uuid].savings, 0.0114)
+            assert isclose(scm._bills[house2.uuid].savings_percent, 0.0)
+        else:
+            assert isclose(scm._bills[house2.uuid].savings, 0.015)
+            assert isclose(scm._bills[house2.uuid].savings_percent, 0.0)
         assert len(scm._home_data[house1.uuid].trades) == 2
         trades = scm._home_data[house1.uuid].trades
         assert isclose(trades[0].trade_rate, 0.3)
@@ -326,12 +340,15 @@ class TestCoefficientArea:
 
     @staticmethod
     def test_calculate_energy_benchmark():
-        bills = AreaEnergyBills()
-        bills.set_min_max_community_savings(10, 90)
-        bills.base_energy_bill_excl_revenue = 1.0
-        bills.gsy_energy_bill = 0.4
-        assert isclose(bills.savings_percent, 60.0)
-        assert isclose(bills.energy_benchmark, (60 - 10) / (90 - 10))
+        with patch(
+            "gsy_e.models.area.scm_manager.AreaEnergyBills.savings_from_buy_from_community", 0.6
+        ):
+            bills = AreaEnergyBills()
+            bills.set_min_max_community_savings(10, 90)
+            bills.base_energy_bill_excl_revenue = 1.0
+            bills.gsy_energy_bill = 0.4
+            assert isclose(bills.savings_percent, 60.0)
+            assert isclose(bills.energy_benchmark, (60 - 10) / (90 - 10))
 
     @staticmethod
     @pytest.fixture()
@@ -436,3 +453,105 @@ class TestCoefficientArea:
 
         assert isclose(scm._bills[house1.uuid].export_grid_fees, 0)
         assert isclose(scm._bills[house2.uuid].export_grid_fees, 0.0004)
+
+    @staticmethod
+    def test_simplified_self_consumption_energy_results(_create_2_house_grid):
+        ConstSettings.SCMSettings.SELF_CONSUMPTION_TYPE = (
+            SCMSelfConsumptionType.SIMPLIFIED_COLLECTIVE_SELF_CONSUMPTION_41.value
+        )
+        grid_area = _create_2_house_grid
+        house1 = grid_area.children[0]
+        house2 = grid_area.children[1]
+        house1.area_properties.AREA_PROPERTIES["coefficient_percentage"] = 0.8
+        house2.area_properties.AREA_PROPERTIES["coefficient_percentage"] = 0.2
+        time_slot = now()
+        scm = SCMManagerWithoutSurplusTrade(grid_area, time_slot)
+        production = grid_area.aggregate_production_from_all_homes(time_slot)
+        assert production == 0.7
+        grid_area.calculate_home_after_meter_data_for_collective_self_consumption(
+            time_slot, scm, production
+        )
+
+        assert isclose(scm._home_data[house1.uuid].production_kWh, 0.7 * 0.8)
+        assert isclose(scm._home_data[house2.uuid].production_kWh, 0.7 * 0.2)
+
+        assert isclose(scm._home_data[house1.uuid].consumption_kWh, 0.7)
+        assert isclose(scm._home_data[house2.uuid].consumption_kWh, 0.1)
+
+        assert isclose(scm._home_data[house1.uuid].self_consumed_energy_kWh, 0.7 * 0.8)
+        assert isclose(scm._home_data[house2.uuid].self_consumed_energy_kWh, 0.1)
+
+        assert isclose(scm._home_data[house1.uuid].energy_surplus_kWh, 0.0)
+        assert isclose(scm._home_data[house2.uuid].energy_surplus_kWh, 0.7 * 0.2 - 0.1)
+
+        assert isclose(scm._home_data[house1.uuid].energy_need_kWh, 0.7 - 0.7 * 0.8)
+        assert isclose(scm._home_data[house2.uuid].energy_need_kWh, 0.0)
+
+        assert isclose(scm._home_data[house1.uuid].energy_bought_from_community_kWh, 0.0)
+        assert isclose(scm._home_data[house1.uuid].energy_sold_to_grid_kWh, 0.0)
+        assert isclose(scm._home_data[house1.uuid].self_production_for_community_kWh, 0.0)
+        assert isclose(scm._home_data[house1.uuid].self_production_for_grid_kWh, 0.0)
+
+        assert isclose(scm._home_data[house2.uuid].energy_bought_from_community_kWh, 0.0)
+        assert isclose(scm._home_data[house2.uuid].energy_sold_to_grid_kWh, 0.7 * 0.2 - 0.1)
+        assert isclose(scm._home_data[house2.uuid].self_production_for_community_kWh, 0.0)
+        assert isclose(scm._home_data[house2.uuid].self_production_for_grid_kWh, 0.7 * 0.2 - 0.1)
+
+    @staticmethod
+    def test_simplified_self_consumption_bills_results(_create_2_house_grid):
+        # pylint: disable=too-many-locals
+        ConstSettings.SCMSettings.SELF_CONSUMPTION_TYPE = (
+            SCMSelfConsumptionType.SIMPLIFIED_COLLECTIVE_SELF_CONSUMPTION_41.value
+        )
+        grid_area = _create_2_house_grid
+        house1 = grid_area.children[0]
+        house2 = grid_area.children[1]
+        house1.area_properties.AREA_PROPERTIES["coefficient_percentage"] = 0.8
+        house2.area_properties.AREA_PROPERTIES["coefficient_percentage"] = 0.2
+        time_slot = now()
+        scm = SCMManagerWithoutSurplusTrade(grid_area, time_slot)
+        production = grid_area.aggregate_production_from_all_homes(time_slot)
+        grid_area.calculate_home_after_meter_data_for_collective_self_consumption(
+            time_slot, scm, production
+        )
+        scm.calculate_community_after_meter_data()
+        grid_area.trigger_energy_trades(scm)
+        scm.accumulate_community_trades()
+
+        rate_per_kwh1 = scm._bills[house1.uuid].energy_rates.utility_rate
+        rate_fees_per_kwh1 = scm._bills[house1.uuid].energy_rates.utility_rate_incl_fees
+        monthly_fees1 = scm._bills[house1.uuid].energy_rates.area_fees.total_monthly_fees
+        expected_bill1 = 0.7 * rate_fees_per_kwh1 + monthly_fees1
+        assert isclose(scm._bills[house1.uuid].base_energy_bill, expected_bill1)
+        assert isclose(scm._bills[house1.uuid].base_energy_bill_excl_revenue, expected_bill1)
+        assert isclose(scm._bills[house1.uuid].base_energy_bill_revenue, 0.0)
+        expected_consumption_from_grid1 = 0.7 - 0.7 * 0.8
+        expected_gsy_bill1 = expected_consumption_from_grid1 * rate_fees_per_kwh1 + monthly_fees1
+        assert isclose(scm._bills[house1.uuid].gsy_energy_bill, expected_gsy_bill1)
+        assert isclose(scm._bills[house1.uuid].gsy_energy_bill_excl_revenue, expected_gsy_bill1)
+        assert isclose(scm._bills[house1.uuid].gsy_energy_bill_revenue, 0.0)
+        assert isclose(
+            scm._bills[house1.uuid].gsy_energy_bill_excl_revenue_without_fees,
+            expected_consumption_from_grid1 * rate_fees_per_kwh1,
+        )
+        assert isclose(
+            scm._bills[house1.uuid].gsy_energy_bill_excl_fees,
+            expected_consumption_from_grid1 * rate_per_kwh1,
+        )
+
+        feed_in_tariff2 = scm._bills[house2.uuid].energy_rates.feed_in_tariff
+        rate_fees_per_kwh2 = scm._bills[house2.uuid].energy_rates.utility_rate_incl_fees
+        monthly_fees2 = scm._bills[house2.uuid].energy_rates.area_fees.total_monthly_fees
+        expected_bill2 = 0.1 * rate_fees_per_kwh2 + monthly_fees2
+        assert isclose(scm._bills[house2.uuid].base_energy_bill, expected_bill2)
+        assert isclose(scm._bills[house2.uuid].base_energy_bill_excl_revenue, expected_bill2)
+        assert isclose(scm._bills[house2.uuid].base_energy_bill_revenue, 0.0)
+        expected_production_for_grid2 = 0.7 * 0.2 - 0.1
+        expected_gsy_bill2 = -expected_production_for_grid2 * feed_in_tariff2 + monthly_fees2
+        assert isclose(scm._bills[house2.uuid].gsy_energy_bill, expected_gsy_bill2)
+        assert isclose(scm._bills[house2.uuid].gsy_energy_bill_excl_revenue, monthly_fees2)
+        assert isclose(scm._bills[house2.uuid].gsy_energy_bill_revenue, abs(expected_gsy_bill2))
+        assert isclose(scm._bills[house2.uuid].gsy_energy_bill_excl_revenue_without_fees, 0.0)
+        assert isclose(
+            scm._bills[house2.uuid].gsy_energy_bill_excl_fees, expected_gsy_bill2 - monthly_fees2
+        )

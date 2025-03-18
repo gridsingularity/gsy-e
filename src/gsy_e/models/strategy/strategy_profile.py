@@ -39,8 +39,7 @@ class StrategyProfileBase(ABC):
 class EmptyProfile(StrategyProfileBase):
     """Empty profile class"""
 
-    def __init__(
-            self, profile_type: InputProfileTypes = None):
+    def __init__(self, profile_type: InputProfileTypes = None):
         super().__init__()
         self.profile = {}
         self.profile_type = profile_type
@@ -56,8 +55,12 @@ class StrategyProfile(StrategyProfileBase):
     """Manage reading/rotating energy profile of an asset."""
 
     def __init__(
-            self, input_profile=None, input_profile_uuid=None,
-            input_energy_rate=None, profile_type: InputProfileTypes = None):
+        self,
+        input_profile=None,
+        input_profile_uuid=None,
+        input_energy_rate=None,
+        profile_type: InputProfileTypes = None,
+    ):
         # pylint: disable=super-init-not-called
 
         self.input_profile = input_profile
@@ -79,23 +82,33 @@ class StrategyProfile(StrategyProfileBase):
         self.profile_type = profile_type
 
     def get_value(self, time_slot: DateTime) -> float:
+        if not self.profile:
+            return 0
         if time_slot in self.profile:
             return self.profile[time_slot]
         if GlobalConfig.is_canary_network() or is_scm_simulation():
             value = get_from_profile_same_weekday_and_time(self.profile, time_slot)
             if value is None:
-                log.error("Value for time_slot %s could not be found in profile %s in "
-                          "Canary Network, returning 0", time_slot, self.input_profile_uuid)
+                log.error(
+                    "Value for time_slot %s could not be found in profile %s in "
+                    "Canary Network, returning 0",
+                    time_slot,
+                    self.input_profile_uuid,
+                )
                 return 0
             return value
-        log.error("Value for time_slot %s could not be found in profile "
-                  "%s.", time_slot, self.input_profile_uuid)
+        log.error(
+            "Value for time_slot %s could not be found in profile %s.",
+            time_slot,
+            self.input_profile_uuid,
+        )
         return 0
 
     def _read_input_profile_type(self):
         if self.input_profile_uuid:
             self.profile_type = global_objects.profiles_handler.get_profile_type(
-                self.input_profile_uuid)
+                self.input_profile_uuid
+            )
         elif self.input_energy_rate is not None:
             self.profile_type = InputProfileTypes.IDENTITY
         else:
@@ -106,23 +119,31 @@ class StrategyProfile(StrategyProfileBase):
             self._read_input_profile_type()
 
         if not self.profile or reconfigure:
-            profile = (self.input_energy_rate
-                       if self.input_energy_rate is not None
-                       else self.input_profile)
+            profile = (
+                self.input_energy_rate
+                if self.input_energy_rate is not None
+                else self.input_profile
+            )
         else:
             profile = self.profile
 
         self.profile = global_objects.profiles_handler.rotate_profile(
             profile_type=self.profile_type,
             profile=profile,
-            profile_uuid=self.input_profile_uuid)
+            profile_uuid=self.input_profile_uuid,
+            input_profile_path=self.input_profile,
+        )
 
 
-def profile_factory(input_profile=None, input_profile_uuid=None,
-                    input_energy_rate=None,
-                    profile_type: InputProfileTypes = None) -> StrategyProfileBase:
+def profile_factory(
+    input_profile=None,
+    input_profile_uuid=None,
+    input_energy_rate=None,
+    profile_type: InputProfileTypes = None,
+) -> StrategyProfileBase:
     """Return correct profile handling class for input parameters."""
-    return (EmptyProfile(profile_type)
-            if input_profile is None and input_profile_uuid is None and input_energy_rate is None
-            else StrategyProfile(
-        input_profile, input_profile_uuid, input_energy_rate, profile_type))
+    return (
+        EmptyProfile(profile_type)
+        if input_profile is None and input_profile_uuid is None and input_energy_rate is None
+        else StrategyProfile(input_profile, input_profile_uuid, input_energy_rate, profile_type)
+    )

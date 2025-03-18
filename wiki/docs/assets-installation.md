@@ -133,24 +133,25 @@ Asset("Power Plant", strategy=FinitePowerPlant(energy_rate=31.3, max_available_p
 
 #### Heat Pump Code Configuration
 
-To configure a heat pump asset (HP) in the backend code, the following lines are to be added to the children's list of one of the areas in the setup file:
+To configure a heat pump asset in the backend code, the following lines are to be added to the children's list of one of the areas in the setup file:
 ```python
 Asset(name="Heat Pump", strategy=HeatPumpStrategy())
 ```
 
 The **HeatPumpStrategy** parameters can be set as follows:
 
-  * **maximum_power_rating_kW**: default=3; the maximum power that the HP will consume;
-  * **min_temp_C**: (default=50); minimum temperature of the HP storage. If the temperature drops below this point, the HP buys energy at any cost;
-  * **max_temp_C**: (default=60); maximum temperature of the HP storage. If the temperature rises above this point, the HP does not buy any energy;
-  * **initial_temp_C**: (default=50); initial temperature of the HP storage at the beginning of the simulation;
-  * **external_temp_C_profile**: (mandatory user input); external temperature that influences the efficiency of the HP. If this parameter is selected, the external temperature is constant for the whole simulation run;
+  * **maximum_power_rating_kW**: default=3; the maximum power that the heat pump will consume;
+  * **min_temp_C**: (default=50); minimum temperature of the heat pump storage. If the temperature drops below this point, the heat pump buys energy at any cost;
+  * **max_temp_C**: (default=60); maximum temperature of the heat pump storage. If the temperature rises above this point, the heat pump does not buy any energy;
+  * **initial_temp_C**: (default=50); initial temperature of the heat pump storage at the beginning of the simulation;
+  * **external_temp_C_profile**: (mandatory user input); external temperature that influences the efficiency of the heat pump. If this parameter is selected, the external temperature is constant for the whole simulation run;
   * **tank_volume_l**: (default=50); volume/capacity of the thermal storage tank;
   * **consumption_kWh**: (mandatory user input); constant amount of energy the heat pump consumes to produce heat, in kWh (can be provided as a constant energy kWh value or as an energy consumption time-series profile, as a dictionary that follows the supported format);
   * **preferred_buying_rate**: (default=15); rate in cts/kWh that determines the [trading strategy](heat-pump.md#heat-pump-asset-trading-strategy);
   * **source_type**:  set how the heat exchange is conducted, either via air or water/ground, as it determines the COP calculation;
   * **order_updater_parameters**: of type **HeatPumpOrderUpdaterParameters**. A template configuration can be seen [below](#heat-pump-price-strategy-configuration)
   * **heat_demand_Q_profile**: (optional user input); time-series profile of the heat demand that the heat pump has to produce, in Joules. Overrides consumption_kWh parameter.
+  * **cop_model_type**: (optional user input; default: COPModelType.UNIVERSAL); select the type of COP model
 
 The initial GSY heat pump strategy assumes that the heat pump is connected to a single water tank. In order to simulate a heat pump that is connected to multiple water tanks, a dedicated strategy, namely MultipleTankHeatPumpStrategy is also available:
 ```
@@ -200,8 +201,8 @@ Asset(name="Virtual Heat Pump", strategy=VirtualHeatPumpStrategy())
 The **VirtualHeatPumpStrategy** parameters can be set as follows:
 
   * **maximum_power_rating_kW**: default=3; the maximum power that the VHP will consume;
-  * **min_temp_C**: (default=50); minimum temperature of the VHP storage. If the temperature drops below this point, the HP buys energy at any cost;
-  * **max_temp_C**: (default=60); maximum temperature of the VHP storage. If the temperature rises above this point, the HP does not buy any energy;
+  * **min_temp_C**: (default=50); minimum temperature of the VHP storage. If the temperature drops below this point, the heat pump buys energy at any cost;
+  * **max_temp_C**: (default=60); maximum temperature of the VHP storage. If the temperature rises above this point, the heat pump does not buy any energy;
   * **initial_temp_C**: (default=50); initial temperature of the VHP storage;
   * **water_supply_temp_C_profile**: (mandatory user input); supply temperature of the water that flows from the district heating network (used to calculate the heat demand of the building);
   * **water_return_temp_C_profile**: (mandatory user input); return temperature of the water that flows from the district heating network (used to calculate the heat demand of the building);

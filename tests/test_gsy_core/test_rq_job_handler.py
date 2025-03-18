@@ -5,7 +5,7 @@ from unittest.mock import patch, Mock
 import pytest
 from pendulum import duration, now, datetime
 
-from gsy_framework.constants_limits import GlobalConfig, ConstSettings
+from gsy_framework.constants_limits import GlobalConfig, ConstSettings, TIME_ZONE
 from gsy_framework.enums import ConfigurationType, CoefficientAlgorithm
 
 import gsy_e.constants
@@ -82,6 +82,7 @@ class TestRqJobHandler:
                 "grid_fees_reduction": 0.45,
                 "intracommunity_rate_base_eur": 12,
                 "scm_cn_hours_of_delay": 4,
+                "self_consumption_type": 1,
             },
         }
         scenario = {"configuration_uuid": "config_uuid"}
@@ -94,6 +95,7 @@ class TestRqJobHandler:
         assert ConstSettings.SCMSettings.GRID_FEES_REDUCTION == 0.45
         assert ConstSettings.MASettings.MARKET_TYPE == 3
         assert ConstSettings.MASettings.BID_OFFER_MATCH_TYPE == 2
+        assert ConstSettings.SCMSettings.SELF_CONSUMPTION_TYPE == 1
 
     @staticmethod
     @patch("gsy_e.gsy_e_core.rq_job_handler.run_simulation")
@@ -117,13 +119,11 @@ class TestRqJobHandler:
         assert config.tick_length == duration(seconds=20)
         assert config.start_date == datetime(2023, 1, 1)
         expected_end_date = (
-            now(tz=gsy_e.constants.TIME_ZONE)
-            .subtract(hours=ConstSettings.SCMSettings.HOURS_OF_DELAY)
-            .add(hours=4)
+            now(tz=TIME_ZONE).subtract(hours=ConstSettings.SCMSettings.HOURS_OF_DELAY).add(hours=4)
         )
-        assert config.end_date.replace(
+        assert config.end_date.replace(second=0, microsecond=0) == expected_end_date.replace(
             second=0, microsecond=0
-        ) == expected_end_date.replace(second=0, microsecond=0)
+        )
         assert config.sim_duration == config.end_date - config.start_date
         assert ConstSettings.BalancingSettings.SPOT_TRADE_RATIO == 0.99
 

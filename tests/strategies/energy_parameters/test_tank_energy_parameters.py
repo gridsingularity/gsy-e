@@ -28,59 +28,59 @@ class TestAllTanksEnergyParameters:
         self._datetime = datetime(2023, 1, 1, 0, 0)
 
     def test_increase_tanks_temp_from_heat_energy(self):
-        self._tanks.increase_tanks_temp_from_heat_energy(1, self._datetime)
+        self._tanks.increase_tanks_temp_from_heat_energy(5000, self._datetime)
         energy_params = self._tanks._tanks_energy_parameters
         assert isclose(
-            energy_params[0]._state._temp_increase_K[self._datetime], 0.5747, rel_tol=0.0001
+            energy_params[0]._state._temp_increase_K[self._datetime], 0.7982, rel_tol=0.0001
         )
         assert isclose(
-            energy_params[1]._state._temp_increase_K[self._datetime], 0.3592, rel_tol=0.0001
+            energy_params[1]._state._temp_increase_K[self._datetime], 0.49888, rel_tol=0.0001
         )
         assert isclose(
-            energy_params[2]._state._temp_increase_K[self._datetime], 0.28735, rel_tol=0.0001
+            energy_params[2]._state._temp_increase_K[self._datetime], 0.399106, rel_tol=0.0001
         )
 
     def test_decrease_tanks_temp_from_heat_energy(self):
-        self._tanks.decrease_tanks_temp_from_heat_energy(1, self._datetime)
+        self._tanks.decrease_tanks_temp_from_heat_energy(5000, self._datetime)
         energy_params = self._tanks._tanks_energy_parameters
         assert isclose(
-            energy_params[0]._state._temp_decrease_K[self._datetime], 0.5747, rel_tol=0.0001
+            energy_params[0]._state._temp_decrease_K[self._datetime], 0.7982, rel_tol=0.0001
         )
         assert isclose(
-            energy_params[1]._state._temp_decrease_K[self._datetime], 0.3592, rel_tol=0.0001
+            energy_params[1]._state._temp_decrease_K[self._datetime], 0.49888, rel_tol=0.0001
         )
         assert isclose(
-            energy_params[2]._state._temp_decrease_K[self._datetime], 0.28735, rel_tol=0.0001
+            energy_params[2]._state._temp_decrease_K[self._datetime], 0.399106, rel_tol=0.0001
         )
 
     def test_update_tanks_temperature(self):
-        self._tanks.increase_tanks_temp_from_heat_energy(2, self._datetime)
-        self._tanks.decrease_tanks_temp_from_heat_energy(1, self._datetime)
+        self._tanks.increase_tanks_temp_from_heat_energy(2000, self._datetime)
+        self._tanks.decrease_tanks_temp_from_heat_energy(1000, self._datetime)
 
         self._tanks.update_tanks_temperature(self._datetime)
         energy_params = self._tanks._tanks_energy_parameters
         assert isclose(
-            energy_params[0]._state._temp_decrease_K[self._datetime], 0.5747, rel_tol=0.0001
+            energy_params[0]._state._temp_decrease_K[self._datetime], 0.159642, rel_tol=0.0001
         )
         assert isclose(
-            energy_params[1]._state._temp_decrease_K[self._datetime], 0.3592, rel_tol=0.0001
+            energy_params[1]._state._temp_decrease_K[self._datetime], 0.09977, rel_tol=0.0001
         )
         assert isclose(
-            energy_params[2]._state._temp_decrease_K[self._datetime], 0.28735, rel_tol=0.0001
+            energy_params[2]._state._temp_decrease_K[self._datetime], 0.079821, rel_tol=0.0001
         )
 
     @pytest.mark.parametrize("cop", (1, 4, 10, 0.5, 12))
     def test_get_max_energy_consumption(self, cop):
-        energy_decrease = 1
-        self._tanks.decrease_tanks_temp_from_heat_energy(energy_decrease, self._datetime)
+        energy_decrease_kJ = 1000
+        self._tanks.decrease_tanks_temp_from_heat_energy(energy_decrease_kJ, self._datetime)
         max_energy_consumption = self._tanks.get_max_energy_consumption(cop, self._datetime)
-        assert isclose(max_energy_consumption, (33.06 + energy_decrease) / cop, rel_tol=0.0001)
+        assert isclose(max_energy_consumption, 33.3377 / cop, rel_tol=0.0001)
 
     @pytest.mark.parametrize("cop", (1, 4, 10, 0.5, 12))
     def test_get_min_energy_consumption(self, cop):
-        self._tanks.decrease_tanks_temp_from_heat_energy(2, self._datetime)
+        self._tanks.decrease_tanks_temp_from_heat_energy(2000, self._datetime)
         min_energy_consumption = self._tanks.get_min_energy_consumption(cop, self._datetime)
-        assert isclose(min_energy_consumption, 2.0 / cop, rel_tol=0.0001)
+        assert isclose(min_energy_consumption, 0.1851851 / cop, rel_tol=0.0001)
 
     def test_get_average_tank_temperature(self):
         self._tanks._tanks_energy_parameters[0]._state._storage_temp_C[self._datetime] = 30
@@ -89,9 +89,9 @@ class TestAllTanksEnergyParameters:
         assert self._tanks.get_average_tank_temperature(self._datetime) == 35
 
     def test_get_unmatched_demand_kWh(self):
-        self._tanks.decrease_tanks_temp_from_heat_energy(10, self._datetime)
-        self._tanks.increase_tanks_temp_from_heat_energy(1, self._datetime)
-        assert self._tanks.get_unmatched_demand_kWh(self._datetime) == 9
+        self._tanks.decrease_tanks_temp_from_heat_energy(10000, self._datetime)
+        self._tanks.increase_tanks_temp_from_heat_energy(1000, self._datetime)
+        assert self._tanks.get_unmatched_demand_kWh(self._datetime) == 2.5
 
     def test_serialize(self):
         tanks_dict = self._tanks.serialize()

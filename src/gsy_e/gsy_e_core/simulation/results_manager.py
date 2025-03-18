@@ -19,13 +19,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from logging import getLogger
 from typing import TYPE_CHECKING, Optional
 
-from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings, DATE_TIME_FORMAT, TIME_ZONE
 from gsy_framework.enums import SpotMarketTypeEnum
 from gsy_framework.kafka_communication.kafka_producer import kafka_connection_factory
 from pendulum import DateTime, now
 
 import gsy_e.constants
-from gsy_e.constants import DATE_TIME_FORMAT, TIME_ZONE
 from gsy_e.gsy_e_core.export import CoefficientExportAndPlot, ExportAndPlot
 from gsy_e.gsy_e_core.sim_results.endpoint_buffer import (
     CoefficientEndpointBuffer,
@@ -51,6 +50,7 @@ class SimulationResultsManager:
         export_path: str,
         export_subdir: Optional[str],
         started_from_cli: bool,
+        carbon_ratio_file: str = None,
     ) -> None:
         self.export_results_on_finish = export_results_on_finish
         self.export_path = export_path
@@ -64,6 +64,7 @@ class SimulationResultsManager:
         self._endpoint_buffer = None
         self._export = None
         self._scm_manager = None
+        self.carbon_ratio_file = carbon_ratio_file
 
     def init_results(
         self, redis_job_id: str, area: "AreaBase", config_params: "SimulationSetup"
@@ -75,7 +76,11 @@ class SimulationResultsManager:
 
         if self.export_results_on_finish:
             self._export = ExportAndPlot(
-                area, self.export_path, self.export_subdir, self._endpoint_buffer
+                area,
+                self.export_path,
+                self.export_subdir,
+                self._endpoint_buffer,
+                self.carbon_ratio_file,
             )
 
     @property
