@@ -187,7 +187,7 @@ class SCMManager:
 
         # Next case is the consumption. In this case the energy allocated from the community
         # is sufficient to cover the energy needs of the home.
-        if home_data.allocated_community_energy_kWh > home_data.energy_need_kWh:
+        if home_data.allocated_community_energy_kWh >= home_data.energy_need_kWh:
             if home_data.energy_need_kWh > FLOATING_POINT_TOLERANCE:
                 home_bill.set_bought_from_community(home_data.energy_need_kWh)
                 home_data.create_buy_trade(
