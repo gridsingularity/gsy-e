@@ -24,7 +24,11 @@ from datetime import datetime
 from typing import Dict, TYPE_CHECKING, List
 
 import pytz
-from gsy_framework.constants_limits import GlobalConfig
+from gsy_framework.constants_limits import (
+    GlobalConfig,
+    ProfileUuidScenarioKeyNames,
+    MeasurementProfileUuidScenarioKeyNames,
+)
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from gsy_framework.utils import generate_market_slot_list
 from pendulum import DateTime, instance, duration
@@ -45,20 +49,20 @@ class ProfileDBConnectionException(Exception):
 
 
 PROFILE_UUID_NAMES = [
-    "daily_load_profile_uuid",
-    "power_profile_uuid",
-    "energy_rate_profile_uuid",
-    "smart_meter_profile_uuid",
-    "buying_rate_profile_uuid",
-    "consumption_kWh_profile_uuid",
-    "source_temp_C_profile_uuid",
-    "prosumption_kWh_profile_uuid",
-    "consumption_kWh_measurement_uuid",
-    "source_temp_C_measurement_uuid",
-    "prosumption_kWh_measurement_uuid",
-    "daily_load_measurement_uuid",
-    "power_measurement_uuid",
-    "smart_meter_measurement_uuid",
+    ProfileUuidScenarioKeyNames.LOAD_CONSUMPTION,
+    ProfileUuidScenarioKeyNames.PV_PRODUCTION,
+    ProfileUuidScenarioKeyNames.MARKET_MAKER_SELL_RATE,
+    ProfileUuidScenarioKeyNames.SMART_METER_PROSUMPTION,
+    ProfileUuidScenarioKeyNames.INFINITE_BUS_BUY_RATE,
+    ProfileUuidScenarioKeyNames.HEATPUMP_CONSUMPTION,
+    ProfileUuidScenarioKeyNames.HEATPUMP_SOURCE_TEMP,
+    ProfileUuidScenarioKeyNames.SCM_STORAGE_PROSUMPTION,
+    MeasurementProfileUuidScenarioKeyNames.HEATPUMP_CONSUMPTION,
+    MeasurementProfileUuidScenarioKeyNames.HEATPUMP_SOURCE_TEMP,
+    MeasurementProfileUuidScenarioKeyNames.SCM_STORAGE_PROSUMPTION,
+    MeasurementProfileUuidScenarioKeyNames.LOAD_CONSUMPTION,
+    MeasurementProfileUuidScenarioKeyNames.PV_PRODUCTION,
+    MeasurementProfileUuidScenarioKeyNames.SMART_METER_PROSUMPTION,
 ]
 
 
