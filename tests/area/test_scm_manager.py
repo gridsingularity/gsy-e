@@ -2,6 +2,7 @@
 import uuid
 from math import isclose
 from unittest.mock import MagicMock, patch
+from copy import deepcopy
 
 import pytest
 from gsy_framework.data_classes import Trade
@@ -22,8 +23,10 @@ from gsy_e.models.strategy.scm.pv import SCMPVUserProfile
 TIME_SLOT = datetime(2025, 3, 13, 8)
 HOUSE1_UUID = str(uuid.uuid4())
 HOUSE2_UUID = str(uuid.uuid4())
+HOUSE3_UUID = str(uuid.uuid4())
 HOUSE1_NAME = "home1"
 HOUSE2_NAME = "home2"
+HOUSE3_NAME = "home3"
 
 
 @pytest.fixture(name="scm_manager")
@@ -153,6 +156,58 @@ class TestSCMManager:
             assert home_data._self_production_for_community_kWh == (
                 0.8 if home_data.home_uuid == HOUSE1_UUID else 0
             )
+
+    @staticmethod
+    def test_calculate_community_after_meter_data_correctly_distributes_surplus_amongst_members(
+        scm_manager, area_properties_house1, area_properties_house2
+    ):
+
+        area_properties_house1.AREA_PROPERTIES["coefficient_percentage"] = 0.4
+        scm_manager.add_home_data(
+            home_uuid=HOUSE1_UUID,
+            home_name=HOUSE1_NAME,
+            area_properties=area_properties_house1,
+            production_kWh=1.4,
+            consumption_kWh=1,
+        )
+        area_properties_house2.AREA_PROPERTIES["coefficient_percentage"] = 0.2
+        scm_manager.add_home_data(
+            home_uuid=HOUSE2_UUID,
+            home_name=HOUSE2_NAME,
+            area_properties=area_properties_house2,
+            production_kWh=0,
+            consumption_kWh=0.5,
+        )
+
+        area_properties_house3 = deepcopy(area_properties_house2)
+        area_properties_house3.AREA_PROPERTIES["coefficient_percentage"] = 0.4
+        scm_manager.add_home_data(
+            home_uuid=HOUSE3_UUID,
+            home_name=HOUSE3_NAME,
+            area_properties=area_properties_house3,
+            production_kWh=1.4,
+            consumption_kWh=1,
+        )
+        # When
+        scm_manager.calculate_community_after_meter_data()
+        assert scm_manager.community_data.community_uuid == scm_manager._community_uuid
+        assert scm_manager.community_data.production_kWh == 2.8
+        assert scm_manager.community_data.consumption_kWh == 2.5
+        assert scm_manager.community_data.self_consumed_energy_kWh == 2.16
+        assert isclose(scm_manager.community_data.energy_surplus_kWh, 0.8, abs_tol=1e-3)
+        assert scm_manager.community_data.energy_need_kWh == 0.5
+        assert isclose(
+            scm_manager.community_data.energy_bought_from_community_kWh, 0.16, abs_tol=1e-3
+        )
+        assert isclose(scm_manager.community_data.energy_sold_to_grid_kWh, 0.64, abs_tol=1e-3)
+
+        for home_data in scm_manager._home_data.values():
+            if home_data.home_uuid == HOUSE1_UUID:
+                assert isclose(home_data.energy_sold_to_grid_kWh, 0.24, abs_tol=1e-3)
+            if home_data.home_uuid == HOUSE2_UUID:
+                assert isclose(home_data.energy_sold_to_grid_kWh, 0.0, abs_tol=1e-3)
+            if home_data.home_uuid == HOUSE3_UUID:
+                assert isclose(home_data.energy_sold_to_grid_kWh, 0.4, abs_tol=1e-3)
 
     @staticmethod
     @pytest.mark.parametrize("house2_consumption", [7, 0.8])
