@@ -280,6 +280,7 @@ class TestCoefficientArea:
     @staticmethod
     @pytest.mark.parametrize("intracommunity_base_rate", (None, 0.3))
     def test_trigger_energy_trades(_create_2_house_grid, intracommunity_base_rate):
+        original_intracommunity_rate = ConstSettings.SCMSettings.INTRACOMMUNITY_BASE_RATE_EUR
         ConstSettings.SCMSettings.INTRACOMMUNITY_BASE_RATE_EUR = intracommunity_base_rate
         grid_area = _create_2_house_grid
         house1 = grid_area.children[0]
@@ -337,6 +338,7 @@ class TestCoefficientArea:
         assert isclose(trades[1].traded_energy, 0.04)
         assert trades[1].seller.name == "House 2"
         assert trades[1].buyer.name == "Grid"
+        ConstSettings.SCMSettings.INTRACOMMUNITY_BASE_RATE_EUR = original_intracommunity_rate
 
     @staticmethod
     def test_calculate_energy_benchmark():
