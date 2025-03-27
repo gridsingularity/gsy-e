@@ -179,8 +179,9 @@ class TwoSidedMarket(OneSidedMarket):
         if dispatch_event is True:
             self.dispatch_market_bid_event(bid)
         log.debug(
-            "%s[BID][NEW][%s] %s",
+            "%s[BID][NEW][%s][%s] %s",
             self._debug_log_market_type_identifier,
+            self.name,
             self.time_slot_str or bid.time_slot,
             bid,
         )
@@ -200,8 +201,9 @@ class TwoSidedMarket(OneSidedMarket):
         if not bid:
             raise BidNotFoundException(bid_or_id)
         log.debug(
-            "%s[BID][DEL][%s] %s",
+            "%s[BID][DEL][%s][%s] %s",
             self._debug_log_market_type_identifier,
+            self.name,
             self.time_slot_str or bid.time_slot,
             bid,
         )
