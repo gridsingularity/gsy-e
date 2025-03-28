@@ -545,9 +545,7 @@ class CoefficientEndpointBuffer(SimulationEndpointBuffer):
                 if area.parent.spot_market is not None:
                     core_stats_dict["energy_rate"] = area.strategy.energy_rate.get(area.now, None)
         elif not area.strategy and self._scm_manager is not None:
-            core_stats_dict.update(
-                self._scm_manager.get_area_results(area.uuid, serializable=True)
-            )
+            core_stats_dict.update(self._scm_manager.get_area_results(area.uuid))
         else:
             core_stats_dict.update(area.get_results_dict())
 

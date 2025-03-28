@@ -500,8 +500,13 @@ class CoefficientDataExporter(BaseDataExporter):
 
         if not self._scm:
             return []
-        area_results = self._scm.get_area_results(self._area.uuid, serializable=False)
-        if not area_results["after_meter_data"]:
+        area_results = self._scm.get_area_results(self._area.uuid)
+        # TODO: We do not export trades any more with this. In general,
+        #  we do not need to export csv files for the coefficient case
+        if (
+            not area_results["after_meter_data"]
+            or "trades" not in area_results["after_meter_data"]
+        ):
             return []
         trade_rates = [t.trade_rate for t in area_results["after_meter_data"]["trades"]]
         trade_prices = [t.trade_price for t in area_results["after_meter_data"]["trades"]]
