@@ -43,7 +43,7 @@ import gsy_e.constants
 from gsy_e.gsy_e_core.area_serializer import area_to_string
 from gsy_e.gsy_e_core.enums import PAST_MARKET_TYPE_FILE_SUFFIX_MAPPING
 from gsy_e.gsy_e_core.matching_engine_singleton import bid_offer_matcher
-from gsy_e.gsy_e_core.sim_results.file_export_endpoints import file_export_endpoints_factory
+from gsy_e.gsy_e_core.sim_results.file_export_endpoints import FileExportEndpoints
 from gsy_e.gsy_e_core.sim_results.results_plots import (
     PlotAverageTradePrice,
     PlotDeviceStats,
@@ -105,7 +105,7 @@ class ExportAndPlot:
     ):
         self.area = root_area
         self.endpoint_buffer = endpoint_buffer
-        self.file_stats_endpoint = file_export_endpoints_factory()
+        self.file_stats_endpoint = FileExportEndpoints()
         self.raw_data_subdir = None
         self.carbon_ratio_file = carbon_ratio_file
         try:
