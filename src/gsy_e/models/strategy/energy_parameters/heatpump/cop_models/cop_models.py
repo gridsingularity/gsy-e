@@ -33,7 +33,9 @@ class BaseCOPModel:
     """Base clas for COP models"""
 
     @abstractmethod
-    def calc_cop(self, source_temp_C: float, tank_temp_C: float, heat_demand_kW: Optional[float]):
+    def calc_cop(
+        self, source_temp_C: float, condenser_temp_C: float, heat_demand_kW: Optional[float]
+    ):
         """Return COP value for provided inputs"""
 
 
@@ -49,23 +51,23 @@ class IndividualCOPModel(BaseCOPModel):
             self._model = json.load(fp)
         self.model_type = model_type
 
-    def _calc_power(self, source_temp_C: float, tank_temp_C: float, heat_demand_kW: float):
+    def _calc_power(self, source_temp_C: float, condenser_temp_C: float, heat_demand_kW: float):
         CAPFT = (
             self._model["CAPFT"][0]
-            + self._model["CAPFT"][1] * source_temp_C
-            + self._model["CAPFT"][3] * source_temp_C**2
-            + self._model["CAPFT"][2] * tank_temp_C
-            + self._model["CAPFT"][5] * tank_temp_C**2
-            + self._model["CAPFT"][4] * source_temp_C * tank_temp_C
+            + self._model["CAPFT"][1] * condenser_temp_C
+            + self._model["CAPFT"][3] * condenser_temp_C**2
+            + self._model["CAPFT"][2] * condenser_temp_C
+            + self._model["CAPFT"][5] * condenser_temp_C**2
+            + self._model["CAPFT"][4] * source_temp_C * condenser_temp_C
         )
 
         HEIRFT = (
             self._model["HEIRFT"][0]
             + self._model["HEIRFT"][1] * source_temp_C
             + self._model["HEIRFT"][3] * source_temp_C**2
-            + self._model["HEIRFT"][2] * tank_temp_C
-            + self._model["HEIRFT"][5] * tank_temp_C**2
-            + self._model["HEIRFT"][4] * source_temp_C * tank_temp_C
+            + self._model["HEIRFT"][2] * condenser_temp_C
+            + self._model["HEIRFT"][5] * condenser_temp_C**2
+            + self._model["HEIRFT"][4] * source_temp_C * condenser_temp_C
         )
 
         # Partial Load Ratio (PLR)
@@ -81,19 +83,19 @@ class IndividualCOPModel(BaseCOPModel):
         # Power consumption (P) calculation
         return self._model["Pref"] * CAPFT * HEIRFT * HEIRFPLR
 
-    def calc_cop(self, source_temp_C: float, tank_temp_C: float, heat_demand_kW: float):
+    def calc_cop(self, source_temp_C: float, condenser_temp_C: float, heat_demand_kW: float):
         assert heat_demand_kW is not None, "heat demand should be provided"
         if heat_demand_kW == 0:
             return 0
-        electrical_power_kW = self._calc_power(source_temp_C, tank_temp_C, heat_demand_kW)
+        electrical_power_kW = self._calc_power(source_temp_C, condenser_temp_C, heat_demand_kW)
         if electrical_power_kW <= 0:
             log.error(
                 "calculated power is negative: "
                 "hp model: %s  source_temp: %s, "
-                "tank_temp: %s, heat_demand_kW: %s, calculated power: %s",
+                "condenser_temp: %s, heat_demand_kW: %s, calculated power: %s",
                 self.model_type.name,
                 round(source_temp_C, 2),
-                round(tank_temp_C, 2),
+                round(condenser_temp_C, 2),
                 round(heat_demand_kW, 2),
                 round(electrical_power_kW, 2),
             )
@@ -103,11 +105,11 @@ class IndividualCOPModel(BaseCOPModel):
             log.error(
                 "calculated COP (%s) is unrealistic: "
                 "hp model: %s  source_temp: %s, "
-                "tank_temp: %s, heat_demand_kW: %s, calculated power: %s",
+                "condenser_temp: %s, heat_demand_kW: %s, calculated power: %s",
                 round(cop, 2),
                 self.model_type.name,
                 round(source_temp_C, 2),
-                round(tank_temp_C, 2),
+                round(condenser_temp_C, 2),
                 round(heat_demand_kW, 2),
                 round(electrical_power_kW, 2),
             )
@@ -121,10 +123,10 @@ class UniversalCOPModel(BaseCOPModel):
         self._source_type = source_type
 
     def calc_cop(
-        self, source_temp_C: float, tank_temp_C: float, heat_demand_kW: Optional[float]
+        self, source_temp_C: float, condenser_temp_C: float, heat_demand_kW: Optional[float]
     ) -> float:
         """COP model following https://www.nature.com/articles/s41597-019-0199-y"""
-        delta_temp = tank_temp_C - source_temp_C
+        delta_temp = condenser_temp_C - source_temp_C
         if self._source_type == HeatPumpSourceType.AIR.value:
             return 6.08 - 0.09 * delta_temp + 0.0005 * delta_temp**2
         if self._source_type == HeatPumpSourceType.GROUND.value:
