@@ -111,6 +111,14 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
         assert min_energy_consumption > -FLOATING_POINT_TOLERANCE
         return min(self._max_energy_consumption_kWh, min_energy_consumption)
 
+    def _calc_energy_demand(self, time_slot: DateTime):
+        self._state.heatpump.set_min_energy_demand_kWh(
+            time_slot, self._calc_energy_to_buy_minimum(time_slot)
+        )
+        self._state.heatpump.set_max_energy_demand_kWh(
+            time_slot, self._calc_energy_to_buy_maximum(time_slot)
+        )
+
     def _set_temp_decrease_for_all_tanks(self, time_slot: DateTime):
         dh_supply_temp = self._water_supply_temp_C.get_value(time_slot)
         dh_return_temp = self._water_return_temp_C.get_value(time_slot)

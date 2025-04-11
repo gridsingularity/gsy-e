@@ -140,16 +140,18 @@ class TestHeatPumpEnergyParameters:
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
         traded_energy = 0.1
         energy_params.event_traded_energy(CURRENT_MARKET_SLOT, traded_energy)
+        # energy_params._update_last_time_slot_data(CURRENT_MARKET_SLOT)
+        energy_params.event_market_cycle(CURRENT_MARKET_SLOT + duration(minutes=60))
         assert isclose(tank_state._temp_increase_K[CURRENT_MARKET_SLOT], 1.1280172413793106)
 
     @staticmethod
     @pytest.mark.parametrize(
         "current_temp, expected_demand",
         [
-            [10, 2],  # storage too cold, charging with _max_energy_consumption_kWh reached
-            [20, 1.739],  # storage too cold, charging
-            [30, 0.58],  # storage at min temp, only trade for heat demand
-            [32, 0.348],  # storage does not need to be charged, can drop to min
+            [10, 1.922],  # storage too cold, charging with _max_energy_consumption_kWh reached
+            [20, 1.329],  # storage too cold, charging
+            [30, 0.513],  # storage at min temp, only trade for heat demand
+            [32, 0.317],  # storage does not need to be charged, can drop to min
             [35, 0.0],  # temp decrease due to demand is equal to drop to min, do not trade
             [37, 0.0],  # temp decrease due to demand is higher than the drop to min, do not trade
         ],
@@ -184,6 +186,7 @@ class TestHeatPumpEnergyParameters:
     def test_event_market_cycle_calculates_and_sets_cop(energy_params):
         assert energy_params._state.heatpump._cop[CURRENT_MARKET_SLOT] == 0
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
+        energy_params.event_market_cycle(CURRENT_MARKET_SLOT + duration(minutes=60))
         assert energy_params._state.heatpump._cop[CURRENT_MARKET_SLOT] == 6.5425
 
     @staticmethod
@@ -206,10 +209,11 @@ class TestHeatPumpEnergyParameters:
 
     @staticmethod
     def test_cop_model_is_correctly_selected(energy_params_heat_profile):
-        energy_params_heat_profile._source_temp_C.read_or_rotate_profiles = Mock()
+        # energy_params_heat_profile._source_temp_C.read_or_rotate_profiles = Mock()
         energy_params_heat_profile.event_market_cycle(CURRENT_MARKET_SLOT)
+        energy_params_heat_profile.event_market_cycle(CURRENT_MARKET_SLOT + duration(minutes=60))
         assert isclose(
             energy_params_heat_profile._state.heatpump.get_cop(CURRENT_MARKET_SLOT),
-            4.8941,
+            10.992,
             abs_tol=0.001,
         )

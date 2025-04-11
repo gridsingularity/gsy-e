@@ -1,6 +1,5 @@
 from math import isclose
 
-import pytest
 from deepdiff import DeepDiff
 from pendulum import datetime
 
@@ -69,18 +68,16 @@ class TestAllTanksEnergyParameters:
             energy_params[2]._state._temp_decrease_K[self._datetime], 0.079821, rel_tol=0.0001
         )
 
-    @pytest.mark.parametrize("cop", (1, 4, 10, 0.5, 12))
-    def test_get_max_energy_consumption(self, cop):
+    def test_get_max_energy_consumption(self):
         energy_decrease_kJ = 1000
         self._tanks.decrease_tanks_temp_from_heat_energy(energy_decrease_kJ, self._datetime)
-        max_energy_consumption = self._tanks.get_max_energy_consumption(cop, self._datetime)
-        assert isclose(max_energy_consumption, 33.3377 / cop, rel_tol=0.0001)
+        max_energy_consumption = self._tanks.get_max_heat_energy_consumption_kWh(self._datetime)
+        assert isclose(max_energy_consumption, 33.3377, rel_tol=0.0001)
 
-    @pytest.mark.parametrize("cop", (1, 4, 10, 0.5, 12))
-    def test_get_min_energy_consumption(self, cop):
+    def test_get_min_energy_consumption(self):
         self._tanks.decrease_tanks_temp_from_heat_energy(2000, self._datetime)
-        min_energy_consumption = self._tanks.get_min_energy_consumption(cop, self._datetime)
-        assert isclose(min_energy_consumption, 0.1851851 / cop, rel_tol=0.0001)
+        min_energy_consumption = self._tanks.get_min_heat_energy_consumption_kWh(self._datetime)
+        assert isclose(min_energy_consumption, 0.1851851, rel_tol=0.0001)
 
     def test_get_average_tank_temperature(self):
         self._tanks._tanks_energy_parameters[0]._state._storage_temp_C[self._datetime] = 30

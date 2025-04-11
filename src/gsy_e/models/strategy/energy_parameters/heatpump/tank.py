@@ -69,18 +69,18 @@ class TankEnergyParameters:
         """Increase the tank temperature from temperature delta."""
         self._state.update_temp_increase_K(time_slot, temp_diff)
 
-    def get_max_energy_consumption(self, cop: float, time_slot: DateTime):
-        """Calculate max energy consumption that a heatpump with provided COP can consume."""
+    def get_max_heat_energy_consumption_kWh(self, time_slot: DateTime):
+        """Calculate max heat energy consumption that the tank can accomodate."""
         max_temp_diff = (
             self._parameters.max_temp_C
             - self._state.get_storage_temp_C(time_slot)
             + self._state.get_temp_decrease_K(time_slot)
         )
-        return max_temp_diff * self._Q_specific / cop
+        return max_temp_diff * self._Q_specific
 
-    def get_min_energy_consumption(self, cop: float, time_slot: DateTime):
+    def get_min_heat_energy_consumption_kWh(self, time_slot: DateTime):
         """
-        Calculate min energy consumption that a heatpump with provided COP has to consume in
+        Calculate min heat energy consumption that a heatpump has to consume in
         order to only let the storage drop its temperature to the minimum storage temperature.
         - if current_temp < min_storage_temp: charge till min_storage_temp is reached
         - if current_temp = min_storage_temp: only for the demanded energy
@@ -94,7 +94,7 @@ class TankEnergyParameters:
             if diff_to_min_temp_C <= temp_diff_due_to_consumption
             else 0
         )
-        return min_temp_diff * self._Q_specific / cop
+        return min_temp_diff * self._Q_specific
 
     def current_tank_temperature(self, time_slot: DateTime) -> float:
         """Get current tank temperature for timeslot."""
@@ -148,21 +148,19 @@ class AllTanksEnergyParameters:
             # pylint: disable=protected-access
             tank._state.update_storage_temp(time_slot)
 
-    def get_max_energy_consumption(self, cop: float, time_slot: DateTime):
-        """Get max energy consumption from all water tanks."""
+    def get_max_heat_energy_consumption_kWh(self, time_slot: DateTime):
+        """Get max heat energy consumption from all water tanks."""
         max_energy_consumption_kWh = sum(
-            tank.get_max_energy_consumption(cop, time_slot)
+            tank.get_max_heat_energy_consumption_kWh(time_slot)
             for tank in self._tanks_energy_parameters
         )
         assert max_energy_consumption_kWh > -FLOATING_POINT_TOLERANCE
         return max_energy_consumption_kWh
 
-    def get_min_energy_consumption(self, cop: float, time_slot: DateTime):
-        """Get min energy consumption from all water tanks."""
-        if cop == 0:
-            return 0
+    def get_min_heat_energy_consumption_kWh(self, time_slot: DateTime):
+        """Get min heat energy consumption from all water tanks."""
         min_energy_consumption_kWh = sum(
-            tank.get_min_energy_consumption(cop, time_slot)
+            tank.get_min_heat_energy_consumption_kWh(time_slot)
             for tank in self._tanks_energy_parameters
         )
         assert min_energy_consumption_kWh > -FLOATING_POINT_TOLERANCE
