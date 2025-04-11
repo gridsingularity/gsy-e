@@ -1,5 +1,6 @@
 from copy import deepcopy
 from typing import Dict
+from pendulum import duration
 
 from gsy_framework.enums import AvailableMarketTypes
 from gsy_framework.live_events.b2b import LiveEventArgsValidator, B2BLiveEvents
@@ -10,6 +11,7 @@ from gsy_e.models.strategy.forward.order_updater import ForwardOrderUpdater
 
 class ForwardValidator:
     """Contain decorators that validate the start / stop trading live event arguments."""
+
     # pylint: disable=protected-access
 
     @staticmethod
@@ -27,17 +29,21 @@ class ForwardValidator:
         def validate_event(*method_args):
             self, args = method_args
             if start_trading and not LiveEventArgsValidator(
-                    self._strategy.log.error).are_start_trading_event_args_valid(args):
+                self._strategy.log.error
+            ).are_start_trading_event_args_valid(args):
                 return
             if not start_trading and not LiveEventArgsValidator(
-                    self._strategy.log.error).are_stop_trading_event_args_valid(args):
+                self._strategy.log.error
+            ).are_stop_trading_event_args_valid(args):
                 return
             func(self, args)
+
         return validate_event
 
 
 class ForwardLiveEvents:
     """Handle live events for the forward strategies."""
+
     # pylint: disable=protected-access
 
     def __init__(self, strategy):
@@ -47,7 +53,8 @@ class ForwardLiveEvents:
         """Apply a live event to the strategy."""
         if not B2BLiveEvents.is_supported_event(event.get("type")):
             self._strategy.log.error(
-                "Invalid event (%s) for area %s.", event, self._strategy.area.name)
+                "Invalid event (%s) for area %s.", event, self._strategy.area.name
+            )
             return
 
         if event.get("type") == B2BLiveEvents.ENABLE_TRADING_EVENT_NAME:
@@ -85,18 +92,22 @@ class ForwardLiveEvents:
             market_parameters = market.get_market_parameters_for_market_slot(slot)
 
             order_updater_params = deepcopy(self._strategy._order_updater_params[market_type])
+            # temporary fix, until https://github.com/python-pendulum/pendulum/issues/870 is fixed
+            if market_type == AvailableMarketTypes.MONTH_FORWARD:
+                order_updater_params.update_interval = duration(weeks=1)
             order_updater_params.capacity_percent = capacity_percent
             order_updater_params.final_rate = energy_rate
 
             # Clamping the value between the initial / final rate for the specified market in
             # order to always fall in the accepted energy rate range.
-            order_updater_params.initial_rate = max(min(
-                order_updater_params.initial_rate,
-                energy_rate),
-                order_updater_params.final_rate)
+            order_updater_params.initial_rate = max(
+                min(order_updater_params.initial_rate, energy_rate),
+                order_updater_params.final_rate,
+            )
 
             self._strategy._order_updaters[market][slot] = ForwardOrderUpdater(
-                order_updater_params, market_parameters)
+                order_updater_params, market_parameters
+            )
             self._strategy.post_order(market, slot)
 
     @ForwardValidator.stop_trading
@@ -114,8 +125,9 @@ class ForwardLiveEvents:
         energy_rate = args["energy_rate"]
         for slot in market.market_time_slots:
             if start_time <= slot <= end_time:
-                self._strategy.post_order(market, slot, energy_rate,
-                                          capacity_percent=capacity_percent)
+                self._strategy.post_order(
+                    market, slot, energy_rate, capacity_percent=capacity_percent
+                )
 
     @ForwardValidator.stop_trading
     def _remove_order_event(self, args: Dict):

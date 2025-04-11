@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
 from abc import ABC
 from logging import getLogger
 from typing import Dict
@@ -44,8 +45,7 @@ class FutureMarketRotator(BaseRotator):
 
     def rotate(self, current_time_slot: DateTime) -> None:
         """Delete orders in expired future markets."""
-        self.markets.delete_orders_in_old_future_markets(
-            last_slot_to_be_deleted=current_time_slot)
+        self.markets.delete_orders_in_old_future_markets(last_slot_to_be_deleted=current_time_slot)
 
 
 class ForwardMarketRotatorBase(BaseRotator, ABC):
@@ -65,7 +65,8 @@ class ForwardMarketRotatorBase(BaseRotator, ABC):
             for delivery_time, market_slot_info in self.markets.open_market_slot_info.items():
                 if market_slot_info.closing_time <= current_time_slot:
                     self.markets.delete_orders_in_old_future_markets(
-                        last_slot_to_be_deleted=delivery_time)
+                        last_slot_to_be_deleted=delivery_time
+                    )
                     slots_deleted.append(delivery_time)
             for slot_deleted in slots_deleted:
                 self.markets.open_market_slot_info.pop(slot_deleted)
@@ -76,8 +77,7 @@ class IntradayMarketRotator(ForwardMarketRotatorBase):
 
     @staticmethod
     def _is_it_time_to_rotate(current_time: DateTime) -> bool:
-        return (current_time.minute % 15 == 0 and
-                current_time.second == 0)
+        return current_time.minute % 15 == 0 and current_time.second == 0
 
 
 class DayForwardMarketRotator(ForwardMarketRotatorBase):
@@ -93,10 +93,12 @@ class WeekForwardMarketRotator(ForwardMarketRotatorBase):
 
     @staticmethod
     def _is_it_time_to_rotate(current_time: DateTime) -> bool:
-        return (current_time.day_of_week == 1 and
-                current_time.hour == 0 and
-                current_time.minute == 0 and
-                current_time.second == 0)
+        return (
+            current_time.day_of_week == 0
+            and current_time.hour == 0
+            and current_time.minute == 0
+            and current_time.second == 0
+        )
 
 
 class MonthForwardMarketRotator(ForwardMarketRotatorBase):
@@ -104,10 +106,12 @@ class MonthForwardMarketRotator(ForwardMarketRotatorBase):
 
     @staticmethod
     def _is_it_time_to_rotate(current_time: DateTime) -> bool:
-        return (current_time.day == 1 and
-                current_time.hour == 0 and
-                current_time.minute == 0 and
-                current_time.second == 0)
+        return (
+            current_time.day == 1
+            and current_time.hour == 0
+            and current_time.minute == 0
+            and current_time.second == 0
+        )
 
 
 class YearForwardMarketRotator(ForwardMarketRotatorBase):
@@ -115,11 +119,13 @@ class YearForwardMarketRotator(ForwardMarketRotatorBase):
 
     @staticmethod
     def _is_it_time_to_rotate(current_time: DateTime) -> bool:
-        return (current_time.month == 1 and
-                current_time.day == 1 and
-                current_time.hour == 0 and
-                current_time.minute == 0 and
-                current_time.second == 0)
+        return (
+            current_time.month == 1
+            and current_time.day == 1
+            and current_time.hour == 0
+            and current_time.minute == 0
+            and current_time.second == 0
+        )
 
 
 class DefaultMarketRotator(BaseRotator):
@@ -135,8 +141,9 @@ class DefaultMarketRotator(BaseRotator):
         self._delete_past_markets(self.past_markets, current_time_slot)
 
     @staticmethod
-    def _is_it_time_to_delete_past_market(current_time_slot: DateTime,
-                                          time_slot: DateTime) -> bool:
+    def _is_it_time_to_delete_past_market(
+        current_time_slot: DateTime, time_slot: DateTime
+    ) -> bool:
         """Check if the past market for time_slot is ready to be deleted."""
 
         if constants.RETAIN_PAST_MARKET_STRATEGIES_STATE:
@@ -145,24 +152,28 @@ class DefaultMarketRotator(BaseRotator):
         if ConstSettings.SettlementMarketSettings.ENABLE_SETTLEMENT_MARKETS:
             # if the settlement markets are enabled, the same amount as the active
             # settlement markets has to be kept in the past_market buffer
-            return (time_slot < current_time_slot.subtract(
-                hours=ConstSettings.SettlementMarketSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS))
+            return time_slot < current_time_slot.subtract(
+                hours=ConstSettings.SettlementMarketSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS
+            )
 
         return time_slot < current_time_slot.subtract(
-            minutes=GlobalConfig.slot_length.total_minutes())
+            minutes=GlobalConfig.slot_length.total_minutes()
+        )
 
     @staticmethod
-    def _is_it_time_to_rotate_market(current_time_slot: DateTime,
-                                     time_slot: DateTime) -> bool:
+    def _is_it_time_to_rotate_market(current_time_slot: DateTime, time_slot: DateTime) -> bool:
         """Check if it is time to move market for time_slot into past markets."""
         return time_slot < current_time_slot
 
-    def _move_markets_to_past(self, markets: Dict, past_markets: Dict,
-                              current_time_slot: DateTime) -> None:
+    def _move_markets_to_past(
+        self, markets: Dict, past_markets: Dict, current_time_slot: DateTime
+    ) -> None:
         """Move markets to self.past_markets."""
         market_slots_to_be_cycled = [
-            time_slot for time_slot in markets.keys()
-            if self._is_it_time_to_rotate_market(current_time_slot, time_slot)]
+            time_slot
+            for time_slot in markets.keys()
+            if self._is_it_time_to_rotate_market(current_time_slot, time_slot)
+        ]
         for time_slot in market_slots_to_be_cycled:
             market = markets.pop(time_slot)
             market.readonly = True
@@ -172,8 +183,10 @@ class DefaultMarketRotator(BaseRotator):
     def _delete_past_markets(self, market_dict: Dict, current_time_slot: DateTime) -> None:
         """Delete the unneeded markets from self.past_markets."""
         market_slots_to_be_deleted = [
-            time_slot for time_slot in market_dict.keys()
-            if self._is_it_time_to_delete_past_market(current_time_slot, time_slot)]
+            time_slot
+            for time_slot in market_dict.keys()
+            if self._is_it_time_to_delete_past_market(current_time_slot, time_slot)
+        ]
         for time_slot in market_slots_to_be_deleted:
             self._delete_market_and_all_attributes(market_dict, time_slot)
 
@@ -199,18 +212,23 @@ class DefaultMarketRotator(BaseRotator):
 
 class SettlementMarketRotator(DefaultMarketRotator):
     """Deal with market rotation of settlement markets."""
+
     @staticmethod
-    def _is_it_time_to_delete_past_market(current_time_slot: DateTime,
-                                          time_slot: DateTime) -> bool:
+    def _is_it_time_to_delete_past_market(
+        current_time_slot: DateTime, time_slot: DateTime
+    ) -> bool:
         """Check if the past market for time_slot is ready to be deleted."""
         if constants.RETAIN_PAST_MARKET_STRATEGIES_STATE:
             return False
-        return (time_slot < current_time_slot.subtract(
+        return time_slot < current_time_slot.subtract(
             hours=ConstSettings.SettlementMarketSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS,
-            minutes=GlobalConfig.slot_length.total_minutes()))
+            minutes=GlobalConfig.slot_length.total_minutes(),
+        )
 
-    def _is_it_time_to_rotate_market(self, current_time_slot: DateTime,
-                                     time_slot: DateTime) -> bool:
-        """ Check if it is time to move market for time_slot into past markets. """
-        return (time_slot < current_time_slot.subtract(
-            hours=ConstSettings.SettlementMarketSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS))
+    def _is_it_time_to_rotate_market(
+        self, current_time_slot: DateTime, time_slot: DateTime
+    ) -> bool:
+        """Check if it is time to move market for time_slot into past markets."""
+        return time_slot < current_time_slot.subtract(
+            hours=ConstSettings.SettlementMarketSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS
+        )
