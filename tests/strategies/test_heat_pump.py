@@ -327,7 +327,7 @@ class TestHeatPumpStrategy:
     def test_get_energy_buy_energy_returns_correct_value(heatpump_fixture):
         strategy = heatpump_fixture[0]
         strategy.preferred_buying_rate = 15
-        tank_parameters = strategy._energy_params._state.tanks._tanks_energy_parameters[0]
+        tank_parameters = strategy._energy_params._state.tanks._tanks_states[0]
         tank_parameters._parameters.min_temp_C = 10
         tank_parameters._state.get_storage_temp_C = MagicMock(return_value=20)
         tank_parameters.get_temp_decrease = MagicMock(return_value=10)

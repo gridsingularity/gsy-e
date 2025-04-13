@@ -101,7 +101,7 @@ class TestHeatPumpEnergyParameters:
 
     @staticmethod
     def test_event_market_cycle_populates_state(energy_params):
-        tank_state = energy_params._state.tanks._tanks_energy_parameters[0]._state
+        tank_state = energy_params._state.tanks._tanks_states[0]
         heatpump_state = energy_params._state.heatpump
         assert CURRENT_MARKET_SLOT not in tank_state._temp_decrease_K
         assert CURRENT_MARKET_SLOT not in tank_state._storage_temp_C
@@ -136,7 +136,7 @@ class TestHeatPumpEnergyParameters:
 
     @staticmethod
     def test_event_market_cycle_updates_temp_increase_if_energy_was_traded(energy_params):
-        tank_state = energy_params._state.tanks._tanks_states[0]._state
+        tank_state = energy_params._state.tanks._tanks_states[0]
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
         traded_energy = 0.1
         energy_params.event_traded_energy(CURRENT_MARKET_SLOT, traded_energy)
