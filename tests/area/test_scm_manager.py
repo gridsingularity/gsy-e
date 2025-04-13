@@ -313,9 +313,8 @@ class TestSCMManager:
         assert {"seller": "Grid", "buyer": "home2", "energy": 6.2} in saved_trades_simplyfied
 
     @staticmethod
-    @pytest.mark.parametrize("serializable", [True, False])
     def test_get_area_results_returns_correct_results(
-        scm_manager, area_properties_house1, area_properties_house2, serializable
+        scm_manager, area_properties_house1, area_properties_house2
     ):
         # Given
         scm_manager.add_home_data(
@@ -339,22 +338,9 @@ class TestSCMManager:
         scm_manager.accumulate_community_trades()
 
         # When
-        return_value = scm_manager.get_area_results(HOUSE1_UUID, serializable=serializable)
+        return_value = scm_manager.get_area_results(HOUSE1_UUID)
 
         # Then
-        assert all(key in return_value for key in ["bills", "after_meter_data", "trades"])
-        # TODO: why do we export the trades twice?
-        if serializable:
-            assert all(
-                isinstance(trade, dict) for trade in return_value["after_meter_data"]["trades"]
-            )
-            assert all(isinstance(trade, dict) for trade in return_value["trades"])
-        else:
-            assert all(
-                isinstance(trade, Trade) for trade in return_value["after_meter_data"]["trades"]
-            )
-            assert all(isinstance(trade, dict) for trade in return_value["trades"])
-
         assert return_value["bills"] == {
             "base_energy_bill": -13.999899193548387,
             "base_energy_bill_excl_revenue": 0.00010080645161290323,
@@ -385,7 +371,6 @@ class TestSCMManager:
             "gsy_total_benefit": 18.4576,
         }
 
-        return_value["after_meter_data"].pop("trades")
         assert return_value["after_meter_data"] == {
             "home_uuid": HOUSE1_UUID,
             "home_name": HOUSE1_NAME,

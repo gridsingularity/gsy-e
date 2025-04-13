@@ -49,6 +49,7 @@ class HomeAfterMeterData:
     def to_dict(self) -> Dict:
         """Dict representation of the home after meter data."""
         output_dict = asdict(self)
+        del output_dict["trades"]
         output_dict.update(
             {
                 "allocated_community_energy_kWh": self.allocated_community_energy_kWh,
@@ -241,7 +242,9 @@ class CommunityData:
 
     def to_dict(self) -> Dict:
         """Dict representation of the community energy data."""
-        return asdict(self)
+        to_dict = asdict(self)
+        del to_dict["trades"]
+        return to_dict
 
     def serializable_dict(self) -> Dict:
         """Dict representation that can be serialized."""
