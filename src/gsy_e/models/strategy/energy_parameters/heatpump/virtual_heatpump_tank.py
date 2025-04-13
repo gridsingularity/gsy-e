@@ -9,10 +9,9 @@ from gsy_e.models.strategy.energy_parameters.heatpump.constants import (
     WATER_DENSITY,
 )
 from gsy_e.models.strategy.energy_parameters.heatpump.tank import (
-    TankEnergyParameters,
-    AllTanksEnergyParameters,
-    TankParameters,
+    AllTanksState,
 )
+from gsy_e.models.strategy.state.heat_pump_state import TankParameters, HeatPumpTankState
 from gsy_e.models.strategy.energy_parameters.heatpump.virtual_heatpump_solver import (
     TankSolverParameters,
     VirtualHeatpumpSolverParameters,
@@ -22,7 +21,7 @@ from gsy_e.models.strategy.energy_parameters.heatpump.virtual_heatpump_solver im
 logger = logging.getLogger(__name__)
 
 
-class VirtualHeatpumpTankEnergyParameters(TankEnergyParameters):
+class VirtualHeatpumpTankState(HeatPumpTankState):
     """
     Individual tank energy parameters, for operation with the virtual heatpump.
     Uses the sympy solver in order to model the water tank.
@@ -33,20 +32,18 @@ class VirtualHeatpumpTankEnergyParameters(TankEnergyParameters):
         Decrease the tank temperature. Return True if the operation incurs in unmatched demand.
         """
         temp_differential_per_sec = -heat_energy / (
-            WATER_DENSITY * WATER_SPECIFIC_HEAT_CAPACITY * self._parameters.tank_volume_L
+            WATER_DENSITY * WATER_SPECIFIC_HEAT_CAPACITY * self._tank_volume_L
         )
         temp_decrease_C = temp_differential_per_sec * GlobalConfig.slot_length.total_seconds()
         # Temp decrease is a negative value, therefore we need to add it to the current temp.
-        new_temperature_without_operation_C = (
-            self._state.get_storage_temp_C(time_slot) + temp_decrease_C
-        )
-        if new_temperature_without_operation_C < self._parameters.min_temp_C:
+        new_temperature_without_operation_C = self.get_storage_temp_C(time_slot) + temp_decrease_C
+        if new_temperature_without_operation_C < self._min_storage_temp_C:
             # Tank temp drops below minimum. Setting zero to tank temperature and reporting the
             # unmatched heat demand event in order to be calculated and tracked.
-            self._state.set_temp_decrease_K(time_slot, 0.0)
+            self.set_temp_decrease_K(time_slot, 0.0)
             return True
         assert temp_decrease_C <= 0.0
-        self._state.set_temp_decrease_K(time_slot, abs(temp_decrease_C))
+        self.set_temp_decrease_K(time_slot, abs(temp_decrease_C))
         return False
 
     def create_tank_parameters_for_maintaining_tank_temp(
@@ -56,21 +53,21 @@ class VirtualHeatpumpTankEnergyParameters(TankEnergyParameters):
         Return tank solver parameters, that can be used by the solver to maintain the current tank
         temp.
         """
-        current_storage_temp_C = self._state.get_storage_temp_C(time_slot)
+        current_storage_temp_C = self.get_storage_temp_C(time_slot)
         target_storage_temp_C = current_storage_temp_C
-        if not self._parameters.min_temp_C < target_storage_temp_C < self._parameters.max_temp_C:
+        if not self._min_storage_temp_C < target_storage_temp_C < self._max_storage_temp_C:
             logger.info(
                 "Storage temp %s cannot exceed min (%s) / max (%s) tank temperatures.",
                 target_storage_temp_C,
-                self._parameters.min_temp_C,
-                self._parameters.max_temp_C,
+                self._min_storage_temp_C,
+                self._max_storage_temp_C,
             )
             target_storage_temp_C = max(
-                min(target_storage_temp_C, self._parameters.max_temp_C),
-                self._parameters.min_temp_C,
+                min(target_storage_temp_C, self._max_storage_temp_C),
+                self._min_storage_temp_C,
             )
         return TankSolverParameters(
-            tank_volume_L=self._parameters.tank_volume_L,
+            tank_volume_L=self._tank_volume_L,
             current_storage_temp_C=current_storage_temp_C,
             target_storage_temp_C=target_storage_temp_C,
         )
@@ -82,10 +79,10 @@ class VirtualHeatpumpTankEnergyParameters(TankEnergyParameters):
         Return tank solver parameters, that can be used by the solver to increase the current tank
         temp to its maximum.
         """
-        current_storage_temp_C = self._state.get_storage_temp_C(time_slot)
-        target_storage_temp_C = self._parameters.max_temp_C
+        current_storage_temp_C = self.get_storage_temp_C(time_slot)
+        target_storage_temp_C = self._max_storage_temp_C
         return TankSolverParameters(
-            tank_volume_L=self._parameters.tank_volume_L,
+            tank_volume_L=self._tank_volume_L,
             current_storage_temp_C=current_storage_temp_C,
             target_storage_temp_C=target_storage_temp_C,
         )
@@ -95,21 +92,20 @@ class VirtualHeatpumpTankEnergyParameters(TankEnergyParameters):
         Create tank parameters without specifying tank temp, in order to be used as an output of
         the solver.
         """
-        current_storage_temp_C = self._state.get_storage_temp_C(time_slot)
+        current_storage_temp_C = self.get_storage_temp_C(time_slot)
         return TankSolverParameters(
-            tank_volume_L=self._parameters.tank_volume_L,
+            tank_volume_L=self._tank_volume_L,
             current_storage_temp_C=current_storage_temp_C,
         )
 
 
-class VirtualHeatpumpAllTanksEnergyParameters(AllTanksEnergyParameters):
+class VirtualHeatpumpAllTanksState(AllTanksState):
     """Manage the operation of all tanks for the virtual heatpump. Uses sympy solver."""
 
     # pylint: disable=super-init-not-called
     def __init__(self, tank_parameters: List[TankParameters]):
         self._tanks_energy_parameters = [
-            VirtualHeatpumpTankEnergyParameters(tank, GlobalConfig.slot_length)
-            for tank in tank_parameters
+            VirtualHeatpumpTankState(tank, GlobalConfig.slot_length) for tank in tank_parameters
         ]
 
     def set_temp_decrease_vhp(

@@ -4,11 +4,11 @@ from deepdiff import DeepDiff
 from pendulum import datetime
 
 from gsy_e.models.strategy.energy_parameters.heatpump.tank import (
-    AllTanksEnergyParameters,
+    AllTanksState,
     TankParameters,
 )
 from gsy_e.models.strategy.energy_parameters.heatpump.virtual_heatpump_tank import (
-    VirtualHeatpumpAllTanksEnergyParameters,
+    VirtualHeatpumpAllTanksState,
     VirtualHeatpumpSolverParameters,
 )
 
@@ -17,7 +17,7 @@ from gsy_e.models.strategy.energy_parameters.heatpump.virtual_heatpump_tank impo
 class TestAllTanksEnergyParameters:
 
     def setup_method(self):
-        self._tanks = AllTanksEnergyParameters(
+        self._tanks = AllTanksState(
             [
                 TankParameters(10, 50, 25, 500),
                 TankParameters(20, 40, 20, 800),
@@ -28,7 +28,7 @@ class TestAllTanksEnergyParameters:
 
     def test_increase_tanks_temp_from_heat_energy(self):
         self._tanks.increase_tanks_temp_from_heat_energy(5000, self._datetime)
-        energy_params = self._tanks._tanks_energy_parameters
+        energy_params = self._tanks._tanks_states
         assert isclose(
             energy_params[0]._state._temp_increase_K[self._datetime], 0.7982, rel_tol=0.0001
         )
@@ -41,7 +41,7 @@ class TestAllTanksEnergyParameters:
 
     def test_decrease_tanks_temp_from_heat_energy(self):
         self._tanks.decrease_tanks_temp_from_heat_energy(5000, self._datetime)
-        energy_params = self._tanks._tanks_energy_parameters
+        energy_params = self._tanks._tanks_states
         assert isclose(
             energy_params[0]._state._temp_decrease_K[self._datetime], 0.7982, rel_tol=0.0001
         )
@@ -57,7 +57,7 @@ class TestAllTanksEnergyParameters:
         self._tanks.decrease_tanks_temp_from_heat_energy(1000, self._datetime)
 
         self._tanks.update_tanks_temperature(self._datetime)
-        energy_params = self._tanks._tanks_energy_parameters
+        energy_params = self._tanks._tanks_states
         assert isclose(
             energy_params[0]._state._temp_decrease_K[self._datetime], 0.159642, rel_tol=0.0001
         )
@@ -80,9 +80,9 @@ class TestAllTanksEnergyParameters:
         assert isclose(min_energy_consumption, 666.66, rel_tol=0.0001)
 
     def test_get_average_tank_temperature(self):
-        self._tanks._tanks_energy_parameters[0]._state._storage_temp_C[self._datetime] = 30
-        self._tanks._tanks_energy_parameters[1]._state._storage_temp_C[self._datetime] = 35
-        self._tanks._tanks_energy_parameters[2]._state._storage_temp_C[self._datetime] = 40
+        self._tanks._tanks_states[0]._state._storage_temp_C[self._datetime] = 30
+        self._tanks._tanks_states[1]._state._storage_temp_C[self._datetime] = 35
+        self._tanks._tanks_states[2]._state._storage_temp_C[self._datetime] = 40
         assert self._tanks.get_average_tank_temperature(self._datetime) == 35
 
     def test_get_unmatched_demand_kWh(self):
@@ -113,7 +113,7 @@ class TestAllTanksEnergyParameters:
 class TestVirtualHeatpumpAllTanksEnergyParameters:
 
     def setup_method(self):
-        self._tanks = VirtualHeatpumpAllTanksEnergyParameters(
+        self._tanks = VirtualHeatpumpAllTanksState(
             [
                 TankParameters(10, 50, 25, 500),
                 TankParameters(20, 40, 20, 800),
@@ -126,30 +126,18 @@ class TestVirtualHeatpumpAllTanksEnergyParameters:
         self._tanks.set_temp_decrease_vhp(1000, self._datetime)
 
         energy_params = self._tanks._tanks_energy_parameters
-        assert isclose(
-            energy_params[0]._state._temp_decrease_K[self._datetime], 0.14347, rel_tol=0.0001
-        )
-        assert isclose(
-            energy_params[1]._state._temp_decrease_K[self._datetime], 0.0, rel_tol=0.0001
-        )
-        assert isclose(
-            energy_params[2]._state._temp_decrease_K[self._datetime], 0.07174, rel_tol=0.0001
-        )
+        assert isclose(energy_params[0]._temp_decrease_K[self._datetime], 0.14347, rel_tol=0.0001)
+        assert isclose(energy_params[1]._temp_decrease_K[self._datetime], 0.0, rel_tol=0.0001)
+        assert isclose(energy_params[2]._temp_decrease_K[self._datetime], 0.07174, rel_tol=0.0001)
 
     def test_set_temp_decrease_vhp_all_tanks(self):
-        self._tanks._tanks_energy_parameters[1]._state._storage_temp_C[self._datetime] = 30.0
+        self._tanks._tanks_energy_parameters[1]._storage_temp_C[self._datetime] = 30.0
         solver_params = self._tanks.set_temp_decrease_vhp(1000, self._datetime)
         assert not solver_params
         energy_params = self._tanks._tanks_energy_parameters
-        assert isclose(
-            energy_params[0]._state._temp_decrease_K[self._datetime], 0.14347, rel_tol=0.0001
-        )
-        assert isclose(
-            energy_params[1]._state._temp_decrease_K[self._datetime], 0.08967, rel_tol=0.0001
-        )
-        assert isclose(
-            energy_params[2]._state._temp_decrease_K[self._datetime], 0.07174, rel_tol=0.0001
-        )
+        assert isclose(energy_params[0]._temp_decrease_K[self._datetime], 0.14347, rel_tol=0.0001)
+        assert isclose(energy_params[1]._temp_decrease_K[self._datetime], 0.08967, rel_tol=0.0001)
+        assert isclose(energy_params[2]._temp_decrease_K[self._datetime], 0.07174, rel_tol=0.0001)
 
     def test_create_tank_solver_for_maintaining_tank_temperature(self):
         solver_params = self._tanks.create_tank_solver_for_maintaining_tank_temperature(
@@ -191,6 +179,4 @@ class TestVirtualHeatpumpAllTanksEnergyParameters:
         self._tanks.increase_tanks_temperature_with_energy_vhp(solver_params, self._datetime)
         # Temp increase is shared equally across tanks
         for energy_param in self._tanks._tanks_energy_parameters:
-            assert isclose(
-                energy_param._state.get_temp_increase_K(self._datetime), 3.306, rel_tol=0.0001
-            )
+            assert isclose(energy_param.get_temp_increase_K(self._datetime), 3.306, rel_tol=0.0001)

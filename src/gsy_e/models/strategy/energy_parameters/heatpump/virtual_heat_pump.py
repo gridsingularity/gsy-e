@@ -17,7 +17,7 @@ from gsy_e.models.strategy.energy_parameters.heatpump.virtual_heatpump_solver im
     VirtualHeatpumpStorageEnergySolver,
 )
 from gsy_e.models.strategy.energy_parameters.heatpump.virtual_heatpump_tank import (
-    VirtualHeatpumpAllTanksEnergyParameters,
+    VirtualHeatpumpAllTanksState,
 )
 from gsy_e.models.strategy.strategy_profile import StrategyProfile
 
@@ -48,7 +48,7 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
         if not tank_parameters:
             tank_parameters = [TankParameters()]
 
-        self._tanks = VirtualHeatpumpAllTanksEnergyParameters(tank_parameters)
+        self._tanks = VirtualHeatpumpAllTanksState(tank_parameters)
 
         self._water_supply_temp_C: [DateTime, float] = StrategyProfile(
             water_supply_temp_C_profile,

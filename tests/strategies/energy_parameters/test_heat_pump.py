@@ -135,12 +135,11 @@ class TestHeatPumpEnergyParameters:
         )
 
     @staticmethod
-    def test_event_traded_energy_updates_temp_increase(energy_params):
-        tank_state = energy_params._state.tanks._tanks_energy_parameters[0]._state
+    def test_event_market_cycle_updates_temp_increase_if_energy_was_traded(energy_params):
+        tank_state = energy_params._state.tanks._tanks_states[0]._state
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
         traded_energy = 0.1
         energy_params.event_traded_energy(CURRENT_MARKET_SLOT, traded_energy)
-        # energy_params._update_last_time_slot_data(CURRENT_MARKET_SLOT)
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT + duration(minutes=60))
         assert isclose(tank_state._temp_increase_K[CURRENT_MARKET_SLOT], 1.1280172413793106)
 
@@ -162,7 +161,7 @@ class TestHeatPumpEnergyParameters:
         energy_params._max_energy_consumption_kWh = 2
         temp_decrease_consumption = 5
         energy_params._state.heatpump.get_cop = Mock(return_value=5)
-        for tank_states in energy_params._state.tanks._tanks_energy_parameters:
+        for tank_states in energy_params._state.tanks._tanks_states:
             tank_states._state._min_storage_temp_C = 30
             tank_states._state.get_storage_temp_C = Mock(return_value=current_temp)
             tank_states._state.get_temp_decrease_K = Mock(return_value=temp_decrease_consumption)
@@ -172,7 +171,6 @@ class TestHeatPumpEnergyParameters:
             expected_demand,
             abs_tol=1e-3,
         )
-        # assert False
 
     @staticmethod
     def test_get_max_energy_demand_kWh_returns_correct_value(energy_params):
@@ -209,7 +207,6 @@ class TestHeatPumpEnergyParameters:
 
     @staticmethod
     def test_cop_model_is_correctly_selected(energy_params_heat_profile):
-        # energy_params_heat_profile._source_temp_C.read_or_rotate_profiles = Mock()
         energy_params_heat_profile.event_market_cycle(CURRENT_MARKET_SLOT)
         energy_params_heat_profile.event_market_cycle(CURRENT_MARKET_SLOT + duration(minutes=60))
         assert isclose(

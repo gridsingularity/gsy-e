@@ -20,7 +20,7 @@ from gsy_e.models.strategy.energy_parameters.heatpump.cop_models import (
 )
 from gsy_e.models.strategy.energy_parameters.heatpump.tank import (
     TankParameters,
-    AllTanksEnergyParameters,
+    AllTanksState,
 )
 from gsy_e.models.strategy.state import HeatPumpState
 from gsy_e.models.strategy.strategy_profile import profile_factory
@@ -78,7 +78,7 @@ class CombinedHeatpumpTanksState:
     def __init__(
         self,
         hp_state: HeatPumpState,
-        tanks_state: AllTanksEnergyParameters,
+        tanks_state: AllTanksState,
         cop_model: BaseCOPModel,
         slot_length: pendulum.Duration,
         max_energy_consumption_kWh: float,
@@ -124,7 +124,7 @@ class CombinedHeatpumpTanksState:
         return self._hp_state
 
     @property
-    def tanks(self) -> AllTanksEnergyParameters:
+    def tanks(self) -> AllTanksState:
         """Exposes the tanks state."""
         return self._tanks_state
 
@@ -231,9 +231,6 @@ class CombinedHeatpumpTanksState:
             return 0
         return convert_kJ_to_kWh(Q_energy_kJ / cop)
 
-    def _last_time_slot(self, current_market_slot: DateTime) -> DateTime:
-        return current_market_slot - GlobalConfig.slot_length
-
 
 class HeatPumpEnergyParametersBase(ABC):
     """
@@ -257,7 +254,7 @@ class HeatPumpEnergyParametersBase(ABC):
             maximum_power_rating_kW * self._slot_length.total_hours()
         )
         state = HeatPumpState(self._slot_length)
-        tanks = AllTanksEnergyParameters(tank_parameters)
+        tanks = AllTanksState(tank_parameters)
         self._state = CombinedHeatpumpTanksState(
             state, tanks, cop_model, self._slot_length, self._max_energy_consumption_kWh
         )
