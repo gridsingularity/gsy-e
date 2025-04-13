@@ -6,7 +6,7 @@ from typing import Dict, Union, List
 from pendulum import DateTime
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig, FLOATING_POINT_TOLERANCE
-from gsy_framework.utils import convert_kJ_to_kWh
+from gsy_framework.utils import convert_kJ_to_kWh, convert_kWh_to_kJ
 
 from gsy_e.models.strategy.energy_parameters.heatpump.constants import (
     WATER_DENSITY,
@@ -76,6 +76,7 @@ class TankEnergyParameters:
             - self._state.get_storage_temp_C(time_slot)
             + self._state.get_temp_decrease_K(time_slot)
         )
+
         return max_temp_diff * self._Q_specific
 
     def get_min_heat_energy_consumption_kWh(self, time_slot: DateTime):
@@ -148,23 +149,23 @@ class AllTanksEnergyParameters:
             # pylint: disable=protected-access
             tank._state.update_storage_temp(time_slot)
 
-    def get_max_heat_energy_consumption_kWh(self, time_slot: DateTime):
+    def get_max_heat_energy_consumption_kJ(self, time_slot: DateTime):
         """Get max heat energy consumption from all water tanks."""
         max_energy_consumption_kWh = sum(
             tank.get_max_heat_energy_consumption_kWh(time_slot)
             for tank in self._tanks_energy_parameters
         )
         assert max_energy_consumption_kWh > -FLOATING_POINT_TOLERANCE
-        return max_energy_consumption_kWh
+        return convert_kWh_to_kJ(max_energy_consumption_kWh)
 
-    def get_min_heat_energy_consumption_kWh(self, time_slot: DateTime):
+    def get_min_heat_energy_consumption_kJ(self, time_slot: DateTime):
         """Get min heat energy consumption from all water tanks."""
         min_energy_consumption_kWh = sum(
             tank.get_min_heat_energy_consumption_kWh(time_slot)
             for tank in self._tanks_energy_parameters
         )
         assert min_energy_consumption_kWh > -FLOATING_POINT_TOLERANCE
-        return min_energy_consumption_kWh
+        return convert_kWh_to_kJ(min_energy_consumption_kWh)
 
     def get_average_tank_temperature(self, time_slot: DateTime):
         """Get average tank temperature of all water tanks."""

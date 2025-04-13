@@ -30,6 +30,7 @@ log = getLogger(__name__)
 
 
 def delete_time_slots_in_state(profile: Dict, current_time_stamp: DateTime):
+    """Remove time slots older than the current_time_stamp from the profile."""
     stamps_to_delete = []
     for time_slot in profile:
         if time_slot < current_time_stamp:
@@ -100,7 +101,6 @@ class HeatPumpTankState(StateInterface):
             "storage_temp_C": convert_pendulum_to_str_in_dict(self._storage_temp_C),
             "temp_decrease_K": convert_pendulum_to_str_in_dict(self._temp_decrease_K),
             "temp_increase_K": convert_pendulum_to_str_in_dict(self._temp_increase_K),
-            "slot_length": self._slot_length.total_seconds(),
             "min_storage_temp_C": self._min_storage_temp_C,
         }
 
@@ -108,7 +108,6 @@ class HeatPumpTankState(StateInterface):
         self._storage_temp_C = convert_str_to_pendulum_in_dict(state_dict["storage_temp_C"])
         self._temp_decrease_K = convert_str_to_pendulum_in_dict(state_dict["temp_decrease_K"])
         self._temp_increase_K = convert_str_to_pendulum_in_dict(state_dict["temp_increase_K"])
-        self._slot_length = duration(seconds=state_dict["slot_length"])
         self._min_storage_temp_C = state_dict["min_storage_temp_C"]
 
     def delete_past_state_values(self, current_time_slot: DateTime):
@@ -236,7 +235,6 @@ class HeatPumpState(StateInterface):
             "condenser_temp_C": convert_pendulum_to_str_in_dict(self._condenser_temp_C),
             "heat_demand_J": convert_pendulum_to_str_in_dict(self._heat_demand_J),
             "total_traded_energy_kWh": self._total_traded_energy_kWh,
-            "slot_length": self._slot_length.total_seconds(),
         }
 
     def restore_state(self, state_dict: Dict):
