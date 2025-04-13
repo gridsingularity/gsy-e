@@ -161,10 +161,10 @@ class TestHeatPumpEnergyParameters:
         energy_params._max_energy_consumption_kWh = 2
         temp_decrease_consumption = 5
         energy_params._state.heatpump.get_cop = Mock(return_value=5)
-        for tank_states in energy_params._state.tanks._tanks_states:
-            tank_states._state._min_storage_temp_C = 30
-            tank_states._state.get_storage_temp_C = Mock(return_value=current_temp)
-            tank_states._state.get_temp_decrease_K = Mock(return_value=temp_decrease_consumption)
+        for tank_state in energy_params._state.tanks._tanks_states:
+            tank_state._min_storage_temp_C = 30
+            tank_state.get_storage_temp_C = Mock(return_value=current_temp)
+            tank_state.get_temp_decrease_K = Mock(return_value=temp_decrease_consumption)
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
         assert isclose(
             energy_params.get_min_energy_demand_kWh(CURRENT_MARKET_SLOT),
