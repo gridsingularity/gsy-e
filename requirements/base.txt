@@ -4,7 +4,7 @@
 #
 #    pip-compile --max-rounds=100 --no-emit-index-url requirements/base.in
 #
--e git+https://github.com/gridsingularity/gsy-framework@master#egg=gsy_framework
+-e git+https://github.com/gridsingularity/gsy-framework@${GSY_FRAMEWORK_BRANCH}#egg=gsy_framework
     # via -r requirements/base.in
 attrs==23.2.0
     # via
@@ -16,10 +16,6 @@ avro==1.11.3
     # via gsy-framework
 awesome-slugify==1.6.5
     # via -r requirements/base.in
-beautifulsoup4==4.12.3
-    # via
-    #   entsoe-py
-    #   gsy-framework
 cached-property==1.5.2
     # via -r requirements/base.in
 cachetools==5.3.3
@@ -65,8 +61,6 @@ distlib==0.3.8
     # via
     #   gsy-framework
     #   virtualenv
-entsoe-py==0.6.2
-    # via gsy-framework
 et-xmlfile==1.1.0
     # via
     #   gsy-framework
@@ -109,10 +103,7 @@ nodeenv==1.8.0
     #   gsy-framework
     #   pre-commit
 numpy==1.24.4
-    # via
-    #   -r requirements/base.in
-    #   gsy-framework
-    #   pandas
+    # via -r requirements/base.in
 openpyxl==3.0.10
     # via gsy-framework
 packaging==24.0
@@ -121,11 +112,7 @@ packaging==24.0
     #   plotly
     #   pyproject-api
     #   tox
-pandas==1.4.2
-    # via
-    #   entsoe-py
-    #   gsy-framework
-pendulum==2.1.2
+pendulum==3.0.0
     # via
     #   -r requirements/base.in
     #   gsy-framework
@@ -155,20 +142,12 @@ pyproject-api==1.6.1
 python-dateutil==2.9.0.post0
     # via
     #   gsy-framework
-    #   pandas
     #   pendulum
+    #   time-machine
 python-rex==0.4
     # via -r requirements/base.in
 pytz==2024.2
-    # via
-    #   -r requirements/base.in
-    #   entsoe-py
-    #   gsy-framework
-    #   pandas
-pytzdata==2020.1
-    # via
-    #   gsy-framework
-    #   pendulum
+    # via -r requirements/base.in
 pyyaml==6.0.1
     # via
     #   gsy-framework
@@ -191,7 +170,6 @@ regex==2024.5.15
     # via awesome-slugify
 requests==2.31.0
     # via
-    #   entsoe-py
     #   geocoder
     #   gsy-framework
 rpds-py==0.18.1
@@ -209,18 +187,22 @@ six==1.16.0
     #   python-rex
 sortedcontainers==2.4.0
     # via -r requirements/base.in
-soupsieve==2.6
-    # via
-    #   beautifulsoup4
-    #   gsy-framework
 sympy==1.12
     # via -r requirements/base.in
 tabulate==0.9.0
     # via gsy-framework
 tenacity==8.3.0
     # via plotly
+time-machine==2.16.0
+    # via
+    #   gsy-framework
+    #   pendulum
 tox==4.15.0
     # via gsy-framework
+tzdata==2025.2
+    # via
+    #   gsy-framework
+    #   pendulum
 unidecode==0.4.21
     # via awesome-slugify
 urllib3==1.26.18
