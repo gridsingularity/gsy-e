@@ -4,7 +4,7 @@
 #
 #    pip-compile --max-rounds=100 --no-emit-index-url requirements/dev.in
 #
--e git+https://github.com/gridsingularity/gsy-framework@master#egg=gsy_framework
+-e git+https://github.com/gridsingularity/gsy-framework@${GSY_FRAMEWORK_BRANCH}#egg=gsy_framework
     # via -r requirements/base.txt
 astroid==3.2.1
     # via pylint
