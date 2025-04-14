@@ -14,7 +14,7 @@ from gsy_e.models.strategy.energy_parameters.heatpump.virtual_heatpump_tank impo
 
 
 # pylint: disable=attribute-defined-outside-init,protected-access
-class TestAllTanksEnergyParameters:
+class TestAllTanksState:
 
     def setup_method(self):
         self._tanks = AllTanksState(
