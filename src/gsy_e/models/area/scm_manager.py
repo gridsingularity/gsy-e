@@ -232,21 +232,16 @@ class SCMManager:
         for home_data in self._home_data.values():
             self.community_data.trades.extend(home_data.trades)
 
-    def get_area_results(self, area_uuid: str, serializable: bool = False) -> Dict:
+    def get_area_results(self, area_uuid: str) -> Dict:
         """Return the SCM results for one area (and one time slot)."""
         if area_uuid == self._community_uuid:
             return {
                 "bills": self.community_bills,
-                "after_meter_data": (
-                    self.community_data.to_dict()
-                    if serializable is False
-                    else self.community_data.serializable_dict()
-                ),
-                "trades": [trade.serializable_dict() for trade in self.community_data.trades],
+                "after_meter_data": self.community_data.to_dict(),
             }
 
         if area_uuid not in self._bills:
-            return {"bills": {}, "after_meter_data": {}, "trades": []}
+            return {"bills": {}, "after_meter_data": {}}
 
         min_savings = min(bill.savings_percent for bill in self._bills.values())
         max_savings = max(bill.savings_percent for bill in self._bills.values())
@@ -255,12 +250,7 @@ class SCMManager:
 
         return {
             "bills": self._bills[area_uuid].to_dict(),
-            "after_meter_data": (
-                self._home_data[area_uuid].to_dict()
-                if serializable is False
-                else self._home_data[area_uuid].serializable_dict()
-            ),
-            "trades": [trade.serializable_dict() for trade in self._home_data[area_uuid].trades],
+            "after_meter_data": self._home_data[area_uuid].to_dict(),
         }
 
     def get_after_meter_data(self, area_uuid: str) -> Optional[HomeAfterMeterData]:
