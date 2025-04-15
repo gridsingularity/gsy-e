@@ -5,7 +5,7 @@ click
 click-default-group
 colorlog==4.7.2
 numpy
-pendulum==2.1.2
+pendulum==3.0.0
 plotly
 python-rex
 redis
@@ -17,4 +17,4 @@ pony
 psycopg2==2.9.10
 psycopg2-binary==2.9.10
 
--e git+https://github.com/gridsingularity/gsy-framework@master#egg=gsy_framework
+-e git+https://github.com/gridsingularity/gsy-framework@feature/GSYE-498#egg=gsy_framework
