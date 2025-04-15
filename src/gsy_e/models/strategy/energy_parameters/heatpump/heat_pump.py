@@ -48,13 +48,13 @@ class HeatChargerDischarger:
      - the heat storage and the heat demand
     """
 
-    def __init__(self, tanks):
+    def __init__(self, tanks: AllTanksState):
         self.tanks = tanks
         self._efficiency = HEAT_EXCHANGER_EFFICIENCY
 
     def get_condenser_temperature_C(self, time_slot: DateTime):
         """Get the temperature on the condenser side of the heat pump."""
-        return self.tanks.get_average_tank_temperature(time_slot) * self._efficiency
+        return self.tanks.get_average_tank_temperature(time_slot) / self._efficiency
 
     def charge(self, heat_energy_kJ: float, time_slot: DateTime):
         """
