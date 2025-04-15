@@ -69,38 +69,24 @@ class AllTanksState:
 
     def serialize(self) -> Union[Dict, List]:
         """Serializable dict with the parameters of all water tanks."""
-        # TODO: Convert the AVRO schemas to be able to serialize multiple tanks
-        if len(self._tanks_states) == 1:
-            # Return a dict for the case of one tank, in order to not break other services that
-            # support one single tank.
-            return self._tanks_states[0].serialize()
         return [tank.serialize() for tank in self._tanks_states]
 
     def get_results_dict(self, current_time_slot: DateTime):
         """Results dict with the results from all water tanks."""
-        if len(self._tanks_states) == 1:
-            # Return a dict for the case of one tank, in order to not break other services that
-            # support one single tank.
-            return self._tanks_states[0].get_results_dict(current_time_slot)
+        if current_time_slot is None:
+            return []
         return [tank.get_results_dict(current_time_slot) for tank in self._tanks_states]
 
     def get_state(self) -> Union[List, Dict]:
         """Get all tanks state."""
-        # pylint: disable=protected-access
-        if len(self._tanks_states) == 1:
-            # Return a dict for the case of one tank, in order to not break other services that
-            # support one single tank.
-            return self._tanks_states[0].get_state()
         return [tank.get_state() for tank in self._tanks_states]
 
     def restore_state(self, state_dict: dict):
         """Restore all tanks state."""
-        # pylint: disable=protected-access
         for tank in self._tanks_states:
             tank.restore_state(state_dict)
 
     def delete_past_state_values(self, current_time_slot: DateTime):
         """Delete previous state from all tanks."""
-        # pylint: disable=protected-access
         for tank in self._tanks_states:
             tank.delete_past_state_values(current_time_slot)

@@ -123,14 +123,14 @@ class CombinedHeatpumpTanksState:
 
     def get_results_dict(self, current_time_slot: DateTime) -> dict:
         """Results dict for all heatpump and tanks results."""
+        if current_time_slot is None:
+            return {}
         tanks_state = self._charger.get_tanks_results_dict(current_time_slot)
-        if isinstance(tanks_state, list):
-            return {
-                "tanks": tanks_state,
-                **self._hp_state.get_results_dict(current_time_slot),
-                "storage_temp_C": mean([tank["storage_temp_C"] for tank in tanks_state]),
-            }
-        return {**self._hp_state.get_results_dict(current_time_slot), **tanks_state}
+        return {
+            "tanks": tanks_state,
+            **self._hp_state.get_results_dict(current_time_slot),
+            "storage_temp_C": mean([tank["storage_temp_C"] for tank in tanks_state]),
+        }
 
     def get_state(self) -> Dict:
         """Return the current state of the device."""
