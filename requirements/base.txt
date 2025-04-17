@@ -4,7 +4,7 @@
 #
 #    pip-compile --max-rounds=100 --no-emit-index-url requirements/base.in
 #
--e git+https://github.com/gridsingularity/gsy-framework@${GSY_FRAMEWORK_BRANCH}#egg=gsy_framework
+-e git+https://github.com/gridsingularity/gsy-framework@master#egg=gsy_framework
     # via -r requirements/base.in
 attrs==23.2.0
     # via
