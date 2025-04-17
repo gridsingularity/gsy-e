@@ -16,13 +16,22 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from dataclasses import dataclass
 from collections import defaultdict
 from logging import getLogger
 from typing import Dict
 
-from gsy_framework.utils import convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict
+from gsy_framework.constants_limits import ConstSettings, FLOATING_POINT_TOLERANCE
+from gsy_framework.utils import (
+    convert_pendulum_to_str_in_dict,
+    convert_str_to_pendulum_in_dict,
+)
 from pendulum import DateTime, duration
 
+from gsy_e.models.strategy.energy_parameters.heatpump.constants import (
+    WATER_DENSITY,
+    SPECIFIC_HEAT_CONST_WATER,
+)
 from gsy_e import constants
 from gsy_e.models.strategy.state.base_states import StateInterface
 
@@ -30,6 +39,7 @@ log = getLogger(__name__)
 
 
 def delete_time_slots_in_state(profile: Dict, current_time_stamp: DateTime):
+    """Remove time slots older than the current_time_stamp from the profile."""
     stamps_to_delete = []
     for time_slot in profile:
         if time_slot < current_time_stamp:
@@ -38,21 +48,28 @@ def delete_time_slots_in_state(profile: Dict, current_time_stamp: DateTime):
         profile.pop(stamp, None)
 
 
+@dataclass
+class TankParameters:
+    """Nameplate parameters of a water tank."""
+
+    min_temp_C: float = ConstSettings.HeatPumpSettings.MIN_TEMP_C
+    max_temp_C: float = ConstSettings.HeatPumpSettings.MAX_TEMP_C
+    initial_temp_C: float = ConstSettings.HeatPumpSettings.INIT_TEMP_C
+    tank_volume_L: float = ConstSettings.HeatPumpSettings.TANK_VOL_L
+
+
 class HeatPumpTankState(StateInterface):
     """State for the heat pump tank."""
 
-    def __init__(
-        self,
-        initial_temp_C: float,
-        slot_length: duration,
-        min_storage_temp_C: float,
-        max_storage_temp_C: float,
-    ):
-        self._storage_temp_C: Dict[DateTime, float] = defaultdict(lambda: initial_temp_C)
+    def __init__(self, tank_parameters: TankParameters, slot_length: duration):
+        self._storage_temp_C: Dict[DateTime, float] = defaultdict(
+            lambda: tank_parameters.initial_temp_C
+        )
         self._temp_decrease_K: Dict[DateTime, float] = defaultdict(lambda: 0)
         self._temp_increase_K: Dict[DateTime, float] = defaultdict(lambda: 0)
-        self._min_storage_temp_C = min_storage_temp_C
-        self._max_storage_temp_C = max_storage_temp_C
+        self._min_storage_temp_C = tank_parameters.min_temp_C
+        self._max_storage_temp_C = tank_parameters.max_temp_C
+        self._tank_volume_L = tank_parameters.tank_volume_L
         self._slot_length = slot_length
 
     def get_storage_temp_C(self, time_slot: DateTime) -> float:
@@ -100,7 +117,6 @@ class HeatPumpTankState(StateInterface):
             "storage_temp_C": convert_pendulum_to_str_in_dict(self._storage_temp_C),
             "temp_decrease_K": convert_pendulum_to_str_in_dict(self._temp_decrease_K),
             "temp_increase_K": convert_pendulum_to_str_in_dict(self._temp_increase_K),
-            "slot_length": self._slot_length.total_seconds(),
             "min_storage_temp_C": self._min_storage_temp_C,
         }
 
@@ -108,7 +124,6 @@ class HeatPumpTankState(StateInterface):
         self._storage_temp_C = convert_str_to_pendulum_in_dict(state_dict["storage_temp_C"])
         self._temp_decrease_K = convert_str_to_pendulum_in_dict(state_dict["temp_decrease_K"])
         self._temp_increase_K = convert_str_to_pendulum_in_dict(state_dict["temp_increase_K"])
-        self._slot_length = duration(seconds=state_dict["slot_length"])
         self._min_storage_temp_C = state_dict["min_storage_temp_C"]
 
     def delete_past_state_values(self, current_time_slot: DateTime):
@@ -127,15 +142,86 @@ class HeatPumpTankState(StateInterface):
         }
         return retval
 
+    def __str__(self):
+        return self.__class__.__name__
+
+    def serialize(self):
+        """Serializable dict with the parameters of the water tank."""
+        return {
+            "max_temp_C": self._max_storage_temp_C,
+            "min_temp_C": self._min_storage_temp_C,
+            "tank_volume_l": self._tank_volume_L,
+        }
+
+    def increase_tank_temp_from_heat_energy(self, heat_energy_kWh: float, time_slot: DateTime):
+        """Increase the temperature of the water tank with the provided heat energy."""
+        temp_increase_K = self._Q_kWh_to_temp_diff(heat_energy_kWh)
+        self.update_temp_increase_K(time_slot, temp_increase_K)
+
+    def decrease_tank_temp_from_heat_energy(self, heat_energy_kWh: float, time_slot: DateTime):
+        """Decrease the temperature of the water tank with the provided heat energy."""
+        temp_decrease_K = self._Q_kWh_to_temp_diff(heat_energy_kWh)
+        self.set_temp_decrease_K(time_slot, temp_decrease_K)
+
+    def increase_tank_temp_from_temp_delta(self, temp_diff: float, time_slot: DateTime):
+        """Increase the tank temperature from temperature delta."""
+        self.update_temp_increase_K(time_slot, temp_diff)
+
+    def get_max_heat_energy_consumption_kWh(self, time_slot: DateTime):
+        """Calculate max heat energy consumption that the tank can accomodate."""
+        max_temp_diff = (
+            self._max_storage_temp_C
+            - self.get_storage_temp_C(time_slot)
+            + self.get_temp_decrease_K(time_slot)
+        )
+
+        return max_temp_diff * self._Q_specific
+
+    def get_min_heat_energy_consumption_kWh(self, time_slot: DateTime):
+        """
+        Calculate min heat energy consumption that a heatpump has to consume in
+        order to only let the storage drop its temperature to the minimum storage temperature.
+        - if current_temp < min_storage_temp: charge till min_storage_temp is reached
+        - if current_temp = min_storage_temp: only for the demanded energy
+        - if current_temp > min_storage: only trade for the demand minus the heat
+                                         that can be extracted from the storage
+        """
+        diff_to_min_temp_C = self.get_current_diff_to_min_temp_K(time_slot)
+        temp_diff_due_to_consumption = self.get_temp_decrease_K(time_slot)
+        min_temp_diff = (
+            temp_diff_due_to_consumption - diff_to_min_temp_C
+            if diff_to_min_temp_C <= temp_diff_due_to_consumption
+            else 0
+        )
+        return min_temp_diff * self._Q_specific
+
+    def current_tank_temperature(self, time_slot: DateTime) -> float:
+        """Get current tank temperature for timeslot."""
+        return self.get_storage_temp_C(time_slot)
+
+    def get_unmatched_demand_kWh(self, time_slot: DateTime) -> float:
+        """Get unmatched demand for timeslot."""
+        temp_balance = self.get_temp_increase_K(time_slot) - self.get_temp_decrease_K(time_slot)
+        if temp_balance < FLOATING_POINT_TOLERANCE:
+            return self._temp_diff_to_Q_kWh(abs(temp_balance))
+        return 0.0
+
+    def _temp_diff_to_Q_kWh(self, diff_temp_K: float) -> float:
+        return diff_temp_K * self._Q_specific
+
+    def _Q_kWh_to_temp_diff(self, energy_kWh: float) -> float:
+        return energy_kWh / self._Q_specific
+
+    @property
+    def _Q_specific(self):
+        return SPECIFIC_HEAT_CONST_WATER * self._tank_volume_L * WATER_DENSITY
+
     def _last_time_slot(self, current_market_slot: DateTime) -> DateTime:
         return current_market_slot - self._slot_length
 
     @staticmethod
     def _delete_time_slots(profile: Dict, current_time_stamp: DateTime):
         delete_time_slots_in_state(profile, current_time_stamp)
-
-    def __str__(self):
-        return self.__class__.__name__
 
 
 class HeatPumpState(StateInterface):
@@ -236,7 +322,6 @@ class HeatPumpState(StateInterface):
             "condenser_temp_C": convert_pendulum_to_str_in_dict(self._condenser_temp_C),
             "heat_demand_J": convert_pendulum_to_str_in_dict(self._heat_demand_J),
             "total_traded_energy_kWh": self._total_traded_energy_kWh,
-            "slot_length": self._slot_length.total_seconds(),
         }
 
     def restore_state(self, state_dict: Dict):

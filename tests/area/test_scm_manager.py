@@ -415,7 +415,6 @@ class TestSCMManager:
 
         # Then
         assert isinstance(return_value, HomeAfterMeterData)
-        print(return_value)
         assert return_value.home_uuid == HOUSE1_UUID
         assert return_value.home_name == HOUSE1_NAME
         assert return_value.consumption_kWh == 5
@@ -547,7 +546,6 @@ class TestSCMManagerWithoutSurplusTrade:
         house2_consumption,
     ):
         scm_manager = scm_manager_without_surplus_trade
-        print(HOUSE1_UUID)
         # Given
         scm_manager.add_home_data(
             home_uuid=HOUSE1_UUID,

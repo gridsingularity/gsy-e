@@ -404,9 +404,13 @@ class PCMHeatPumpEnergyParameters(HeatPumpEnergyParameters):
         heat_demand_kWh = self._get_heat_demand_kWh(last_time_slot)
         consumed_heat_kWh = self._get_consumed_heat_kWh(last_time_slot)
         if consumed_heat_kWh >= heat_demand_kWh:
-            self._increase_tank_temp_from_heat_energy(consumed_heat_kWh, last_time_slot)
+            self._increase_tank_temp_from_heat_energy(
+                consumed_heat_kWh - heat_demand_kWh, last_time_slot
+            )
         elif heat_demand_kWh > 0:
-            self._decrease_tank_temp_from_heat_energy(heat_demand_kWh, last_time_slot)
+            self._decrease_tank_temp_from_heat_energy(
+                heat_demand_kWh - consumed_heat_kWh, last_time_slot
+            )
 
     def _get_consumed_heat_kWh(self, time_slot: DateTime) -> float:
         return self._state.tank.get_consumed_energy(time_slot) * self._state.heatpump.get_cop(
