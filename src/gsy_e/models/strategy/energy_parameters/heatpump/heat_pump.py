@@ -18,10 +18,8 @@ from gsy_e.models.strategy.energy_parameters.heatpump.cop_models import (
     cop_model_factory,
     BaseCOPModel,
 )
-from gsy_e.models.strategy.energy_parameters.heatpump.tank import (
-    TankParameters,
-    AllTanksState,
-)
+from gsy_e.models.strategy.state.heatpump_all_tanks_state import AllTanksState
+from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import TankParameters
 from gsy_e.models.strategy.state import HeatPumpState
 from gsy_e.models.strategy.strategy_profile import profile_factory
 

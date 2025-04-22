@@ -9,7 +9,7 @@ from pendulum import duration, today
 from gsy_e.models.strategy.energy_parameters.heatpump.virtual_heat_pump import (
     VirtualHeatpumpEnergyParameters,
 )
-from gsy_e.models.strategy.energy_parameters.heatpump.tank import TankParameters
+from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import TankParameters
 
 CURRENT_MARKET_SLOT = today(tz=TIME_ZONE)
 

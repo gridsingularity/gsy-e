@@ -397,3 +397,38 @@ class ProductionState(ProsumptionInterface):
         assert production_forecast >= -FLOATING_POINT_TOLERANCE
 
         return production_forecast
+
+
+class TankStateBase(StateInterface):
+
+    @abstractmethod
+    def increase_tank_temp_from_heat_energy(self, heat_energy_per_tank_kWh, time_slot):
+        """"""
+
+    @abstractmethod
+    def decrease_tank_temp_from_heat_energy(self, heat_energy_per_tank_kWh, time_slot):
+        """"""
+
+    @abstractmethod
+    def update_storage_temp(self, time_slot):
+        """"""
+
+    @abstractmethod
+    def get_max_heat_energy_consumption_kWh(self, time_slot):
+        """"""
+
+    @abstractmethod
+    def get_min_heat_energy_consumption_kWh(self, time_slot):
+        """todo: switch to kJ"""
+
+    @abstractmethod
+    def current_tank_temperature(self, time_slot):
+        """TODO: deal with PCM and water difference"""
+
+    @abstractmethod
+    def get_unmatched_demand_kWh(self, time_slot):
+        """"""
+
+    @abstractmethod
+    def serialize(self):
+        """"""

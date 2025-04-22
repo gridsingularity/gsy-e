@@ -7,9 +7,9 @@ from gsy_framework.constants_limits import GlobalConfig, TIME_ZONE
 from gsy_framework.utils import generate_market_slot_list
 from pendulum import duration, today
 
+from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import TankParameters
 from gsy_e.models.strategy.energy_parameters.heatpump.heat_pump import (
     HeatPumpEnergyParameters,
-    TankParameters,
 )
 from gsy_e.models.strategy.energy_parameters.heatpump.cop_models import COPModelType
 

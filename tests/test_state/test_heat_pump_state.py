@@ -3,7 +3,7 @@ import pytest
 from gsy_framework.constants_limits import TIME_ZONE
 from pendulum import duration, today
 
-from gsy_e.models.strategy.state.heat_pump_state import HeatPumpState
+from gsy_e.models.strategy.state.heatpump_state import HeatPumpState
 
 CURRENT_MARKET_SLOT = today(tz=TIME_ZONE)
 

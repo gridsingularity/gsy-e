@@ -37,7 +37,6 @@ from gsy_e.models.strategy.storage import StorageStrategy
 from gsy_e.models.strategy.heat_pump import (
     HeatPumpStrategy,
     MultipleTankHeatPumpStrategy,
-    PCMHeatPump,
 )
 from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
 from gsy_e.models.strategy.virtual_heatpump import (
@@ -189,7 +188,8 @@ class LeafDataExporter(BaseDataExporter):
                 "heat demand J",
             ]
         # pylint: disable=unidiomatic-typecheck
-        if type(self.area.strategy) == PCMHeatPump:
+        # todo
+        if type(self.area.strategy) == HeatPumpStrategy:
             return [
                 "unmatched heat demand [kWh]",
                 "COP",
@@ -273,7 +273,8 @@ class LeafDataExporter(BaseDataExporter):
                 round(self.area.strategy.state.heatpump.get_cop(slot), ROUND_TOLERANCE),
                 round(self.area.strategy.state.heatpump.get_heat_demand(slot), ROUND_TOLERANCE),
             ]
-        if type(self.area.strategy) == PCMHeatPump:
+        # todo
+        if type(self.area.strategy) == HeatPumpStrategy:
             return [
                 round(
                     self.area.strategy.state.heatpump.get_unmatched_demand_kWh(slot),

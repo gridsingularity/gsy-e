@@ -3,10 +3,9 @@ from math import isclose
 from deepdiff import DeepDiff
 from pendulum import datetime
 
-from gsy_e.models.strategy.energy_parameters.heatpump.tank import (
-    AllTanksState,
-    TankParameters,
-)
+from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import TankParameters
+from gsy_e.models.strategy.state.heatpump_all_tanks_state import AllTanksState
+
 from gsy_e.models.strategy.energy_parameters.heatpump.virtual_heatpump_tank import (
     VirtualHeatpumpAllTanksState,
     VirtualHeatpumpSolverParameters,
