@@ -14,19 +14,14 @@ from gsy_e.gsy_e_core.util import (
     get_market_maker_rate_from_time_slot,
     get_feed_in_tariff_rate_from_time_slot,
 )
+from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import TankParameters
 from gsy_e.models.strategy.energy_parameters.heatpump.heat_pump import (
     HeatPumpEnergyParameters,
-    TankParameters,
     CombinedHeatpumpTanksState,
 )
 from gsy_e.models.strategy.order_updater import OrderUpdaterParameters, OrderUpdater
 from gsy_e.models.strategy.trading_strategy_base import TradingStrategyBase
 from gsy_e.models.strategy.energy_parameters.heatpump.cop_models import COPModelType
-from gsy_e.models.strategy.energy_parameters.heatpump.pcm_tank.pcm_tank import (
-    PCMHeatPumpEnergyParameters,
-    PCMTankParameters,
-    CombinedHeatpumpPCMTankState,
-)
 
 
 if TYPE_CHECKING:
@@ -346,52 +341,3 @@ class HeatPumpStrategy(MultipleTankHeatPumpStrategy):
             preferred_buying_rate,
             cop_model_type=cop_model_type,
         )
-
-
-class PCMHeatPump(HeatPumpStrategy):
-    """Heat pump with PCM tank"""
-
-    # pylint: disable=too-many-arguments, super-init-not-called, too-many-locals
-    def __init__(
-        self,
-        maximum_power_rating_kW: float = ConstSettings.HeatPumpSettings.MAX_POWER_RATING_KW,
-        min_temp_C: float = ConstSettings.HeatPumpSettings.MIN_TEMP_C,
-        max_temp_C: float = ConstSettings.HeatPumpSettings.MAX_TEMP_C,
-        initial_temp_C: float = ConstSettings.HeatPumpSettings.INIT_TEMP_C,
-        source_temp_C_profile: Optional[Union[str, float, Dict]] = None,
-        source_temp_C_profile_uuid: Optional[str] = None,
-        consumption_kWh_profile: Optional[Union[str, float, Dict]] = None,
-        consumption_kWh_profile_uuid: Optional[str] = None,
-        source_type: int = ConstSettings.HeatPumpSettings.SOURCE_TYPE,
-        order_updater_parameters: Dict[
-            AvailableMarketTypes, HeatPumpOrderUpdaterParameters
-        ] = None,
-        preferred_buying_rate: float = ConstSettings.HeatPumpSettings.PREFERRED_BUYING_RATE,
-        cop_model_type: COPModelType = COPModelType.UNIVERSAL,
-        heat_demand_Q_profile: Optional[Union[str, float, Dict]] = None,
-        max_capacity_kWh: float = 6.0,  # todo: put default value somewhere
-    ):
-        tank_parameters = PCMTankParameters(
-            min_temp_C=min_temp_C,
-            max_temp_C=max_temp_C,
-            initial_temp_C=initial_temp_C,
-            max_capacity_kWh=max_capacity_kWh,
-        )
-
-        self._energy_params = PCMHeatPumpEnergyParameters(
-            maximum_power_rating_kW=maximum_power_rating_kW,
-            tank_parameters=tank_parameters,
-            source_temp_C_profile=source_temp_C_profile,
-            source_temp_C_profile_uuid=source_temp_C_profile_uuid,
-            consumption_kWh_profile=consumption_kWh_profile,
-            consumption_kWh_profile_uuid=consumption_kWh_profile_uuid,
-            source_type=source_type,
-            heat_demand_Q_profile=heat_demand_Q_profile,
-            cop_model_type=cop_model_type,
-        )
-
-        self._init_price_params(order_updater_parameters, preferred_buying_rate)
-
-    @property
-    def state(self) -> CombinedHeatpumpPCMTankState:
-        return self._energy_params.combined_state
