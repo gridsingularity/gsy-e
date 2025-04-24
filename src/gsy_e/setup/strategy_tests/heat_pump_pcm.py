@@ -22,9 +22,13 @@ from gsy_framework.constants_limits import ConstSettings
 
 from gsy_e.gsy_e_core.util import gsye_root_path
 from gsy_e.models.area import Area
-from gsy_e.models.strategy.heat_pump import PCMHeatPump
-from gsy_e.models.strategy.pv import PVStrategy
+from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import (
+    TankParameters,
+    HeatpumpTankTypes,
+)
+from gsy_e.models.strategy.heat_pump import MultipleTankHeatPumpStrategy
 from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
+from gsy_e.models.strategy.pv import PVStrategy
 
 ConstSettings.MASettings.MARKET_TYPE = 2
 ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL = 5
@@ -38,13 +42,19 @@ def get_setup(config):
                 "House 1",
                 [
                     Area(
-                        "PCM",
-                        strategy=PCMHeatPump(
-                            initial_temp_C=35,
-                            max_temp_C=45,
-                            min_temp_C=30,
-                            maximum_power_rating_kW=6,
-                            # preferred_buying_rate=12,
+                        "HeatPumpWithMultipleTanks",
+                        strategy=MultipleTankHeatPumpStrategy(
+                            tank_parameters=[
+                                TankParameters(initial_temp_C=50, max_temp_C=80, min_temp_C=30),
+                                TankParameters(
+                                    type=HeatpumpTankTypes.PCM,
+                                    max_capacity_kJ=20000,
+                                    initial_temp_C=35,
+                                    max_temp_C=45,
+                                    min_temp_C=30,
+                                ),
+                            ],
+                            preferred_buying_rate=5,
                             consumption_kWh_profile=os.path.join(
                                 gsye_root_path, "resources", "hp_consumption_kWh.csv"
                             ),
