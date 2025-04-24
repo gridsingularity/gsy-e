@@ -11,7 +11,7 @@ from gsy_e.models.strategy.energy_parameters.heatpump.constants import (
     DEFAULT_SOURCE_TEMPERATURE_C,
 )
 from gsy_e.models.strategy.energy_parameters.heatpump.heat_pump import HeatPumpEnergyParametersBase
-from gsy_e.models.strategy.energy_parameters.heatpump.tank import TankParameters
+from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import TankParameters
 from gsy_e.models.strategy.energy_parameters.heatpump.virtual_heatpump_solver import (
     VirtualHeatpumpSolverParameters,
     VirtualHeatpumpStorageEnergySolver,

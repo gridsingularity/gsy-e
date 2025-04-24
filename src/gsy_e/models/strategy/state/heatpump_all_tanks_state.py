@@ -1,14 +1,19 @@
-import logging
+from logging import getLogger
 from statistics import mean
-from typing import Dict, Union, List
+from typing import Union, List, Dict
 
 from gsy_framework.constants_limits import GlobalConfig, FLOATING_POINT_TOLERANCE
 from gsy_framework.utils import convert_kJ_to_kWh, convert_kWh_to_kJ
 from pendulum import DateTime
 
-from gsy_e.models.strategy.state.heat_pump_state import TankParameters, HeatPumpTankState
+from gsy_e.models.strategy.state.heatpump_pcm_tank_state import PCMTankState
+from gsy_e.models.strategy.state.heatpump_water_tank_state import HeatPumpTankState
+from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import (
+    TankParameters,
+    HeatpumpTankTypes,
+)
 
-logger = logging.getLogger(__name__)
+log = getLogger(__name__)
 
 
 class AllTanksState:
@@ -16,7 +21,12 @@ class AllTanksState:
 
     def __init__(self, tank_parameters: List[TankParameters]):
         self._tanks_states = [
-            HeatPumpTankState(tank, GlobalConfig.slot_length) for tank in tank_parameters
+            (
+                HeatPumpTankState(tank_parameters=tank, slot_length=GlobalConfig.slot_length)
+                if tank.type == HeatpumpTankTypes.WATER
+                else PCMTankState(tank_parameters=tank)
+            )
+            for tank in tank_parameters
         ]
 
     def increase_tanks_temp_from_heat_energy(self, heat_energy_kJ: float, time_slot: DateTime):
@@ -90,3 +100,8 @@ class AllTanksState:
         """Delete previous state from all tanks."""
         for tank in self._tanks_states:
             tank.delete_past_state_values(current_time_slot)
+
+    def event_activate(self):
+        """Perform steps when activate event is called"""
+        for tank in self._tanks_states:
+            tank.init_storage_temps()
