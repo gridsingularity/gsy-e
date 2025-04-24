@@ -25,8 +25,10 @@ class PCMChargeModel(PCMModelBase):
     def _soc_lut(self):
         return {}
 
-    def get_temp_after_charging(self, current_storage_temps: list, charging_temp: float) -> list:
-        return current_storage_temps
+    def get_temp_after_charging(
+        self, current_htf_temps_C: list, current_pcm_temps_C: list, charging_temp: float
+    ) -> tuple[list, list]:
+        return current_htf_temps_C, current_pcm_temps_C
 
 
 class PCMDischargeModel(PCMModelBase):
@@ -36,6 +38,6 @@ class PCMDischargeModel(PCMModelBase):
         return {}
 
     def get_temp_after_discharging(
-        self, current_storage_temps: list, discharging_temp: float
-    ) -> list:
-        return current_storage_temps
+        self, current_htf_temps_C: list, current_pcm_temps_C: list, discharging_temp: float
+    ) -> tuple[list, list]:
+        return current_htf_temps_C, current_pcm_temps_C
