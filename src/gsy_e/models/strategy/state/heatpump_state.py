@@ -52,21 +52,11 @@ class HeatPumpState(StateInterface):
         self._max_energy_demand_kWh: Dict[DateTime, float] = {}
         # buffers for increase and  decrease of storage
         self._energy_consumption_kWh: Dict[DateTime, float] = defaultdict(lambda: 0)
-        self._unmatched_demand_kWh: Dict[DateTime, float] = defaultdict(lambda: 0)
         self._cop: Dict[DateTime, float] = defaultdict(lambda: 0)
         self._condenser_temp_C: Dict[DateTime, float] = defaultdict(lambda: 0)
         self._heat_demand_J: Dict[DateTime, float] = defaultdict(lambda: 0)
         self._total_traded_energy_kWh: float = 0
         self._slot_length = slot_length
-
-    def update_unmatched_demand_kWh(self, current_time_slot: DateTime, energy_kWh: float):
-        """Update unmatched demand while ensuring always positive numbers."""
-        updated_unmatched_demand = self._unmatched_demand_kWh[current_time_slot] + energy_kWh
-        self._unmatched_demand_kWh[current_time_slot] = max(0.0, updated_unmatched_demand)
-
-    def set_unmatched_demand_kWh(self, current_time_slot: DateTime, energy_kWh: float):
-        """Set unmatched demand while ensuring always positive numbers."""
-        self._unmatched_demand_kWh[current_time_slot] = max(0.0, energy_kWh)
 
     def set_heat_demand(self, time_slot: DateTime, heat_demand_J: float):
         """Set heat demand for the given time slot."""
@@ -116,10 +106,6 @@ class HeatPumpState(StateInterface):
         """Return the temperature increase for a given time slot."""
         return self._energy_consumption_kWh.get(time_slot, 0)
 
-    def get_unmatched_demand_kWh(self, time_slot: DateTime) -> float:
-        """Return the unmatched demanded energy for a given time slot."""
-        return self._unmatched_demand_kWh.get(time_slot, 0)
-
     def get_cop(self, time_slot: DateTime) -> float:
         """Return the cop for a given time slot."""
         return self._cop.get(time_slot, 0)
@@ -135,7 +121,6 @@ class HeatPumpState(StateInterface):
             ),
             "min_energy_demand_kWh": convert_pendulum_to_str_in_dict(self._min_energy_demand_kWh),
             "max_energy_demand_kWh": convert_pendulum_to_str_in_dict(self._max_energy_demand_kWh),
-            "unmatched_demand_kWh": convert_pendulum_to_str_in_dict(self._unmatched_demand_kWh),
             "cop": convert_pendulum_to_str_in_dict(self._cop),
             "condenser_temp_C": convert_pendulum_to_str_in_dict(self._condenser_temp_C),
             "heat_demand_J": convert_pendulum_to_str_in_dict(self._heat_demand_J),
@@ -152,9 +137,6 @@ class HeatPumpState(StateInterface):
         self._max_energy_demand_kWh = convert_str_to_pendulum_in_dict(
             state_dict["max_energy_demand_kWh"]
         )
-        self._unmatched_demand_kWh = convert_str_to_pendulum_in_dict(
-            state_dict["unmatched_demand_kWh"]
-        )
         self._cop = convert_str_to_pendulum_in_dict(state_dict["cop"])
         self._heat_demand_J = convert_str_to_pendulum_in_dict(state_dict["heat_demand_J"])
         self._condenser_temp_C = convert_str_to_pendulum_in_dict(state_dict["condenser_temp_C"])
@@ -168,7 +150,6 @@ class HeatPumpState(StateInterface):
         self._delete_time_slots(self._min_energy_demand_kWh, last_time_slot)
         self._delete_time_slots(self._max_energy_demand_kWh, last_time_slot)
         self._delete_time_slots(self._energy_consumption_kWh, last_time_slot)
-        self._delete_time_slots(self._unmatched_demand_kWh, last_time_slot)
         self._delete_time_slots(self._cop, last_time_slot)
         self._delete_time_slots(self._condenser_temp_C, last_time_slot)
         self._delete_time_slots(self._heat_demand_J, last_time_slot)
@@ -178,7 +159,6 @@ class HeatPumpState(StateInterface):
             "energy_consumption_kWh": self.get_energy_consumption_kWh(current_time_slot),
             "max_energy_demand_kWh": self.get_max_energy_demand_kWh(current_time_slot),
             "min_energy_demand_kWh": self.get_min_energy_demand_kWh(current_time_slot),
-            "unmatched_demand_kWh": self.get_unmatched_demand_kWh(current_time_slot),
             "cop": self.get_cop(current_time_slot),
             "condenser_temp_C": self.get_condenser_temp(current_time_slot),
             "total_traded_energy_kWh": self._total_traded_energy_kWh,

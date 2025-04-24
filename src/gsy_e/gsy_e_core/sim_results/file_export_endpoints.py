@@ -182,14 +182,12 @@ class LeafDataExporter(BaseDataExporter):
         # pylint: disable=unidiomatic-typecheck
         if type(self.area.strategy) == HeatPumpStrategy:
             return [
-                "unmatched demand [kWh]",
                 "storage temperature C",
                 "COP",
                 "heat demand J",
             ]
         if type(self.area.strategy) == VirtualHeatpumpStrategy:
             return [
-                "unmatched demand [kWh]",
                 "storage temperature C",
                 "COP",
                 "heat demand J",
@@ -197,7 +195,6 @@ class LeafDataExporter(BaseDataExporter):
             ]
         if type(self.area.strategy) == MultipleTankHeatPumpStrategy:
             return [
-                "unmatched demand [kWh]",
                 "storage temperature C",
                 "energy demand kWh",
                 "COP",
@@ -206,7 +203,6 @@ class LeafDataExporter(BaseDataExporter):
         # pylint: disable=unidiomatic-typecheck
         if type(self.area.strategy) == MultipleTankVirtualHeatpumpStrategy:
             return [
-                "unmatched demand [kWh]",
                 "storage temperature C",
                 "energy demand kWh",
                 "COP",
@@ -252,10 +248,6 @@ class LeafDataExporter(BaseDataExporter):
         if type(self.area.strategy) == HeatPumpStrategy:
             return [
                 round(
-                    self.area.strategy.state.charger.tanks.get_unmatched_demand_kWh(slot),
-                    ROUND_TOLERANCE,
-                ),
-                round(
                     self.area.strategy.state.charger.tanks.get_average_tank_temperature(slot),
                     ROUND_TOLERANCE,
                 ),
@@ -277,10 +269,6 @@ class LeafDataExporter(BaseDataExporter):
         if type(self.area.strategy) == MultipleTankHeatPumpStrategy:
             cop = self.area.strategy.state.heatpump.get_cop(slot)
             return [
-                round(
-                    self.area.strategy.state.charger.tanks.get_unmatched_demand_kWh(slot),
-                    ROUND_TOLERANCE,
-                ),
                 round(
                     self.area.strategy.state.charger.tanks.get_average_tank_temperature(slot),
                     ROUND_TOLERANCE,

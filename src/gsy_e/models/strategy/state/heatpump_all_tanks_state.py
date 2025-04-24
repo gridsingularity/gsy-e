@@ -73,10 +73,6 @@ class AllTanksState:
         """Get average tank temperature of all water tanks."""
         return mean(tank.current_tank_temperature(time_slot) for tank in self._tanks_states)
 
-    def get_unmatched_demand_kWh(self, time_slot: DateTime):
-        """Get unmatched demand of all water tanks."""
-        return sum(tank.get_unmatched_demand_kWh(time_slot) for tank in self._tanks_states)
-
     def serialize(self) -> Union[Dict, List]:
         """Serializable dict with the parameters of all water tanks."""
         return [tank.serialize() for tank in self._tanks_states]

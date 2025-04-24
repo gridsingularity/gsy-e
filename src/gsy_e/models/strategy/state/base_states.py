@@ -429,10 +429,6 @@ class TankStateBase(StateInterface):
         """Return current temperature of the tank."""
 
     @abstractmethod
-    def get_unmatched_demand_kWh(self, time_slot):
-        """TODO: remove"""
-
-    @abstractmethod
     def serialize(self):
         """Serialize the memebrs of the class."""
 

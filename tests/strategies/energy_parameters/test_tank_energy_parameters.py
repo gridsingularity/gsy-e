@@ -66,11 +66,6 @@ class TestAllTanksState:
         self._tanks._tanks_states[2]._storage_temp_C[self._datetime] = 40
         assert self._tanks.get_average_tank_temperature(self._datetime) == 35
 
-    def test_get_unmatched_demand_kWh(self):
-        self._tanks.decrease_tanks_temp_from_heat_energy(10000, self._datetime)
-        self._tanks.increase_tanks_temp_from_heat_energy(1000, self._datetime)
-        assert self._tanks.get_unmatched_demand_kWh(self._datetime) == 2.5
-
     def test_serialize(self):
         tanks_dict = self._tanks.serialize()
         expected_dict = [

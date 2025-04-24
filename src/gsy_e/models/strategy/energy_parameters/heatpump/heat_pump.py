@@ -329,10 +329,6 @@ class HeatPumpEnergyParametersBase(ABC):
 
     def _populate_state(self, time_slot: DateTime):
         self._calc_energy_demand(time_slot)
-        self._calculate_and_set_unmatched_demand(time_slot)
-
-    def _calculate_and_set_unmatched_demand(self, time_slot: DateTime):
-        pass
 
     def _calc_energy_demand(self, time_slot: DateTime):
         self._state.heatpump.set_min_energy_demand_kWh(
@@ -431,7 +427,6 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
         """React to an event_traded_energy."""
         self._decrement_posted_energy(time_slot, energy_kWh)
         self._bought_energy_kWh += energy_kWh
-        self._calculate_and_set_unmatched_demand(time_slot)
 
     def _rotate_profiles(self, current_time_slot: Optional[DateTime] = None):
         super()._rotate_profiles(current_time_slot)
@@ -493,11 +488,3 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
         self._state.heatpump.set_energy_consumption_kWh(
             time_slot, self._consumption_kWh.get_value(time_slot)
         )
-
-    def _calculate_and_set_unmatched_demand(self, time_slot: DateTime) -> None:
-        # pylint: disable=protected-access
-        unmatched_energy_demand = self.combined_state.charger.tanks.get_unmatched_demand_kWh(
-            time_slot
-        )
-        if unmatched_energy_demand < FLOATING_POINT_TOLERANCE:
-            self._state.heatpump.set_unmatched_demand_kWh(time_slot, unmatched_energy_demand)

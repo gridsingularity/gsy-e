@@ -2,7 +2,6 @@ from collections import defaultdict
 from logging import getLogger
 from typing import Dict
 
-from gsy_framework.constants_limits import FLOATING_POINT_TOLERANCE
 from gsy_framework.utils import (
     convert_pendulum_to_str_in_dict,
     convert_str_to_pendulum_in_dict,
@@ -162,16 +161,6 @@ class HeatPumpTankState(TankStateBase):
     def current_tank_temperature(self, time_slot: DateTime) -> float:
         """Get current tank temperature for timeslot."""
         return self.get_storage_temp_C(time_slot)
-
-    def get_unmatched_demand_kWh(self, time_slot: DateTime) -> float:
-        """Get unmatched demand for timeslot."""
-        temp_balance = self.get_temp_increase_K(time_slot) - self.get_temp_decrease_K(time_slot)
-        if temp_balance < FLOATING_POINT_TOLERANCE:
-            return self._temp_diff_to_Q_kWh(abs(temp_balance))
-        return 0.0
-
-    def _temp_diff_to_Q_kWh(self, diff_temp_K: float) -> float:
-        return diff_temp_K * self._Q_specific
 
     def _Q_kWh_to_temp_diff(self, energy_kWh: float) -> float:
         return energy_kWh / self._Q_specific

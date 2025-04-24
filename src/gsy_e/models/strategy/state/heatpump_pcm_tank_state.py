@@ -274,10 +274,6 @@ class PCMTankState(TankStateBase):
         """Nothing to do here, because the storage temps are already updated in
         increase_tank_temp_from_heat_energy and decrease_tank_temp_from_heat_energy"""
 
-    def get_unmatched_demand_kWh(self, time_slot):
-        """todo"""
-        return 0.0
-
     def _get_consumed_heat_kWh(self, time_slot: DateTime) -> float:
         return self.get_consumed_energy(time_slot)
 
