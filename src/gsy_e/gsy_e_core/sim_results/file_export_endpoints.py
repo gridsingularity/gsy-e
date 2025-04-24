@@ -49,6 +49,19 @@ if TYPE_CHECKING:
     from gsy_e.models.area.scm_manager import SCMManager
 
 
+def is_heatpump_with_tanks(area: Area):
+    """Return if area has a heat pump strategy."""
+    return isinstance(
+        area.strategy,
+        (
+            MultipleTankHeatPumpStrategy,
+            MultipleTankVirtualHeatpumpStrategy,
+            HeatPumpStrategy,
+            VirtualHeatpumpStrategy,
+        ),
+    )
+
+
 class BaseDataExporter(ABC):
     """Base class for data exporter."""
 
@@ -179,36 +192,6 @@ class LeafDataExporter(BaseDataExporter):
             return ["desired energy [kWh]", "deficit [kWh]"]
         if isinstance(self.area.strategy, PVStrategy):
             return ["produced [kWh]", "not sold [kWh]"]
-        # pylint: disable=unidiomatic-typecheck
-        if type(self.area.strategy) == HeatPumpStrategy:
-            return [
-                "storage temperature C",
-                "COP",
-                "heat demand J",
-            ]
-        if type(self.area.strategy) == VirtualHeatpumpStrategy:
-            return [
-                "storage temperature C",
-                "COP",
-                "heat demand J",
-                "condenser temperature C",
-            ]
-        if type(self.area.strategy) == MultipleTankHeatPumpStrategy:
-            return [
-                "storage temperature C",
-                "energy demand kWh",
-                "COP",
-                "heat demand J",
-            ]
-        # pylint: disable=unidiomatic-typecheck
-        if type(self.area.strategy) == MultipleTankVirtualHeatpumpStrategy:
-            return [
-                "storage temperature C",
-                "energy demand kWh",
-                "COP",
-                "condenser temperature C",
-            ]
-
         return []
 
     @property
@@ -244,61 +227,71 @@ class LeafDataExporter(BaseDataExporter):
             not_sold = self.area.strategy.state.get_available_energy_kWh(slot)
             produced = self.area.strategy.state.get_energy_production_forecast_kWh(slot, 0.0)
             return [produced, not_sold]
+
+        return []
+
+
+class HeatPumpDataExporter(BaseDataExporter):
+    """Data exporter dedicated to heat pump areas"""
+
+    def __init__(self, area, past_markets):
+        assert is_heatpump_with_tanks(area)
+        self.area = area
+        self.past_markets = past_markets
+
+    @property
+    def labels(self) -> Dict[str, List]:
+        return {"heat_pump": ["slot", "energy traded [kWh]", "COP", "heat demand kJ"]}
+
+    @property
+    def rows(self) -> Dict[str, List]:
+        return {"heat_pump": [self._row(market.time_slot, market) for market in self.past_markets]}
+
+    def _traded(self, market):
+        return (
+            market.traded_energy[self.area.name] if self.area.name in market.traded_energy else 0
+        )
+
+    def _row(self, slot, market):
+        return [
+            slot,
+            self._traded(market),
+        ] + self._specific_row(slot, market)
+
+    def _specific_row(self, slot, market):
         # pylint: disable=unidiomatic-typecheck
         if type(self.area.strategy) == HeatPumpStrategy:
             return [
+                round(self.area.strategy.state.heatpump.get_cop(slot), ROUND_TOLERANCE),
                 round(
-                    self.area.strategy.state.charger.tanks.get_average_tank_temperature(slot),
+                    self.area.strategy.state.heatpump.get_heat_demand(slot) / 1000.0,
                     ROUND_TOLERANCE,
                 ),
-                round(self.area.strategy.state.heatpump.get_cop(slot), ROUND_TOLERANCE),
-                round(self.area.strategy.state.heatpump.get_heat_demand(slot), ROUND_TOLERANCE),
             ]
         # pylint: disable=unidiomatic-typecheck
         if type(self.area.strategy) == VirtualHeatpumpStrategy:
             return [
-                round(
-                    self.area.strategy.state.tanks.get_unmatched_demand_kWh(slot), ROUND_TOLERANCE
-                ),
-                round(self.area.strategy.state.get_storage_temp_C(slot), ROUND_TOLERANCE),
                 round(self.area.strategy.state.get_cop(slot), ROUND_TOLERANCE),
-                round(self.area.strategy.state.get_heat_demand(slot), ROUND_TOLERANCE),
-                round(self.area.strategy.state.get_condenser_temp(slot), ROUND_TOLERANCE),
+                round(self.area.strategy.state.get_heat_demand(slot) / 1000, ROUND_TOLERANCE),
             ]
         # pylint: disable=unidiomatic-typecheck
         if type(self.area.strategy) == MultipleTankHeatPumpStrategy:
             cop = self.area.strategy.state.heatpump.get_cop(slot)
             return [
-                round(
-                    self.area.strategy.state.charger.tanks.get_average_tank_temperature(slot),
-                    ROUND_TOLERANCE,
-                ),
-                round(
-                    self.area.strategy.state.charger.tanks.get_min_heat_energy_consumption_kJ(
-                        slot
-                    ),
-                    ROUND_TOLERANCE,
-                ),
                 round(cop, ROUND_TOLERANCE),
-                round(self.area.strategy.state.heatpump.get_heat_demand(slot), ROUND_TOLERANCE),
+                round(
+                    self.area.strategy.state.heatpump.get_heat_demand(slot) / 1000, ROUND_TOLERANCE
+                ),
             ]
         # pylint: disable=unidiomatic-typecheck
         if type(self.area.strategy) == MultipleTankVirtualHeatpumpStrategy:
             cop = self.area.strategy.state.heatpump.get_cop(slot)
             return [
-                round(
-                    self.area.strategy.state.tanks.get_unmatched_demand_kWh(slot), ROUND_TOLERANCE
-                ),
-                round(
-                    self.area.strategy.state.tanks.get_average_tank_temperature(slot),
-                    ROUND_TOLERANCE,
-                ),
-                round(
-                    self.area.strategy.state.tanks.get_min_energy_consumption(cop, slot),
-                    ROUND_TOLERANCE,
-                ),
                 round(cop, ROUND_TOLERANCE),
-                round(self.area.strategy.state.heatpump.get_condenser_temp(slot), ROUND_TOLERANCE),
+                round(
+                    self.area.strategy.state.tanks.get_min_energy_consumption(cop, slot),  # todo
+                    ROUND_TOLERANCE,
+                ),
             ]
 
         return []
@@ -330,9 +323,11 @@ class FileExportEndpoints:
     ) -> BaseDataExporter:
         """Decide which data acquisition class to use."""
         if past_market_type == AvailableMarketTypes.SPOT:
+            if len(area.children) > 0:
+                return UpperLevelDataExporter(area.past_markets)
             return (
-                UpperLevelDataExporter(area.past_markets)
-                if len(area.children) > 0
+                HeatPumpDataExporter(area, area.parent.past_markets)
+                if is_heatpump_with_tanks(area)
                 else LeafDataExporter(area, area.parent.past_markets)
             )
         if past_market_type == AvailableMarketTypes.BALANCING:
