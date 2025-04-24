@@ -3,7 +3,7 @@ from statistics import mean
 from typing import Union, List, Dict
 
 from gsy_framework.constants_limits import GlobalConfig, FLOATING_POINT_TOLERANCE
-from gsy_framework.utils import convert_kJ_to_kWh, convert_kWh_to_kJ
+from gsy_framework.utils import convert_kJ_to_kWh
 from pendulum import DateTime
 
 from gsy_e.models.strategy.state.heatpump_pcm_tank_state import PCMTankState
@@ -55,19 +55,19 @@ class AllTanksState:
 
     def get_max_heat_energy_consumption_kJ(self, time_slot: DateTime):
         """Get max heat energy consumption from all water tanks."""
-        max_energy_consumption_kWh = sum(
-            tank.get_max_heat_energy_consumption_kWh(time_slot) for tank in self._tanks_states
+        max_energy_consumption_kJ = sum(
+            tank.get_max_heat_energy_consumption_kJ(time_slot) for tank in self._tanks_states
         )
-        assert max_energy_consumption_kWh > -FLOATING_POINT_TOLERANCE
-        return convert_kWh_to_kJ(max_energy_consumption_kWh)
+        assert max_energy_consumption_kJ > -FLOATING_POINT_TOLERANCE
+        return max_energy_consumption_kJ
 
     def get_min_heat_energy_consumption_kJ(self, time_slot: DateTime):
         """Get min heat energy consumption from all water tanks."""
-        min_energy_consumption_kWh = sum(
-            tank.get_min_heat_energy_consumption_kWh(time_slot) for tank in self._tanks_states
+        min_energy_consumption_kJ = sum(
+            tank.get_min_heat_energy_consumption_kJ(time_slot) for tank in self._tanks_states
         )
-        assert min_energy_consumption_kWh > -FLOATING_POINT_TOLERANCE
-        return convert_kWh_to_kJ(min_energy_consumption_kWh)
+        assert min_energy_consumption_kJ > -FLOATING_POINT_TOLERANCE
+        return min_energy_consumption_kJ
 
     def get_average_tank_temperature(self, time_slot: DateTime):
         """Get average tank temperature of all water tanks."""

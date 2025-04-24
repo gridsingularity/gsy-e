@@ -11,7 +11,6 @@ from gsy_framework.utils import (
     convert_str_to_pendulum_in_dict,
     convert_kWh_to_W,
     convert_kWh_to_kJ,
-    convert_kJ_to_kWh,
 )
 
 from gsy_e import constants
@@ -256,15 +255,15 @@ class PCMTankState(TankStateBase):
     def _get_current_heat_charge_kJ(self, time_slot: DateTime):
         return self.get_soc(time_slot) / 100 * self._max_capacity_kJ
 
-    def get_min_heat_energy_consumption_kWh(self, time_slot: DateTime):
+    def get_min_heat_energy_consumption_kJ(self, time_slot: DateTime):
         current_heat_charge_kJ = self._get_current_heat_charge_kJ(time_slot)
         heat_demand_kJ = self._get_heat_demand_kJ(time_slot)
         if current_heat_charge_kJ >= heat_demand_kJ:
             return 0
-        return convert_kJ_to_kWh(heat_demand_kJ)
+        return heat_demand_kJ
 
-    def get_max_heat_energy_consumption_kWh(self, time_slot):
-        return convert_kJ_to_kWh(
+    def get_max_heat_energy_consumption_kJ(self, time_slot):
+        return (
             self._max_capacity_kJ
             - self._get_current_heat_charge_kJ(time_slot)
             + self._get_heat_demand_kJ(time_slot)

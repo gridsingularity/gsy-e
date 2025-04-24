@@ -5,6 +5,7 @@ from typing import Dict
 from gsy_framework.utils import (
     convert_pendulum_to_str_in_dict,
     convert_str_to_pendulum_in_dict,
+    convert_kWh_to_kJ,
 )
 from pendulum import DateTime, duration
 
@@ -129,7 +130,7 @@ class HeatPumpTankState(TankStateBase):
         """Increase the tank temperature from temperature delta."""
         self.update_temp_increase_K(time_slot, temp_diff)
 
-    def get_max_heat_energy_consumption_kWh(self, time_slot: DateTime):
+    def get_max_heat_energy_consumption_kJ(self, time_slot: DateTime):
         """Calculate max heat energy consumption that the tank can accomodate."""
         max_temp_diff = (
             self._max_storage_temp_C
@@ -138,9 +139,9 @@ class HeatPumpTankState(TankStateBase):
         )
         if max_temp_diff < 0:
             assert False
-        return max_temp_diff * self._Q_specific
+        return convert_kWh_to_kJ(max_temp_diff * self._Q_specific)
 
-    def get_min_heat_energy_consumption_kWh(self, time_slot: DateTime):
+    def get_min_heat_energy_consumption_kJ(self, time_slot: DateTime):
         """
         Calculate min heat energy consumption that a heatpump has to consume in
         order to only let the storage drop its temperature to the minimum storage temperature.
@@ -156,7 +157,7 @@ class HeatPumpTankState(TankStateBase):
             if diff_to_min_temp_C <= temp_diff_due_to_consumption
             else 0
         )
-        return min_temp_diff * self._Q_specific
+        return convert_kWh_to_kJ(min_temp_diff * self._Q_specific)
 
     def current_tank_temperature(self, time_slot: DateTime) -> float:
         """Get current tank temperature for timeslot."""

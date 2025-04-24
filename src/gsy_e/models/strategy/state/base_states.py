@@ -415,14 +415,12 @@ class TankStateBase(StateInterface):
         """Update the storage temperature"""
 
     @abstractmethod
-    def get_max_heat_energy_consumption_kWh(self, time_slot):
+    def get_max_heat_energy_consumption_kJ(self, time_slot):
         """Return the maximal energy consumption."""
-        # todo: switch to kJ
 
     @abstractmethod
-    def get_min_heat_energy_consumption_kWh(self, time_slot):
-        """Return the mimimal energy consumption."""
-        # todo: switch to kJ
+    def get_min_heat_energy_consumption_kJ(self, time_slot):
+        """Return the minimal energy consumption."""
 
     @abstractmethod
     def current_tank_temperature(self, time_slot):
