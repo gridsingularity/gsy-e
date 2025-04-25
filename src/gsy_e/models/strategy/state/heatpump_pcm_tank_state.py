@@ -111,7 +111,7 @@ class PCMTankState(TankStateBase):
 
     def get_soc(self, time_slot: DateTime) -> float:
         """Return SOC level in percent."""
-        return self._soc[time_slot]
+        return self._soc.get(time_slot) * 100
 
     def get_htf_temp_C(self, time_slot: DateTime) -> Optional[float]:
         """Return mean temperature of the heat transfer fluid"""
@@ -177,7 +177,7 @@ class PCMTankState(TankStateBase):
         if not self._is_temp_limit_respected(condensor_temp_C):
             self._htf_temps_C[next_market_slot] = self._get_htf_temps_C(time_slot)
             self._pcm_temps_C[next_market_slot] = self._get_pcm_temps_C(time_slot)
-            self._soc[next_market_slot] = self.get_soc(time_slot)
+            self._soc[next_market_slot] = self.get_soc(time_slot) / 100.0
             return
         htf_temps, pcm_temps = self._pcm_charge_model.get_temp_after_charging(
             current_htf_temps_C=self._get_htf_temps_C(time_slot),
@@ -197,7 +197,7 @@ class PCMTankState(TankStateBase):
         if not self._is_temp_limit_respected(condensor_temp_C):
             self._htf_temps_C[next_market_slot] = self._get_htf_temps_C(time_slot)
             self._pcm_temps_C[next_market_slot] = self._get_pcm_temps_C(time_slot)
-            self._soc[next_market_slot] = self.get_soc(time_slot)
+            self._soc[next_market_slot] = self.get_soc(time_slot) / 100.0
             return
         htf_temps, pcm_temps = self._pcm_discharge_model.get_temp_after_discharging(
             current_htf_temps_C=self._get_htf_temps_C(time_slot),
