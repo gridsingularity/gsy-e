@@ -279,12 +279,12 @@ class HeatPumpDataExporter(BaseDataExporter):
                 ),
             ]
         if file_key == "water_tanks":
-            for tank in self.area.strategy.state.charger.tanks._tanks_states:
+            for tank in self.area.strategy.state.charger.tanks.tanks_states:
                 if isinstance(tank, WaterTankState):
                     rows.append(round(tank.current_tank_temperature(slot), ROUND_TOLERANCE))
                     rows.append(round(tank.get_soc(slot), ROUND_TOLERANCE))
         if file_key == "pcm_tanks":
-            for tank in self.area.strategy.state.charger.tanks._tanks_states:
+            for tank in self.area.strategy.state.charger.tanks.tanks_states:
                 if isinstance(tank, PCMTankState):
                     rows.append(round(tank.current_tank_temperature(slot), ROUND_TOLERANCE))
                     rows.append(round(tank.get_soc(slot), ROUND_TOLERANCE))
@@ -293,7 +293,7 @@ class HeatPumpDataExporter(BaseDataExporter):
     @property
     def _water_tank_labels(self):
         labels = ["slot"]
-        for number, tank in enumerate(self.area.strategy.state.charger.tanks._tanks_states):
+        for number, tank in enumerate(self.area.strategy.state.charger.tanks.tanks_states):
             if isinstance(tank, WaterTankState):
                 labels.append(f"tank {number + 1} temperature C")
                 labels.append(f"tank {number} SOC %")
@@ -302,7 +302,7 @@ class HeatPumpDataExporter(BaseDataExporter):
     @property
     def _pcm_tank_labels(self):
         labels = ["slot"]
-        for number, tank in enumerate(self.area.strategy.state.charger.tanks._tanks_states):
+        for number, tank in enumerate(self.area.strategy.state.charger.tanks.tanks_states):
             if isinstance(tank, WaterTankState):
                 labels.append(f"tank {number + 1} temperature C")
                 labels.append(f"tank {number + 1} SOC %")
