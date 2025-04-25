@@ -7,7 +7,7 @@ from gsy_framework.utils import convert_kJ_to_kWh
 from pendulum import DateTime
 
 from gsy_e.models.strategy.state.heatpump_pcm_tank_state import PCMTankState
-from gsy_e.models.strategy.state.heatpump_water_tank_state import HeatPumpTankState
+from gsy_e.models.strategy.state.heatpump_water_tank_state import WaterTankState
 from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import (
     TankParameters,
     HeatpumpTankTypes,
@@ -22,7 +22,7 @@ class AllTanksState:
     def __init__(self, tank_parameters: List[TankParameters]):
         self._tanks_states = [
             (
-                HeatPumpTankState(tank_parameters=tank, slot_length=GlobalConfig.slot_length)
+                WaterTankState(tank_parameters=tank, slot_length=GlobalConfig.slot_length)
                 if tank.type == HeatpumpTankTypes.WATER
                 else PCMTankState(tank_parameters=tank)
             )

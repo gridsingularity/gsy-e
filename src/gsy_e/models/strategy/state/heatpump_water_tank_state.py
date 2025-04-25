@@ -22,7 +22,7 @@ from gsy_e.models.strategy.state.heatpump_state import delete_time_slots_in_stat
 log = getLogger(__name__)
 
 
-class HeatPumpTankState(TankStateBase):
+class WaterTankState(TankStateBase):
     """State for the heat pump tank."""
 
     # pylint: disable=too-many-instance-attributes

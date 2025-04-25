@@ -10,7 +10,7 @@ from gsy_e.models.strategy.energy_parameters.heatpump.constants import (
 )
 from gsy_e.models.strategy.state.heatpump_all_tanks_state import AllTanksState
 from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import TankParameters
-from gsy_e.models.strategy.state.heatpump_water_tank_state import HeatPumpTankState
+from gsy_e.models.strategy.state.heatpump_water_tank_state import WaterTankState
 from gsy_e.models.strategy.energy_parameters.heatpump.virtual_heatpump_solver import (
     TankSolverParameters,
     VirtualHeatpumpSolverParameters,
@@ -20,7 +20,7 @@ from gsy_e.models.strategy.energy_parameters.heatpump.virtual_heatpump_solver im
 logger = logging.getLogger(__name__)
 
 
-class VirtualHeatpumpTankState(HeatPumpTankState):
+class VirtualHeatpumpTankState(WaterTankState):
     """
     Individual tank energy parameters, for operation with the virtual heatpump.
     Uses the sympy solver in order to model the water tank.
