@@ -485,10 +485,15 @@ class ExportAndPlot:
         data = self.file_stats_endpoint.export_data_factory(area, past_market_type)
         if is_heatpump_with_tanks(area):
             for file_key in ["heat_pump", "water_tanks", "pcm_tanks"]:
-                if not data.rows.get(file_key):
+                if not data.labels.get(file_key):
+                    # case when specific tank is not configured
                     continue
                 self._write_rows_to_csv_file(
-                    data.rows[file_key], data.labels[file_key], directory, file_name, is_first
+                    data.rows[file_key],
+                    data.labels[file_key],
+                    directory,
+                    f"{file_name}_{file_key}",
+                    is_first,
                 )
         else:
             self._write_rows_to_csv_file(data.rows, data.labels, directory, file_name, is_first)
