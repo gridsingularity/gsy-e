@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from abc import ABC, abstractmethod
 from math import copysign
 from typing import Dict, Optional
+from collections import defaultdict
 
 from pendulum import DateTime
 
@@ -407,6 +408,9 @@ class TankStateBase(StateInterface):
         self.name = tank_parameters.name
         self._min_storage_temp_C = tank_parameters.min_temp_C
         self._max_storage_temp_C = tank_parameters.max_temp_C
+        self._initial_temp_C = tank_parameters.initial_temp_C
+        self._soc: Dict[DateTime, float] = defaultdict(lambda: 0)
+        self._max_capacity_kJ: float = 0
 
     @abstractmethod
     def increase_tank_temp_from_heat_energy(self, heat_energy_kWh, time_slot):
@@ -443,3 +447,7 @@ class TankStateBase(StateInterface):
     @abstractmethod
     def init(self):
         """Initiate class members of the tank"""
+
+    def get_available_energy_kJ(self, time_slot: DateTime) -> float:
+        """Return the available energy stored in the tank."""
+        return self._soc.get(time_slot) * self._max_capacity_kJ

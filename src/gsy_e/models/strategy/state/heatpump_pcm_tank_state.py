@@ -45,8 +45,6 @@ class PCMTankState(TankStateBase):
         self._pcm_temps_C: Dict[DateTime, list[float]] = {}
         self._consumed_energy: Dict[DateTime, float] = defaultdict(lambda: 0)
         self._max_capacity_kJ = tank_parameters.max_capacity_kJ
-        self._initial_temp_C = tank_parameters.initial_temp_C
-        self._soc: Dict[DateTime, float] = defaultdict(lambda: 0)
         self._pcm_charge_model = PCMChargeModel(
             slot_length=GlobalConfig.slot_length, mass_flow_rate_kg_s=MASS_FLOW_RATE
         )
@@ -82,6 +80,10 @@ class PCMTankState(TankStateBase):
         self._pcm_temps_C[GlobalConfig.start_date] = [
             self._initial_temp_C for _ in range(int(NUMBER_OF_PCM_ELEMENTS / 2))
         ]
+        # based on a non-physical assumption for the initial market slot, to be improved
+        self._soc[GlobalConfig.start_date] = (self._initial_temp_C - self._min_storage_temp_C) / (
+            self._max_storage_temp_C - self._min_storage_temp_C
+        )
 
     def is_time_slot_available(self, time_slot: DateTime) -> bool:
         """Return True if the provided time_slot is part of the _storage_temp_C dict."""
@@ -121,17 +123,17 @@ class PCMTankState(TankStateBase):
         pcm_temps = self._get_pcm_temps_C(time_slot)
         return None if pcm_temps is None else mean(pcm_temps)
 
-    def _get_maximum_available_storage_energy_kWh(self, time_slot: DateTime):
-        """Return the maximum available energy that can be stored in the storage."""
-        return self._max_capacity_kWh - self.get_soc(time_slot) / 100 * self._max_capacity_kWh
-
     def _is_temp_limit_respected(self, condensor_temp_C: float) -> bool:
-        if (
-            condensor_temp_C < self._min_storage_temp_C
-            or condensor_temp_C > self._max_storage_temp_C
-        ):
+        if condensor_temp_C < self._min_storage_temp_C:
             log.error(
-                "The PCM storage tank reach it's maximum, charging /discharging "
+                "The PCM storage tank reach it's minimum, discharging "
+                "condensor temperature of %s is omitted",
+                condensor_temp_C,
+            )
+            return False
+        if condensor_temp_C > self._max_storage_temp_C:
+            log.error(
+                "The PCM storage tank reach it's maximum, charging "
                 "condensor temperature of %s is omitted",
                 condensor_temp_C,
             )

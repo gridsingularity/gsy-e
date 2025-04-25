@@ -34,8 +34,11 @@ class WaterTankState(TankStateBase):
         )
         self._temp_decrease_K: Dict[DateTime, float] = defaultdict(lambda: 0)
         self._temp_increase_K: Dict[DateTime, float] = defaultdict(lambda: 0)
-        self._soc: Dict[DateTime, float] = defaultdict(lambda: 0)
+
         self._tank_volume_L = tank_parameters.tank_volume_L
+        self._max_capacity_kJ = convert_kWh_to_kJ(
+            (self._max_storage_temp_C - self._min_storage_temp_C) * self._Q_specific
+        )
 
     def get_storage_temp_C(self, time_slot: DateTime) -> float:
         """Return temperature of storage for a time slot in degree celsius."""

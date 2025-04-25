@@ -29,19 +29,33 @@ class AllTanksState:
             for tank in tank_parameters
         ]
 
+        self._current_energy_demands_tanks: List[float] = []
+
+    def _get_scaling_factors_for_charging_energy(self):
+        total_energy = sum(self._current_energy_demands_tanks)
+        if total_energy == 0:
+            return [0 for _ in range(len(self.tanks_states))]
+        return [energy / total_energy for energy in self._current_energy_demands_tanks]
+
+    def _get_scaling_factors_for_discharging(self, time_slot):
+        available_energies = [
+            tank.get_available_energy_kJ(time_slot) for tank in self.tanks_states
+        ]
+        total_available_energy = sum(available_energies)
+        return [energy / total_available_energy for energy in available_energies]
+
     def increase_tanks_temp_from_heat_energy(self, heat_energy_kJ: float, time_slot: DateTime):
         """Increase the temperature of the water tanks with the provided heat energy."""
-        # Split heat energy equally across tanks
-        heat_energy_per_tank_kJ = heat_energy_kJ / len(self.tanks_states)
-        heat_energy_per_tank_kWh = convert_kJ_to_kWh(heat_energy_per_tank_kJ)
-        for tank in self.tanks_states:
+        scaling_factors = self._get_scaling_factors_for_charging_energy()
+        for num, tank in enumerate(self.tanks_states):
+            heat_energy_per_tank_kWh = convert_kJ_to_kWh(heat_energy_kJ * scaling_factors[num])
             tank.increase_tank_temp_from_heat_energy(heat_energy_per_tank_kWh, time_slot)
 
     def decrease_tanks_temp_from_heat_energy(self, heat_energy_kJ: float, time_slot: DateTime):
         """Decrease the temperature of the water tanks with the provided heat energy."""
-        heat_energy_per_tank_kJ = heat_energy_kJ / len(self.tanks_states)
-        heat_energy_per_tank_kWh = convert_kJ_to_kWh(heat_energy_per_tank_kJ)
-        for tank in self.tanks_states:
+        scaling_factors = self._get_scaling_factors_for_discharging(time_slot)
+        for num, tank in enumerate(self.tanks_states):
+            heat_energy_per_tank_kWh = convert_kJ_to_kWh(heat_energy_kJ * scaling_factors[num])
             tank.decrease_tank_temp_from_heat_energy(heat_energy_per_tank_kWh, time_slot)
 
     def update_tanks_temperature(self, time_slot: DateTime):
@@ -63,9 +77,10 @@ class AllTanksState:
 
     def get_min_heat_energy_consumption_kJ(self, time_slot: DateTime):
         """Get min heat energy consumption from all water tanks."""
-        min_energy_consumption_kJ = sum(
+        self._current_energy_demands_tanks = [
             tank.get_min_heat_energy_consumption_kJ(time_slot) for tank in self.tanks_states
-        )
+        ]
+        min_energy_consumption_kJ = sum(self._current_energy_demands_tanks)
         assert min_energy_consumption_kJ > -FLOATING_POINT_TOLERANCE
         return min_energy_consumption_kJ
 
