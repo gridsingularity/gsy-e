@@ -8,7 +8,7 @@ from gsy_framework.utils import (
     convert_kWh_to_kJ,
 )
 from gsy_framework.constants_limits import GlobalConfig
-from pendulum import DateTime, duration
+from pendulum import DateTime
 
 from gsy_e import constants
 from gsy_e.models.strategy.energy_parameters.heatpump.constants import (
@@ -27,17 +27,15 @@ class WaterTankState(TankStateBase):
 
     # pylint: disable=too-many-instance-attributes
 
-    def __init__(self, tank_parameters: TankParameters, slot_length: duration):
+    def __init__(self, tank_parameters: TankParameters):
+        super().__init__(tank_parameters)
         self._storage_temp_C: Dict[DateTime, float] = defaultdict(
             lambda: tank_parameters.initial_temp_C
         )
         self._temp_decrease_K: Dict[DateTime, float] = defaultdict(lambda: 0)
         self._temp_increase_K: Dict[DateTime, float] = defaultdict(lambda: 0)
         self._soc: Dict[DateTime, float] = defaultdict(lambda: 0)
-        self._min_storage_temp_C = tank_parameters.min_temp_C
-        self._max_storage_temp_C = tank_parameters.max_temp_C
         self._tank_volume_L = tank_parameters.tank_volume_L
-        self._slot_length = slot_length
 
     def get_storage_temp_C(self, time_slot: DateTime) -> float:
         """Return temperature of storage for a time slot in degree celsius."""
@@ -185,7 +183,7 @@ class WaterTankState(TankStateBase):
         return SPECIFIC_HEAT_CONST_WATER * self._tank_volume_L * WATER_DENSITY
 
     def _last_time_slot(self, current_market_slot: DateTime) -> DateTime:
-        return current_market_slot - self._slot_length
+        return current_market_slot - GlobalConfig.slot_length
 
     @staticmethod
     def _delete_time_slots(profile: Dict, current_time_stamp: DateTime):

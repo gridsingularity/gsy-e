@@ -40,14 +40,12 @@ class PCMTankState(TankStateBase):
         self,
         tank_parameters: TankParameters,
     ):
+        super().__init__(tank_parameters)
         self._htf_temps_C: Dict[DateTime, list[float]] = {}
         self._pcm_temps_C: Dict[DateTime, list[float]] = {}
         self._consumed_energy: Dict[DateTime, float] = defaultdict(lambda: 0)
-        self._initial_temp_C = tank_parameters.initial_temp_C
-        self._min_storage_temp_C = tank_parameters.min_temp_C
-        self._max_storage_temp_C = tank_parameters.max_temp_C
         self._max_capacity_kJ = tank_parameters.max_capacity_kJ
-
+        self._initial_temp_C = tank_parameters.initial_temp_C
         self._soc: Dict[DateTime, float] = defaultdict(lambda: 0)
         self._pcm_charge_model = PCMChargeModel(
             slot_length=GlobalConfig.slot_length, mass_flow_rate_kg_s=MASS_FLOW_RATE

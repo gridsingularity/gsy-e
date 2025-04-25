@@ -2,7 +2,7 @@ from logging import getLogger
 from statistics import mean
 from typing import Union, List, Dict
 
-from gsy_framework.constants_limits import GlobalConfig, FLOATING_POINT_TOLERANCE
+from gsy_framework.constants_limits import FLOATING_POINT_TOLERANCE
 from gsy_framework.utils import convert_kJ_to_kWh
 from pendulum import DateTime
 
@@ -22,7 +22,7 @@ class AllTanksState:
     def __init__(self, tank_parameters: List[TankParameters]):
         self.tanks_states = [
             (
-                WaterTankState(tank_parameters=tank, slot_length=GlobalConfig.slot_length)
+                WaterTankState(tank_parameters=tank)
                 if tank.type == HeatpumpTankTypes.WATER
                 else PCMTankState(tank_parameters=tank)
             )

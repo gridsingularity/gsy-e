@@ -103,9 +103,7 @@ class VirtualHeatpumpAllTanksState(AllTanksState):
 
     # pylint: disable=super-init-not-called
     def __init__(self, tank_parameters: List[TankParameters]):
-        self.tanks_states = [
-            VirtualHeatpumpTankState(tank, GlobalConfig.slot_length) for tank in tank_parameters
-        ]
+        self.tanks_states = [VirtualHeatpumpTankState(tank) for tank in tank_parameters]
 
     def set_temp_decrease_vhp(
         self, heat_energy: float, time_slot: DateTime

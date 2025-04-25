@@ -295,8 +295,9 @@ class HeatPumpDataExporter(BaseDataExporter):
         labels = ["slot"]
         for number, tank in enumerate(self.area.strategy.state.charger.tanks.tanks_states):
             if isinstance(tank, WaterTankState):
-                labels.append(f"tank {number + 1} temperature C")
-                labels.append(f"tank {number} SOC %")
+                tank_name_str = tank.name if tank.name else f"tank {number + 1}"
+                labels.append(f"{tank_name_str} temperature C")
+                labels.append(f"{tank_name_str} SOC %")
         return labels
 
     @property
@@ -304,8 +305,9 @@ class HeatPumpDataExporter(BaseDataExporter):
         labels = ["slot"]
         for number, tank in enumerate(self.area.strategy.state.charger.tanks.tanks_states):
             if isinstance(tank, WaterTankState):
-                labels.append(f"tank {number + 1} temperature C")
-                labels.append(f"tank {number + 1} SOC %")
+                tank_name_str = tank.name if tank.name else f"tank {number + 1}"
+                labels.append(f"{tank_name_str} temperature C")
+                labels.append(f"{tank_name_str} SOC %")
         return labels
 
 
