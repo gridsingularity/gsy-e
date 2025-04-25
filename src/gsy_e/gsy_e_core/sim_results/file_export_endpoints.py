@@ -282,7 +282,7 @@ class HeatPumpDataExporter(BaseDataExporter):
             for tank in self.area.strategy.state.charger.tanks._tanks_states:
                 if isinstance(tank, HeatPumpTankState):
                     rows.append(round(tank.current_tank_temperature(slot), ROUND_TOLERANCE))
-                    # rows.append(round(tank.get_soc(slot), ROUND_TOLERANCE))
+                    rows.append(round(tank.get_soc(slot), ROUND_TOLERANCE))
         if file_key == "pcm_tanks":
             for tank in self.area.strategy.state.charger.tanks._tanks_states:
                 if isinstance(tank, PCMTankState):
@@ -296,7 +296,7 @@ class HeatPumpDataExporter(BaseDataExporter):
         for number, tank in enumerate(self.area.strategy.state.charger.tanks._tanks_states):
             if isinstance(tank, HeatPumpTankState):
                 labels.append(f"tank {number + 1} temperature C")
-                # labels.append(f"tank {number} SOC %")
+                labels.append(f"tank {number} SOC %")
         return labels
 
     @property

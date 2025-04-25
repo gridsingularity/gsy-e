@@ -100,4 +100,4 @@ class AllTanksState:
     def event_activate(self):
         """Perform steps when activate event is called"""
         for tank in self._tanks_states:
-            tank.init_storage_temps()
+            tank.init()

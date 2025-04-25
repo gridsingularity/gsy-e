@@ -74,7 +74,7 @@ class PCMTankState(TankStateBase):
         """Return consumed_energy for the provided time_slot"""
         return self._consumed_energy.get(time_slot, 0.0)
 
-    def init_storage_temps(self):
+    def init(self):
         """
         Initiate the storage temperatures with the initial temperature of the storge
         """

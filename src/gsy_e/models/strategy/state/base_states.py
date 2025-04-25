@@ -427,9 +427,13 @@ class TankStateBase(StateInterface):
         """Return current temperature of the tank."""
 
     @abstractmethod
+    def get_soc(self, time_slot):
+        """Return the current SOC of tha tank"""
+
+    @abstractmethod
     def serialize(self):
         """Serialize the memebrs of the class."""
 
     @abstractmethod
-    def init_storage_temps(self):
-        """Initiate the temperature values of the tank"""
+    def init(self):
+        """Initiate class members of the tank"""
