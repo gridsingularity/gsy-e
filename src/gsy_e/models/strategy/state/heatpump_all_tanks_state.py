@@ -42,6 +42,8 @@ class AllTanksState:
             tank.get_available_energy_kJ(time_slot) for tank in self.tanks_states
         ]
         total_available_energy = sum(available_energies)
+        if total_available_energy == 0:
+            return [0 for _ in range(len(self.tanks_states))]
         return [energy / total_available_energy for energy in available_energies]
 
     def increase_tanks_temp_from_heat_energy(self, heat_energy_kJ: float, time_slot: DateTime):

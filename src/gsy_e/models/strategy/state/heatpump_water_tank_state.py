@@ -54,6 +54,9 @@ class WaterTankState(TankStateBase):
         if new_temp < self._min_storage_temp_C:
             new_temp = self._min_storage_temp_C
             log.warning("Storage tank temperature dropped below minimum, setting to minimum.")
+        if new_temp > self._max_storage_temp_C:
+            new_temp = self._max_storage_temp_C
+            log.warning("Storage tank temperature rose beyond the maximum, setting to maximum.")
         self._storage_temp_C[time_slot] = new_temp
         self._update_soc(time_slot)
 
