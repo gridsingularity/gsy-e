@@ -304,7 +304,7 @@ class HeatPumpDataExporter(BaseDataExporter):
     def _pcm_tank_labels(self):
         labels = ["slot"]
         for number, tank in enumerate(self.area.strategy.state.charger.tanks.tanks_states):
-            if isinstance(tank, WaterTankState):
+            if isinstance(tank, PCMTankState):
                 tank_name_str = tank.name if tank.name else f"tank {number + 1}"
                 labels.append(f"{tank_name_str} temperature C")
                 labels.append(f"{tank_name_str} SOC %")

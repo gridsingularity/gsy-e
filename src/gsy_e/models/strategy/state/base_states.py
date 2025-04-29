@@ -405,12 +405,8 @@ class TankStateBase(StateInterface):
     """Base class for heat tank states"""
 
     def __init__(self, tank_parameters: TankParameters):
-        self.name = tank_parameters.name
-        self._min_storage_temp_C = tank_parameters.min_temp_C
-        self._max_storage_temp_C = tank_parameters.max_temp_C
-        self._initial_temp_C = tank_parameters.initial_temp_C
         self._soc: Dict[DateTime, float] = defaultdict(lambda: 0)
-        self._max_capacity_kJ: float = 0
+        self._params = tank_parameters
 
     @abstractmethod
     def increase_tank_temp_from_heat_energy(self, heat_energy_kWh, time_slot):
