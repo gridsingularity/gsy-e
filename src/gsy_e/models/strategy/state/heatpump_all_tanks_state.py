@@ -7,7 +7,7 @@ from gsy_framework.utils import convert_kJ_to_kWh
 from pendulum import DateTime
 
 from gsy_e.models.strategy.state.heatpump_pcm_tank_state import PCMTankState
-from gsy_e.models.strategy.state.heatpump_water_tank_state import HeatPumpTankState
+from gsy_e.models.strategy.state.heatpump_water_tank_state import HeatPumpTankState, TankStateBase
 from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import (
     TankParameters,
     HeatpumpTankTypes,
@@ -16,18 +16,22 @@ from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import (
 log = getLogger(__name__)
 
 
+def heatpump_state_factory(tank_parameter: TankParameters) -> TankStateBase:
+    """Return correct Tank object from the type provided in the tank parameters."""
+    if tank_parameter.type == HeatpumpTankTypes.WATER:
+        return HeatPumpTankState(
+            tank_parameters=tank_parameter, slot_length=GlobalConfig.slot_length
+        )
+    if tank_parameter.type == HeatpumpTankTypes.PCM:
+        return PCMTankState(tank_parameters=tank_parameter)
+    assert False, f"Unsupported heat pump tank type {tank_parameter.type}"
+
+
 class AllTanksState:
     """Manage the operation of heating and extracting temperature from multiple tanks."""
 
     def __init__(self, tank_parameters: List[TankParameters]):
-        self._tanks_states = [
-            (
-                HeatPumpTankState(tank_parameters=tank, slot_length=GlobalConfig.slot_length)
-                if tank.type == HeatpumpTankTypes.WATER
-                else PCMTankState(tank_parameters=tank)
-            )
-            for tank in tank_parameters
-        ]
+        self._tanks_states = [heatpump_state_factory(tank) for tank in tank_parameters]
 
     def increase_tanks_temp_from_heat_energy(self, heat_energy_kJ: float, time_slot: DateTime):
         """Increase the temperature of the water tanks with the provided heat energy."""
