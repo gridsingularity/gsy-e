@@ -26,6 +26,7 @@ from gsy_framework.constants_limits import FLOATING_POINT_TOLERANCE
 from gsy_framework.utils import convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict
 
 from gsy_e.gsy_e_core.util import is_time_slot_in_past_markets
+from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import TankParameters
 
 
 class UnexpectedStateException(Exception):
@@ -402,6 +403,9 @@ class ProductionState(ProsumptionInterface):
 class TankStateBase(StateInterface):
     """Base class for heat tank states"""
 
+    def __init__(self, tank_parameters: TankParameters):
+        self._params = tank_parameters
+
     @abstractmethod
     def increase_tank_temp_from_heat_energy(self, heat_energy_kWh, time_slot):
         """Set the tank temperature increase from heat energy."""
@@ -427,9 +431,13 @@ class TankStateBase(StateInterface):
         """Return current temperature of the tank."""
 
     @abstractmethod
+    def get_soc(self, time_slot):
+        """Return the current SOC of tha tank"""
+
+    @abstractmethod
     def serialize(self):
         """Serialize the memebrs of the class."""
 
     @abstractmethod
-    def init_storage_temps(self):
-        """Initiate the temperature values of the tank"""
+    def init(self):
+        """Initiate class members of the tank"""

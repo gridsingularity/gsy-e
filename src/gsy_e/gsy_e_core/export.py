@@ -35,15 +35,19 @@ from gsy_framework.data_classes import (
 )
 from gsy_framework.enums import AvailableMarketTypes, BidOfferMatchAlgoEnum
 from gsy_framework.read_user_profile import InputProfileTypes
-from gsy_framework.utils import mkdir_from_str
 from gsy_framework.sim_results.carbon_emissions.results import CarbonEmissionsHandler
+from gsy_framework.utils import mkdir_from_str
 from pendulum import DateTime
 
 import gsy_e.constants
 from gsy_e.gsy_e_core.area_serializer import area_to_string
 from gsy_e.gsy_e_core.enums import PAST_MARKET_TYPE_FILE_SUFFIX_MAPPING
+from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.gsy_e_core.matching_engine_singleton import bid_offer_matcher
-from gsy_e.gsy_e_core.sim_results.file_export_endpoints import file_export_endpoints_factory
+from gsy_e.gsy_e_core.sim_results.file_export_endpoints import (
+    file_export_endpoints_factory,
+    is_heatpump_with_tanks,
+)
 from gsy_e.gsy_e_core.sim_results.results_plots import (
     PlotAverageTradePrice,
     PlotDeviceStats,
@@ -56,7 +60,6 @@ from gsy_e.gsy_e_core.sim_results.results_plots import (
     PlotUnmatchedLoads,
 )
 from gsy_e.gsy_e_core.util import constsettings_to_dict, is_two_sided_market_simulation
-from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.models.area import Area
 
 if TYPE_CHECKING:
@@ -461,25 +464,39 @@ class ExportAndPlot:
         except OSError:
             _log.exception("Could not export offers, bids, trades")
 
+    def _write_rows_to_csv_file(self, rows, labels, directory, file_name, is_first):
+        if not rows and not is_first:
+            return
+        try:
+            with open(self._file_path(directory, file_name), "a", encoding="utf-8") as csv_file:
+                writer = csv.writer(csv_file)
+                if is_first:
+                    writer.writerow(labels)
+                for row in rows:
+                    writer.writerow(row)
+        except OSError:
+            _log.exception("Could not export area data.")
+
     def _export_area_stats_csv_file(
         self, area: Area, directory: dir, past_market_type: AvailableMarketTypes, is_first: bool
     ) -> None:
         """Export trade statistics in *.csv files."""
         file_name = f"{area.slug}{PAST_MARKET_TYPE_FILE_SUFFIX_MAPPING[past_market_type]}"
         data = self.file_stats_endpoint.export_data_factory(area, past_market_type)
-        rows = data.rows
-        if not rows and not is_first:
-            return
-
-        try:
-            with open(self._file_path(directory, file_name), "a", encoding="utf-8") as csv_file:
-                writer = csv.writer(csv_file)
-                if is_first:
-                    writer.writerow(data.labels)
-                for row in rows:
-                    writer.writerow(row)
-        except OSError:
-            _log.exception("Could not export area data.")
+        if is_heatpump_with_tanks(area):
+            for file_key in ["heat_pump", "water_tanks", "pcm_tanks"]:
+                if not data.labels.get(file_key):
+                    # case when specific tank is not configured
+                    continue
+                self._write_rows_to_csv_file(
+                    data.rows[file_key],
+                    data.labels[file_key],
+                    directory,
+                    f"{file_name}_{file_key}",
+                    is_first,
+                )
+        else:
+            self._write_rows_to_csv_file(data.rows, data.labels, directory, file_name, is_first)
 
 
 # pylint: disable=missing-class-docstring,arguments-differ,attribute-defined-outside-init

@@ -40,14 +40,10 @@ class PCMTankState(TankStateBase):
         self,
         tank_parameters: TankParameters,
     ):
+        super().__init__(tank_parameters)
         self._htf_temps_C: Dict[DateTime, list[float]] = {}
         self._pcm_temps_C: Dict[DateTime, list[float]] = {}
         self._consumed_energy: Dict[DateTime, float] = defaultdict(lambda: 0)
-        self._initial_temp_C = tank_parameters.initial_temp_C
-        self._min_storage_temp_C = tank_parameters.min_temp_C
-        self._max_storage_temp_C = tank_parameters.max_temp_C
-        self._max_capacity_kJ = tank_parameters.max_capacity_kJ
-
         self._soc: Dict[DateTime, float] = defaultdict(lambda: 0)
         self._pcm_charge_model = PCMChargeModel(
             slot_length=GlobalConfig.slot_length, mass_flow_rate_kg_s=MASS_FLOW_RATE
@@ -60,10 +56,10 @@ class PCMTankState(TankStateBase):
     def serialize(self):
         """Return serializable dict of class parameters."""
         return {
-            "initial_temp_C": self._initial_temp_C,
-            "min_storage_temp_C": self._min_storage_temp_C,
-            "max_storage_temp_C": self._max_storage_temp_C,
-            "max_capacity_kJ": self._max_capacity_kJ,
+            "initial_temp_C": self._params.initial_temp_C,
+            "min_storage_temp_C": self._params.min_temp_C,
+            "max_storage_temp_C": self._params.max_temp_C,
+            "max_capacity_kJ": self._params.max_capacity_kJ,
         }
 
     def update_consumed_energy(self, energy: float, time_slot: DateTime) -> None:
@@ -74,15 +70,15 @@ class PCMTankState(TankStateBase):
         """Return consumed_energy for the provided time_slot"""
         return self._consumed_energy.get(time_slot, 0.0)
 
-    def init_storage_temps(self):
+    def init(self):
         """
         Initiate the storage temperatures with the initial temperature of the storge
         """
         self._htf_temps_C[GlobalConfig.start_date] = [
-            self._initial_temp_C for _ in range(int(NUMBER_OF_PCM_ELEMENTS / 2))
+            self._params.initial_temp_C for _ in range(int(NUMBER_OF_PCM_ELEMENTS / 2))
         ]
         self._pcm_temps_C[GlobalConfig.start_date] = [
-            self._initial_temp_C for _ in range(int(NUMBER_OF_PCM_ELEMENTS / 2))
+            self._params.initial_temp_C for _ in range(int(NUMBER_OF_PCM_ELEMENTS / 2))
         ]
 
     def is_time_slot_available(self, time_slot: DateTime) -> bool:
@@ -129,8 +125,8 @@ class PCMTankState(TankStateBase):
 
     def _is_temp_limit_respected(self, condenser_temp_C: float) -> bool:
         if (
-            condenser_temp_C < self._min_storage_temp_C
-            or condenser_temp_C > self._max_storage_temp_C
+            condenser_temp_C < self._params.min_temp_C
+            or condenser_temp_C > self._params.max_temp_C
         ):
             log.error(
                 "The PCM storage tank reach it's maximum, charging /discharging "
@@ -224,10 +220,10 @@ class PCMTankState(TankStateBase):
             "pcm_temps_C": convert_pendulum_to_str_in_dict(self._pcm_temps_C),
             "consumed_energy": convert_pendulum_to_str_in_dict(self._consumed_energy),
             "soc": convert_pendulum_to_str_in_dict(self._soc),
-            "min_storage_temp_C": self._min_storage_temp_C,
-            "max_storage_temp_C": self._max_storage_temp_C,
-            "max_capacity_kJ": self._max_capacity_kJ,
-            "initial_temp_C": self._initial_temp_C,
+            "min_storage_temp_C": self._params.min_temp_C,
+            "max_storage_temp_C": self._params.max_temp_C,
+            "max_capacity_kJ": self._params.max_capacity_kJ,
+            "initial_temp_C": self._params.initial_temp_C,
         }
 
     def restore_state(self, state_dict: Dict):
@@ -235,10 +231,10 @@ class PCMTankState(TankStateBase):
         self._pcm_temps_C = convert_str_to_pendulum_in_dict(state_dict["pcm_temps_C"])
         self._consumed_energy = convert_str_to_pendulum_in_dict(state_dict["consumed_energy"])
         self._soc = convert_str_to_pendulum_in_dict(state_dict["soc"])
-        self._min_storage_temp_C = state_dict["min_storage_temp_C"]
-        self._max_storage_temp_C = state_dict["max_storage_temp_C"]
-        self._max_capacity_kJ = state_dict["max_capacity_kJ"]
-        self._initial_temp_C = state_dict["initial_temp_C"]
+        self._params.min_temp_C = state_dict["min_storage_temp_C"]
+        self._params.max_temp_C = state_dict["max_storage_temp_C"]
+        self._params.max_capacity_kJ = state_dict["max_capacity_kJ"]
+        self._params.initial_temp_C = state_dict["initial_temp_C"]
 
     def delete_past_state_values(self, current_time_slot: DateTime):
         if not current_time_slot or constants.RETAIN_PAST_MARKET_STRATEGIES_STATE:
@@ -253,7 +249,7 @@ class PCMTankState(TankStateBase):
         return current_market_slot - GlobalConfig.slot_length
 
     def _get_current_heat_charge_kJ(self, time_slot: DateTime):
-        return self.get_soc(time_slot) / 100 * self._max_capacity_kJ
+        return self.get_soc(time_slot) / 100 * self._params.max_capacity_kJ
 
     def get_min_heat_energy_consumption_kJ(self, time_slot: DateTime):
         current_heat_charge_kJ = self._get_current_heat_charge_kJ(time_slot)
@@ -264,7 +260,7 @@ class PCMTankState(TankStateBase):
 
     def get_max_heat_energy_consumption_kJ(self, time_slot):
         return (
-            self._max_capacity_kJ
+            self._params.max_capacity_kJ
             - self._get_current_heat_charge_kJ(time_slot)
             + self._get_heat_demand_kJ(time_slot)
         )

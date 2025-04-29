@@ -7,7 +7,8 @@ from gsy_framework.utils import (
     convert_str_to_pendulum_in_dict,
     convert_kWh_to_kJ,
 )
-from pendulum import DateTime, duration
+from gsy_framework.constants_limits import GlobalConfig
+from pendulum import DateTime
 
 from gsy_e import constants
 from gsy_e.models.strategy.energy_parameters.heatpump.constants import (
@@ -21,19 +22,19 @@ from gsy_e.models.strategy.state.heatpump_state import delete_time_slots_in_stat
 log = getLogger(__name__)
 
 
-class HeatPumpTankState(TankStateBase):
+class WaterTankState(TankStateBase):
     """State for the heat pump tank."""
 
-    def __init__(self, tank_parameters: TankParameters, slot_length: duration):
+    # pylint: disable=too-many-instance-attributes
+
+    def __init__(self, tank_parameters: TankParameters):
+        super().__init__(tank_parameters)
         self._storage_temp_C: Dict[DateTime, float] = defaultdict(
             lambda: tank_parameters.initial_temp_C
         )
         self._temp_decrease_K: Dict[DateTime, float] = defaultdict(lambda: 0)
         self._temp_increase_K: Dict[DateTime, float] = defaultdict(lambda: 0)
-        self._min_storage_temp_C = tank_parameters.min_temp_C
-        self._max_storage_temp_C = tank_parameters.max_temp_C
-        self._tank_volume_L = tank_parameters.tank_volume_L
-        self._slot_length = slot_length
+        self._soc: Dict[DateTime, float] = defaultdict(lambda: 0)
 
     def get_storage_temp_C(self, time_slot: DateTime) -> float:
         """Return temperature of storage for a time slot in degree celsius."""
@@ -46,21 +47,30 @@ class HeatPumpTankState(TankStateBase):
             - self.get_temp_decrease_K(self._last_time_slot(time_slot))
             + self.get_temp_increase_K(self._last_time_slot(time_slot))
         )
-        if new_temp < self._min_storage_temp_C:
-            new_temp = self._min_storage_temp_C
+        if new_temp < self._params.min_temp_C:
+            new_temp = self._params.min_temp_C
             log.warning("Storage tank temperature dropped below minimum, setting to minimum.")
         self._storage_temp_C[time_slot] = new_temp
+        self._update_soc(time_slot)
 
     def get_temp_decrease_K(self, time_slot: DateTime) -> float:
         """Return the temperature decrease for a given time slot."""
         return self._temp_decrease_K.get(time_slot, 0)
+
+    def _update_soc(self, time_slot: DateTime):
+        self._soc[time_slot] = (self._storage_temp_C[time_slot] - self._params.min_temp_C) / (
+            self._params.max_temp_C - self._params.min_temp_C
+        )
+
+    def get_soc(self, time_slot: DateTime) -> float:
+        return self._soc.get(time_slot) * 100
 
     def _get_current_diff_to_min_temp_K(self, time_slot: DateTime) -> float:
         """
         Return the temperature difference between the current storage temp and the minimum
         storage temperature
         """
-        min_temp_decrease_K = self.get_storage_temp_C(time_slot) - self._min_storage_temp_C
+        min_temp_decrease_K = self.get_storage_temp_C(time_slot) - self._params.min_temp_C
         return min_temp_decrease_K
 
     def get_temp_increase_K(self, time_slot: DateTime) -> float:
@@ -80,14 +90,14 @@ class HeatPumpTankState(TankStateBase):
             "storage_temp_C": convert_pendulum_to_str_in_dict(self._storage_temp_C),
             "temp_decrease_K": convert_pendulum_to_str_in_dict(self._temp_decrease_K),
             "temp_increase_K": convert_pendulum_to_str_in_dict(self._temp_increase_K),
-            "min_storage_temp_C": self._min_storage_temp_C,
+            "soc": convert_pendulum_to_str_in_dict(self._soc),
         }
 
     def restore_state(self, state_dict: Dict):
         self._storage_temp_C = convert_str_to_pendulum_in_dict(state_dict["storage_temp_C"])
         self._temp_decrease_K = convert_str_to_pendulum_in_dict(state_dict["temp_decrease_K"])
         self._temp_increase_K = convert_str_to_pendulum_in_dict(state_dict["temp_increase_K"])
-        self._min_storage_temp_C = state_dict["min_storage_temp_C"]
+        self._soc = convert_str_to_pendulum_in_dict(state_dict["soc"])
 
     def delete_past_state_values(self, current_time_slot: DateTime):
         if not current_time_slot or constants.RETAIN_PAST_MARKET_STRATEGIES_STATE:
@@ -96,6 +106,7 @@ class HeatPumpTankState(TankStateBase):
         self._delete_time_slots(self._storage_temp_C, last_time_slot)
         self._delete_time_slots(self._temp_increase_K, last_time_slot)
         self._delete_time_slots(self._temp_decrease_K, last_time_slot)
+        self._delete_time_slots(self._soc, last_time_slot)
 
     def get_results_dict(self, current_time_slot: DateTime) -> Dict:
         retval = {
@@ -111,9 +122,9 @@ class HeatPumpTankState(TankStateBase):
     def serialize(self):
         """Serializable dict with the parameters of the water tank."""
         return {
-            "max_temp_C": self._max_storage_temp_C,
-            "min_temp_C": self._min_storage_temp_C,
-            "tank_volume_l": self._tank_volume_L,
+            "max_temp_C": self._params.max_temp_C,
+            "min_temp_C": self._params.min_temp_C,
+            "tank_volume_l": self._params.tank_volume_L,
         }
 
     def increase_tank_temp_from_heat_energy(self, heat_energy_kWh: float, time_slot: DateTime):
@@ -133,7 +144,7 @@ class HeatPumpTankState(TankStateBase):
     def get_max_heat_energy_consumption_kJ(self, time_slot: DateTime):
         """Calculate max heat energy consumption that the tank can accomodate."""
         max_temp_diff = (
-            self._max_storage_temp_C
+            self._params.max_temp_C
             - self.get_storage_temp_C(time_slot)
             + self.get_temp_decrease_K(time_slot)
         )
@@ -168,14 +179,14 @@ class HeatPumpTankState(TankStateBase):
 
     @property
     def _Q_specific(self):
-        return SPECIFIC_HEAT_CONST_WATER * self._tank_volume_L * WATER_DENSITY
+        return SPECIFIC_HEAT_CONST_WATER * self._params.tank_volume_L * WATER_DENSITY
 
     def _last_time_slot(self, current_market_slot: DateTime) -> DateTime:
-        return current_market_slot - self._slot_length
+        return current_market_slot - GlobalConfig.slot_length
 
     @staticmethod
     def _delete_time_slots(profile: Dict, current_time_stamp: DateTime):
         delete_time_slots_in_state(profile, current_time_stamp)
 
-    def init_storage_temps(self):
-        """Nothing to do here"""
+    def init(self):
+        self._update_soc(GlobalConfig.start_date)

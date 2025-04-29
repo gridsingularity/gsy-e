@@ -21,3 +21,4 @@ class TankParameters:
     tank_volume_L: float = ConstSettings.HeatPumpSettings.TANK_VOL_L
     type: HeatpumpTankTypes = HeatpumpTankTypes.WATER
     max_capacity_kJ: float = 6.0 * 3600
+    name: str = ""

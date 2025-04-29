@@ -45,8 +45,14 @@ def get_setup(config):
                         "HeatPumpWithMultipleTanks",
                         strategy=MultipleTankHeatPumpStrategy(
                             tank_parameters=[
-                                TankParameters(initial_temp_C=50, max_temp_C=80, min_temp_C=30),
                                 TankParameters(
+                                    name="water tank 1",
+                                    initial_temp_C=50,
+                                    max_temp_C=80,
+                                    min_temp_C=30,
+                                ),
+                                TankParameters(
+                                    name="pcm tank 1",
                                     type=HeatpumpTankTypes.PCM,
                                     max_capacity_kJ=20000,
                                     initial_temp_C=35,

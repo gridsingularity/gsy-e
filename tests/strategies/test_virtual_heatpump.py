@@ -126,7 +126,7 @@ class TestVirtualHeatpumpStrategy:
         }
         self._virtual_hp._energy_params._dh_water_flow_m3.profile = {self._datetime: water_flow}
         self._virtual_hp._energy_params.increase_tanks_temp_update_hp_state(energy, self._datetime)
-        tank = self._virtual_hp._energy_params._tanks._tanks_states[0]
+        tank = self._virtual_hp._energy_params._tanks.tanks_states[0]
         temp_increase = tank.get_temp_increase_K(self._datetime)
         calculated_storage_temp = temp_increase + tank.get_storage_temp_C(self._datetime)
         assert isclose(calculated_storage_temp, storage_temp, abs_tol=FLOATING_POINT_TOLERANCE)
@@ -152,7 +152,7 @@ class TestVirtualHeatpumpStrategy:
         }
         self._virtual_hp._energy_params._dh_water_flow_m3.profile = {self._datetime: water_flow}
         hp_params = self._virtual_hp._energy_params
-        tank = self._virtual_hp._energy_params._tanks._tanks_states[0]
+        tank = self._virtual_hp._energy_params._tanks.tanks_states[0]
         hp_params._set_temp_decrease_for_all_tanks(self._datetime)
         calculated_temp_decrease = tank.get_temp_decrease_K(self._datetime)
         assert isclose(calculated_temp_decrease, temp_decrease, abs_tol=FLOATING_POINT_TOLERANCE)
