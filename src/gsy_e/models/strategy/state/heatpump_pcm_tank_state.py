@@ -51,6 +51,7 @@ class PCMTankState(TankStateBase):
             slot_length=GlobalConfig.slot_length, mass_flow_rate_kg_s=MASS_FLOW_RATE
         )
         self._heat_demand_kJ: Dict[DateTime, float] = {}
+        self._max_capacity_kJ = tank_parameters.max_capacity_kJ
 
     def serialize(self):
         """Return serializable dict of class parameters."""
@@ -80,9 +81,9 @@ class PCMTankState(TankStateBase):
             self._params.initial_temp_C for _ in range(int(NUMBER_OF_PCM_ELEMENTS / 2))
         ]
         # based on a non-physical assumption for the initial market slot, to be improved
-        self._soc[GlobalConfig.start_date] = (self._initial_temp_C - self._min_storage_temp_C) / (
-            self._max_storage_temp_C - self._min_storage_temp_C
-        )
+        self._soc[GlobalConfig.start_date] = (
+            self._params.initial_temp_C - self._params.min_temp_C
+        ) / (self._params.max_temp_C - self._params.min_temp_C)
 
     def _get_htf_temps_C(self, time_slot: DateTime) -> Optional[list]:
         return self._htf_temps_C.get(time_slot)
@@ -116,6 +117,7 @@ class PCMTankState(TankStateBase):
     def get_pcm_temp_C(self, time_slot: DateTime) -> Optional[float]:
         """Return the mean temperature of the PCM."""
         pcm_temps = self._get_pcm_temps_C(time_slot)
+        print("get_pcm_temp_C", time_slot)
         return None if pcm_temps is None else mean(pcm_temps)
 
     def _is_temp_limit_respected(self, condenser_temp_C: float) -> bool:
@@ -173,9 +175,13 @@ class PCMTankState(TankStateBase):
     ):
         """Increase storage temperatures for provided condenser temperature."""
         if not self._is_temp_limit_respected(condenser_temp_C):
-            self._htf_temps_C[time_slot] = self._get_htf_temps_C(time_slot)
-            self._pcm_temps_C[time_slot] = self._get_pcm_temps_C(time_slot)
-            self._soc[time_slot] = self.get_soc(time_slot) / 100.0
+            last_time_slot = time_slot - GlobalConfig.slot_length
+            if last_time_slot not in self._pcm_temps_C:
+                # first market slot case
+                return
+            self._htf_temps_C[time_slot] = self._get_htf_temps_C(last_time_slot)
+            self._pcm_temps_C[time_slot] = self._get_pcm_temps_C(last_time_slot)
+            self._soc[time_slot] = self._soc[last_time_slot]
             return
         htf_temps, pcm_temps = self._pcm_charge_model.get_temp_after_charging(
             current_htf_temps_C=self._get_htf_temps_C(time_slot),
@@ -191,9 +197,13 @@ class PCMTankState(TankStateBase):
     ):
         """Decrease storage temperatures for provided condenser temperature."""
         if not self._is_temp_limit_respected(condenser_temp_C):
-            self._htf_temps_C[time_slot] = self._get_htf_temps_C(time_slot)
-            self._pcm_temps_C[time_slot] = self._get_pcm_temps_C(time_slot)
-            self._soc[time_slot] = self.get_soc(time_slot)
+            last_time_slot = time_slot - GlobalConfig.slot_length
+            if last_time_slot not in self._pcm_temps_C:
+                # first market slot case
+                return
+            self._htf_temps_C[time_slot] = self._get_htf_temps_C(last_time_slot)
+            self._pcm_temps_C[time_slot] = self._get_pcm_temps_C(last_time_slot)
+            self._soc[time_slot] = self._soc[last_time_slot]
             return
         htf_temps, pcm_temps = self._pcm_discharge_model.get_temp_after_discharging(
             current_htf_temps_C=self._get_htf_temps_C(time_slot),
@@ -248,7 +258,7 @@ class PCMTankState(TankStateBase):
         return current_market_slot - GlobalConfig.slot_length
 
     def _get_current_heat_charge_kJ(self, time_slot: DateTime):
-        return self.get_soc(time_slot) / 100 * self._params.max_capacity_kJ
+        return self._soc[time_slot] * self._params.max_capacity_kJ
 
     def get_min_heat_energy_consumption_kJ(self, time_slot: DateTime):
         current_heat_charge_kJ = self._get_current_heat_charge_kJ(time_slot)
