@@ -31,12 +31,12 @@ class VirtualHeatpumpTankState(WaterTankState):
         Decrease the tank temperature. Return True if the operation incurs in unmatched demand.
         """
         temp_differential_per_sec = -heat_energy / (
-            WATER_DENSITY * WATER_SPECIFIC_HEAT_CAPACITY * self._tank_volume_L
+            WATER_DENSITY * WATER_SPECIFIC_HEAT_CAPACITY * self._params.tank_volume_L
         )
         temp_decrease_C = temp_differential_per_sec * GlobalConfig.slot_length.total_seconds()
         # Temp decrease is a negative value, therefore we need to add it to the current temp.
         new_temperature_without_operation_C = self.get_storage_temp_C(time_slot) + temp_decrease_C
-        if new_temperature_without_operation_C < self._min_storage_temp_C:
+        if new_temperature_without_operation_C < self._params.min_temp_C:
             # Tank temp drops below minimum. Setting zero to tank temperature and reporting the
             # unmatched heat demand event in order to be calculated and tracked.
             self.set_temp_decrease_K(time_slot, 0.0)
@@ -54,19 +54,19 @@ class VirtualHeatpumpTankState(WaterTankState):
         """
         current_storage_temp_C = self.get_storage_temp_C(time_slot)
         target_storage_temp_C = current_storage_temp_C
-        if not self._min_storage_temp_C < target_storage_temp_C < self._max_storage_temp_C:
+        if not self._params.min_temp_C < target_storage_temp_C < self._params.max_temp_C:
             logger.info(
                 "Storage temp %s cannot exceed min (%s) / max (%s) tank temperatures.",
                 target_storage_temp_C,
-                self._min_storage_temp_C,
-                self._max_storage_temp_C,
+                self._params.min_temp_C,
+                self._params.max_temp_C,
             )
             target_storage_temp_C = max(
-                min(target_storage_temp_C, self._max_storage_temp_C),
-                self._min_storage_temp_C,
+                min(target_storage_temp_C, self._params.max_temp_C),
+                self._params.min_temp_C,
             )
         return TankSolverParameters(
-            tank_volume_L=self._tank_volume_L,
+            tank_volume_L=self._params.tank_volume_L,
             current_storage_temp_C=current_storage_temp_C,
             target_storage_temp_C=target_storage_temp_C,
         )
@@ -79,9 +79,9 @@ class VirtualHeatpumpTankState(WaterTankState):
         temp to its maximum.
         """
         current_storage_temp_C = self.get_storage_temp_C(time_slot)
-        target_storage_temp_C = self._max_storage_temp_C
+        target_storage_temp_C = self._params.max_temp_C
         return TankSolverParameters(
-            tank_volume_L=self._tank_volume_L,
+            tank_volume_L=self._params.tank_volume_L,
             current_storage_temp_C=current_storage_temp_C,
             target_storage_temp_C=target_storage_temp_C,
         )
@@ -93,7 +93,7 @@ class VirtualHeatpumpTankState(WaterTankState):
         """
         current_storage_temp_C = self.get_storage_temp_C(time_slot)
         return TankSolverParameters(
-            tank_volume_L=self._tank_volume_L,
+            tank_volume_L=self._params.tank_volume_L,
             current_storage_temp_C=current_storage_temp_C,
         )
 
