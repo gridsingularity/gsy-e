@@ -8,10 +8,9 @@ from gsy_e.models.strategy.energy_parameters.heatpump.constants import (
     WATER_SPECIFIC_HEAT_CAPACITY,
     WATER_DENSITY,
 )
-from gsy_e.models.strategy.energy_parameters.heatpump.tank import (
-    AllTanksState,
-)
-from gsy_e.models.strategy.state.heat_pump_state import TankParameters, HeatPumpTankState
+from gsy_e.models.strategy.state.heatpump_all_tanks_state import AllTanksState
+from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import TankParameters
+from gsy_e.models.strategy.state.heatpump_water_tank_state import HeatPumpTankState
 from gsy_e.models.strategy.energy_parameters.heatpump.virtual_heatpump_solver import (
     TankSolverParameters,
     VirtualHeatpumpSolverParameters,

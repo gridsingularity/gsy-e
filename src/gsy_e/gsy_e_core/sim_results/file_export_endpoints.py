@@ -37,7 +37,6 @@ from gsy_e.models.strategy.storage import StorageStrategy
 from gsy_e.models.strategy.heat_pump import (
     HeatPumpStrategy,
     MultipleTankHeatPumpStrategy,
-    PCMHeatPump,
 )
 from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
 from gsy_e.models.strategy.virtual_heatpump import (
@@ -183,24 +182,12 @@ class LeafDataExporter(BaseDataExporter):
         # pylint: disable=unidiomatic-typecheck
         if type(self.area.strategy) == HeatPumpStrategy:
             return [
-                "unmatched demand [kWh]",
                 "storage temperature C",
                 "COP",
                 "heat demand J",
             ]
-        # pylint: disable=unidiomatic-typecheck
-        if type(self.area.strategy) == PCMHeatPump:
-            return [
-                "unmatched heat demand [kWh]",
-                "COP",
-                "heat demand J",
-                "HTF temp C",
-                "PCM temp C",
-                "SOC %",
-            ]
         if type(self.area.strategy) == VirtualHeatpumpStrategy:
             return [
-                "unmatched demand [kWh]",
                 "storage temperature C",
                 "COP",
                 "heat demand J",
@@ -208,7 +195,6 @@ class LeafDataExporter(BaseDataExporter):
             ]
         if type(self.area.strategy) == MultipleTankHeatPumpStrategy:
             return [
-                "unmatched demand [kWh]",
                 "storage temperature C",
                 "energy demand kWh",
                 "COP",
@@ -217,7 +203,6 @@ class LeafDataExporter(BaseDataExporter):
         # pylint: disable=unidiomatic-typecheck
         if type(self.area.strategy) == MultipleTankVirtualHeatpumpStrategy:
             return [
-                "unmatched demand [kWh]",
                 "storage temperature C",
                 "energy demand kWh",
                 "COP",
@@ -263,27 +248,11 @@ class LeafDataExporter(BaseDataExporter):
         if type(self.area.strategy) == HeatPumpStrategy:
             return [
                 round(
-                    self.area.strategy.state.tanks.get_unmatched_demand_kWh(slot),
-                    ROUND_TOLERANCE,
-                ),
-                round(
-                    self.area.strategy.state.tanks.get_average_tank_temperature(slot),
+                    self.area.strategy.state.charger.tanks.get_average_tank_temperature(slot),
                     ROUND_TOLERANCE,
                 ),
                 round(self.area.strategy.state.heatpump.get_cop(slot), ROUND_TOLERANCE),
                 round(self.area.strategy.state.heatpump.get_heat_demand(slot), ROUND_TOLERANCE),
-            ]
-        if type(self.area.strategy) == PCMHeatPump:
-            return [
-                round(
-                    self.area.strategy.state.heatpump.get_unmatched_demand_kWh(slot),
-                    ROUND_TOLERANCE,
-                ),
-                round(self.area.strategy.state.heatpump.get_cop(slot), ROUND_TOLERANCE),
-                round(self.area.strategy.state.heatpump.get_heat_demand(slot), ROUND_TOLERANCE),
-                round(self.area.strategy.state.tank.get_htf_temp_C(slot), ROUND_TOLERANCE),
-                round(self.area.strategy.state.tank.get_pcm_temp_C(slot), ROUND_TOLERANCE),
-                round(self.area.strategy.state.tank.get_soc(slot), 2) * 100,
             ]
         # pylint: disable=unidiomatic-typecheck
         if type(self.area.strategy) == VirtualHeatpumpStrategy:
@@ -301,14 +270,13 @@ class LeafDataExporter(BaseDataExporter):
             cop = self.area.strategy.state.heatpump.get_cop(slot)
             return [
                 round(
-                    self.area.strategy.state.tanks.get_unmatched_demand_kWh(slot), ROUND_TOLERANCE
-                ),
-                round(
-                    self.area.strategy.state.tanks.get_average_tank_temperature(slot),
+                    self.area.strategy.state.charger.tanks.get_average_tank_temperature(slot),
                     ROUND_TOLERANCE,
                 ),
                 round(
-                    self.area.strategy.state.tanks.get_min_energy_consumption(cop, slot),
+                    self.area.strategy.state.charger.tanks.get_min_heat_energy_consumption_kJ(
+                        slot
+                    ),
                     ROUND_TOLERANCE,
                 ),
                 round(cop, ROUND_TOLERANCE),

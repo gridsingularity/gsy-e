@@ -16,17 +16,17 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from gsy_e.models.strategy.state.pv_state import PVState
+from gsy_e.models.strategy.state.base_states import StateInterface
+from gsy_e.models.strategy.state.heatpump_state import HeatPumpState
 from gsy_e.models.strategy.state.load_state import LoadState
+from gsy_e.models.strategy.state.pv_state import PVState
+from gsy_e.models.strategy.state.smart_meter_state import SmartMeterState
 from gsy_e.models.strategy.state.storage_state import (
     StorageState,
     ESSEnergyOrigin,
     EnergyOrigin,
     StorageLosses,
 )
-from gsy_e.models.strategy.state.smart_meter_state import SmartMeterState
-from gsy_e.models.strategy.state.base_states import StateInterface
-from gsy_e.models.strategy.state.heat_pump_state import HeatPumpState, HeatPumpTankState
 
 __all__ = [
     "PVState",
@@ -34,7 +34,6 @@ __all__ = [
     "StorageState",
     "SmartMeterState",
     "HeatPumpState",
-    "HeatPumpTankState",
     "ESSEnergyOrigin",
     "EnergyOrigin",
     "StateInterface",

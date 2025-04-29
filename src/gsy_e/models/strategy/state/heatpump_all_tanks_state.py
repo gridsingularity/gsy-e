@@ -1,23 +1,37 @@
-import logging
+from logging import getLogger
 from statistics import mean
-from typing import Dict, Union, List
+from typing import Union, List, Dict
 
 from gsy_framework.constants_limits import GlobalConfig, FLOATING_POINT_TOLERANCE
-from gsy_framework.utils import convert_kJ_to_kWh, convert_kWh_to_kJ
+from gsy_framework.utils import convert_kJ_to_kWh
 from pendulum import DateTime
 
-from gsy_e.models.strategy.state.heat_pump_state import TankParameters, HeatPumpTankState
+from gsy_e.models.strategy.state.heatpump_pcm_tank_state import PCMTankState
+from gsy_e.models.strategy.state.heatpump_water_tank_state import HeatPumpTankState, TankStateBase
+from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import (
+    TankParameters,
+    HeatpumpTankTypes,
+)
 
-logger = logging.getLogger(__name__)
+log = getLogger(__name__)
+
+
+def heatpump_state_factory(tank_parameter: TankParameters) -> TankStateBase:
+    """Return correct Tank object from the type provided in the tank parameters."""
+    if tank_parameter.type == HeatpumpTankTypes.WATER:
+        return HeatPumpTankState(
+            tank_parameters=tank_parameter, slot_length=GlobalConfig.slot_length
+        )
+    if tank_parameter.type == HeatpumpTankTypes.PCM:
+        return PCMTankState(tank_parameters=tank_parameter)
+    assert False, f"Unsupported heat pump tank type {tank_parameter.type}"
 
 
 class AllTanksState:
     """Manage the operation of heating and extracting temperature from multiple tanks."""
 
     def __init__(self, tank_parameters: List[TankParameters]):
-        self._tanks_states = [
-            HeatPumpTankState(tank, GlobalConfig.slot_length) for tank in tank_parameters
-        ]
+        self._tanks_states = [heatpump_state_factory(tank) for tank in tank_parameters]
 
     def increase_tanks_temp_from_heat_energy(self, heat_energy_kJ: float, time_slot: DateTime):
         """Increase the temperature of the water tanks with the provided heat energy."""
@@ -45,27 +59,23 @@ class AllTanksState:
 
     def get_max_heat_energy_consumption_kJ(self, time_slot: DateTime):
         """Get max heat energy consumption from all water tanks."""
-        max_energy_consumption_kWh = sum(
-            tank.get_max_heat_energy_consumption_kWh(time_slot) for tank in self._tanks_states
+        max_energy_consumption_kJ = sum(
+            tank.get_max_heat_energy_consumption_kJ(time_slot) for tank in self._tanks_states
         )
-        assert max_energy_consumption_kWh > -FLOATING_POINT_TOLERANCE
-        return convert_kWh_to_kJ(max_energy_consumption_kWh)
+        assert max_energy_consumption_kJ > -FLOATING_POINT_TOLERANCE
+        return max_energy_consumption_kJ
 
     def get_min_heat_energy_consumption_kJ(self, time_slot: DateTime):
         """Get min heat energy consumption from all water tanks."""
-        min_energy_consumption_kWh = sum(
-            tank.get_min_heat_energy_consumption_kWh(time_slot) for tank in self._tanks_states
+        min_energy_consumption_kJ = sum(
+            tank.get_min_heat_energy_consumption_kJ(time_slot) for tank in self._tanks_states
         )
-        assert min_energy_consumption_kWh > -FLOATING_POINT_TOLERANCE
-        return convert_kWh_to_kJ(min_energy_consumption_kWh)
+        assert min_energy_consumption_kJ > -FLOATING_POINT_TOLERANCE
+        return min_energy_consumption_kJ
 
     def get_average_tank_temperature(self, time_slot: DateTime):
         """Get average tank temperature of all water tanks."""
         return mean(tank.current_tank_temperature(time_slot) for tank in self._tanks_states)
-
-    def get_unmatched_demand_kWh(self, time_slot: DateTime):
-        """Get unmatched demand of all water tanks."""
-        return sum(tank.get_unmatched_demand_kWh(time_slot) for tank in self._tanks_states)
 
     def serialize(self) -> Union[Dict, List]:
         """Serializable dict with the parameters of all water tanks."""
@@ -90,3 +100,8 @@ class AllTanksState:
         """Delete previous state from all tanks."""
         for tank in self._tanks_states:
             tank.delete_past_state_values(current_time_slot)
+
+    def event_activate(self):
+        """Perform steps when activate event is called"""
+        for tank in self._tanks_states:
+            tank.init_storage_temps()

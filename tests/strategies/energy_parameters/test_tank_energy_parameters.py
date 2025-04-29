@@ -3,10 +3,9 @@ from math import isclose
 from deepdiff import DeepDiff
 from pendulum import datetime
 
-from gsy_e.models.strategy.energy_parameters.heatpump.tank import (
-    AllTanksState,
-    TankParameters,
-)
+from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import TankParameters
+from gsy_e.models.strategy.state.heatpump_all_tanks_state import AllTanksState
+
 from gsy_e.models.strategy.energy_parameters.heatpump.virtual_heatpump_tank import (
     VirtualHeatpumpAllTanksState,
     VirtualHeatpumpSolverParameters,
@@ -66,11 +65,6 @@ class TestAllTanksState:
         self._tanks._tanks_states[1]._storage_temp_C[self._datetime] = 35
         self._tanks._tanks_states[2]._storage_temp_C[self._datetime] = 40
         assert self._tanks.get_average_tank_temperature(self._datetime) == 35
-
-    def test_get_unmatched_demand_kWh(self):
-        self._tanks.decrease_tanks_temp_from_heat_energy(10000, self._datetime)
-        self._tanks.increase_tanks_temp_from_heat_energy(1000, self._datetime)
-        assert self._tanks.get_unmatched_demand_kWh(self._datetime) == 2.5
 
     def test_serialize(self):
         tanks_dict = self._tanks.serialize()

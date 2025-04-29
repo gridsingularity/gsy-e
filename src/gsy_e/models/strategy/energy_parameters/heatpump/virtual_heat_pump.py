@@ -11,7 +11,7 @@ from gsy_e.models.strategy.energy_parameters.heatpump.constants import (
     DEFAULT_SOURCE_TEMPERATURE_C,
 )
 from gsy_e.models.strategy.energy_parameters.heatpump.heat_pump import HeatPumpEnergyParametersBase
-from gsy_e.models.strategy.energy_parameters.heatpump.tank import TankParameters
+from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import TankParameters
 from gsy_e.models.strategy.energy_parameters.heatpump.virtual_heatpump_solver import (
     VirtualHeatpumpSolverParameters,
     VirtualHeatpumpStorageEnergySolver,
@@ -140,7 +140,6 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
             )
             solver.calculate_energy_from_storage_temp()
             logger.debug(solver)
-            self._state.heatpump.set_unmatched_demand_kWh(time_slot, solver.energy_kWh)
 
     def _current_tank_temp_to_energy(self, time_slot: DateTime) -> float:
         """

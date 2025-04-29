@@ -98,7 +98,7 @@ class ProsumptionInterface(StateInterface, ABC):
         self._unsettled_deviation_kWh: Dict[DateTime, float] = {}
         self._forecast_measurement_deviation_kWh: Dict[DateTime, float] = {}
 
-    # pylint: disable=unused-argument, no-self-use
+    # pylint: disable=unused-argument
     def _calculate_unsettled_energy_kWh(
         self, measured_energy_kWh: float, time_slot: DateTime
     ) -> float:
@@ -397,3 +397,39 @@ class ProductionState(ProsumptionInterface):
         assert production_forecast >= -FLOATING_POINT_TOLERANCE
 
         return production_forecast
+
+
+class TankStateBase(StateInterface):
+    """Base class for heat tank states"""
+
+    @abstractmethod
+    def increase_tank_temp_from_heat_energy(self, heat_energy_kWh, time_slot):
+        """Set the tank temperature increase from heat energy."""
+
+    @abstractmethod
+    def decrease_tank_temp_from_heat_energy(self, heat_energy_kWh, time_slot):
+        """Set the tank temperature decrease from heat energy."""
+
+    @abstractmethod
+    def update_storage_temp(self, time_slot):
+        """Update the storage temperature"""
+
+    @abstractmethod
+    def get_max_heat_energy_consumption_kJ(self, time_slot):
+        """Return the maximal energy consumption."""
+
+    @abstractmethod
+    def get_min_heat_energy_consumption_kJ(self, time_slot):
+        """Return the minimal energy consumption."""
+
+    @abstractmethod
+    def current_tank_temperature(self, time_slot):
+        """Return current temperature of the tank."""
+
+    @abstractmethod
+    def serialize(self):
+        """Serialize the memebrs of the class."""
+
+    @abstractmethod
+    def init_storage_temps(self):
+        """Initiate the temperature values of the tank"""

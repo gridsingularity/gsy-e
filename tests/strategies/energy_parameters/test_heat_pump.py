@@ -7,9 +7,9 @@ from gsy_framework.constants_limits import GlobalConfig, TIME_ZONE
 from gsy_framework.utils import generate_market_slot_list
 from pendulum import duration, today
 
+from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import TankParameters
 from gsy_e.models.strategy.energy_parameters.heatpump.heat_pump import (
     HeatPumpEnergyParameters,
-    TankParameters,
 )
 from gsy_e.models.strategy.energy_parameters.heatpump.cop_models import COPModelType
 
@@ -101,7 +101,7 @@ class TestHeatPumpEnergyParameters:
 
     @staticmethod
     def test_event_market_cycle_populates_state(energy_params):
-        tank_state = energy_params._state._charger.tanks._tanks_states[0]
+        tank_state = energy_params._state.charger.tanks._tanks_states[0]
         heatpump_state = energy_params._state.heatpump
         assert CURRENT_MARKET_SLOT not in tank_state._temp_decrease_K
         assert CURRENT_MARKET_SLOT not in tank_state._storage_temp_C
@@ -136,7 +136,7 @@ class TestHeatPumpEnergyParameters:
 
     @staticmethod
     def test_event_market_cycle_updates_temp_increase_if_energy_was_traded(energy_params):
-        tank_state = energy_params._state._charger.tanks._tanks_states[0]
+        tank_state = energy_params._state.charger.tanks._tanks_states[0]
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
         traded_energy = 0.1
         energy_params.event_traded_energy(CURRENT_MARKET_SLOT, traded_energy)
@@ -161,7 +161,7 @@ class TestHeatPumpEnergyParameters:
         energy_params._max_energy_consumption_kWh = 2
         temp_decrease_consumption = 5
         energy_params._state.heatpump.get_cop = Mock(return_value=5)
-        for tank_state in energy_params._state._charger.tanks._tanks_states:
+        for tank_state in energy_params._state.charger.tanks._tanks_states:
             tank_state._min_storage_temp_C = 30
             tank_state.get_storage_temp_C = Mock(return_value=current_temp)
             tank_state.get_temp_decrease_K = Mock(return_value=temp_decrease_consumption)
