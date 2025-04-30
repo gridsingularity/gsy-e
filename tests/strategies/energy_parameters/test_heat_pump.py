@@ -214,6 +214,7 @@ class TestHeatPumpEnergyParameters:
 
     @staticmethod
     def test_cop_model_is_correctly_selected(energy_params_heat_profile):
+        energy_params_heat_profile.event_activate()
         energy_params_heat_profile.event_market_cycle(CURRENT_MARKET_SLOT)
         energy_params_heat_profile.event_market_cycle(CURRENT_MARKET_SLOT + duration(minutes=60))
         assert isclose(

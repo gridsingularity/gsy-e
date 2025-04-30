@@ -1,4 +1,5 @@
 from math import isclose
+from unittest.mock import patch, Mock
 
 from deepdiff import DeepDiff
 from pendulum import datetime
@@ -26,6 +27,11 @@ class TestAllTanksState:
         self._tanks.event_activate()
         self._datetime = datetime(2023, 1, 1, 0, 0)
 
+    @patch(
+        "gsy_e.models.strategy.state.heatpump_all_tanks_state.AllTanksState."
+        "_get_scaling_factors_for_charging_energy",
+        Mock(return_value=[1 / 3, 1 / 3, 1 / 3]),
+    )
     def test_increase_tanks_temp_from_heat_energy(self):
         self._tanks.increase_tanks_temp_from_heat_energy(5000, self._datetime)
         tank_states = self._tanks.tanks_states
@@ -33,6 +39,11 @@ class TestAllTanksState:
         assert isclose(tank_states[1]._temp_increase_K[self._datetime], 0.49888, rel_tol=0.0001)
         assert isclose(tank_states[2]._temp_increase_K[self._datetime], 0.399106, rel_tol=0.0001)
 
+    @patch(
+        "gsy_e.models.strategy.state.heatpump_all_tanks_state.AllTanksState."
+        "_get_scaling_factors_for_discharging",
+        Mock(return_value=[1 / 3, 1 / 3, 1 / 3]),
+    )
     def test_decrease_tanks_temp_from_heat_energy(self):
         self._tanks.decrease_tanks_temp_from_heat_energy(5000, self._datetime)
         tank_states = self._tanks.tanks_states
@@ -40,6 +51,16 @@ class TestAllTanksState:
         assert isclose(tank_states[1]._temp_decrease_K[self._datetime], 0.49888, rel_tol=0.0001)
         assert isclose(tank_states[2]._temp_decrease_K[self._datetime], 0.399106, rel_tol=0.0001)
 
+    @patch(
+        "gsy_e.models.strategy.state.heatpump_all_tanks_state.AllTanksState."
+        "_get_scaling_factors_for_charging_energy",
+        Mock(return_value=[1 / 3, 1 / 3, 1 / 3]),
+    )
+    @patch(
+        "gsy_e.models.strategy.state.heatpump_all_tanks_state.AllTanksState."
+        "_get_scaling_factors_for_discharging",
+        Mock(return_value=[1 / 3, 1 / 3, 1 / 3]),
+    )
     def test_update_tanks_temperature(self):
         self._tanks.increase_tanks_temp_from_heat_energy(2000, self._datetime)
         self._tanks.decrease_tanks_temp_from_heat_energy(1000, self._datetime)
@@ -50,12 +71,22 @@ class TestAllTanksState:
         assert isclose(tank_states[1]._temp_decrease_K[self._datetime], 0.09977, rel_tol=0.0001)
         assert isclose(tank_states[2]._temp_decrease_K[self._datetime], 0.079821, rel_tol=0.0001)
 
+    @patch(
+        "gsy_e.models.strategy.state.heatpump_all_tanks_state.AllTanksState."
+        "_get_scaling_factors_for_discharging",
+        Mock(return_value=[1 / 3, 1 / 3, 1 / 3]),
+    )
     def test_get_max_energy_consumption(self):
         energy_decrease_kJ = 1000
         self._tanks.decrease_tanks_temp_from_heat_energy(energy_decrease_kJ, self._datetime)
         max_energy_consumption = self._tanks.get_max_heat_energy_consumption_kJ(self._datetime)
         assert isclose(max_energy_consumption, 120016, rel_tol=0.0001)
 
+    @patch(
+        "gsy_e.models.strategy.state.heatpump_all_tanks_state.AllTanksState."
+        "_get_scaling_factors_for_discharging",
+        Mock(return_value=[1 / 3, 1 / 3, 1 / 3]),
+    )
     def test_get_min_energy_consumption(self):
         self._tanks.decrease_tanks_temp_from_heat_energy(2000, self._datetime)
         min_energy_consumption = self._tanks.get_min_heat_energy_consumption_kJ(self._datetime)
