@@ -435,16 +435,6 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
         if self._heat_demand_Q_J:
             self._heat_demand_Q_J.read_or_rotate_profiles()
 
-    def _calc_energy_to_buy_maximum(self, time_slot: DateTime) -> float:
-        return self.combined_state.get_energy_to_buy_maximum_kWh(
-            time_slot, self._source_temp_C.profile[time_slot]
-        )
-
-    def _calc_energy_to_buy_minimum(self, time_slot: DateTime) -> float:
-        return self.combined_state.get_energy_to_buy_minimum_kWh(
-            time_slot, self._source_temp_C.profile[time_slot]
-        )
-
     def _update_last_time_slot_data(self, time_slot: DateTime):
         last_time_slot = self.last_time_slot(time_slot)
         if last_time_slot not in self._source_temp_C.profile:
