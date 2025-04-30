@@ -5,7 +5,7 @@ from deepdiff import DeepDiff
 from pendulum import datetime
 
 from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import TankParameters
-from gsy_e.models.strategy.state.heatpump_all_tanks_state import AllTanksState
+from gsy_e.models.strategy.state.heatpump_tank_states.heatpump_all_tanks_state import AllTanksState
 
 from gsy_e.models.strategy.energy_parameters.heatpump.virtual_heatpump_tank import (
     VirtualHeatpumpAllTanksState,
@@ -28,7 +28,7 @@ class TestAllTanksState:
         self._datetime = datetime(2023, 1, 1, 0, 0)
 
     @patch(
-        "gsy_e.models.strategy.state.heatpump_all_tanks_state.AllTanksState."
+        "gsy_e.models.strategy.state.heatpump_tank_states.heatpump_all_tanks_state.AllTanksState."
         "_get_scaling_factors_for_charging_energy",
         Mock(return_value=[1 / 3, 1 / 3, 1 / 3]),
     )
@@ -40,7 +40,7 @@ class TestAllTanksState:
         assert isclose(tank_states[2]._temp_increase_K[self._datetime], 0.399106, rel_tol=0.0001)
 
     @patch(
-        "gsy_e.models.strategy.state.heatpump_all_tanks_state.AllTanksState."
+        "gsy_e.models.strategy.state.heatpump_tank_states.heatpump_all_tanks_state.AllTanksState."
         "_get_scaling_factors_for_discharging",
         Mock(return_value=[1 / 3, 1 / 3, 1 / 3]),
     )
@@ -52,12 +52,12 @@ class TestAllTanksState:
         assert isclose(tank_states[2]._temp_decrease_K[self._datetime], 0.399106, rel_tol=0.0001)
 
     @patch(
-        "gsy_e.models.strategy.state.heatpump_all_tanks_state.AllTanksState."
+        "gsy_e.models.strategy.state.heatpump_tank_states.heatpump_all_tanks_state.AllTanksState."
         "_get_scaling_factors_for_charging_energy",
         Mock(return_value=[1 / 3, 1 / 3, 1 / 3]),
     )
     @patch(
-        "gsy_e.models.strategy.state.heatpump_all_tanks_state.AllTanksState."
+        "gsy_e.models.strategy.state.heatpump_tank_states.heatpump_all_tanks_state.AllTanksState."
         "_get_scaling_factors_for_discharging",
         Mock(return_value=[1 / 3, 1 / 3, 1 / 3]),
     )
@@ -72,7 +72,7 @@ class TestAllTanksState:
         assert isclose(tank_states[2]._temp_decrease_K[self._datetime], 0.079821, rel_tol=0.0001)
 
     @patch(
-        "gsy_e.models.strategy.state.heatpump_all_tanks_state.AllTanksState."
+        "gsy_e.models.strategy.state.heatpump_tank_states.heatpump_all_tanks_state.AllTanksState."
         "_get_scaling_factors_for_discharging",
         Mock(return_value=[1 / 3, 1 / 3, 1 / 3]),
     )
@@ -83,7 +83,7 @@ class TestAllTanksState:
         assert isclose(max_energy_consumption, 120016, rel_tol=0.0001)
 
     @patch(
-        "gsy_e.models.strategy.state.heatpump_all_tanks_state.AllTanksState."
+        "gsy_e.models.strategy.state.heatpump_tank_states.heatpump_all_tanks_state.AllTanksState."
         "_get_scaling_factors_for_discharging",
         Mock(return_value=[1 / 3, 1 / 3, 1 / 3]),
     )

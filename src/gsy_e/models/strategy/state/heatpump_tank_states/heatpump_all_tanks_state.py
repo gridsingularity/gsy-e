@@ -6,8 +6,11 @@ from gsy_framework.constants_limits import FLOATING_POINT_TOLERANCE
 from gsy_framework.utils import convert_kJ_to_kWh
 from pendulum import DateTime
 
-from gsy_e.models.strategy.state.heatpump_pcm_tank_state import PCMTankState
-from gsy_e.models.strategy.state.heatpump_water_tank_state import WaterTankState, TankStateBase
+from gsy_e.models.strategy.state.heatpump_tank_states.heatpump_pcm_tank_state import PCMTankState
+from gsy_e.models.strategy.state.heatpump_tank_states.heatpump_water_tank_state import (
+    WaterTankState,
+    TankStateBase,
+)
 from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import (
     TankParameters,
     HeatpumpTankTypes,
