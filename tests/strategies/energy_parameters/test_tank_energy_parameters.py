@@ -23,31 +23,32 @@ class TestAllTanksState:
                 TankParameters(30, 60, 60, 1000),
             ]
         )
+        self._tanks.event_activate()
         self._datetime = datetime(2023, 1, 1, 0, 0)
 
     def test_increase_tanks_temp_from_heat_energy(self):
         self._tanks.increase_tanks_temp_from_heat_energy(5000, self._datetime)
-        energy_params = self._tanks.tanks_states
-        assert isclose(energy_params[0]._temp_increase_K[self._datetime], 0.7982, rel_tol=0.0001)
-        assert isclose(energy_params[1]._temp_increase_K[self._datetime], 0.49888, rel_tol=0.0001)
-        assert isclose(energy_params[2]._temp_increase_K[self._datetime], 0.399106, rel_tol=0.0001)
+        tank_states = self._tanks.tanks_states
+        assert isclose(tank_states[0]._temp_increase_K[self._datetime], 0.7982, rel_tol=0.0001)
+        assert isclose(tank_states[1]._temp_increase_K[self._datetime], 0.49888, rel_tol=0.0001)
+        assert isclose(tank_states[2]._temp_increase_K[self._datetime], 0.399106, rel_tol=0.0001)
 
     def test_decrease_tanks_temp_from_heat_energy(self):
         self._tanks.decrease_tanks_temp_from_heat_energy(5000, self._datetime)
-        energy_params = self._tanks.tanks_states
-        assert isclose(energy_params[0]._temp_decrease_K[self._datetime], 0.7982, rel_tol=0.0001)
-        assert isclose(energy_params[1]._temp_decrease_K[self._datetime], 0.49888, rel_tol=0.0001)
-        assert isclose(energy_params[2]._temp_decrease_K[self._datetime], 0.399106, rel_tol=0.0001)
+        tank_states = self._tanks.tanks_states
+        assert isclose(tank_states[0]._temp_decrease_K[self._datetime], 0.7982, rel_tol=0.0001)
+        assert isclose(tank_states[1]._temp_decrease_K[self._datetime], 0.49888, rel_tol=0.0001)
+        assert isclose(tank_states[2]._temp_decrease_K[self._datetime], 0.399106, rel_tol=0.0001)
 
     def test_update_tanks_temperature(self):
         self._tanks.increase_tanks_temp_from_heat_energy(2000, self._datetime)
         self._tanks.decrease_tanks_temp_from_heat_energy(1000, self._datetime)
 
         self._tanks.update_tanks_temperature(self._datetime)
-        energy_params = self._tanks.tanks_states
-        assert isclose(energy_params[0]._temp_decrease_K[self._datetime], 0.159642, rel_tol=0.0001)
-        assert isclose(energy_params[1]._temp_decrease_K[self._datetime], 0.09977, rel_tol=0.0001)
-        assert isclose(energy_params[2]._temp_decrease_K[self._datetime], 0.079821, rel_tol=0.0001)
+        tank_states = self._tanks.tanks_states
+        assert isclose(tank_states[0]._temp_decrease_K[self._datetime], 0.159642, rel_tol=0.0001)
+        assert isclose(tank_states[1]._temp_decrease_K[self._datetime], 0.09977, rel_tol=0.0001)
+        assert isclose(tank_states[2]._temp_decrease_K[self._datetime], 0.079821, rel_tol=0.0001)
 
     def test_get_max_energy_consumption(self):
         energy_decrease_kJ = 1000
@@ -101,19 +102,19 @@ class TestVirtualHeatpumpAllTanksEnergyParameters:
     def test_set_temp_decrease_vhp_works_with_one_tank_empty(self):
         self._tanks.set_temp_decrease_vhp(1000, self._datetime)
 
-        energy_params = self._tanks.tanks_states
-        assert isclose(energy_params[0]._temp_decrease_K[self._datetime], 0.14347, rel_tol=0.0001)
-        assert isclose(energy_params[1]._temp_decrease_K[self._datetime], 0.0, rel_tol=0.0001)
-        assert isclose(energy_params[2]._temp_decrease_K[self._datetime], 0.07174, rel_tol=0.0001)
+        tank_states = self._tanks.tanks_states
+        assert isclose(tank_states[0]._temp_decrease_K[self._datetime], 0.14347, rel_tol=0.0001)
+        assert isclose(tank_states[1]._temp_decrease_K[self._datetime], 0.0, rel_tol=0.0001)
+        assert isclose(tank_states[2]._temp_decrease_K[self._datetime], 0.07174, rel_tol=0.0001)
 
     def test_set_temp_decrease_vhp_all_tanks(self):
         self._tanks.tanks_states[1]._storage_temp_C[self._datetime] = 30.0
         solver_params = self._tanks.set_temp_decrease_vhp(1000, self._datetime)
         assert not solver_params
-        energy_params = self._tanks.tanks_states
-        assert isclose(energy_params[0]._temp_decrease_K[self._datetime], 0.14347, rel_tol=0.0001)
-        assert isclose(energy_params[1]._temp_decrease_K[self._datetime], 0.08967, rel_tol=0.0001)
-        assert isclose(energy_params[2]._temp_decrease_K[self._datetime], 0.07174, rel_tol=0.0001)
+        tank_states = self._tanks.tanks_states
+        assert isclose(tank_states[0]._temp_decrease_K[self._datetime], 0.14347, rel_tol=0.0001)
+        assert isclose(tank_states[1]._temp_decrease_K[self._datetime], 0.08967, rel_tol=0.0001)
+        assert isclose(tank_states[2]._temp_decrease_K[self._datetime], 0.07174, rel_tol=0.0001)
 
     def test_create_tank_solver_for_maintaining_tank_temperature(self):
         solver_params = self._tanks.create_tank_solver_for_maintaining_tank_temperature(
