@@ -407,42 +407,51 @@ class TankStateBase(StateInterface):
     def __init__(self, tank_parameters: TankParameters):
         self._soc: Dict[DateTime, float] = defaultdict(lambda: 0)
         self._params = tank_parameters
+        self._max_capacity_kJ = None
 
     @abstractmethod
-    def increase_tank_temp_from_heat_energy(self, heat_energy_kWh, time_slot):
+    def increase_tank_temp_from_heat_energy(
+        self, heat_energy_kWh: float, time_slot: DateTime
+    ) -> None:
         """Set the tank temperature increase from heat energy."""
 
     @abstractmethod
-    def decrease_tank_temp_from_heat_energy(self, heat_energy_kWh, time_slot):
+    def decrease_tank_temp_from_heat_energy(
+        self, heat_energy_kWh: float, time_slot: DateTime
+    ) -> None:
         """Set the tank temperature decrease from heat energy."""
 
     @abstractmethod
-    def update_storage_temp(self, time_slot):
+    def update_storage_temp(self, time_slot: DateTime) -> None:
         """Update the storage temperature"""
 
     @abstractmethod
-    def get_max_heat_energy_consumption_kJ(self, time_slot):
+    def get_max_heat_energy_consumption_kJ(self, time_slot: DateTime) -> float:
         """Return the maximal energy consumption."""
 
     @abstractmethod
-    def get_min_heat_energy_consumption_kJ(self, time_slot):
+    def get_min_heat_energy_consumption_kJ(self, time_slot: DateTime) -> float:
         """Return the minimal energy consumption."""
 
     @abstractmethod
-    def current_tank_temperature(self, time_slot):
+    def current_tank_temperature(self, time_slot: DateTime) -> float:
         """Return current temperature of the tank."""
 
     @abstractmethod
-    def get_soc(self, time_slot):
+    def get_soc(self, time_slot) -> float:
         """Return the current SOC of tha tank"""
 
     @abstractmethod
-    def serialize(self):
+    def serialize(self) -> None:
         """Serialize the memebrs of the class."""
 
     @abstractmethod
-    def init(self):
+    def init(self) -> None:
         """Initiate class members of the tank"""
+
+    @abstractmethod
+    def get_heat_consumption_kJ(self, time_slot: DateTime) -> float:
+        """Return heat consumption of the tank for the provided time slot."""
 
     def get_available_energy_kJ(self, time_slot: DateTime) -> float:
         """Return the available energy stored in the tank."""

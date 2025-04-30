@@ -31,13 +31,14 @@ class AllTanksState:
     def __init__(self, tank_parameters: List[TankParameters]):
         self.tanks_states = [heatpump_state_factory(tank) for tank in tank_parameters]
 
-        self._current_energy_demands_tanks: List[float] = []
-
-    def _get_scaling_factors_for_charging_energy(self):
-        total_energy = sum(self._current_energy_demands_tanks)
+    def _get_scaling_factors_for_charging_energy(self, time_slot):
+        _current_energy_demands_tanks = [
+            tank.get_heat_consumption_kJ(time_slot) for tank in self.tanks_states
+        ]
+        total_energy = sum(_current_energy_demands_tanks)
         if total_energy == 0:
             return [0 for _ in range(len(self.tanks_states))]
-        return [energy / total_energy for energy in self._current_energy_demands_tanks]
+        return [energy / total_energy for energy in _current_energy_demands_tanks]
 
     def _get_scaling_factors_for_discharging(self, time_slot):
         available_energies = [
@@ -50,7 +51,7 @@ class AllTanksState:
 
     def increase_tanks_temp_from_heat_energy(self, heat_energy_kJ: float, time_slot: DateTime):
         """Increase the temperature of the water tanks with the provided heat energy."""
-        scaling_factors = self._get_scaling_factors_for_charging_energy()
+        scaling_factors = self._get_scaling_factors_for_charging_energy(time_slot)
         for num, tank in enumerate(self.tanks_states):
             heat_energy_per_tank_kWh = convert_kJ_to_kWh(heat_energy_kJ * scaling_factors[num])
             tank.increase_tank_temp_from_heat_energy(heat_energy_per_tank_kWh, time_slot)
@@ -81,10 +82,9 @@ class AllTanksState:
 
     def get_min_heat_energy_consumption_kJ(self, time_slot: DateTime):
         """Get min heat energy consumption from all water tanks."""
-        self._current_energy_demands_tanks = [
+        min_energy_consumption_kJ = sum(
             tank.get_min_heat_energy_consumption_kJ(time_slot) for tank in self.tanks_states
-        ]
-        min_energy_consumption_kJ = sum(self._current_energy_demands_tanks)
+        )
         assert min_energy_consumption_kJ > -FLOATING_POINT_TOLERANCE
         return min_energy_consumption_kJ
 

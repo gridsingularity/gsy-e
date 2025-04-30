@@ -157,6 +157,9 @@ class WaterTankState(TankStateBase):
             assert False
         return convert_kWh_to_kJ(max_temp_diff * self._Q_specific)
 
+    def get_heat_consumption_kJ(self, time_slot: DateTime):
+        return convert_kWh_to_kJ(self.get_temp_decrease_K(time_slot) * self._Q_specific)
+
     def get_min_heat_energy_consumption_kJ(self, time_slot: DateTime):
         """
         Calculate min heat energy consumption that a heatpump has to consume in

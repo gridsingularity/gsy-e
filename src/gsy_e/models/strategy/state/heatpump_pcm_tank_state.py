@@ -1,5 +1,4 @@
 import logging
-from collections import defaultdict
 from statistics import mean
 from typing import Dict, Optional
 
@@ -43,14 +42,13 @@ class PCMTankState(TankStateBase):
         super().__init__(tank_parameters)
         self._htf_temps_C: Dict[DateTime, list[float]] = {}
         self._pcm_temps_C: Dict[DateTime, list[float]] = {}
-        self._consumed_energy: Dict[DateTime, float] = defaultdict(lambda: 0)
         self._pcm_charge_model = PCMChargeModel(
             slot_length=GlobalConfig.slot_length, mass_flow_rate_kg_s=MASS_FLOW_RATE
         )
         self._pcm_discharge_model = PCMDischargeModel(
             slot_length=GlobalConfig.slot_length, mass_flow_rate_kg_s=MASS_FLOW_RATE
         )
-        self._heat_demand_kJ: Dict[DateTime, float] = {}
+        self._heat_consumption_kJ: Dict[DateTime, float] = {}
         self._max_capacity_kJ = tank_parameters.max_capacity_kJ
 
     def serialize(self):
@@ -99,11 +97,11 @@ class PCMTankState(TankStateBase):
         """Calculate and set SOC level after discharging."""
         self._soc[time_slot] = self._pcm_discharge_model.get_soc(self._get_pcm_temps_C(time_slot))
 
-    def _get_heat_demand_kJ(self, time_slot: DateTime):
-        return self._heat_demand_kJ.get(time_slot)
+    def get_heat_consumption_kJ(self, time_slot: DateTime):
+        return self._heat_consumption_kJ.get(time_slot)
 
-    def _set_heat_demand_kJ(self, energy_kJ: float, time_slot: DateTime):
-        self._heat_demand_kJ[time_slot] = energy_kJ
+    def _set_heat_consumption_kJ(self, energy_kJ: float, time_slot: DateTime):
+        self._heat_consumption_kJ[time_slot] = energy_kJ
 
     def get_soc(self, time_slot: DateTime) -> float:
         """Return SOC level in percent."""
@@ -162,12 +160,12 @@ class PCMTankState(TankStateBase):
 
     def decrease_tank_temp_from_heat_energy(self, heat_energy_kWh: float, time_slot: DateTime):
         """Decrease the temperature of the water tank with the provided heat energy."""
+        self._set_heat_consumption_kJ(convert_kWh_to_kJ(heat_energy_kWh), time_slot)
         if heat_energy_kWh > FLOATING_POINT_TOLERANCE:
             temp_cond_C = self._get_condenser_temp_from_heat_demand_kWh(
                 -heat_energy_kWh, time_slot
             )
             self._decrease_storage_temp_from_condenser_temp(temp_cond_C, time_slot)
-            self._set_heat_demand_kJ(convert_kWh_to_kJ(heat_energy_kWh), time_slot)
 
     def _increase_storage_temp_from_condenser_temp(
         self, condenser_temp_C: float, time_slot: DateTime
@@ -199,7 +197,6 @@ class PCMTankState(TankStateBase):
 
     def get_results_dict(self, current_time_slot: DateTime) -> dict:
         return {
-            "consumed_energy": self._consumed_energy.get(current_time_slot, 0),
             "soc": self._soc.get(current_time_slot, 0),
             "htf_temp_C": self.get_htf_temp_C(current_time_slot),
             "pcm_temp_C": self.get_pcm_temp_C(current_time_slot),
@@ -210,7 +207,6 @@ class PCMTankState(TankStateBase):
         return {
             "htf_temps_C": convert_pendulum_to_str_in_dict(self._htf_temps_C),
             "pcm_temps_C": convert_pendulum_to_str_in_dict(self._pcm_temps_C),
-            "consumed_energy": convert_pendulum_to_str_in_dict(self._consumed_energy),
             "soc": convert_pendulum_to_str_in_dict(self._soc),
             "min_storage_temp_C": self._params.min_temp_C,
             "max_storage_temp_C": self._params.max_temp_C,
@@ -221,7 +217,6 @@ class PCMTankState(TankStateBase):
     def restore_state(self, state_dict: Dict):
         self._htf_temps_C = convert_str_to_pendulum_in_dict(state_dict["htf_temps_C"])
         self._pcm_temps_C = convert_str_to_pendulum_in_dict(state_dict["pcm_temps_C"])
-        self._consumed_energy = convert_str_to_pendulum_in_dict(state_dict["consumed_energy"])
         self._soc = convert_str_to_pendulum_in_dict(state_dict["soc"])
         self._params.min_temp_C = state_dict["min_storage_temp_C"]
         self._params.max_temp_C = state_dict["max_storage_temp_C"]
@@ -235,7 +230,6 @@ class PCMTankState(TankStateBase):
         delete_time_slots_in_state(self._htf_temps_C, last_time_slot)
         delete_time_slots_in_state(self._pcm_temps_C, last_time_slot)
         delete_time_slots_in_state(self._soc, last_time_slot)
-        delete_time_slots_in_state(self._consumed_energy, last_time_slot)
 
     def _last_time_slot(self, current_market_slot: DateTime) -> DateTime:
         return current_market_slot - GlobalConfig.slot_length
@@ -245,16 +239,16 @@ class PCMTankState(TankStateBase):
 
     def get_min_heat_energy_consumption_kJ(self, time_slot: DateTime):
         current_heat_charge_kJ = self._get_current_heat_charge_kJ(time_slot)
-        heat_demand_kJ = self._get_heat_demand_kJ(time_slot)
-        if current_heat_charge_kJ >= heat_demand_kJ:
+        heat_consumption_kJ = self.get_heat_consumption_kJ(time_slot)
+        if current_heat_charge_kJ >= heat_consumption_kJ:
             return 0
-        return heat_demand_kJ - current_heat_charge_kJ
+        return heat_consumption_kJ - current_heat_charge_kJ
 
     def get_max_heat_energy_consumption_kJ(self, time_slot):
         return (
             self._params.max_capacity_kJ
             - self._get_current_heat_charge_kJ(time_slot)
-            + self._get_heat_demand_kJ(time_slot)
+            + self.get_heat_consumption_kJ(time_slot)
         )
 
     def update_storage_temp(self, time_slot):
