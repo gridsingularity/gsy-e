@@ -34,7 +34,9 @@ class WaterTankState(TankStateBase):
         )
         self._temp_decrease_K: Dict[DateTime, float] = defaultdict(lambda: 0)
         self._temp_increase_K: Dict[DateTime, float] = defaultdict(lambda: 0)
-        self._soc: Dict[DateTime, float] = defaultdict(lambda: 0)
+        self._max_capacity_kJ = convert_kWh_to_kJ(
+            (self._params.max_temp_C - self._params.min_temp_C) * self._Q_specific
+        )
 
     def get_storage_temp_C(self, time_slot: DateTime) -> float:
         """Return temperature of storage for a time slot in degree celsius."""
@@ -50,6 +52,9 @@ class WaterTankState(TankStateBase):
         if new_temp < self._params.min_temp_C:
             new_temp = self._params.min_temp_C
             log.warning("Storage tank temperature dropped below minimum, setting to minimum.")
+        if new_temp > self._params.max_temp_C:
+            new_temp = self._params.max_temp_C
+            log.warning("Storage tank temperature rose beyond the maximum, setting to maximum.")
         self._storage_temp_C[time_slot] = new_temp
         self._update_soc(time_slot)
 
@@ -151,6 +156,12 @@ class WaterTankState(TankStateBase):
         if max_temp_diff < 0:
             assert False
         return convert_kWh_to_kJ(max_temp_diff * self._Q_specific)
+
+    def get_heat_consumption_kJ(self, time_slot: DateTime):
+        return convert_kWh_to_kJ(self.get_temp_decrease_K(time_slot) * self._Q_specific)
+
+    def get_dod_energy_kJ(self, time_slot: DateTime) -> float:
+        return (1 - self._soc[time_slot]) * self._max_capacity_kJ
 
     def get_min_heat_energy_consumption_kJ(self, time_slot: DateTime):
         """

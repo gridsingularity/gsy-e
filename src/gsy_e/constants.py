@@ -21,7 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # pylint: disable=unused-import
 import os
 
-ROUND_TOLERANCE = 5
+EXPORT_STATS_ROUND_TOLERANCE = 3
 
 # Percentual standard deviation relative to the forecast energy, used to compute the (simulated)
 # real energy produced/consumed by a device.

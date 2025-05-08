@@ -18,7 +18,7 @@ from gsy_e.models.strategy.energy_parameters.heatpump.cop_models import (
     cop_model_factory,
     BaseCOPModel,
 )
-from gsy_e.models.strategy.state.heatpump_all_tanks_state import AllTanksState
+from gsy_e.models.strategy.state.heatpump_tank_states.all_tanks_state import AllTanksState
 from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import TankParameters
 from gsy_e.models.strategy.state import HeatPumpState
 from gsy_e.models.strategy.strategy_profile import profile_factory
@@ -434,16 +434,6 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
         self._source_temp_C.read_or_rotate_profiles()
         if self._heat_demand_Q_J:
             self._heat_demand_Q_J.read_or_rotate_profiles()
-
-    def _calc_energy_to_buy_maximum(self, time_slot: DateTime) -> float:
-        return self.combined_state.get_energy_to_buy_maximum_kWh(
-            time_slot, self._source_temp_C.profile[time_slot]
-        )
-
-    def _calc_energy_to_buy_minimum(self, time_slot: DateTime) -> float:
-        return self.combined_state.get_energy_to_buy_minimum_kWh(
-            time_slot, self._source_temp_C.profile[time_slot]
-        )
 
     def _update_last_time_slot_data(self, time_slot: DateTime):
         last_time_slot = self.last_time_slot(time_slot)

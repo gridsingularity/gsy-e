@@ -24,7 +24,7 @@ from typing import TYPE_CHECKING, Dict, List
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.enums import AvailableMarketTypes, BidOfferMatchAlgoEnum, SpotMarketTypeEnum
 
-from gsy_e.constants import ROUND_TOLERANCE
+from gsy_e.constants import EXPORT_STATS_ROUND_TOLERANCE
 from gsy_e.gsy_e_core.matching_engine_singleton import bid_offer_matcher
 from gsy_e.gsy_e_core.util import is_two_sided_market_simulation
 from gsy_e.models.area import Area
@@ -43,8 +43,10 @@ from gsy_e.models.strategy.virtual_heatpump import (
     VirtualHeatpumpStrategy,
     MultipleTankVirtualHeatpumpStrategy,
 )
-from gsy_e.models.strategy.state.heatpump_water_tank_state import WaterTankState
-from gsy_e.models.strategy.state.heatpump_pcm_tank_state import PCMTankState
+from gsy_e.models.strategy.state.heatpump_tank_states.water_tank_state import (
+    WaterTankState,
+)
+from gsy_e.models.strategy.state.heatpump_tank_states.pcm_tank_state import PCMTankState
 
 if TYPE_CHECKING:
     from gsy_e.models.area import CoefficientArea
@@ -272,22 +274,29 @@ class HeatPumpDataExporter(BaseDataExporter):
         rows = [slot]
         if file_key == "heat_pump":
             rows += [
-                round(self._traded(market), ROUND_TOLERANCE),
-                round(self.area.strategy.state.heatpump.get_cop(slot), ROUND_TOLERANCE),
+                round(self._traded(market), EXPORT_STATS_ROUND_TOLERANCE),
                 round(
-                    self.area.strategy.state.heatpump.get_heat_demand(slot) / 1000, ROUND_TOLERANCE
+                    self.area.strategy.state.heatpump.get_cop(slot), EXPORT_STATS_ROUND_TOLERANCE
+                ),
+                round(
+                    self.area.strategy.state.heatpump.get_heat_demand(slot) / 1000,
+                    EXPORT_STATS_ROUND_TOLERANCE,
                 ),
             ]
         if file_key == "water_tanks":
             for tank in self.area.strategy.state.charger.tanks.tanks_states:
                 if isinstance(tank, WaterTankState):
-                    rows.append(round(tank.current_tank_temperature(slot), ROUND_TOLERANCE))
-                    rows.append(round(tank.get_soc(slot), ROUND_TOLERANCE))
+                    rows.append(
+                        round(tank.current_tank_temperature(slot), EXPORT_STATS_ROUND_TOLERANCE)
+                    )
+                    rows.append(round(tank.get_soc(slot), EXPORT_STATS_ROUND_TOLERANCE))
         if file_key == "pcm_tanks":
             for tank in self.area.strategy.state.charger.tanks.tanks_states:
                 if isinstance(tank, PCMTankState):
-                    rows.append(round(tank.current_tank_temperature(slot), ROUND_TOLERANCE))
-                    rows.append(round(tank.get_soc(slot), ROUND_TOLERANCE))
+                    rows.append(
+                        round(tank.current_tank_temperature(slot), EXPORT_STATS_ROUND_TOLERANCE)
+                    )
+                    rows.append(round(tank.get_soc(slot), EXPORT_STATS_ROUND_TOLERANCE))
         return rows
 
     @property
