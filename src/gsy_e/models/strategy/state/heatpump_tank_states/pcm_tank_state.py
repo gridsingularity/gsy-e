@@ -237,6 +237,9 @@ class PCMTankState(TankStateBase):
     def _get_current_heat_charge_kJ(self, time_slot: DateTime):
         return self._soc[time_slot] * self._params.max_capacity_kJ
 
+    def get_dod_energy_kJ(self, time_slot: DateTime) -> float:
+        return (1 - self._soc[time_slot]) * self._params.max_capacity_kJ
+
     def get_min_heat_energy_consumption_kJ(self, time_slot: DateTime):
         current_heat_charge_kJ = self._get_current_heat_charge_kJ(time_slot)
         heat_consumption_kJ = self.get_heat_consumption_kJ(time_slot)

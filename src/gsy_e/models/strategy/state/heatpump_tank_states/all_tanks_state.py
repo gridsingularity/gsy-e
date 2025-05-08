@@ -35,13 +35,11 @@ class AllTanksState:
         self.tanks_states = [heatpump_state_factory(tank) for tank in tank_parameters]
 
     def _get_scaling_factors_for_charging_energy(self, time_slot):
-        _current_energy_demands_tanks = [
-            tank.get_heat_consumption_kJ(time_slot) for tank in self.tanks_states
-        ]
-        total_energy = sum(_current_energy_demands_tanks)
+        _current_dod_tanks = [tank.get_dod_energy_kJ(time_slot) for tank in self.tanks_states]
+        total_energy = sum(_current_dod_tanks)
         if total_energy == 0:
             return [0 for _ in range(len(self.tanks_states))]
-        return [energy / total_energy for energy in _current_energy_demands_tanks]
+        return [energy / total_energy for energy in _current_dod_tanks]
 
     def _get_scaling_factors_for_discharging(self, time_slot):
         available_energies = [
@@ -49,7 +47,7 @@ class AllTanksState:
         ]
         total_available_energy = sum(available_energies)
         if total_available_energy == 0:
-            return [0 for _ in range(len(self.tanks_states))]
+            return [1 / len(self.tanks_states) for _ in range(len(self.tanks_states))]
         return [energy / total_available_energy for energy in available_energies]
 
     def increase_tanks_temp_from_heat_energy(self, heat_energy_kJ: float, time_slot: DateTime):

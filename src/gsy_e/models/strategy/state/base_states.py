@@ -456,3 +456,6 @@ class TankStateBase(StateInterface):
     def get_available_energy_kJ(self, time_slot: DateTime) -> float:
         """Return the available energy stored in the tank."""
         return self._soc.get(time_slot) * self._max_capacity_kJ
+
+    def get_dod_energy_kJ(self, time_slot: DateTime) -> float:
+        """Return depth of discharge as an energy value in kJ."""
