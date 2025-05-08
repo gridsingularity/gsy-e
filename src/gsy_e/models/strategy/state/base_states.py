@@ -438,7 +438,7 @@ class TankStateBase(StateInterface):
         """Return current temperature of the tank."""
 
     @abstractmethod
-    def get_soc(self, time_slot) -> float:
+    def get_soc(self, time_slot: DateTime) -> float:
         """Return the current SOC of tha tank"""
 
     @abstractmethod
