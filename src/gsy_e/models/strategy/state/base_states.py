@@ -23,7 +23,7 @@ from collections import defaultdict
 
 from pendulum import DateTime
 
-from gsy_framework.constants_limits import FLOATING_POINT_TOLERANCE
+from gsy_framework.constants_limits import FLOATING_POINT_TOLERANCE, GlobalConfig
 from gsy_framework.utils import convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict
 
 from gsy_e.gsy_e_core.util import is_time_slot_in_past_markets
@@ -408,6 +408,9 @@ class TankStateBase(StateInterface):
         self._soc: Dict[DateTime, float] = defaultdict(lambda: 0)
         self._params = tank_parameters
         self._max_capacity_kJ = None
+
+    def _last_time_slot(self, time_slot: DateTime):
+        return time_slot - GlobalConfig.slot_length
 
     @abstractmethod
     def increase_tank_temp_from_heat_energy(

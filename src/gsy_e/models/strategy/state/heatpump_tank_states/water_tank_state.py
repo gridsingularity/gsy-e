@@ -107,11 +107,10 @@ class WaterTankState(TankStateBase):
     def delete_past_state_values(self, current_time_slot: DateTime):
         if not current_time_slot or constants.RETAIN_PAST_MARKET_STRATEGIES_STATE:
             return
-        last_time_slot = self._last_time_slot(current_time_slot)
-        self._delete_time_slots(self._storage_temp_C, last_time_slot)
-        self._delete_time_slots(self._temp_increase_K, last_time_slot)
-        self._delete_time_slots(self._temp_decrease_K, last_time_slot)
-        self._delete_time_slots(self._soc, last_time_slot)
+        self._delete_time_slots(self._storage_temp_C, self._last_time_slot(current_time_slot))
+        self._delete_time_slots(self._temp_increase_K, self._last_time_slot(current_time_slot))
+        self._delete_time_slots(self._temp_decrease_K, self._last_time_slot(current_time_slot))
+        self._delete_time_slots(self._soc, self._last_time_slot(current_time_slot))
 
     def get_results_dict(self, current_time_slot: DateTime) -> Dict:
         retval = {
@@ -191,9 +190,6 @@ class WaterTankState(TankStateBase):
     @property
     def _Q_specific(self):
         return SPECIFIC_HEAT_CONST_WATER * self._params.tank_volume_L * WATER_DENSITY
-
-    def _last_time_slot(self, current_market_slot: DateTime) -> DateTime:
-        return current_market_slot - GlobalConfig.slot_length
 
     @staticmethod
     def _delete_time_slots(profile: Dict, current_time_stamp: DateTime):
