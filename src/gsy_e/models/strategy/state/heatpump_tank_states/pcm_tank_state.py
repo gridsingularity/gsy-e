@@ -253,9 +253,9 @@ class PCMTankState(TankStateBase):
         """Copy the temps of the last market slot to the current, because the temperatures are
         already adapted in increase_tank_temp_from_heat_energy and
         decrease_tank_temp_from_heat_energy"""
-        energy_to_store = self._heat_consumption_kJ.get(
+        energy_to_store = self._heat_production_kJ.get(
             self._last_time_slot(time_slot)
-        ) - self._heat_production_kJ.get(self._last_time_slot(time_slot))
+        ) - self._heat_consumption_kJ.get(self._last_time_slot(time_slot))
         temp_cond_C = self._get_condenser_temp_from_heat_demand_kWh(
             convert_kJ_to_kWh(energy_to_store), self._last_time_slot(time_slot)
         )
