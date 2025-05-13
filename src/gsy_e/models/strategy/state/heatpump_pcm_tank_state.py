@@ -48,6 +48,7 @@ class PCMTankState(TankStateBase):
             slot_length=GlobalConfig.slot_length, mass_flow_rate_kg_s=MASS_FLOW_RATE
         )
         self._heat_demand_kJ: Dict[DateTime, float] = {}
+        self._max_capacity_kJ = tank_parameters.max_capacity_kJ
 
     def serialize(self):
         """Return serializable dict of class parameters."""
@@ -68,6 +69,9 @@ class PCMTankState(TankStateBase):
         self._pcm_temps_C[GlobalConfig.start_date] = [
             self._params.initial_temp_C for _ in range(int(NUMBER_OF_PCM_ELEMENTS / 2))
         ]
+        self._soc[GlobalConfig.start_date] = (
+            self._params.initial_temp_C - self._params.min_temp_C
+        ) / (self._params.max_temp_C - self._params.min_temp_C)
 
     def _get_htf_temps_C(self, time_slot: DateTime) -> Optional[list]:
         return self._htf_temps_C.get(time_slot)

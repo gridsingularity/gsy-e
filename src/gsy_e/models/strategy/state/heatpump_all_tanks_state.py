@@ -2,7 +2,7 @@ from logging import getLogger
 from statistics import mean
 from typing import Union, List, Dict
 
-from gsy_framework.constants_limits import FLOATING_POINT_TOLERANCE
+from gsy_framework.constants_limits import FLOATING_POINT_TOLERANCE, GlobalConfig
 from gsy_framework.utils import convert_kJ_to_kWh
 from pendulum import DateTime
 
@@ -33,17 +33,20 @@ class AllTanksState:
 
     def increase_tanks_temp_from_heat_energy(self, heat_energy_kJ: float, time_slot: DateTime):
         """Increase the temperature of the water tanks with the provided heat energy."""
-        # Split heat energy equally across tanks
-        heat_energy_per_tank_kJ = heat_energy_kJ / len(self.tanks_states)
-        heat_energy_per_tank_kWh = convert_kJ_to_kWh(heat_energy_per_tank_kJ)
-        for tank in self.tanks_states:
+        scaling_factors = self._get_scaling_factors_for_charging_energy(
+            self._last_time_slot(time_slot)
+        )
+        for num, tank in enumerate(self.tanks_states):
+            heat_energy_per_tank_kWh = convert_kJ_to_kWh(heat_energy_kJ * scaling_factors[num])
             tank.increase_tank_temp_from_heat_energy(heat_energy_per_tank_kWh, time_slot)
 
     def decrease_tanks_temp_from_heat_energy(self, heat_energy_kJ: float, time_slot: DateTime):
         """Decrease the temperature of the water tanks with the provided heat energy."""
-        heat_energy_per_tank_kJ = heat_energy_kJ / len(self.tanks_states)
-        heat_energy_per_tank_kWh = convert_kJ_to_kWh(heat_energy_per_tank_kJ)
-        for tank in self.tanks_states:
+        scaling_factors = self._get_scaling_factors_for_discharging(
+            self._last_time_slot(time_slot)
+        )
+        for num, tank in enumerate(self.tanks_states):
+            heat_energy_per_tank_kWh = convert_kJ_to_kWh(heat_energy_kJ * scaling_factors[num])
             tank.decrease_tank_temp_from_heat_energy(heat_energy_per_tank_kWh, time_slot)
 
     def no_charge(self, time_slot: DateTime):
@@ -62,19 +65,29 @@ class AllTanksState:
 
     def get_max_heat_energy_consumption_kJ(self, time_slot: DateTime, heat_demand_kJ: float):
         """Get max heat energy consumption from all water tanks."""
-        max_energy_consumption_kJ = sum(
-            tank.get_max_heat_energy_consumption_kJ(time_slot, heat_demand_kJ)
-            for tank in self.tanks_states
-        )
+        max_heat_energies = []
+        scaling_factors = self._get_scaling_factors_for_discharging(time_slot)
+        for num, tank in enumerate(self.tanks_states):
+            max_heat_energy_per_tank = heat_demand_kJ * scaling_factors[num]
+            max_heat_energies.append(
+                tank.get_max_heat_energy_consumption_kJ(time_slot, max_heat_energy_per_tank)
+            )
+
+        max_energy_consumption_kJ = sum(max_heat_energies)
         assert max_energy_consumption_kJ > -FLOATING_POINT_TOLERANCE
         return max_energy_consumption_kJ
 
     def get_min_heat_energy_consumption_kJ(self, time_slot: DateTime, heat_demand_kJ: float):
         """Get min heat energy consumption from all water tanks."""
-        min_energy_consumption_kJ = sum(
-            tank.get_min_heat_energy_consumption_kJ(time_slot, heat_demand_kJ)
-            for tank in self.tanks_states
-        )
+        min_heat_energies = []
+        scaling_factors = self._get_scaling_factors_for_discharging(time_slot)
+        for num, tank in enumerate(self.tanks_states):
+            min_heat_energy_per_tank = heat_demand_kJ * scaling_factors[num]
+            min_heat_energies.append(
+                tank.get_min_heat_energy_consumption_kJ(time_slot, min_heat_energy_per_tank)
+            )
+
+        min_energy_consumption_kJ = sum(min_heat_energies)
         assert min_energy_consumption_kJ > -FLOATING_POINT_TOLERANCE
         return min_energy_consumption_kJ
 
@@ -110,3 +123,24 @@ class AllTanksState:
         """Perform steps when activate event is called"""
         for tank in self.tanks_states:
             tank.init()
+
+    def _get_scaling_factors_for_charging_energy(self, time_slot):
+        _current_dod_tanks = [tank.get_dod_energy_kJ(time_slot) for tank in self.tanks_states]
+        total_energy = sum(_current_dod_tanks)
+        if total_energy == 0:
+            log.error("No available space for charging in any tank. Skipping charging.")
+            return [0] * len(self.tanks_states)
+        return [energy / total_energy for energy in _current_dod_tanks]
+
+    def _get_scaling_factors_for_discharging(self, time_slot):
+        available_energies = [
+            tank.get_available_energy_kJ(time_slot) for tank in self.tanks_states
+        ]
+        total_available_energy = sum(available_energies)
+        if total_available_energy == 0:
+            log.error("No available capacity for discharging in any tanks. Skipping discharging.")
+            return [0] * len(self.tanks_states)
+        return [energy / total_available_energy for energy in available_energies]
+
+    def _last_time_slot(self, time_slot: DateTime):
+        return time_slot - GlobalConfig.slot_length

@@ -33,9 +33,12 @@ class WaterTankState(TankStateBase):
         self._storage_temp_C: Dict[DateTime, float] = defaultdict(
             lambda: tank_parameters.initial_temp_C
         )
+        self._max_capacity_kJ = convert_kWh_to_kJ(
+            (self._params.max_temp_C - self._params.min_temp_C) * self._Q_specific
+        )
 
     def get_storage_temp_C(self, time_slot: DateTime) -> float:
-        """Return temperature of storage for a time slot in degree celsius."""
+        """Return temperature of storage for a time slot in degree Celsius."""
         return self._storage_temp_C[time_slot]
 
     def _update_soc(self, time_slot: DateTime):
@@ -92,7 +95,7 @@ class WaterTankState(TankStateBase):
         """Decrease the temperature of the water tank with the provided heat energy."""
         temp_decrease_K = self._Q_kWh_to_temp_diff(heat_energy_kWh)
         new_temp = self.get_storage_temp_C(self._last_time_slot(time_slot)) - temp_decrease_K
-        if new_temp > self._params.min_temp_C:
+        if new_temp < self._params.min_temp_C:
             new_temp = self._params.min_temp_C
             log.warning("Storage tank temperature dropped below minimum, setting to minimum.")
         self._storage_temp_C[time_slot] = new_temp

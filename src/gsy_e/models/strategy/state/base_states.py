@@ -407,6 +407,7 @@ class TankStateBase(StateInterface):
     def __init__(self, tank_parameters: TankParameters):
         self._params = tank_parameters
         self._soc: Dict[DateTime, float] = defaultdict(lambda: 0)
+        self._max_capacity_kJ = None
 
     @abstractmethod
     def increase_tank_temp_from_heat_energy(self, heat_energy_kWh: float, time_slot: DateTime):
@@ -439,6 +440,14 @@ class TankStateBase(StateInterface):
     @abstractmethod
     def init(self):
         """Initiate class members of the tank"""
+
+    def get_dod_energy_kJ(self, time_slot: DateTime) -> float:
+        """Return depth of discharge as an energy value in kJ."""
+        return (1 - self._soc[time_slot]) * self._max_capacity_kJ
+
+    def get_available_energy_kJ(self, time_slot: DateTime) -> float:
+        """Return the available energy stored in the tank."""
+        return self._soc.get(time_slot) * self._max_capacity_kJ
 
     def get_soc(self, time_slot: DateTime) -> float:
         """Return SOC in percent for the provided time slot"""
