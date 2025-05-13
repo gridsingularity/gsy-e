@@ -33,6 +33,8 @@ from gsy_e.models.strategy.pv import PVStrategy
 ConstSettings.MASettings.MARKET_TYPE = 2
 ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL = 5
 
+preferred_buying_rate = 15
+
 
 def get_setup(config):
     area = Area(
@@ -42,7 +44,7 @@ def get_setup(config):
                 "House 1",
                 [
                     Area(
-                        "HeatPumpWithMultipleTanks",
+                        f"HeatPumpWithMultipleTanks_{preferred_buying_rate}",
                         strategy=MultipleTankHeatPumpStrategy(
                             tank_parameters=[
                                 TankParameters(
@@ -52,15 +54,22 @@ def get_setup(config):
                                     min_temp_C=30,
                                 ),
                                 TankParameters(
+                                    name="water tank 2",
+                                    initial_temp_C=60,
+                                    max_temp_C=60,
+                                    min_temp_C=30,
+                                    tank_volume_L=2000,
+                                ),
+                                TankParameters(
                                     name="pcm tank 1",
                                     type=HeatpumpTankTypes.PCM,
                                     max_capacity_kJ=20000,
-                                    initial_temp_C=35,
-                                    max_temp_C=45,
-                                    min_temp_C=30,
+                                    initial_temp_C=37,
+                                    max_temp_C=42,
+                                    min_temp_C=32,
                                 ),
                             ],
-                            preferred_buying_rate=5,
+                            preferred_buying_rate=preferred_buying_rate,
                             consumption_kWh_profile=os.path.join(
                                 gsye_root_path, "resources", "hp_consumption_kWh.csv"
                             ),
