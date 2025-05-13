@@ -216,14 +216,14 @@ class CombinedHeatpumpTanksState:
         last_time_slot: DateTime,
     ):
         """Update the COP of the heat pump in its state class."""
-        heat_demand_J = self._hp_state.get_heat_demand(last_time_slot)
-        cop = self._calc_cop(heat_demand_J, source_temp_C, last_time_slot)
+        heat_demand_kJ = self._hp_state.get_heat_demand(last_time_slot)
+        cop = self._calc_cop(heat_demand_kJ, source_temp_C, last_time_slot)
         # Set the calculated COP on both the last and the current time slot to use in calculations
         self._hp_state.set_cop(last_time_slot, cop)
         self._hp_state.set_cop(time_slot, cop)
 
     def _calc_cop(
-        self, heat_demand_Q_J: float, source_temp_C: float, time_slot: DateTime
+        self, heat_demand_Q_kJ: float, source_temp_C: float, time_slot: DateTime
     ) -> float:
         """
         Return the coefficient of performance (COP) for a given ambient and storage temperature.
@@ -234,7 +234,7 @@ class CombinedHeatpumpTanksState:
         """
         # 1 J = 1 W s
         heat_demand_kW = (
-            heat_demand_Q_J / self._slot_length.total_seconds() / 1000 if heat_demand_Q_J else None
+            heat_demand_Q_kJ / self._slot_length.total_seconds() if heat_demand_Q_kJ else None
         )
         return self._cop_model.calc_cop(
             source_temp_C=source_temp_C,
@@ -480,8 +480,7 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
                 time_slot, produced_heat_energy_kJ
             )
             self._consumption_kWh.profile[time_slot] = energy_demand_kWh
-
-        self._state.heatpump.set_heat_demand(time_slot, produced_heat_energy_kJ * 1000)
+        self._state.heatpump.set_heat_demand(time_slot, produced_heat_energy_kJ)
         self.combined_state.decrease_tank_temp_from_heat_demand(produced_heat_energy_kJ, time_slot)
 
         super()._populate_state(time_slot)
