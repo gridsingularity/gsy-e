@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from abc import ABC, abstractmethod
 from math import copysign
 from typing import Dict, Optional
+from collections import defaultdict
 
 from pendulum import DateTime
 
@@ -405,6 +406,7 @@ class TankStateBase(StateInterface):
 
     def __init__(self, tank_parameters: TankParameters):
         self._params = tank_parameters
+        self._soc: Dict[DateTime, float] = defaultdict(lambda: 0)
 
     @abstractmethod
     def increase_tank_temp_from_heat_energy(self, heat_energy_kWh: float, time_slot: DateTime):
@@ -431,16 +433,16 @@ class TankStateBase(StateInterface):
         """Return current temperature of the tank."""
 
     @abstractmethod
-    def get_soc(self, time_slot):
-        """Return the current SOC of tha tank"""
-
-    @abstractmethod
     def serialize(self):
         """Serialize the memebrs of the class."""
 
     @abstractmethod
     def init(self):
         """Initiate class members of the tank"""
+
+    def get_soc(self, time_slot: DateTime) -> float:
+        """Return SOC in percent for the provided time slot"""
+        return self._soc.get(time_slot) * 100
 
     def _last_time_slot(self, time_slot: DateTime):
         return time_slot - GlobalConfig.slot_length

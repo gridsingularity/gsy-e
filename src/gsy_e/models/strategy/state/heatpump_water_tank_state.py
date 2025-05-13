@@ -33,58 +33,24 @@ class WaterTankState(TankStateBase):
         self._storage_temp_C: Dict[DateTime, float] = defaultdict(
             lambda: tank_parameters.initial_temp_C
         )
-        self._temp_decrease_K: Dict[DateTime, float] = defaultdict(lambda: 0)
-        self._temp_increase_K: Dict[DateTime, float] = defaultdict(lambda: 0)
-        self._soc: Dict[DateTime, float] = defaultdict(lambda: 0)
 
     def get_storage_temp_C(self, time_slot: DateTime) -> float:
         """Return temperature of storage for a time slot in degree celsius."""
         return self._storage_temp_C[time_slot]
-
-    def get_temp_decrease_K(self, time_slot: DateTime) -> float:
-        """Return the temperature decrease for a given time slot."""
-        return self._temp_decrease_K.get(time_slot, 0)
 
     def _update_soc(self, time_slot: DateTime):
         self._soc[time_slot] = (self._storage_temp_C[time_slot] - self._params.min_temp_C) / (
             self._params.max_temp_C - self._params.min_temp_C
         )
 
-    def get_soc(self, time_slot: DateTime) -> float:
-        return self._soc.get(time_slot) * 100
-
-    def _get_current_diff_to_min_temp_K(self, time_slot: DateTime) -> float:
-        """
-        Return the temperature difference between the current storage temp and the minimum
-        storage temperature
-        """
-        min_temp_decrease_K = self.get_storage_temp_C(time_slot) - self._params.min_temp_C
-        return min_temp_decrease_K
-
-    def get_temp_increase_K(self, time_slot: DateTime) -> float:
-        """Return the temperature increase for a given time slot."""
-        return self._temp_increase_K.get(time_slot, 0)
-
-    def set_temp_decrease_K(self, time_slot: DateTime, temp_diff_K: float):
-        """Set the temperature decrease for a given time slot."""
-        self._temp_decrease_K[time_slot] = temp_diff_K
-
-    def update_temp_increase_K(self, time_slot: DateTime, temp_diff_K: float):
-        """Set the temperature increase for a given time slot."""
-        self._temp_increase_K[time_slot] += temp_diff_K
-
     def get_state(self) -> Dict:
         return {
             "storage_temp_C": convert_pendulum_to_str_in_dict(self._storage_temp_C),
-            "temp_decrease_K": convert_pendulum_to_str_in_dict(self._temp_decrease_K),
-            "temp_increase_K": convert_pendulum_to_str_in_dict(self._temp_increase_K),
             "soc": convert_pendulum_to_str_in_dict(self._soc),
         }
 
     def restore_state(self, state_dict: Dict):
         self._storage_temp_C = convert_str_to_pendulum_in_dict(state_dict["storage_temp_C"])
-        self._temp_decrease_K = convert_str_to_pendulum_in_dict(state_dict["temp_decrease_K"])
-        self._temp_increase_K = convert_str_to_pendulum_in_dict(state_dict["temp_increase_K"])
         self._soc = convert_str_to_pendulum_in_dict(state_dict["soc"])
 
     def delete_past_state_values(self, current_time_slot: DateTime):
@@ -92,15 +58,12 @@ class WaterTankState(TankStateBase):
             return
         last_time_slot = self._last_time_slot(current_time_slot)
         self._delete_time_slots(self._storage_temp_C, last_time_slot)
-        self._delete_time_slots(self._temp_increase_K, last_time_slot)
-        self._delete_time_slots(self._temp_decrease_K, last_time_slot)
         self._delete_time_slots(self._soc, last_time_slot)
 
     def get_results_dict(self, current_time_slot: DateTime) -> Dict:
         retval = {
             "storage_temp_C": self.get_storage_temp_C(current_time_slot),
-            "temp_decrease_K": self.get_temp_decrease_K(current_time_slot),
-            "temp_increase_K": self.get_temp_increase_K(current_time_slot),
+            "soc": self.get_soc(current_time_slot),
         }
         return retval
 
@@ -164,7 +127,7 @@ class WaterTankState(TankStateBase):
         - if current_temp > min_storage: only trade for the demand minus the heat
                                          that can be extracted from the storage
         """
-        diff_to_min_temp_C = self._get_current_diff_to_min_temp_K(time_slot)
+        diff_to_min_temp_C = self.get_storage_temp_C(time_slot) - self._params.min_temp_C
         temp_diff_due_to_consumption = self._Q_kWh_to_temp_diff(convert_kJ_to_kWh(heat_demand_kJ))
         min_temp_diff = (
             temp_diff_due_to_consumption - diff_to_min_temp_C
