@@ -128,7 +128,7 @@ class AllTanksState:
         _current_dod_tanks = [tank.get_dod_energy_kJ(time_slot) for tank in self.tanks_states]
         total_energy = sum(_current_dod_tanks)
         if total_energy == 0:
-            log.error("No available space for charging in any tank. Skipping charging.")
+            log.warning("No available space for charging in any tank. Skipping charging.")
             return [0] * len(self.tanks_states)
         return [energy / total_energy for energy in _current_dod_tanks]
 
@@ -138,7 +138,9 @@ class AllTanksState:
         ]
         total_available_energy = sum(available_energies)
         if total_available_energy == 0:
-            log.error("No available capacity for discharging in any tanks. Skipping discharging.")
+            log.warning(
+                "No available capacity for discharging in any tanks. Skipping discharging."
+            )
             return [0] * len(self.tanks_states)
         return [energy / total_available_energy for energy in available_energies]
 

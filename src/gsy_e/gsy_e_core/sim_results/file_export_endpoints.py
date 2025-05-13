@@ -296,6 +296,9 @@ class HeatPumpDataExporter(BaseDataExporter):
                 tank_name_str = tank._params.name if tank._params.name else f"tank {number + 1}"
                 labels.append(f"{tank_name_str} temperature C")
                 labels.append(f"{tank_name_str} SOC %")
+        if len(labels) == 1:
+            # case when no water tank was configured
+            return []
         return labels
 
     @property
@@ -306,6 +309,9 @@ class HeatPumpDataExporter(BaseDataExporter):
                 tank_name_str = tank._params.name if tank._params.name else f"tank {number + 1}"
                 labels.append(f"{tank_name_str} temperature C")
                 labels.append(f"{tank_name_str} SOC %")
+        if len(labels) == 1:
+            # case when no PCM tank was configured
+            return []
         return labels
 
 
