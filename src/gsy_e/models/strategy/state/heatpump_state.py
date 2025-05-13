@@ -58,11 +58,11 @@ class HeatPumpState(StateInterface):
         self._total_traded_energy_kWh: float = 0
         self._slot_length = slot_length
 
-    def set_heat_demand(self, time_slot: DateTime, heat_demand_kJ: float):
+    def set_heat_demand_kJ(self, time_slot: DateTime, heat_demand_kJ: float):
         """Set heat demand for the given time slot."""
         self._heat_demand_kJ[time_slot] = heat_demand_kJ
 
-    def get_heat_demand(self, time_slot: DateTime) -> float:
+    def get_heat_demand_kJ(self, time_slot: DateTime) -> float:
         """Return the heat demand in J for a given time slot."""
         return self._heat_demand_kJ.get(time_slot, 0)
 
@@ -162,7 +162,7 @@ class HeatPumpState(StateInterface):
             "cop": self.get_cop(current_time_slot),
             "condenser_temp_C": self.get_condenser_temp(current_time_slot),
             "total_traded_energy_kWh": self._total_traded_energy_kWh,
-            "heat_demand_J": self.get_heat_demand(current_time_slot),
+            "heat_demand_J": self.get_heat_demand_kJ(current_time_slot),
         }
         return retval
 

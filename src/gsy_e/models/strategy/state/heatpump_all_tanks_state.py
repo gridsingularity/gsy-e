@@ -46,6 +46,11 @@ class AllTanksState:
         for tank in self.tanks_states:
             tank.decrease_tank_temp_from_heat_energy(heat_energy_per_tank_kWh, time_slot)
 
+    def no_charge(self, time_slot: DateTime):
+        """Trigger no_charge method for all tanks"""
+        for tank in self.tanks_states:
+            tank.no_charge(time_slot)
+
     def update_tanks_temperature(self, time_slot: DateTime):
         """
         Update the current temperature of all tanks, based on temp increase/decrease of the market
@@ -55,18 +60,20 @@ class AllTanksState:
             # pylint: disable=protected-access
             tank.update_storage_temp(time_slot)
 
-    def get_max_heat_energy_consumption_kJ(self, time_slot: DateTime):
+    def get_max_heat_energy_consumption_kJ(self, time_slot: DateTime, heat_demand_kJ: float):
         """Get max heat energy consumption from all water tanks."""
         max_energy_consumption_kJ = sum(
-            tank.get_max_heat_energy_consumption_kJ(time_slot) for tank in self.tanks_states
+            tank.get_max_heat_energy_consumption_kJ(time_slot, heat_demand_kJ)
+            for tank in self.tanks_states
         )
         assert max_energy_consumption_kJ > -FLOATING_POINT_TOLERANCE
         return max_energy_consumption_kJ
 
-    def get_min_heat_energy_consumption_kJ(self, time_slot: DateTime):
+    def get_min_heat_energy_consumption_kJ(self, time_slot: DateTime, heat_demand_kJ: float):
         """Get min heat energy consumption from all water tanks."""
         min_energy_consumption_kJ = sum(
-            tank.get_min_heat_energy_consumption_kJ(time_slot) for tank in self.tanks_states
+            tank.get_min_heat_energy_consumption_kJ(time_slot, heat_demand_kJ)
+            for tank in self.tanks_states
         )
         assert min_energy_consumption_kJ > -FLOATING_POINT_TOLERANCE
         return min_energy_consumption_kJ

@@ -6,6 +6,7 @@ from gsy_framework.utils import (
     convert_pendulum_to_str_in_dict,
     convert_str_to_pendulum_in_dict,
     convert_kWh_to_kJ,
+    convert_kJ_to_kWh,
 )
 from gsy_framework.constants_limits import GlobalConfig
 from pendulum import DateTime
@@ -39,19 +40,6 @@ class WaterTankState(TankStateBase):
     def get_storage_temp_C(self, time_slot: DateTime) -> float:
         """Return temperature of storage for a time slot in degree celsius."""
         return self._storage_temp_C[time_slot]
-
-    def update_storage_temp(self, time_slot: DateTime):
-        """Update storage temperature of the given slot with the accumulated changes."""
-        new_temp = (
-            self.get_storage_temp_C(self._last_time_slot(time_slot))
-            - self.get_temp_decrease_K(self._last_time_slot(time_slot))
-            + self.get_temp_increase_K(self._last_time_slot(time_slot))
-        )
-        if new_temp < self._params.min_temp_C:
-            new_temp = self._params.min_temp_C
-            log.warning("Storage tank temperature dropped below minimum, setting to minimum.")
-        self._storage_temp_C[time_slot] = new_temp
-        self._update_soc(time_slot)
 
     def get_temp_decrease_K(self, time_slot: DateTime) -> float:
         """Return the temperature decrease for a given time slot."""
@@ -130,29 +118,44 @@ class WaterTankState(TankStateBase):
     def increase_tank_temp_from_heat_energy(self, heat_energy_kWh: float, time_slot: DateTime):
         """Increase the temperature of the water tank with the provided heat energy."""
         temp_increase_K = self._Q_kWh_to_temp_diff(heat_energy_kWh)
-        self.update_temp_increase_K(time_slot, temp_increase_K)
+        new_temp = self.get_storage_temp_C(self._last_time_slot(time_slot)) + temp_increase_K
+        if new_temp > self._params.max_temp_C:
+            new_temp = self._params.max_temp_C
+            log.warning("Storage tank temperature exceeded maximum, setting to maximum.")
+        self._storage_temp_C[time_slot] = new_temp
+        self._update_soc(time_slot)
 
     def decrease_tank_temp_from_heat_energy(self, heat_energy_kWh: float, time_slot: DateTime):
         """Decrease the temperature of the water tank with the provided heat energy."""
         temp_decrease_K = self._Q_kWh_to_temp_diff(heat_energy_kWh)
-        self.set_temp_decrease_K(time_slot, temp_decrease_K)
+        new_temp = self.get_storage_temp_C(self._last_time_slot(time_slot)) - temp_decrease_K
+        if new_temp > self._params.min_temp_C:
+            new_temp = self._params.min_temp_C
+            log.warning("Storage tank temperature dropped below minimum, setting to minimum.")
+        self._storage_temp_C[time_slot] = new_temp
+        self._update_soc(time_slot)
+
+    def no_charge(self, time_slot: DateTime):
+        self._storage_temp_C[time_slot] = self.get_storage_temp_C(self._last_time_slot(time_slot))
+        self._update_soc(time_slot)
 
     def increase_tank_temp_from_temp_delta(self, temp_diff: float, time_slot: DateTime):
         """Increase the tank temperature from temperature delta."""
         self.update_temp_increase_K(time_slot, temp_diff)
 
-    def get_max_heat_energy_consumption_kJ(self, time_slot: DateTime):
+    def get_max_heat_energy_consumption_kJ(self, time_slot: DateTime, heat_demand_kJ: float):
         """Calculate max heat energy consumption that the tank can accomodate."""
+        temp_diff_due_to_consumption = self._Q_kWh_to_temp_diff(convert_kJ_to_kWh(heat_demand_kJ))
         max_temp_diff = (
             self._params.max_temp_C
             - self.get_storage_temp_C(time_slot)
-            + self.get_temp_decrease_K(time_slot)
+            + temp_diff_due_to_consumption
         )
         if max_temp_diff < 0:
             assert False
         return convert_kWh_to_kJ(max_temp_diff * self._Q_specific)
 
-    def get_min_heat_energy_consumption_kJ(self, time_slot: DateTime):
+    def get_min_heat_energy_consumption_kJ(self, time_slot: DateTime, heat_demand_kJ: float):
         """
         Calculate min heat energy consumption that a heatpump has to consume in
         order to only let the storage drop its temperature to the minimum storage temperature.
@@ -162,7 +165,7 @@ class WaterTankState(TankStateBase):
                                          that can be extracted from the storage
         """
         diff_to_min_temp_C = self._get_current_diff_to_min_temp_K(time_slot)
-        temp_diff_due_to_consumption = self.get_temp_decrease_K(time_slot)
+        temp_diff_due_to_consumption = self._Q_kWh_to_temp_diff(convert_kJ_to_kWh(heat_demand_kJ))
         min_temp_diff = (
             temp_diff_due_to_consumption - diff_to_min_temp_C
             if diff_to_min_temp_C <= temp_diff_due_to_consumption
@@ -180,9 +183,6 @@ class WaterTankState(TankStateBase):
     @property
     def _Q_specific(self):
         return SPECIFIC_HEAT_CONST_WATER * self._params.tank_volume_L * WATER_DENSITY
-
-    def _last_time_slot(self, current_market_slot: DateTime) -> DateTime:
-        return current_market_slot - GlobalConfig.slot_length
 
     @staticmethod
     def _delete_time_slots(profile: Dict, current_time_stamp: DateTime):

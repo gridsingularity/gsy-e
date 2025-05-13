@@ -22,7 +22,7 @@ from typing import Dict, Optional
 
 from pendulum import DateTime
 
-from gsy_framework.constants_limits import FLOATING_POINT_TOLERANCE
+from gsy_framework.constants_limits import FLOATING_POINT_TOLERANCE, GlobalConfig
 from gsy_framework.utils import convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict
 
 from gsy_e.gsy_e_core.util import is_time_slot_in_past_markets
@@ -407,23 +407,23 @@ class TankStateBase(StateInterface):
         self._params = tank_parameters
 
     @abstractmethod
-    def increase_tank_temp_from_heat_energy(self, heat_energy_kWh, time_slot):
+    def increase_tank_temp_from_heat_energy(self, heat_energy_kWh: float, time_slot: DateTime):
         """Set the tank temperature increase from heat energy."""
 
     @abstractmethod
-    def decrease_tank_temp_from_heat_energy(self, heat_energy_kWh, time_slot):
+    def decrease_tank_temp_from_heat_energy(self, heat_energy_kWh: float, time_slot: DateTime):
         """Set the tank temperature decrease from heat energy."""
 
     @abstractmethod
-    def update_storage_temp(self, time_slot):
-        """Update the storage temperature"""
+    def no_charge(self, time_slot: DateTime):
+        """Copy state information to from the last time slot to the current."""
 
     @abstractmethod
-    def get_max_heat_energy_consumption_kJ(self, time_slot):
+    def get_max_heat_energy_consumption_kJ(self, time_slot: DateTime, heat_demand_kJ: float):
         """Return the maximal energy consumption."""
 
     @abstractmethod
-    def get_min_heat_energy_consumption_kJ(self, time_slot):
+    def get_min_heat_energy_consumption_kJ(self, time_slot: DateTime, heat_demand_kJ: float):
         """Return the minimal energy consumption."""
 
     @abstractmethod
@@ -441,3 +441,6 @@ class TankStateBase(StateInterface):
     @abstractmethod
     def init(self):
         """Initiate class members of the tank"""
+
+    def _last_time_slot(self, time_slot: DateTime):
+        return time_slot - GlobalConfig.slot_length

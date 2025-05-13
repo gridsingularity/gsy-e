@@ -274,9 +274,7 @@ class HeatPumpDataExporter(BaseDataExporter):
             rows += [
                 round(self._traded(market), ROUND_TOLERANCE),
                 round(self.area.strategy.state.heatpump.get_cop(slot), ROUND_TOLERANCE),
-                round(
-                    self.area.strategy.state.heatpump.get_heat_demand(slot) / 1000, ROUND_TOLERANCE
-                ),
+                round(self.area.strategy.state.heatpump.get_heat_demand_kJ(slot), ROUND_TOLERANCE),
             ]
         if file_key == "water_tanks":
             for tank in self.area.strategy.state.charger.tanks.tanks_states:
