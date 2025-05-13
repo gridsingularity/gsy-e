@@ -54,15 +54,6 @@ class AllTanksState:
         for tank in self.tanks_states:
             tank.no_charge(time_slot)
 
-    def update_tanks_temperature(self, time_slot: DateTime):
-        """
-        Update the current temperature of all tanks, based on temp increase/decrease of the market
-        slot.
-        """
-        for tank in self.tanks_states:
-            # pylint: disable=protected-access
-            tank.update_storage_temp(time_slot)
-
     def get_max_heat_energy_consumption_kJ(self, time_slot: DateTime, heat_demand_kJ: float):
         """Get max heat energy consumption from all water tanks."""
         max_heat_energies = []

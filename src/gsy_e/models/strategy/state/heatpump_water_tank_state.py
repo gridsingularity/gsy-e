@@ -105,10 +105,6 @@ class WaterTankState(TankStateBase):
         self._storage_temp_C[time_slot] = self.get_storage_temp_C(self._last_time_slot(time_slot))
         self._update_soc(time_slot)
 
-    def increase_tank_temp_from_temp_delta(self, temp_diff: float, time_slot: DateTime):
-        """Increase the tank temperature from temperature delta."""
-        self.update_temp_increase_K(time_slot, temp_diff)
-
     def get_max_heat_energy_consumption_kJ(self, time_slot: DateTime, heat_demand_kJ: float):
         """Calculate max heat energy consumption that the tank can accomodate."""
         temp_diff_due_to_consumption = self._Q_kWh_to_temp_diff(convert_kJ_to_kWh(heat_demand_kJ))
