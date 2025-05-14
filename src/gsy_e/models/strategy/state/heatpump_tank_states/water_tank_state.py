@@ -64,11 +64,10 @@ class WaterTankState(TankStateBase):
         self._delete_time_slots(self._soc, last_time_slot)
 
     def get_results_dict(self, current_time_slot: DateTime) -> Dict:
-        retval = {
+        return {
             "storage_temp_C": self.get_storage_temp_C(current_time_slot),
             "soc": self.get_soc(current_time_slot),
         }
-        return retval
 
     def __str__(self):
         return self.__class__.__name__

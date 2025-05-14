@@ -108,3 +108,9 @@ class TestWaterTankState:
         water_tank.init()
         # Then
         assert water_tank._soc == {CURRENT_MARKET_SLOT: 0.5}
+
+    def test_get_results_dict(self, water_tank):
+        assert water_tank.get_results_dict(CURRENT_MARKET_SLOT) == {
+            "storage_temp_C": 50,
+            "soc": 50,
+        }
