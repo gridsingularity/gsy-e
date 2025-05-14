@@ -3,6 +3,8 @@ from math import isclose
 from deepdiff import DeepDiff
 from pendulum import datetime
 
+from gsy_framework.constants_limits import GlobalConfig
+
 from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import TankParameters
 from gsy_e.models.strategy.state.heatpump_all_tanks_state import AllTanksState
 
@@ -24,41 +26,36 @@ class TestAllTanksState:
             ]
         )
         self._datetime = datetime(2023, 1, 1, 0, 0)
+        for tank in self._tanks.tanks_states:
+            tank._update_soc(self._datetime)
+            tank._update_soc(self._datetime - GlobalConfig.slot_length)
 
-    def test_increase_tanks_temp_from_heat_energy(self):
+    def test_increase_tanks_temp_from_heat_energy_updates_tank_temperature_correctly(self):
         self._tanks.increase_tanks_temp_from_heat_energy(5000, self._datetime)
-        energy_params = self._tanks.tanks_states
-        assert isclose(energy_params[0]._temp_increase_K[self._datetime], 0.7982, rel_tol=0.0001)
-        assert isclose(energy_params[1]._temp_increase_K[self._datetime], 0.49888, rel_tol=0.0001)
-        assert isclose(energy_params[2]._temp_increase_K[self._datetime], 0.399106, rel_tol=0.0001)
+        tank_states = self._tanks.tanks_states
+        assert isclose(tank_states[0]._storage_temp_C[self._datetime], 26.050, rel_tol=0.0001)
+        assert isclose(tank_states[1]._storage_temp_C[self._datetime], 20.840, rel_tol=0.0001)
+        assert isclose(tank_states[2]._storage_temp_C[self._datetime], 60, rel_tol=0.0001)
 
-    def test_decrease_tanks_temp_from_heat_energy(self):
+    def test_decrease_tanks_temp_from_heat_energy_updates_tank_temperature_correctly(self):
+
         self._tanks.decrease_tanks_temp_from_heat_energy(5000, self._datetime)
-        energy_params = self._tanks.tanks_states
-        assert isclose(energy_params[0]._temp_decrease_K[self._datetime], 0.7982, rel_tol=0.0001)
-        assert isclose(energy_params[1]._temp_decrease_K[self._datetime], 0.49888, rel_tol=0.0001)
-        assert isclose(energy_params[2]._temp_decrease_K[self._datetime], 0.399106, rel_tol=0.0001)
-
-    def test_update_tanks_temperature(self):
-        self._tanks.increase_tanks_temp_from_heat_energy(2000, self._datetime)
-        self._tanks.decrease_tanks_temp_from_heat_energy(1000, self._datetime)
-
-        self._tanks.update_tanks_temperature(self._datetime)
-        energy_params = self._tanks.tanks_states
-        assert isclose(energy_params[0]._temp_decrease_K[self._datetime], 0.159642, rel_tol=0.0001)
-        assert isclose(energy_params[1]._temp_decrease_K[self._datetime], 0.09977, rel_tol=0.0001)
-        assert isclose(energy_params[2]._temp_decrease_K[self._datetime], 0.079821, rel_tol=0.0001)
+        tank_states = self._tanks.tanks_states
+        assert isclose(tank_states[0]._storage_temp_C[self._datetime], 24.521, rel_tol=0.0001)
+        assert isclose(tank_states[1]._storage_temp_C[self._datetime], 20.0, rel_tol=0.0001)
+        assert isclose(tank_states[2]._storage_temp_C[self._datetime], 59.0421, rel_tol=0.0001)
 
     def test_get_max_energy_consumption(self):
-        energy_decrease_kJ = 1000
-        self._tanks.decrease_tanks_temp_from_heat_energy(energy_decrease_kJ, self._datetime)
-        max_energy_consumption = self._tanks.get_max_heat_energy_consumption_kJ(self._datetime)
+        max_energy_consumption = self._tanks.get_max_heat_energy_consumption_kJ(
+            self._datetime, 1000
+        )
         assert isclose(max_energy_consumption, 120016, rel_tol=0.0001)
 
     def test_get_min_energy_consumption(self):
-        self._tanks.decrease_tanks_temp_from_heat_energy(2000, self._datetime)
-        min_energy_consumption = self._tanks.get_min_heat_energy_consumption_kJ(self._datetime)
-        assert isclose(min_energy_consumption, 666.66, rel_tol=0.0001)
+        min_energy_consumption = self._tanks.get_min_heat_energy_consumption_kJ(
+            self._datetime, 200000
+        )
+        assert isclose(min_energy_consumption, 43400, rel_tol=0.1)
 
     def test_get_average_tank_temperature(self):
         self._tanks.tanks_states[0]._storage_temp_C[self._datetime] = 30
@@ -79,9 +76,9 @@ class TestAllTanksState:
     def test_get_results_dict(self):
         results_dict = self._tanks.get_results_dict(self._datetime)
         expected_dict = [
-            {"storage_temp_C": 25, "temp_decrease_K": 0, "temp_increase_K": 0},
-            {"storage_temp_C": 20, "temp_decrease_K": 0, "temp_increase_K": 0},
-            {"storage_temp_C": 60, "temp_decrease_K": 0, "temp_increase_K": 0},
+            {"storage_temp_C": 25, "soc": 37.5},
+            {"storage_temp_C": 20, "soc": 0.0},
+            {"storage_temp_C": 60, "soc": 100.0},
         ]
         assert len(DeepDiff(results_dict, expected_dict)) == 0
 
