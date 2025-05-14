@@ -1,4 +1,5 @@
 from math import isclose
+from unittest.mock import Mock
 
 from deepdiff import DeepDiff
 from pendulum import datetime
@@ -45,13 +46,24 @@ class TestAllTanksState:
         assert isclose(tank_states[1]._storage_temp_C[self._datetime], 20.0, rel_tol=0.0001)
         assert isclose(tank_states[2]._storage_temp_C[self._datetime], 59.0421, rel_tol=0.0001)
 
-    def test_get_max_energy_consumption(self):
+    def test_no_charge_calls_tank_methods_correctly(self):
+        for tank in self._tanks.tanks_states:
+            tank.no_charge = Mock()
+
+        self._tanks.no_charge(self._datetime)
+        count = 0
+        for tank in self._tanks.tanks_states:
+            tank.no_charge.assert_called_once()
+            count += 1
+        assert count == 3
+
+    def test_get_max_energy_consumption_kJ_returns_correct_energy_value(self):
         max_energy_consumption = self._tanks.get_max_heat_energy_consumption_kJ(
             self._datetime, 1000
         )
         assert isclose(max_energy_consumption, 120016, rel_tol=0.0001)
 
-    def test_get_min_energy_consumption(self):
+    def test_get_min_energy_consumption_kJ_returns_correct_energy_value(self):
         min_energy_consumption = self._tanks.get_min_heat_energy_consumption_kJ(
             self._datetime, 200000
         )

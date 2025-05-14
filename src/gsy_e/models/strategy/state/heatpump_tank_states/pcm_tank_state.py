@@ -234,7 +234,7 @@ class PCMTankState(TankStateBase):
         current_heat_charge_kJ = self._get_current_heat_charge_kJ(time_slot)
         if current_heat_charge_kJ >= heat_demand_kJ:
             return 0
-        return heat_demand_kJ
+        return heat_demand_kJ - current_heat_charge_kJ
 
     def get_max_heat_energy_consumption_kJ(self, time_slot: DateTime, heat_demand_kJ: float):
         return (
