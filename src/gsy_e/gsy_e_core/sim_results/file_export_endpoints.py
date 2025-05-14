@@ -43,8 +43,10 @@ from gsy_e.models.strategy.virtual_heatpump import (
     VirtualHeatpumpStrategy,
     MultipleTankVirtualHeatpumpStrategy,
 )
-from gsy_e.models.strategy.state.heatpump_water_tank_state import WaterTankState
-from gsy_e.models.strategy.state.heatpump_pcm_tank_state import PCMTankState
+from gsy_e.models.strategy.state.heatpump_tank_states.heatpump_water_tank_state import (
+    WaterTankState,
+)
+from gsy_e.models.strategy.state.heatpump_tank_states.heatpump_pcm_tank_state import PCMTankState
 
 if TYPE_CHECKING:
     from gsy_e.models.area import CoefficientArea
