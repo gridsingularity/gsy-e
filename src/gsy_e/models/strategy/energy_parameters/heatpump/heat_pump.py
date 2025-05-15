@@ -103,6 +103,10 @@ class HeatChargerDischarger:
         """Delete the state of the charger before the given time slot."""
         self.tanks.delete_past_state_values(current_time_slot)
 
+    def event_activate(self):
+        """Runs on activate event."""
+        self.tanks.event_activate()
+
 
 class CombinedHeatpumpTanksState:
     """Combined state that includes both heatpump and tanks state."""
@@ -118,7 +122,7 @@ class CombinedHeatpumpTanksState:
         ancillary_heat_source_kJ: Optional[str] = None,
     ):
         self._hp_state = hp_state
-        self.charger = HeatChargerDischarger(tanks_state)
+        self._charger = HeatChargerDischarger(tanks_state)
         self._cop_model = cop_model
         self._slot_length = slot_length
         self._max_energy_consumption_kWh = max_energy_consumption_kWh
@@ -134,29 +138,29 @@ class CombinedHeatpumpTanksState:
         """Results dict for all heatpump and tanks results."""
         if current_time_slot is None:
             return {}
-        tanks_state = self.charger.get_tanks_results_dict(current_time_slot)
+        tanks_results = self._charger.get_tanks_results_dict(current_time_slot)
         return {
-            "tanks": tanks_state,
+            "tanks": tanks_results,
             **self._hp_state.get_results_dict(current_time_slot),
-            "storage_temp_C": mean([tank["storage_temp_C"] for tank in tanks_state]),
+            "storage_temp_C": mean([tank["storage_temp_C"] for tank in tanks_results]),
         }
 
     def get_state(self) -> Dict:
         """Return the current state of the device."""
         return {
             **self._hp_state.get_state(),
-            "tanks": self.charger.get_state(),
+            "tanks": self._charger.get_state(),
         }
 
     def restore_state(self, state_dict: Dict):
         """Update the state of the device using the provided dictionary."""
         self._hp_state.restore_state(state_dict)
-        self.charger.restore_state(state_dict)
+        self._charger.restore_state(state_dict)
 
     def delete_past_state_values(self, current_time_slot: DateTime):
         """Delete the state of the device before the given time slot."""
         self._hp_state.delete_past_state_values(current_time_slot)
-        self.charger.delete_past_state_values(current_time_slot)
+        self._charger.delete_past_state_values(current_time_slot)
 
     @property
     def heatpump(self) -> HeatPumpState:
@@ -165,12 +169,12 @@ class CombinedHeatpumpTanksState:
 
     def get_energy_to_buy_maximum_kWh(self, time_slot: DateTime, source_temp_C: float) -> float:
         """Get maximum energy to buy from the heat pump + storage."""
-        max_heat_demand_kJ = self.charger.get_max_heat_energy_charge_kJ(
+        max_heat_demand_kJ = self._charger.get_max_heat_energy_charge_kJ(
             time_slot, self._get_heat_demand_kJ(time_slot)
         )
         cop = self._cop_model.calc_cop(
             source_temp_C=source_temp_C,
-            condenser_temp_C=self.charger.get_condenser_temperature_C(time_slot),
+            condenser_temp_C=self._charger.get_condenser_temperature_C(time_slot),
             heat_demand_kW=convert_kJ_to_kW(max_heat_demand_kJ, self._slot_length),
         )
 
@@ -209,13 +213,13 @@ class CombinedHeatpumpTanksState:
 
     def get_energy_to_buy_minimum_kWh(self, time_slot: DateTime, source_temp_C: float) -> float:
         """Get minimum energy to buy from the heat pump + storage."""
-        min_heat_demand_kJ = self.charger.get_min_heat_energy_charge_kJ(
+        min_heat_demand_kJ = self._charger.get_min_heat_energy_charge_kJ(
             time_slot, self._get_heat_demand_kJ(time_slot)
         )
 
         cop = self._cop_model.calc_cop(
             source_temp_C=source_temp_C,
-            condenser_temp_C=self.charger.get_condenser_temperature_C(time_slot),
+            condenser_temp_C=self._charger.get_condenser_temperature_C(time_slot),
             heat_demand_kW=convert_kJ_to_kW(min_heat_demand_kJ, self._slot_length),
         )
 
@@ -243,11 +247,11 @@ class CombinedHeatpumpTanksState:
         )
         net_energy_kJ = traded_heat_energy_kJ - heat_demand_kJ
         if net_energy_kJ > 0:
-            self.charger.charge(net_energy_kJ, time_slot)
+            self._charger.charge(net_energy_kJ, time_slot)
         elif net_energy_kJ < 0:
-            self.charger.discharge(abs(net_energy_kJ), time_slot)
+            self._charger.discharge(abs(net_energy_kJ), time_slot)
         else:
-            self.charger.no_charge(time_slot)
+            self._charger.no_charge(time_slot)
 
     def update_cop(
         self,
@@ -278,7 +282,7 @@ class CombinedHeatpumpTanksState:
         )
         return self._cop_model.calc_cop(
             source_temp_C=source_temp_C,
-            condenser_temp_C=self.charger.get_condenser_temperature_C(time_slot),
+            condenser_temp_C=self._charger.get_condenser_temperature_C(time_slot),
             heat_demand_kW=heat_demand_kW,
         )
 
@@ -286,7 +290,7 @@ class CombinedHeatpumpTanksState:
         self, time_slot: DateTime, energy_kWh: float, source_temp_C: float
     ) -> float:
         """Calculate heat in kJ from energy in kWh."""
-        condenser_temp = self.charger.get_condenser_temperature_C(time_slot)
+        condenser_temp = self._charger.get_condenser_temperature_C(time_slot)
         cop = self._cop_model.calc_cop(
             source_temp_C, condenser_temp, convert_kWh_to_W(energy_kWh, self._slot_length) / 1000.0
         )
@@ -298,6 +302,10 @@ class CombinedHeatpumpTanksState:
         if cop == 0:
             return 0
         return convert_kJ_to_kWh(Q_energy_kJ / cop)
+
+    def event_activate(self):
+        """Runs on activate event."""
+        self._charger.event_activate()
 
 
 class HeatPumpEnergyParametersBase(ABC):
@@ -353,7 +361,7 @@ class HeatPumpEnergyParametersBase(ABC):
 
     def event_activate(self):
         """Runs on activate event."""
-        self._state.charger.tanks.event_activate()
+        self._state.event_activate()
         self._rotate_profiles()
 
     def event_market_cycle(self, current_time_slot):
@@ -458,7 +466,7 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
         """Return dict with the current energy parameter values."""
         return {
             # pylint: disable=protected-access
-            "tanks": self.combined_state.charger.tanks.serialize(),
+            "tanks": self.combined_state._charger.tanks.serialize(),
             "max_energy_consumption_kWh": self._max_energy_consumption_kWh,
             "maximum_power_rating_kW": self._maximum_power_rating_kW,
             "consumption_kWh": self._consumption_kWh.input_profile,

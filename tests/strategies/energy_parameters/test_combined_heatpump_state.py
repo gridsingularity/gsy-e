@@ -30,14 +30,14 @@ class TestCombinedHeatpumpTanksState:
     def test_get_energy_to_buy_maximum_kWh_calls_correct_methods(self, combined_state):
         # Given
         combined_state.heatpump.get_heat_demand_kJ = Mock(return_value=5000)
-        combined_state.charger.get_max_heat_energy_charge_kJ = Mock(return_value=1800)
-        combined_state.charger.get_condenser_temperature_C = Mock(return_value=30)
+        combined_state._charger.get_max_heat_energy_charge_kJ = Mock(return_value=1800)
+        combined_state._charger.get_condenser_temperature_C = Mock(return_value=30)
         combined_state._cop_model.calc_cop = Mock(return_value=4)
         # When
         ret_value = combined_state.get_energy_to_buy_maximum_kWh(CURRENT_MARKET_SLOT, 20)
         # Then
         assert isclose(ret_value, 0.125, abs_tol=0.001)
-        combined_state.charger.get_max_heat_energy_charge_kJ.assert_called_with(
+        combined_state._charger.get_max_heat_energy_charge_kJ.assert_called_with(
             CURRENT_MARKET_SLOT, 5000
         )
         combined_state._cop_model.calc_cop.assert_called_with(
@@ -47,14 +47,14 @@ class TestCombinedHeatpumpTanksState:
     def test_get_energy_to_buy_minimum_kWh_calls_correct_methods(self, combined_state):
         # Given
         combined_state.heatpump.get_heat_demand_kJ = Mock(return_value=5000)
-        combined_state.charger.get_min_heat_energy_charge_kJ = Mock(return_value=1800)
-        combined_state.charger.get_condenser_temperature_C = Mock(return_value=30)
+        combined_state._charger.get_min_heat_energy_charge_kJ = Mock(return_value=1800)
+        combined_state._charger.get_condenser_temperature_C = Mock(return_value=30)
         combined_state._cop_model.calc_cop = Mock(return_value=4)
         # When
         ret_value = combined_state.get_energy_to_buy_minimum_kWh(CURRENT_MARKET_SLOT, 20)
         # Then
         assert isclose(ret_value, 0.125, abs_tol=0.001)
-        combined_state.charger.get_min_heat_energy_charge_kJ.assert_called_with(
+        combined_state._charger.get_min_heat_energy_charge_kJ.assert_called_with(
             CURRENT_MARKET_SLOT, 5000
         )
         combined_state._cop_model.calc_cop.assert_called_with(
@@ -69,9 +69,9 @@ class TestCombinedHeatpumpTanksState:
         self, combined_state, bought_energy_kWh, expected_command
     ):
         # Given
-        combined_state.charger.charge = Mock()
-        combined_state.charger.no_charge = Mock()
-        combined_state.charger.discharge = Mock()
+        combined_state._charger.charge = Mock()
+        combined_state._charger.no_charge = Mock()
+        combined_state._charger.discharge = Mock()
         combined_state.calc_Q_kJ_from_energy_kWh = Mock(return_value=bought_energy_kWh * 5000)
         # When
         combined_state.update_tanks_temperature(
@@ -81,13 +81,13 @@ class TestCombinedHeatpumpTanksState:
         called = False
         if expected_command == "charge":
             called = True
-            combined_state.charger.charge.assert_called_once()
+            combined_state._charger.charge.assert_called_once()
         if expected_command == "no_charge":
             called = True
-            combined_state.charger.no_charge.assert_called_once()
+            combined_state._charger.no_charge.assert_called_once()
         if expected_command == "discharge":
             called = True
-            combined_state.charger.discharge.assert_called_once()
+            combined_state._charger.discharge.assert_called_once()
         assert called, "one of the methods should have been called"
 
     @pytest.mark.parametrize("ancillary_heat_source", [True, False])
