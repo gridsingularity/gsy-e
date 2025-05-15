@@ -113,4 +113,5 @@ class TestWaterTankState:
             "storage_temp_C": 50,
             "soc": 50,
             "type": "WATER",
+            "name": "",
         }

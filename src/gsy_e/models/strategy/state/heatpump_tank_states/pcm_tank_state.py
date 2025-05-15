@@ -191,13 +191,24 @@ class PCMTankState(TankStateBase):
         self._pcm_temps_C[time_slot] = self._get_pcm_temps_C(self._last_time_slot(time_slot))
         self._soc[time_slot] = self._soc[self._last_time_slot(time_slot)]
 
-    def get_results_dict(self, current_time_slot: DateTime) -> dict:
+    def get_results_dict(self, current_time_slot: Optional[DateTime] = None) -> dict:
+        if current_time_slot is None:
+            return {
+                "soc": 0,
+                "htf_temp_C": 0,
+                "pcm_temp_C": 0,
+                "storage_temp_C": 0,
+                "type": "PCM",
+                "name": self._params.name,
+            }
+
         return {
             "soc": self.get_soc(current_time_slot),
             "htf_temp_C": self.get_htf_temp_C(current_time_slot),
             "pcm_temp_C": self.get_pcm_temp_C(current_time_slot),
             "storage_temp_C": self.get_pcm_temp_C(current_time_slot),
             "type": "PCM",
+            "name": self._params.name,
         }
 
     def get_state(self) -> Dict:
