@@ -102,14 +102,6 @@ class HeatChargerDischarger:
         """Delete the state of the charger before the given time slot."""
         self.tanks.delete_past_state_values(current_time_slot)
 
-    def update_tanks_temperature(self, time_slot: DateTime):
-        """
-        Update temperature of the tanks at the end of the market slot. Sets updated value to the
-        storage temperature in order to be used from the next market slot as a base for the
-        temperature calculations.
-        """
-        self.tanks.update_tanks_temperature(time_slot)
-
 
 class CombinedHeatpumpTanksState:
     """Combined state that includes both heatpump and tanks state."""
@@ -201,10 +193,6 @@ class CombinedHeatpumpTanksState:
         if min_energy_consumption_kWh > self._max_energy_consumption_kWh:
             return self._max_energy_consumption_kWh
         return min_energy_consumption_kWh
-
-    def decrease_tank_temp_from_heat_demand(self, heat_demand_kJ: float, time_slot: DateTime):
-        """Decrease the tanks temperature according to the heat demand."""
-        self.charger.discharge(heat_demand_kJ, time_slot)
 
     def update_tanks_temperature(
         self,

@@ -3,7 +3,6 @@ from math import isclose
 from unittest.mock import Mock
 import pytest
 
-from pendulum import datetime
 from gsy_framework.constants_limits import GlobalConfig
 
 from gsy_e.models.strategy.state.heatpump_tank_states.water_tank_state import (
@@ -11,7 +10,7 @@ from gsy_e.models.strategy.state.heatpump_tank_states.water_tank_state import (
     TankParameters,
 )
 
-CURRENT_MARKET_SLOT = datetime(2025, 5, 14, 0, 0)
+CURRENT_MARKET_SLOT = GlobalConfig.start_date
 NEXT_MARKET_SLOT = CURRENT_MARKET_SLOT + GlobalConfig.slot_length
 
 
