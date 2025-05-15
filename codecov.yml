@@ -7,6 +7,12 @@ coverage:
 
 ignore:
   - "setup.py"
+  - "src/gsy_e/setup/*"
+  - "src/gsy_e/resources/*"
+  - "vagrant/*"
+  - "wiki/*"
+  - "tools/*"
+  - "requirements/*"
 
 comment:
   layout: "diff"
