@@ -19,10 +19,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from abc import ABC, abstractmethod
 from math import copysign
 from typing import Dict, Optional
+from collections import defaultdict
 
 from pendulum import DateTime
 
-from gsy_framework.constants_limits import FLOATING_POINT_TOLERANCE
+from gsy_framework.constants_limits import FLOATING_POINT_TOLERANCE, GlobalConfig
 from gsy_framework.utils import convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict
 
 from gsy_e.gsy_e_core.util import is_time_slot_in_past_markets
@@ -405,34 +406,32 @@ class TankStateBase(StateInterface):
 
     def __init__(self, tank_parameters: TankParameters):
         self._params = tank_parameters
+        self._soc: Dict[DateTime, float] = defaultdict(lambda: 0)
+        self._max_capacity_kJ = None
 
     @abstractmethod
-    def increase_tank_temp_from_heat_energy(self, heat_energy_kWh, time_slot):
+    def increase_tank_temp_from_heat_energy(self, heat_energy_kWh: float, time_slot: DateTime):
         """Set the tank temperature increase from heat energy."""
 
     @abstractmethod
-    def decrease_tank_temp_from_heat_energy(self, heat_energy_kWh, time_slot):
+    def decrease_tank_temp_from_heat_energy(self, heat_energy_kWh: float, time_slot: DateTime):
         """Set the tank temperature decrease from heat energy."""
 
     @abstractmethod
-    def update_storage_temp(self, time_slot):
-        """Update the storage temperature"""
+    def no_charge(self, time_slot: DateTime):
+        """Copy state information to from the last time slot to the current."""
 
     @abstractmethod
-    def get_max_heat_energy_consumption_kJ(self, time_slot):
+    def get_max_heat_energy_consumption_kJ(self, time_slot: DateTime, heat_demand_kJ: float):
         """Return the maximal energy consumption."""
 
     @abstractmethod
-    def get_min_heat_energy_consumption_kJ(self, time_slot):
+    def get_min_heat_energy_consumption_kJ(self, time_slot: DateTime, heat_demand_kJ: float):
         """Return the minimal energy consumption."""
 
     @abstractmethod
     def current_tank_temperature(self, time_slot):
         """Return current temperature of the tank."""
-
-    @abstractmethod
-    def get_soc(self, time_slot):
-        """Return the current SOC of tha tank"""
 
     @abstractmethod
     def serialize(self):
@@ -441,3 +440,18 @@ class TankStateBase(StateInterface):
     @abstractmethod
     def init(self):
         """Initiate class members of the tank"""
+
+    def get_dod_energy_kJ(self, time_slot: DateTime) -> float:
+        """Return depth of discharge as an energy value in kJ."""
+        return (1 - self._soc[time_slot]) * self._max_capacity_kJ
+
+    def get_available_energy_kJ(self, time_slot: DateTime) -> float:
+        """Return the available energy stored in the tank."""
+        return self._soc.get(time_slot) * self._max_capacity_kJ
+
+    def get_soc(self, time_slot: DateTime) -> float:
+        """Return SOC in percent for the provided time slot"""
+        return self._soc.get(time_slot) * 100
+
+    def _last_time_slot(self, time_slot: DateTime):
+        return time_slot - GlobalConfig.slot_length

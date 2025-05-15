@@ -43,8 +43,10 @@ from gsy_e.models.strategy.virtual_heatpump import (
     VirtualHeatpumpStrategy,
     MultipleTankVirtualHeatpumpStrategy,
 )
-from gsy_e.models.strategy.state.heatpump_water_tank_state import WaterTankState
-from gsy_e.models.strategy.state.heatpump_pcm_tank_state import PCMTankState
+from gsy_e.models.strategy.state.heatpump_tank_states.water_tank_state import (
+    WaterTankState,
+)
+from gsy_e.models.strategy.state.heatpump_tank_states.pcm_tank_state import PCMTankState
 
 if TYPE_CHECKING:
     from gsy_e.models.area import CoefficientArea
@@ -274,9 +276,7 @@ class HeatPumpDataExporter(BaseDataExporter):
             rows += [
                 round(self._traded(market), ROUND_TOLERANCE),
                 round(self.area.strategy.state.heatpump.get_cop(slot), ROUND_TOLERANCE),
-                round(
-                    self.area.strategy.state.heatpump.get_heat_demand(slot) / 1000, ROUND_TOLERANCE
-                ),
+                round(self.area.strategy.state.heatpump.get_heat_demand_kJ(slot), ROUND_TOLERANCE),
             ]
         if file_key == "water_tanks":
             for tank in self.area.strategy.state.charger.tanks.tanks_states:
@@ -298,6 +298,9 @@ class HeatPumpDataExporter(BaseDataExporter):
                 tank_name_str = tank._params.name if tank._params.name else f"tank {number + 1}"
                 labels.append(f"{tank_name_str} temperature C")
                 labels.append(f"{tank_name_str} SOC %")
+        if len(labels) == 1:
+            # case when no water tank was configured
+            return []
         return labels
 
     @property
@@ -308,6 +311,9 @@ class HeatPumpDataExporter(BaseDataExporter):
                 tank_name_str = tank._params.name if tank._params.name else f"tank {number + 1}"
                 labels.append(f"{tank_name_str} temperature C")
                 labels.append(f"{tank_name_str} SOC %")
+        if len(labels) == 1:
+            # case when no PCM tank was configured
+            return []
         return labels
 
 

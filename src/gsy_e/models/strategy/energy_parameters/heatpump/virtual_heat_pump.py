@@ -212,7 +212,7 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
         # Update last slot statistics (COP, heat demand, condenser temp)
         self._state.heatpump.set_cop(time_slot, solver.cop)
         self._state.heatpump.set_condenser_temp(time_slot, solver.condenser_temp_C)
-        self._state.heatpump.set_heat_demand(time_slot, solver.q_out_J)
+        self._state.heatpump.set_heat_demand_kJ(time_slot, solver.q_out_J / 1000)
 
     def event_traded_energy(self, time_slot: DateTime, energy_kWh: float):
         """React to an event_traded_energy."""
