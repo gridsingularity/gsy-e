@@ -112,4 +112,5 @@ class TestWaterTankState:
         assert water_tank.get_results_dict(CURRENT_MARKET_SLOT) == {
             "storage_temp_C": 50,
             "soc": 50,
+            "type": "WATER",
         }

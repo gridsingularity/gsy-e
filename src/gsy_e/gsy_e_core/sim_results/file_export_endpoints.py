@@ -279,21 +279,21 @@ class HeatPumpDataExporter(BaseDataExporter):
                 round(self.area.strategy.state.heatpump.get_heat_demand_kJ(slot), ROUND_TOLERANCE),
             ]
         if file_key == "water_tanks":
-            for tank in self.area.strategy.state.charger.tanks.tanks_states:
-                if isinstance(tank, WaterTankState):
-                    rows.append(round(tank.current_tank_temperature(slot), ROUND_TOLERANCE))
-                    rows.append(round(tank.get_soc(slot), ROUND_TOLERANCE))
+            for tank in self.area.strategy.state.get_results_dict(slot)["tanks"]:
+                if tank["type"] == "WATER":
+                    rows.append(round(tank["storage_temp_C"], ROUND_TOLERANCE))
+                    rows.append(round(tank["soc"], ROUND_TOLERANCE))
         if file_key == "pcm_tanks":
-            for tank in self.area.strategy.state.charger.tanks.tanks_states:
-                if isinstance(tank, PCMTankState):
-                    rows.append(round(tank.current_tank_temperature(slot), ROUND_TOLERANCE))
-                    rows.append(round(tank.get_soc(slot), ROUND_TOLERANCE))
+            for tank in self.area.strategy.state.get_results_dict(slot)["tanks"]:
+                if tank["type"] == "PCM":
+                    rows.append(round(tank["storage_temp_C"], ROUND_TOLERANCE))
+                    rows.append(round(tank["soc"], ROUND_TOLERANCE))
         return rows
 
     @property
     def _water_tank_labels(self):
         labels = ["slot"]
-        for number, tank in enumerate(self.area.strategy.state.charger.tanks.tanks_states):
+        for number, tank in enumerate(self.area.strategy.state._charger.tanks.tanks_states):
             if isinstance(tank, WaterTankState):
                 tank_name_str = tank._params.name if tank._params.name else f"tank {number + 1}"
                 labels.append(f"{tank_name_str} temperature C")
@@ -306,7 +306,7 @@ class HeatPumpDataExporter(BaseDataExporter):
     @property
     def _pcm_tank_labels(self):
         labels = ["slot"]
-        for number, tank in enumerate(self.area.strategy.state.charger.tanks.tanks_states):
+        for number, tank in enumerate(self.area.strategy.state._charger.tanks.tanks_states):
             if isinstance(tank, PCMTankState):
                 tank_name_str = tank._params.name if tank._params.name else f"tank {number + 1}"
                 labels.append(f"{tank_name_str} temperature C")

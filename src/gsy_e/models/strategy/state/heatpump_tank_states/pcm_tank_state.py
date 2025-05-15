@@ -197,6 +197,7 @@ class PCMTankState(TankStateBase):
             "htf_temp_C": self.get_htf_temp_C(current_time_slot),
             "pcm_temp_C": self.get_pcm_temp_C(current_time_slot),
             "storage_temp_C": self.get_pcm_temp_C(current_time_slot),
+            "type": "PCM",
         }
 
     def get_state(self) -> Dict:

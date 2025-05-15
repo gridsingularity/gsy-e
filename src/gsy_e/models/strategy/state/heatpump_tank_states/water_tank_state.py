@@ -67,6 +67,7 @@ class WaterTankState(TankStateBase):
         return {
             "storage_temp_C": self.get_storage_temp_C(current_time_slot),
             "soc": self.get_soc(current_time_slot),
+            "type": "WATER",
         }
 
     def __str__(self):

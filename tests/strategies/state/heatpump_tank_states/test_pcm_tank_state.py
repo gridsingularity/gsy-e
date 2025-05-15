@@ -174,6 +174,7 @@ class TestPCMTankState:
             "htf_temp_C": 37,
             "pcm_temp_C": 37,
             "storage_temp_C": 37,
+            "type": "PCM",
         }
 
     def test_get_state_returns_correct_values(self, pcm_tank):
