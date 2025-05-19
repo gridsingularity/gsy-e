@@ -134,11 +134,12 @@ class CombinedHeatpumpTanksState:
         """Rotate profiles."""
         self._ancillary_heat_source_kJ.read_or_rotate_profiles()
 
-    def get_results_dict(self, current_time_slot: DateTime) -> dict:
+    def get_results_dict(self, current_time_slot: Optional[DateTime] = None) -> dict:
         """Results dict for all heatpump and tanks results."""
-        if current_time_slot is None:
-            return {}
         tanks_results = self._charger.get_tanks_results_dict(current_time_slot)
+        if current_time_slot is None:
+            # used in file_export_endpoints
+            return {"tanks": tanks_results}
         return {
             "tanks": tanks_results,
             **self._hp_state.get_results_dict(current_time_slot),
@@ -366,8 +367,10 @@ class HeatPumpEnergyParametersBase(ABC):
 
     def event_market_cycle(self, current_time_slot):
         """To be called at the start of the market slot."""
-        self._rotate_profiles(current_time_slot)
+        # Order is very important here, because _populate_state relies on last market slot,
+        # that might not be available after rotating the profiles
         self._populate_state(current_time_slot)
+        self._rotate_profiles(current_time_slot)
 
     def get_min_energy_demand_kWh(self, time_slot: DateTime) -> float:
         """Get energy that is needed to compensate for the heat loss due to heating."""
@@ -487,7 +490,10 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
 
     def _rotate_profiles(self, current_time_slot: Optional[DateTime] = None):
         super()._rotate_profiles(current_time_slot)
-        self._consumption_kWh.read_or_rotate_profiles()
+        if not self._heat_demand_Q_J:
+            self._consumption_kWh.read_or_rotate_profiles()
+        else:
+            self._heat_demand_Q_J.read_or_rotate_profiles()
         self._source_temp_C.read_or_rotate_profiles()
         if self._heat_demand_Q_J:
             self._heat_demand_Q_J.read_or_rotate_profiles()
