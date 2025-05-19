@@ -1,5 +1,6 @@
 import logging
-from typing import List
+from typing import List, Dict
+from collections import defaultdict
 
 from gsy_framework.constants_limits import GlobalConfig
 from pendulum import DateTime
@@ -8,9 +9,14 @@ from gsy_e.models.strategy.energy_parameters.heatpump.constants import (
     WATER_SPECIFIC_HEAT_CAPACITY,
     WATER_DENSITY,
 )
-from gsy_e.models.strategy.state.heatpump_all_tanks_state import AllTanksState
-from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import TankParameters
-from gsy_e.models.strategy.state.heatpump_water_tank_state import WaterTankState
+from gsy_e.models.strategy.state.heatpump_tank_states.all_tanks_state import AllTanksState
+from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import (
+    TankParameters,
+    HeatpumpTankTypes,
+)
+from gsy_e.models.strategy.state.heatpump_tank_states.water_tank_state import (
+    WaterTankState,
+)
 from gsy_e.models.strategy.energy_parameters.heatpump.virtual_heatpump_solver import (
     TankSolverParameters,
     VirtualHeatpumpSolverParameters,
@@ -25,6 +31,47 @@ class VirtualHeatpumpTankState(WaterTankState):
     Individual tank energy parameters, for operation with the virtual heatpump.
     Uses the sympy solver in order to model the water tank.
     """
+
+    def __init__(self, tank_parameters: TankParameters):
+        assert tank_parameters.type == HeatpumpTankTypes.WATER, (
+            "only water tanks are allowed " "in the virtual heat pump "
+        )
+        super().__init__(tank_parameters)
+        self._temp_decrease_K: Dict[DateTime, float] = defaultdict(lambda: 0)
+        self._temp_increase_K: Dict[DateTime, float] = defaultdict(lambda: 0)
+
+    def get_temp_increase_K(self, time_slot: DateTime) -> float:
+        """Return the temperature increase for a given time slot."""
+        return self._temp_increase_K.get(time_slot, 0)
+
+    def set_temp_decrease_K(self, time_slot: DateTime, temp_diff_K: float):
+        """Set the temperature decrease for a given time slot."""
+        self._temp_decrease_K[time_slot] = temp_diff_K
+
+    def update_temp_increase_K(self, time_slot: DateTime, temp_diff_K: float):
+        """Set the temperature increase for a given time slot."""
+        self._temp_increase_K[time_slot] += temp_diff_K
+
+    def get_temp_decrease_K(self, time_slot: DateTime) -> float:
+        """Return the temperature decrease for a given time slot."""
+        return self._temp_decrease_K.get(time_slot, 0)
+
+    def increase_tank_temp_from_temp_delta(self, temp_diff: float, time_slot: DateTime):
+        """Increase the tank temperature from temperature delta."""
+        self.update_temp_increase_K(time_slot, temp_diff)
+
+    def update_storage_temp(self, time_slot: DateTime):
+        """Update storage temperature of the given slot with the accumulated changes."""
+        new_temp = (
+            self.get_storage_temp_C(self._last_time_slot(time_slot))
+            - self.get_temp_decrease_K(self._last_time_slot(time_slot))
+            + self.get_temp_increase_K(self._last_time_slot(time_slot))
+        )
+        if new_temp < self._params.min_temp_C:
+            new_temp = self._params.min_temp_C
+            logger.warning("Storage tank temperature dropped below minimum, setting to minimum.")
+        self._storage_temp_C[time_slot] = new_temp
+        self._update_soc(time_slot)
 
     def decrease_tank_temp_vhp(self, heat_energy: float, time_slot: DateTime):
         """
@@ -104,6 +151,14 @@ class VirtualHeatpumpAllTanksState(AllTanksState):
     # pylint: disable=super-init-not-called
     def __init__(self, tank_parameters: List[TankParameters]):
         self.tanks_states = [VirtualHeatpumpTankState(tank) for tank in tank_parameters]
+
+    def update_tanks_temperature(self, time_slot: DateTime):
+        """
+        Update the current temperature of all tanks, based on temp increase/decrease of the market
+        slot.
+        """
+        for tank in self.tanks_states:
+            tank.update_storage_temp(time_slot)
 
     def set_temp_decrease_vhp(
         self, heat_energy: float, time_slot: DateTime
