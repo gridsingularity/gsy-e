@@ -95,8 +95,6 @@ class AllTanksState:
 
     def get_results_dict(self, current_time_slot: DateTime):
         """Results dict with the results from all water tanks."""
-        if current_time_slot is None:
-            return []
         return [tank.get_results_dict(current_time_slot) for tank in self._tanks_states]
 
     def get_state(self) -> Union[List, Dict]:
