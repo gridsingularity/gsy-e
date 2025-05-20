@@ -77,7 +77,7 @@ class HeatPumpOrderUpdaterParameters(OrderUpdaterParameters):
 class MultipleTankHeatPumpStrategy(TradingStrategyBase):
     """Strategy for heat pumps with multiple storages."""
 
-    # pylint: disable=too-many-arguments,super-init-not-called, too-many-locals
+    # pylint: disable=too-many-arguments,super-init-not-called
     def __init__(
         self,
         maximum_power_rating_kW: float = ConstSettings.HeatPumpSettings.MAX_POWER_RATING_KW,
@@ -95,7 +95,6 @@ class MultipleTankHeatPumpStrategy(TradingStrategyBase):
         preferred_buying_rate: float = ConstSettings.HeatPumpSettings.PREFERRED_BUYING_RATE,
         heat_demand_Q_profile: Optional[Union[str, float, Dict]] = None,
         cop_model_type: COPModelType = COPModelType.UNIVERSAL,
-        ancillary_heat_source_kJ: Optional[str] = None,
     ):
 
         assert (
@@ -114,7 +113,6 @@ class MultipleTankHeatPumpStrategy(TradingStrategyBase):
             source_type=source_type,
             heat_demand_Q_profile=heat_demand_Q_profile,
             cop_model_type=cop_model_type,
-            ancillary_heat_source_kJ=ancillary_heat_source_kJ,
         )
 
         for tank in tank_parameters:

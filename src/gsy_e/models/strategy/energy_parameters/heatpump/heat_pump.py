@@ -119,20 +119,12 @@ class CombinedHeatpumpTanksState:
         cop_model: BaseCOPModel,
         slot_length: pendulum.Duration,
         max_energy_consumption_kWh: float,
-        ancillary_heat_source_kJ: Optional[str] = None,
     ):
         self._hp_state = hp_state
         self._charger = HeatChargerDischarger(tanks_state)
         self._cop_model = cop_model
         self._slot_length = slot_length
         self._max_energy_consumption_kWh = max_energy_consumption_kWh
-        self._ancillary_heat_source_kJ = profile_factory(
-            input_profile=ancillary_heat_source_kJ, profile_type=InputProfileTypes.IDENTITY
-        )
-
-    def rotate_profiles(self):
-        """Rotate profiles."""
-        self._ancillary_heat_source_kJ.read_or_rotate_profiles()
 
     def get_results_dict(self, current_time_slot: Optional[DateTime] = None) -> dict:
         """Results dict for all heatpump and tanks results."""
@@ -171,7 +163,7 @@ class CombinedHeatpumpTanksState:
     def get_energy_to_buy_maximum_kWh(self, time_slot: DateTime, source_temp_C: float) -> float:
         """Get maximum energy to buy from the heat pump + storage."""
         max_heat_demand_kJ = self._charger.get_max_heat_energy_charge_kJ(
-            time_slot, self._get_heat_demand_kJ(time_slot)
+            time_slot, self.heatpump.get_heat_demand_kJ(time_slot)
         )
         cop = self._cop_model.calc_cop(
             source_temp_C=source_temp_C,
@@ -188,34 +180,10 @@ class CombinedHeatpumpTanksState:
             return self._max_energy_consumption_kWh
         return max_energy_consumption_kWh
 
-    def _get_heat_demand_kJ(self, time_slot: DateTime) -> float:
-        demand_by_house_kJ = self.heatpump.get_heat_demand_kJ(time_slot)
-        ancillary_heat_source_energy_kJ = (
-            self._ancillary_heat_source_kJ.get_value(time_slot)
-            if self._ancillary_heat_source_kJ
-            else 0
-        )
-        return (
-            demand_by_house_kJ - ancillary_heat_source_energy_kJ
-            if ancillary_heat_source_energy_kJ < demand_by_house_kJ
-            else 0
-        )
-
-    def get_net_heat_demand_kJ(self, time_slot) -> float:
-        """Return demand (>0) or  net consumption by the ancillary_heat_source (<1)"""
-        # todo: report this value in the CSVs ?
-        demand_by_house_kJ = self.heatpump.get_heat_demand_kJ(time_slot)
-        ancillary_heat_source_energy_kJ = (
-            self._ancillary_heat_source_kJ.get_value(time_slot)
-            if self._ancillary_heat_source_kJ
-            else 0
-        )
-        return demand_by_house_kJ - ancillary_heat_source_energy_kJ
-
     def get_energy_to_buy_minimum_kWh(self, time_slot: DateTime, source_temp_C: float) -> float:
         """Get minimum energy to buy from the heat pump + storage."""
         min_heat_demand_kJ = self._charger.get_min_heat_energy_charge_kJ(
-            time_slot, self._get_heat_demand_kJ(time_slot)
+            time_slot, self.heatpump.get_heat_demand_kJ(time_slot)
         )
 
         cop = self._cop_model.calc_cop(
@@ -261,7 +229,7 @@ class CombinedHeatpumpTanksState:
         last_time_slot: DateTime,
     ):
         """Update the COP of the heat pump in its state class."""
-        heat_demand_kJ = self._get_heat_demand_kJ(last_time_slot)
+        heat_demand_kJ = self._hp_state.get_heat_demand_kJ(last_time_slot)
         cop = self._calc_cop(heat_demand_kJ, source_temp_C, last_time_slot)
         # Set the calculated COP on both the last and the current time slot to use in calculations
         self._hp_state.set_cop(last_time_slot, cop)
@@ -324,7 +292,6 @@ class HeatPumpEnergyParametersBase(ABC):
         source_temp_C_profile: Optional[Union[str, float, Dict]] = None,
         source_temp_C_profile_uuid: Optional[str] = None,
         source_temp_C_measurement_uuid: Optional[str] = None,
-        ancillary_heat_source_kJ: Optional[str] = None,
     ):
         self._slot_length = GlobalConfig.slot_length
         self._maximum_power_rating_kW = maximum_power_rating_kW
@@ -339,7 +306,6 @@ class HeatPumpEnergyParametersBase(ABC):
             cop_model,
             self._slot_length,
             self._max_energy_consumption_kWh,
-            ancillary_heat_source_kJ,
         )
 
         self._source_temp_C: StrategyProfileBase = profile_factory(
@@ -382,7 +348,6 @@ class HeatPumpEnergyParametersBase(ABC):
 
     @abstractmethod
     def _rotate_profiles(self, current_time_slot: Optional[DateTime] = None):
-        self._state.rotate_profiles()
         self._state.heatpump.delete_past_state_values(current_time_slot)
 
     def _populate_state(self, time_slot: DateTime):
@@ -431,7 +396,6 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
         source_type: int = ConstSettings.HeatPumpSettings.SOURCE_TYPE,
         heat_demand_Q_profile: Optional[Union[str, float, Dict]] = None,
         cop_model_type: COPModelType = COPModelType.UNIVERSAL,
-        ancillary_heat_source_kJ: Optional[str] = None,
     ):
         cop_model = cop_model_factory(cop_model_type, source_type)
         super().__init__(
@@ -441,7 +405,6 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
             source_temp_C_profile,
             source_temp_C_profile_uuid,
             source_temp_C_measurement_uuid,
-            ancillary_heat_source_kJ=ancillary_heat_source_kJ,
         )
 
         self._source_type = source_type
@@ -517,7 +480,7 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
             last_time_slot,
             time_slot,
             self._bought_energy_kWh,
-            self._state.get_net_heat_demand_kJ(last_time_slot),
+            self._state.heatpump.get_heat_demand_kJ(last_time_slot),
             self._source_temp_C.get_value(last_time_slot),
         )
 

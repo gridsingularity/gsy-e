@@ -62,9 +62,6 @@ def get_setup(config):
                                     min_temp_C=32,
                                 ),
                             ],
-                            ancillary_heat_source_kJ=os.path.join(
-                                gsye_root_path, "resources", "ancillary_heat_source_kJ.csv"
-                            ),
                             preferred_buying_rate=preferred_buying_rate,
                             consumption_kWh_profile=os.path.join(
                                 gsye_root_path, "resources", "hp_consumption_kWh.csv"
