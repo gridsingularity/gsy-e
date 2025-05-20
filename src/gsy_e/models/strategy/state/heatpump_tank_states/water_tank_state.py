@@ -1,6 +1,6 @@
 from collections import defaultdict
 from logging import getLogger
-from typing import Dict
+from typing import Dict, Optional
 
 from gsy_framework.utils import (
     convert_pendulum_to_str_in_dict,
@@ -63,10 +63,14 @@ class WaterTankState(TankStateBase):
         self._delete_time_slots(self._storage_temp_C, last_time_slot)
         self._delete_time_slots(self._soc, last_time_slot)
 
-    def get_results_dict(self, current_time_slot: DateTime) -> Dict:
+    def get_results_dict(self, current_time_slot: Optional[DateTime] = None) -> Dict:
+        if current_time_slot is None:
+            return {"storage_temp_C": 0, "soc": 0, "type": "WATER", "name": self._params.name}
         return {
             "storage_temp_C": self.get_storage_temp_C(current_time_slot),
             "soc": self.get_soc(current_time_slot),
+            "type": "WATER",
+            "name": self._params.name,
         }
 
     def __str__(self):

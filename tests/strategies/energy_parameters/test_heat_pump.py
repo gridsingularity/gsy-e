@@ -106,7 +106,7 @@ class TestHeatPumpEnergyParameters:
 
     @staticmethod
     def test_event_market_cycle_populates_state(energy_params):
-        tank_state = energy_params._state.charger.tanks.tanks_states[0]
+        tank_state = energy_params._state._charger.tanks._tanks_states[0]
         heatpump_state = energy_params._state.heatpump
         assert CURRENT_MARKET_SLOT not in heatpump_state._min_energy_demand_kWh
         assert CURRENT_MARKET_SLOT not in heatpump_state._max_energy_demand_kWh
@@ -140,7 +140,7 @@ class TestHeatPumpEnergyParameters:
 
     @staticmethod
     def test_event_market_cycle_updates_temp_increase_if_energy_was_traded(energy_params):
-        tank_state = energy_params._state.charger.tanks.tanks_states[0]
+        tank_state = energy_params._state._charger.tanks._tanks_states[0]
         energy_params.event_activate()
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
         traded_energy = 6
@@ -167,7 +167,7 @@ class TestHeatPumpEnergyParameters:
         energy_params._max_energy_consumption_kWh = 2
         energy_params._state.heatpump.get_cop = Mock(return_value=5)
         energy_params._state.heatpump.get_heat_demand_kJ = Mock(return_value=10440)
-        for tank_state in energy_params._state.charger.tanks.tanks_states:
+        for tank_state in energy_params._state._charger.tanks._tanks_states:
             tank_state._params.min_temp_C = 30
             tank_state.get_storage_temp_C = Mock(return_value=current_temp)
         energy_params.event_activate()
@@ -223,3 +223,15 @@ class TestHeatPumpEnergyParameters:
             10.992,
             abs_tol=0.001,
         )
+
+    def test_net_energy_demand_is_called_in_when_populating_the_state(self, energy_params):
+        # Given
+        energy_params._state.get_net_heat_demand_kJ = Mock(return_value=5000)
+        energy_params.event_activate()
+        # When
+        # In order to trigger update_tanks_temperature at least once,
+        # event_market_cycle has to be called at least for 2 times
+        energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
+        energy_params.event_market_cycle(CURRENT_MARKET_SLOT + GlobalConfig.slot_length)
+        # Then
+        energy_params._state.get_net_heat_demand_kJ.assert_called_once()

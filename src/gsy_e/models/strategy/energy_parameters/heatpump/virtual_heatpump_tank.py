@@ -150,14 +150,14 @@ class VirtualHeatpumpAllTanksState(AllTanksState):
 
     # pylint: disable=super-init-not-called
     def __init__(self, tank_parameters: List[TankParameters]):
-        self.tanks_states = [VirtualHeatpumpTankState(tank) for tank in tank_parameters]
+        self._tanks_states = [VirtualHeatpumpTankState(tank) for tank in tank_parameters]
 
     def update_tanks_temperature(self, time_slot: DateTime):
         """
         Update the current temperature of all tanks, based on temp increase/decrease of the market
         slot.
         """
-        for tank in self.tanks_states:
+        for tank in self._tanks_states:
             tank.update_storage_temp(time_slot)
 
     def set_temp_decrease_vhp(
@@ -167,10 +167,10 @@ class VirtualHeatpumpAllTanksState(AllTanksState):
         Decrease the temperature of all tanks according to the heat energy produced.
         Returns true if there is unmatched heat demand in any of the tanks.
         """
-        heat_energy_per_tank = heat_energy / len(self.tanks_states)
+        heat_energy_per_tank = heat_energy / len(self._tanks_states)
         unmatched_heat_demand = [
             tank.decrease_tank_temp_vhp(heat_energy_per_tank, time_slot)
-            for tank in self.tanks_states
+            for tank in self._tanks_states
         ]
         if any(unmatched_heat_demand):
             return self.create_tank_solver_for_maintaining_tank_temperature(time_slot)
@@ -185,7 +185,7 @@ class VirtualHeatpumpAllTanksState(AllTanksState):
         """
         return [
             tank.create_tank_parameters_for_maintaining_tank_temp(time_slot)
-            for tank in self.tanks_states
+            for tank in self._tanks_states
         ]
 
     def create_tank_parameters_for_maxing_tank_temperature(
@@ -197,7 +197,7 @@ class VirtualHeatpumpAllTanksState(AllTanksState):
         """
         return [
             tank.create_tank_parameters_for_maxing_tank_temp(time_slot)
-            for tank in self.tanks_states
+            for tank in self._tanks_states
         ]
 
     def increase_tanks_temperature_with_energy_vhp(
@@ -208,7 +208,7 @@ class VirtualHeatpumpAllTanksState(AllTanksState):
         """
         tank_parameters = [
             tank.create_tank_parameters_without_target_tank_temp(time_slot)
-            for tank in self.tanks_states
+            for tank in self._tanks_states
         ]
         solver = VirtualHeatpumpStorageEnergySolver(
             heatpump_parameters=heatpump_parameters, tank_parameters=tank_parameters
@@ -217,7 +217,7 @@ class VirtualHeatpumpAllTanksState(AllTanksState):
         logger.debug(solver)
 
         for tank_index, tank_output in enumerate(solver.tank_parameters):
-            self.tanks_states[tank_index].increase_tank_temp_from_temp_delta(
+            self._tanks_states[tank_index].increase_tank_temp_from_temp_delta(
                 tank_output.target_storage_temp_C - tank_output.current_storage_temp_C, time_slot
             )
 

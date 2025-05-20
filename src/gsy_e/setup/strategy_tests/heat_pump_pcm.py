@@ -33,7 +33,7 @@ from gsy_e.models.strategy.pv import PVStrategy
 ConstSettings.MASettings.MARKET_TYPE = 2
 ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL = 5
 
-preferred_buying_rate = 15
+preferred_buying_rate = 0
 
 
 def get_setup(config):
@@ -54,13 +54,6 @@ def get_setup(config):
                                     min_temp_C=30,
                                 ),
                                 TankParameters(
-                                    name="water tank 2",
-                                    initial_temp_C=60,
-                                    max_temp_C=60,
-                                    min_temp_C=30,
-                                    tank_volume_L=2000,
-                                ),
-                                TankParameters(
                                     name="pcm tank 1",
                                     type=HeatpumpTankTypes.PCM,
                                     max_capacity_kJ=20000,
@@ -69,6 +62,9 @@ def get_setup(config):
                                     min_temp_C=32,
                                 ),
                             ],
+                            ancillary_heat_source_kJ=os.path.join(
+                                gsye_root_path, "resources", "ancillary_heat_source_kJ.csv"
+                            ),
                             preferred_buying_rate=preferred_buying_rate,
                             consumption_kWh_profile=os.path.join(
                                 gsye_root_path, "resources", "hp_consumption_kWh.csv"

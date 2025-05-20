@@ -43,10 +43,6 @@ from gsy_e.models.strategy.virtual_heatpump import (
     VirtualHeatpumpStrategy,
     MultipleTankVirtualHeatpumpStrategy,
 )
-from gsy_e.models.strategy.state.heatpump_tank_states.water_tank_state import (
-    WaterTankState,
-)
-from gsy_e.models.strategy.state.heatpump_tank_states.pcm_tank_state import PCMTankState
 
 if TYPE_CHECKING:
     from gsy_e.models.area import CoefficientArea
@@ -279,23 +275,23 @@ class HeatPumpDataExporter(BaseDataExporter):
                 round(self.area.strategy.state.heatpump.get_heat_demand_kJ(slot), ROUND_TOLERANCE),
             ]
         if file_key == "water_tanks":
-            for tank in self.area.strategy.state.charger.tanks.tanks_states:
-                if isinstance(tank, WaterTankState):
-                    rows.append(round(tank.current_tank_temperature(slot), ROUND_TOLERANCE))
-                    rows.append(round(tank.get_soc(slot), ROUND_TOLERANCE))
+            for tank in self.area.strategy.state.get_results_dict(slot)["tanks"]:
+                if tank["type"] == "WATER":
+                    rows.append(round(tank["storage_temp_C"], ROUND_TOLERANCE))
+                    rows.append(round(tank["soc"], ROUND_TOLERANCE))
         if file_key == "pcm_tanks":
-            for tank in self.area.strategy.state.charger.tanks.tanks_states:
-                if isinstance(tank, PCMTankState):
-                    rows.append(round(tank.current_tank_temperature(slot), ROUND_TOLERANCE))
-                    rows.append(round(tank.get_soc(slot), ROUND_TOLERANCE))
+            for tank in self.area.strategy.state.get_results_dict(slot)["tanks"]:
+                if tank["type"] == "PCM":
+                    rows.append(round(tank["storage_temp_C"], ROUND_TOLERANCE))
+                    rows.append(round(tank["soc"], ROUND_TOLERANCE))
         return rows
 
     @property
     def _water_tank_labels(self):
         labels = ["slot"]
-        for number, tank in enumerate(self.area.strategy.state.charger.tanks.tanks_states):
-            if isinstance(tank, WaterTankState):
-                tank_name_str = tank._params.name if tank._params.name else f"tank {number + 1}"
+        for number, tank in enumerate(self.area.strategy.state.get_results_dict()["tanks"]):
+            if tank["type"] == "WATER":
+                tank_name_str = tank["name"] if tank["name"] else f"tank {number + 1}"
                 labels.append(f"{tank_name_str} temperature C")
                 labels.append(f"{tank_name_str} SOC %")
         if len(labels) == 1:
@@ -306,9 +302,9 @@ class HeatPumpDataExporter(BaseDataExporter):
     @property
     def _pcm_tank_labels(self):
         labels = ["slot"]
-        for number, tank in enumerate(self.area.strategy.state.charger.tanks.tanks_states):
-            if isinstance(tank, PCMTankState):
-                tank_name_str = tank._params.name if tank._params.name else f"tank {number + 1}"
+        for number, tank in enumerate(self.area.strategy.state.get_results_dict()["tanks"]):
+            if tank["type"] == "PCM":
+                tank_name_str = tank["name"] if tank["name"] else f"tank {number + 1}"
                 labels.append(f"{tank_name_str} temperature C")
                 labels.append(f"{tank_name_str} SOC %")
         if len(labels) == 1:
