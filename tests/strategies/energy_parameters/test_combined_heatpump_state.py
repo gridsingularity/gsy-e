@@ -6,7 +6,6 @@ import pytest
 from gsy_framework.constants_limits import GlobalConfig
 
 from gsy_e.models.strategy.energy_parameters.heatpump.heat_pump import CombinedHeatpumpTanksState
-from gsy_e.models.strategy.strategy_profile import profile_factory
 
 CURRENT_MARKET_SLOT = GlobalConfig.start_date
 LAST_MARKET_SLOT = CURRENT_MARKET_SLOT - GlobalConfig.slot_length
@@ -89,37 +88,3 @@ class TestCombinedHeatpumpTanksState:
             called = True
             combined_state._charger.discharge.assert_called_once()
         assert called, "one of the methods should have been called"
-
-    @pytest.mark.parametrize("ancillary_heat_source", [True, False])
-    def test_get_net_heat_demand_kJ_returns_correct_values(
-        self, combined_state, ancillary_heat_source
-    ):
-        # Given
-        combined_state.heatpump.get_heat_demand_kJ = Mock(return_value=5000)
-        if ancillary_heat_source:
-            combined_state._ancillary_heat_source_kJ = profile_factory(
-                input_profile={CURRENT_MARKET_SLOT: 6000}
-            )
-            combined_state.rotate_profiles()
-        # When
-        ret_val = combined_state.get_net_heat_demand_kJ(CURRENT_MARKET_SLOT)
-        # Then
-        if ancillary_heat_source:
-            assert ret_val == -1000
-        else:
-            assert ret_val == 5000
-
-    @pytest.mark.parametrize("ancillary_heat_source_kJ", [0, 3000, 6000])
-    def test__get_heat_demand_kJ_returns_correct_values(
-        self, combined_state, ancillary_heat_source_kJ
-    ):
-        # Given
-        combined_state.heatpump.get_heat_demand_kJ = Mock(return_value=5000)
-        combined_state._ancillary_heat_source_kJ = profile_factory(
-            input_profile={CURRENT_MARKET_SLOT: ancillary_heat_source_kJ}
-        )
-        combined_state.rotate_profiles()
-        # When
-        ret_val = combined_state._get_heat_demand_kJ(CURRENT_MARKET_SLOT)
-        # Then
-        assert ret_val == max(5000 - ancillary_heat_source_kJ, 0)

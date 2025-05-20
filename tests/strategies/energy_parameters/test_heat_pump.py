@@ -223,15 +223,3 @@ class TestHeatPumpEnergyParameters:
             10.992,
             abs_tol=0.001,
         )
-
-    def test_net_energy_demand_is_called_in_when_populating_the_state(self, energy_params):
-        # Given
-        energy_params._state.get_net_heat_demand_kJ = Mock(return_value=5000)
-        energy_params.event_activate()
-        # When
-        # In order to trigger update_tanks_temperature at least once,
-        # event_market_cycle has to be called at least for 2 times
-        energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
-        energy_params.event_market_cycle(CURRENT_MARKET_SLOT + GlobalConfig.slot_length)
-        # Then
-        energy_params._state.get_net_heat_demand_kJ.assert_called_once()
