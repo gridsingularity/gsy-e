@@ -151,19 +151,19 @@ class SmartMeterStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         self._replace_rates_with_market_maker_rates()
 
         self._validate_consumption_rates(
-            initial_rate=self.bid_update.initial_rate_profile_buffer,
-            final_rate=self.bid_update.final_rate_profile_buffer,
+            initial_rate=self.bid_update.initial_rate_profile_buffer.profile,
+            final_rate=self.bid_update.final_rate_profile_buffer.profile,
             energy_rate_change_per_update=(
-                self.bid_update.energy_rate_change_per_update_profile_buffer
+                self.bid_update.energy_rate_change_per_update_profile_buffer.profile
             ),
             fit_to_limit=self.bid_update.fit_to_limit,
         )
 
         self._validate_production_rates(
-            initial_rate=self.offer_update.initial_rate_profile_buffer,
-            final_rate=self.offer_update.final_rate_profile_buffer,
+            initial_rate=self.offer_update.initial_rate_profile_buffer.profile,
+            final_rate=self.offer_update.final_rate_profile_buffer.profile,
             energy_rate_change_per_update=(
-                self.offer_update.energy_rate_change_per_update_profile_buffer
+                self.offer_update.energy_rate_change_per_update_profile_buffer.profile
             ),
             fit_to_limit=self.offer_update.fit_to_limit,
         )
@@ -340,13 +340,13 @@ class SmartMeterStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         initial_rate = (
             read_arbitrary_profile(InputProfileTypes.IDENTITY, kwargs["initial_buying_rate"])
             if kwargs.get("initial_buying_rate") is not None
-            else self.bid_update.initial_rate_profile_buffer
+            else self.bid_update.initial_rate_profile_buffer.profile
         )
 
         final_rate = (
             read_arbitrary_profile(InputProfileTypes.IDENTITY, kwargs["final_buying_rate"])
             if kwargs.get("final_buying_rate") is not None
-            else self.bid_update.final_rate_profile_buffer
+            else self.bid_update.final_rate_profile_buffer.profile
         )
 
         energy_rate_change_per_update = (
@@ -354,7 +354,7 @@ class SmartMeterStrategy(BidEnabledStrategy, UseMarketMakerMixin):
                 InputProfileTypes.IDENTITY, kwargs["energy_rate_increase_per_update"]
             )
             if kwargs.get("energy_rate_increase_per_update") is not None
-            else self.bid_update.energy_rate_change_per_update_profile_buffer
+            else self.bid_update.energy_rate_change_per_update_profile_buffer.profile
         )
 
         fit_to_limit = (
@@ -461,21 +461,19 @@ class SmartMeterStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         self._future_market_strategy.delete_past_state_values(self.area.current_market.time_slot)
 
     def _validate_consumption_rates(
-        self, initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit
+        self, initial_rate: dict, final_rate: dict, energy_rate_change_per_update: dict, fit_to_limit
     ):
         for time_slot in initial_rate.keys():
             rate_change = (
                 None
                 if fit_to_limit
-                else get_from_profile_same_weekday_and_time(
-                    energy_rate_change_per_update, time_slot
-                )
+                else energy_rate_change_per_update.get(time_slot)
             )
 
             self.validator.validate_rate(
-                initial_buying_rate=initial_rate[time_slot],
+                initial_buying_rate=initial_rate.get(time_slot),
                 energy_rate_increase_per_update=rate_change,
-                final_buying_rate=get_from_profile_same_weekday_and_time(final_rate, time_slot),
+                final_buying_rate=final_rate.get(time_slot),
                 fit_to_limit=fit_to_limit,
             )
 

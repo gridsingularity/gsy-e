@@ -21,7 +21,7 @@ import logging
 import os
 import uuid
 from datetime import datetime
-from typing import Dict, TYPE_CHECKING, List
+from typing import Dict, TYPE_CHECKING, List, Union
 
 import pytz
 from gsy_framework.constants_limits import (
@@ -489,7 +489,7 @@ class ProfilesHandler:
         profile,
         profile_uuid: str = None,
         input_profile_path: str = None,
-    ) -> Dict[DateTime, float]:
+    ) -> Union[Dict[DateTime, float], None]:
         """Reads a new chunk of profile if the buffer does not contain the current time stamp
         Profile chunks are either generated from single values, input daily profiles or profiles
         that are read from the DB
@@ -504,24 +504,25 @@ class ProfilesHandler:
         Returns: Profile chunk as dictionary
 
         """
-        if profile_uuid is None and self.should_create_profile(profile):
+        if profile_uuid is None and self._should_read_new_chunk_of_profile(profile):
             if input_profile_path:
                 profile = input_profile_path
+            print("rotate_profile.read_new profile")
             return read_arbitrary_profile(
                 profile_type, profile, current_timestamp=self.current_timestamp
             )
-        if self.time_to_rotate_profile(profile):
+        if self._should_read_new_chunk_from_db(profile):
             return self._read_new_datapoints_from_buffer_or_rotate_profile(
                 profile, profile_uuid, profile_type
             )
-
+        # return None
         return profile
 
-    def time_to_rotate_profile(self, profile):
+    def _should_read_new_chunk_from_db(self, profile):
         """Checks if current time_stamp is part of the populated profile"""
         return profile is None or self.current_timestamp not in profile.keys()
 
-    def should_create_profile(self, profile):
+    def _should_read_new_chunk_of_profile(self, profile):
         """Checks if profile is already a populated Dict[Datetime, float] dict
         or if it is an input value (str, int, dict)
         """

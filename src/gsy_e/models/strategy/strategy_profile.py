@@ -1,6 +1,7 @@
 from abc import abstractmethod, ABC
 import logging
 from pendulum import DateTime
+from copy import copy
 
 from gsy_framework.read_user_profile import InputProfileTypes
 from gsy_framework.constants_limits import GlobalConfig
@@ -78,6 +79,7 @@ class StrategyProfile(StrategyProfileBase):
             self.input_energy_rate = None
 
         self.profile = {}
+        self._last_rotation_profile = {}
 
         self.profile_type = profile_type
 
@@ -102,6 +104,7 @@ class StrategyProfile(StrategyProfileBase):
             time_slot,
             self.input_profile_uuid,
         )
+        assert False
         return 0
 
     def _read_input_profile_type(self):
@@ -114,6 +117,44 @@ class StrategyProfile(StrategyProfileBase):
         else:
             self.profile_type = InputProfileTypes.POWER_W
 
+    # def _add_last_slot_value_to_new_profile_rotation(self, new_profile_chunk: dict):
+    #     if self.profile:
+    #         last_timestamp = list(self.profile.keys())[-1]
+    #         last_profile_element = {last_timestamp: self.profile[last_timestamp]}
+    #         if last_timestamp in new_profile_chunk:
+    #             # case when the profile was already populated but rotation was triggered again
+    #             # important! the order tof timestamps should not be changed for
+    #             # get_from_profile_same_weekday_and_time to work
+    #             print("last_timestamp already in", last_timestamp)
+    #             return new_profile_chunk
+    #         print("ROTATE!!!")
+    #         return {**last_profile_element, **new_profile_chunk}
+    #     print("initital population")
+    #     return new_profile_chunk
+
+    def _add_last_slot_value_to_new_profile_rotation(self, new_profile_chunk: dict):
+        # if new_profile_chunk is None and not self.profile:
+        #     assert False todo: re-add
+        if new_profile_chunk is None:
+            # print("already there")
+            return self.profile
+
+        if not self.profile:
+            print("newly created")
+            return new_profile_chunk
+
+        last_timestamp = list(self.profile.keys())[-1]
+        last_profile_element = {last_timestamp: self.profile[last_timestamp]}
+        if last_timestamp in new_profile_chunk:
+            # case when the profile was already populated but rotation was triggered again
+            # important! the order tof timestamps should not be changed for
+            # get_from_profile_same_weekday_and_time to work
+            # print("last_timestamp already in", last_timestamp)
+            return self.profile
+        print("ROTATE!!!")
+        return {**last_profile_element, **new_profile_chunk}
+
+
     def read_or_rotate_profiles(self, reconfigure=False):
         if self.profile_type is None:
             self._read_input_profile_type()
@@ -125,15 +166,17 @@ class StrategyProfile(StrategyProfileBase):
                 else self.input_profile
             )
         else:
-            profile = self.profile
+            profile = copy(self.profile)
 
-        self.profile = global_objects.profiles_handler.rotate_profile(
+        new_profile_chunk = global_objects.profiles_handler.rotate_profile(
             profile_type=self.profile_type,
             profile=profile,
             profile_uuid=self.input_profile_uuid,
             input_profile_path=self.input_profile,
         )
-
+        self.profile = new_profile_chunk
+        # print("...", list(new_profile_chunk.keys())[0], list(new_profile_chunk.keys())[-1])
+        # self.profile = self._add_last_slot_value_to_new_profile_rotation(new_profile_chunk)
 
 def profile_factory(
     input_profile=None,

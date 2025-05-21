@@ -25,7 +25,6 @@ from gsy_framework.exceptions import GSyDeviceException
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
 from gsy_framework.utils import (
     limit_float_precision,
-    get_from_profile_same_weekday_and_time,
     is_time_slot_in_simulation_duration,
 )
 from gsy_framework.validators.load_validator import LoadValidator
@@ -155,7 +154,7 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         )
 
     def _validate_rates(
-        self, initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit
+        self, initial_rate: dict, final_rate: dict, energy_rate_change_per_update: dict, fit_to_limit: bool
     ):
         # all parameters have to be validated for each time slot starting from the current time
         for time_slot in initial_rate.keys():
@@ -171,18 +170,17 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
             rate_change = (
                 None
                 if fit_to_limit
-                else get_from_profile_same_weekday_and_time(
-                    energy_rate_change_per_update, time_slot
-                )
+                else energy_rate_change_per_update.get(time_slot)
             )
             LoadValidator.validate_rate(
-                initial_buying_rate=initial_rate[time_slot],
+                initial_buying_rate=initial_rate.get(time_slot),
                 energy_rate_increase_per_update=rate_change,
-                final_buying_rate=get_from_profile_same_weekday_and_time(final_rate, time_slot),
+                final_buying_rate=final_rate.get(time_slot),
                 fit_to_limit=fit_to_limit,
             )
 
     def event_activate(self, **kwargs):
+        self.bid_update.rotate_profiles()
         self._energy_params.event_activate_energy(self.area)
         self._calculate_active_markets()
         self.event_activate_price()
@@ -198,6 +196,7 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
 
     def event_market_cycle(self):
         super().event_market_cycle()
+        self.bid_update.rotate_profiles()
         self._cycle_energy_parameters()
         self.bid_update.update_and_populate_price_settings(self.area)
         if is_one_sided_market_simulation():
@@ -235,20 +234,20 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
                 InputProfileTypes.IDENTITY, kwargs["initial_buying_rate"]
             )
         else:
-            initial_rate = self.bid_update.initial_rate_profile_buffer
+            initial_rate = self.bid_update.initial_rate_profile_buffer.profile
         if kwargs.get("final_buying_rate") is not None:
             final_rate = read_arbitrary_profile(
                 InputProfileTypes.IDENTITY, kwargs["final_buying_rate"]
             )
         else:
-            final_rate = self.bid_update.final_rate_profile_buffer
+            final_rate = self.bid_update.final_rate_profile_buffer.profile
         if kwargs.get("energy_rate_increase_per_update") is not None:
             energy_rate_change_per_update = read_arbitrary_profile(
                 InputProfileTypes.IDENTITY, kwargs["energy_rate_increase_per_update"]
             )
         else:
             energy_rate_change_per_update = (
-                self.bid_update.energy_rate_change_per_update_profile_buffer
+                self.bid_update.energy_rate_change_per_update_profile_buffer.profile
             )
         if kwargs.get("fit_to_limit") is not None:
             fit_to_limit = kwargs["fit_to_limit"]
@@ -268,7 +267,10 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
 
         try:
             self._validate_rates(
-                initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit
+                initial_rate,
+                final_rate,
+                energy_rate_change_per_update,
+                fit_to_limit
             )
         except GSyDeviceException:
             self.log.exception("LoadHours._area_reconfigure_prices failed. Exception: ")
@@ -294,9 +296,9 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         self._replace_rates_with_market_maker_rates()
 
         self._validate_rates(
-            self.bid_update.initial_rate_profile_buffer,
-            self.bid_update.final_rate_profile_buffer,
-            self.bid_update.energy_rate_change_per_update_profile_buffer,
+            self.bid_update.initial_rate_profile_buffer.profile,
+            self.bid_update.final_rate_profile_buffer.profile,
+            self.bid_update.energy_rate_change_per_update_profile_buffer.profile,
             self.bid_update.fit_to_limit,
         )
 

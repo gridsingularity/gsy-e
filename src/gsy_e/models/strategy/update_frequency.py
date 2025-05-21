@@ -25,8 +25,8 @@ from gsy_framework.utils import (get_from_profile_same_weekday_and_time,
 from pendulum import duration, DateTime, Duration
 
 import gsy_e.constants
-from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.gsy_e_core.util import write_default_to_dict, is_time_slot_in_past_markets
+from gsy_e.models.strategy.strategy_profile import profile_factory
 
 if TYPE_CHECKING:
     from gsy_e.models.area import Area
@@ -78,9 +78,10 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
         self.energy_rate_change_per_update_input = energy_rate_change_per_update
 
         # buffer of populated input values Dict[DateTime, float]
-        self.initial_rate_profile_buffer = {}
-        self.final_rate_profile_buffer = {}
-        self.energy_rate_change_per_update_profile_buffer = {}
+        self.initial_rate_profile_buffer = profile_factory(self.initial_rate_input)
+        self.final_rate_profile_buffer = profile_factory(self.final_rate_input)
+        self.energy_rate_change_per_update_profile_buffer = profile_factory(
+            self.energy_rate_change_per_update_input)
 
         # dicts that are used for price calculations, contain only
         # all_markets Dict[DateTime, float]
@@ -100,6 +101,9 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
         self.number_of_available_updates = 0
         self.rate_limit_object = rate_limit_object
 
+    def rotate_profiles(self):
+        self._read_or_rotate_rate_profiles()
+
     def serialize(self):
         """Return dict with configuration parameters."""
         return {
@@ -110,15 +114,11 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
     def _read_or_rotate_rate_profiles(self) -> None:
         """ Creates a new chunk of profiles if the current_timestamp is not in the profile buffers
         """
-        self.initial_rate_profile_buffer = global_objects.profiles_handler.rotate_profile(
-            InputProfileTypes.IDENTITY, self.initial_rate_input)
-        self.final_rate_profile_buffer = global_objects.profiles_handler.rotate_profile(
-            InputProfileTypes.IDENTITY, self.final_rate_input)
+        self.initial_rate_profile_buffer.read_or_rotate_profiles(self.initial_rate_input)
+        self.final_rate_profile_buffer.read_or_rotate_profiles(self.final_rate_input)
         if self.fit_to_limit is False:
-            self.energy_rate_change_per_update_profile_buffer = (
-                global_objects.profiles_handler.rotate_profile(
-                    InputProfileTypes.IDENTITY, self.energy_rate_change_per_update_input)
-            )
+            self.energy_rate_change_per_update_profile_buffer.read_or_rotate_profiles(
+                self.energy_rate_change_per_update_input)
 
     def _delete_market_slot_data(self, market_time_slot: DateTime) -> None:
         self.initial_rate.pop(market_time_slot, None)
@@ -154,13 +154,9 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
                 continue
             if self.fit_to_limit is False:
                 self.energy_rate_change_per_update[time_slot] = (
-                    get_from_profile_same_weekday_and_time(
-                        self.energy_rate_change_per_update_profile_buffer, time_slot)
-                )
-            initial_rate = get_from_profile_same_weekday_and_time(
-                self.initial_rate_profile_buffer, time_slot)
-            final_rate = get_from_profile_same_weekday_and_time(
-                self.final_rate_profile_buffer, time_slot)
+                    self.energy_rate_change_per_update_profile_buffer.get_value(time_slot))
+            initial_rate = self.initial_rate_profile_buffer.get_value(time_slot)
+            final_rate = self.final_rate_profile_buffer.get_value(time_slot)
 
             if initial_rate is None or final_rate is None:
                 logging.warning(
@@ -168,10 +164,8 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
                     "Reloading profiles from the database.",
                     gsy_e.constants.CONFIGURATION_ID, area.uuid)
                 self._read_or_rotate_rate_profiles()
-                initial_rate = get_from_profile_same_weekday_and_time(
-                    self.initial_rate_profile_buffer, time_slot)
-                final_rate = get_from_profile_same_weekday_and_time(
-                    self.final_rate_profile_buffer, time_slot)
+                initial_rate = self.initial_rate_profile_buffer.get_value(time_slot)
+                final_rate = self.final_rate_profile_buffer.get_value(time_slot)
 
             # Hackathon TODO: get rid of self.initial_rate, self.final_rate, self.update_counter
             # and self.market_slot_added_time_mapping in favor of one object
@@ -184,6 +178,7 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
 
             # todo: homogenize the calculation of elapsed seconds for spot and future markets
             self._add_slot_to_mapping(area, time_slot)
+            self.rotate_profiles()
 
     def _add_slot_to_mapping(self, area, time_slot):
         """keep track of the elapsed time of simulation at the addition of a new slot."""
@@ -194,22 +189,18 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
     def _set_or_update_energy_rate_change_per_update(self, time_slot: DateTime) -> None:
         energy_rate_change_per_update = {}
         if self.fit_to_limit:
-            initial_rate = get_from_profile_same_weekday_and_time(
-                self.initial_rate_profile_buffer, time_slot)
-            final_rate = get_from_profile_same_weekday_and_time(
-                self.final_rate_profile_buffer, time_slot)
+            initial_rate = self.initial_rate_profile_buffer.get_value(time_slot)
+            final_rate = self.final_rate_profile_buffer.get_value(time_slot)
             energy_rate_change_per_update[time_slot] = (
                     (initial_rate - final_rate) / self.number_of_available_updates
             )
         else:
             if self.rate_limit_object is min:
                 energy_rate_change_per_update[time_slot] = \
-                    -1 * get_from_profile_same_weekday_and_time(
-                        self.energy_rate_change_per_update_profile_buffer, time_slot)
+                    -1 * self.energy_rate_change_per_update_profile_buffer.get_value(time_slot)
             elif self.rate_limit_object is max:
                 energy_rate_change_per_update[time_slot] = \
-                    get_from_profile_same_weekday_and_time(
-                        self.energy_rate_change_per_update_profile_buffer, time_slot)
+                    self.energy_rate_change_per_update_profile_buffer.get_value(time_slot)
         self.energy_rate_change_per_update.update(energy_rate_change_per_update)
 
     @property

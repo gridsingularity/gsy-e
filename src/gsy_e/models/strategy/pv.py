@@ -22,8 +22,7 @@ from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import TraderDetails
 from gsy_framework.exceptions import GSyException
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
-from gsy_framework.utils import (
-    get_from_profile_same_weekday_and_time, key_in_dict_and_not_none)
+from gsy_framework.utils import key_in_dict_and_not_none
 from gsy_framework.validators import PVValidator
 from pendulum import duration
 
@@ -170,18 +169,17 @@ class PVStrategy(BidEnabledStrategy, UseMarketMakerMixin):
             update_interval=update_interval
         )
 
-    def _validate_rates(self, initial_rate, final_rate, energy_rate_change_per_update,
+    def _validate_rates(self, initial_rate: dict, final_rate: dict, energy_rate_change_per_update: dict,
                         fit_to_limit):
         # all parameters have to be validated for each time slot here
         for time_slot in initial_rate.keys():
             if self.area and self.area.current_market \
                     and time_slot < self.area.current_market.time_slot:
                 continue
-            rate_change = None if fit_to_limit else \
-                get_from_profile_same_weekday_and_time(energy_rate_change_per_update, time_slot)
+            rate_change = None if fit_to_limit else energy_rate_change_per_update.get(time_slot)
             PVValidator.validate_rate(
-                initial_selling_rate=initial_rate[time_slot],
-                final_selling_rate=get_from_profile_same_weekday_and_time(final_rate, time_slot),
+                initial_selling_rate=initial_rate.get(time_slot),
+                final_selling_rate=final_rate.get(time_slot),
                 energy_rate_decrease_per_update=rate_change,
                 fit_to_limit=fit_to_limit)
 
@@ -194,9 +192,9 @@ class PVStrategy(BidEnabledStrategy, UseMarketMakerMixin):
     def event_activate_price(self):
         self._replace_rates_with_market_maker_rates()
 
-        self._validate_rates(self.offer_update.initial_rate_profile_buffer,
-                             self.offer_update.final_rate_profile_buffer,
-                             self.offer_update.energy_rate_change_per_update_profile_buffer,
+        self._validate_rates(self.offer_update.initial_rate_profile_buffer.profile,
+                             self.offer_update.final_rate_profile_buffer.profile,
+                             self.offer_update.energy_rate_change_per_update_profile_buffer.profile,
                              self.offer_update.fit_to_limit)
 
     def event_activate_energy(self):
