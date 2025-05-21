@@ -316,6 +316,7 @@ class HeatPumpEnergyParametersBase(ABC):
         self._measurement_source_temp_C: StrategyProfileBase = profile_factory(
             None, source_temp_C_measurement_uuid, profile_type=InputProfileTypes.IDENTITY
         )
+        self._source_temp_last_time_slot = None
 
     @property
     def combined_state(self) -> CombinedHeatpumpTanksState:
@@ -330,13 +331,12 @@ class HeatPumpEnergyParametersBase(ABC):
         """Runs on activate event."""
         self._state.event_activate()
         self._rotate_profiles()
+        # self._source_temp_last_time_slot = self._source_temp_C.get_value(GlobalConfig.start_date)
 
     def event_market_cycle(self, current_time_slot):
         """To be called at the start of the market slot."""
-        # Order is very important here, because _populate_state relies on last market slot,
-        # that might not be available after rotating the profiles
-        self._populate_state(current_time_slot)
         self._rotate_profiles(current_time_slot)
+        self._populate_state(current_time_slot)
 
     def get_min_energy_demand_kWh(self, time_slot: DateTime) -> float:
         """Get energy that is needed to compensate for the heat loss due to heating."""
@@ -473,7 +473,8 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
 
     def _update_last_time_slot_data(self, time_slot: DateTime):
         last_time_slot = self.last_time_slot(time_slot)
-        if last_time_slot not in self._source_temp_C.profile:
+        if self._source_temp_last_time_slot is None:
+            self._source_temp_last_time_slot = self._source_temp_C.profile.get(time_slot)
             return
 
         self.combined_state.update_tanks_temperature(
@@ -481,16 +482,17 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
             time_slot,
             self._bought_energy_kWh,
             self._state.heatpump.get_heat_demand_kJ(last_time_slot),
-            self._source_temp_C.get_value(last_time_slot),
+            self._source_temp_last_time_slot,
         )
 
         self._bought_energy_kWh = 0.0
 
         self.combined_state.update_cop(
-            self._source_temp_C.get_value(last_time_slot),
+            self._source_temp_last_time_slot,
             time_slot,
             last_time_slot,
         )
+        self._source_temp_last_time_slot = self._source_temp_C.profile.get(time_slot)
 
     def _populate_state(self, time_slot: DateTime):
         self._update_last_time_slot_data(time_slot)
