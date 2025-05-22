@@ -115,8 +115,6 @@ class StrategyProfile(StrategyProfileBase):
             self.profile_type = InputProfileTypes.POWER_W
 
     def _add_last_slot_value_to_new_profile_rotation(self, new_profile_chunk: dict):
-        if new_profile_chunk is None and not self.profile:
-            assert False
         if new_profile_chunk is None:
             return self.profile
 
