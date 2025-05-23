@@ -103,7 +103,7 @@ class WaterTankState(TankStateBase):
         temp_decrease_K = self._Q_kWh_to_temp_diff(heat_energy_kWh)
         new_temp = self.get_storage_temp_C(self._last_time_slot(time_slot)) - temp_decrease_K
         if new_temp < self._params.min_temp_C:
-            if (new_temp - self._params.min_temp_C) < FLOATING_POINT_TOLERANCE:
+            if (self._params.min_temp_C - new_temp) > FLOATING_POINT_TOLERANCE:
                 log.error(
                     "Storage tank temperature dropped below minimum, setting to minimum. (%s)",
                     new_temp,
