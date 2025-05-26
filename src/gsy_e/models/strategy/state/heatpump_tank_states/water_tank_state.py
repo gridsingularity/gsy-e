@@ -8,7 +8,7 @@ from gsy_framework.utils import (
     convert_kWh_to_kJ,
     convert_kJ_to_kWh,
 )
-from gsy_framework.constants_limits import GlobalConfig
+from gsy_framework.constants_limits import GlobalConfig, FLOATING_POINT_TOLERANCE
 from pendulum import DateTime
 
 from gsy_e import constants
@@ -89,8 +89,12 @@ class WaterTankState(TankStateBase):
         temp_increase_K = self._Q_kWh_to_temp_diff(heat_energy_kWh)
         new_temp = self.get_storage_temp_C(self._last_time_slot(time_slot)) + temp_increase_K
         if new_temp > self._params.max_temp_C:
+            if (new_temp - self._params.max_temp_C) > FLOATING_POINT_TOLERANCE:
+                log.error(
+                    "Storage tank temperature exceeded maximum, setting to maximum. (%s)",
+                    new_temp,
+                )
             new_temp = self._params.max_temp_C
-            log.warning("Storage tank temperature exceeded maximum, setting to maximum.")
         self._storage_temp_C[time_slot] = new_temp
         self._update_soc(time_slot)
 
@@ -99,8 +103,12 @@ class WaterTankState(TankStateBase):
         temp_decrease_K = self._Q_kWh_to_temp_diff(heat_energy_kWh)
         new_temp = self.get_storage_temp_C(self._last_time_slot(time_slot)) - temp_decrease_K
         if new_temp < self._params.min_temp_C:
+            if (self._params.min_temp_C - new_temp) > FLOATING_POINT_TOLERANCE:
+                log.error(
+                    "Storage tank temperature dropped below minimum, setting to minimum. (%s)",
+                    new_temp,
+                )
             new_temp = self._params.min_temp_C
-            log.warning("Storage tank temperature dropped below minimum, setting to minimum.")
         self._storage_temp_C[time_slot] = new_temp
         self._update_soc(time_slot)
 

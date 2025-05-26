@@ -8,7 +8,7 @@ from gsy_framework.utils import convert_W_to_kWh, convert_kWh_to_W
 
 from gsy_framework.constants_limits import FLOATING_POINT_TOLERANCE
 from gsy_e.models.strategy.energy_parameters.heatpump.constants import (
-    WATER_SPECIFIC_HEAT_CAPACITY,
+    SPECIFIC_HEAT_CAPACITY_WATER,
     WATER_DENSITY,
 )
 
@@ -98,7 +98,7 @@ class VirtualHeatpumpStorageEnergySolver:
     def _calculate_q_out(self):
         self.q_out_J = (
             self.dh_flow_kg_per_sec
-            * WATER_SPECIFIC_HEAT_CAPACITY
+            * SPECIFIC_HEAT_CAPACITY_WATER
             * (self.dh_supply_temp_C - self.dh_return_temp_C)
         )
 
@@ -118,7 +118,7 @@ class VirtualHeatpumpStorageEnergySolver:
 
             tanks_temp_increase_energy_J += (
                 WATER_DENSITY
-                * WATER_SPECIFIC_HEAT_CAPACITY
+                * SPECIFIC_HEAT_CAPACITY_WATER
                 * tank.tank_volume_L
                 * tank.temp_differential_per_sec
             )
@@ -136,7 +136,7 @@ class VirtualHeatpumpStorageEnergySolver:
             # Solving by Tcond:
             # Tcond = ((Qin / mC) + Ttarget1 + Ttarget2 + .... ) / nr_tanks
             self.condenser_temp_C = (
-                self.q_in_J / (self.dh_flow_kg_per_sec * WATER_SPECIFIC_HEAT_CAPACITY)
+                self.q_in_J / (self.dh_flow_kg_per_sec * SPECIFIC_HEAT_CAPACITY_WATER)
             ) + (
                 sum(tank.target_storage_temp_C for tank in self.tank_parameters)
                 / len(self.tank_parameters)
@@ -186,7 +186,7 @@ class VirtualHeatpumpStorageEnergySolver:
             *[
                 (
                     WATER_DENSITY
-                    * WATER_SPECIFIC_HEAT_CAPACITY
+                    * SPECIFIC_HEAT_CAPACITY_WATER
                     * tank.tank_volume_L
                     * tank_symbols[(2 * tank_index) + 1]
                 )
@@ -199,7 +199,7 @@ class VirtualHeatpumpStorageEnergySolver:
                 sp.Eq(sum_of_tanks_heat_demand_expr + self.q_out_J, q_in_sym),
                 sp.Eq(
                     (
-                        (q_in_sym / (self.dh_flow_kg_per_sec * WATER_SPECIFIC_HEAT_CAPACITY))
+                        (q_in_sym / (self.dh_flow_kg_per_sec * SPECIFIC_HEAT_CAPACITY_WATER))
                         + sum_of_tanks_target_temp_expr
                     )
                     / len(self.tank_parameters),

@@ -6,7 +6,7 @@ from gsy_framework.constants_limits import GlobalConfig
 from pendulum import DateTime
 
 from gsy_e.models.strategy.energy_parameters.heatpump.constants import (
-    WATER_SPECIFIC_HEAT_CAPACITY,
+    SPECIFIC_HEAT_CAPACITY_WATER,
     WATER_DENSITY,
 )
 from gsy_e.models.strategy.state.heatpump_tank_states.all_tanks_state import AllTanksState
@@ -78,7 +78,7 @@ class VirtualHeatpumpTankState(WaterTankState):
         Decrease the tank temperature. Return True if the operation incurs in unmatched demand.
         """
         temp_differential_per_sec = -heat_energy / (
-            WATER_DENSITY * WATER_SPECIFIC_HEAT_CAPACITY * self._params.tank_volume_L
+            WATER_DENSITY * SPECIFIC_HEAT_CAPACITY_WATER * self._params.tank_volume_L
         )
         temp_decrease_C = temp_differential_per_sec * GlobalConfig.slot_length.total_seconds()
         # Temp decrease is a negative value, therefore we need to add it to the current temp.

@@ -7,7 +7,7 @@ from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.read_user_profile import InputProfileTypes
 
 from gsy_e.models.strategy.energy_parameters.heatpump.constants import (
-    WATER_SPECIFIC_HEAT_CAPACITY,
+    SPECIFIC_HEAT_CAPACITY_WATER,
     DEFAULT_SOURCE_TEMPERATURE_C,
 )
 from gsy_e.models.strategy.energy_parameters.heatpump.heat_pump import HeatPumpEnergyParametersBase
@@ -124,7 +124,7 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
         dh_return_temp = self._water_return_temp_C.get_value(time_slot)
         m_m3 = self._dh_water_flow_m3.get_value(time_slot)
         m_kg_per_sec = m_m3 * 1000 / 3600
-        q_out = m_kg_per_sec * WATER_SPECIFIC_HEAT_CAPACITY * (dh_supply_temp - dh_return_temp)
+        q_out = m_kg_per_sec * SPECIFIC_HEAT_CAPACITY_WATER * (dh_supply_temp - dh_return_temp)
 
         tank_solver_parameters = self._tanks.set_temp_decrease_vhp(q_out, time_slot)
         if tank_solver_parameters:

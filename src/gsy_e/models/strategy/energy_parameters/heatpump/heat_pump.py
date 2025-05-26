@@ -333,10 +333,8 @@ class HeatPumpEnergyParametersBase(ABC):
 
     def event_market_cycle(self, current_time_slot):
         """To be called at the start of the market slot."""
-        # Order is very important here, because _populate_state relies on last market slot,
-        # that might not be available after rotating the profiles
-        self._populate_state(current_time_slot)
         self._rotate_profiles(current_time_slot)
+        self._populate_state(current_time_slot)
 
     def get_min_energy_demand_kWh(self, time_slot: DateTime) -> float:
         """Get energy that is needed to compensate for the heat loss due to heating."""
@@ -458,8 +456,6 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
         else:
             self._heat_demand_Q_J.read_or_rotate_profiles()
         self._source_temp_C.read_or_rotate_profiles()
-        if self._heat_demand_Q_J:
-            self._heat_demand_Q_J.read_or_rotate_profiles()
 
     def _calc_energy_to_buy_maximum(self, time_slot: DateTime) -> float:
         return self.combined_state.get_energy_to_buy_maximum_kWh(
