@@ -2,6 +2,7 @@ import os
 from setuptools import find_packages, setup
 
 gsy_framework_branch = os.environ.get("GSY_FRAMEWORK_BRANCH", "master")
+scm_engine_branch = os.environ.get("SCM_ENGINE_BRANCH", "master")
 
 try:
     with open("requirements/dev.txt", encoding="utf-8") as req:
@@ -10,6 +11,12 @@ try:
             [
                 f"gsy-framework @ "
                 f"git+https://github.com/gridsingularity/gsy-framework.git@{gsy_framework_branch}"
+            ]
+        )
+        REQUIREMENTS.extend(
+            [
+                f"scm-engine @ "
+                f"git+https://github.com/gridsingularity/scm-engine.git@{scm_engine_branch}"
             ]
         )
 except OSError:

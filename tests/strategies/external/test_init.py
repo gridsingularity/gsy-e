@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-# pylint: disable=protected-access
+# pylint: disable=protected-access,too-many-lines
 import json
 import uuid
 from collections import deque
