@@ -4,7 +4,7 @@ from typing import Dict, Optional
 
 from pendulum import DateTime
 
-from gsy_framework.constants_limits import GlobalConfig
+from gsy_framework.constants_limits import GlobalConfig, FLOATING_POINT_TOLERANCE
 from gsy_framework.utils import (
     convert_pendulum_to_str_in_dict,
     convert_str_to_pendulum_in_dict,
@@ -103,10 +103,6 @@ class PCMTankState(TankStateBase):
         pcm_temps = self._get_pcm_temps_C(time_slot)
         return None if pcm_temps is None else mean(pcm_temps)
 
-    def _get_maximum_available_storage_energy_kWh(self, time_slot: DateTime):
-        """Return the maximum available energy that can be stored in the storage."""
-        return self._max_capacity_kWh - self._soc[time_slot] / 100 * self._max_capacity_kWh
-
     def _get_deltaT_from_heat_demand_kWh(self, heat_energy_kWh: float) -> float:
         """
         Q > 0 --> dT >0
@@ -126,18 +122,20 @@ class PCMTankState(TankStateBase):
         return condenser_temp_C
 
     def _limit_condenser_temp(self, condenser_temp_C: float) -> float:
-        if condenser_temp_C < self._params.min_temp_C:
-            log.warning(
-                "The PCM storage tank reached it's minimum, discharging "
+        if (self._params.min_temp_C - condenser_temp_C) > FLOATING_POINT_TOLERANCE:
+            log.error(
+                "The PCM storage tank reached it's minimum (%s), discharging "
                 "condensor temperature of %s is omitted",
-                condenser_temp_C,
+                self._params.min_temp_C,
+                round(condenser_temp_C, 2),
             )
             return self._params.min_temp_C
-        if condenser_temp_C > self._params.max_temp_C:
-            log.warning(
-                "The PCM storage tank reached it's maximum, charging "
+        if (condenser_temp_C - self._params.max_temp_C) > FLOATING_POINT_TOLERANCE:
+            log.error(
+                "The PCM storage tank reached it's maximum (%s), charging "
                 "condensor temperature of %s is omitted",
-                condenser_temp_C,
+                self._params.max_temp_C,
+                round(condenser_temp_C, 2),
             )
             return self._params.max_temp_C
         return condenser_temp_C
@@ -239,20 +237,15 @@ class PCMTankState(TankStateBase):
         delete_time_slots_in_state(self._pcm_temps_C, last_time_slot)
         delete_time_slots_in_state(self._soc, last_time_slot)
 
-    def _get_current_heat_charge_kJ(self, time_slot: DateTime):
-        return self._soc[time_slot] * self._params.max_capacity_kJ
-
     def get_min_heat_energy_consumption_kJ(self, time_slot: DateTime, heat_demand_kJ: float):
-        current_heat_charge_kJ = self._get_current_heat_charge_kJ(time_slot)
-        if current_heat_charge_kJ >= heat_demand_kJ:
+        available_energy_kJ = self.get_available_energy_kJ(time_slot)
+        if available_energy_kJ >= heat_demand_kJ:
             return 0
-        return heat_demand_kJ - current_heat_charge_kJ
+        return heat_demand_kJ - available_energy_kJ
 
     def get_max_heat_energy_consumption_kJ(self, time_slot: DateTime, heat_demand_kJ: float):
         return (
-            self._params.max_capacity_kJ
-            - self._get_current_heat_charge_kJ(time_slot)
-            + heat_demand_kJ
+            self._params.max_capacity_kJ - self.get_available_energy_kJ(time_slot) + heat_demand_kJ
         )
 
     def current_tank_temperature(self, time_slot):

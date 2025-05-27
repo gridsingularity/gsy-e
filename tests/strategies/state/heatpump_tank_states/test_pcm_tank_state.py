@@ -128,7 +128,7 @@ class TestPCMTankState:
         self, pcm_tank, current_heat_charge_kJ, expected_energy_kJ
     ):
         # Given
-        pcm_tank._get_current_heat_charge_kJ = Mock(return_value=current_heat_charge_kJ)
+        pcm_tank.get_available_energy_kJ = Mock(return_value=current_heat_charge_kJ)
         # When
         max_energy = pcm_tank.get_min_heat_energy_consumption_kJ(CURRENT_MARKET_SLOT, 5000)
         # Then

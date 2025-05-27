@@ -91,8 +91,9 @@ class WaterTankState(TankStateBase):
         if new_temp > self._params.max_temp_C:
             if (new_temp - self._params.max_temp_C) > FLOATING_POINT_TOLERANCE:
                 log.error(
-                    "Storage tank temperature exceeded maximum, setting to maximum. (%s)",
+                    "Storage tank temperature exceeded maximum, setting to maximum. (%s -> %s)",
                     new_temp,
+                    self._params.max_temp_C,
                 )
             new_temp = self._params.max_temp_C
         self._storage_temp_C[time_slot] = new_temp
@@ -105,8 +106,10 @@ class WaterTankState(TankStateBase):
         if new_temp < self._params.min_temp_C:
             if (self._params.min_temp_C - new_temp) > FLOATING_POINT_TOLERANCE:
                 log.error(
-                    "Storage tank temperature dropped below minimum, setting to minimum. (%s)",
+                    "Storage tank temperature dropped below minimum, "
+                    "setting to minimum. (%s -> %s)",
                     new_temp,
+                    self._params.min_temp_C,
                 )
             new_temp = self._params.min_temp_C
         self._storage_temp_C[time_slot] = new_temp
@@ -117,7 +120,7 @@ class WaterTankState(TankStateBase):
         self._update_soc(time_slot)
 
     def get_max_heat_energy_consumption_kJ(self, time_slot: DateTime, heat_demand_kJ: float):
-        """Calculate max heat energy consumption that the tank can accomodate."""
+        """Calculate max heat energy consumption that the tank can accommodate."""
         temp_diff_due_to_consumption = self._Q_kWh_to_temp_diff(convert_kJ_to_kWh(heat_demand_kJ))
         max_temp_diff = (
             self._params.max_temp_C
@@ -125,7 +128,7 @@ class WaterTankState(TankStateBase):
             + temp_diff_due_to_consumption
         )
         if max_temp_diff < 0:
-            assert False
+            assert False, f"max_temp_diff lower than 0: {max_temp_diff}"
         return convert_kWh_to_kJ(max_temp_diff * self._Q_specific)
 
     def get_min_heat_energy_consumption_kJ(self, time_slot: DateTime, heat_demand_kJ: float):
