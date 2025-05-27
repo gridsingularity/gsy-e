@@ -52,7 +52,7 @@ jobs:
 
       - name: validate parsed SCM Engine branch
         env:
-          PARSED_GSY_FRAMEWORK_BRANCH: ${{ steps.parse_branch_scm_engine.outputs.PARSED_SCM_ENGINE_BRANCH }}
+          PARSED_SCM_ENGINE_BRANCH: ${{ steps.parse_branch_scm_engine.outputs.PARSED_SCM_ENGINE_BRANCH }}
         run: |
           echo "::set-output name=SCM_ENGINE_BRANCH::${PARSED_SCM_ENGINE_BRANCH:-master}"
         id: validated_branch_scm_engine
