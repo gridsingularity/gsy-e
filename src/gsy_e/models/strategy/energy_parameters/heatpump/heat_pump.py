@@ -337,7 +337,7 @@ class HeatPumpEnergyParametersBase(ABC):
 
     @abstractmethod
     def _rotate_profiles(self, current_time_slot: Optional[DateTime] = None):
-        self._state.heatpump.delete_past_state_values(current_time_slot)
+        self._state.delete_past_state_values(current_time_slot)
 
     def _populate_state(self, time_slot: DateTime):
         self._calc_energy_demand(time_slot)
