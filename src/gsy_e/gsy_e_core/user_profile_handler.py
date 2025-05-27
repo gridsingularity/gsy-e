@@ -467,9 +467,13 @@ class ProfilesHandler:
                     timestamp, gsy_e.constants.CONFIGURATION_ID
                 )
 
-    def _read_new_datapoints_from_buffer_or_rotate_profile(
+    def read_new_datapoints_from_buffer_or_rotate_profile(
         self, profile, profile_uuid, profile_type
     ):
+        """
+        Read new datapoints from the profile buffer, and if the profile is not available rotate
+        the profile by reading from the DB.
+        """
         if should_read_profile_from_db(profile_uuid):
             db_profile = self.db.get_profile_from_db_buffer(profile_uuid)
             if not db_profile:
@@ -511,7 +515,7 @@ class ProfilesHandler:
                 profile_type, profile, current_timestamp=self.current_timestamp
             )
         if self.time_to_rotate_profile(profile):
-            return self._read_new_datapoints_from_buffer_or_rotate_profile(
+            return self.read_new_datapoints_from_buffer_or_rotate_profile(
                 profile, profile_uuid, profile_type
             )
 

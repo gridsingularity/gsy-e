@@ -2,7 +2,6 @@ import logging
 import traceback
 from threading import Lock
 
-from gsy_framework.constants_limits import ConstSettings, SpotMarketTypeEnum
 from gsy_framework.live_events.b2b import B2BLiveEvents
 
 from gsy_e.gsy_e_core.area_serializer import area_from_dict
@@ -42,30 +41,10 @@ class CreateAreaEvent:
         return True
 
     def __repr__(self):
-        return f"<CreateAreaEvent - parent UUID({self.parent_uuid} - " \
-               f"params({self.area_representation}))>"
-
-
-class CreateAreaEventCoefficient(CreateAreaEvent):
-    """Event that creates a new area on the area representation tree for SCM simulations."""
-
-    def apply(self, area):
-        """Trigger the area creation."""
-        if area.uuid != self.parent_uuid:
-            return False
-        try:
-            self.created_area.parent = area
-            area.children.append(self.created_area)
-            if self.created_area.strategy:
-                self.created_area.strategy.activate()
-            else:
-                self.created_area.activate_energy_parameters(
-                    current_time_slot=area.current_market_time_slot)
-        except Exception as ex:
-            if self.created_area in area.children:
-                area.children.remove(self.created_area)
-            raise LiveEventException(ex) from ex
-        return True
+        return (
+            f"<CreateAreaEvent - parent UUID({self.parent_uuid} - "
+            f"params({self.area_representation}))>"
+        )
 
 
 class UpdateAreaEvent:
@@ -113,24 +92,6 @@ class UpdateAreaEvent:
         return f"<UpdateAreaEvent - area UUID({self.area_uuid}) - params({self.area_params})>"
 
 
-class UpdateAreaEventCoefficient(UpdateAreaEvent):
-    """Handle update live event for SCM simulations."""
-
-    def apply(self, area):
-        """Trigger the area update."""
-        if area.uuid != self.area_uuid:
-            return False
-        self._sanitize_live_event_parameters()
-        try:
-            if area.strategy:
-                # Currently we do not support updates of SCM strategies
-                return False
-            area.area_reconfigure_event(**self.area_params)
-        except Exception as ex:
-            raise LiveEventException(ex) from ex
-        return True
-
-
 class DeleteAreaEvent:
     """Delete an area from the area representation tree."""
 
@@ -169,20 +130,6 @@ class ForwardMarketsEvent:
         return f"<ForwardMarketsEvent - area UUID({self._area_uuid})>"
 
 
-def create_area_live_event_factory():
-    """Factory method for the create area live event."""
-    return (CreateAreaEventCoefficient
-            if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value
-            else CreateAreaEvent)
-
-
-def update_area_live_event_factory():
-    """Factory method for the update area live event."""
-    return (UpdateAreaEventCoefficient
-            if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value
-            else UpdateAreaEvent)
-
-
 class LiveEvents:
     """Manage the incoming live events."""
 
@@ -198,13 +145,15 @@ class LiveEvents:
             try:
                 logging.debug("Received live event %s.", event_dict)
                 if event_dict["eventType"] == "create_area":
-                    event_object = create_area_live_event_factory()(
-                        event_dict["parent_uuid"], event_dict["area_representation"], self._config)
+                    event_object = self._create_area_live_event_class(
+                        event_dict["parent_uuid"], event_dict["area_representation"], self._config
+                    )
                 elif event_dict["eventType"] == "delete_area":
                     event_object = DeleteAreaEvent(event_dict["area_uuid"])
                 elif event_dict["eventType"] == "update_area":
-                    event_object = update_area_live_event_factory()(
-                        event_dict["area_uuid"], event_dict["area_representation"])
+                    event_object = self._update_area_live_event_class(
+                        event_dict["area_uuid"], event_dict["area_representation"]
+                    )
                 elif B2BLiveEvents.is_supported_event(event_dict["eventType"]):
                     event_object = ForwardMarketsEvent(event_dict["area_uuid"], event_dict)
                     self._tick_event_buffer.append(event_object)
@@ -222,8 +171,13 @@ class LiveEvents:
             if event.apply(area) is True:
                 return True
         except LiveEventException as ex:
-            logging.error("Event %s failed to apply on area %s. Exception: %s. Traceback: %s",
-                          event, area.name, ex, traceback.format_exc())
+            logging.error(
+                "Event %s failed to apply on area %s. Exception: %s. Traceback: %s",
+                event,
+                area.name,
+                ex,
+                traceback.format_exc(),
+            )
             return False
         if not area.children:
             return False
@@ -243,12 +197,24 @@ class LiveEvents:
         """Handle all events that arrived during the past market slot."""
         if self._event_buffer:
             global_objects.profiles_handler.update_time_and_buffer_profiles(
-                root_area.current_market_time_slot, root_area)
+                root_area.current_market_time_slot, root_area
+            )
         self._handle_events(root_area, self._event_buffer)
 
     def handle_tick_events(self, root_area):
         """Handle all events that arrived during the past tick."""
         if self._tick_event_buffer:
             global_objects.profiles_handler.update_time_and_buffer_profiles(
-                root_area.current_market_time_slot, root_area)
+                root_area.current_market_time_slot, root_area
+            )
         self._handle_events(root_area, self._tick_event_buffer)
+
+    @property
+    def _create_area_live_event_class(self):
+        """Factory method for the create area live event."""
+        return CreateAreaEvent
+
+    @property
+    def _update_area_live_event_class(self):
+        """Factory method for the update area live event."""
+        return UpdateAreaEvent
