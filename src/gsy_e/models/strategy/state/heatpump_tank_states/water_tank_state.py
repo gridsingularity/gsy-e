@@ -90,7 +90,7 @@ class WaterTankState(TankStateBase):
         new_temp = self.get_storage_temp_C(self._last_time_slot(time_slot)) + temp_increase_K
         if new_temp > self._params.max_temp_C:
             if (new_temp - self._params.max_temp_C) > FLOATING_POINT_TOLERANCE:
-                log.error(
+                log.warning(
                     "Storage tank temperature exceeded maximum, setting to maximum. (%s -> %s)",
                     new_temp,
                     self._params.max_temp_C,
@@ -105,7 +105,7 @@ class WaterTankState(TankStateBase):
         new_temp = self.get_storage_temp_C(self._last_time_slot(time_slot)) - temp_decrease_K
         if new_temp < self._params.min_temp_C:
             if (self._params.min_temp_C - new_temp) > FLOATING_POINT_TOLERANCE:
-                log.error(
+                log.warning(
                     "Storage tank temperature dropped below minimum, "
                     "setting to minimum. (%s -> %s)",
                     new_temp,
