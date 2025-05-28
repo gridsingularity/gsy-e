@@ -223,3 +223,13 @@ class TestHeatPumpEnergyParameters:
             10.992,
             abs_tol=0.001,
         )
+
+    @staticmethod
+    def test_event_market_cycle_triggers_delete_past_state_values(energy_params):
+        # Given
+        energy_params._state.delete_past_state_values = Mock()
+        energy_params._populate_state = Mock()
+        # When
+        energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
+        # Then
+        energy_params._state.delete_past_state_values.assert_called_once()
