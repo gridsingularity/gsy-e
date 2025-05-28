@@ -202,13 +202,14 @@ class CombinedHeatpumpTanksState:
         Update the storage temperature based on the bought heatpump energy and the heatpump source
         temperature.
         """
+        FLOATING_POINT_TOLERANCE_UPDATE = 1e-4
         traded_heat_energy_kJ = self.calc_Q_kJ_from_energy_kWh(
             last_time_slot, bought_energy_kWh, source_temp_C
         )
         net_energy_kJ = traded_heat_energy_kJ - heat_demand_kJ
-        if net_energy_kJ > 0:
+        if net_energy_kJ > FLOATING_POINT_TOLERANCE_UPDATE:
             self._charger.charge(net_energy_kJ, time_slot)
-        elif net_energy_kJ < 0:
+        elif net_energy_kJ < -FLOATING_POINT_TOLERANCE_UPDATE:
             self._charger.discharge(abs(net_energy_kJ), time_slot)
         else:
             self._charger.no_charge(time_slot)
@@ -249,12 +250,13 @@ class CombinedHeatpumpTanksState:
         self, time_slot: DateTime, energy_kWh: float, source_temp_C: float
     ) -> float:
         """Calculate heat in kJ from energy in kWh."""
+        energy_kJ = convert_kWh_to_kJ(energy_kWh)
         cop = self._calc_cop(
-            heat_demand_Q_kJ=convert_kWh_to_kJ(energy_kWh),
+            heat_demand_Q_kJ=energy_kJ,
             source_temp_C=source_temp_C,
             time_slot=time_slot,
         )
-        return convert_kWh_to_kJ(cop * energy_kWh)
+        return energy_kJ * cop
 
     def calc_energy_kWh_from_Q_kJ(self, time_slot: DateTime, Q_energy_kJ: float) -> float:
         """Calculate energy in kWh from heat in kJ."""
