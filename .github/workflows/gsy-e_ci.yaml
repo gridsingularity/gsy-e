@@ -43,6 +43,20 @@ jobs:
           echo "::set-output name=GSY_FRAMEWORK_BRANCH::${PARSED_GSY_FRAMEWORK_BRANCH:-master}"
         id: validated_branch_framework
 
+      - name: parse SCM Engine branch
+        env:
+          prBody: ${{ steps.PR.outputs.pr_body }}
+        run: |
+          echo "::set-output name=PARSED_SCM_ENGINE_BRANCH::$(echo -e $prBody | sed -n 's/.*\*\*SCM_ENGINE_BRANCH\*\*=\([^ ]*\).*/\1/p')"
+        id: parse_branch_scm_engine
+
+      - name: validate parsed SCM Engine branch
+        env:
+          PARSED_SCM_ENGINE_BRANCH: ${{ steps.parse_branch_scm_engine.outputs.PARSED_SCM_ENGINE_BRANCH }}
+        run: |
+          echo "::set-output name=SCM_ENGINE_BRANCH::${PARSED_SCM_ENGINE_BRANCH:-master}"
+        id: validated_branch_scm_engine
+
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
@@ -55,6 +69,8 @@ jobs:
         env:
           TOXENV: ci
           GSY_FRAMEWORK_BRANCH: ${{ steps.validated_branch_framework.outputs.GSY_FRAMEWORK_BRANCH }}
+          SCM_ENGINE_REPO: https://gsydev:${{ secrets.GSYDEV_TOKEN }}@github.com/gridsingularity/scm-engine.git
+          SCM_ENGINE_BRANCH: ${{ steps.validated_branch_scm_engine.outputs.SCM_ENGINE_BRANCH }}
           INTEGRATION_TESTS_REPO: https://gsydev:${{ secrets.GSYDEV_TOKEN }}@github.com/gridsingularity/gsy-backend-integration-tests.git
           INTEGRATION_TESTS_BRANCH: ${{ steps.validated_branch.outputs.INTEGRATION_TESTS_BRANCH }}
         run: |

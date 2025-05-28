@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-# pylint: disable=protected-access
+# pylint: disable=protected-access,too-many-lines
 import json
 import uuid
 from collections import deque
@@ -32,7 +32,7 @@ from redis.exceptions import RedisError
 
 import gsy_e.constants
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
-from gsy_e.models.area import Area, CoefficientArea
+from gsy_e.models.area import Area
 from gsy_e.models.strategy import BidEnabledStrategy
 from gsy_e.models.strategy.external_strategies import (
     IncomingRequest,
@@ -51,7 +51,6 @@ from gsy_e.models.strategy.external_strategies.pv import (
     PVUserProfileExternalStrategy,
 )
 from gsy_e.models.strategy.external_strategies.storage import StorageExternalStrategy
-from gsy_e.models.strategy.scm import SCMStrategy
 
 transaction_id = str(uuid.uuid4())
 
@@ -66,20 +65,14 @@ def fixture_ext_strategy(request):
     config.start_date = GlobalConfig.start_date
     config.grid_fee_type = ConstSettings.MASettings.GRID_FEE_TYPE
     config.end_date = GlobalConfig.start_date + duration(days=1)
-    if isinstance(strategy, SCMStrategy):
-        area = CoefficientArea(name="forecast_pv", config=config, strategy=strategy)
-        parent = CoefficientArea(name="parent_area", children=[area], config=config)
-        parent.activate_energy_parameters(GlobalConfig.start_date)
-        area.activate_energy_parameters(GlobalConfig.start_date)
-    else:
-        area = Area(
-            name="forecast_pv",
-            config=config,
-            strategy=strategy,
-            external_connection_available=True,
-        )
-        parent = Area(name="parent_area", children=[area], config=config)
-        parent.activate()
+    area = Area(
+        name="forecast_pv",
+        config=config,
+        strategy=strategy,
+        external_connection_available=True,
+    )
+    parent = Area(name="parent_area", children=[area], config=config)
+    parent.activate()
     strategy.connected = True
     market = MagicMock()
     market.time_slot = GlobalConfig.start_date

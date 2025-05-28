@@ -20,7 +20,7 @@ import json
 from datetime import datetime
 
 import pytest
-from gsy_framework.constants_limits import ConstSettings, GlobalConfig, SpotMarketTypeEnum
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from pendulum import duration, instance
 
 from gsy_e.gsy_e_core.area_serializer import are_all_areas_unique, area_from_string, area_to_string
@@ -31,18 +31,11 @@ from gsy_e.models.leaves import (
     LoadHours,
     SmartMeter,
     Storage,
-    SCMLoadHours,
-    SCMLoadProfile,
-    SCMPVProfile,
-    SCMStorage,
 )
 from gsy_e.models.strategy.external_strategies.load import LoadHoursExternalStrategy
 from gsy_e.models.strategy.external_strategies.pv import PVExternalStrategy
 from gsy_e.models.strategy.external_strategies.storage import StorageExternalStrategy
 from gsy_e.models.strategy.pv import PVStrategy
-from gsy_e.models.strategy.scm.load import SCMLoadHoursStrategy, SCMLoadProfileStrategy
-from gsy_e.models.strategy.scm.pv import SCMPVUserProfile
-from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
 from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
 from gsy_e.models.strategy.forward.pv import ForwardPVStrategy
 from gsy_e.models.strategy.forward.load import ForwardLoadStrategy
@@ -200,45 +193,6 @@ def test_leaf_deserialization_does_not_deserialize_invalid_args():
     assert isinstance(recovered.children[0], PV)
     assert not hasattr(recovered.children[0].strategy, "load_profile")
     assert recovered.children[0].strategy._energy_params.panel_count == 4
-
-
-def test_leaf_deserialization_scm():
-    ConstSettings.MASettings.MARKET_TYPE = SpotMarketTypeEnum.COEFFICIENTS.value
-    recovered = area_from_string(
-        """{
-             "name": "house",
-             "children":[
-                 {"name": "pv1", "type": "PVProfile", "power_profile": "test1.csv",
-                  "power_profile_uuid": "fedcba"},
-                 {"name": "load1", "type": "LoadHours", "avg_power_W": 200},
-                 {"name": "load1", "type": "LoadProfile", "daily_load_profile": "test.csv",
-                  "daily_load_profile_uuid": "abcdef"},
-                 {"name": "storage1", "type": "ScmStorage", "initial_soc": 34}
-             ]
-           }
-        """,
-        _create_config(),
-    )
-
-    assert isinstance(recovered.children[0], SCMPVProfile)
-    assert isinstance(recovered.children[0].strategy, SCMPVUserProfile)
-
-    assert (
-        recovered.children[0].strategy._energy_params.energy_profile.input_profile == "test1.csv"
-    )
-    assert recovered.children[0].strategy._energy_params.energy_profile.input_profile_uuid is None
-
-    assert isinstance(recovered.children[1], SCMLoadHours)
-    assert isinstance(recovered.children[1].strategy, SCMLoadHoursStrategy)
-    assert recovered.children[1].strategy._energy_params.avg_power_W == 200
-
-    assert isinstance(recovered.children[2], SCMLoadProfile)
-    assert isinstance(recovered.children[2].strategy, SCMLoadProfileStrategy)
-    assert recovered.children[2].strategy._energy_params.energy_profile.input_profile == "test.csv"
-    assert recovered.children[2].strategy._energy_params.energy_profile.input_profile_uuid is None
-
-    assert isinstance(recovered.children[3], SCMStorage)
-    assert isinstance(recovered.children[3].strategy, SCMStorageStrategy)
 
 
 @pytest.fixture

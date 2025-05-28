@@ -23,7 +23,7 @@ from gsy_framework.constants_limits import ConstSettings, SpotMarketTypeEnum
 from gsy_framework.utils import convert_pendulum_to_str_in_dict, key_in_dict_and_not_none
 from pendulum import Duration
 
-from gsy_e.models.area import CoefficientArea, Area, Market, Asset  # NOQA
+from gsy_e.models.area import Area, Market, Asset  # NOQA
 from gsy_e.models.strategy import BaseStrategy
 from gsy_e.models.area.throughput_parameters import ThroughputParameters
 
@@ -35,12 +35,9 @@ from gsy_e.models.strategy.load_hours import LoadHoursStrategy  # NOQA
 from gsy_e.models.strategy.predefined_load import DefinedLoadStrategy  # NOQA
 from gsy_e.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy  # NOQA
 from gsy_e.models.strategy.finite_power_plant import FinitePowerPlant  # NOQA
-from gsy_e.models.strategy.scm import SCMStrategy
 
 from gsy_e.models.leaves import (  # NOQA
     Leaf,
-    scm_leaf_mapping,
-    CoefficientLeaf,
     forward_leaf_mapping,
 )
 from gsy_e.models.leaves import *  # NOQA  # pylint: disable=wildcard-import
@@ -53,14 +50,28 @@ class AreaEncoder(json.JSONEncoder):
     """Convert the Area class hierarchy to json dict."""
 
     def default(self, o):
+        # pylint: disable=too-many-return-statements
         # Leaf classes are Areas too, therefore the Area/AreaBase classes need to be handled
         # separately.
-        if type(o) in [Area, CoefficientArea, Market, Asset]:
-            return self._encode_area(o)
-        if isinstance(o, (Leaf, CoefficientLeaf)):
-            return self._encode_leaf(o)
-        if isinstance(o, (BaseStrategy, SCMStrategy)):
-            return self._encode_subobject(o)
+        if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
+            # pylint: disable=import-outside-toplevel
+            from scm.engine.coefficient_area import CoefficientArea
+            from scm.strategies import SCMStrategy
+            from scm.engine.leaves import CoefficientLeaf
+
+            if type(o) in [CoefficientArea]:
+                return self._encode_area(o)
+            if isinstance(o, (Leaf, CoefficientLeaf)):
+                return self._encode_leaf(o)
+            if isinstance(o, (BaseStrategy, SCMStrategy)):
+                return self._encode_subobject(o)
+        else:
+            if type(o) in [Area, Market, Asset]:
+                return self._encode_area(o)
+            if isinstance(o, Leaf):
+                return self._encode_leaf(o)
+            if isinstance(o, BaseStrategy):
+                return self._encode_subobject(o)
         if isinstance(o, TradingStrategyBase):
             return self._encode_subobject(o)
         if isinstance(o, Duration):
@@ -136,6 +147,9 @@ def _leaf_from_dict(description, config):
         if not issubclass(leaf_type, Leaf):
             raise ValueError(f"Unknown forward leaf type '{leaf_type}'")
     elif ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
+        # pylint: disable=import-outside-toplevel
+        from scm.engine.leaves import scm_leaf_mapping, CoefficientLeaf
+
         strategy_type = description.pop("type")
         leaf_type = scm_leaf_mapping.get(strategy_type)
         if not leaf_type:
@@ -160,6 +174,7 @@ def _leaf_from_dict(description, config):
     return leaf_object
 
 
+# pylint: disable=too-many-locals
 def area_from_dict(description, config):
     """Create Area tree from JSON dict."""
 
@@ -183,6 +198,9 @@ def area_from_dict(description, config):
 
         if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
             # For the SCM only use the CoefficientArea strategy.
+            # pylint: disable=import-outside-toplevel
+            from scm.engine.coefficient_area import CoefficientArea
+
             area = CoefficientArea(name, children, uuid, optional("strategy"), config)
         else:
             grid_fee_percentage = description.get("grid_fee_percentage", None)

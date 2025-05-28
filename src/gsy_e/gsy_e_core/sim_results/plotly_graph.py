@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+# pylint: disable=use-dict-literal
 import os
 
 import pendulum
@@ -33,9 +34,6 @@ from gsy_e.models.strategy.market_maker_strategy import MarketMakerStrategy
 from gsy_e.models.strategy.pv import PVStrategy
 from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
 from gsy_e.models.strategy.storage import StorageStrategy
-from gsy_e.models.strategy.scm.load import SCMLoadProfileStrategy, SCMLoadHoursStrategy
-from gsy_e.models.strategy.scm.pv import SCMPVUserProfile
-from gsy_e.models.strategy.scm.smart_meter import SCMSmartMeterStrategy
 from gsy_e.models.strategy.heat_pump import HeatPumpStrategy
 
 green = "rgba(20,150,20, alpha)"
@@ -226,6 +224,7 @@ class PlotlyGraph:
                 return
 
         layout = cls._common_layout(plot_desc, time_range, showlegend, hovermode=hovermode)
+        # pylint: disable=possibly-used-before-assignment
         fig = go.Figure(data=data, layout=layout)
         py.offline.plot(fig, filename=iname, auto_open=False)
 
@@ -522,9 +521,7 @@ class PlotlyGraph:
                 "overlay", f"{device_name}", "Time", yaxis_caption_list
             )
 
-        elif isinstance(
-            device_strategy, (LoadHoursStrategy, SCMLoadHoursStrategy, SCMLoadProfileStrategy)
-        ):
+        elif isinstance(device_strategy, LoadHoursStrategy):
             y1axis_key = "trade_price_eur"
             y2axis_key = trade_energy_var_name
             y3axis_key = "load_profile_kWh"
@@ -544,7 +541,7 @@ class PlotlyGraph:
                 "overlay", f"{device_name}", "Time", yaxis_caption_list
             )
 
-        elif isinstance(device_strategy, (SmartMeterStrategy, SCMSmartMeterStrategy)):
+        elif isinstance(device_strategy, SmartMeterStrategy):
             y1axis_key = "trade_price_eur"
             y2axis_key = trade_energy_var_name
             y3axis_key = "smart_meter_profile_kWh"
@@ -561,7 +558,7 @@ class PlotlyGraph:
             data += cls._plot_line_time_series(device_dict, y3axis_key)
             layout = cls._device_plot_layout("overlay", device_name, "Time", yaxis_caption_list)
 
-        elif isinstance(device_strategy, (PVStrategy, SCMPVUserProfile)):
+        elif isinstance(device_strategy, PVStrategy):
             y1axis_key = "trade_price_eur"
             y2axis_key = trade_energy_var_name
             y3axis_key = "pv_production_kWh"
