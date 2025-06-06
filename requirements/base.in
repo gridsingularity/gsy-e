@@ -18,4 +18,3 @@ psycopg2==2.9.10
 psycopg2-binary==2.9.10
 
 -e git+https://github.com/gridsingularity/gsy-framework@master#egg=gsy_framework
--e git+https://github.com/gridsingularity/scm-engine@feature/GSYE-830#egg=scm_engine

@@ -6,8 +6,8 @@
 #
 -e git+https://github.com/gridsingularity/gsy-framework@master#egg=gsy_framework
     # via -r requirements/dev.txt
--e git+https://github.com/gridsingularity/scm-engine@feature/GSYE-830#egg=scm_engine
-    # via -r requirements/dev.txt
+allure-python-commons==2.14.2
+    # via behavex
 astroid==3.3.10
     # via
     #   -r requirements/dev.txt
@@ -15,6 +15,7 @@ astroid==3.3.10
 attrs==23.2.0
     # via
     #   -r requirements/dev.txt
+    #   allure-python-commons
     #   gsy-framework
     #   hypothesis
     #   jsonschema
@@ -33,7 +34,7 @@ behave==1.2.6
     # via
     #   behavex
     #   behavex-images
-behavex==4.1.2
+behavex==4.2.0
     # via
     #   -r requirements/tests.in
     #   behavex-images
@@ -257,11 +258,12 @@ platformdirs==4.2.2
     #   pylint
     #   tox
     #   virtualenv
-plotly==6.1.1
+plotly==6.1.2
     # via -r requirements/dev.txt
 pluggy==1.5.0
     # via
     #   -r requirements/dev.txt
+    #   allure-python-commons
     #   gsy-framework
     #   pytest
     #   tox
@@ -285,6 +287,8 @@ pycparser==2.22
     #   cffi
 pyflakes==3.3.2
     # via flake8
+pygments==2.19.1
+    # via pytest
 pylint==3.3.7
     # via -r requirements/dev.txt
 pynacl==1.5.0
@@ -296,7 +300,7 @@ pyproject-api==1.6.1
     #   -r requirements/dev.txt
     #   gsy-framework
     #   tox
-pytest==8.3.5
+pytest==8.4.0
     # via
     #   -r requirements/tests.in
     #   pytest-cov

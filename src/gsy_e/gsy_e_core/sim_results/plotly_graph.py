@@ -598,7 +598,7 @@ class PlotlyGraph:
                 "overlay", f"{device_name}", "Time", yaxis_caption_list
             )
 
-        elif type(device_strategy) == FinitePowerPlant:
+        elif type(device_strategy) is FinitePowerPlant:
             y1axis_key = "trade_price_eur"
             y2axis_key = trade_energy_var_name
             y3axis_key = "production_kWh"
@@ -628,7 +628,7 @@ class PlotlyGraph:
             layout = cls._device_plot_layout(
                 "overlay", f"{device_name}", "Time", yaxis_caption_list
             )
-        elif type(device_strategy) == InfiniteBusStrategy:
+        elif type(device_strategy) is InfiniteBusStrategy:
             y1axis_key = "trade_price_eur"
             y2axis_key = sold_trade_energy_var_name
             y3axis_key = bought_trade_energy_var_name

@@ -6,8 +6,6 @@
 #
 -e git+https://github.com/gridsingularity/gsy-framework@master#egg=gsy_framework
     # via -r requirements/base.in
--e git+https://github.com/gridsingularity/scm-engine@feature/GSYE-830#egg=scm_engine
-    # via -r requirements/base.in
 attrs==23.2.0
     # via
     #   -r requirements/base.in
@@ -125,7 +123,7 @@ platformdirs==4.2.2
     #   gsy-framework
     #   tox
     #   virtualenv
-plotly==6.1.1
+plotly==6.1.2
     # via -r requirements/base.in
 pluggy==1.5.0
     # via
