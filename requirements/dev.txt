@@ -4,9 +4,9 @@
 #
 #    pip-compile --max-rounds=100 --no-emit-index-url requirements/dev.in
 #
--e git+https://github.com/gridsingularity/gsy-framework@${GSY_FRAMEWORK_BRANCH}#egg=gsy_framework
+-e git+https://github.com/gridsingularity/gsy-framework@master#egg=gsy_framework
     # via -r requirements/base.txt
-astroid==3.2.1
+astroid==3.3.10
     # via pylint
 attrs==23.2.0
     # via
@@ -20,9 +20,9 @@ avro==1.11.3
     #   gsy-framework
 awesome-slugify==1.6.5
     # via -r requirements/base.txt
-bcrypt==4.1.3
+bcrypt==4.3.0
     # via paramiko
-cached-property==1.5.2
+cached-property==2.0.1
     # via -r requirements/base.txt
 cachetools==5.3.3
     # via
@@ -34,7 +34,7 @@ certifi==2024.2.2
     #   -r requirements/base.txt
     #   gsy-framework
     #   requests
-cffi==1.16.0
+cffi==1.17.1
     # via
     #   cryptography
     #   pynacl
@@ -69,7 +69,7 @@ colorama==0.4.6
     #   tox
 colorlog==4.7.2
     # via -r requirements/base.txt
-cryptography==42.0.7
+cryptography==45.0.3
     # via paramiko
 decorator==5.1.1
     # via
@@ -77,9 +77,9 @@ decorator==5.1.1
     #   fabric
     #   gsy-framework
     #   ratelim
-deprecated==1.2.14
+deprecated==1.2.18
     # via fabric
-dill==0.3.8
+dill==0.4.0
     # via pylint
 distlib==0.3.8
     # via
@@ -128,7 +128,7 @@ iso3166==2.1.1
     # via
     #   -r requirements/base.txt
     #   gsy-framework
-isort==5.13.2
+isort==6.0.1
     # via pylint
 jsonschema==4.22.0
     # via
@@ -143,18 +143,22 @@ kafka-python==2.0.2
     # via
     #   -r requirements/base.txt
     #   gsy-framework
-mccabe==0.6.1
+mccabe==0.7.0
     # via pylint
 mpmath==1.3.0
     # via
     #   -r requirements/base.txt
     #   sympy
+narwhals==1.41.0
+    # via
+    #   -r requirements/base.txt
+    #   plotly
 nodeenv==1.8.0
     # via
     #   -r requirements/base.txt
     #   gsy-framework
     #   pre-commit
-numpy==1.24.4
+numpy==2.2.6
     # via -r requirements/base.txt
 openpyxl==3.0.10
     # via
@@ -167,7 +171,7 @@ packaging==24.0
     #   plotly
     #   pyproject-api
     #   tox
-paramiko==3.4.0
+paramiko==3.5.1
     # via fabric
 pendulum==3.0.0
     # via
@@ -180,20 +184,20 @@ platformdirs==4.2.2
     #   pylint
     #   tox
     #   virtualenv
-plotly==5.22.0
+plotly==6.1.2
     # via -r requirements/base.txt
 pluggy==1.5.0
     # via
     #   -r requirements/base.txt
     #   gsy-framework
     #   tox
-pony==0.7.17
+pony==0.7.19
     # via -r requirements/base.txt
 pre-commit==3.5.0
     # via
     #   -r requirements/base.txt
     #   gsy-framework
-psutil==5.9.8
+psutil==7.0.0
     # via -r requirements/dev.in
 psycopg2==2.9.10
     # via -r requirements/base.txt
@@ -201,7 +205,7 @@ psycopg2-binary==2.9.10
     # via -r requirements/base.txt
 pycparser==2.22
     # via cffi
-pylint==3.2.0
+pylint==3.3.7
     # via -r requirements/dev.in
 pynacl==1.5.0
     # via paramiko
@@ -218,7 +222,7 @@ python-dateutil==2.9.0.post0
     #   time-machine
 python-rex==0.4
     # via -r requirements/base.txt
-pytz==2024.2
+pytz==2025.2
     # via -r requirements/base.txt
 pyyaml==6.0.1
     # via
@@ -242,7 +246,7 @@ referencing==0.35.1
     #   gsy-framework
     #   jsonschema
     #   jsonschema-specifications
-regex==2024.5.15
+regex==2024.11.6
     # via
     #   -r requirements/base.txt
     #   awesome-slugify
@@ -257,7 +261,7 @@ rpds-py==0.18.1
     #   gsy-framework
     #   jsonschema
     #   referencing
-rq==1.16.2
+rq==2.3.3
     # via -r requirements/base.txt
 six==1.16.0
     # via
@@ -268,22 +272,18 @@ six==1.16.0
     #   python-rex
 sortedcontainers==2.4.0
     # via -r requirements/base.txt
-sympy==1.12
+sympy==1.14.0
     # via -r requirements/base.txt
 tabulate==0.9.0
     # via
     #   -r requirements/base.txt
     #   gsy-framework
-tenacity==8.3.0
-    # via
-    #   -r requirements/base.txt
-    #   plotly
 time-machine==2.16.0
     # via
     #   -r requirements/base.txt
     #   gsy-framework
     #   pendulum
-tomlkit==0.12.5
+tomlkit==0.13.2
     # via pylint
 tox==4.15.0
     # via
@@ -313,7 +313,7 @@ websockets==12.0
     # via
     #   -r requirements/base.txt
     #   gsy-framework
-wrapt==1.16.0
+wrapt==1.17.2
     # via deprecated
 
 # The following packages are considered to be unsafe in a requirements file:

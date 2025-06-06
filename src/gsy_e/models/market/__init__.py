@@ -233,7 +233,7 @@ class MarketBase:  # pylint: disable=too-many-instance-attributes
             self.redis_publisher.publish_event(event, **kwargs)
         else:
             # Deliver notifications in random order to ensure fairness
-            for listener in sorted(self.notification_listeners, key=lambda l: random()):
+            for listener in sorted(self.notification_listeners, key=lambda inp: random()):
                 listener(event, market_id=self.id, **kwargs)
 
     def _update_stats_after_trade(self, trade: Trade, order: Union[Offer, Bid]) -> None:
