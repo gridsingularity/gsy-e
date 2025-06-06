@@ -15,10 +15,11 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
 import os
 import platform
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from subprocess import Popen
 from time import sleep
 
@@ -37,14 +38,15 @@ MAX_LIMIT_MEMORY_USAGE_PERCENT = os.environ.get("D3A_MAX_MEM_USAGE_PERCENT", 90)
 
 class Launcher:
     """Launch new simulation jobs after reading from the job queue."""
+
     def __init__(self, max_jobs=None, max_delay_seconds=2):
         self.redis_connection = Redis.from_url(REDIS_URL, retry_on_timeout=True)
         self.queue = Queue(QueueNames().gsy_e_queue_name, connection=self.redis_connection)
         self.max_jobs = max_jobs if max_jobs is not None else int(MAX_JOBS)
         self.max_delay = timedelta(seconds=max_delay_seconds)
-        python_executable = sys.executable \
-            if platform.python_implementation() != "PyPy" \
-            else "pypy3"
+        python_executable = (
+            sys.executable if platform.python_implementation() != "PyPy" else "pypy3"
+        )
         self.command = [python_executable, "src/gsy_e/gsy_e_core/exchange_jobs.py"]
         self.job_array = []
 
@@ -68,7 +70,7 @@ class Launcher:
         enqueued = self.queue.jobs
         if enqueued:
             earliest = min(job.enqueued_at for job in enqueued)
-            if datetime.utcnow() - earliest >= self.max_delay:
+            if datetime.now(tz=timezone.utc) - earliest >= self.max_delay:
                 return True
         return False
 
