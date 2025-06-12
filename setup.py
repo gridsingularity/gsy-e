@@ -16,7 +16,7 @@ try:
                 f"git+https://github.com/gridsingularity/gsy-framework.git@{gsy_framework_branch}"
             ]
         )
-        if scm_engine_branch:
+        if scm_engine_branch and scm_engine_repo:
             REQUIREMENTS.extend([f"scm-engine @ {scm_engine_repo}@{scm_engine_branch}"])
 except OSError:
     # Shouldn't happen
