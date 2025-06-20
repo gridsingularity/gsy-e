@@ -119,25 +119,26 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
         """Return dict with configuration parameters."""
         return {"fit_to_limit": self.fit_to_limit, "update_interval": self.update_interval}
 
-    def _read_or_rotate_rate_profiles(self) -> None:
+    def _read_or_rotate_rate_profiles(self, reconfigure=False) -> None:
         """
         Creates a new chunk of profiles if the current_timestamp is not in the profile buffers
         """
+
         self.initial_rate_profile_buffer = global_objects.profiles_handler.rotate_profile(
             profile_type=InputProfileTypes.IDENTITY,
             profile=(
-                self.initial_rate_profile_buffer
-                if self.initial_rate_profile_buffer
-                else self.initial_rate_input
+                self.initial_rate_input
+                if reconfigure or not self.initial_rate_profile_buffer
+                else self.initial_rate_profile_buffer
             ),
             input_profile_path=self.initial_rate_input,
         )
         self.final_rate_profile_buffer = global_objects.profiles_handler.rotate_profile(
             profile_type=InputProfileTypes.IDENTITY,
             profile=(
-                self.final_rate_profile_buffer
-                if self.final_rate_profile_buffer
-                else self.final_rate_input
+                self.final_rate_input
+                if reconfigure or not self.final_rate_profile_buffer
+                else self.final_rate_profile_buffer
             ),
             input_profile_path=self.final_rate_input,
         )
@@ -340,7 +341,7 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
             self.fit_to_limit = fit_to_limit
         if update_interval is not None:
             self.update_interval = update_interval
-        self._read_or_rotate_rate_profiles()
+        self._read_or_rotate_rate_profiles(reconfigure=True)
 
     def reset(self, strategy: "BaseStrategy") -> None:
         raise NotImplementedError
