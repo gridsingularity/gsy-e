@@ -88,3 +88,13 @@ class TestCombinedHeatpumpTanksState:
             called = True
             combined_state._charger.discharge.assert_called_once()
         assert called, "one of the methods should have been called"
+
+    @staticmethod
+    def test_delete_past_state_values_triggers_deletion_in_states(combined_state):
+        combined_state._hp_state.delete_past_state_values = Mock()
+        combined_state._charger.delete_past_state_values = Mock()
+
+        combined_state.delete_past_state_values(CURRENT_MARKET_SLOT)
+
+        combined_state._hp_state.delete_past_state_values.assert_called_once()
+        combined_state._charger.delete_past_state_values.assert_called_once()
