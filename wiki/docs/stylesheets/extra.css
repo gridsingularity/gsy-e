@@ -227,14 +227,14 @@ p{
   font-weight: bold;
 }
 
-carbon-footprint-table {
+.carbon-footprint-table {
   font-family: inherit;
   font-size: inherit;
   border-collapse: collapse;
   width: 100%;
 }
 
-carbon-footprint-table th, carbon-footprint-table td {
+.carbon-footprint-table th, .carbon-footprint-table td {
   border: 1px solid #66ee66;
   padding: 0.5em;
   padding: 8px;
