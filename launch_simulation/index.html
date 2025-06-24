@@ -891,6 +891,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../carbon-footprint-savings/" title="Carbon Footprint and Carbon Savings" class="md-nav__link">
+      Carbon Footprint and Carbon Savings
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../trade-profile/" title="Trade Profile and Energy Peak Percentage" class="md-nav__link">
       Trade Profile and Energy Peak Percentage
     </a>
@@ -1710,15 +1722,17 @@
 <li>--slot-length-realtime: Desired duration of slot in realtime [default: 0s]</li>
 </ul>
 <p>Example simulation call:</p>
-<pre class="codehilite"><code class="language-commandline">gsy-e -l ERROR run --duration=1d --tick-length=1s --slot-length=15m --cloud-coverage=0 --setup default_2a</code></pre>
+<div class="codehilite"><pre><span></span><code>gsy-e -l ERROR run --duration=1d --tick-length=1s --slot-length=15m --cloud-coverage=0 --setup default_2a
+</code></pre></div>
 
 
 <p>Getting help in the command line:</p>
-<pre class="codehilite"><code class="language-commandline">gsy-e run --help</code></pre>
+<div class="codehilite"><pre><span></span><code>gsy-e run --help
+</code></pre></div>
 
 
 <p>returns</p>
-<pre class="codehilite"><code>Usage: gsy-e [OPTIONS] COMMAND [ARGS]...
+<div class="codehilite"><pre><span></span><code>Usage: gsy-e [OPTIONS] COMMAND [ARGS]...
 
   Entrypoint for command-line interface interaction.
 
@@ -1825,10 +1839,11 @@ Options:
   --enable-bc                     Run simulation on Blockchain
   --enable-external-connection    External Agents interaction to simulation during runtime
   --start-date DATE               Start date of the Simulation (YYYY-MM-DD)  [default: 2023-10-04]
-  --enable-dof / --disable-dof    Enable or disable Degrees of Freedom (orders can't contain attributes/requirements).
+  --enable-dof / --disable-dof    Enable or disable Degrees of Freedom (orders can&#39;t contain attributes/requirements).
   -m, --market-type INTEGER       Market type. 1 for one-sided market, 2 for two-sided market, 3 for coefficient-based
                                   trading.  [default: 1]
-  --help                          Show this message and exit.</code></pre>
+  --help                          Show this message and exit.
+</code></pre></div>
                 
                   
                 

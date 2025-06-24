@@ -876,6 +876,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../carbon-footprint-savings/" title="Carbon Footprint and Carbon Savings" class="md-nav__link">
+      Carbon Footprint and Carbon Savings
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../trade-profile/" title="Trade Profile and Energy Peak Percentage" class="md-nav__link">
       Trade Profile and Energy Peak Percentage
     </a>
@@ -2025,33 +2037,35 @@
 <h4 id="grid-topology-storage-database-schema">Grid Topology Storage Database Schema<a class="headerlink" href="#grid-topology-storage-database-schema" title="Permanent link">&para;</a></h4>
 <p>The Grid Topology Storage will store all assets using the same data type, with optional arguments applied to differentiate the asset type and position, creating and persisting a hierarchical layered representation of the electrical grid. Different topology types will support different arguments, accommodating generation, consumption and storage assets (namely PVs, Heat Pumps, Loads and Batteries), as well as electrical devices that form the electrical grid (Smart Metres, Voltage Transformers and Circuit Breakers), along with the Area type that is used in order to group different assets. Topology connections are modelled using the “children” argument, which is available only for Area type (also termed Market or Submarket), Voltage Transformer and Circuit Breaker types, and accept a list of asset uuids.</p>
 <figure>
-<pre class="codehilite"><code class="language-json">{
-   &quot;type&quot;: &quot;Load&quot;,
-   &quot;nonce&quot;: 3,
-   &quot;uuid&quot;: &quot;load_uuid&quot;,
-   &quot;name&quot;: &quot;Home 1 Consumption&quot;,
-   &quot;community_uuid&quot;: 13,
-   &quot;creation_time&quot;: 1546300800,
-   &quot;max_consumption_kWh&quot;: 5,
-   &quot;coordinates&quot;: [43.2, 45],
-   &quot;children&quot;: []
- }</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
+<span class="w">   </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Load&quot;</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;nonce&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;uuid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;load_uuid&quot;</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Home 1 Consumption&quot;</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;community_uuid&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">13</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;creation_time&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1546300800</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;max_consumption_kWh&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;coordinates&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">43.2</span><span class="p">,</span><span class="w"> </span><span class="mi">45</span><span class="p">],</span>
+<span class="w">   </span><span class="nt">&quot;children&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span>
+<span class="w"> </span><span class="p">}</span>
+</code></pre></div>
 
 
 <p><figcaption><b>Figure 3</b>: Example of GSY DEX Off-Chain Grid Topology Storage Load.</figcaption></p>
 </figure>
 <figure>
-<pre class="codehilite"><code class="language-json">{
-   &quot;type&quot;: &quot;VoltageTransformer&quot;,
-   &quot;nonce&quot;: 3,
-   &quot;uuid&quot;: 5,
-   &quot;name&quot;: &quot;Home 1 Consumption&quot;,
-   &quot;community_uuid&quot;: 13,
-   &quot;creation_time&quot;: 1546300800,
-   &quot;max_power_rating_kW&quot;: 20,
-   &quot;coordinates&quot;: [43.2, 45],
-   &quot;children&quot;: [&quot;load_uuid&quot;]
- }</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
+<span class="w">   </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;VoltageTransformer&quot;</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;nonce&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;uuid&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Home 1 Consumption&quot;</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;community_uuid&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">13</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;creation_time&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1546300800</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;max_power_rating_kW&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">20</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;coordinates&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="mf">43.2</span><span class="p">,</span><span class="w"> </span><span class="mi">45</span><span class="p">],</span>
+<span class="w">   </span><span class="nt">&quot;children&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;load_uuid&quot;</span><span class="p">]</span>
+<span class="w"> </span><span class="p">}</span>
+</code></pre></div>
 
 
 <p><figcaption><b>Figure 4</b>: Example of a voltage transformer in the GSY DEX Off-Chain Grid Topology Storage.</figcaption></p>
@@ -2059,31 +2073,33 @@
 <h4 id="measurements-storage-database-schema">Measurements Storage Database Schema<a class="headerlink" href="#measurements-storage-database-schema" title="Permanent link">&para;</a></h4>
 <p>The Measurements Storage will persist forecasts and measurements, using the same data type. The <code>type</code> data entry attribute is used to differentiate between forecasts and measurements, thereby allowing the database to select only forecasts or measurements, depending on the user interest. Furthermore, <code>type</code>, <code>asset_uuid</code> and <code>time_slot</code> data entries are indexed, in order to accelerate queries that select forecasts or measurements for a select asset and period of time.</p>
 <figure>
-<pre class="codehilite"><code class="language-json">{
-   &quot;type&quot;: &quot;Forecast&quot;,
-   &quot;nonce&quot;: 3,
-   &quot;asset_uuid&quot;: 5,
-   &quot;community_uuid&quot;: 13,
-   &quot;time_slot&quot;: 2,
-   &quot;creation_time&quot;: 1546300800,
-   &quot;energy_consumption_kWh&quot;: 1.2,
-   &quot;energy_production_kWh&quot;: 0,
-}</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
+<span class="w">   </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Forecast&quot;</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;nonce&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;asset_uuid&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;community_uuid&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">13</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;time_slot&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;creation_time&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1546300800</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;energy_consumption_kWh&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.2</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;energy_production_kWh&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span>
+<span class="p">}</span>
+</code></pre></div>
 
 
 <p><figcaption><b>Figure 5</b>: Example of a forecast in the GSY DEX Off-Chain Measurements Storage.</figcaption></p>
 </figure>
 <figure>
-<pre class="codehilite"><code class="language-json">{
-   &quot;type&quot;: &quot;Measurement&quot;,
-   &quot;nonce&quot;: 2,
-   &quot;asset_uuid&quot;: 1,
-   &quot;community_uuid&quot;: 13,
-   &quot;time_slot&quot;: 2,
-   &quot;creation_time&quot;: 1546300800,
-   &quot;energy_consumption_kWh&quot;: 10.2,
-   &quot;energy_production_kWh&quot;: 0.3,
-}</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
+<span class="w">   </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Measurement&quot;</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;nonce&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;asset_uuid&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;community_uuid&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">13</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;time_slot&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;creation_time&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1546300800</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;energy_consumption_kWh&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">10.2</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;energy_production_kWh&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.3</span><span class="p">,</span>
+<span class="p">}</span>
+</code></pre></div>
 
 
 <p><figcaption><b>Figure 6</b>: Example of a measurement in the GSY DEX Off-Chain Measurements Storage.</figcaption></p>
@@ -2091,37 +2107,39 @@
 <h4 id="order-book-storage-database-schema">Order Book Storage Database Schema<a class="headerlink" href="#order-book-storage-database-schema" title="Permanent link">&para;</a></h4>
 <p>Bids and offers are saved using the same data type. Similar to the other storage subcomponents, <code>type</code> data entry attribute in the JSON document is used in order to differentiate between offers and bids, thus allowing the user to filter for either one. Moreover, <code>type</code>, <code>asset_uuid</code>, <code>market_uuid</code> and <code>time_slot</code> data entries are indexed, in order to accelerate queries that select bids or offers for a select asset, market and time slot.</p>
 <figure>
-<pre class="codehilite"><code class="language-json">{
-   &quot;type&quot;: &quot;Bid&quot;,
-   &quot;nonce&quot;: 2,
-   &quot;asset_uuid&quot;: 1,
-   &quot;market_uuid&quot;: 1,
-   &quot;time_slot&quot;: 2,
-   &quot;creation_time&quot;: 1546300800,
-   &quot;bid_component&quot;: {
-       &quot;buyer&quot;: &quot;aabc&quot;,
-       &quot;energy&quot;: 10,
-       &quot;energy_rate&quot;: 1
-   }
-}</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
+<span class="w">   </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Bid&quot;</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;nonce&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;asset_uuid&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;market_uuid&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;time_slot&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;creation_time&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1546300800</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;bid_component&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">       </span><span class="nt">&quot;buyer&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;aabc&quot;</span><span class="p">,</span>
+<span class="w">       </span><span class="nt">&quot;energy&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
+<span class="w">       </span><span class="nt">&quot;energy_rate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">   </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
 
 
 <p><figcaption><b>Figure 7</b>: Example of a bid in the GSY DEX Off-Chain Order Book Storage.</figcaption></p>
 </figure>
 <figure>
-<pre class="codehilite"><code class="language-json">{
-   &quot;type&quot;: &quot;Offer&quot;,
-   &quot;nonce&quot;: 1,
-   &quot;asset_uuid&quot;: 1,
-   &quot;market_uuid&quot;: 1,
-   &quot;time_slot&quot;: 1,
-   &quot;creation_time&quot;: 1546300800,
-   &quot;offer_component&quot;: {
-       &quot;seller&quot;: &quot;bbcd&quot;,
-       &quot;energy&quot;: 10,
-       &quot;energy_rate&quot;: 1
-   }
-}</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
+<span class="w">   </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Offer&quot;</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;nonce&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;asset_uuid&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;market_uuid&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;time_slot&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;creation_time&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1546300800</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;offer_component&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">       </span><span class="nt">&quot;seller&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;bbcd&quot;</span><span class="p">,</span>
+<span class="w">       </span><span class="nt">&quot;energy&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
+<span class="w">       </span><span class="nt">&quot;energy_rate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">   </span><span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
 
 
 <p><figcaption><b>Figure 8</b>: Example of an offer in the GSY DEX Off-Chain Order Book Storage.</figcaption></p>
@@ -2129,26 +2147,27 @@
 <h4 id="trades-storage-database-schema">Trades Storage Database Schema<a class="headerlink" href="#trades-storage-database-schema" title="Permanent link">&para;</a></h4>
 <p>Trades are also saved using JSON documents in a similar format as the Order. The same fields as for the Order Book Storage will need to be indexed, namely asset_uuid, market_uuid and time_slot, thus speeding up the selection of the trades for one asset / market / time slot.</p>
 <figure>
-<pre class="codehilite"><code class="language-json">{
-   &quot;type&quot;: &quot;Trade&quot;,
-   &quot;nonce&quot;: 2,
-   &quot;asset_uuid&quot;: 1,
-   &quot;market_uuid&quot;: 1,
-   &quot;time_slot&quot;: 2,
-   &quot;creation_time&quot;: 1546300800,
-   &quot;energy&quot;: 10,
-   &quot;energy_rate&quot;: 1,
-   &quot;bid_component&quot;: {
-       &quot;buyer&quot;: &quot;aabc&quot;,
-       &quot;energy&quot;: 10,
-       &quot;energy_rate&quot;: 1
-   },
-   &quot;offer_component&quot;: {
-       &quot;seller&quot;: &quot;deca&quot;,
-       &quot;energy&quot;: 10,
-       &quot;energy_rate&quot;: 1
-   },
-}</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span>
+<span class="w">   </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Trade&quot;</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;nonce&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;asset_uuid&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;market_uuid&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;time_slot&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;creation_time&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1546300800</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;energy&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;energy_rate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;bid_component&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">       </span><span class="nt">&quot;buyer&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;aabc&quot;</span><span class="p">,</span>
+<span class="w">       </span><span class="nt">&quot;energy&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
+<span class="w">       </span><span class="nt">&quot;energy_rate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">   </span><span class="p">},</span>
+<span class="w">   </span><span class="nt">&quot;offer_component&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">       </span><span class="nt">&quot;seller&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;deca&quot;</span><span class="p">,</span>
+<span class="w">       </span><span class="nt">&quot;energy&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
+<span class="w">       </span><span class="nt">&quot;energy_rate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">   </span><span class="p">},</span>
+<span class="p">}</span>
+</code></pre></div>
 
 
 <p><figcaption><b>Figure 9</b>: Example of a trade in the GSY DEX Off-Chain Order Book Storage.</figcaption></p>
@@ -2157,136 +2176,145 @@
 <p>Each storage subcomponent is exposed via separate REST endpoints for operations that are most commonly required by the users of the GSY DEX Off-Chain Storage API. GET and POST requests are supported to facilitate reading of database entries, as well as the creation of new database entries.</p>
 <h4 id="grid-topology-storage-api-schema">Grid Topology Storage API Schema<a class="headerlink" href="#grid-topology-storage-api-schema" title="Permanent link">&para;</a></h4>
 <p>The Grid Topology Storage uses the dedicated endpoint</p>
-<pre class="codehilite"><code class="language-commandline">/grid-topology</code></pre>
+<div class="codehilite"><pre><span></span><code>/grid-topology
+</code></pre></div>
 
 
 <p>In order to both fetch and create new entries. The endpoint supports both GET and POST HTTP requests, and the accepted input data format is similar to the database schema:</p>
 <figure>
-<pre class="codehilite"><code class="language-json">POST /grid-topology
-[{
-   &quot;type&quot;: &quot;VoltageTransformer&quot;,
-   &quot;nonce&quot;: 3,
-   &quot;uuid&quot;: 5,
-   &quot;name&quot;: &quot;Home 1 Consumption&quot;,
-   &quot;community_uuid&quot;: 13,
-   &quot;creation_time&quot;: 1546300800,
-   &quot;max_power_rating_kW&quot;: 20,
-   &quot;children&quot;: [{
-      &quot;type&quot;: &quot;Load&quot;,
-      &quot;nonce&quot;: 3,
-      &quot;uuid&quot;: &quot;load_uuid&quot;,
-      &quot;name&quot;: &quot;Home 1 Consumption&quot;,
-      &quot;creation_time&quot;: 1546300800,
-      &quot;max_consumption_kWh&quot;: 5,
-      &quot;children&quot;: []
-    }
- }]</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="err">POST</span><span class="w"> </span><span class="err">/grid</span><span class="mi">-</span><span class="kc">t</span><span class="err">opology</span>
+<span class="p">[{</span>
+<span class="w">   </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;VoltageTransformer&quot;</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;nonce&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;uuid&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Home 1 Consumption&quot;</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;community_uuid&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">13</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;creation_time&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1546300800</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;max_power_rating_kW&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">20</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;children&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span>
+<span class="w">      </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Load&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;nonce&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;uuid&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;load_uuid&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Home 1 Consumption&quot;</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;creation_time&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1546300800</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;max_consumption_kWh&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span>
+<span class="w">      </span><span class="nt">&quot;children&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[]</span>
+<span class="w">    </span><span class="p">}</span>
+<span class="w"> </span><span class="p">}]</span>
+</code></pre></div>
 
 
 <p><figcaption><b>Figure 10</b>: Example of GSY DEX Off-Chain Grid Topology REST API POST.</figcaption></p>
 </figure>
 <h4 id="measurements-storage-api-schema">Measurements Storage API Schema<a class="headerlink" href="#measurements-storage-api-schema" title="Permanent link">&para;</a></h4>
 <p>The Measurements Storage uses one dedicated endpoint for forecasts:</p>
-<pre class="codehilite"><code class="language-commandline">/forecasts</code></pre>
+<div class="codehilite"><pre><span></span><code>/forecasts
+</code></pre></div>
 
 
 <p>and one for measurements:</p>
-<pre class="codehilite"><code class="language-commandline">/measurements</code></pre>
+<div class="codehilite"><pre><span></span><code>/measurements
+</code></pre></div>
 
 
 <p>Both endpoints support GET and POST HTTP requests, in order to be able to both fetch and create forecasts / measurements. The accepted input data format is similar to the database schema in both cases:</p>
 <figure>
-<pre class="codehilite"><code class="language-json">POST /forecasts
-{
-   &quot;type&quot;: &quot;Forecast&quot;,
-   &quot;nonce&quot;: 3,
-   &quot;asset_uuid&quot;: 5,
-   &quot;community_uuid&quot;: 13,
-   &quot;time_slot&quot;: 2,
-   &quot;creation_time&quot;: 1546300800,
-   &quot;energy&quot;: 1.2,
-}
-POST /measurements
-{
-   &quot;type&quot;: &quot;Measurement&quot;,
-   &quot;nonce&quot;: 2,
-   &quot;asset_uuid&quot;: 1,
-   &quot;community_uuid&quot;: 13,
-   &quot;time_slot&quot;: 2,
-   &quot;creation_time&quot;: 1546300800,
-   &quot;energy&quot;: 10.2,
-}</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="err">POST</span><span class="w"> </span><span class="err">/</span><span class="kc">f</span><span class="err">orecas</span><span class="kc">ts</span>
+<span class="p">{</span>
+<span class="w">   </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Forecast&quot;</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;nonce&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">3</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;asset_uuid&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;community_uuid&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">13</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;time_slot&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;creation_time&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1546300800</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;energy&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.2</span><span class="p">,</span>
+<span class="p">}</span>
+<span class="err">POST</span><span class="w"> </span><span class="err">/measureme</span><span class="kc">nts</span>
+<span class="p">{</span>
+<span class="w">   </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Measurement&quot;</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;nonce&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;asset_uuid&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;community_uuid&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">13</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;time_slot&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;creation_time&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1546300800</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;energy&quot;</span><span class="p">:</span><span class="w"> </span><span class="mf">10.2</span><span class="p">,</span>
+<span class="p">}</span>
+</code></pre></div>
 
 
 <p><figcaption><b>Figure 11</b>: Example of GSY DEX Off-Chain Measurements Storage REST API POST.</figcaption></p>
 </figure>
 <h4 id="order-book-storage-api-schema">Order Book Storage API Schema<a class="headerlink" href="#order-book-storage-api-schema" title="Permanent link">&para;</a></h4>
 <p>The Order Book Storage uses the dedicated endpoint</p>
-<pre class="codehilite"><code class="language-commandline">/orders</code></pre>
+<div class="codehilite"><pre><span></span><code>/orders
+</code></pre></div>
 
 
 <p>In order to both fetch and create new entries. The endpoint supports both GET and POST HTTP request, and the accepted input data format is similar to the database schema:</p>
 <figure>
-<pre class="codehilite"><code class="language-json">POST /orders/
-[{
-   &quot;type&quot;: &quot;Bid&quot;,
-   &quot;nonce&quot;: 2,
-   &quot;asset_uuid&quot;: 1,
-   &quot;market_uuid&quot;: 1,
-   &quot;time_slot&quot;: 2,
-   &quot;creation_time&quot;: 1546300800,
-   &quot;bid_component&quot;: {
-       &quot;buyer&quot;: &quot;aabc&quot;,
-       &quot;energy&quot;: 10,
-       &quot;energy_rate&quot;: 1
-   }
-}]
-POST /orders/
-[{
-   &quot;type&quot;: &quot;Offer&quot;,
-   &quot;nonce&quot;: 1,
-   &quot;asset_uuid&quot;: 1,
-   &quot;market_uuid&quot;: 1,
-   &quot;time_slot&quot;: 1,
-   &quot;creation_time&quot;: 1546300800,
-   &quot;offer_component&quot;: {
-       &quot;seller&quot;: &quot;bbcd&quot;,
-       &quot;energy&quot;: 10,
-       &quot;energy_rate&quot;: 1
-   }
-}]</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="err">POST</span><span class="w"> </span><span class="err">/orders/</span>
+<span class="p">[{</span>
+<span class="w">   </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Bid&quot;</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;nonce&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;asset_uuid&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;market_uuid&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;time_slot&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;creation_time&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1546300800</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;bid_component&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">       </span><span class="nt">&quot;buyer&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;aabc&quot;</span><span class="p">,</span>
+<span class="w">       </span><span class="nt">&quot;energy&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
+<span class="w">       </span><span class="nt">&quot;energy_rate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">   </span><span class="p">}</span>
+<span class="p">}]</span>
+<span class="err">POST</span><span class="w"> </span><span class="err">/orders/</span>
+<span class="p">[{</span>
+<span class="w">   </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Offer&quot;</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;nonce&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;asset_uuid&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;market_uuid&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;time_slot&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;creation_time&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1546300800</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;offer_component&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">       </span><span class="nt">&quot;seller&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;bbcd&quot;</span><span class="p">,</span>
+<span class="w">       </span><span class="nt">&quot;energy&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
+<span class="w">       </span><span class="nt">&quot;energy_rate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">   </span><span class="p">}</span>
+<span class="p">}]</span>
+</code></pre></div>
 
 
 <p><figcaption><b>Figure 12</b>: Example of the GSY DEX Off-Chain Order Book REST API POST.</figcaption></p>
 </figure>
 <h4 id="trades-storage-api-schema">Trades Storage API Schema<a class="headerlink" href="#trades-storage-api-schema" title="Permanent link">&para;</a></h4>
 <p>The Trades Storage uses the dedicated endpoint</p>
-<pre class="codehilite"><code class="language-commandline">/trades</code></pre>
+<div class="codehilite"><pre><span></span><code>/trades
+</code></pre></div>
 
 
 <p>in order to both fetch and create new entries. The endpoint supports both GET and POST HTTP request, and the accepted input data format is similar to the database schema:</p>
 <figure>
-<pre class="codehilite"><code class="language-json">POST /trades
-[{
-   &quot;type&quot;: &quot;Trade&quot;,
-   &quot;nonce&quot;: 2,
-   &quot;asset_uuid&quot;: 1,
-   &quot;market_uuid&quot;: 1,
-   &quot;time_slot&quot;: 2,
-   &quot;creation_time&quot;: 1546300800,
-   &quot;energy&quot;: 10,
-   &quot;energy_rate&quot;: 1,
-   &quot;bid_component&quot;: {
-       &quot;buyer&quot;: &quot;aabc&quot;,
-       &quot;energy&quot;: 10,
-       &quot;energy_rate&quot;: 1
-   },
-   &quot;offer_component&quot;: {
-       &quot;seller&quot;: &quot;deca&quot;,
-       &quot;energy&quot;: 10,
-       &quot;energy_rate&quot;: 1
-   },
-}]</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="err">POST</span><span class="w"> </span><span class="err">/</span><span class="kc">tra</span><span class="err">des</span>
+<span class="p">[{</span>
+<span class="w">   </span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Trade&quot;</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;nonce&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;asset_uuid&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;market_uuid&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;time_slot&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;creation_time&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1546300800</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;energy&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;energy_rate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">   </span><span class="nt">&quot;bid_component&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">       </span><span class="nt">&quot;buyer&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;aabc&quot;</span><span class="p">,</span>
+<span class="w">       </span><span class="nt">&quot;energy&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
+<span class="w">       </span><span class="nt">&quot;energy_rate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">   </span><span class="p">},</span>
+<span class="w">   </span><span class="nt">&quot;offer_component&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">       </span><span class="nt">&quot;seller&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;deca&quot;</span><span class="p">,</span>
+<span class="w">       </span><span class="nt">&quot;energy&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">10</span><span class="p">,</span>
+<span class="w">       </span><span class="nt">&quot;energy_rate&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span>
+<span class="w">   </span><span class="p">},</span>
+<span class="p">}]</span>
+</code></pre></div>
 
 
 <p><figcaption><b>Figure 13</b>: Example of the GSY DEX Off-Chain Trades Storage REST API POST.</figcaption></p>

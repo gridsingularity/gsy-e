@@ -876,6 +876,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../carbon-footprint-savings/" title="Carbon Footprint and Carbon Savings" class="md-nav__link">
+      Carbon Footprint and Carbon Savings
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../trade-profile/" title="Trade Profile and Energy Peak Percentage" class="md-nav__link">
       Trade Profile and Energy Peak Percentage
     </a>
@@ -1922,12 +1934,14 @@
                 <p>For local test runs of Grid Singularity Exchange (backend simulation), <a href="https://redis.io/" target="_blank">redis</a> is used as a communication protocol.</p>
 <h3 id="install-redis-server">Install Redis server<a class="headerlink" href="#install-redis-server" title="Permanent link">&para;</a></h3>
 <p>To install the Redis server, open a new terminal window and type:</p>
-<pre class="codehilite"><code>brew install redis</code></pre>
+<div class="codehilite"><pre><span></span><code>brew install redis
+</code></pre></div>
 
 
 <p>To install redis in Ubuntu follow the instructions in this <a href="https://redis.io/topics/quickstart" target="_blank">link</a>.
 To start the redis instance, open a new terminal and run the following command:</p>
-<pre class="codehilite"><code>redis-server /usr/local/etc/redis.conf</code></pre>
+<div class="codehilite"><pre><span></span><code>redis-server /usr/local/etc/redis.conf
+</code></pre></div>
 
 
 <p>The path for the Redis server would be the location where the Redis is installed in your system.</p>
@@ -1935,46 +1949,54 @@ To start the redis instance, open a new terminal and run the following command:<
 <ol>
 <li>Make a new virtual environment for the Matching API client:</li>
 </ol>
-<pre class="codehilite"><code>mkvirtualenv gsy-matching-engine-sdk</code></pre>
+<div class="codehilite"><pre><span></span><code>mkvirtualenv gsy-matching-engine-sdk
+</code></pre></div>
 
 
 <ol>
 <li>Clone the GitHub directory of the Matching Engine client:</li>
 </ol>
-<pre class="codehilite"><code>pip clone git+https://github.com/gridsingularity/gsy-matching-engine-sdk.git</code></pre>
+<div class="codehilite"><pre><span></span><code>pip clone git+https://github.com/gridsingularity/gsy-matching-engine-sdk.git
+</code></pre></div>
 
 
 <ol>
 <li>Install the requirements:</li>
 </ol>
-<pre class="codehilite"><code>pip install - e.</code></pre>
+<div class="codehilite"><pre><span></span><code>pip install - e.
+</code></pre></div>
 
 
 <h3 id="enabling-external-connection-for-clearing-the-market">Enabling external connection for clearing the market<a class="headerlink" href="#enabling-external-connection-for-clearing-the-market" title="Permanent link">&para;</a></h3>
 <p>To register an asset through API and to use an external matching algorithm it is required to specify the following line in the exchange setup file:</p>
-<pre class="codehilite"><code class="language-python">ConstSettings.MASettings.MARKET_TYPE = 2
-ConstSettings.MASettings.BID_OFFER_MATCH_TYPE = (BidOfferMatchAlgoEnum.EXTERNAL.value)</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="n">ConstSettings</span><span class="o">.</span><span class="n">MASettings</span><span class="o">.</span><span class="n">MARKET_TYPE</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">ConstSettings</span><span class="o">.</span><span class="n">MASettings</span><span class="o">.</span><span class="n">BID_OFFER_MATCH_TYPE</span> <span class="o">=</span> <span class="p">(</span><span class="n">BidOfferMatchAlgoEnum</span><span class="o">.</span><span class="n">EXTERNAL</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+</code></pre></div>
 
 
 <p>An example simulation setup can be found here. For more information on how to build this setup and add more markets and assets please visit this page.</p>
 <h3 id="launch-simulation">Launch Simulation<a class="headerlink" href="#launch-simulation" title="Permanent link">&para;</a></h3>
 <p>Once the entire grid architecture is modeled, including energy assets, the user can launch the simulation by running a command-line including desired setup features:</p>
-<pre class="codehilite"><code>gsy-e -l INFO run -t 10s -s 15m --setup matching_engine_setup.external_matching_engine --enable-external-connection --paused --slot-length-realtime 12</code></pre>
+<div class="codehilite"><pre><span></span><code>gsy-e -l INFO run -t 10s -s 15m --setup matching_engine_setup.external_matching_engine --enable-external-connection --paused --slot-length-realtime 12
+</code></pre></div>
 
 
 <p>After a few seconds, the simulation should begin, waiting for the API template as mentioned in the figure below:</p>
 <p><img alt="alt_text" src="../img/matching_engine_backend_simulation.png" /></p>
 <h2 id="initialise-and-start-the-api">Initialise and start the API:<a class="headerlink" href="#initialise-and-start-the-api" title="Permanent link">&para;</a></h2>
 <p>The Matching API is launched with a cli command. To launch the Matching API, the user needs to open a new terminal and activate the MatchingEngine-SDK environment:</p>
-<pre class="codehilite"><code>workon gsy-matching-engine-sdk</code></pre>
+<div class="codehilite"><pre><span></span><code>workon gsy-matching-engine-sdk
+</code></pre></div>
 
 
 <p>Now, go to the MatchingEngine-SDK directory:</p>
-<pre class="codehilite"><code>cd path_to_directory/gsy-matching-engine-sdk</code></pre>
+<div class="codehilite"><pre><span></span><code>cd path_to_directory/gsy-matching-engine-sdk
+</code></pre></div>
 
 
 <p>The api launch CLI command takes several arguments that can be listed with:</p>
-<pre class="codehilite"><code>gsy-matching-engine-sdk run --help</code></pre>
+<div class="codehilite"><pre><span></span><code>gsy-matching-engine-sdk run --help
+</code></pre></div>
 
 
 <p>The arguments are:</p>
@@ -1990,7 +2012,8 @@ ConstSettings.MASettings.BID_OFFER_MATCH_TYPE = (BidOfferMatchAlgoEnum.EXTERNAL.
 </ul>
 <h3 id="interact-with-local-simulations">Interact with local simulations<a class="headerlink" href="#interact-with-local-simulations" title="Permanent link">&para;</a></h3>
 <p>To interact with a locally running simulation (backend simulation), username, passwords, domain and websocket names and simulation_id are not necessary. There is only an additional flag required in the CLI command : --run-on-redis.</p>
-<pre class="codehilite"><code>gsy-matching-engine-sdk --log-level INFO run --setup matching_api_template --run-on-redis</code></pre>
+<div class="codehilite"><pre><span></span><code>gsy-matching-engine-sdk --log-level INFO run --setup matching_api_template --run-on-redis
+</code></pre></div>
 
 
 <h4 id="log-levels">Log levels:<a class="headerlink" href="#log-levels" title="Permanent link">&para;</a></h4>

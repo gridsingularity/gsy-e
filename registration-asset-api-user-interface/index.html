@@ -876,6 +876,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../carbon-footprint-savings/" title="Carbon Footprint and Carbon Savings" class="md-nav__link">
+      Carbon Footprint and Carbon Savings
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../trade-profile/" title="Trade Profile and Energy Peak Percentage" class="md-nav__link">
       Trade Profile and Energy Peak Percentage
     </a>
@@ -1773,15 +1785,18 @@
                 
                 <p><em>Note: The following instructions serve as a guide to launch the Grid Operator API as well.</em></p>
 <p>The Asset API is launched with a cli command. To launch the Asset API, the user needs to open a new terminal and activate the gsy-e-sdk environment (Grid Singularity Exchange SDK).</p>
-<pre class="codehilite"><code>workon gsy-e-sdk</code></pre>
+<div class="codehilite"><pre><span></span><code>workon gsy-e-sdk
+</code></pre></div>
 
 
 <p>And go to the <a href="https://github.com/gridsingularity/gsy-e-sdk" target="_blank">GSy Exchange SDK repository</a></p>
-<pre class="codehilite"><code>cd path_to_repository/gsy-e-sdk</code></pre>
+<div class="codehilite"><pre><span></span><code>cd path_to_repository/gsy-e-sdk
+</code></pre></div>
 
 
 <p>The API launch CLI command takes several arguments that can be listed with:</p>
-<pre class="codehilite"><code>gsy-e-sdk run --help</code></pre>
+<div class="codehilite"><pre><span></span><code>gsy-e-sdk run --help
+</code></pre></div>
 
 
 <p>The arguments are :</p>
@@ -1805,23 +1820,27 @@
 <p>The user can directly pass the relevant variables as arguments in the CLI commands. For that to work, the user needs to pass the domain name and websocket name (both are optional parameters and only relevant when connecting to specific domains) and the simulation_id. The simulation_id corresponds to the Universally Unique Identifier (UUID). This token can be found in the URL of a collaboration or a Canary Test Network in the User Interface. It is the UUID right after the URL <code>https://gridsingularity.com/singularity-map/results/</code> (marked in the screenshot below)</p>
 <p><img alt="alt_text" src="../img/api-overview-4.png" /></p>
 <p>To run the Asset API, users can run the following command by adapting the arguments to their case:</p>
-<pre class="codehilite"><code class="language-commandline">gsy-e-sdk --log-level INFO run  --setup asset_api_template -u username -p password --simulation-id UUID</code></pre>
+<div class="codehilite"><pre><span></span><code>gsy-e-sdk --log-level INFO run  --setup asset_api_template -u username -p password --simulation-id UUID
+</code></pre></div>
 
 
 <h4 id="environnement-variables">Environnement variables:<a class="headerlink" href="#environnement-variables" title="Permanent link">&para;</a></h4>
 <p>The last method to launch the API is send the set the required variable in the environment. To do that users can simply define those parameters at the top of their script as follows:</p>
-<pre class="codehilite"><code>os.environ[&quot;API_CLIENT_USERNAME&quot;] = &quot;username&quot;
+<div class="codehilite"><pre><span></span><code>os.environ[&quot;API_CLIENT_USERNAME&quot;] = &quot;username&quot;
 os.environ[&quot;API_CLIENT_PASSWORD&quot;] = &quot;password&quot;
-os.environ[&quot;API_CLIENT_SIMULATION_ID&quot;] = &quot;simulation_uuid&quot;</code></pre>
+os.environ[&quot;API_CLIENT_SIMULATION_ID&quot;] = &quot;simulation_uuid&quot;
+</code></pre></div>
 
 
 <p>To run the Asset API, you can run the following command by adapting the arguments to your case:</p>
-<pre class="codehilite"><code>gsy-e-sdk --log-level INFO run  --setup asset_api_template</code></pre>
+<div class="codehilite"><pre><span></span><code>gsy-e-sdk --log-level INFO run  --setup asset_api_template
+</code></pre></div>
 
 
 <h4 id="local-simulation">Local simulation:<a class="headerlink" href="#local-simulation" title="Permanent link">&para;</a></h4>
 <p>To interact with a locally running simulation (backend simulation), username, passwords, domain and websocket names and simulation_id are not necessary. There is only an additional flag required in the CLI command : <code>--run-on-redis</code>.</p>
-<pre class="codehilite"><code>gsy-e-sdk --log-level INFO run --setup asset_api_template --run-on-redis</code></pre>
+<div class="codehilite"><pre><span></span><code>gsy-e-sdk --log-level INFO run --setup asset_api_template --run-on-redis
+</code></pre></div>
 
 
 <p>Once the Asset SDK Script has been launched, you can click on “Run” in the Results page of your Collaboration in the User-Interface.</p>

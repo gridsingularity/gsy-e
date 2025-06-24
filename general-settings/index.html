@@ -876,6 +876,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../carbon-footprint-savings/" title="Carbon Footprint and Carbon Savings" class="md-nav__link">
+      Carbon Footprint and Carbon Savings
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../trade-profile/" title="Trade Profile and Energy Peak Percentage" class="md-nav__link">
       Trade Profile and Energy Peak Percentage
     </a>
@@ -1783,11 +1795,12 @@
 <h2 id="backend-simulation-configuration">Backend Simulation Configuration<a class="headerlink" href="#backend-simulation-configuration" title="Permanent link">&para;</a></h2>
 <p>In the backend, the simulation process is slightly different. There is no need to login to set up a simulation. The user first needs to download the code from our Github Repository (Installation Instructions for <a href="../linux-installation-instructions/">Linux</a>, <a href="../ios-installation-instructions/">Mac</a> and <a href="../vm-installation-instructions/">Windows</a>). In the setup-file (in Python programming language), general and <a href="trading-agents-and-strategies">trading strategy</a> settings can be defined. Examples can be found in the relevant <a href="https://github.com/gridsingularity/gsy-e/tree/master/src/gsy_e/setup" target="_blank">Grid Singularity GitHub</a> folder.</p>
 <p>This is the most basic skeleton for a setup-file:</p>
-<pre class="codehilite"><code class="language-python">```python
-from gsy_e.models.area import Area
-def get_setup(config):
-    area = Area('Grid', [])
-    return area</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="err">```</span><span class="n">python</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gsy_e.models.area</span><span class="w"> </span><span class="kn">import</span> <span class="n">Area</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_setup</span><span class="p">(</span><span class="n">config</span><span class="p">):</span>
+    <span class="n">area</span> <span class="o">=</span> <span class="n">Area</span><span class="p">(</span><span class="s1">&#39;Grid&#39;</span><span class="p">,</span> <span class="p">[])</span>
+    <span class="k">return</span> <span class="n">area</span>
+</code></pre></div>
 
 
 <p>The user can add more nested submarkets recursively by adding more instances of <code>Area</code> to the second parameter (list) of the <code>Area</code> class. If the strategy parameter is set in the <code>Area</code> class, the area is converted to a leaf node, e.g. a load. The following grid architecture is given:</p>
@@ -1808,55 +1821,56 @@ def get_setup(config):
 </ul>
 <p>Bold instances in the outline above are markets (<code>Area</code> component). For each of these markets, a <a href="../trading-agents-and-strategies/">market agent</a> is created in the background to execute offer/bid forwarding and matching.</p>
 <p>In the following, the corresponding setup-file is shown.</p>
-<pre class="codehilite"><code class="language-python">```python
-from gsy_e.models.area import Area
-from d3a.models.strategy.storage import StorageStrategy
-from gsy_e.models.strategy.load_hours import LoadHoursStrategy
-from d3a.models.strategy.pv import PVStrategy
+<div class="codehilite"><pre><span></span><code><span class="err">```</span><span class="n">python</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gsy_e.models.area</span><span class="w"> </span><span class="kn">import</span> <span class="n">Area</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">d3a.models.strategy.storage</span><span class="w"> </span><span class="kn">import</span> <span class="n">StorageStrategy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">gsy_e.models.strategy.load_hours</span><span class="w"> </span><span class="kn">import</span> <span class="n">LoadHoursStrategy</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">d3a.models.strategy.pv</span><span class="w"> </span><span class="kn">import</span> <span class="n">PVStrategy</span>
 
 
-def get_setup(config):
-    area = Area(
-        'Grid',
-        [
-            Area(
-                'House 1',
-                [
-                    Area('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=200,
-                                                                       hrs_per_day=6,
-                                                                       hrs_of_day=list(
-                                                                           range(12, 18)),
-                                                                       final_buying_rate=35)
-                         ),
-                    Area('H1 Storage1', strategy=StorageStrategy(initial_soc=50)
-                         ),
-                    Area('H1 Storage2', strategy=StorageStrategy(initial_soc=50)
-                         ),
-                ],
-                grid_fee_pct=0, grid_fee_const=0,
-            ),
-            Area(
-                'House 2',
-                [
-                    Area('H2 General Load', strategy=LoadHoursStrategy(avg_power_W=200,
-                                                                       hrs_per_day=4,
-                                                                       hrs_of_day=list(
-                                                                           range(12, 16)),
-                                                                       final_buying_rate=35)
-                         ),
-                    Area('H2 PV', strategy=PVStrategy(panel_count=4, initial_selling_rate=30,
-                                                      final_selling_rate=5)
-                         ),
+<span class="k">def</span><span class="w"> </span><span class="nf">get_setup</span><span class="p">(</span><span class="n">config</span><span class="p">):</span>
+    <span class="n">area</span> <span class="o">=</span> <span class="n">Area</span><span class="p">(</span>
+        <span class="s1">&#39;Grid&#39;</span><span class="p">,</span>
+        <span class="p">[</span>
+            <span class="n">Area</span><span class="p">(</span>
+                <span class="s1">&#39;House 1&#39;</span><span class="p">,</span>
+                <span class="p">[</span>
+                    <span class="n">Area</span><span class="p">(</span><span class="s1">&#39;H1 General Load&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">LoadHoursStrategy</span><span class="p">(</span><span class="n">avg_power_W</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
+                                                                       <span class="n">hrs_per_day</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>
+                                                                       <span class="n">hrs_of_day</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span>
+                                                                           <span class="nb">range</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">18</span><span class="p">)),</span>
+                                                                       <span class="n">final_buying_rate</span><span class="o">=</span><span class="mi">35</span><span class="p">)</span>
+                         <span class="p">),</span>
+                    <span class="n">Area</span><span class="p">(</span><span class="s1">&#39;H1 Storage1&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">StorageStrategy</span><span class="p">(</span><span class="n">initial_soc</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+                         <span class="p">),</span>
+                    <span class="n">Area</span><span class="p">(</span><span class="s1">&#39;H1 Storage2&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">StorageStrategy</span><span class="p">(</span><span class="n">initial_soc</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+                         <span class="p">),</span>
+                <span class="p">],</span>
+                <span class="n">grid_fee_pct</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">grid_fee_const</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="n">Area</span><span class="p">(</span>
+                <span class="s1">&#39;House 2&#39;</span><span class="p">,</span>
+                <span class="p">[</span>
+                    <span class="n">Area</span><span class="p">(</span><span class="s1">&#39;H2 General Load&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">LoadHoursStrategy</span><span class="p">(</span><span class="n">avg_power_W</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
+                                                                       <span class="n">hrs_per_day</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+                                                                       <span class="n">hrs_of_day</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span>
+                                                                           <span class="nb">range</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">16</span><span class="p">)),</span>
+                                                                       <span class="n">final_buying_rate</span><span class="o">=</span><span class="mi">35</span><span class="p">)</span>
+                         <span class="p">),</span>
+                    <span class="n">Area</span><span class="p">(</span><span class="s1">&#39;H2 PV&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">PVStrategy</span><span class="p">(</span><span class="n">panel_count</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">initial_selling_rate</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
+                                                      <span class="n">final_selling_rate</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+                         <span class="p">),</span>
 
-                ],
-                grid_fee_pct=0, grid_fee_const=0,
+                <span class="p">],</span>
+                <span class="n">grid_fee_pct</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">grid_fee_const</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
 
-            ),
+            <span class="p">),</span>
 
-        ],
-        config=config
-    )
-    return area</code></pre>
+        <span class="p">],</span>
+        <span class="n">config</span><span class="o">=</span><span class="n">config</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">area</span>
+</code></pre></div>
 
 
 <p>Additionally the user has the possibility to change the default general settings in two different ways:</p>
@@ -1872,12 +1886,13 @@ def get_setup(config):
 <li>Grid_fee_type (if equal to 1: <a href="../grid-fee-accounting/#constant-grid-fee-calculation">Constant grid fee</a>, if equal to 2 : <a href="../grid-fee-accounting/#percentage-grid-fee-calculation">Percentage grid fee</a>)</li>
 </ul>
 <p>Here is an example to setup a simulation with the Two-Sided Pay-as-Bid market type, constant grid fee and default min (0cts/kWh) and max to (35cts/kWh) energy rate for all <a href="../consumption/">loads</a>:</p>
-<pre class="codehilite"><code class="language-python">from gsy_framework.constants_limits import ConstSettings
-def get_setup(config):
-    ConstSettings.MASettings.MARKET_TYPE = 2
-    ConstSettings.LoadSettings.MIN_ENERGY_RATE = 0
-    ConstSettings.LoadSettings.MAX_ENERGY_RATE = 35
-    ConstSettings.MASettings.GRID_FEE_TYPE = 1</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gsy_framework.constants_limits</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConstSettings</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_setup</span><span class="p">(</span><span class="n">config</span><span class="p">):</span>
+    <span class="n">ConstSettings</span><span class="o">.</span><span class="n">MASettings</span><span class="o">.</span><span class="n">MARKET_TYPE</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="n">ConstSettings</span><span class="o">.</span><span class="n">LoadSettings</span><span class="o">.</span><span class="n">MIN_ENERGY_RATE</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">ConstSettings</span><span class="o">.</span><span class="n">LoadSettings</span><span class="o">.</span><span class="n">MAX_ENERGY_RATE</span> <span class="o">=</span> <span class="mi">35</span>
+    <span class="n">ConstSettings</span><span class="o">.</span><span class="n">MASettings</span><span class="o">.</span><span class="n">GRID_FEE_TYPE</span> <span class="o">=</span> <span class="mi">1</span>
+</code></pre></div>
 
 
 <h3 id="d3a-settingsjson">d3a-settings.json<a class="headerlink" href="#d3a-settingsjson" title="Permanent link">&para;</a></h3>
@@ -1896,26 +1911,27 @@ def get_setup(config):
 <li>max_panel_power_W</li>
 </ul>
 <p>In order to update some of these parameters (starred in list above), please use <code>update_config_parameters</code> method to update the general configuration parameters in the setup file:</p>
-<pre class="codehilite"><code class="language-python">def get_setup(config):
-    config.update_config_parameters(grid_fee_pct=5,
-                                    grid_fee_const=35,
-                                    cloud_coverage=2,
-                                    pv_user_profile=&quot;&lt;path&gt;/&lt;profile_name&gt;&quot;,
-                                    market_maker_rate=30)
-   area = Area(
-        'Grid',
-        [
-            Area('General Load', strategy=LoadHoursStrategy(avg_power_W=200,
-                                                            hrs_per_day=4,
-                                                            hrs_of_day=list(range(12, 16)),
-                                                            final_buying_rate=35)
-                 ),
-            Area('PV', strategy=PVStrategy(4, 80)
-                 ),
-        ],
-        config=config
-    )
-    return area</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_setup</span><span class="p">(</span><span class="n">config</span><span class="p">):</span>
+    <span class="n">config</span><span class="o">.</span><span class="n">update_config_parameters</span><span class="p">(</span><span class="n">grid_fee_pct</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+                                    <span class="n">grid_fee_const</span><span class="o">=</span><span class="mi">35</span><span class="p">,</span>
+                                    <span class="n">cloud_coverage</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+                                    <span class="n">pv_user_profile</span><span class="o">=</span><span class="s2">&quot;&lt;path&gt;/&lt;profile_name&gt;&quot;</span><span class="p">,</span>
+                                    <span class="n">market_maker_rate</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+   <span class="n">area</span> <span class="o">=</span> <span class="n">Area</span><span class="p">(</span>
+        <span class="s1">&#39;Grid&#39;</span><span class="p">,</span>
+        <span class="p">[</span>
+            <span class="n">Area</span><span class="p">(</span><span class="s1">&#39;General Load&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">LoadHoursStrategy</span><span class="p">(</span><span class="n">avg_power_W</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
+                                                            <span class="n">hrs_per_day</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+                                                            <span class="n">hrs_of_day</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">16</span><span class="p">)),</span>
+                                                            <span class="n">final_buying_rate</span><span class="o">=</span><span class="mi">35</span><span class="p">)</span>
+                 <span class="p">),</span>
+            <span class="n">Area</span><span class="p">(</span><span class="s1">&#39;PV&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">PVStrategy</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">80</span><span class="p">)</span>
+                 <span class="p">),</span>
+        <span class="p">],</span>
+        <span class="n">config</span><span class="o">=</span><span class="n">config</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">area</span>
+</code></pre></div>
 
 
 <h4 id="simulation-launch">Simulation launch<a class="headerlink" href="#simulation-launch" title="Permanent link">&para;</a></h4>
@@ -1928,14 +1944,16 @@ def get_setup(config):
 <li>--slot-length-realtime: Desired duration of slot in realtime [default: 0s]</li>
 </ul>
 <p>Example simulation call:</p>
-<pre class="codehilite"><code class="language-commandline">d3a -l ERROR run --duration=1d --tick-length=1s --slot-length=15m --cloud-coverage=0 --setup default_2a</code></pre>
+<div class="codehilite"><pre><span></span><code>d3a -l ERROR run --duration=1d --tick-length=1s --slot-length=15m --cloud-coverage=0 --setup default_2a
+</code></pre></div>
 
 
 <p>Getting help in the command line:</p>
-<pre class="codehilite"><code class="language-commandline">d3a --help returns:</code></pre>
+<div class="codehilite"><pre><span></span><code>d3a --help returns:
+</code></pre></div>
 
 
-<pre class="codehilite"><code>Usage: d3a [OPTIONS] COMMAND [ARGS]...
+<div class="codehilite"><pre><span></span><code>Usage: d3a [OPTIONS] COMMAND [ARGS]...
 
 
 Options:
@@ -2076,7 +2094,8 @@ Options:
 
   --start-date DATE             Start date of the Simulation (YYYY-MM-DD)  [default: 2019-09-27]
 
-  --help                        Show this message and exit.</code></pre>
+  --help                        Show this message and exit.
+</code></pre></div>
                 
                   
                 

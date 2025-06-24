@@ -876,6 +876,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../carbon-footprint-savings/" title="Carbon Footprint and Carbon Savings" class="md-nav__link">
+      Carbon Footprint and Carbon Savings
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../trade-profile/" title="Trade Profile and Energy Peak Percentage" class="md-nav__link">
       Trade Profile and Energy Peak Percentage
     </a>
@@ -1827,66 +1839,74 @@
                 
                 <p>In the Matching API, seven event types are triggered while a simulation is running. To facilitate offer and bid requests and clearing, the client will get notified via events. It is possible to capture these events and react to them by overriding the corresponding methods.</p>
 <h3 id="each-new-market-slot">Each new market slot<a class="headerlink" href="#each-new-market-slot" title="Permanent link">&para;</a></h3>
-<pre class="codehilite"><code>def on_market_cycle(self, data):</code></pre>
+<div class="codehilite"><pre><span></span><code>def on_market_cycle(self, data):
+</code></pre></div>
 
 
 <p>The method  on_market_cycle is triggered at the start of every market slot.</p>
 <h3 id="on-of-market-completion">On % of market completion<a class="headerlink" href="#on-of-market-completion" title="Permanent link">&para;</a></h3>
-<pre class="codehilite"><code>def on_tick(self, data):</code></pre>
+<div class="codehilite"><pre><span></span><code>def on_tick(self, data):
+</code></pre></div>
 
 
 <p>The method on_tick is called when a new <a href="../market-types/#market-ticks">tick</a> is started, at each 1-2% of the market slot completion. It performs an HTTP request to get all open bids and offers posted on the exchange. The response can be received in the method named <a href="./#on-offers-bids-response">on_offers_bids_response</a>.</p>
 <h3 id="on-offers-bids-response">On offers bids response<a class="headerlink" href="#on-offers-bids-response" title="Permanent link">&para;</a></h3>
-<pre class="codehilite"><code>def on_offers_bids_response(self, data):</code></pre>
+<div class="codehilite"><pre><span></span><code>def on_offers_bids_response(self, data):
+</code></pre></div>
 
 
 <p>The method on_offers_bids_response is triggered when open <a href="../trading-agents-and-strategies/">offers/bids</a> responses are returned. The <strong>data</strong> dictionary received from the exchange contains information on all open bids/offers posted. The structure is shown below:</p>
-<pre class="codehilite"><code class="language-json">{'8f7b7e7b-0f4a-490b-853f-6017af84ef60':
-{‘2021-12-20T00:00’:
-{'bids': [{'type': 'Bid', 'id': '5934bfff-43c6-4870-8f1f-52bb8374a1f9',
-'energy': 0.05,
-'energy_rate': 2.5,
-'original_price': 0.125,
-‘creation_time’: ‘2021-12-20T00.00:25’,
-‘time_slot’: ‘2021-12-20T00:00’,
-‘attributes’: None,
-‘requirements’: None,
-'buyer_origin': 'load',
-'buyer_origin_id': 'fcbe2390-5bcf-4cbd-b4f4-7c6d44fda34f',
-'buyer_id': 'fcbe2390-5bcf-4cbd-b4f4-7c6d44fda34f',
-'buyer': 'load'}],
-'offers': [{'type': 'Offer', 'id': 'c4b10dd5-eb5f-4807-859a-9b6a0592a21c',
-'energy': 1.25,
-'energy_rate': 29.64285714288,
-'original_price': 37.0535714286,
-‘creation_time’: ‘2021-12-20T00.00:25’,
-‘time_slot’: ‘2021-12-20T00:00’,
-‘attributes’: None,
-‘requirements’: None,
-'seller': 'IAA House 2',
-'seller_origin': 'H1 Storage1',
-'seller_origin_id': 'e9faeda1-ce20-4789-b61c-61559a95f9fb',
-'seller_id': 'a4403967-3e47-4d47-8c63-b5145d6c1e42'} ]}]}}</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="p">{</span><span class="err">&#39;</span><span class="mi">8</span><span class="kc">f</span><span class="mi">7</span><span class="err">b</span><span class="mf">7e7</span><span class="err">b</span><span class="mi">-0</span><span class="kc">f</span><span class="mi">4</span><span class="err">a</span><span class="mi">-490</span><span class="err">b</span><span class="mi">-853</span><span class="kc">f</span><span class="mi">-6017</span><span class="err">a</span><span class="kc">f</span><span class="mf">84e</span><span class="kc">f</span><span class="mi">60</span><span class="err">&#39;</span><span class="p">:</span>
+<span class="p">{</span><span class="err">‘</span><span class="mi">2021-12-20</span><span class="err">T</span><span class="mi">00</span><span class="p">:</span><span class="mi">00</span><span class="err">’</span><span class="p">:</span>
+<span class="p">{</span><span class="err">&#39;bids&#39;</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span><span class="err">&#39;</span><span class="kc">t</span><span class="err">ype&#39;</span><span class="p">:</span><span class="w"> </span><span class="err">&#39;Bid&#39;</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;id&#39;</span><span class="p">:</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">5934</span><span class="err">b</span><span class="kc">fff</span><span class="mi">-43</span><span class="err">c</span><span class="mi">6-4870-8</span><span class="kc">f</span><span class="mi">1</span><span class="kc">f</span><span class="mi">-52</span><span class="err">bb</span><span class="mi">8374</span><span class="err">a</span><span class="mi">1</span><span class="kc">f</span><span class="mi">9</span><span class="err">&#39;</span><span class="p">,</span>
+<span class="err">&#39;e</span><span class="kc">ner</span><span class="err">gy&#39;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.05</span><span class="p">,</span>
+<span class="err">&#39;e</span><span class="kc">ner</span><span class="err">gy_ra</span><span class="kc">te</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mf">2.5</span><span class="p">,</span>
+<span class="err">&#39;origi</span><span class="kc">nal</span><span class="err">_price&#39;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.125</span><span class="p">,</span>
+<span class="err">‘crea</span><span class="kc">t</span><span class="err">io</span><span class="kc">n</span><span class="err">_</span><span class="kc">t</span><span class="err">ime’</span><span class="p">:</span><span class="w"> </span><span class="err">‘</span><span class="mi">2021-12-20</span><span class="err">T</span><span class="mf">00.00</span><span class="p">:</span><span class="mi">25</span><span class="err">’</span><span class="p">,</span>
+<span class="err">‘</span><span class="kc">t</span><span class="err">ime_slo</span><span class="kc">t</span><span class="err">’</span><span class="p">:</span><span class="w"> </span><span class="err">‘</span><span class="mi">2021-12-20</span><span class="err">T</span><span class="mi">00</span><span class="p">:</span><span class="mi">00</span><span class="err">’</span><span class="p">,</span>
+<span class="err">‘a</span><span class="kc">ttr</span><span class="err">ibu</span><span class="kc">tes</span><span class="err">’</span><span class="p">:</span><span class="w"> </span><span class="err">No</span><span class="kc">ne</span><span class="p">,</span>
+<span class="err">‘requireme</span><span class="kc">nts</span><span class="err">’</span><span class="p">:</span><span class="w"> </span><span class="err">No</span><span class="kc">ne</span><span class="p">,</span>
+<span class="err">&#39;buyer_origi</span><span class="kc">n</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="err">&#39;load&#39;</span><span class="p">,</span>
+<span class="err">&#39;buyer_origi</span><span class="kc">n</span><span class="err">_id&#39;</span><span class="p">:</span><span class="w"> </span><span class="err">&#39;</span><span class="kc">f</span><span class="err">cbe</span><span class="mi">2390-5</span><span class="err">bc</span><span class="kc">f</span><span class="mi">-4</span><span class="err">cbd</span><span class="mi">-</span><span class="err">b</span><span class="mi">4</span><span class="kc">f</span><span class="mi">4-7</span><span class="err">c</span><span class="mi">6</span><span class="err">d</span><span class="mi">44</span><span class="kc">f</span><span class="err">da</span><span class="mi">34</span><span class="kc">f</span><span class="err">&#39;</span><span class="p">,</span>
+<span class="err">&#39;buyer_id&#39;</span><span class="p">:</span><span class="w"> </span><span class="err">&#39;</span><span class="kc">f</span><span class="err">cbe</span><span class="mi">2390-5</span><span class="err">bc</span><span class="kc">f</span><span class="mi">-4</span><span class="err">cbd</span><span class="mi">-</span><span class="err">b</span><span class="mi">4</span><span class="kc">f</span><span class="mi">4-7</span><span class="err">c</span><span class="mi">6</span><span class="err">d</span><span class="mi">44</span><span class="kc">f</span><span class="err">da</span><span class="mi">34</span><span class="kc">f</span><span class="err">&#39;</span><span class="p">,</span>
+<span class="err">&#39;buyer&#39;</span><span class="p">:</span><span class="w"> </span><span class="err">&#39;load&#39;</span><span class="p">}],</span>
+<span class="err">&#39;o</span><span class="kc">ffers</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span><span class="err">&#39;</span><span class="kc">t</span><span class="err">ype&#39;</span><span class="p">:</span><span class="w"> </span><span class="err">&#39;O</span><span class="kc">ffer</span><span class="err">&#39;</span><span class="p">,</span><span class="w"> </span><span class="err">&#39;id&#39;</span><span class="p">:</span><span class="w"> </span><span class="err">&#39;c</span><span class="mi">4</span><span class="err">b</span><span class="mi">10</span><span class="err">dd</span><span class="mf">5-e</span><span class="err">b</span><span class="mi">5</span><span class="kc">f</span><span class="mi">-4807-859</span><span class="err">a</span><span class="mi">-9</span><span class="err">b</span><span class="mi">6</span><span class="err">a</span><span class="mi">0592</span><span class="err">a</span><span class="mi">21</span><span class="err">c&#39;</span><span class="p">,</span>
+<span class="err">&#39;e</span><span class="kc">ner</span><span class="err">gy&#39;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.25</span><span class="p">,</span>
+<span class="err">&#39;e</span><span class="kc">ner</span><span class="err">gy_ra</span><span class="kc">te</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mf">29.64285714288</span><span class="p">,</span>
+<span class="err">&#39;origi</span><span class="kc">nal</span><span class="err">_price&#39;</span><span class="p">:</span><span class="w"> </span><span class="mf">37.0535714286</span><span class="p">,</span>
+<span class="err">‘crea</span><span class="kc">t</span><span class="err">io</span><span class="kc">n</span><span class="err">_</span><span class="kc">t</span><span class="err">ime’</span><span class="p">:</span><span class="w"> </span><span class="err">‘</span><span class="mi">2021-12-20</span><span class="err">T</span><span class="mf">00.00</span><span class="p">:</span><span class="mi">25</span><span class="err">’</span><span class="p">,</span>
+<span class="err">‘</span><span class="kc">t</span><span class="err">ime_slo</span><span class="kc">t</span><span class="err">’</span><span class="p">:</span><span class="w"> </span><span class="err">‘</span><span class="mi">2021-12-20</span><span class="err">T</span><span class="mi">00</span><span class="p">:</span><span class="mi">00</span><span class="err">’</span><span class="p">,</span>
+<span class="err">‘a</span><span class="kc">ttr</span><span class="err">ibu</span><span class="kc">tes</span><span class="err">’</span><span class="p">:</span><span class="w"> </span><span class="err">No</span><span class="kc">ne</span><span class="p">,</span>
+<span class="err">‘requireme</span><span class="kc">nts</span><span class="err">’</span><span class="p">:</span><span class="w"> </span><span class="err">No</span><span class="kc">ne</span><span class="p">,</span>
+<span class="err">&#39;seller&#39;</span><span class="p">:</span><span class="w"> </span><span class="err">&#39;IAA</span><span class="w"> </span><span class="err">House</span><span class="w"> </span><span class="mi">2</span><span class="err">&#39;</span><span class="p">,</span>
+<span class="err">&#39;seller_origi</span><span class="kc">n</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="err">&#39;H</span><span class="mi">1</span><span class="w"> </span><span class="err">S</span><span class="kc">t</span><span class="err">orage</span><span class="mi">1</span><span class="err">&#39;</span><span class="p">,</span>
+<span class="err">&#39;seller_origi</span><span class="kc">n</span><span class="err">_id&#39;</span><span class="p">:</span><span class="w"> </span><span class="err">&#39;e</span><span class="mi">9</span><span class="kc">fae</span><span class="err">da</span><span class="mi">1-</span><span class="err">ce</span><span class="mi">20-4789-</span><span class="err">b</span><span class="mi">61</span><span class="err">c</span><span class="mi">-61559</span><span class="err">a</span><span class="mi">95</span><span class="kc">f</span><span class="mi">9</span><span class="kc">f</span><span class="err">b&#39;</span><span class="p">,</span>
+<span class="err">&#39;seller_id&#39;</span><span class="p">:</span><span class="w"> </span><span class="err">&#39;a</span><span class="mf">4403967-3e47-4</span><span class="err">d</span><span class="mi">47-8</span><span class="err">c</span><span class="mi">63-</span><span class="err">b</span><span class="mi">5145</span><span class="err">d</span><span class="mi">6</span><span class="err">c</span><span class="mf">1e42</span><span class="err">&#39;</span><span class="p">}</span><span class="w"> </span><span class="p">]}]}}</span>
+</code></pre></div>
 
 
 <p>where '8f7b7e7b-0f4a-490b-853f-6017af84ef60' refers to a unique identifier of both the market slot and the market in which the corresponding bids / offers have been posted.</p>
 <h3 id="on-matched-recommendations-response">On matched recommendations response<a class="headerlink" href="#on-matched-recommendations-response" title="Permanent link">&para;</a></h3>
-<pre class="codehilite"><code>def on_matched_recommendations_response(self, data):</code></pre>
+<div class="codehilite"><pre><span></span><code>def on_matched_recommendations_response(self, data):
+</code></pre></div>
 
 
 <p>When the matching engine client sends trades recommendations, this function is triggered and a response is passed through the <strong>data</strong> dictionary.</p>
 <h3 id="on-area-map-response">On area map response<a class="headerlink" href="#on-area-map-response" title="Permanent link">&para;</a></h3>
-<pre class="codehilite"><code>def on_area_map_response(self, data):</code></pre>
+<div class="codehilite"><pre><span></span><code>def on_area_map_response(self, data):
+</code></pre></div>
 
 
 <p>This method is triggered once at the beginning of the simulation and it is used to build the list of market IDs from which the user wants to request bids and offers from through the <a href="../matching-api-commands/#requestoffersbids">request_offers_bids</a> command.</p>
 <h3 id="on-event-or-response">On event or response<a class="headerlink" href="#on-event-or-response" title="Permanent link">&para;</a></h3>
-<pre class="codehilite"><code>def on_event_or_response(self, data):</code></pre>
+<div class="codehilite"><pre><span></span><code>def on_event_or_response(self, data):
+</code></pre></div>
 
 
 <p>Each time an event arrives or any response (from sending a batch of recommendations) is triggered, this information is passed through <code>on_event_or_response</code>.</p>
 <h3 id="on-finish">On finish<a class="headerlink" href="#on-finish" title="Permanent link">&para;</a></h3>
-<pre class="codehilite"><code>def on_finish(self, data):</code></pre>
+<div class="codehilite"><pre><span></span><code>def on_finish(self, data):
+</code></pre></div>
 
 
 <p>This executes when the simulation ends and can be used to trigger exporting data, training a model or exiting the code.</p>

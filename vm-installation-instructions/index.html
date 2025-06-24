@@ -965,6 +965,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../carbon-footprint-savings/" title="Carbon Footprint and Carbon Savings" class="md-nav__link">
+      Carbon Footprint and Carbon Savings
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../trade-profile/" title="Trade Profile and Energy Peak Percentage" class="md-nav__link">
       Trade Profile and Energy Peak Percentage
     </a>
@@ -1846,81 +1858,97 @@
 <h3 id="step-2-install-virtualbox-and-vagrant">Step 2: Install Virtualbox and Vagrant<a class="headerlink" href="#step-2-install-virtualbox-and-vagrant" title="Permanent link">&para;</a></h3>
 <p>It is recommended to use Chocolatey as a package management tool for Windows.</p>
 <p>Open your terminal (cmd.exe) as administrator and install chocolatey by running the following command :</p>
-<pre class="codehilite"><code>@&quot;%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe&quot; -NoProfile -InputFormat None -ExecutionPolicy Bypass -Command &quot;[System.Net.ServicePointManager]::SecurityProtocol = 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))&quot; &amp;&amp; SET &quot;PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin&quot;</code></pre>
+<div class="codehilite"><pre><span></span><code>@&quot;%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe&quot; -NoProfile -InputFormat None -ExecutionPolicy Bypass -Command &quot;[System.Net.ServicePointManager]::SecurityProtocol = 3072; iex ((New-Object System.Net.WebClient).DownloadString(&#39;https://chocolatey.org/install.ps1&#39;))&quot; &amp;&amp; SET &quot;PATH=%PATH%;%ALLUSERSPROFILE%\chocolatey\bin&quot;
+</code></pre></div>
 
 
 <p>Install Virtualbox from a Windows console</p>
-<pre class="codehilite"><code>choco install virtualbox</code></pre>
+<div class="codehilite"><pre><span></span><code>choco install virtualbox
+</code></pre></div>
 
 
 <p>Install Vagrant (this is a software wrapper around virtualbox and other supervisors, that allows easy creation, download, and installation of virtual machines.</p>
-<pre class="codehilite"><code>choco install vagrant
-vagrant plugin install vagrant-disksize</code></pre>
+<div class="codehilite"><pre><span></span><code>choco install vagrant
+vagrant plugin install vagrant-disksize
+</code></pre></div>
 
 
 <h3 id="step-3-install-grid-singularity-exchange-while-sharing-a-folder-between-guest-and-host-machine-via-vagrant">Step 3: Install Grid Singularity Exchange while sharing a folder between guest and host machine via vagrant<a class="headerlink" href="#step-3-install-grid-singularity-exchange-while-sharing-a-folder-between-guest-and-host-machine-via-vagrant" title="Permanent link">&para;</a></h3>
 <p>Create a new-folder that you want to share across guest and host machines.</p>
 <p>Add the Vagrantfile from Grid Singularity Exchange repository into your newly created folder.</p>
 <p>Open a terminal and go into your newly-created folder with:</p>
-<pre class="codehilite"><code>cd &lt;path-to-your-folder&gt;</code></pre>
+<div class="codehilite"><pre><span></span><code>cd &lt;path-to-your-folder&gt;
+</code></pre></div>
 
 
 <p>If it is your first time do:</p>
-<pre class="codehilite"><code>vagrant up</code></pre>
+<div class="codehilite"><pre><span></span><code>vagrant up
+</code></pre></div>
 
 
 <p>If vagrant was already running, please delete re-initialize with the following steps first :</p>
 <ul>
 <li>Delete old vagrant images via :</li>
 </ul>
-<pre class="codehilite"><code>vagrant destroy --force</code></pre>
+<div class="codehilite"><pre><span></span><code>vagrant destroy --force
+</code></pre></div>
 
 
 <ul>
 <li>Remove residues of old vagrant boxes via :</li>
 </ul>
-<pre class="codehilite"><code>vagrant box remove ubuntu/&lt;your-box-name&gt; --all --force</code></pre>
+<div class="codehilite"><pre><span></span><code>vagrant box remove ubuntu/&lt;your-box-name&gt; --all --force
+</code></pre></div>
 
 
 <h3 id="step-4-reload-your-virtual-machine">Step 4: Reload your virtual machine:<a class="headerlink" href="#step-4-reload-your-virtual-machine" title="Permanent link">&para;</a></h3>
-<pre class="codehilite"><code>vagrant reload</code></pre>
+<div class="codehilite"><pre><span></span><code>vagrant reload
+</code></pre></div>
 
 
 <h3 id="step-5-access-your-virtual-machine-terminal-to-run-grid-singularity-exchange">Step 5: Access your virtual machine terminal to run Grid Singularity Exchange:<a class="headerlink" href="#step-5-access-your-virtual-machine-terminal-to-run-grid-singularity-exchange" title="Permanent link">&para;</a></h3>
-<pre class="codehilite"><code>vagrant ssh</code></pre>
+<div class="codehilite"><pre><span></span><code>vagrant ssh
+</code></pre></div>
 
 
 <h3 id="step-6-share-folder-to-windows-host-by-running-these-three-commands">Step 6: Share folder to Windows host by running these three commands:<a class="headerlink" href="#step-6-share-folder-to-windows-host-by-running-these-three-commands" title="Permanent link">&para;</a></h3>
-<pre class="codehilite"><code>cp -r /home/vagrant/gsy-e/vagrant/</code></pre>
+<div class="codehilite"><pre><span></span><code>cp -r /home/vagrant/gsy-e/vagrant/
+</code></pre></div>
 
 
 <p>Share gsy-e-sdk:</p>
-<pre class="codehilite"><code>cp -r /home/vagrant/gsy-e-sdk/vagrant/</code></pre>
+<div class="codehilite"><pre><span></span><code>cp -r /home/vagrant/gsy-e-sdk/vagrant/
+</code></pre></div>
 
 
 <p>If you have results you want to export to Windows :</p>
-<pre class="codehilite"><code>cd /home/vagrant/gsy-e-simulation/
+<div class="codehilite"><pre><span></span><code>cd /home/vagrant/gsy-e-simulation/
 zip -r &lt;your-zip-filename&gt;.zip ./&lt;folder-to-be-zipped&gt;/
-cp -r &lt;your-zip-filename&gt;.zip /vagrant/</code></pre>
+cp -r &lt;your-zip-filename&gt;.zip /vagrant/
+</code></pre></div>
 
 
 <h3 id="step-7-run-a-gsy-e-simulation">Step 7: Run a gsy-e simulation<a class="headerlink" href="#step-7-run-a-gsy-e-simulation" title="Permanent link">&para;</a></h3>
 <p>Activate the gsy-e environment:</p>
-<pre class="codehilite"><code>source /home/vagrant/envs/gsy-e/bin/activate</code></pre>
+<div class="codehilite"><pre><span></span><code>source /home/vagrant/envs/gsy-e/bin/activate
+</code></pre></div>
 
 
 <p>Run simulation with:</p>
-<pre class="codehilite"><code>cd /vagrant/gsy-e
-gsy-e run</code></pre>
+<div class="codehilite"><pre><span></span><code>cd /vagrant/gsy-e
+gsy-e run
+</code></pre></div>
 
 
 <h3 id="step-8-run-the-grid-singularity-exchange-sdk-in-vagrant">Step 8: Run the Grid Singularity Exchange SDK in Vagrant<a class="headerlink" href="#step-8-run-the-grid-singularity-exchange-sdk-in-vagrant" title="Permanent link">&para;</a></h3>
 <p>Activate the Exchange SDK environment:</p>
-<pre class="codehilite"><code>source /home/vagrant/envs/exchange-sdk/bin/activate</code></pre>
+<div class="codehilite"><pre><span></span><code>source /home/vagrant/envs/exchange-sdk/bin/activate
+</code></pre></div>
 
 
 <p>To run your SDK script, run the following command (template here):</p>
-<pre class="codehilite"><code>python your_sdk_script.py</code></pre>
+<div class="codehilite"><pre><span></span><code>python your_sdk_script.py
+</code></pre></div>
                 
                   
                 

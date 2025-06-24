@@ -999,6 +999,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../carbon-footprint-savings/" title="Carbon Footprint and Carbon Savings" class="md-nav__link">
+      Carbon Footprint and Carbon Savings
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../trade-profile/" title="Trade Profile and Energy Peak Percentage" class="md-nav__link">
       Trade Profile and Energy Peak Percentage
     </a>
@@ -1909,50 +1921,59 @@
                 
                 <h3 id="step-1-installation-prerequisites">Step 1: Installation prerequisites:<a class="headerlink" href="#step-1-installation-prerequisites" title="Permanent link">&para;</a></h3>
 <h4 id="make-sure-the-command-line-compiler-tools-are-installed">make sure the command line compiler tools are installed:<a class="headerlink" href="#make-sure-the-command-line-compiler-tools-are-installed" title="Permanent link">&para;</a></h4>
-<pre class="codehilite"><code>xcode-select --install</code></pre>
+<div class="codehilite"><pre><span></span><code>xcode-select --install
+</code></pre></div>
 
 
 <p>(Select <code>Install</code> in the window that opens)</p>
 <h3 id="step-2-install-homebrew">Step 2: Install homebrew<a class="headerlink" href="#step-2-install-homebrew" title="Permanent link">&para;</a></h3>
-<pre class="codehilite"><code>/bin/bash -c &quot;$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)&quot;</code></pre>
+<div class="codehilite"><pre><span></span><code>/bin/bash -c &quot;$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)&quot;
+</code></pre></div>
 
 
 <h3 id="step-3-install-other-required-libraries">Step 3: Install other required libraries:<a class="headerlink" href="#step-3-install-other-required-libraries" title="Permanent link">&para;</a></h3>
-<pre class="codehilite"><code>brew install automake libtool pkg-config libffi gmp openssl readline xz</code></pre>
+<div class="codehilite"><pre><span></span><code>brew install automake libtool pkg-config libffi gmp openssl readline xz
+</code></pre></div>
 
 
 <h3 id="step-4-install-pyenv">Step 4: Install pyenv:<a class="headerlink" href="#step-4-install-pyenv" title="Permanent link">&para;</a></h3>
-<pre class="codehilite"><code>brew install pyenv
-echo -e 'if command -v pyenv 1&gt;/dev/null 2&gt;&amp;1; then\n eval &quot;$(pyenv init -)&quot;\nfi' &gt;&gt; ~/.bash_profile</code></pre>
+<div class="codehilite"><pre><span></span><code>brew install pyenv
+echo -e &#39;if command -v pyenv 1&gt;/dev/null 2&gt;&amp;1; then\n eval &quot;$(pyenv init -)&quot;\nfi&#39; &gt;&gt; ~/.bash_profile
+</code></pre></div>
 
 
 <h3 id="step-5-close-and-re-open-the-terminal">Step 5: Close and re-open the terminal<a class="headerlink" href="#step-5-close-and-re-open-the-terminal" title="Permanent link">&para;</a></h3>
 <h3 id="step-6-install-python-36-and-set-as-default">Step 6: Install Python 3.6 and set as default:<a class="headerlink" href="#step-6-install-python-36-and-set-as-default" title="Permanent link">&para;</a></h3>
-<pre class="codehilite"><code>pyenv install 3.8.6
-pyenv global 3.8.6</code></pre>
+<div class="codehilite"><pre><span></span><code>pyenv install 3.8.6
+pyenv global 3.8.6
+</code></pre></div>
 
 
 <h3 id="step-7-install-virtualenvwrapper">Step 7: Install virtualenvwrapper:<a class="headerlink" href="#step-7-install-virtualenvwrapper" title="Permanent link">&para;</a></h3>
-<pre class="codehilite"><code>pip3 install virtualenvwrapper
-echo -e 'export WORKON_HOME=~/Envs\nsource ~/.pyenv/versions/3.8.6/bin/virtualenvwrapper.sh' &gt;&gt; ~/.bash_profile</code></pre>
+<div class="codehilite"><pre><span></span><code>pip3 install virtualenvwrapper
+echo -e &#39;export WORKON_HOME=~/Envs\nsource ~/.pyenv/versions/3.8.6/bin/virtualenvwrapper.sh&#39; &gt;&gt; ~/.bash_profile
+</code></pre></div>
 
 
 <h3 id="step-8-setup-paths-for-compiling-python-libraries">Step 8: Setup paths for compiling Python libraries:<a class="headerlink" href="#step-8-setup-paths-for-compiling-python-libraries" title="Permanent link">&para;</a></h3>
-<pre class="codehilite"><code>echo -e 'BREW_PREFIX=&quot;$(brew --prefix openssl)&quot;\nexport CFLAGS=&quot;-I${BREW_PREFIX}/include&quot;\nexport LDFLAGS=&quot;-L${BREW_PREFIX}/lib&quot;' &gt;&gt; ~/.bash_profile</code></pre>
+<div class="codehilite"><pre><span></span><code>echo -e &#39;BREW_PREFIX=&quot;$(brew --prefix openssl)&quot;\nexport CFLAGS=&quot;-I${BREW_PREFIX}/include&quot;\nexport LDFLAGS=&quot;-L${BREW_PREFIX}/lib&quot;&#39; &gt;&gt; ~/.bash_profile
+</code></pre></div>
 
 
 <h3 id="step-9-close-and-re-open-the-terminal">Step 9: Close and re-open the terminal<a class="headerlink" href="#step-9-close-and-re-open-the-terminal" title="Permanent link">&para;</a></h3>
 <h3 id="step-10-clone-gsy-e-repository-do-this-inside-the-directory-where-you-want-the-project-to-be">Step 10: Clone gsy-e repository (do this inside the directory where you want the project to be):<a class="headerlink" href="#step-10-clone-gsy-e-repository-do-this-inside-the-directory-where-you-want-the-project-to-be" title="Permanent link">&para;</a></h3>
-<pre class="codehilite"><code>git clone &quot;https://github.com/gridsingularity/gsy-e.git&quot;
-cd gsy-e</code></pre>
+<div class="codehilite"><pre><span></span><code>git clone &quot;https://github.com/gridsingularity/gsy-e.git&quot;
+cd gsy-e
+</code></pre></div>
 
 
 <h3 id="step-11-create-and-initialise-gsy-e-virtualenv">Step 11: Create and initialise gsy-e virtualenv<a class="headerlink" href="#step-11-create-and-initialise-gsy-e-virtualenv" title="Permanent link">&para;</a></h3>
-<pre class="codehilite"><code>brew install npm
+<div class="codehilite"><pre><span></span><code>brew install npm
 npm install --global ganache-cli
 mkvirtualenv gsy-e
 pip3 install pendulum pip-tools
-pip3 install -e .</code></pre>
+pip3 install -e .
+</code></pre></div>
 
 
 <p>You now should have a working gsy-e setup.</p>

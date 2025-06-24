@@ -876,6 +876,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../carbon-footprint-savings/" title="Carbon Footprint and Carbon Savings" class="md-nav__link">
+      Carbon Footprint and Carbon Savings
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../trade-profile/" title="Trade Profile and Energy Peak Percentage" class="md-nav__link">
       Trade Profile and Energy Peak Percentage
     </a>
@@ -2269,12 +2281,13 @@ The Balancing Agent is responsible for monitoring power imbalances in the segmen
 <p>The trading strategies of <a href="../configuration/">energy assets</a> can be used to balance the grid by placing balancing offers. These assets participate in the balancing market only if they are registered in the Balancing Asset Registry.</p>
 <h4 id="balancing-asset-registry">Balancing Asset Registry<a class="headerlink" href="#balancing-asset-registry" title="Permanent link">&para;</a></h4>
 <p>The Balancing Asset Registry is a dictionary that contains the names of assets as keys and the balancing rates as tuple values: (demand balancing rate, supply balancing rate).</p>
-<pre class="codehilite"><code class="language-python">asset_registry_dict = {
-    &quot;H1 General Load&quot;: (33, 35),
-    &quot;H2 General Load&quot;: (33, 35),
-    &quot;H1 Storage1&quot;: (33, 35),
-    &quot;H1 Storage2&quot;: (33, 35),
-}</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="n">asset_registry_dict</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;H1 General Load&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">33</span><span class="p">,</span> <span class="mi">35</span><span class="p">),</span>
+    <span class="s2">&quot;H2 General Load&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">33</span><span class="p">,</span> <span class="mi">35</span><span class="p">),</span>
+    <span class="s2">&quot;H1 Storage1&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">33</span><span class="p">,</span> <span class="mi">35</span><span class="p">),</span>
+    <span class="s2">&quot;H1 Storage2&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">33</span><span class="p">,</span> <span class="mi">35</span><span class="p">),</span>
+<span class="p">}</span>
+</code></pre></div>
 
 
 <h4 id="balancing-market-type">Balancing Market Type<a class="headerlink" href="#balancing-market-type" title="Permanent link">&para;</a></h4>

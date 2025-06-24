@@ -876,6 +876,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../carbon-footprint-savings/" title="Carbon Footprint and Carbon Savings" class="md-nav__link">
+      Carbon Footprint and Carbon Savings
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../trade-profile/" title="Trade Profile and Energy Peak Percentage" class="md-nav__link">
       Trade Profile and Energy Peak Percentage
     </a>
@@ -1867,37 +1879,40 @@ Figure 1: Screenshot of a simulation url, which includes the simulation_id and t
 <ol>
 <li>Import the library and set the parameters of your simulation</li>
 </ol>
-<pre class="codehilite"><code class="language-python">import requests
+<div class="codehilite"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
 
-username = &quot;&lt;your_user&gt;&quot;
-password = &quot;&lt;your_password&gt;&quot;
+<span class="n">username</span> <span class="o">=</span> <span class="s2">&quot;&lt;your_user&gt;&quot;</span>
+<span class="n">password</span> <span class="o">=</span> <span class="s2">&quot;&lt;your_password&gt;&quot;</span>
 
-domain = &quot;https://gsyweb.gridsingularity.com&quot;
-simulation_id = &quot;990abe5e-3126-4b8b-9978-66ca07824d3c&quot;
-market_uuid = &quot;a245cff8-d90a-44d9-82e5-d37999b62e04&quot;
-start_date = &quot;2021-09-25T00:00&quot;
-end_date = &quot;2021-10-01T00:00&quot;</code></pre>
+<span class="n">domain</span> <span class="o">=</span> <span class="s2">&quot;https://gsyweb.gridsingularity.com&quot;</span>
+<span class="n">simulation_id</span> <span class="o">=</span> <span class="s2">&quot;990abe5e-3126-4b8b-9978-66ca07824d3c&quot;</span>
+<span class="n">market_uuid</span> <span class="o">=</span> <span class="s2">&quot;a245cff8-d90a-44d9-82e5-d37999b62e04&quot;</span>
+<span class="n">start_date</span> <span class="o">=</span> <span class="s2">&quot;2021-09-25T00:00&quot;</span>
+<span class="n">end_date</span> <span class="o">=</span> <span class="s2">&quot;2021-10-01T00:00&quot;</span>
+</code></pre></div>
 
 
 <ol>
 <li>Generate your JWT token</li>
 </ol>
-<pre class="codehilite"><code class="language-python">response = requests.post(url=domain + &quot;/api-token-auth/&quot;,
-                         json={&quot;username&quot;: username, &quot;password&quot;: password})
+<div class="codehilite"><pre><span></span><code><span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">domain</span> <span class="o">+</span> <span class="s2">&quot;/api-token-auth/&quot;</span><span class="p">,</span>
+                         <span class="n">json</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;username&quot;</span><span class="p">:</span> <span class="n">username</span><span class="p">,</span> <span class="s2">&quot;password&quot;</span><span class="p">:</span> <span class="n">password</span><span class="p">})</span>
 
-token = response.json()[&quot;token&quot;]</code></pre>
+<span class="n">token</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()[</span><span class="s2">&quot;token&quot;</span><span class="p">]</span>
+</code></pre></div>
 
 
 <ol>
 <li>Create a URL and send the request:</li>
 </ol>
-<pre class="codehilite"><code class="language-python">historical_data_url = f&quot;{domain}/historical-data/assets/{configuration_id}/{asset_id}/{start_date}/{end_date}&quot;
-headers = {&quot;Authorization&quot;: f&quot;JWT {token}&quot;}
+<div class="codehilite"><pre><span></span><code><span class="n">historical_data_url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">domain</span><span class="si">}</span><span class="s2">/historical-data/assets/</span><span class="si">{</span><span class="n">configuration_id</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">asset_id</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">start_date</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">end_date</span><span class="si">}</span><span class="s2">&quot;</span>
+<span class="n">headers</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;Authorization&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;JWT </span><span class="si">{</span><span class="n">token</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">}</span>
 
-response = requests.get(url=historical_data_url,
-                        headers=headers)
+<span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="o">=</span><span class="n">historical_data_url</span><span class="p">,</span>
+                        <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">)</span>
 
-profile = response.json()</code></pre>
+<span class="n">profile</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+</code></pre></div>
                 
                   
                 

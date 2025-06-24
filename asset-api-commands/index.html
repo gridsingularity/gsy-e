@@ -876,6 +876,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../carbon-footprint-savings/" title="Carbon Footprint and Carbon Savings" class="md-nav__link">
+      Carbon Footprint and Carbon Savings
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../trade-profile/" title="Trade Profile and Energy Peak Percentage" class="md-nav__link">
       Trade Profile and Energy Peak Percentage
     </a>
@@ -1862,7 +1874,8 @@
 </li>
 </ul>
 <p>Here is an example:</p>
-<pre class="codehilite"><code>self.add_to_batch_commands.bid_energy(asset_uuid = &quot;2e7866d8-34c6-49ad-a388-fd5876a3e679&quot;, energy = 2, price = 60, replace_existing = True, attributes = None,  requirements =  [{“energy_type”: “PV”, “trading_partners” = [], “energy” = 5, “price”: 28}], “time_slot” = None)</code></pre>
+<div class="codehilite"><pre><span></span><code>self.add_to_batch_commands.bid_energy(asset_uuid = &quot;2e7866d8-34c6-49ad-a388-fd5876a3e679&quot;, energy = 2, price = 60, replace_existing = True, attributes = None,  requirements =  [{“energy_type”: “PV”, “trading_partners” = [], “energy” = 5, “price”: 28}], “time_slot” = None)
+</code></pre></div>
 
 
 <p>If the bid is placed successfully, it returns the detailed information about the bid. If not, it returns the reason for the error.</p>
@@ -1888,13 +1901,15 @@
 </li>
 </ul>
 <p>Here is an example:</p>
-<pre class="codehilite"><code>self.add_to_batch_commands.bid_energy_rate(asset_uuid = &quot;2e7866d8-34c6-49ad-a388-fd5876a3e679&quot;, energy = 2, rate = 30, replace_existing = True, attributes = None,  requirements =  [{“energy_type”: “PV”, “trading_partners” = [], “energy” = 5, “price”: 28}], “time_slot” = None)</code></pre>
+<div class="codehilite"><pre><span></span><code>self.add_to_batch_commands.bid_energy_rate(asset_uuid = &quot;2e7866d8-34c6-49ad-a388-fd5876a3e679&quot;, energy = 2, rate = 30, replace_existing = True, attributes = None,  requirements =  [{“energy_type”: “PV”, “trading_partners” = [], “energy” = 5, “price”: 28}], “time_slot” = None)
+</code></pre></div>
 
 
 <h3 id="lists_bids">lists_bids()<a class="headerlink" href="#lists_bids" title="Permanent link">&para;</a></h3>
 <p>It lists all posted bids on the selected market. This command takes one argument: area_uuid, which is the Universal Unique Identifier of the selected market.</p>
 <p>Here is an example:</p>
-<pre class="codehilite"><code>self.add_to_batch_commands.list_bids(asset_uuid=&quot;62f827ec-ef86-4782-b5c3-88327751d97d&quot;)</code></pre>
+<div class="codehilite"><pre><span></span><code>self.add_to_batch_commands.list_bids(asset_uuid=&quot;62f827ec-ef86-4782-b5c3-88327751d97d&quot;)
+</code></pre></div>
 
 
 <h3 id="delete_bid">delete_bid()<a class="headerlink" href="#delete_bid" title="Permanent link">&para;</a></h3>
@@ -1904,7 +1919,8 @@
 <li><strong>bid_id</strong>: ID of the selected bid. If None, all the bids posted by the selected asset will be deleted.</li>
 </ul>
 <p>Here is an example:</p>
-<pre class="codehilite"><code>self.add_to_batch_commands.delete_bid(asset_uuid=&quot;62f827ec-ef86-4782-b5c3-88327751d97d&quot;, bid_id = &quot;2e7866d8-3dg6-49ad-afe8-fd5876a3e679&quot;)</code></pre>
+<div class="codehilite"><pre><span></span><code>self.add_to_batch_commands.delete_bid(asset_uuid=&quot;62f827ec-ef86-4782-b5c3-88327751d97d&quot;, bid_id = &quot;2e7866d8-3dg6-49ad-afe8-fd5876a3e679&quot;)
+</code></pre></div>
 
 
 <h3 id="offer_energy">offer_energy()<a class="headerlink" href="#offer_energy" title="Permanent link">&para;</a></h3>
@@ -1926,7 +1942,8 @@
 </li>
 </ul>
 <p>Here is an example:</p>
-<pre class="codehilite"><code>self.add_to_batch_commands.offer_energy(asset_uuid = &quot;2e7866d8-34c6-49ad-a388-fd5876a3e679&quot;, energy = 2, price_cents = 60, replace_existing = True, attributes = “PV”,  requirements =  [{ “trading_partners”: &quot;62f827ec-ef86-4782-b5c3-88327751d97d”}], “time_slot” = None)</code></pre>
+<div class="codehilite"><pre><span></span><code>self.add_to_batch_commands.offer_energy(asset_uuid = &quot;2e7866d8-34c6-49ad-a388-fd5876a3e679&quot;, energy = 2, price_cents = 60, replace_existing = True, attributes = “PV”,  requirements =  [{ “trading_partners”: &quot;62f827ec-ef86-4782-b5c3-88327751d97d”}], “time_slot” = None)
+</code></pre></div>
 
 
 <p>If the offer is placed successfully, it returns the detailed information about the bid. If not, it returns the reason for the error.</p>
@@ -1948,13 +1965,15 @@
 </li>
 </ul>
 <p>Here is an example:</p>
-<pre class="codehilite"><code>self.add_to_batch_commands.offer_energy_rate(asset_uuid = &quot;2e7866d8-34c6-49ad-a388-fd5876a3e679&quot;, energy = 2, rate = 30, replace_existing = True, attributes = “PV”,  requirements =  [{ “trading_partners”: &quot;62f827ec-ef86-4782-b5c3-88327751d97d”}], “time_slot” = None)</code></pre>
+<div class="codehilite"><pre><span></span><code>self.add_to_batch_commands.offer_energy_rate(asset_uuid = &quot;2e7866d8-34c6-49ad-a388-fd5876a3e679&quot;, energy = 2, rate = 30, replace_existing = True, attributes = “PV”,  requirements =  [{ “trading_partners”: &quot;62f827ec-ef86-4782-b5c3-88327751d97d”}], “time_slot” = None)
+</code></pre></div>
 
 
 <h3 id="lists_offers">lists_offers()<a class="headerlink" href="#lists_offers" title="Permanent link">&para;</a></h3>
 <p>It lists all posted offers on the selected market. This command takes one argument: area_uuid, which is the Universal Unique Identifier of the selected market.
 Here is an example:</p>
-<pre class="codehilite"><code>self.add_to_batch_commands.list_offers(asset_uuid=&quot;62f827ec-ef86-4782-b5c3-88327751d97d&quot;)</code></pre>
+<div class="codehilite"><pre><span></span><code>self.add_to_batch_commands.list_offers(asset_uuid=&quot;62f827ec-ef86-4782-b5c3-88327751d97d&quot;)
+</code></pre></div>
 
 
 <h3 id="delete_offer">delete_offer()<a class="headerlink" href="#delete_offer" title="Permanent link">&para;</a></h3>
@@ -1964,11 +1983,13 @@ Here is an example:</p>
 <li><strong>offer_id</strong>: ID of the selected offer. If None, all the bids posted by the selected asset will be deleted.</li>
 </ul>
 <p>Here is an example:</p>
-<pre class="codehilite"><code>self.add_to_batch_commands.delete_offer(asset_uuid=&quot;62f827ec-ef86-4782-b5c3-88327751d97d&quot;, bid_id = &quot;2e7866d8-3dg6-49ad-afe8-fd5876a3e679&quot;)</code></pre>
+<div class="codehilite"><pre><span></span><code>self.add_to_batch_commands.delete_offer(asset_uuid=&quot;62f827ec-ef86-4782-b5c3-88327751d97d&quot;, bid_id = &quot;2e7866d8-3dg6-49ad-afe8-fd5876a3e679&quot;)
+</code></pre></div>
 
 
 <p>After adding all the wanted commands in the batch, the API can execute it with the following command:</p>
-<pre class="codehilite"><code>response = self.execute_batch_commands()</code></pre>
+<div class="codehilite"><pre><span></span><code>response = self.execute_batch_commands()
+</code></pre></div>
 
 
 <p>In return the simulation will provide a detailed response for all commands submitted.</p>

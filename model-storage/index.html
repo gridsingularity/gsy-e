@@ -876,6 +876,18 @@
 
 
   <li class="md-nav__item">
+    <a href="../carbon-footprint-savings/" title="Carbon Footprint and Carbon Savings" class="md-nav__link">
+      Carbon Footprint and Carbon Savings
+    </a>
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
     <a href="../trade-profile/" title="Trade Profile and Energy Peak Percentage" class="md-nav__link">
       Trade Profile and Energy Peak Percentage
     </a>
@@ -1783,7 +1795,8 @@
 <h2 id="backend-configuration">Backend Configuration<a class="headerlink" href="#backend-configuration" title="Permanent link">&para;</a></h2>
 <p>To implement the storage in a backend simulation one option is available:</p>
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/storage.py" target="_blank">Energy Storage System</a></p>
-<pre class="codehilite"><code class="language-python">Market('Storage', strategy=StorageStrategy(initial_soc=50, energy_rate_decrease_per_update=3, battery_capacity_kWh=1.2, max_abs_battery_power_kW=5, final_buying_rate=16.99, final_selling_rate= 17.01)))</code></pre>
+<div class="codehilite"><pre><span></span><code><span class="n">Market</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">StorageStrategy</span><span class="p">(</span><span class="n">initial_soc</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">energy_rate_decrease_per_update</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">battery_capacity_kWh</span><span class="o">=</span><span class="mf">1.2</span><span class="p">,</span> <span class="n">max_abs_battery_power_kW</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">final_buying_rate</span><span class="o">=</span><span class="mf">16.99</span><span class="p">,</span> <span class="n">final_selling_rate</span><span class="o">=</span> <span class="mf">17.01</span><span class="p">)))</span>
+</code></pre></div>
 
 
 <h2 id="addendum-storage-capacity-based-method">Addendum: Storage Capacity Based Method<a class="headerlink" href="#addendum-storage-capacity-based-method" title="Permanent link">&para;</a></h2>
