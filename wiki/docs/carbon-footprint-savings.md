@@ -14,7 +14,7 @@ Carbon Savings (kg CO₂-equivalent) = Baseline Carbon Footprint − Reduced Car
 
 <figure markdown>
   ![alt_text](img/carbon-footprint-savings-fig-1.png){:text-align:center"}
-  <figcaption><b>Figure 1</b>: Example of Carbon Footprint and Carbon Savings Results in Grid Singularity’s simulation tool interface (Singularity Map)
+  <figcaption><b>Figure 3.7</b>: Example of Carbon Footprint and Carbon Savings Results in Grid Singularity’s simulation tool interface (Singularity Map)
 </figcaption>
 </figure>
 
@@ -27,18 +27,18 @@ The emissions data for most European countries is calculated based on real-time 
 Country Carbon Intensity (kg CO₂-equivalent/kWh) = [(Energy Fossil Gas (kWh) × EF Gas (kgCO₂-equivalent/kWh)) + (Energy Biomass × EF Biomass) + … + (Energy Solar × EF Solar)] / (Energy Fossil Gas + … + Energy Solar)
 ```
 
-Additionally, two open-source database sources are used for retrieving country-specific CO₂-equivalent emission data for other regions, namely [Electricity Maps](http://www.electricitymaps.com){target=_blank} (licenced under the [Open Database License](https://opendatacommons.org/licenses/odbl/){target=_blank} (ODbL)), which provides historical data on carbon intensity of electricity generation based on a country’s energy mix, and [Our World in Data](http://www.ourworldindata.org){target=_blank} (licensed under the [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/legalcode){target=_blank} - CC-BY), an open-source, nonprofit organisation offering comprehensive global datasets, including carbon intensity of electricity generation. For countries or region****s where direct CO₂-equivalent emissions data was not available (such as Andorra, Palau, etc.), values from neighbouring countries or regions are selected.
+Additionally, two open-source database sources are used for retrieving country-specific CO₂-equivalent emission data for other regions, namely [Electricity Maps](http://www.electricitymaps.com){target=_blank} (licenced under the [Open Database License](https://opendatacommons.org/licenses/odbl/){target=_blank} - ODbL), which provides historical data on carbon intensity of electricity generation based on a country’s energy mix, and [Our World in Data](http://www.ourworldindata.org){target=_blank} (licensed under the [Creative Commons Attribution 4.0 International License](https://creativecommons.org/licenses/by/4.0/legalcode){target=_blank} - CC-BY), an open-source, nonprofit organisation offering comprehensive global datasets, including carbon intensity of electricity generation. For countries or region****s where direct CO₂-equivalent emissions data was not available (such as Andorra, Palau, etc.), values from neighbouring countries or regions are selected.
 
 The world carbon footprint value is calculated as follows:
 
-`World Carbon Footprint (g CO₂-equivalent / kWh) = 540 (14.6 (total emissions) / 27000 (global electricity production))` ([source](https://iea.blob.core.windows.net/assets/c3086240-732b-4f6a-89d7-db01be018f5e/GlobalEnergyReviewCO2Emissionsin2021.pdf){target=_blank})
+`World Carbon Footprint (g CO₂-equivalent / kWh) = 540 (14.6 (total emissions) / 27000 (global electricity production))` ([IEA](https://iea.blob.core.windows.net/assets/c3086240-732b-4f6a-89d7-db01be018f5e/GlobalEnergyReviewCO2Emissionsin2021.pdf){target=_blank})
 
 A list of CO₂-equivalent emission data sources is provided in the table below. <i>Note: In case you have a suggestion on how to improve a select data source, please write to us at contact at gridsingularity.com</i>
 
 ### CO₂-Equivalent Emission Data Sources
 
 
-<table class="table">
+<table>
   <tr>
    <th>Country
    </th>
