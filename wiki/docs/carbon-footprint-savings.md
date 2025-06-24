@@ -48,1171 +48,1167 @@ A list of CO₂-equivalent emission data sources is provided in the table below.
   <tr>
    <td>Republic of the Congo
    </td>
-   <td>[Congo Yearly Data](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
-   </td>
+    <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Congo Yearly Data</a></td>
   </tr>
   <tr>
    <td>Monaco
    </td>
-   <td>[France Monthly 2023](https://www.electricitymaps.com/data-portal){target=_blank}
-   </td>
+   <td><a href="https://www.electricitymaps.com/data-portal" target="_blank">France Monthly 2023</a></td>
   </tr>
   <tr>
    <td>Netherlands
    </td>
-   <td>Hourly from [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/){target=_blank}
-   </td>
+   <td><a href="https://transparency.entsoe.eu/" target="_blank">Hourly from ENTSO-E Transparency Platform</a></td>
   </tr>
   <tr>
    <td>North Macedonia
    </td>
-   <td>Hourly from [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/){target=_blank}
-   </td>
+   <td><a href="https://transparency.entsoe.eu/" target="_blank">Hourly from ENTSO-E Transparency Platform</a></td>
   </tr>
   <tr>
    <td>Poland
    </td>
-   <td>Hourly from [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/){target=_blank}
+   <td><a href="https://transparency.entsoe.eu/" target="_blank">Hourly from ENTSO-E Transparency Platform</a>
    </td>
   </tr>
   <tr>
    <td>Portugal
    </td>
-   <td>Hourly from [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/){target=_blank}
+   <td><a href="https://transparency.entsoe.eu/" target="_blank">Hourly from ENTSO-E Transparency Platform</a>
    </td>
   </tr>
   <tr>
    <td>Romania
    </td>
-   <td>Hourly from [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/){target=_blank}
+   <td><a href="https://transparency.entsoe.eu/" target="_blank">Hourly from ENTSO-E Transparency Platform</a>
    </td>
   </tr>
   <tr>
    <td>Serbia
    </td>
-   <td>Hourly from [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/){target=_blank}
+   <td><a href="https://transparency.entsoe.eu/" target="_blank">Hourly from ENTSO-E Transparency Platform</a>
    </td>
   </tr>
   <tr>
    <td>Slovakia
    </td>
-   <td>Hourly from [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/){target=_blank}
+   <td><a href="https://transparency.entsoe.eu/" target="_blank">Hourly from ENTSO-E Transparency Platform</a>
    </td>
   </tr>
   <tr>
    <td>Slovenia
    </td>
-   <td>Hourly from [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/){target=_blank}
+   <td><a href="https://transparency.entsoe.eu/" target="_blank">Hourly from ENTSO-E Transparency Platform</a>
    </td>
   </tr>
   <tr>
    <td>Spain
    </td>
-   <td>Hourly from [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/){target=_blank}
+   <td><a href="https://transparency.entsoe.eu/" target="_blank">Hourly from ENTSO-E Transparency Platform</a>
    </td>
   </tr>
   <tr>
    <td>Sweden
    </td>
-   <td>Hourly from [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/){target=_blank}
+   <td><a href="https://transparency.entsoe.eu/" target="_blank">Hourly from ENTSO-E Transparency Platform</a>
    </td>
   </tr>
   <tr>
    <td>Switzerland
    </td>
-   <td>Hourly from [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/){target=_blank}
+   <td><a href="https://transparency.entsoe.eu/" target="_blank">Hourly from ENTSO-E Transparency Platform</a>
    </td>
   </tr>
   <tr>
    <td>Turkey
    </td>
-   <td>Hourly from [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/){target=_blank}
+   <td><a href="https://transparency.entsoe.eu/" target="_blank">Hourly from ENTSO-E Transparency Platform</a>
    </td>
   </tr>
   <tr>
    <td>Ukraine
    </td>
-   <td>Hourly from [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/){target=_blank}
+   <td><a href="https://transparency.entsoe.eu/" target="_blank">Hourly from ENTSO-E Transparency Platform</a>
    </td>
   </tr>
   <tr>
    <td>United Kingdom
    </td>
-   <td>Hourly from [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/){target=_blank}
+   <td><a href="https://transparency.entsoe.eu/" target="_blank">Hourly from ENTSO-E Transparency Platform</a>
    </td>
   </tr>
   <tr>
    <td>Albania
    </td>
-   <td>Hourly from [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/){target=_blank}
+   <td><a href="https://transparency.entsoe.eu/" target="_blank">Hourly from ENTSO-E Transparency Platform</a>
    </td>
   </tr>
   <tr>
    <td>Austria
    </td>
-   <td>Hourly from [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/){target=_blank}
+   <td><a href="https://transparency.entsoe.eu/" target="_blank">Hourly from ENTSO-E Transparency Platform</a>
    </td>
   </tr>
   <tr>
    <td>Belgium
    </td>
-   <td>Hourly from [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/){target=_blank}
+   <td><a href="https://transparency.entsoe.eu/" target="_blank">Hourly from ENTSO-E Transparency Platform</a>
    </td>
   </tr>
   <tr>
    <td>Bosnia and Herzegovina
    </td>
-   <td>Hourly from [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/){target=_blank}
+   <td><a href="https://transparency.entsoe.eu/" target="_blank">Hourly from ENTSO-E Transparency Platform</a>
    </td>
   </tr>
   <tr>
    <td>Bulgaria
    </td>
-   <td>Hourly from [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/){target=_blank}
+   <td><a href="https://transparency.entsoe.eu/" target="_blank">Hourly from ENTSO-E Transparency Platform</a>
    </td>
   </tr>
   <tr>
    <td>Croatia
    </td>
-   <td>Hourly from [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/){target=_blank}
+   <td><a href="https://transparency.entsoe.eu/" target="_blank">Hourly from ENTSO-E Transparency Platform</a>
    </td>
   </tr>
   <tr>
    <td>Cyprus
    </td>
-   <td>Hourly from [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/){target=_blank}
+   <td><a href="https://transparency.entsoe.eu/" target="_blank">Hourly from ENTSO-E Transparency Platform</a>
    </td>
   </tr>
   <tr>
    <td>Czechia
    </td>
-   <td>Hourly from [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/){target=_blank}
+   <td><a href="https://transparency.entsoe.eu/" target="_blank">Hourly from ENTSO-E Transparency Platform</a>
    </td>
   </tr>
   <tr>
    <td>Denmark
    </td>
-   <td>Hourly from [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/){target=_blank}
+   <td><a href="https://transparency.entsoe.eu/" target="_blank">Hourly from ENTSO-E Transparency Platform</a>
    </td>
   </tr>
   <tr>
    <td>Estonia
    </td>
-   <td>Hourly from [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/){target=_blank}
+   <td><a href="https://transparency.entsoe.eu/" target="_blank">Hourly from ENTSO-E Transparency Platform</a>
    </td>
   </tr>
   <tr>
    <td>Finland
    </td>
-   <td>Hourly from [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/){target=_blank}
+   <td><a href="https://transparency.entsoe.eu/" target="_blank">Hourly from ENTSO-E Transparency Platform</a>
    </td>
   </tr>
   <tr>
    <td>France
    </td>
-   <td>Hourly from [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/){target=_blank}
+   <td><a href="https://transparency.entsoe.eu/" target="_blank">Hourly from ENTSO-E Transparency Platform</a>
    </td>
   </tr>
   <tr>
    <td>Georgia
    </td>
-   <td>Hourly from [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/){target=_blank}
+   <td><a href="https://transparency.entsoe.eu/" target="_blank">Hourly from ENTSO-E Transparency Platform</a>
    </td>
   </tr>
   <tr>
    <td>Germany
    </td>
-   <td>Hourly from [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/){target=_blank}
+   <td><a href="https://transparency.entsoe.eu/" target="_blank">Hourly from ENTSO-E Transparency Platform</a>
    </td>
   </tr>
   <tr>
    <td>Greece
    </td>
-   <td>Hourly from [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/){target=_blank}
+   <td><a href="https://transparency.entsoe.eu/" target="_blank">Hourly from ENTSO-E Transparency Platform</a>
    </td>
   </tr>
   <tr>
    <td>Hungary
    </td>
-   <td>Hourly from [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/){target=_blank}
+   <td><a href="https://transparency.entsoe.eu/" target="_blank">Hourly from ENTSO-E Transparency Platform</a>
    </td>
   </tr>
   <tr>
    <td>Iceland
    </td>
-   <td>Hourly from [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/){target=_blank}
+   <td><a href="https://transparency.entsoe.eu/" target="_blank">Hourly from ENTSO-E Transparency Platform</a>
    </td>
   </tr>
   <tr>
    <td>Ireland
    </td>
-   <td>Hourly from [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/){target=_blank}
+   <td><a href="https://transparency.entsoe.eu/" target="_blank">Hourly from ENTSO-E Transparency Platform</a>
    </td>
   </tr>
   <tr>
    <td>Italy
    </td>
-   <td>Hourly from [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/){target=_blank}
+   <td><a href="https://transparency.entsoe.eu/" target="_blank">Hourly from ENTSO-E Transparency Platform</a>
    </td>
   </tr>
   <tr>
    <td>Kosovo
    </td>
-   <td>Hourly from [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/){target=_blank}
+   <td><a href="https://transparency.entsoe.eu/" target="_blank">Hourly from ENTSO-E Transparency Platform</a>
    </td>
   </tr>
   <tr>
    <td>Latvia
    </td>
-   <td>Hourly from [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/){target=_blank}
+   <td><a href="https://transparency.entsoe.eu/" target="_blank">Hourly from ENTSO-E Transparency Platform</a>
    </td>
   </tr>
   <tr>
    <td>Lithuania
    </td>
-   <td>Hourly from [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/){target=_blank}
+   <td><a href="https://transparency.entsoe.eu/" target="_blank">Hourly from ENTSO-E Transparency Platform</a>
    </td>
   </tr>
   <tr>
    <td>Luxembourg
    </td>
-   <td>Hourly from [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/){target=_blank}
+   <td><a href="https://transparency.entsoe.eu/" target="_blank">Hourly from ENTSO-E Transparency Platform</a>
    </td>
   </tr>
   <tr>
    <td>Malta
    </td>
-   <td>Hourly from [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/){target=_blank}
+   <td><a href="https://transparency.entsoe.eu/" target="_blank">Hourly from ENTSO-E Transparency Platform</a>
    </td>
   </tr>
   <tr>
    <td>Moldova
    </td>
-   <td>Hourly from [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/){target=_blank}
+   <td><a href="https://transparency.entsoe.eu/" target="_blank">Hourly from ENTSO-E Transparency Platform</a>
    </td>
   </tr>
   <tr>
    <td>Montenegro
    </td>
-   <td>Hourly from [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/){target=_blank}
+   <td><a href="https://transparency.entsoe.eu/" target="_blank">Hourly from ENTSO-E Transparency Platform</a>
    </td>
   </tr>
   <tr>
    <td>Norway
    </td>
-   <td>Hourly from [ENTSO-E Transparency Platform](https://transparency.entsoe.eu/){target=_blank}
+   <td><a href="https://transparency.entsoe.eu/" target="_blank">Hourly from ENTSO-E Transparency Platform</a>
    </td>
   </tr>
   <tr>
    <td>Iran
    </td>
-   <td>[Iran Yearly Data](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Iran Yearly Data</a>
    </td>
   </tr>
   <tr>
    <td>San Marino
    </td>
-   <td>[Italy Monthly 2023](https://www.electricitymaps.com/data-portal){target=_blank}
+   <td><a href="https://www.electricitymaps.com/data-portal" target="_blank">Italy Monthly 2023</a>
    </td>
   </tr>
   <tr>
    <td>Australia
    </td>
-   <td>[Monthly 2023](https://www.electricitymaps.com/data-portal){target=_blank}
+   <td><a href="https://www.electricitymaps.com/data-portal" target="_blank">Monthly 2023</a>
    </td>
   </tr>
   <tr>
    <td>Brazil
    </td>
-   <td>[Monthly 2023](https://www.electricitymaps.com/data-portal){target=_blank}
+   <td><a href="https://www.electricitymaps.com/data-portal" target="_blank">Monthly 2023</a>
    </td>
   </tr>
   <tr>
    <td>Canada
    </td>
-   <td>[Monthly 2023](https://www.electricitymaps.com/data-portal){target=_blank}
+   <td><a href="https://www.electricitymaps.com/data-portal" target="_blank">Monthly 2023</a>
    </td>
   </tr>
   <tr>
    <td>Chile
    </td>
-   <td>[Monthly 2023](https://www.electricitymaps.com/data-portal){target=_blank}
+   <td><a href="https://www.electricitymaps.com/data-portal" target="_blank">Monthly 2023</a>
    </td>
   </tr>
   <tr>
    <td>Costa Rica
    </td>
-   <td>[Monthly 2023](https://www.electricitymaps.com/data-portal){target=_blank}
+   <td><a href="https://www.electricitymaps.com/data-portal" target="_blank">Monthly 2023</a>
    </td>
   </tr>
   <tr>
    <td>Great Britain
    </td>
-   <td>[Monthly 2023](https://www.electricitymaps.com/data-portal){target=_blank}
+   <td><a href="https://www.electricitymaps.com/data-portal" target="_blank">Monthly 2023</a>
    </td>
   </tr>
   <tr>
    <td>Hong Kong
    </td>
-   <td>[Monthly 2023](https://www.electricitymaps.com/data-portal){target=_blank}
+   <td><a href="https://www.electricitymaps.com/data-portal" target="_blank">Monthly 2023</a>
    </td>
   </tr>
   <tr>
    <td>India
    </td>
-   <td>[Monthly 2023](https://www.electricitymaps.com/data-portal){target=_blank}
+   <td><a href="https://www.electricitymaps.com/data-portal" target="_blank">Monthly 2023</a>
    </td>
   </tr>
   <tr>
    <td>Indonesia
    </td>
-   <td>[Monthly 2023](https://www.electricitymaps.com/data-portal){target=_blank}
+   <td><a href="https://www.electricitymaps.com/data-portal" target="_blank">Monthly 2023</a>
    </td>
   </tr>
   <tr>
    <td>Israel
    </td>
-   <td>[Monthly 2023](https://www.electricitymaps.com/data-portal){target=_blank}
+   <td><a href="https://www.electricitymaps.com/data-portal" target="_blank">Monthly 2023</a>
    </td>
   </tr>
   <tr>
    <td>Japan
    </td>
-   <td>[Monthly 2023](https://www.electricitymaps.com/data-portal){target=_blank}
+   <td><a href="https://www.electricitymaps.com/data-portal" target="_blank">Monthly 2023</a>
    </td>
   </tr>
   <tr>
    <td>New Zealand
    </td>
-   <td>[Monthly 2023](https://www.electricitymaps.com/data-portal){target=_blank}
+   <td><a href="https://www.electricitymaps.com/data-portal" target="_blank">Monthly 2023</a>
    </td>
   </tr>
   <tr>
    <td>Nicaragua
    </td>
-   <td>[Monthly 2023](https://www.electricitymaps.com/data-portal){target=_blank}
+   <td><a href="https://www.electricitymaps.com/data-portal" target="_blank">Monthly 2023</a>
    </td>
   </tr>
   <tr>
    <td>Northern Ireland
    </td>
-   <td>[Monthly 2023](https://www.electricitymaps.com/data-portal){target=_blank}
+   <td><a href="https://www.electricitymaps.com/data-portal" target="_blank">Monthly 2023</a>
    </td>
   </tr>
   <tr>
    <td>Panama
    </td>
-   <td>[Monthly 2023](https://www.electricitymaps.com/data-portal){target=_blank}
+   <td><a href="https://www.electricitymaps.com/data-portal" target="_blank">Monthly 2023</a>
    </td>
   </tr>
   <tr>
    <td>Singapore
    </td>
-   <td>[Monthly 2023](https://www.electricitymaps.com/data-portal){target=_blank}
+   <td><a href="https://www.electricitymaps.com/data-portal" target="_blank">Monthly 2023</a>
    </td>
   </tr>
   <tr>
    <td>South Africa
    </td>
-   <td>[Monthly 2023](https://www.electricitymaps.com/data-portal){target=_blank}
+   <td><a href="https://www.electricitymaps.com/data-portal" target="_blank">Monthly 2023</a>
    </td>
   </tr>
   <tr>
    <td>South Korea
    </td>
-   <td>[Monthly 2023](https://www.electricitymaps.com/data-portal){target=_blank}
+   <td><a href="https://www.electricitymaps.com/data-portal" target="_blank">Monthly 2023</a>
    </td>
   </tr>
   <tr>
    <td>Taiwan
    </td>
-   <td>[Monthly 2023](https://www.electricitymaps.com/data-portal){target=_blank}
+   <td><a href="https://www.electricitymaps.com/data-portal" target="_blank">Monthly 2023</a>
    </td>
   </tr>
   <tr>
    <td>United States of America
    </td>
-   <td>[Monthly 2023](https://www.electricitymaps.com/data-portal){target=_blank}
+   <td><a href="https://www.electricitymaps.com/data-portal" target="_blank">Monthly 2023</a>
    </td>
   </tr>
   <tr>
    <td>Uruguay
    </td>
-   <td>[Monthly 2023](https://www.electricitymaps.com/data-portal){target=_blank}
+   <td><a href="https://www.electricitymaps.com/data-portal" target="_blank">Monthly 2023</a>
    </td>
   </tr>
   <tr>
    <td>Marshall Islands
    </td>
-   <td>[Papua New Guinea Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Papua New Guinea Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Micronesia
    </td>
-   <td>[Papua New Guinea Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Papua New Guinea Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Palau
    </td>
-   <td>[Philippines Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Philippines Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Andorra
    </td>
-   <td>[Spain Monthly 2023](https://www.electricitymaps.com/data-portal){target=_blank}
+   <td><a href="https://www.electricitymaps.com/data-portal" target="_blank">Spain Monthly 2023</a>
    </td>
   </tr>
   <tr>
    <td>Afghanistan
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Algeria
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Angola
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Antigua and Barbuda
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Argentina
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Armenia
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Azerbaijan
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Bahamas
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Bahrain
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Bangladesh
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Barbados
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Belarus
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Belize
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Benin
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Bhutan
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Bolivia
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Botswana
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Brunei
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Burkina Faso
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Burundi
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Cabo Verde
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Cambodia
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Cameroon
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Central African Republic
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Chad
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Comoros
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Côte d'Ivoire
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Cuba
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Democratic Republic of the Congo
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Djibouti
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Dominica
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Dominican Republic
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>East Timor
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Ecuador
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Egypt
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>El Salvador
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Equatorial Guinea
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Eritrea
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Eswatini (Swaziland)
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Ethiopia
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Fiji
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Gabon
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Gambia
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Ghana
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Grenada
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Guatemala
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Guinea
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Guinea-Bissau
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Guyana
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Haiti
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Honduras
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Iraq
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Jamaica
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Jordan
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Kazakhstan
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Kenya
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Kiribati
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Kuwait
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Kyrgyzstan
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Laos
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Lebanon
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Lesotho
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Liberia
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Libya
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Madagascar
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Malawi
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Malaysia
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Maldives
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Mali
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Mauritania
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Mauritius
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Mexico
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Mongolia
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Morocco
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Mozambique
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Myanmar
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Namimbia
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Nauru
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Nepal
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Niger
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Nigeria
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>North Korea
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Oman
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Pakistan
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Papua New Guinea
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Paraguay
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Peru
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Philippines
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Qatar
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Russia
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Rwanda
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Saint Kitts and Nevis
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Saint Lucia
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Saint Vincent and the Grenadines
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Samoa
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>São Tomé and Príncipe
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Saudi Arabia
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Senegal
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Seychelles
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Sierra Leone
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Solomon Islands
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Somalia
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>South Sudan
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Sri Lanka
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Sudan
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Suriname
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Suria
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Tajikistan
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Tanzania
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Thailand
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Togo
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Tonga
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Trinidad and Tobago
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Tunisia
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Turkmenistan
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Tuvalu
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Uganda
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>United Arab Emirates
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Uzbekistan
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Vanuatu
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Venezuela
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Vietnam
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Yemen
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Zambia
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
   <tr>
    <td>Zimbabwe
    </td>
-   <td>[Yearly](https://ourworldindata.org/grapher/carbon-intensity-electricity){target=_blank}
+   <td><a href="https://ourworldindata.org/grapher/carbon-intensity-electricity" target="_blank">Yearly</a>
    </td>
   </tr>
 </table>
