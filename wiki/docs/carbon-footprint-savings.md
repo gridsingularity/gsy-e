@@ -40,7 +40,7 @@ A list of CO₂-equivalent emission data sources is provided in the table below.
 
 <table class="carbon-footprint-table">
   <tr>
-   <th>Country
+   <th>Country / Entity
    </th>
    <th>Data Source
    </th>
