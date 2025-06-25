@@ -9,6 +9,8 @@ from gsy_framework.utils import (
     convert_pendulum_to_str_in_dict,
     convert_str_to_pendulum_in_dict,
     convert_kWh_to_W,
+    convert_W_to_kWh,
+    convert_kWh_to_kJ,
 )
 
 from gsy_e import constants
@@ -104,12 +106,16 @@ class PCMTankState(TankStateBase):
         return None if pcm_temps is None else mean(pcm_temps)
 
     def _get_deltaT_from_heat_demand_kWh(self, heat_energy_kWh: float) -> float:
-        """
-        Q > 0 --> dT >0
-        Q < 0 --> dT <0
-        """
+        """dT[K] = Q / (m + c_p)"""
         return convert_kWh_to_W(heat_energy_kWh, GlobalConfig.slot_length) / (
             MASS_FLOW_RATE * SPECIFIC_HEAT_CAPACITY_WATER
+        )
+
+    def _get_heat_demand_kWh_from_deltaT(self, temperature_difference: float) -> float:
+        """Q[W]= m * c_p * dT"""
+        return convert_W_to_kWh(
+            MASS_FLOW_RATE * SPECIFIC_HEAT_CAPACITY_WATER * temperature_difference,
+            GlobalConfig.slot_length,
         )
 
     def _get_condenser_temp_from_heat_demand_kWh(
@@ -243,9 +249,17 @@ class PCMTankState(TankStateBase):
             return 0
         return heat_demand_kJ - available_energy_kJ
 
-    def get_max_heat_energy_consumption_kJ(self, time_slot: DateTime, heat_demand_kJ: float):
+    def get_max_heat_energy_consumption_kJ(
+        self, time_slot: DateTime, heat_demand_kJ: float
+    ) -> float:
+        """Return the available energy stored in the tank."""
         return (
-            self._params.max_capacity_kJ - self.get_available_energy_kJ(time_slot) + heat_demand_kJ
+            convert_kWh_to_kJ(
+                self._get_heat_demand_kWh_from_deltaT(
+                    self._params.max_temp_C - self.get_pcm_temp_C(time_slot)
+                )
+            )
+            + heat_demand_kJ
         )
 
     def current_tank_temperature(self, time_slot):
