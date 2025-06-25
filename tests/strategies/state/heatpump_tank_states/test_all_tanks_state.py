@@ -38,13 +38,26 @@ class TestAllTanksState:
         assert isclose(tank_states[1]._storage_temp_C[self._datetime], 20.840, rel_tol=0.0001)
         assert isclose(tank_states[2]._storage_temp_C[self._datetime], 60, rel_tol=0.0001)
 
-    def test_decrease_tanks_temp_from_heat_energy_updates_tank_temperature_correctly(self):
+    def test_increase_tanks_temp_from_heat_energy_calls_no_charge_for_zero_energy(self):
+        self._tanks._get_scaling_factors_for_charging = Mock(return_value=[0, 0.8, 0.2])
+        tank_states = self._tanks._tanks_states
+        tank_states[0].no_charge = Mock()
+        self._tanks.increase_tanks_temp_from_heat_energy(5000, self._datetime)
+        tank_states[0].no_charge.assert_called_once()
 
+    def test_decrease_tanks_temp_from_heat_energy_updates_tank_temperature_correctly(self):
         self._tanks.decrease_tanks_temp_from_heat_energy(5000, self._datetime)
         tank_states = self._tanks._tanks_states
         assert isclose(tank_states[0]._storage_temp_C[self._datetime], 24.521, rel_tol=0.0001)
         assert isclose(tank_states[1]._storage_temp_C[self._datetime], 20.0, rel_tol=0.0001)
         assert isclose(tank_states[2]._storage_temp_C[self._datetime], 59.0421, rel_tol=0.0001)
+
+    def test_decrease_tanks_temp_from_heat_energy_calls_no_charge_for_zero_energy(self):
+        self._tanks._get_scaling_factors_for_discharging = Mock(return_value=[0, 0.8, 0.2])
+        tank_states = self._tanks._tanks_states
+        tank_states[0].no_charge = Mock()
+        self._tanks.decrease_tanks_temp_from_heat_energy(5000, self._datetime)
+        tank_states[0].no_charge.assert_called_once()
 
     def test_no_charge_calls_tank_methods_correctly(self):
         for tank in self._tanks._tanks_states:

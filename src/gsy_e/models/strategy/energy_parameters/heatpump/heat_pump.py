@@ -1,3 +1,4 @@
+# pylint: disable=too-many-positional-arguments
 from abc import ABC, abstractmethod
 from typing import Optional, Dict, Union, List
 from statistics import mean
@@ -237,7 +238,7 @@ class CombinedHeatpumpTanksState:
         Generally, the higher the temperature difference between the source and the sink,
         the lower the efficiency of the heat pump (the lower COP).
         """
-        if heat_demand_Q_kJ == 0:
+        if heat_demand_Q_kJ < FLOATING_POINT_TOLERANCE:
             return 0
         heat_demand_kW = convert_kJ_to_kW(heat_demand_Q_kJ, GlobalConfig.slot_length)
         return self._cop_model.calc_cop(

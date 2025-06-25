@@ -39,7 +39,7 @@ class AllTanksState:
         scaling_factors = self._get_scaling_factors_for_charging(self._last_time_slot(time_slot))
         for num, tank in enumerate(self._tanks_states):
             heat_energy_per_tank_kWh = convert_kJ_to_kWh(heat_energy_kJ * scaling_factors[num])
-            if heat_energy_per_tank_kWh == 0:
+            if heat_energy_per_tank_kWh < FLOATING_POINT_TOLERANCE:
                 tank.no_charge(time_slot)
             tank.increase_tank_temp_from_heat_energy(heat_energy_per_tank_kWh, time_slot)
 
@@ -50,7 +50,7 @@ class AllTanksState:
         )
         for num, tank in enumerate(self._tanks_states):
             heat_energy_per_tank_kWh = convert_kJ_to_kWh(heat_energy_kJ * scaling_factors[num])
-            if heat_energy_per_tank_kWh == 0:
+            if heat_energy_per_tank_kWh < FLOATING_POINT_TOLERANCE:
                 tank.no_charge(time_slot)
             tank.decrease_tank_temp_from_heat_energy(heat_energy_per_tank_kWh, time_slot)
 
