@@ -47,6 +47,7 @@ nav:
     - 'Results dashboard': 'results-dashboard'
     - 'Net Energy Traded, Energy Cost (Bill) and Energy Cost Savings': 'bills_savings.md'
     - 'Self-Sufficiency and Self-Consumption': 'self-sufficiency-self-consumption.md'
+    - 'Carbon Footprint and Carbon Savings': 'carbon-footprint-savings.md'
     - 'Trade Profile and Energy Peak Percentage': 'trade-profile.md'
     - 'Aggregate Market Summary': 'aggregate-market-summary.md'
     - 'Price Graph': 'price.md'

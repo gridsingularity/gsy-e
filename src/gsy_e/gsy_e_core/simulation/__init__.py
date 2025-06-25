@@ -12,13 +12,12 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-from gsy_e.gsy_e_core.simulation.simulation import (Simulation, simulation_class_factory,
-                                                    run_simulation, CoefficientSimulation)
+
+from gsy_e.gsy_e_core.simulation.simulation import (
+    Simulation,
+    simulation_class_factory,
+    run_simulation,
+)
 
 
-__all__ = [
-    "Simulation",
-    "CoefficientSimulation",
-    "simulation_class_factory",
-    "run_simulation"
-]
+__all__ = ["Simulation", "simulation_class_factory", "run_simulation"]

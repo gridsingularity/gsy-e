@@ -3,7 +3,7 @@
     "sim_duration": "24h",
     "slot_length": "15m",
     "tick_length": "15s",
-    "start_date": "2025-04-14"
+    "start_date": "2025-06-06"
   },
   "advanced_settings": {
     "GeneralSettings": {
