@@ -23,7 +23,7 @@ from typing import Dict, List
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.enums import AvailableMarketTypes, BidOfferMatchAlgoEnum
 
-from gsy_e.constants import ROUND_TOLERANCE
+from gsy_e.constants import ROUND_TOLERANCE_EXPORT
 from gsy_e.gsy_e_core.matching_engine_singleton import bid_offer_matcher
 from gsy_e.gsy_e_core.util import is_two_sided_market_simulation
 from gsy_e.models.area import Area
@@ -261,20 +261,23 @@ class HeatPumpDataExporter(BaseDataExporter):
         rows = [slot]
         if file_key == "heat_pump":
             rows += [
-                round(self._traded(market), ROUND_TOLERANCE),
-                round(self.area.strategy.state.heatpump.get_cop(slot), ROUND_TOLERANCE),
-                round(self.area.strategy.state.heatpump.get_heat_demand_kJ(slot), ROUND_TOLERANCE),
+                round(self._traded(market), ROUND_TOLERANCE_EXPORT),
+                round(self.area.strategy.state.heatpump.get_cop(slot), ROUND_TOLERANCE_EXPORT),
+                round(
+                    self.area.strategy.state.heatpump.get_heat_demand_kJ(slot),
+                    ROUND_TOLERANCE_EXPORT,
+                ),
             ]
         if file_key == "water_tanks":
             for tank in self.area.strategy.state.get_results_dict(slot)["tanks"]:
                 if tank["type"] == "WATER":
-                    rows.append(round(tank["storage_temp_C"], ROUND_TOLERANCE))
-                    rows.append(round(tank["soc"], ROUND_TOLERANCE))
+                    rows.append(round(tank["storage_temp_C"], ROUND_TOLERANCE_EXPORT))
+                    rows.append(round(tank["soc"], ROUND_TOLERANCE_EXPORT))
         if file_key == "pcm_tanks":
             for tank in self.area.strategy.state.get_results_dict(slot)["tanks"]:
                 if tank["type"] == "PCM":
-                    rows.append(round(tank["storage_temp_C"], ROUND_TOLERANCE))
-                    rows.append(round(tank["soc"], ROUND_TOLERANCE))
+                    rows.append(round(tank["storage_temp_C"], ROUND_TOLERANCE_EXPORT))
+                    rows.append(round(tank["soc"], ROUND_TOLERANCE_EXPORT))
         return rows
 
     @property

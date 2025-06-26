@@ -1,3 +1,4 @@
+# pylint: disable=too-many-positional-arguments
 from abc import ABC, abstractmethod
 from typing import Optional, Dict, Union, List
 from statistics import mean
@@ -8,7 +9,6 @@ from gsy_framework.read_user_profile import InputProfileTypes
 from gsy_framework.utils import (
     convert_kJ_to_kWh,
     convert_kWh_to_kJ,
-    convert_kWh_to_W,
     convert_kJ_to_kW,
 )
 from pendulum import DateTime
@@ -165,15 +165,11 @@ class CombinedHeatpumpTanksState:
         max_heat_demand_kJ = self._charger.get_max_heat_energy_charge_kJ(
             time_slot, self.heatpump.get_heat_demand_kJ(time_slot)
         )
-        cop = self._cop_model.calc_cop(
-            source_temp_C=source_temp_C,
-            condenser_temp_C=self._charger.get_condenser_temperature_C(time_slot),
-            heat_demand_kW=convert_kJ_to_kW(max_heat_demand_kJ, self._slot_length),
+        cop = self._calc_cop(
+            heat_demand_Q_kJ=max_heat_demand_kJ, source_temp_C=source_temp_C, time_slot=time_slot
         )
-
         if cop == 0:
             return 0
-
         max_energy_consumption_kWh = convert_kJ_to_kWh(max_heat_demand_kJ / cop)
         assert max_energy_consumption_kWh > -FLOATING_POINT_TOLERANCE
         if max_energy_consumption_kWh > self._max_energy_consumption_kWh:
@@ -185,13 +181,9 @@ class CombinedHeatpumpTanksState:
         min_heat_demand_kJ = self._charger.get_min_heat_energy_charge_kJ(
             time_slot, self.heatpump.get_heat_demand_kJ(time_slot)
         )
-
-        cop = self._cop_model.calc_cop(
-            source_temp_C=source_temp_C,
-            condenser_temp_C=self._charger.get_condenser_temperature_C(time_slot),
-            heat_demand_kW=convert_kJ_to_kW(min_heat_demand_kJ, self._slot_length),
+        cop = self._calc_cop(
+            heat_demand_Q_kJ=min_heat_demand_kJ, source_temp_C=source_temp_C, time_slot=time_slot
         )
-
         if cop == 0:
             return 0
         min_energy_consumption_kWh = convert_kJ_to_kWh(min_heat_demand_kJ / cop)
@@ -211,13 +203,14 @@ class CombinedHeatpumpTanksState:
         Update the storage temperature based on the bought heatpump energy and the heatpump source
         temperature.
         """
+        FLOATING_POINT_TOLERANCE_UPDATE = 1e-4
         traded_heat_energy_kJ = self.calc_Q_kJ_from_energy_kWh(
             last_time_slot, bought_energy_kWh, source_temp_C
         )
         net_energy_kJ = traded_heat_energy_kJ - heat_demand_kJ
-        if net_energy_kJ > 0:
+        if net_energy_kJ > FLOATING_POINT_TOLERANCE_UPDATE:
             self._charger.charge(net_energy_kJ, time_slot)
-        elif net_energy_kJ < 0:
+        elif net_energy_kJ < -FLOATING_POINT_TOLERANCE_UPDATE:
             self._charger.discharge(abs(net_energy_kJ), time_slot)
         else:
             self._charger.no_charge(time_slot)
@@ -245,10 +238,9 @@ class CombinedHeatpumpTanksState:
         Generally, the higher the temperature difference between the source and the sink,
         the lower the efficiency of the heat pump (the lower COP).
         """
-        # 1 J = 1 W s
-        heat_demand_kW = (
-            heat_demand_Q_kJ / self._slot_length.total_seconds() if heat_demand_Q_kJ else None
-        )
+        if heat_demand_Q_kJ < FLOATING_POINT_TOLERANCE:
+            return 0
+        heat_demand_kW = convert_kJ_to_kW(heat_demand_Q_kJ, GlobalConfig.slot_length)
         return self._cop_model.calc_cop(
             source_temp_C=source_temp_C,
             condenser_temp_C=self._charger.get_condenser_temperature_C(time_slot),
@@ -259,11 +251,13 @@ class CombinedHeatpumpTanksState:
         self, time_slot: DateTime, energy_kWh: float, source_temp_C: float
     ) -> float:
         """Calculate heat in kJ from energy in kWh."""
-        condenser_temp = self._charger.get_condenser_temperature_C(time_slot)
-        cop = self._cop_model.calc_cop(
-            source_temp_C, condenser_temp, convert_kWh_to_W(energy_kWh, self._slot_length) / 1000.0
+        energy_kJ = convert_kWh_to_kJ(energy_kWh)
+        cop = self._calc_cop(
+            heat_demand_Q_kJ=energy_kJ,
+            source_temp_C=source_temp_C,
+            time_slot=time_slot,
         )
-        return convert_kWh_to_kJ(cop * energy_kWh)
+        return energy_kJ * cop
 
     def calc_energy_kWh_from_Q_kJ(self, time_slot: DateTime, Q_energy_kJ: float) -> float:
         """Calculate energy in kWh from heat in kJ."""
@@ -346,7 +340,7 @@ class HeatPumpEnergyParametersBase(ABC):
 
     @abstractmethod
     def _rotate_profiles(self, current_time_slot: Optional[DateTime] = None):
-        self._state.heatpump.delete_past_state_values(current_time_slot)
+        self._state.delete_past_state_values(current_time_slot)
 
     def _populate_state(self, time_slot: DateTime):
         self._calc_energy_demand(time_slot)

@@ -36,11 +36,11 @@ class AllTanksState:
 
     def increase_tanks_temp_from_heat_energy(self, heat_energy_kJ: float, time_slot: DateTime):
         """Increase the temperature of the water tanks with the provided heat energy."""
-        scaling_factors = self._get_scaling_factors_for_charging_energy(
-            self._last_time_slot(time_slot)
-        )
+        scaling_factors = self._get_scaling_factors_for_charging(self._last_time_slot(time_slot))
         for num, tank in enumerate(self._tanks_states):
             heat_energy_per_tank_kWh = convert_kJ_to_kWh(heat_energy_kJ * scaling_factors[num])
+            if heat_energy_per_tank_kWh < FLOATING_POINT_TOLERANCE:
+                tank.no_charge(time_slot)
             tank.increase_tank_temp_from_heat_energy(heat_energy_per_tank_kWh, time_slot)
 
     def decrease_tanks_temp_from_heat_energy(self, heat_energy_kJ: float, time_slot: DateTime):
@@ -50,6 +50,8 @@ class AllTanksState:
         )
         for num, tank in enumerate(self._tanks_states):
             heat_energy_per_tank_kWh = convert_kJ_to_kWh(heat_energy_kJ * scaling_factors[num])
+            if heat_energy_per_tank_kWh < FLOATING_POINT_TOLERANCE:
+                tank.no_charge(time_slot)
             tank.decrease_tank_temp_from_heat_energy(heat_energy_per_tank_kWh, time_slot)
 
     def no_charge(self, time_slot: DateTime):
@@ -60,7 +62,9 @@ class AllTanksState:
     def get_max_heat_energy_consumption_kJ(self, time_slot: DateTime, heat_demand_kJ: float):
         """Get max heat energy consumption from all water tanks."""
         max_heat_energies = []
-        scaling_factors = self._get_scaling_factors_for_discharging(time_slot)
+        scaling_factors = self._get_scaling_factors_for_charging(time_slot)
+        if sum(scaling_factors) == 0:
+            return heat_demand_kJ
         for num, tank in enumerate(self._tanks_states):
             max_heat_energy_per_tank = heat_demand_kJ * scaling_factors[num]
             max_heat_energies.append(
@@ -75,6 +79,8 @@ class AllTanksState:
         """Get min heat energy consumption from all water tanks."""
         min_heat_energies = []
         scaling_factors = self._get_scaling_factors_for_discharging(time_slot)
+        if sum(scaling_factors) == 0:
+            return heat_demand_kJ
         for num, tank in enumerate(self._tanks_states):
             min_heat_energy_per_tank = heat_demand_kJ * scaling_factors[num]
             min_heat_energies.append(
@@ -116,7 +122,7 @@ class AllTanksState:
         for tank in self._tanks_states:
             tank.init()
 
-    def _get_scaling_factors_for_charging_energy(self, time_slot):
+    def _get_scaling_factors_for_charging(self, time_slot):
         _current_dod_tanks = [tank.get_dod_energy_kJ(time_slot) for tank in self._tanks_states]
         total_energy = sum(_current_dod_tanks)
         if total_energy == 0:
