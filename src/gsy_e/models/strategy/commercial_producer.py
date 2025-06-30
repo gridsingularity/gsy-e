@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
 
-from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.data_classes import TraderDetails
 from gsy_framework.utils import convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict
 from gsy_framework.validators import CommercialProducerValidator
@@ -60,6 +60,7 @@ class CommercialStrategy(BaseStrategy):
 
     def _read_or_rotate_profiles(self, reconfigure=False):
         self._sell_energy_profile.read_or_rotate_profiles(reconfigure=reconfigure)
+        GlobalConfig.market_maker_rate = self._sell_energy_profile.profile
 
     def _markets_to_offer_on_activate(self):
         return self.area.all_markets
