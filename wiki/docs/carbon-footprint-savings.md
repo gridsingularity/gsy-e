@@ -3,9 +3,11 @@ Carbon Footprint measures the total emissions of a community by correlating the 
 Carbon Savings represent the reduction in carbon footprint resulting from a decrease in electricity imports realised by engaging in community energy trading.
 
 The carbon footprint value is calculated as follows:
-```
-Carbon Footprint (kg CO₂-equivalent) = Imported Electricity (kWh) × Country’s CO₂-equivalent Emissions (kg CO₂-equivalent/kWh) / 1000
-```
+
+`Carbon Footprint (kg CO₂-equivalent) = Imported Electricity (kWh) × Country’s CO₂-equivalent Emissions (kg CO₂-equivalent/kWh) / 1000 (note that country and entity are used intermittently in the relevant development documentation to avoid any political implications).
+`
+
+
 The carbon savings value is calculated as follows:
 ```
 Carbon Savings (kg CO₂-equivalent) = Baseline Carbon Footprint − Reduced Carbon Footprint
