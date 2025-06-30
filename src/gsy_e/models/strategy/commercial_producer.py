@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
 import logging
 
 from gsy_framework.constants_limits import ConstSettings
@@ -33,13 +34,13 @@ class CommercialStrategy(BaseStrategy):
     """Strategy class for commercial energy producer that can sell an infinite amount of energy."""
 
     def __init__(self, energy_rate=None):
-        CommercialProducerValidator.validate(energy_rate=energy_rate)
         super().__init__()
         self.energy_per_slot_kWh = INF_ENERGY
 
         if energy_rate is None:
             energy_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
         self._sell_energy_profile = StrategyProfile(input_energy_rate=energy_rate)
+        CommercialProducerValidator.validate(energy_rate=self._sell_energy_profile.profile)
 
     @property
     def energy_rate(self):
@@ -98,8 +99,11 @@ class CommercialStrategy(BaseStrategy):
 
             self.offers.post(offer, market.id)
         except MarketException:
-            logging.error(f"Offer posted with negative energy rate {energy_rate}."
-                          "Posting offer with zero energy rate instead.")
+            logging.error(
+                "Offer posted with negative energy rate %s."
+                "Posting offer with zero energy rate instead.",
+                energy_rate,
+            )
 
     def _offer_balancing_energy(self, market):
         if not self._is_eligible_for_balancing_market:
@@ -113,7 +117,7 @@ class CommercialStrategy(BaseStrategy):
         offer = market.balancing_offer(
             self.energy_per_slot_kWh * balancing_supply_rate,
             self.energy_per_slot_kWh,
-            TraderDetails(self.owner.name, self.owner.uuid, self.owner.name, self.owner.uuid)
+            TraderDetails(self.owner.name, self.owner.uuid, self.owner.name, self.owner.uuid),
         )
         self.offers.post(offer, market.id)
 
@@ -122,7 +126,8 @@ class CommercialStrategy(BaseStrategy):
 
     def restore_state(self, saved_state):
         self._sell_energy_profile.profile = convert_str_to_pendulum_in_dict(
-            saved_state["energy_rate"])
+            saved_state["energy_rate"]
+        )
 
     @property
     def asset_type(self):
