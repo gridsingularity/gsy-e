@@ -15,9 +15,11 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.utils import key_in_dict_and_not_none
 from gsy_framework.validators import MarketMakerValidator
+from gsy_framework.read_user_profile import InputProfileTypes
 
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
 from gsy_e.models.strategy.strategy_profile import StrategyProfile
@@ -30,19 +32,29 @@ class MarketMakerStrategy(CommercialStrategy):
     in order to be used as the reference market maker price by other strategies.
     """
 
-    def __init__(self, energy_rate_profile=None, energy_rate=None, grid_connected=True,
-                 energy_rate_profile_uuid=None):
+    def __init__(
+        self,
+        energy_rate_profile=None,
+        energy_rate=None,
+        grid_connected=True,
+        energy_rate_profile_uuid=None,
+    ):
         super().__init__()
         MarketMakerValidator.validate(grid_connected=grid_connected)
         self._grid_connected = grid_connected
         self.energy_rate_profile_uuid = energy_rate_profile_uuid  # needed for profile_handler
 
-        if all(arg is None for arg in [
-               energy_rate_profile, energy_rate_profile_uuid, energy_rate]):
+        if all(
+            arg is None for arg in [energy_rate_profile, energy_rate_profile_uuid, energy_rate]
+        ):
             energy_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
 
         self._sell_energy_profile = StrategyProfile(
-            energy_rate_profile, energy_rate_profile_uuid, energy_rate)
+            energy_rate_profile,
+            energy_rate_profile_uuid,
+            energy_rate,
+            profile_type=InputProfileTypes.IDENTITY,
+        )
         self._read_or_rotate_profiles()
 
     def serialize(self):
@@ -50,7 +62,7 @@ class MarketMakerStrategy(CommercialStrategy):
             "grid_connected": self._grid_connected,
             "energy_rate": self._sell_energy_profile.input_energy_rate,
             "energy_rate_profile": self._sell_energy_profile.input_profile,
-            "energy_rate_profile_uuid": self._sell_energy_profile.input_profile_uuid
+            "energy_rate_profile_uuid": self._sell_energy_profile.input_profile_uuid,
         }
 
     def _read_or_rotate_profiles(self, reconfigure=False):
