@@ -18,14 +18,20 @@ The operation of the GSY DEX Execution Engine comprises the following functions:
 - Energy Deviation and Penalty Calculation: For each trade, the GSY DEX Execution Engine compares the energy volume that was traded (as per the order parameters) with the energy delivered. Optionally, a penalty for the deviated energy is attributed to the buyer and seller. This penalty mechanism is only enabled if there is no on-chain remuneration engine.
   - For the buyer of the trade, if the delivered energy exceeds the traded energy, the engine calculates the penalty as:
     ```
+
     delta_consumed = measured_energy - traded_energy
+
     penalty = delta_consumed * penalty_rate
+
     ```
     and the penalty is assigned to the buyer.
   - For the seller of the trade, if the delivered energy is less than the traded energy, the penalty is calculated as:
     ```
+
     delta_produced = traded_energy - measured_energy
+
     penalty = delta_produced * penalty_rate
+
     ```
     and the penalty is assigned to the seller.
 - Submission to [GSY Node](blockchain-system-components-overview.md#gsy-node){target=_blank}: Once penalties are computed, the GSY DEX Execution Engine assembles these into one batch and submits it to the GSY Node in the form of extrinsics. This is performed using the [Subxt](https://github.com/paritytech/subxt){target=_blank} library to sign and send transactions, ensuring that penalties are recorded on-chain and that the appropriate financial consequences are enacted. The GSY Node’s runtime includes a dedicated **Trade Execution** pallet to process penalties and update user accounts accordingly. It also includes the **PenaltiesRegistry**, responsible for saving any penalties that the GSY DEX Execution Engine reports to the blockchain, maintaining an immutable record of penalties to enhance transparency and trustworthiness of the exchange operation.
@@ -86,8 +92,8 @@ After penalties are calculated, the GSY DEX Execution Engine communicates with t
 The GSY Node Trade Execution pallet interacts with the GSY DEX Execution Engine to provide an important decentralised trade execution functionality by registering, verifying and processing the penalties for any deviation between traded and measured energy. It consists of the following components:
 - **PenaltiesSubmitted**: Emitted when the penalty extrinsics have been accepted by the GSY Node and the penalty is added to the **PenaltiesRegistry**
 
-##### Trade Execution Pallet Errors
+#### Trade Execution Pallet Errors
 - **NotARegisteredExchangeOperator**: Ensures that only registered exchange operators can submit penalties to the pallet storage. Registered exchange operators are representatives of an entity that is legally contracted to provide an energy exchange service.
 
-##### Trade Execution Pallet Dispatchable Functions
+#### Trade Execution Pallet Dispatchable Functions
 - **submit_penalties**: Validates that the account that submitted the penalties is an exchange operator account. If this is confirmed, the raw penalty is scaled by a factor of 10,000 and rounded to ensure the penalty cost is represented as an u64 value. Subsequently, the submitted penalties are added to the Trade Execution Pallet storage, and the applicable billing and payment service is notified in order to update the balance of the penalised account.
