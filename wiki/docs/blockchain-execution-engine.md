@@ -17,21 +17,19 @@ The operation of the GSY DEX Execution Engine comprises the following functions:
 - Data Retrieval: The GSY DEX Execution Engine polls the [GSY DEX Off-Chain Storage](blockchain-off-chain-storage.md){target=_blank} in regular intervals (each 15 minutes, or at another selected trading interval) for the latest trades and corresponding energy production and consumption measurements. It leverages time-window queries, using calculated start_time and end_time based on 900-second market intervals, to ensure that it processes data in fixed, predictable market slots. On-chain timestamping is used as a common time source.
 - Energy Deviation and Penalty Calculation: For each trade, the GSY DEX Execution Engine compares the energy volume that was traded (as per the order parameters) with the energy delivered. Optionally, a penalty for the deviated energy is attributed to the buyer and seller. This penalty mechanism is only enabled if there is no on-chain remuneration engine.
   - For the buyer of the trade, if the delivered energy exceeds the traded energy, the engine calculates the penalty as:
-    ```
 
+    ```
     delta_consumed = measured_energy - traded_energy
 
     penalty = delta_consumed * penalty_rate
-
     ```
     and the penalty is assigned to the buyer.
   - For the seller of the trade, if the delivered energy is less than the traded energy, the penalty is calculated as:
-    ```
 
+    ```
     delta_produced = traded_energy - measured_energy
 
     penalty = delta_produced * penalty_rate
-
     ```
     and the penalty is assigned to the seller.
 - Submission to [GSY Node](blockchain-system-components-overview.md#gsy-node){target=_blank}: Once penalties are computed, the GSY DEX Execution Engine assembles these into one batch and submits it to the GSY Node in the form of extrinsics. This is performed using the [Subxt](https://github.com/paritytech/subxt){target=_blank} library to sign and send transactions, ensuring that penalties are recorded on-chain and that the appropriate financial consequences are enacted. The GSY Node’s runtime includes a dedicated **Trade Execution** pallet to process penalties and update user accounts accordingly. It also includes the **PenaltiesRegistry**, responsible for saving any penalties that the GSY DEX Execution Engine reports to the blockchain, maintaining an immutable record of penalties to enhance transparency and trustworthiness of the exchange operation.
