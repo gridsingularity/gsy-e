@@ -76,6 +76,11 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://gridsingularity.github.io/gsy-e/documentation/blockchain-execution-engine/</loc>
+         <lastmod>2025-07-01</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://gridsingularity.github.io/gsy-e/documentation/blockchain-installation/</loc>
          <lastmod>2025-07-01</lastmod>
          <changefreq>daily</changefreq>

@@ -1742,6 +1742,18 @@
   </li>
 
         
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../blockchain-execution-engine/" title="GSY DEX Execution Engine" class="md-nav__link">
+      GSY DEX Execution Engine
+    </a>
+  </li>
+
+        
       </ul>
     </nav>
   </li>
@@ -1905,7 +1917,7 @@
 <p>The GSY DEX Matching Engine is implemented in <a href="https://www.rust-lang.org/" target="_blank">Rust</a>, in order to take advantage of the ease of interconnection with other components of the GSY DEX, especially with the GSY Node, and the Rust performance benefits compared to other programming languages. The Matching Engine’s operation revolves around a loop that continuously submits requests to the <a href="../blockchain-off-chain-storage/">GSY DEX Off-Chain Storage</a> as to whether new open offers or bids have been created. If the Off-Chain Storage reports that new offers and bids have been created, the Matching Engine calls the applicable matching algorithm to calculate the matches and then transmits the calculated matches to the GSY Node. The main Rust modules that comprise the Matching Engine are the Algorithms Module and the Connectors Module.</p>
 <figure>
 <p><img alt="alt_text" src="../img/blockchain-matching-engine-dataflow.png" text-align:center_="text-align:center&quot;" />
-  <figcaption><b>Figure 1</b>: The GSY DEX Matching Engine Dataflow
+  <figcaption><b>Figure 6.16</b>: The GSY DEX Matching Engine Dataflow
 </figcaption></p>
 </figure>
 <p>The GSY DEX Matching Engine <a href="https://github.com/gridsingularity/gsy-decentralized-exchange/tree/main/gsy-matching-engine/src/algorithms" target="_blank">Algorithms Module</a> stores the available matching algorithms. Currently the <a href="../market-types/#two-sided-pay-as-bid-market">two-sided pay-as-bid</a> algorithm is supported, with additional matching algorithms to be added in the future, either by Grid Singularity or a third party via the GSY DEX Matching API. Furthermore, the design of the Algorithms Module allows multiple algorithms to be deployed in parallel. For instance, different matching algorithms can be applied in different energy communities, or in different buildings within an energy community to optimise their asset configuration</p>
@@ -1949,7 +1961,7 @@
 </code></pre></div>
 
 
-<figcaption><b>Figure 2</b>: Template of GSY DEX Off-Chain Storage Bid and Offer structures that are read by the GSY DEX Matching Engine</figcaption>
+<figcaption><b>Figure 6.17</b>: Template of GSY DEX Off-Chain Storage Bid and Offer structures that are read by the GSY DEX Matching Engine</figcaption>
 
 <h3 id="gsy-dex-matching-engine-gsy-node-communication-trade-settlement-pallet">GSY DEX Matching Engine / GSY Node Communication - Trade Settlement Pallet<a class="headerlink" href="#gsy-dex-matching-engine-gsy-node-communication-trade-settlement-pallet" title="Permanent link">&para;</a></h3>
 <p>The Trade Settlement pallet provides a decentralised trade verification functionality that allows its users to:</p>
@@ -2036,13 +2048,13 @@
           </a>
         
         
-          <a href="../references/" title="References" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../blockchain-execution-engine/" title="GSY DEX Execution Engine" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                References
+                GSY DEX Execution Engine
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">
