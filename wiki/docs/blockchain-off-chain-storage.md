@@ -6,10 +6,10 @@ Off-chain workers (also termed mycos in the GSY DEX architecture design) are an 
 
 The GSY DEX Off-Chain Storage comprises four distinct components, named substorages and described below:
 
-- **GSY DEX Grid Topology Storage**
-- **GSY DEX Measurements Storage**
-- **GSY DEX Trades Storage**
-- **GSY DEX Order Book Storage**
+- [**GSY DEX Grid Topology Storage**](#gsy-dex-grid-topology-storage)
+- [**GSY DEX Measurements Storage**](#gsy-dex-measurements-storage)
+- [**GSY DEX Trades Storage**](#gsy-dex-trades-storage)
+- [**GSY DEX Order Book Storage**](#gsy-dex-order-book-storage)
 
 
 Each of the off-chain storage components is associated with proprietary, component-specific  database tables, and exposed to other [GSY DEX system components](blockchain-system-components-overview.md) via HTTP REST endpoints to facilitate common operations and streamline access to data. This approach ensures that other GSY DEX system components can read, update and save information related to each storage component. Furthermore, separating the data in different components restricts data dependencies and thereby optimises its management, including by enabling efficient database migration and other operations on the database tables’ schema. In addition, data storage segmentation facilitates partial data transfer to other data storages in the future system upgrades. Off-chain storage workers’ role is to ensure that off-chain storage subcomponents, namely the GSY DEX Grid Topology Storage and the GSY DEX Measurements Storage, securely receive the required data such as asset-level generation and consumption, and that the GSY DEX Trades Storage and the GSY DEX Order Book Storage can support and improve performance of the matching operation based on a set of preferred energy attributes in communities where such preferences can be facilitated.
