@@ -83,7 +83,7 @@ Once the data is fetched, the GSY DEX Execution Engine compares the traded energ
 After penalties are calculated, the GSY DEX Execution Engine communicates with the GSY Node by constructing and submitting penalty extrinsics. These extrinsics are built by converting the internal penalty structures into the node’s expected SCALE‑encoded types, and signed using an exchange operator key. The [GSY Node](blockchain-system-components-overview.md#gsy-node){target=_blank} then verifies and processes these penalties, triggering the necessary account adjustments, via the Trade Execution pallet, which is described below. As noted above, the penalty mechanism is only enabled if there is no on-chain remuneration engine.
 
 ### Trade Execution Pallet (GSY DEX Execution Engine / GSY Node Communication)
-The GSY Node Trade Execution pallet interacts with the GSY DEX Execution Engine to provide an important decentralised trade execution functionality by registering, verifying and processing the penalties for any deviation between traded and measured energy. It consists of the following component:
+The GSY Node Trade Execution pallet interacts with the GSY DEX Execution Engine to provide an important decentralised trade execution functionality by registering, verifying and processing the penalties for any deviation between traded and measured energy. It consists of one critical component:
 
 - **PenaltiesSubmitted**: Emitted when the penalty extrinsics have been accepted by the GSY Node and the penalty is added to the **Penalties Registry**
 
