@@ -13,7 +13,7 @@
         <meta name="description" content="Documentation for the Grid Singularity Exchange">
       
       
-        <link rel="canonical" href="https://gridsingularity.github.io/gsy-e/documentation/blockchain-execution-engine/">
+        <link rel="canonical" href="http://localhost:8000/blockchain-execution-engine/">
       
       
         <meta name="author" content="Grid Singularity">
@@ -119,7 +119,7 @@
   <nav class="md-header-nav md-grid">
     <div class="md-flex">
       <div class="md-flex__cell md-flex__cell--shrink">
-        <a href="https://gridsingularity.github.io/gsy-e/documentation/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
+        <a href="http://localhost:8000/" title="Grid Singularity Wiki" class="md-header-nav__button md-logo">
           
             <img src="../img/Profile.png" width="32" height="32">
           
@@ -209,7 +209,7 @@
                   <div class="md-sidebar__inner">
                     <nav class="md-nav md-nav--primary" data-md-level="0">
   <label class="md-nav__title md-nav__title--site" for="__drawer">
-    <a href="https://gridsingularity.github.io/gsy-e/documentation/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
+    <a href="http://localhost:8000/" title="Grid Singularity Wiki" class="md-nav__button md-logo">
       
         <img src="../img/Profile.png" width="48" height="48">
       
@@ -1856,21 +1856,31 @@
 <p>The operation of the GSY DEX Execution Engine comprises the following functions:</p>
 <ul>
 <li>Data Retrieval: The GSY DEX Execution Engine polls the <a href="../blockchain-off-chain-storage/" target="_blank">GSY DEX Off-Chain Storage</a> in regular intervals (each 15 minutes, or at another selected trading interval) for the latest trades and corresponding energy production and consumption measurements. It leverages time-window queries, using calculated start_time and end_time based on 900-second market intervals, to ensure that it processes data in fixed, predictable market slots. On-chain timestamping is used as a common time source.</li>
-<li>Energy Deviation and Penalty Calculation: For each trade, the GSY DEX Execution Engine compares the energy volume that was traded (as per the order parameters) with the energy delivered. Optionally, a penalty for the deviated energy is attributed to the buyer and seller. This penalty mechanism is only enabled if there is no on-chain remuneration engine.</li>
+<li>
+<p>Energy Deviation and Penalty Calculation: For each trade, the GSY DEX Execution Engine compares the energy volume that was traded (as per the order parameters) with the energy delivered. Optionally, a penalty for the deviated energy is attributed to the buyer and seller. This penalty mechanism is only enabled if there is no on-chain remuneration engine.</p>
+<ul>
 <li>
 <p>For the buyer of the trade, if the delivered energy exceeds the traded energy, the engine calculates the penalty as:</p>
-<p>```
-delta_consumed = measured_energy - traded_energy</p>
-<p>penalty = delta_consumed * penalty_rate
-```
-and the penalty is assigned to the buyer.
-  - For the seller of the trade, if the delivered energy is less than the traded energy, the penalty is calculated as:</p>
-<p>```
-delta_produced = traded_energy - measured_energy</p>
-<p>penalty = delta_produced * penalty_rate
-```
-and the penalty is assigned to the seller.
-- Submission to <a href="../blockchain-system-components-overview/#gsy-node" target="_blank">GSY Node</a>: Once penalties are computed, the GSY DEX Execution Engine assembles these into one batch and submits it to the GSY Node in the form of extrinsics. This is performed using the <a href="https://github.com/paritytech/subxt" target="_blank">Subxt</a> library to sign and send transactions, ensuring that penalties are recorded on-chain and that the appropriate financial consequences are enacted. The GSY Node’s runtime includes a dedicated <strong>Trade Execution</strong> pallet to process penalties and update user accounts accordingly. It also includes the <strong>PenaltiesRegistry</strong>, responsible for saving any penalties that the GSY DEX Execution Engine reports to the blockchain, maintaining an immutable record of penalties to enhance transparency and trustworthiness of the exchange operation.</p>
+<div class="codehilite"><pre><span></span><code>delta_consumed = measured_energy - traded_energy
+penalty = delta_consumed * penalty_rate
+</code></pre></div>
+
+
+<p>and the penalty is assigned to the buyer.</p>
+</li>
+<li>
+<p>For the seller of the trade, if the delivered energy is less than the traded energy, the penalty is calculated as:</p>
+<div class="codehilite"><pre><span></span><code>delta_produced = traded_energy - measured_energy
+penalty = delta_produced * penalty_rate
+</code></pre></div>
+
+
+<p>and the penalty is assigned to the seller.</p>
+</li>
+</ul>
+</li>
+<li>
+<p>Submission to <a href="../blockchain-system-components-overview/#gsy-node" target="_blank">GSY Node</a>: Once penalties are computed, the GSY DEX Execution Engine assembles these into one batch and submits it to the GSY Node in the form of extrinsics. This is performed using the <a href="https://github.com/paritytech/subxt" target="_blank">Subxt</a> library to sign and send transactions, ensuring that penalties are recorded on-chain and that the appropriate financial consequences are enacted. The GSY Node’s runtime includes a dedicated <strong>Trade Execution</strong> pallet to process penalties and update user accounts accordingly. It also includes the <strong>PenaltiesRegistry</strong>, responsible for saving any penalties that the GSY DEX Execution Engine reports to the blockchain, maintaining an immutable record of penalties to enhance transparency and trustworthiness of the exchange operation.</p>
 </li>
 </ul>
 <h3 id="gsy-dex-execution-engine-implementation">GSY DEX Execution Engine Implementation<a class="headerlink" href="#gsy-dex-execution-engine-implementation" title="Permanent link">&para;</a></h3>
