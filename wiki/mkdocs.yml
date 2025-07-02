@@ -183,6 +183,7 @@ markdown_extensions:
         guess_lang: false
     - toc:
         permalink: true
+        toc_depth: 4
     - mdtooltips
     - attr_list
     - md_in_html
