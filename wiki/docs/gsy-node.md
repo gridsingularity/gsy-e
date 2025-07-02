@@ -244,11 +244,11 @@ and start docker-compose:
 docker-compose up
 ```
 
-#### Setting up your computer for Substrate development
+#### Set up your computer for Substrate development
 
 Please install Rust toolchain and the Developer Tools following the instructions from Substrate [here](https://docs.substrate.io/main-docs/install/){target=_blank}.
 
-#### Running the GSY DEX code
+#### Run the GSY DEX code
 
 The `cargo run` command will perform an initial build. Use the following command to build the node without launching it:
 
@@ -283,7 +283,7 @@ Integration with the non-decentralized version of the [GSY Energy Exchange](http
 
 Once installation is completed, a new energy marketplace can be modelled following the instructions [here](general-settings.md#backend-simulation-configuration). The same marketplace can also be simulated using the GSY DEX as the exchange engine.  In order to switch to the GSY DEX and enable blockchain operations, the command-line flag `--enable-bc` should be used. The mnemonic of the GSY DEX account should also be provided, in order to authorise the exchange engine to restore your key when needed and interact as bids and offers’ aggregator on your behalf with the blockchain. Finally, the `ENABLE_SUBSTRATE` parameter should be set to True.
 
-#### Co-developing the GSY DEX
+#### Co-develop the GSY DEX
 To develop and extend the GSY DEX features and applications please follow this guide, which is based on the [rustup](https://rustup.rs){target=_blank} installer tool for Rust toolchain management.
 
 First install and configure `rustup`:
@@ -300,9 +300,9 @@ rustup update
 rustup update nightly
 rustup target add wasm32-unknown-unknown --toolchain nightly
 ```
-In order to test your setup, the best way to ensure that you have successfully prepared a computer for the [GSY Node](blockchain-system-components-overview.md#gsy-node) development is to follow the steps in the [first Substrate tutorial](https://docs.substrate.io/tutorials/).
+In order to test your setup, the best way to ensure that you have successfully prepared a computer for the [GSY Node](gsy-node.md) development is to follow the steps in the [first Substrate tutorial](https://docs.substrate.io/tutorials/).
 
-In order to run the code in developer mode, use Rust's native `cargo` command to build and launch the [GSY Node](blockchain-system-components-overview.md#gsy-node):
+In order to run the code in developer mode, use Rust's native `cargo` command to build and launch the [GSY Node](gsy-node.md):
 ```commandline
 cd gsy-node
 cargo run --release -- --dev --tmp
@@ -339,7 +339,7 @@ The terminal should display output similar to this:
 2022-08-16 13:54:26 💤 Idle (0 peers), best: #3 (0xcdac…26e5), finalized #1 (0x107c…9bae), ⬇ 0 ⬆ 0
 ```
 
-If the block number, denoted by the logs that include the string `finalized #<block-number>`, is increasing, the [GSY Node](blockchain-system-components-overview.md#gsy-node) is producing new blocks and its consensus algorithm is operating correctly.
+If the block number, denoted by the logs that include the string `finalized #<block-number>`, is increasing, the [GSY Node](gsy-node.md) is producing new blocks and its consensus algorithm is operating correctly.
 
 #### Connect external UI to the GSY DEX
 
