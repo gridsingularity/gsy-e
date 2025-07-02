@@ -120,6 +120,57 @@ The following are the components of the Order Book Registry Pallet:
 - `is_registered_matching_engine_operator`: Check if an account is a registered matching engine operator.
 
 
+#### GSY Node Order Book Worker Pallet
+
+The Order Book Worker pallet manages the lifecycle of energy orders for the GSY DEX, communicating with its on- and off-chain services. It ensures the integrity of the GSY Node Order Book and serves as the entry point for all incoming orders. The Order Book Worker Pallet facilitates the following functions:
+
+- Insert orders into the order book
+- Insert orders into the order book by proxy
+- Remove orders
+- Remove orders by order reference
+- Remove orders by proxy
+
+By interacting with the GSY DEX API Gateway and the GSY DEX Off-Chain Storage, it routes all orders transmitted from the GSY DEX API Gateway to off-chain services that require them, such as the GSY DEX Off-Chain Storage. Furthermore, the incoming orders are forwarded to other pallets that require them as inputs, such as the Order Book Registry Pallet. In detail, the interactions of the Order Book Worker Pallet with other services comprise of:
+
+- GSY DEX API Gateway: The Order Book Worker Pallet receives new orders submitted through the API gateway. It processes and validates these orders before adding them to the off-chain order book storage. The pallet also communicates, using on-chain events, any update or other changes in the order status back to the users.
+- [GSY DEX Off-Chain Storage](blockchain-off-chain-storage.md){target=_blank}: The Order Book Worker Pallet works closely with the off-chain storage service to manage the order book. It broadcasts orders to the off-chain order book storage component. This interaction ensures that the order book data is always up-to-date and readily available for subsequent processing by the GSY DEX Matching Engine.
+
+The following are the components of the Order Book Worker Pallet:
+
+##### Order Book Worker Pallet Storage Items
+
+- `Orderbook`: A storage map that temporarily contains the orders in the order book.
+- `UserNonce`: A storage map that contains nonces for each user.
+
+##### Order Book Worker Pallet Events
+
+- `OrderRemoved`: Emitted when an order is removed from the order book storage.
+- `NewOrderInserted`: Emitted when a new order is inserted into the order book storage.
+
+##### Order Book Worker Pallet Errors
+
+- `OffchainUnsignedTxError`: An error that occurs when processing an unsigned transaction.
+- `OffchainSignedTxError`: An error that occurs when processing a signed transaction.
+- `OrderProcessingError`: An error that occurs when processing an order.
+- `NoLocalAcctForSigning`: An error that occurs when there is no local account for signing.
+- `NonceCheckOverflow`: Returned when the nonce check overflows.
+- `OrderIsNotRegistered`: Returned when an order is not registered.
+- `NotARootUser`: Returned when the user is not a root user.
+- `InvalidNonce`: Returned when the nonce is invalid.
+
+##### Order Book Worker Pallet Dispatchable Functions
+
+- `insert_orders`: Insert a vector of orders into the order book.
+- `insert_orders_by_proxy`: Insert a vector of orders into the order book on behalf of a delegator.
+- `remove_orders`: Remove a vector of orders from the order book.
+- `remove_orders_by_order_reference`: Remove an order from the order book by its order reference. This function requires an unsigned transaction and provides an interface for the off-chain workers.
+- `remove_orders_by_proxy`:  Remove a vector of orders from the order book on behalf of a delegator.
+
+##### Order Book Worker Pallet Hooks
+
+- `offchain_worker`: An offchain worker that processes orders in the order book for broadcasting them to the off-chain storage and removes them from the on-chain storage.
+
+
 #### GSY DEX Primitives
 
 
@@ -173,57 +224,6 @@ The `trades` module defines several types:
 - `TradeParameters`: A struct representing the trade parameters, including the selected energy, energy rate, and trade UUID.
 - `BidOfferMatch`: A struct representing a bid and offer match, including the selected energy, energy rate, and trade UUID
 - `Validator`: A trait defining the validation functions for the `trades` module.
-
-
-#### GSY Node Order Book Worker Pallet
-
-The Order Book Worker pallet manages the lifecycle of energy orders for the GSY DEX, communicating with its on- and off-chain services. It ensures the integrity of the GSY Node Order Book and serves as the entry point for all incoming orders. The Order Book Worker Pallet facilitates the following functions:
-
-- Insert orders into the order book
-- Insert orders into the order book by proxy
-- Remove orders
-- Remove orders by order reference
-- Remove orders by proxy
-
-By interacting with the GSY DEX API Gateway and the GSY DEX Off-Chain Storage, it routes all orders transmitted from the GSY DEX API Gateway to off-chain services that require them, such as the GSY DEX Off-Chain Storage. Furthermore, the incoming orders are forwarded to other pallets that require them as inputs, such as the Order Book Registry Pallet. In detail, the interactions of the Order Book Worker Pallet with other services comprise of:
-
-- GSY DEX API Gateway: The Order Book Worker Pallet receives new orders submitted through the API gateway. It processes and validates these orders before adding them to the off-chain order book storage. The pallet also communicates, using on-chain events, any update or other changes in the order status back to the users.
-- [GSY DEX Off-Chain Storage](blockchain-off-chain-storage.md){target=_blank}: The Order Book Worker Pallet works closely with the off-chain storage service to manage the order book. It broadcasts orders to the off-chain order book storage component. This interaction ensures that the order book data is always up-to-date and readily available for subsequent processing by the GSY DEX Matching Engine.
-
-The following are the components of the Order Book Worker Pallet:
-
-##### Order Book Worker Pallet Storage Items
-
-- `Orderbook`: A storage map that temporarily contains the orders in the order book.
-- `UserNonce`: A storage map that contains nonces for each user.
-
-##### Order Book Worker Pallet Events
-
-- `OrderRemoved`: Emitted when an order is removed from the order book storage.
-- `NewOrderInserted`: Emitted when a new order is inserted into the order book storage.
-
-##### Order Book Worker Pallet Errors
-
-- `OffchainUnsignedTxError`: An error that occurs when processing an unsigned transaction.
-- `OffchainSignedTxError`: An error that occurs when processing a signed transaction.
-- `OrderProcessingError`: An error that occurs when processing an order.
-- `NoLocalAcctForSigning`: An error that occurs when there is no local account for signing.
-- `NonceCheckOverflow`: Returned when the nonce check overflows.
-- `OrderIsNotRegistered`: Returned when an order is not registered.
-- `NotARootUser`: Returned when the user is not a root user.
-- `InvalidNonce`: Returned when the nonce is invalid.
-
-##### Order Book Worker Pallet Dispatchable Functions
-
-- `insert_orders`: Insert a vector of orders into the order book.
-- `insert_orders_by_proxy`: Insert a vector of orders into the order book on behalf of a delegator.
-- `remove_orders`: Remove a vector of orders from the order book.
-- `remove_orders_by_order_reference`: Remove an order from the order book by its order reference. This function requires an unsigned transaction and provides an interface for the off-chain workers.
-- `remove_orders_by_proxy`:  Remove a vector of orders from the order book on behalf of a delegator.
-
-##### Order Book Worker Pallet Hooks
-
-- `offchain_worker`: An offchain worker that processes orders in the order book for broadcasting them to the off-chain storage and removes them from the on-chain storage.
 
 
 ### GSY Node Installation
