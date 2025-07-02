@@ -99,6 +99,7 @@ nav:
   - 'GSY DEX Node Installation, Operation and Development': 'blockchain-installation.md'
   - 'GSY DEX Off-Chain Storage': 'blockchain-off-chain-storage.md'
   - 'GSY DEX Matching Engine': 'blockchain-matching-engine.md'
+  - 'GSY DEX Execution Engine': 'blockchain-execution-engine.md'
 - 'References': 'references.md'
 - 'Releases Archive': 'releases.md'
 ## - 'Not included':

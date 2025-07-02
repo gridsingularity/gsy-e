@@ -27,7 +27,7 @@ The GSY DEX Matching Engine is implemented in [Rust](https://www.rust-lang.org/)
 
 <figure markdown>
   ![alt_text](img/blockchain-matching-engine-dataflow.png){:text-align:center"}
-  <figcaption><b>Figure 1</b>: The GSY DEX Matching Engine Dataflow
+  <figcaption><b>Figure 6.16</b>: The GSY DEX Matching Engine Dataflow
 </figcaption>
 </figure>
 
@@ -86,7 +86,7 @@ To calculate the bid and offer matches, the GSY Matching Engine reads the open o
 ]
 
 ```
-<figcaption><b>Figure 2</b>: Template of GSY DEX Off-Chain Storage Bid and Offer structures that are read by the GSY DEX Matching Engine</figcaption>
+<figcaption><b>Figure 6.17</b>: Template of GSY DEX Off-Chain Storage Bid and Offer structures that are read by the GSY DEX Matching Engine</figcaption>
 
 
 ### GSY DEX Matching Engine / GSY Node Communication - Trade Settlement Pallet
