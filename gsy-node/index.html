@@ -1696,22 +1696,22 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#setting-up-your-computer-for-substrate-development" title="Setting up your computer for Substrate development" class="md-nav__link">
-    Setting up your computer for Substrate development
+  <a href="#set-up-your-computer-for-substrate-development" title="Set up your computer for Substrate development" class="md-nav__link">
+    Set up your computer for Substrate development
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#running-the-gsy-dex-code" title="Running the GSY DEX code" class="md-nav__link">
-    Running the GSY DEX code
+  <a href="#run-the-gsy-dex-code" title="Run the GSY DEX code" class="md-nav__link">
+    Run the GSY DEX code
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#co-developing-the-gsy-dex" title="Co-developing the GSY DEX" class="md-nav__link">
-    Co-developing the GSY DEX
+  <a href="#co-develop-the-gsy-dex" title="Co-develop the GSY DEX" class="md-nav__link">
+    Co-develop the GSY DEX
   </a>
   
 </li>
@@ -1886,22 +1886,22 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#setting-up-your-computer-for-substrate-development" title="Setting up your computer for Substrate development" class="md-nav__link">
-    Setting up your computer for Substrate development
+  <a href="#set-up-your-computer-for-substrate-development" title="Set up your computer for Substrate development" class="md-nav__link">
+    Set up your computer for Substrate development
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#running-the-gsy-dex-code" title="Running the GSY DEX code" class="md-nav__link">
-    Running the GSY DEX code
+  <a href="#run-the-gsy-dex-code" title="Run the GSY DEX code" class="md-nav__link">
+    Run the GSY DEX code
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#co-developing-the-gsy-dex" title="Co-developing the GSY DEX" class="md-nav__link">
-    Co-developing the GSY DEX
+  <a href="#co-develop-the-gsy-dex" title="Co-develop the GSY DEX" class="md-nav__link">
+    Co-develop the GSY DEX
   </a>
   
 </li>
@@ -2153,9 +2153,9 @@ docker tag gsy_dex_image:latest gsy_dex_image:staging
 </code></pre></div>
 
 
-<h4 id="setting-up-your-computer-for-substrate-development">Setting up your computer for Substrate development<a class="headerlink" href="#setting-up-your-computer-for-substrate-development" title="Permanent link">&para;</a></h4>
+<h4 id="set-up-your-computer-for-substrate-development">Set up your computer for Substrate development<a class="headerlink" href="#set-up-your-computer-for-substrate-development" title="Permanent link">&para;</a></h4>
 <p>Please install Rust toolchain and the Developer Tools following the instructions from Substrate <a href="https://docs.substrate.io/main-docs/install/" target="_blank">here</a>.</p>
-<h4 id="running-the-gsy-dex-code">Running the GSY DEX code<a class="headerlink" href="#running-the-gsy-dex-code" title="Permanent link">&para;</a></h4>
+<h4 id="run-the-gsy-dex-code">Run the GSY DEX code<a class="headerlink" href="#run-the-gsy-dex-code" title="Permanent link">&para;</a></h4>
 <p>The <code>cargo run</code> command will perform an initial build. Use the following command to build the node without launching it:</p>
 <div class="codehilite"><pre><span></span><code>cd gsy-node
 cargo build --release
@@ -2185,7 +2185,7 @@ This command will start the single-node development chain with persistent state.
 
 <p>Integration with the non-decentralized version of the <a href="https://github.com/gridsingularity/gsy-e" target="_blank">GSY Energy Exchange</a> is also possible, with the objective of modelling, simulation and optimisation of energy marketplaces. To install, please refer to these <a href="https://github.com/gridsingularity/gsy-e#basic-setup">installation instructions</a>.</p>
 <p>Once installation is completed, a new energy marketplace can be modelled following the instructions <a href="../general-settings/#backend-simulation-configuration">here</a>. The same marketplace can also be simulated using the GSY DEX as the exchange engine.  In order to switch to the GSY DEX and enable blockchain operations, the command-line flag <code>--enable-bc</code> should be used. The mnemonic of the GSY DEX account should also be provided, in order to authorise the exchange engine to restore your key when needed and interact as bids and offers’ aggregator on your behalf with the blockchain. Finally, the <code>ENABLE_SUBSTRATE</code> parameter should be set to True.</p>
-<h4 id="co-developing-the-gsy-dex">Co-developing the GSY DEX<a class="headerlink" href="#co-developing-the-gsy-dex" title="Permanent link">&para;</a></h4>
+<h4 id="co-develop-the-gsy-dex">Co-develop the GSY DEX<a class="headerlink" href="#co-develop-the-gsy-dex" title="Permanent link">&para;</a></h4>
 <p>To develop and extend the GSY DEX features and applications please follow this guide, which is based on the <a href="https://rustup.rs" target="_blank">rustup</a> installer tool for Rust toolchain management.</p>
 <p>First install and configure <code>rustup</code>:</p>
 <div class="codehilite"><pre><span></span><code># Install
@@ -2203,8 +2203,8 @@ rustup target add wasm32-unknown-unknown --toolchain nightly
 </code></pre></div>
 
 
-<p>In order to test your setup, the best way to ensure that you have successfully prepared a computer for the <a href="../blockchain-system-components-overview/#gsy-node">GSY Node</a> development is to follow the steps in the <a href="https://docs.substrate.io/tutorials/">first Substrate tutorial</a>.</p>
-<p>In order to run the code in developer mode, use Rust's native <code>cargo</code> command to build and launch the <a href="../blockchain-system-components-overview/#gsy-node">GSY Node</a>:</p>
+<p>In order to test your setup, the best way to ensure that you have successfully prepared a computer for the <a href="./">GSY Node</a> development is to follow the steps in the <a href="https://docs.substrate.io/tutorials/">first Substrate tutorial</a>.</p>
+<p>In order to run the code in developer mode, use Rust's native <code>cargo</code> command to build and launch the <a href="./">GSY Node</a>:</p>
 <div class="codehilite"><pre><span></span><code>cd gsy-node
 cargo run --release -- --dev --tmp
 </code></pre></div>
@@ -2236,7 +2236,7 @@ cargo run --release -- --dev --tmp
 </code></pre></div>
 
 
-<p>If the block number, denoted by the logs that include the string <code>finalized #&lt;block-number&gt;</code>, is increasing, the <a href="../blockchain-system-components-overview/#gsy-node">GSY Node</a> is producing new blocks and its consensus algorithm is operating correctly.</p>
+<p>If the block number, denoted by the logs that include the string <code>finalized #&lt;block-number&gt;</code>, is increasing, the <a href="./">GSY Node</a> is producing new blocks and its consensus algorithm is operating correctly.</p>
 <h4 id="connect-external-ui-to-the-gsy-dex">Connect external UI to the GSY DEX<a class="headerlink" href="#connect-external-ui-to-the-gsy-dex" title="Permanent link">&para;</a></h4>
 <p>Once the node is running locally, you can connect it with the Polkadot-JS Apps User Interface to interact with the running node <a href="https://polkadot.js.org/apps/#/explorer" target="_blank">here</a>.</p>
                 
