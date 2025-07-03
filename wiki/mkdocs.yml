@@ -201,4 +201,4 @@ plugins:
             # When trying to reach the root page, redirect to the documentation page
             '': 'https://gridsingularity.github.io/gsy-e/documentation/'
             'blockchain-installation.md': 'gsy-node.md'
-            'two-sided-pay-as-bid.md': 'market-types.md#two-sided-pay-as-bid-market'
+            'two-sided-pay-as-bid.md': 'https://gridsingularity.github.io/gsy-e/market-types/#two-sided-pay-as-bid-market'
