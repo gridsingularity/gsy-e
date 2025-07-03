@@ -110,6 +110,10 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
+      <a href="#the-gsy-dex-design-principles" tabindex="1" class="md-skip">
+        Skip to content
+      </a>
+    
     
       <header class="md-header" data-md-component="header">
   <nav class="md-header-nav md-grid">
@@ -1588,9 +1592,36 @@
     <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
     
     
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        GSY DEX Overview
+      </label>
+    
     <a href="./" title="GSY DEX Overview" class="md-nav__link md-nav__link--active">
       GSY DEX Overview
     </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-gsy-dex-design-principles" title="The GSY DEX Design Principles" class="md-nav__link">
+    The GSY DEX Design Principles
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
     
   </li>
 
@@ -1691,6 +1722,35 @@
               </div>
             
             
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary">
+  
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-gsy-dex-design-principles" title="The GSY DEX Design Principles" class="md-nav__link">
+    The GSY DEX Design Principles
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
           
           <div class="md-content">
             <article class="md-content__inner md-typeset">
@@ -1701,37 +1761,31 @@
                 
                   <h1>GSY DEX Overview</h1>
                 
-                <p>The <a href="../technical-approach/">Grid Singularity Exchange</a> decentralised implementation (GSY DEX) aims to create a robust, secure, and efficient platform for energy trading in a decentralised environment by leveraging distributed ledger technology, such as blockchain, and advanced distributed runtime functionalities. The GSY DEX is designed to further optimise energy consumption and generation, promote peer-to-peer energy trading, and contribute to a more sustainable and resilient energy infrastructure.</p>
-<p>The GSY DEX powers <a href="https://gridsingularity.medium.com/discussion-paper-grid-singularitys-implementation-of-symbiotic-energy-markets-bd3954af43c8" target="_blank">Symbiotic Energy Markets</a>, combining multi-attribute double-sided auctions, graph representations of the energy grid and the decentralised computation and verification enabled by blockchain. In the envisaged consumer-centric market design, spot, futures, settlement, and balancing markets are intertwined through the use of time slots, allowing market-driven pricing and accurate accounting of delivered energy. Individuals can optimise for their own multi-attribute objectives (e.g. green energy source, reduced energy bill, preferred trading partner) through <a href="../trading-agents-and-strategies/#bidoffer-attributes-and-requirements-for-trading-preferences-degrees-of-freedom">Degrees of Freedom</a> in the multi-attribute double auction with dynamic pricing. The grid is represented as a weighted graph, offering grid operators efficient management tools and allowing energy communities to interconnect and trade. The complexity of the matching algorithm is decoupled from the verification of transactions, with matching facilitated by third party matching algorithm providers, termed “mycos”, enabling the exchange itself to operate on a blockchain. New energy market participants are rewarded for providing valuable services such as data and algorithms, while the roles of established market participants (aggregators, grid operators, utilities, and regulators) converge towards the individual and the community.</p>
-<p>The GSY DEX is built on <a href="https://substrate.io/" target="_blank">Substrate</a>, which allows modular business logic to be built directly in the blockchain and facilitates a high and secure transaction throughput. Substrate has components called pallets, where each pallet can represent different functionality, such as smart contracts, storage, auctions, and more. For instance, the GSY Node is built as a storage pallet that provides immutable storage of executed transactions.</p>
-<p>The GSY DEX, developed and published as part of the Grid Singularity Exchange <a href="../licensing/">open-source GPL v.3 licence</a> code base, is currently available for operation in the form of simulated transactions, intended for developers interested in contributing and/or building complementary features. Blockchain code can also optionally be enabled on simulations running locally with the backend code base.</p>
-<p>Full blockchain deployment will be enabled once the following <a href="../blockchain-system-components-overview/">GSY DEX System Components</a> are completed, with current development in part supported by the European Union <a href="https://fedecom-project.eu/" target="_blank">FEDECOM project</a>:</p>
-<ul>
-<li><a href="../gsy-node/">GSY Node</a>, responsible for network activities and executing blockchain state transitions (custom runtime code in the form of pallets and smart contracts that extend the Substrate runtime and set the framework for GSY DEX services, developed in Substrate/Rust);</li>
-<li><a href="../blockchain-off-chain-storage/">GSY DEX Off-Chain Storage</a>, which stores various types of data that are crucial to the platform’s operation but do not need to be recorded on the blockchain, thereby enhancing scalability and efficiency (structured in four subcomponents: Grid Topology Storage, Measurements Storage, Trades Storage and Order Book Storage and developed in Substrate/Rust, using MongoDB as database);</li>
-<li><a href="../blockchain-matching-engine/">GSY DEX Matching Engine</a>, responsible for identifying suitable matches for energy supply and demand based on participant preferences and market conditions, facilitating seamless and optimised exchange clearance) developed in <a href="../blockchain-matching-engine/#gsy-matching-engine-implementation">Rust</a> with the accompanying <a href="../blockchain-matching-engine/#gsy-dex-matching-api">GSY DEX Matching API</a>, also developed in Rust;</li>
-<li><strong>GSY DEX Execution Engine</strong>, responsible for execution or rejection of the trade securely, transparently and in accordance with the agreed terms upon the energy delivery verification (in development);</li>
-<li><strong>GSY DEX Analytics Engine</strong>, which collects and processes live trading data (bids, offers, trades) and related energy asset information, providing valuable insights and market intelligence to the exchange platform users and/or operators by generating key performance indicators (in development);</li>
-<li><strong>GSY DEX API Gateway</strong>, which provides an interface that facilitates user access to the platform's features, namely submission of energy orders, and retrieval of <a href="../results-dashboard/">key performance indicators</a>, including the trade volume and the current and historical asset data (e.g. energy consumption / production, traded energy). The GSY DEX API Gateway also fosters community engagement and collaboration by allowing third-party developers to build and integrate complementary applications and services, such as payments (in development).</li>
-</ul>
-<p>The <a href="https://www.energyweb.org/" target="_blank">Energy Web Chain</a> is the blockchain of choice for the Grid Singularity Exchange decentralised implementation, anchored upon <a href="https://polkadot.network/" target="_blank">Polkadot’s</a> scaling solution. Grid Singularity, an energy technology startup, and the Rocky Mountain Institute, a nonprofit clean technology organisation, jointly founded the Energy Web Foundation (EWF) in January 2017 as a non-profit entrepreneurial foundation building web3 applications for the energy transition. Having significantly contributed to EWF development and the launch of the Energy Web Chain, Grid Singularity’s role today in the Energy Web is supervisory and advisory via Foundation Council.</p>
+                <p>As envisaged by the GSY concept of <a href="https://gridsingularity.medium.com/discussion-paper-grid-singularitys-implementation-of-symbiotic-energy-markets-bd3954af43c8" target="_blank">Symbiotic Energy Markets</a>, the Grid Singularity Exchange decentralised implementation - GSY DEX is a robust, secure, and efficient technology platform for energy trading in a decentralised environment, leveraging blockchain and advanced distributed runtime functionalities. Grid Singularity’s vision is to enable a citizen and environment-centric, bottom-up market design, with spot, futures, settlement, and balancing markets intertwined through the use of time slots, allowing market-driven pricing and accurate accounting of delivered energy aligned with individual preferences. The objective is to empower individuals with choices on their energy use, reaching higher <a href="../degrees-of-freedom/" target="_blank">Degrees of Freedom</a> based on a multi-attribute double auction with dynamic pricing.</p>
+<p>In the GSY modular and scalable architecture design, the complexity of the matching process (based on price and other available preferences) is decoupled from the  validation of transactions and energy delivery verification (execution), with matching facilitated by third party matching algorithm providers (termed “mycos”). This design benefits system security and interoperability, while supporting multiple trading mechanisms and enabling the exchange itself to efficiently operate on a blockchain. New energy market participants are rewarded for providing valuable services such as data and algorithms, while the roles of established market participants (aggregators, grid operators, utilities, and regulators) converge towards the individual and the community.</p>
 <figure>
 <p><img alt="alt_text" src="../img/blockchain-1.png" text-align:center_="text-align:center&quot;" />
-  <figcaption><b>Figure 6.1</b>: Decentralised Peer-to-Peer Energy Exchange (GSY DEX) Architecture (Note: GSY DEX system components, designated in green, interact with the GSY Node for on-chain operations via Energy Web Data Hub that provides a secure and interoperable data exchange service. Grid and asset management services are provided through interoperable API interfaces, as are third party services such as billing and payments).
+  <figcaption><b>Figure 6.1</b>: GSY DEX Core Functions (Note: GSY Node Order Book is where bids and offers are stored, to be then matched based on the applicable trading mechanism for price verification and executed based on energy delivery verification.
 </figcaption></p>
 </figure>
-<p><strong>The GSY DEX Design Principles</strong></p>
+<p>The GSY DEX facilitates both intra- and inter-community trading, with the former meaning trading within a single community and the latter meaning trading between two or more communities, which also allows grid operators to procure energy and flexibility across communities. The default applicable trading mechanism is peer-to-peer (either asset-to-asset or household-to-household depending on available measurements), but in case of restrictive regulation a peer-to-pool (also termed peer-to-market or community trading) mechanism can also be applied meaning that there is a single price at the community level determined by coefficient-allocation or another pool trading algorithm. The GSY DEX is a critical technology for energy trading at scale (such as inter-community trading) and achieving the operational transition to a bottom-up energy market design.</p>
+<p>The GSY DEX consists of six key <a href="../blockchain-system-components-overview/" target="_blank">system components</a> (GSY Node, GSY DEX Off-Chain Storage, GSY DEX Matching Engine, GSY DEX Execution Engine, GSY DEX Analytics Engine, and GSY DEX API Gateway) developed by building upon the centralised version of the Grid Singularity Exchange (<a href="https://github.com/gridsingularity/gsy-e" target="_blank">GSYe</a>), and additional support provided by the EU co-financed <a href="https://fedecom-project.eu/" target="_blank">FEDECOM</a> project (GSY DEX v.1) and the <a href="https://intelligent-project.eu/" target="_blank">INTELLIGENT project</a> (GSY DEX v.2). The GSY DEX leverages Substrate, <a href="https://polkadot.network/" target="_blank">Polkadot</a>’s software development kit, allowing modular business logic to be built directly in the blockchain with a high and secure transaction throughput. Substrate has components called pallets, where each pallet can represent different functionality, such as smart contracts, storage, auctions, and more. For instance, the GSY Node is built as a pallet that provides immutable storage of executed transactions.</p>
+<p>The programming is performed using <a href="https://www.rust-lang.org/" target="_blank">Rust</a> protocols and libraries, such as <a href="https://tokio.rs/" target="_blank">Tokio</a>, which is an event-driven, non-blocking I/O platform for writing asynchronous applications with a strong type system, facilitating straightforward interconnection with other components of the GSY DEX, ensuring secure and precise calculations, <a href="https://github.com/paritytech/subxt" target="_blank">Subxt</a>, which is the official Rust library for interacting with <a href="https://www.substrate.io/" target="_blank">Substrate</a> nodes, and <a href="https://github.com/seanmonstar/reqwest" target="_blank">reqwest</a>, a high-performance asynchronous HTTP client, which facilitates the development of scalable and efficient API gateways and services.  The Energy Web Chain, tailored to the energy industry, is the blockchain of choice for the Grid Singularity Exchange decentralised implementation, anchored upon Polkadot’s scaling solution. Grid Singularity, an energy technology venture, and the Rocky Mountain Institute, a nonprofit clean technology organisation, jointly founded the Energy Web Foundation (EWF) in January 2017 as a non-profit entrepreneurial foundation building web3 applications for the energy transition and made a significant contribution to the development of the Energy Web Chain.</p>
+<p>To support scalability and account for data privacy requirements, including the ability to delete data upon request and perform other operations in alignment with the <a href="https://eur-lex.europa.eu/eli/reg/2016/679/oj/eng" target="_blank">GDPR</a>, multiple GSY DEX operations need to be executed off-chain. The off-chain storage database type of choice for processing these transactions is <a href="https://www.mongodb.com/docs/manual/sharding/" target="_blank">MongoDB</a>, a NoSQL document-oriented database, capable of storing and fetching large data volumes and at the same time enabling horizontal scaling.  Another critical feature of the GSY DEX is the ease of deployment and the ability to separately scale each GSY DEX component if it runs out of computing resources, thus optimising their efficient use. To facilitate this, GSY DEX utilises <a href="https://www.docker.com/" target="_blank">Docker</a> and <a href="https://docs.docker.com/compose/" target="_blank">Docker Compose</a>, which enable the creation of isolated, containerised environments that can be easily managed and scaled. Docker ensures that each GSY DEX component runs consistently across different environments, while Docker Compose simplifies the orchestration of all GSY DEX components. Together, they provide a reliable and efficient solution for deploying and scaling the GSY DEX, ensuring optimal performance and resource utilisation. To reinforce security, all engines in the GSY DEX, including GSY DEX Matching Engine and GSY DEX Execution Engine, are operating with redundancy, by concurrently running multiple engine modules. Thus in case of a failure, a second instance of the engine will be immediately available to resume the GSY DEX operation without interruption.</p>
+<p>The modular architecture of GSY DEX provides the necessary flexibility to customise the energy trading and adapt to varied regulatory requirements and preferences of different energy communities and grid operators. Moreover, it does not limit its use to just electricity trading, but also enables cross-sector integration opportunities (e.g. hydrogen or thermal systems). Furthermore, the scalability of the modular architecture allows the system to dynamically adapt to increasing trading volume or number of communities or grid operators that participate in GSY DEX. For reference, the first implementation of GSY DEX (v.1) will be able to facilitate at least 1000 transactions per second, and to serve over 100 energy communities. Support for an even larger number of assets and communities is envisioned in the future.</p>
+<p>The GSY DEX, developed and published as part of the Grid Singularity Exchange <a href="https://gridsingularity.github.io/gsy-e/licensing/" target="_blank">open-source GPL v.3 licence</a> code base, currently available for operation in the form of simulated transactions, is intended for developers interested in contributing and/or building complementary features. Blockchain code can also optionally be enabled on simulations running locally with the backend code base. Once all the key components are developed, the next step will be to launch services leveraging the GSY DEX, both as autonomous services and as an integrated application to operate a decentralised marketplace.</p>
+<h4 id="the-gsy-dex-design-principles">The GSY DEX Design Principles<a class="headerlink" href="#the-gsy-dex-design-principles" title="Permanent link">&para;</a></h4>
 <p>The GSY DEX is designed around a set of key principles that guide its development and ensure that it meets the requirements of a modern, efficient, and secure energy trading platform. These design principles are aligned with the use of the Substrate framework for the development of the distributed ledger combined with the definition of a set of complementary ancillary services.</p>
 <ol>
-<li>Modularity: The GSY DEX is built on a modular structure, enabling each component to be developed, tested, and maintained independently. This modularity simplifies the development process and allows for easy integration of new features, modules, or services in the future.</li>
-<li>Scalability: The GSY DEX is designed to scale horizontally, accommodating the growing number of participants, transactions, and data. The use of Substrate allows for a highly scalable and efficient distributed ledger, while the ancillary services can also scale independently to handle increased throughput.</li>
-<li>Interoperability: The GSY DEX promotes the use of open standards, protocols, and APIs to facilitate seamless integration with other systems, platforms, and technologies in the energy sector. This approach enables the GSY DEX to easily interact with other energy management systems, IoT devices, and related infrastructure and applications.</li>
-<li>Security: Ensuring the security and integrity of the GSY DEX is a top priority. The Substrate framework provides robust security features, including strong cryptographic algorithms and a proven consensus mechanism. In addition, the ancillary services and communication protocols must be designed with security best practices in mind, including encryption, access control, and secure data storage.</li>
-<li>Decentralisation: The GSY DEX leverages the power of blockchain technology to enable a fully decentralised system. This approach eliminates the need for a central authority, ensuring a transparent, secure, and efficient energy trading platform that is less susceptible to manipulation or control by any single entity.</li>
-<li>Flexibility: The GSY DEX is designed to be adaptable and capable of incorporating new technologies, innovations, and evolving market requirements. This flexibility is achieved through the use of modular components, extensible APIs, and a development process that encourages innovation and experimentation.</li>
-<li>Usability: The user experience is an essential aspect of the GSY DEX. The GSY DEX should be easy to use and accessible to a wide range of users, including energy producers, consumers, grid operators, and regulators. The user interfaces and APIs are designed with simplicity, efficiency, and intuitiveness in mind.</li>
+<li><strong>Modularity</strong>: The GSY DEX is built on a modular structure, enabling each component to be developed, tested, and maintained independently. This modularity simplifies the development process and allows for easy integration of new features, modules, or services in the future.</li>
+<li><strong>Scalability</strong>: The GSY DEX is designed to scale horizontally, accommodating the growing number of participants, transactions, and data. The use of blockchain technology, Substrate in particular, enables a highly scalable and efficient transaction processing and validation, while the ancillary services can also scale independently to handle increased throughput.</li>
+<li><strong>Interoperability</strong>: The GSY DEX promotes the use of open standards, protocols, and APIs to facilitate seamless integration with other systems, platforms, and technologies in the energy sector. This approach enables the GSY DEX to easily interact with other energy management systems, IoT devices, and related infrastructure and applications.</li>
+<li><strong>Security</strong>: Ensuring the security and integrity of the GSY DEX is a top priority. The Substrate framework provides robust security features, including strong cryptographic algorithms and a proven consensus mechanism. In addition, the ancillary services and communication protocols must be designed with security best practices in mind, including encryption, access control, and secure data storage.</li>
+<li><strong>Decentralisation</strong>: The GSY DEX leverages the power of blockchain technology to enable a fully decentralised system. This approach eliminates the need for a central authority, ensuring a transparent, secure, and efficient energy trading platform that is less susceptible to manipulation or control by any single entity.</li>
+<li><strong>Flexibility</strong>: The GSY DEX is designed to be adaptable and capable of incorporating new technologies, innovations, and evolving market requirements. This flexibility is achieved through the use of modular components, extensible APIs, and a development process that encourages innovation and experimentation.</li>
+<li><strong>Usability</strong>: The user experience is an essential aspect of the GSY DEX. The GSY DEX should be easy to use and accessible to a wide range of users, including energy producers, consumers, grid operators, and regulators. The user interfaces and APIs are designed with simplicity, efficiency, and intuitiveness in mind.</li>
 </ol>
-<p>In brief, while the Grid Singularity Exchange does not require blockchain technology, its decentralised implementation (GSY DEX) enables a more optimal energy market design, deriving a multitude of benefits, directly or by interacting with complementary blockchain-based solutions, including Energy Web’s decentralised identity access management for energy assets and related open-source tools of the <a href="https://energy-web-foundation.gitbook.io/energy-web/solutions-2023/data-exchange/use-cases-and-reference-implementations/digital-spine-for-electricity-markets" target="_blank">Energy Web Digital Spine toolkit</a>, as well as  <a href="https://energy-web-foundation.gitbook.io/energy-web/solutions-2023/green-proofs" target="_blank">Energy Web Green Proofs</a>, a customisable solution for registering and tracking low-carbon products and their attributes throughout complex supply chains. We rely on open source innovation and ecosystem collaboration to develop an inclusive, efficient, accountable and secure energy exchange.</p>
+<p>A decentralised energy exchange - GSY DEX enables automation and security for a more optimal energy market design, deriving a multitude of benefits. We rely on open source innovation and ecosystem collaboration to develop an inclusive, efficient, accountable and secure energy exchange.</p>
                 
                   
                 
