@@ -77,6 +77,7 @@ class NonP2PHandler:
         market_maker_area.parent = area
 
         area.children.append(market_maker_area)
+        area.set_order_age(gsy_e.constants.MIN_OFFER_BID_AGE_P2P_DISABLED)
 
     def _handle_non_p2p_scenario(self, area: Area):
         if not area.children:
