@@ -119,7 +119,7 @@ The GSY Node Trade Settlement pallet ensures the validity of proposed matches an
 
 In order to persist a batch of matches, the GSY DEX Matching Engine calls the `settle_trades` pallet method, including a vector of `BidOfferMatch` structures, each representing a single Offer-Bid match. The pallet method then validates these matches and executes the trade. The pallet also supports partial offer / bid matching, meaning that the energy from an offer or bid can be used partially and that it is not mandatory that it be used in full. The pallet is able to update the respective bid / offer with the residual energy (energy that remains after the trade was performed) and use the residual energy for matches that are processed at a later time.
 
-The `BidOfferMatch` structure is part of the [Trades module](gsy-node.md#gsy-node-trades-module){target=_blank}, and includes the following information:
+The `BidOfferMatch` structure is part of the [Trades Module](gsy-node.md#gsy-node-trades-module){target=_blank}, and includes the following information:
 
 - `market_id`: Unique identifier of the market to which the bid and offer of the match belong
 - `time_slot`: Time slot of the market to which the Bid and Offer of the match belong. It signifies the time that the delivery of the traded energy should take place
