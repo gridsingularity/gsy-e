@@ -5,7 +5,7 @@ In the GSY modular and scalable architecture design, the complexity of the match
 
 <figure markdown>
   ![alt_text](img/blockchain-1.png){:text-align:center"}
-  <figcaption><b>Figure 6.1</b>: GSY DEX Core Functions (Note: GSY Node Order Book is where bids and offers are stored, to be then matched based on the applicable trading mechanism for price verification and executed based on energy delivery verification.
+  <figcaption><b>Figure 6.1</b>: GSY DEX Core Functions (Note: GSY Node Order Book is where bids and offers are stored, to be then matched based on the applicable trading mechanism for price verification and executed based on energy delivery verification).
 </figcaption>
 </figure>
 

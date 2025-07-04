@@ -14,7 +14,7 @@ Additionally, the system includes a set of ancillary services, as shown in the f
 
 <figure markdown>
   ![alt_text](img/blockchain-system-components-overview-1.png){:text-align:center"}
-  <figcaption><b>Figure 6.2</b>: Grid Singularity Decentralised Energy Exchange (GSY DEX) Architecture (Note: GSY DEX system components, designated in green, interact with the GSY Node for on-chain operations, optimally via Energy Web Digital Spine that provides a secure and interoperable data exchange service. Grid and asset management services are provided through interoperable API interfaces, as are third party services, such as billing and payments.
+  <figcaption><b>Figure 6.2</b>: Grid Singularity Decentralised Energy Exchange (GSY DEX) Architecture (Note: GSY DEX system components, designated in green, interact with the GSY Node for on-chain operations, optimally via Energy Web Digital Spine that provides a secure and interoperable data exchange service. Grid and asset management services are provided through interoperable API interfaces, as are third party services, such as billing and payments).
 </figcaption>
 </figure>
 

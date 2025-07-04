@@ -41,7 +41,7 @@ The GSY DEX Execution Engine is built in Rust, taking full advantage of its powe
 
 <figure markdown>
   ![alt_text](img/blockchain-execution-engine-dataflow.png){:text-align:center"}
-  <figcaption><b>Figure 6.18</b>: GSY DEX Key Components and Dataflow
+  <figcaption><b>Figure 6.19</b>: GSY DEX Key Components and Dataflow
 </figcaption>
 </figure>
 
@@ -64,7 +64,7 @@ The codebase is containerised using Docker, which ensures that it can scale effe
 
 <figure markdown>
   ![alt_text](img/blockchain-execution-engine-communication-protocol.png){:text-align:center"}
-  <figcaption><b>Figure 6.19</b>: GSY DEX Execution Engine Communication Protocol
+  <figcaption><b>Figure 6.20</b>: GSY DEX Execution Engine Communication Protocol
 </figcaption>
 </figure>
 
