@@ -44,10 +44,14 @@ class PCMTankState(TankStateBase):
         self._htf_temps_C: Dict[DateTime, list[float]] = {}
         self._pcm_temps_C: Dict[DateTime, list[float]] = {}
         self._pcm_charge_model = PCMChargeModel(
-            slot_length=GlobalConfig.slot_length, mass_flow_rate_kg_s=MASS_FLOW_RATE
+            slot_length=GlobalConfig.slot_length,
+            mass_flow_rate_kg_s=MASS_FLOW_RATE,
+            pcm_type=tank_parameters.pcm_tank_type,
         )
         self._pcm_discharge_model = PCMDischargeModel(
-            slot_length=GlobalConfig.slot_length, mass_flow_rate_kg_s=MASS_FLOW_RATE
+            slot_length=GlobalConfig.slot_length,
+            mass_flow_rate_kg_s=MASS_FLOW_RATE,
+            pcm_type=tank_parameters.pcm_tank_type,
         )
         self._heat_demand_kJ: Dict[DateTime, float] = {}
         self._max_capacity_kJ = tank_parameters.max_capacity_kJ
@@ -59,6 +63,8 @@ class PCMTankState(TankStateBase):
             "min_storage_temp_C": self._params.min_temp_C,
             "max_storage_temp_C": self._params.max_temp_C,
             "max_capacity_kJ": self._params.max_capacity_kJ,
+            "type": self._params.type.value,
+            "pcm_tank_type": self._params.pcm_tank_type.value,
         }
 
     def init(self):
