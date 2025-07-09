@@ -10,7 +10,7 @@ Grid Singularity is an [awarded](https://www.weforum.org/organizations/grid-sing
 
 Grid Singularity facilitates a bottom-up market design by connecting aggregators, which in turn connect households and distributed energy assets digitally represented by trading agents, and grid operators through an application interface ([Grid Operator API](implement-grid-fees-walkthrough.md) and [Asset API](configure-trading-strategies-walkthrough.md)).
 
-- Economic, by incentivising prosumership and local generation and consumption which is cheaper than buying/selling energy directly from the grid while taking into account a wider range of individual preferences;
+- Economic, by incentivising prosumership and local production and consumption which is cheaper than buying/selling energy directly from the grid while taking into account a wider range of individual preferences;
 - Environmental, optimising the use of green energy supply by fostering collective
 self-consumption and increased investment in local renewable production;
 - Social, promoting the creation of social energy networks by enabling energy exchange within a community and/or to support local initiatives, advancing community engagement and social inclusion.
