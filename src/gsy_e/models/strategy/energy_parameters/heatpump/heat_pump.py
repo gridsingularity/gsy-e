@@ -436,6 +436,7 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
             "source": self._source_temp_C.input_profile_uuid,
             "source_temp_measurement_uuid": self._measurement_source_temp_C.input_profile_uuid,
             "source_type": self._source_type,
+            "heat_demand_Q_profile": self._heat_demand_Q_J.input_profile,
         }
 
     def event_traded_energy(self, time_slot: DateTime, energy_kWh: float):
