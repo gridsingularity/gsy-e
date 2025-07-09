@@ -9,6 +9,7 @@ class HeatpumpTankTypes(Enum):
 
     WATER = 0
     PCM = 1
+    SORPTION = 2
 
 
 @dataclass
@@ -22,3 +23,4 @@ class TankParameters:
     type: HeatpumpTankTypes = HeatpumpTankTypes.WATER
     max_capacity_kJ: float = 6.0 * 3600
     name: str = ""
+    max_charge_kJ_per_minute: float = 1

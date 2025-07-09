@@ -270,6 +270,14 @@ class CombinedHeatpumpTanksState:
         """Runs on activate event."""
         self._charger.event_activate()
 
+    def enable_storage_charging(self):
+        self._charger.tanks.enable_storage_charging()
+
+    def enable_storage_discharging(self):
+        self._charger.tanks.enable_storage_discharging()
+
+    def set_time_on_tanks(self, time_slot: DateTime):
+        self._charger.tanks.set_time(time_slot)
 
 class HeatPumpEnergyParametersBase(ABC):
     """
@@ -325,10 +333,14 @@ class HeatPumpEnergyParametersBase(ABC):
         self._state.event_activate()
         self._rotate_profiles()
 
+    def set_time_on_tanks(self, time_slot: DateTime):
+        self._state.set_time_on_tanks(time_slot)
+
     def event_market_cycle(self, current_time_slot):
         """To be called at the start of the market slot."""
         self._rotate_profiles(current_time_slot)
         self._populate_state(current_time_slot)
+        self.set_time_on_tanks(current_time_slot)
 
     def get_min_energy_demand_kWh(self, time_slot: DateTime) -> float:
         """Get energy that is needed to compensate for the heat loss due to heating."""
@@ -504,3 +516,10 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
         self._state.heatpump.set_energy_consumption_kWh(
             time_slot, self._consumption_kWh.get_value(time_slot)
         )
+
+    def enable_storage_charging(self):
+        self._state.enable_storage_charging()
+
+    def enable_storage_discharging(self):
+        self._state.enable_storage_discharging()
+

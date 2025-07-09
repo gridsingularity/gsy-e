@@ -199,6 +199,8 @@ class MultipleTankHeatPumpStrategy(TradingStrategyBase):
 
     def event_market_cycle(self) -> None:
         super().event_market_cycle()
+        self._decide_for_dis_charging_of_heat_storages()
+
         spot_market = self.area.spot_market
         if not spot_market:
             return
@@ -259,6 +261,15 @@ class MultipleTankHeatPumpStrategy(TradingStrategyBase):
 
         for bid in bids:
             market.delete_bid(bid)
+
+    def _is_market_maker_rate_low(self) -> bool:
+        # todo
+        return True
+
+    def _decide_for_dis_charging_of_heat_storages(self):
+        if self._is_market_maker_rate_low():
+            self.state.enable_storage_charging()
+        self.state.enable_storage_discharging()
 
     def _get_energy_buy_energy(self, buy_rate: float, market_slot: DateTime) -> float:
         if buy_rate > self.preferred_buying_rate:

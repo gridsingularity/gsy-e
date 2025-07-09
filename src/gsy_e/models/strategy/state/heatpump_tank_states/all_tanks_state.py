@@ -122,6 +122,18 @@ class AllTanksState:
         for tank in self._tanks_states:
             tank.init()
 
+    def enable_storage_charging(self):
+        for tank in self._tanks_states:
+            tank.toggle_charging(charge=True)
+
+    def enable_storage_discharging(self):
+        for tank in self._tanks_states:
+            tank.toggle_charging(charge=False)
+
+    def set_time(self, time_slot: DateTime):
+        for tank in self._tanks_states:
+            tank.set_time(time_slot)
+
     def _get_scaling_factors_for_charging(self, time_slot):
         _current_dod_tanks = [tank.get_dod_energy_kJ(time_slot) for tank in self._tanks_states]
         total_energy = sum(_current_dod_tanks)

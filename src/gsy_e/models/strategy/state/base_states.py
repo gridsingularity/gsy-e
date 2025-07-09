@@ -21,7 +21,7 @@ from math import copysign
 from typing import Dict, Optional
 from collections import defaultdict
 
-from pendulum import DateTime
+from pendulum import DateTime, duration
 
 from gsy_framework.constants_limits import FLOATING_POINT_TOLERANCE, GlobalConfig
 from gsy_framework.utils import convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict
@@ -408,6 +408,7 @@ class TankStateBase(StateInterface):
         self._params = tank_parameters
         self._soc: Dict[DateTime, float] = defaultdict(lambda: 0)
         self._max_capacity_kJ = None
+        self._current_time_slot: duration = duration(minutes=0)
 
     @abstractmethod
     def increase_tank_temp_from_heat_energy(self, heat_energy_kWh: float, time_slot: DateTime):
@@ -455,3 +456,9 @@ class TankStateBase(StateInterface):
 
     def _last_time_slot(self, time_slot: DateTime):
         return time_slot - GlobalConfig.slot_length
+
+    def toggle_charging(self, charge=True):
+        pass
+
+    def set_time(self, time_slot: DateTime):
+        self._current_time_slot = time_slot
