@@ -630,6 +630,11 @@ class Area(AreaBase):
             ),
         }
 
+    def set_order_age(self, order_age: int):
+        """Set age of offers and bids before they are dispatched to higher areas."""
+        self._min_offer_age = order_age
+        self._min_bid_age = order_age
+
 
 class Market(Area):
     """Class to define geographical market areas that can contain children (areas or assets)."""
