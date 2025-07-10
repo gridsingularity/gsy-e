@@ -1,4 +1,5 @@
 from pendulum import duration
+from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import PCMType
 
 
 class PCMModelBase:
@@ -21,6 +22,12 @@ class PCMModelBase:
 
 class PCMChargeModel(PCMModelBase):
 
+    def __init__(
+        self, slot_length: duration, mass_flow_rate_kg_s: float, pcm_type: PCMType = PCMType.OM42
+    ):
+
+        super().__init__(slot_length, mass_flow_rate_kg_s)
+
     @property
     def _soc_lut(self):
         return {}
@@ -32,6 +39,11 @@ class PCMChargeModel(PCMModelBase):
 
 
 class PCMDischargeModel(PCMModelBase):
+
+    def __init__(
+        self, slot_length: duration, mass_flow_rate_kg_s: float, pcm_type: PCMType = PCMType.OM42
+    ):
+        super().__init__(slot_length, mass_flow_rate_kg_s)
 
     @property
     def _soc_lut(self):

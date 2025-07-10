@@ -1,5 +1,7 @@
+# pylint: disable=protected-access
 from unittest.mock import Mock, patch
 
+import gsy_e.constants
 from gsy_e.gsy_e_core.area_serializer import area_from_dict
 from gsy_e.gsy_e_core.non_p2p_handler import NonP2PHandler
 
@@ -59,6 +61,9 @@ class TestNonP2PHandler:
         for child in community_area.children:
             if child.name not in expected_home_rate_mapping:
                 continue
+            assert child._min_offer_age == gsy_e.constants.MIN_OFFER_BID_AGE_P2P_DISABLED
+            assert child._min_bid_age == gsy_e.constants.MIN_OFFER_BID_AGE_P2P_DISABLED
+
             market_maker_area = [c for c in child.children if c.name == "MarketMaker"][0]
 
             assert all(

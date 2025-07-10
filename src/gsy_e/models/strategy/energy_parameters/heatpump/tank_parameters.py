@@ -11,8 +11,18 @@ class HeatpumpTankTypes(Enum):
     PCM = 1
 
 
+class PCMType(Enum):
+    """Type if PCM material"""
+
+    OM37 = 1
+    OM42 = 2
+    OM46 = 3
+    OM65 = 4
+
+
 @dataclass
 class TankParameters:
+    # pylint: disable=too-many-instance-attributes)
     """Nameplate parameters of a heat tank."""
 
     min_temp_C: float = ConstSettings.HeatPumpSettings.MIN_TEMP_C
@@ -22,3 +32,4 @@ class TankParameters:
     type: HeatpumpTankTypes = HeatpumpTankTypes.WATER
     max_capacity_kJ: float = 6.0 * 3600
     name: str = ""
+    pcm_tank_type: PCMType = PCMType.OM37
