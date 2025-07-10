@@ -1,10 +1,12 @@
 from abc import abstractmethod, ABC
 import logging
+from functools import cache
 from pendulum import DateTime
 
 from gsy_framework.read_user_profile import InputProfileTypes
 from gsy_framework.constants_limits import GlobalConfig
 from gsy_framework.utils import get_from_profile_same_weekday_and_time
+from gsy_framework.validators.profile_validator import ProfileValidator
 
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.gsy_e_core.util import should_read_profile_from_db
@@ -62,7 +64,6 @@ class StrategyProfile(StrategyProfileBase):
         profile_type: InputProfileTypes = None,
     ):
         # pylint: disable=super-init-not-called
-
         self.input_profile = input_profile
         self.input_profile_uuid = input_profile_uuid
         self.input_energy_rate = input_energy_rate
@@ -149,6 +150,21 @@ class StrategyProfile(StrategyProfileBase):
         )
 
         self.profile = self._add_last_slot_value_to_new_profile_rotation(new_profile_chunk)
+        self._validate_and_log_profile()
+
+    def _validate_and_log_profile(self):
+        try:
+            ProfileValidator(self.profile, slot_length=GlobalConfig.slot_length).validate()
+        except AssertionError as exc:
+            self._log_once(
+                f"Validation of profile time slot fails for profile {self.input_profile_uuid} "
+                f"({str(exc)})"
+            )
+
+    @staticmethod
+    @cache
+    def _log_once(msg: str):
+        log.error(msg)
 
 
 def profile_factory(
