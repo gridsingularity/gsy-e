@@ -446,7 +446,7 @@ class TankStateBase(StateInterface):
 
     def get_available_energy_kJ(self, time_slot: DateTime) -> float:
         """Return the available energy stored in the tank."""
-        return self._soc.get(time_slot) * self.max_capacity_kJ
+        return self._soc.get(time_slot, 0) * self.max_capacity_kJ
 
     def get_soc(self, time_slot: DateTime) -> float:
         """Return SOC in percent for the provided time slot"""

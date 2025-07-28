@@ -99,7 +99,7 @@ class TestAllTanksState:
         assert len(DeepDiff(tanks_dict, expected_dict)) == 0
 
     def test_get_results_dict(self):
-        results_dict = self._tanks.get_results_dict(self._datetime)
+        results_dict = self._tanks.get_results(self._datetime)
         expected_dict = [
             {"storage_temp_C": 25, "soc": 37.5, "type": "WATER", "name": ""},
             {"storage_temp_C": 20, "soc": 0.0, "type": "WATER", "name": ""},

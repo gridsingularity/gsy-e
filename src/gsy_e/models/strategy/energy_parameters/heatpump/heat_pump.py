@@ -87,9 +87,13 @@ class HeatChargerDischarger:
             / self._efficiency
         )
 
-    def get_tanks_results_dict(self, current_time_slot: DateTime) -> dict:
+    def get_tanks_results(self, current_time_slot: DateTime) -> list:
         """Results dict for tanks results."""
-        return self.tanks.get_results_dict(current_time_slot)
+        return self.tanks.get_results(current_time_slot)
+
+    def get_average_soc(self, current_time_slot: DateTime) -> float:
+        """Return average SOC of all tanks."""
+        return self.tanks.get_average_soc(current_time_slot)
 
     def get_state(self) -> Dict:
         """Return the current state of the charger / tanks."""
@@ -128,12 +132,13 @@ class CombinedHeatpumpTanksState:
 
     def get_results_dict(self, current_time_slot: Optional[DateTime] = None) -> dict:
         """Results dict for all heatpump and tanks results."""
-        tanks_results = self._charger.get_tanks_results_dict(current_time_slot)
+        tanks_results = self._charger.get_tanks_results(current_time_slot)
         if current_time_slot is None:
             # used in file_export_endpoints
             return {"tanks": tanks_results}
         return {
             "tanks": tanks_results,
+            "average_soc": self._charger.get_average_soc(current_time_slot),
             **self._hp_state.get_results_dict(current_time_slot),
             "storage_temp_C": mean([tank["storage_temp_C"] for tank in tanks_results]),
         }
