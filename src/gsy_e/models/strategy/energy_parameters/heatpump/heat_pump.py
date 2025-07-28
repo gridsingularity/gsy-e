@@ -160,6 +160,11 @@ class CombinedHeatpumpTanksState:
         """Exposes the heatpump state."""
         return self._hp_state
 
+    @property
+    def tanks(self) -> AllTanksState:
+        """Exposes the state of all tanks."""
+        return self._charger.tanks
+
     def get_energy_to_buy_maximum_kWh(self, time_slot: DateTime, source_temp_C: float) -> float:
         """Get maximum energy to buy from the heat pump + storage."""
         max_heat_demand_kJ = self._charger.get_max_heat_energy_charge_kJ(
@@ -292,14 +297,12 @@ class HeatPumpEnergyParametersBase(ABC):
         self._max_energy_consumption_kWh = (
             maximum_power_rating_kW * self._slot_length.total_hours()
         )
-        state = HeatPumpState(self._slot_length)
-        tanks = AllTanksState(tank_parameters)
         self._state = CombinedHeatpumpTanksState(
-            state,
-            tanks,
-            cop_model,
-            self._slot_length,
-            self._max_energy_consumption_kWh,
+            hp_state=HeatPumpState(self._slot_length),
+            tanks_state=AllTanksState(tank_parameters),
+            cop_model=cop_model,
+            slot_length=self._slot_length,
+            max_energy_consumption_kWh=self._max_energy_consumption_kWh,
         )
 
         self._source_temp_C: StrategyProfileBase = profile_factory(

@@ -115,3 +115,6 @@ class TestWaterTankState:
             "type": "WATER",
             "name": "",
         }
+
+    def test_max_capacity_kJ(self, water_tank):
+        assert water_tank.max_capacity_kJ == 167040.0

@@ -233,7 +233,7 @@ class HeatPumpDataExporter(BaseDataExporter):
     @property
     def labels(self) -> Dict[str, List]:
         return {
-            "heat_pump": ["slot", "energy traded [kWh]", "COP", "heat demand kJ"],
+            "heat_pump": ["slot", "energy traded [kWh]", "COP", "heat demand kJ", "average SOC"],
             "water_tanks": self._water_tank_labels,
             "pcm_tanks": self._pcm_tank_labels,
         }
@@ -266,6 +266,9 @@ class HeatPumpDataExporter(BaseDataExporter):
                 round(
                     self.area.strategy.state.heatpump.get_heat_demand_kJ(slot),
                     ROUND_TOLERANCE_EXPORT,
+                ),
+                round(
+                    self.area.strategy.state.tanks.get_average_soc(slot), ROUND_TOLERANCE_EXPORT
                 ),
             ]
         if file_key == "water_tanks":
