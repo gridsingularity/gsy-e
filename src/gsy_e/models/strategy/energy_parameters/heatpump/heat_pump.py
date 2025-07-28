@@ -141,6 +141,7 @@ class CombinedHeatpumpTanksState:
             "average_soc": self._charger.get_average_soc(current_time_slot),
             **self._hp_state.get_results_dict(current_time_slot),
             "storage_temp_C": mean([tank["storage_temp_C"] for tank in tanks_results]),
+            "condenser_temp_C": self._charger.get_condenser_temperature_C(current_time_slot),
         }
 
     def get_state(self) -> Dict:
