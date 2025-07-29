@@ -1891,31 +1891,27 @@
                 
                 <h3 id="start-redis-server">Start Redis server<a class="headerlink" href="#start-redis-server" title="Permanent link">&para;</a></h3>
 <p>To use the API locally, your script interacts with the simulation using a local Redis instance. To start the redis instance, open a new terminal and run the following command :</p>
-<div class="codehilite"><pre><span></span><code>redis-server /usr/local/etc/redis.conf
-</code></pre></div>
+<pre class="codehilite"><code>redis-server /usr/local/etc/redis.conf</code></pre>
 
 
 <p>To install redis in Ubuntu follow the instructions in this <a href="https://redis.io/topics/quickstart" target="_blank">link</a>.</p>
 <h3 id="open-markets-for-external-cnnection">Open Markets for external cnnection<a class="headerlink" href="#open-markets-for-external-cnnection" title="Permanent link">&para;</a></h3>
 <p>The API supports multiple markets managed with the Grid Operator API. Access is controlled when setting up the simulation, using the <code>Market</code> and <code>Asset</code> classes’ boolean argument called external_connection_available:</p>
-<div class="codehilite"><pre><span></span><code>Market(
-&#39;Community&#39;,
+<pre class="codehilite"><code>Market(
+'Community',
 [
 ...
-], grid_fee_constant=4, external_connection_available=True),
-</code></pre></div>
+], grid_fee_constant=4, external_connection_available=True),</code></pre>
 
 
 <p>If set to <code>True</code>, the market  allows all the Grid Operator API to connect to that market, receive statistics and change grid fees. By default, this <code>external_connection_available</code> is set to <code>False</code>.</p>
 <h3 id="launch-simulation">Launch simulation<a class="headerlink" href="#launch-simulation" title="Permanent link">&para;</a></h3>
 <p>This requires you to have the backend codebase installed on your machine to run simulations (see <a href="../linux-installation-instructions/">Installation Instructions</a>). First, navigate to the Grid Singularity folder (gsy) in a new terminal, then activate the Grid Singularity (gsy-env) environment with the command:</p>
-<div class="codehilite"><pre><span></span><code>workon gsy-env
-</code></pre></div>
+<pre class="codehilite"><code>workon gsy-env</code></pre>
 
 
 <p>Then, launch the simulation by running the following command and adapting the arguments to your case and wait for the SDK Script to execute:</p>
-<div class="codehilite"><pre><span></span><code>gsy-env -l INFO run -t 15s -s 15m --setup api_setup.default_community --slot-length-realtime 5 --start-date 2021-07-01 --enable-external-connection --paused
-</code></pre></div>
+<pre class="codehilite"><code>gsy-env -l INFO run -t 15s -s 15m --setup api_setup.default_community --slot-length-realtime 5 --start-date 2021-07-01 --enable-external-connection --paused</code></pre>
 
 
 <p>After few seconds, the simulation should begin, waiting for the API template as mentioned in the figure below:</p>
@@ -1925,25 +1921,21 @@
 <p>Before launching the SDK Script, users need to adapt the following information in their script:</p>
 <h3 id="oracle-name">Oracle name<a class="headerlink" href="#oracle-name" title="Permanent link">&para;</a></h3>
 <p>This parameter is only relevant when using the API on the User-Interface. This defines the name of the aggregator / API name that manages the markets and energy assets. Once the name is set it cannot be changed within the same running collaboration.</p>
-<div class="codehilite"><pre><span></span><code>oracle_name = &#39;dso&#39;
-</code></pre></div>
+<pre class="codehilite"><code>oracle_name = 'dso'</code></pre>
 
 
 <h3 id="markets-list">Markets list<a class="headerlink" href="#markets-list" title="Permanent link">&para;</a></h3>
 <p>The list of markets needs to be updated to include the assets registered to user through the registration process, in arrays as follows :</p>
-<div class="codehilite"><pre><span></span><code>market_names = [&quot;Grid&quot;, &quot;Community&quot;]
-</code></pre></div>
+<pre class="codehilite"><code>market_names = [&quot;Grid&quot;, &quot;Community&quot;]</code></pre>
 
 
-<div class="codehilite"><pre><span></span><code>market_names = [&quot;Grid&quot;, &quot;Community&quot;]
-</code></pre></div>
+<pre class="codehilite"><code>market_names = [&quot;Grid&quot;, &quot;Community&quot;]</code></pre>
 
 
 <p>The SDK Script has an “automatic” connection process to manage energy assets. If the function <em>automatic</em> is True, the Exchange SDK will automatically connect to all energy assets that it is registered to. This option is only available for simulations running on the User-Interface.</p>
 <h3 id="interact-with-local-simulations">Interact with local simulations<a class="headerlink" href="#interact-with-local-simulations" title="Permanent link">&para;</a></h3>
 <p>To interact with a locally running simulation (backend simulation), username, passwords, domain and websocket names and simulation_id are not necessary. There is only an additional flag required in the CLI command : --run-on-redis.</p>
-<div class="codehilite"><pre><span></span><code>gsy-e-sdk --log-level INFO run --setup gird_operator_api_template --run-on-redis
-</code></pre></div>
+<pre class="codehilite"><code>gsy-e-sdk --log-level INFO run --setup gird_operator_api_template --run-on-redis</code></pre>
 
 
 <h4 id="log-levels">Log levels:<a class="headerlink" href="#log-levels" title="Permanent link">&para;</a></h4>

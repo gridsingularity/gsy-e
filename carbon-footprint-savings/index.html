@@ -1766,8 +1766,7 @@
 <p>The carbon footprint value is calculated as follows:</p>
 <p><code>Carbon Footprint (kg CO₂-equivalent) = Imported Electricity (kWh) × Country’s CO₂-equivalent Emissions (kg CO₂-equivalent/kWh) / 1000 (note that country and entity are used intermittently in the relevant development documentation to avoid any political implications).</code></p>
 <p>The carbon savings value is calculated as follows:</p>
-<div class="codehilite"><pre><span></span><code>Carbon Savings (kg CO₂-equivalent) = Baseline Carbon Footprint − Reduced Carbon Footprint
-</code></pre></div>
+<pre class="codehilite"><code>Carbon Savings (kg CO₂-equivalent) = Baseline Carbon Footprint − Reduced Carbon Footprint</code></pre>
 
 
 <figure>
@@ -1777,8 +1776,7 @@
 </figure>
 <p>The two decarbonisation metrics are calculated over a defined time frame (daily or monthly) and exclusively at a community level, considering that the imported electricity composition is not readily available for each community participant but approximated based on country-level electricity consumption emissions as explained above.</p>
 <p>To source reliable and freely available emissions data, the following data sources were selected. First, the emissions data for most European countries is calculated based on real-time values retrieved from the European Network of Transmission System Operators for Electricity (ENTSO-E) <a href="https://transparency.entsoe.eu/content/static_content/Static%20content/web%20api/Guide.html" target="_blank">Transparency Platform API</a>. The platform provides the actual generation per production type on an hourly basis. The carbon intensity for each country/entity is obtained by multiplying the energy generated each hour by the appropriate  electricity supply technology emission factor (EF) from <a href="https://www.ipcc.ch/site/assets/uploads/2018/02/ipcc_wg3_ar5_annex-iii.pdf#page=7" target="_blank">Climate Change 2014: Mitigation of Climate Change</a>. The sum of these products gives the hour’s total CO₂-equivalent emissions, and dividing by total electricity generated yields the carbon intensity, based on the following formula:</p>
-<div class="codehilite"><pre><span></span><code>Country Carbon Intensity (kg CO₂-equivalent/kWh) = [(Energy Fossil Gas (kWh) × EF Gas (kgCO₂-equivalent/kWh)) + (Energy Biomass × EF Biomass) + … + (Energy Solar × EF Solar)] / (Energy Fossil Gas + … + Energy Solar)
-</code></pre></div>
+<pre class="codehilite"><code>Country Carbon Intensity (kg CO₂-equivalent/kWh) = [(Energy Fossil Gas (kWh) × EF Gas (kgCO₂-equivalent/kWh)) + (Energy Biomass × EF Biomass) + … + (Energy Solar × EF Solar)] / (Energy Fossil Gas + … + Energy Solar)</code></pre>
 
 
 <p>Additionally, two open-source database sources are used for retrieving CO₂-equivalent emission data for other regions, namely <a href="http://www.electricitymaps.com" target="_blank">Electricity Maps</a> (licenced under the <a href="https://opendatacommons.org/licenses/odbl/" target="_blank">Open Database License</a> - ODbL), which provides historical data on carbon intensity of electricity generation based on a country’s energy mix, and <a href="http://www.ourworldindata.org" target="_blank">Our World in Data</a> (licensed under the <a href="https://creativecommons.org/licenses/by/4.0/legalcode" target="_blank">Creative Commons Attribution 4.0 International License</a> - CC-BY), an open-source, nonprofit organisation offering comprehensive global datasets, including carbon intensity of electricity generation. For countries or region****s where direct CO₂-equivalent emissions data was not available (such as Andorra, Palau, etc.), values from neighbouring countries or regions are selected.</p>

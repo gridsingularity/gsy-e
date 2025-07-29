@@ -1970,39 +1970,35 @@
                 <h2 id="solar-panels">Solar Panels<a class="headerlink" href="#solar-panels" title="Permanent link">&para;</a></h2>
 <p>There are two options to implement a PV in a backend:</p>
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/pv.py" target="_blank">Solar Profile</a> (for template generation profile):</p>
-<div class="codehilite"><pre><span></span><code><span class="n">Asset</span><span class="p">(</span>
-    <span class="s2">&quot;H2 PV&quot;</span><span class="p">,</span>
-    <span class="n">strategy</span><span class="o">=</span><span class="n">PVStrategy</span><span class="p">(</span>
-        <span class="n">panel_count</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
-        <span class="n">initial_selling_rate</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
-        <span class="n">final_selling_rate</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
-        <span class="n">fit_to_limit</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">update_interval</span><span class="o">=</span><span class="n">duration</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="mi">5</span><span class="p">)))</span>
-</code></pre></div>
+<pre class="codehilite"><code class="language-python">Asset(
+    &quot;H2 PV&quot;,
+    strategy=PVStrategy(
+        panel_count=4,
+        initial_selling_rate=30,
+        final_selling_rate=5,
+        fit_to_limit=True,
+        update_interval=duration(minutes=5)))</code></pre>
 
 
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/predefined_pv.py" target="_blank">User Profile</a> (for uploaded generation profile):</p>
-<div class="codehilite"><pre><span></span><code><span class="n">user_profile_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">gsy_e_path</span><span class="p">,</span> <span class="s2">&quot;assets/Solar_Curve_W_sunny.csv&quot;</span><span class="p">)</span>
-<span class="n">Asset</span><span class="p">(</span><span class="s1">&#39;H1 PV&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">PVUserProfileStrategy</span><span class="p">(</span><span class="n">power_profile</span><span class="o">=</span><span class="n">user_profile_path</span><span class="p">,</span> <span class="n">panel_count</span><span class="o">=</span><span class="mi">4</span><span class="p">))</span>
-</code></pre></div>
+<pre class="codehilite"><code class="language-python">user_profile_path = os.path.join(gsy_e_path, &quot;assets/Solar_Curve_W_sunny.csv&quot;)
+Asset('H1 PV', strategy=PVUserProfileStrategy(power_profile=user_profile_path, panel_count=4))</code></pre>
 
 
 <h2 id="consumption">Consumption<a class="headerlink" href="#consumption" title="Permanent link">&para;</a></h2>
 <p>To implement the consumption profile (load) in a backend simulation, two options are available:</p>
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/load_hours.py" target="_blank">User configure Profile</a>:</p>
-<div class="codehilite"><pre><span></span><code><span class="n">Asset</span><span class="p">(</span>
-    <span class="s1">&#39;Load&#39;</span><span class="p">,</span>
-    <span class="n">strategy</span><span class="o">=</span><span class="n">LoadHoursStrategy</span><span class="p">(</span>
-        <span class="n">avg_power_W</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">hrs_per_day</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span><span class="n">hrs_of_day</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">18</span><span class="p">)),</span> <span class="n">initial_buying_rate</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-        <span class="n">final_buying_rate</span><span class="o">=</span><span class="mi">35</span><span class="p">))</span>
-</code></pre></div>
+<pre class="codehilite"><code class="language-python">Asset(
+    'Load',
+    strategy=LoadHoursStrategy(
+        avg_power_W=200, hrs_per_day=6,hrs_of_day=list(range(12, 18)), initial_buying_rate=0,
+        final_buying_rate=35))</code></pre>
 
 
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/predefined_load.py" target="_blank">User upload Profile</a>:</p>
-<div class="codehilite"><pre><span></span><code><span class="n">user_profile_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">gsy_e_path</span><span class="p">,</span><span class="s2">&quot;assets/load.csv&quot;</span><span class="p">)</span>
+<pre class="codehilite"><code class="language-python">user_profile_path = os.path.join(gsy_e_path,&quot;assets/load.csv&quot;)
 
-<span class="n">Asset</span><span class="p">(</span><span class="s1">&#39;Load&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">LoadProfileStrategy</span><span class="p">(</span><span class="n">daily_load_profile</span><span class="o">=</span><span class="n">user_profile_path</span><span class="p">,</span> <span class="n">initial_buying_rate</span><span class="p">)</span>
-</code></pre></div>
+Asset('Load', strategy=LoadProfileStrategy(daily_load_profile=user_profile_path, initial_buying_rate)</code></pre>
 
 
 <h3 id="addendum-hrs_of_day-and-hrs_per_day">Addendum: <code>hrs_of_day</code> and <code>hrs_per_day</code><a class="headerlink" href="#addendum-hrs_of_day-and-hrs_per_day" title="Permanent link">&para;</a></h3>
@@ -2014,13 +2010,12 @@
 <h2 id="batteries">Batteries<a class="headerlink" href="#batteries" title="Permanent link">&para;</a></h2>
 <p>To implement a battery in a backend simulation one option is available:</p>
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/storage.py" target="_blank">Energy Storage System</a></p>
-<div class="codehilite"><pre><span></span><code><span class="n">Asset</span><span class="p">(</span>
-    <span class="s1">&#39;Storage&#39;</span><span class="p">,</span>
-    <span class="n">strategy</span><span class="o">=</span><span class="n">StorageStrategy</span><span class="p">(</span>
-        <span class="n">initial_soc</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">energy_rate_decrease_per_update</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">battery_capacity_kWh</span><span class="o">=</span><span class="mf">1.2</span><span class="p">,</span>
-        <span class="n">max_abs_battery_power_kW</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">final_buying_rate</span><span class="o">=</span><span class="mf">16.99</span><span class="p">,</span> <span class="n">final_selling_rate</span><span class="o">=</span> <span class="mf">17.01</span><span class="p">,</span>
-        <span class="n">losses</span><span class="o">=</span><span class="n">StorageLosses</span><span class="p">(</span><span class="n">charging_loss_percent</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">discharging_loss_percent</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">self_discharge_per_day_percent</span><span class="o">=</span><span class="mf">0.0003</span><span class="p">)))</span>
-</code></pre></div>
+<pre class="codehilite"><code class="language-python">Asset(
+    'Storage',
+    strategy=StorageStrategy(
+        initial_soc=50, energy_rate_decrease_per_update=3, battery_capacity_kWh=1.2,
+        max_abs_battery_power_kW=5, final_buying_rate=16.99, final_selling_rate= 17.01,
+        losses=StorageLosses(charging_loss_percent=0.05, discharging_loss_percent=0.01, self_discharge_per_day_percent=0.0003)))</code></pre>
 
 
 <h3 id="storage-losses">Storage Losses<a class="headerlink" href="#storage-losses" title="Permanent link">&para;</a></h3>
@@ -2033,32 +2028,29 @@
 <h2 id="power-plant">Power Plant<a class="headerlink" href="#power-plant" title="Permanent link">&para;</a></h2>
 <p>To implement the power plant in a backend simulation one option is available:</p>
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/finite_power_plant.py" target="_blank">Finite Power Plant</a></p>
-<div class="codehilite"><pre><span></span><code><span class="n">profile_kW</span> <span class="o">=</span> <span class="p">{</span>
-<span class="mi">0</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
-<span class="mi">8</span><span class="p">:</span> <span class="mf">0.15</span><span class="p">,</span>
-<span class="mi">12</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span>
-<span class="mi">19</span><span class="p">:</span> <span class="mf">0.15</span><span class="p">,</span>
-<span class="mi">22</span><span class="p">:</span> <span class="mf">0.1</span>
-<span class="p">}</span>
-<span class="n">Asset</span><span class="p">(</span>
-    <span class="s2">&quot;Power Plant&quot;</span><span class="p">,</span>
-    <span class="n">strategy</span><span class="o">=</span><span class="n">FinitePowerPlant</span><span class="p">(</span><span class="n">energy_rate</span><span class="o">=</span><span class="mf">31.3</span><span class="p">,</span> <span class="n">max_available_power_kW</span><span class="o">=</span><span class="n">profile_kW</span><span class="p">))</span>
-</code></pre></div>
+<pre class="codehilite"><code class="language-python">profile_kW = {
+0: 0.1,
+8: 0.15,
+12: 0.2,
+19: 0.15,
+22: 0.1
+}
+Asset(
+    &quot;Power Plant&quot;,
+    strategy=FinitePowerPlant(energy_rate=31.3, max_available_power_kW=profile_kW))</code></pre>
 
 
 <h2 id="market-maker-utility-pricing">Market Maker (Utility Pricing)<a class="headerlink" href="#market-maker-utility-pricing" title="Permanent link">&para;</a></h2>
 <p>To implement a Market Maker in a backend simulation, two methods are available:</p>
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/market_maker_strategy.py" target="_blank">Infinite power plant</a> (in this mode, the Market Maker has the ability to meet the infinite energy demand of consumers at the highest rate possible in the grid).
 The Market Maker asset strategy in the infinite power plant mode is configured as follows:</p>
-<div class="codehilite"><pre><span></span><code><span class="n">Asset</span><span class="p">(</span><span class="s1">&#39;Market Maker&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">MarketMakerStrategy</span><span class="p">(</span><span class="n">energy_rate</span><span class="p">,</span> <span class="n">energy_rate_profile</span><span class="p">,</span> <span class="n">grid_connected</span><span class="p">))</span>
-</code></pre></div>
+<pre class="codehilite"><code class="language-python">Asset('Market Maker', strategy=MarketMakerStrategy(energy_rate, energy_rate_profile, grid_connected))</code></pre>
 
 
 <p>Where <em>energy_rate</em> is the input for a constant buying rate and <em>energy_rate_profile</em> the input for a variable buying rate. With the <em>grid_connected</em> parameter the user can toggle if the asset is connected to the grid or if it should only dictate the highest energy rate in the grid (islanded mode).</p>
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/infinite_bus.py" target="_blank">Infinite bus</a> (in this mode, the Market Maker has not only the ability to meet the infinite energy demand of the consumer but can also absorb the infinite generation surplus of prosumers/producers at the lowest rate possible in that grid).
 The Market Maker asset strategy in the infinite bus mode is configured as follows:</p>
-<div class="codehilite"><pre><span></span><code><span class="n">Asset</span><span class="p">(</span><span class="s1">&#39;Market Maker&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">InfiniteBusStrategy</span><span class="p">(</span><span class="n">energy_buy_rate</span><span class="p">,</span> <span class="n">energy_rate_profile</span><span class="p">,</span> <span class="n">energy_sell_rate</span><span class="p">,</span> <span class="n">buying_rate_profile</span><span class="p">))</span>
-</code></pre></div>
+<pre class="codehilite"><code class="language-python">Asset('Market Maker', strategy=InfiniteBusStrategy(energy_buy_rate, energy_rate_profile, energy_sell_rate, buying_rate_profile))</code></pre>
 
 
 <p>Where <em>energy_buy_rate</em> and <em>energy_sell_rate</em> are inputs for constant rates and <em>energy_rate_profile</em> and <em>buying_rate_profile</em> the inputs for variable rates.</p>
@@ -2069,22 +2061,20 @@ If the cap_price_strategy is True, the offer price for the storage is calculated
 <p>As an example, considering an <code>initial_selling_rate</code> of 30 cts/kWh and a <code>final_selling_rate</code> of 20 cts/kWh, a storage with an SOC of 1% would sell its energy at 29.9 cts/kWh, and a battery at 100% SOC would sell its energy at 20 cts/kWh.
 To implement a power plant in a backend simulation, one option is available:</p>
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/finite_power_plant.py" target="_blank">Finite Power Plant</a></p>
-<div class="codehilite"><pre><span></span><code><span class="n">profile_kW</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="mi">0</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
-    <span class="mi">8</span><span class="p">:</span> <span class="mf">0.15</span><span class="p">,</span>
-    <span class="mi">12</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span>
-    <span class="mi">19</span><span class="p">:</span> <span class="mf">0.15</span><span class="p">,</span>
-    <span class="mi">22</span><span class="p">:</span> <span class="mf">0.1</span>
-<span class="p">}</span>
-<span class="n">Asset</span><span class="p">(</span><span class="s2">&quot;Power Plant&quot;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">FinitePowerPlant</span><span class="p">(</span><span class="n">energy_rate</span><span class="o">=</span><span class="mf">31.3</span><span class="p">,</span> <span class="n">max_available_power_kW</span><span class="o">=</span><span class="n">profile_kW</span><span class="p">))</span>
-</code></pre></div>
+<pre class="codehilite"><code class="language-python">profile_kW = {
+    0: 0.1,
+    8: 0.15,
+    12: 0.2,
+    19: 0.15,
+    22: 0.1
+}
+Asset(&quot;Power Plant&quot;, strategy=FinitePowerPlant(energy_rate=31.3, max_available_power_kW=profile_kW))</code></pre>
 
 
 <h3 id="heat-pumps">Heat pumps<a class="headerlink" href="#heat-pumps" title="Permanent link">&para;</a></h3>
 <h4 id="heat-pump-code-configuration">Heat Pump Code Configuration<a class="headerlink" href="#heat-pump-code-configuration" title="Permanent link">&para;</a></h4>
 <p>To configure a heat pump asset in the backend code, the following lines are to be added to the children's list of one of the areas in the setup file:</p>
-<div class="codehilite"><pre><span></span><code><span class="n">Asset</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Heat Pump&quot;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">HeatPumpStrategy</span><span class="p">())</span>
-</code></pre></div>
+<pre class="codehilite"><code class="language-python">Asset(name=&quot;Heat Pump&quot;, strategy=HeatPumpStrategy())</code></pre>
 
 
 <p>The <strong>HeatPumpStrategy</strong> parameters can be set as follows:</p>
@@ -2103,8 +2093,7 @@ To implement a power plant in a backend simulation, one option is available:</p>
 <li><strong>cop_model_type</strong>: (optional user input; default: COPModelType.UNIVERSAL); select the type of COP model</li>
 </ul>
 <p>The initial GSY heat pump strategy assumes that the heat pump is connected to a single water tank. In order to simulate a heat pump that is connected to multiple water tanks, a dedicated strategy, namely MultipleTankHeatPumpStrategy is also available:</p>
-<div class="codehilite"><pre><span></span><code>Asset(name=&quot;Heat Pump&quot;, strategy=MultipleTankHeatPumpStrategy())
-</code></pre></div>
+<pre class="codehilite"><code>Asset(name=&quot;Heat Pump&quot;, strategy=MultipleTankHeatPumpStrategy())</code></pre>
 
 
 <p>The MultipleTankHeatPumpStrategy parameters can be set as follows:</p>
@@ -2120,15 +2109,14 @@ To implement a power plant in a backend simulation, one option is available:</p>
 </ul>
 <h4 id="heat-pump-price-strategy-configuration">Heat Pump Price Strategy Configuration<a class="headerlink" href="#heat-pump-price-strategy-configuration" title="Permanent link">&para;</a></h4>
 <p>In order to configure the heat pump bid pricing, the <strong>order_updater_parameters</strong>  should be set by assigning the <strong>HeatPumpOrderUpdaterParameters</strong> data class and its parameters to it:</p>
-<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gsy_e.models.strategy.heat_pump</span><span class="w"> </span><span class="kn">import</span> <span class="n">HeatPumpOrderUpdaterParameters</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pendulum</span><span class="w"> </span><span class="kn">import</span> <span class="n">duration</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">gsy_framework.enums</span><span class="w"> </span><span class="kn">import</span> <span class="n">AvailableMarketTypes</span>
+<pre class="codehilite"><code class="language-python">from gsy_e.models.strategy.heat_pump import HeatPumpOrderUpdaterParameters
+from pendulum import duration
+from gsy_framework.enums import AvailableMarketTypes
 
-<span class="n">Asset</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Heat Pump&quot;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">HeatPumpStrategy</span><span class="p">(</span>
-     <span class="n">order_updater_parameters</span><span class="o">=</span><span class="p">{</span>
-     <span class="n">AvailableMarketTypes</span><span class="o">.</span><span class="n">SPOT</span><span class="p">:</span> <span class="n">HeatPumpOrderUpdaterParameters</span><span class="p">(</span>
-     <span class="n">update_interval</span><span class="o">=</span><span class="n">duration</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">initial_rate</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">final_rate</span><span class="o">=</span><span class="mi">30</span><span class="p">)}))</span>
-</code></pre></div>
+Asset(name=&quot;Heat Pump&quot;, strategy=HeatPumpStrategy(
+     order_updater_parameters={
+     AvailableMarketTypes.SPOT: HeatPumpOrderUpdaterParameters(
+     update_interval=duration(minutes=1), initial_rate=20, final_rate=30)}))</code></pre>
 
 
 <p>The <strong>order_updater_parameters</strong> expects a dictionary with <strong>AvailableMarketTypes</strong> as key and <strong>HeatPumpOrderUpdaterParameters</strong> as values.
@@ -2140,8 +2128,7 @@ If not set by the user, the following default values are used:</p>
 </ul>
 <h4 id="virtual-heat-pump-code-configuration">Virtual Heat Pump Code Configuration<a class="headerlink" href="#virtual-heat-pump-code-configuration" title="Permanent link">&para;</a></h4>
 <p>To configure a virtual heat pump asset (VHP) in the Grid Singularity Exchange backend code, the following lines are to be added to the children's list of one of the areas in the setup file:</p>
-<div class="codehilite"><pre><span></span><code><span class="n">Asset</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Virtual Heat Pump&quot;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">VirtualHeatPumpStrategy</span><span class="p">())</span>
-</code></pre></div>
+<pre class="codehilite"><code class="language-python">Asset(name=&quot;Virtual Heat Pump&quot;, strategy=VirtualHeatPumpStrategy())</code></pre>
 
 
 <p>The <strong>VirtualHeatPumpStrategy</strong> parameters can be set as follows:</p>
@@ -2159,8 +2146,7 @@ If not set by the user, the following default values are used:</p>
 <li><strong>order_updater_parameters</strong>: of type <strong>HeatPumpOrderUpdaterParameters</strong>. A template configuration can be seen <a href="#heat-pump-price-strategy-configuration">below</a></li>
 </ul>
 <p>The initial GSY virtual heat pump strategy assumes that the heat pump is connected to a single water tank. In order to simulate a virtual heat pump that is connected to multiple water tanks, a dedicated strategy, namely MultipleTankVirtualHeatPumpStrategy is also available:</p>
-<div class="codehilite"><pre><span></span><code>Asset(name=&quot;Heat Pump&quot;, strategy=MultipleTankVirtualHeatPumpStrategy())
-</code></pre></div>
+<pre class="codehilite"><code>Asset(name=&quot;Heat Pump&quot;, strategy=MultipleTankVirtualHeatPumpStrategy())</code></pre>
 
 
 <p>The MultipleTankVirtualHeatPumpStrategy parameters can be set as follows:</p>

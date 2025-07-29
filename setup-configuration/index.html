@@ -1808,12 +1808,11 @@
                 <h2 id="backend-simulation-configuration">Backend Simulation Configuration<a class="headerlink" href="#backend-simulation-configuration" title="Permanent link">&para;</a></h2>
 <p>In the backend, the simulation process is slightly different compared to the user interface simulations. There is no need to login to set up a simulation. The user first needs to download the code from our Github Repository (Installation Instructions for <a href="../linux-installation-instructions/">Linux</a>, <a href="../ios-installation-instructions/">Mac</a> and <a href="../vm-installation-instructions/">Windows</a>). In the setup-file (in Python programming language), general and <a href="trading-agents-and-strategies">trading strategy</a> settings can be defined. Examples can be found in the relevant <a href="https://github.com/gridsingularity/gsy-e/tree/master/src/gsy_e/setup" target="_blank">Grid Singularity GitHub</a> folder.</p>
 <p>This is the most basic skeleton for a setup-file:</p>
-<div class="codehilite"><pre><span></span><code><span class="err">```</span><span class="n">python</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">gsy_e.models.area</span><span class="w"> </span><span class="kn">import</span> <span class="n">Market</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">get_setup</span><span class="p">(</span><span class="n">config</span><span class="p">):</span>
-    <span class="n">area</span> <span class="o">=</span> <span class="n">Market</span><span class="p">(</span><span class="s2">&quot;Grid&quot;</span><span class="p">,</span> <span class="p">[])</span>
-    <span class="k">return</span> <span class="n">Market</span>
-</code></pre></div>
+<pre class="codehilite"><code class="language-python">```python
+from gsy_e.models.area import Market
+def get_setup(config):
+    area = Market(&quot;Grid&quot;, [])
+    return Market</code></pre>
 
 
 <p>The user can add more nested submarkets recursively by adding more instances of <code>Market</code> to the second parameter (list) of the <code>Market</code> class. To define the strategy of an asset, please use the <code>Asset</code> class and its strategy parameter. The following grid architecture is given:</p>
@@ -1834,56 +1833,55 @@
 </ul>
 <p>Bold instances in the outline above are markets. For each of these markets, a <a href="../trading-agents-and-strategies/">market agent</a> is created in the background to execute offer/bid forwarding and matching.</p>
 <p>In the following, the corresponding setup-file is shown.</p>
-<div class="codehilite"><pre><span></span><code><span class="err">```</span><span class="n">python</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">gsy_e.models.area</span><span class="w"> </span><span class="kn">import</span> <span class="n">Area</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">gsy_e.models.strategy.storage</span><span class="w"> </span><span class="kn">import</span> <span class="n">StorageStrategy</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">gsy_e.models.strategy.load_hours</span><span class="w"> </span><span class="kn">import</span> <span class="n">LoadHoursStrategy</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">gsy_e.models.strategy.pv</span><span class="w"> </span><span class="kn">import</span> <span class="n">PVStrategy</span>
+<pre class="codehilite"><code class="language-python">```python
+from gsy_e.models.area import Area
+from gsy_e.models.strategy.storage import StorageStrategy
+from gsy_e.models.strategy.load_hours import LoadHoursStrategy
+from gsy_e.models.strategy.pv import PVStrategy
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">get_setup</span><span class="p">(</span><span class="n">config</span><span class="p">):</span>
-    <span class="n">market</span> <span class="o">=</span> <span class="n">Market</span><span class="p">(</span>
-        <span class="s1">&#39;Grid&#39;</span><span class="p">,</span>
-        <span class="p">[</span>
-            <span class="n">Market</span><span class="p">(</span>
-                <span class="s1">&#39;House 1&#39;</span><span class="p">,</span>
-                <span class="p">[</span>
-                    <span class="n">Asset</span><span class="p">(</span><span class="s1">&#39;H1 General Load&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">LoadHoursStrategy</span><span class="p">(</span><span class="n">avg_power_W</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
-                                                                        <span class="n">hrs_per_day</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>
-                                                                        <span class="n">hrs_of_day</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span>
-                                                                            <span class="nb">range</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">18</span><span class="p">)),</span>
-                                                                        <span class="n">final_buying_rate</span><span class="o">=</span><span class="mi">35</span><span class="p">)</span>
-                          <span class="p">),</span>
-                    <span class="n">Asset</span><span class="p">(</span><span class="s1">&#39;H1 Storage1&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">StorageStrategy</span><span class="p">(</span><span class="n">initial_soc</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
-                          <span class="p">),</span>
-                    <span class="n">Asset</span><span class="p">(</span><span class="s1">&#39;H1 Storage2&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">StorageStrategy</span><span class="p">(</span><span class="n">initial_soc</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
-                          <span class="p">),</span>
-                <span class="p">],</span>
-                <span class="n">grid_fee_pct</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">grid_fee_const</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-            <span class="p">),</span>
-            <span class="n">Market</span><span class="p">(</span>
-                <span class="s1">&#39;House 2&#39;</span><span class="p">,</span>
-                <span class="p">[</span>
-                    <span class="n">Asset</span><span class="p">(</span><span class="s1">&#39;H2 General Load&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">LoadHoursStrategy</span><span class="p">(</span><span class="n">avg_power_W</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
-                                                                        <span class="n">hrs_per_day</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
-                                                                        <span class="n">hrs_of_day</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span>
-                                                                            <span class="nb">range</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">16</span><span class="p">)),</span>
-                                                                        <span class="n">final_buying_rate</span><span class="o">=</span><span class="mi">35</span><span class="p">)</span>
-                          <span class="p">),</span>
-                    <span class="n">Asset</span><span class="p">(</span><span class="s1">&#39;H2 PV&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">PVStrategy</span><span class="p">(</span><span class="n">panel_count</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">initial_selling_rate</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
-                                                       <span class="n">final_selling_rate</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
-                          <span class="p">),</span>
+def get_setup(config):
+    market = Market(
+        'Grid',
+        [
+            Market(
+                'House 1',
+                [
+                    Asset('H1 General Load', strategy=LoadHoursStrategy(avg_power_W=200,
+                                                                        hrs_per_day=6,
+                                                                        hrs_of_day=list(
+                                                                            range(12, 18)),
+                                                                        final_buying_rate=35)
+                          ),
+                    Asset('H1 Storage1', strategy=StorageStrategy(initial_soc=50)
+                          ),
+                    Asset('H1 Storage2', strategy=StorageStrategy(initial_soc=50)
+                          ),
+                ],
+                grid_fee_pct=0, grid_fee_const=0,
+            ),
+            Market(
+                'House 2',
+                [
+                    Asset('H2 General Load', strategy=LoadHoursStrategy(avg_power_W=200,
+                                                                        hrs_per_day=4,
+                                                                        hrs_of_day=list(
+                                                                            range(12, 16)),
+                                                                        final_buying_rate=35)
+                          ),
+                    Asset('H2 PV', strategy=PVStrategy(panel_count=4, initial_selling_rate=30,
+                                                       final_selling_rate=5)
+                          ),
 
-                <span class="p">],</span>
-                <span class="n">grid_fee_pct</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">grid_fee_const</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                ],
+                grid_fee_pct=0, grid_fee_const=0,
 
-            <span class="p">),</span>
+            ),
 
-        <span class="p">],</span>
-        <span class="n">config</span><span class="o">=</span><span class="n">config</span>
-    <span class="p">)</span>
-    <span class="k">return</span> <span class="n">market</span>
-</code></pre></div>
+        ],
+        config=config
+    )
+    return market</code></pre>
 
 
 <p>Additionally, the user has the possibility to change the default general settings in two different ways:</p>
@@ -1898,13 +1896,12 @@
 <li>Grid_fee_type (if equal to 1: <a href="../grid-fee-accounting/#constant-grid-fee-calculation">Constant grid fee</a>, if equal to 2 : <a href="../grid-fee-accounting/#percentage-grid-fee-calculation">Percentage grid fee</a>)</li>
 </ul>
 <p>Here is an example to setup a simulation with the Two-Sided Pay-as-Bid market type, constant grid fee and default min (0cts/kWh) and max to (35cts/kWh) energy rate for all <a href="../consumption/">loads</a>:</p>
-<div class="codehilite"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">gsy_framework.constants_limits</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConstSettings</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">get_setup</span><span class="p">(</span><span class="n">config</span><span class="p">):</span>
-    <span class="n">ConstSettings</span><span class="o">.</span><span class="n">MASettings</span><span class="o">.</span><span class="n">MARKET_TYPE</span> <span class="o">=</span> <span class="mi">2</span>
-    <span class="n">ConstSettings</span><span class="o">.</span><span class="n">LoadSettings</span><span class="o">.</span><span class="n">MIN_ENERGY_RATE</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="n">ConstSettings</span><span class="o">.</span><span class="n">LoadSettings</span><span class="o">.</span><span class="n">MAX_ENERGY_RATE</span> <span class="o">=</span> <span class="mi">35</span>
-    <span class="n">ConstSettings</span><span class="o">.</span><span class="n">MASettings</span><span class="o">.</span><span class="n">GRID_FEE_TYPE</span> <span class="o">=</span> <span class="mi">1</span>
-</code></pre></div>
+<pre class="codehilite"><code class="language-python">from gsy_framework.constants_limits import ConstSettings
+def get_setup(config):
+    ConstSettings.MASettings.MARKET_TYPE = 2
+    ConstSettings.LoadSettings.MIN_ENERGY_RATE = 0
+    ConstSettings.LoadSettings.MAX_ENERGY_RATE = 35
+    ConstSettings.MASettings.GRID_FEE_TYPE = 1</code></pre>
 
 
 <h3 id="gsy-e-settingsjson">gsy-e-settings.json<a class="headerlink" href="#gsy-e-settingsjson" title="Permanent link">&para;</a></h3>

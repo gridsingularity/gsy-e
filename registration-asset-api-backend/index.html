@@ -1892,28 +1892,27 @@
                 <p><em>Note: If you are running the Grid Singularity exchange (previously callled D3A) using a virtual machine and <a href="../vm-installation-instructions/">vagrant</a>, the latest GSy-e SDK is already installed on your computer and you can skip to the Launch Simulation section below. If you are running the exchange software locally, please follow the following instructions.</em></p>
 <h3 id="start-redis-server">Start Redis server<a class="headerlink" href="#start-redis-server" title="Permanent link">&para;</a></h3>
 <p>To use the API locally, your script interacts with the simulation using a local Redis instance. To start the redis instance, open a new terminal and run the following command :</p>
-<div class="codehilite"><pre><span></span><code>redis-server /usr/local/etc/redis.conf
-</code></pre></div>
+<pre class="codehilite"><code>redis-server /usr/local/etc/redis.conf</code></pre>
 
 
 <p>To install redis in Ubuntu follow the instructions in this <a href="https://redis.io/topics/quickstart" target="_blank">link</a>.</p>
 <h3 id="open-external-connection-to-api-for-assets">Open external connection to API for Assets<a class="headerlink" href="#open-external-connection-to-api-for-assets" title="Permanent link">&para;</a></h3>
 <p>In the setup file (template available <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/api_setup/default_community.py" target="_blank">here</a>), an asset must be designated as open to external connection via the API. This is controlled when setting up the simulation in the setup file by designating the ExternalStrategy for each relevant energy assets :</p>
-<div class="codehilite"><pre><span></span><code>Market(&#39;Family 3 children+PV+Batt&#39;,
+<pre class="codehilite"><code>Market('Family 3 children+PV+Batt',
                          [
-                             Asset(&#39;Load 3 L17&#39;, strategy=LoadProfileExternalStrategy(
+                             Asset('Load 3 L17', strategy=LoadProfileExternalStrategy(
                                  daily_load_profile=os.path.join(current_dir,
                                                                  &quot;resources/CHR41 Family with 3 children, both at work HH1.csv&quot;),
                                  initial_buying_rate=Load_initial_buying_rate,
                                  final_buying_rate=Load_final_buying_rate),
                                   ),
-                             Asset(&#39;PV 3 (5kW)&#39;, strategy=PVUserProfileExternalStrategy(
+                             Asset('PV 3 (5kW)', strategy=PVUserProfileExternalStrategy(
                                  power_profile=os.path.join(current_dir, &quot;resources/Berlin_pv.csv&quot;),
                                  panel_count=5,
                                  initial_selling_rate=30,
                                  final_selling_rate=11),
                                   ),
-                             Asset(&#39;Tesla Powerwall 3&#39;, strategy=StorageExternalStrategy(initial_soc=10,
+                             Asset('Tesla Powerwall 3', strategy=StorageExternalStrategy(initial_soc=10,
 54min_allowed_soc=10,
 battery_capacity_kWh=14,
 max_abs_battery_power_kW=5,
@@ -1921,21 +1920,18 @@ initial_buying_rate=0,
 final_buying_rate=25,
 initial_selling_rate=30,                                                                              final_selling_rate=25.1),
                                   ),
-                         ]),
-</code></pre></div>
+                         ]),</code></pre>
 
 
 <p>By default, trading strategies do not allow API connections unless the <code>ExternalStrategy</code> is used. Please also ensure that the appropriate libraries are imported to use the API.</p>
 <h3 id="launch-simulation">Launch simulation<a class="headerlink" href="#launch-simulation" title="Permanent link">&para;</a></h3>
 <p>This requires you to have the backend codebase installed on your machine to run simulations (see <a href="../linux-installation-instructions/">Installation Instructions</a>). First, navigate to the Grid Singularity folder (gsy) in a new terminal, then activate the Grid Singularity (gsy-env) environment with the command:</p>
-<div class="codehilite"><pre><span></span><code>workon gsy-env
-</code></pre></div>
+<pre class="codehilite"><code>workon gsy-env</code></pre>
 
 
 <p>An template setup is already available in github and ready to be run <a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/setup/api_setup/default_community.py" target="_blank">here</a> (data available for the July 2021).</p>
 <p>To run this simulation and wait for the API template script to execute:</p>
-<div class="codehilite"><pre><span></span><code>gsy-env -l INFO run -t 15s -s 15m --setup api_setup.default_community --slot-length-realtime 5 --start-date 2021-07-01 --enable-external-connection --paused
-</code></pre></div>
+<pre class="codehilite"><code>gsy-env -l INFO run -t 15s -s 15m --setup api_setup.default_community --slot-length-realtime 5 --start-date 2021-07-01 --enable-external-connection --paused</code></pre>
 
 
 <p>After few seconds, the simulation should begin, waiting for the API template as mentioned in the figure below:</p>
@@ -1945,27 +1941,23 @@ initial_selling_rate=30,                                                        
 <p>Before launching the SDK Script, users need to adapt the following information in their script:</p>
 <h3 id="oracle-name">Oracle name<a class="headerlink" href="#oracle-name" title="Permanent link">&para;</a></h3>
 <p>This parameter is only relevant when using the API on the User-Interface. This defines the name of the aggregator / API name that manages the markets and energy assets. Once the name is set it cannot be changed within the same running collaboration.</p>
-<div class="codehilite"><pre><span></span><code>oracle_name = &#39;oracle&#39;
-</code></pre></div>
+<pre class="codehilite"><code>oracle_name = 'oracle'</code></pre>
 
 
 <h3 id="assets-list">Assets list<a class="headerlink" href="#assets-list" title="Permanent link">&para;</a></h3>
 <p>The list of assets  needs to be updated to include the assets registered to user through the registration process, in arrays as follows :</p>
-<div class="codehilite"><pre><span></span><code>load_names = [&#39;Load 1 L13&#39;, &#39;Load 2 L21&#39;, &#39;Load 3 L17&#39;]
-pv_names = [&#39;PV 1 (4kW)&#39;, &#39;PV 3 (5kW)&#39;]
-storage_names = [&#39;Tesla Powerwall 3&#39;]
-</code></pre></div>
+<pre class="codehilite"><code>load_names = ['Load 1 L13', 'Load 2 L21', 'Load 3 L17']
+pv_names = ['PV 1 (4kW)', 'PV 3 (5kW)']
+storage_names = ['Tesla Powerwall 3']</code></pre>
 
 
-<div class="codehilite"><pre><span></span><code>market_names = [&quot;Grid&quot;, &quot;Community&quot;]
-</code></pre></div>
+<pre class="codehilite"><code>market_names = [&quot;Grid&quot;, &quot;Community&quot;]</code></pre>
 
 
 <p>The SDK Script has an “automatic” connection process to manage energy assets. If the function <em>automatic</em> is True, the Exchange SDK will automatically connect to all energy assets that it is registered to. This option is only available for simulations running on the User-Interface.</p>
 <h3 id="interact-with-local-simulations">Interact with local simulations<a class="headerlink" href="#interact-with-local-simulations" title="Permanent link">&para;</a></h3>
 <p>To interact with a locally running simulation (backend simulation), username, passwords, domain and websocket names and simulation_id are not necessary. There is only an additional flag required in the CLI command : --run-on-redis.</p>
-<div class="codehilite"><pre><span></span><code>gsy-e-sdk --log-level INFO run --setup asset_api_template --run-on-redis
-</code></pre></div>
+<pre class="codehilite"><code>gsy-e-sdk --log-level INFO run --setup asset_api_template --run-on-redis</code></pre>
 
 
 <h4 id="log-levels">Log levels:<a class="headerlink" href="#log-levels" title="Permanent link">&para;</a></h4>

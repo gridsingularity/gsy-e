@@ -1706,13 +1706,12 @@
                   <h1>Market Backend Configuration</h1>
                 
                 <p>These parameters can be set in the backend in the Market class :</p>
-<div class="codehilite"><pre><span></span><code><span class="err">Marke</span><span class="kc">t</span><span class="err">(&#39;Marke</span><span class="kc">t</span><span class="err">&#39;</span><span class="p">,</span>
-<span class="w">       </span><span class="p">[</span>
-<span class="w">           </span><span class="err">...</span><span class="w"> </span><span class="s2">&quot;some assets here&quot;</span>
-<span class="w">       </span><span class="p">],</span>
-<span class="w">       </span><span class="err">grid_</span><span class="kc">fee</span><span class="err">_co</span><span class="kc">nstant</span><span class="err">=</span><span class="mi">2</span><span class="p">,</span>
-<span class="w">       </span><span class="kc">t</span><span class="err">hroughpu</span><span class="kc">t</span><span class="err">=Throughpu</span><span class="kc">t</span><span class="err">Parame</span><span class="kc">ters</span><span class="err">(impor</span><span class="kc">t</span><span class="err">_capaci</span><span class="kc">t</span><span class="err">y_kVA=</span><span class="mf">2.0</span><span class="p">,</span><span class="w"> </span><span class="err">expor</span><span class="kc">t</span><span class="err">_capaci</span><span class="kc">t</span><span class="err">y_kVA=</span><span class="mf">2.0</span><span class="p">,</span><span class="w"> </span><span class="err">baseli</span><span class="kc">ne</span><span class="err">_peak_e</span><span class="kc">ner</span><span class="err">gy_impor</span><span class="kc">t</span><span class="err">_kWh=</span><span class="mf">0.4</span><span class="p">,</span><span class="w"> </span><span class="err">baseli</span><span class="kc">ne</span><span class="err">_peak_e</span><span class="kc">ner</span><span class="err">gy_expor</span><span class="kc">t</span><span class="err">_kWh=</span><span class="mf">0.4</span><span class="err">))</span>
-</code></pre></div>
+<pre class="codehilite"><code class="language-JSON">Market('Market',
+       [
+           ... &quot;some assets here&quot;
+       ],
+       grid_fee_constant=2,
+       throughput=ThroughputParameters(import_capacity_kVA=2.0, export_capacity_kVA=2.0, baseline_peak_energy_import_kWh=0.4, baseline_peak_energy_export_kWh=0.4))</code></pre>
                 
                   
                 

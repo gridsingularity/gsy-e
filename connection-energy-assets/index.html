@@ -1839,26 +1839,22 @@
 <h2 id="establish-a-connection-with-your-energy-assets">Establish a connection with your energy assets<a class="headerlink" href="#establish-a-connection-with-your-energy-assets" title="Permanent link">&para;</a></h2>
 <p>It is possible to connect and register automatically to a running Canary Network:</p>
 <h3 id="user-interface-gridsingularitycom-please-note-that-the-energy-asset-uuid-has-to-be-obtained-first-for-this-option">User-Interface (gridsingularity.com; please note that the energy asset uuid has to be obtained first for this option)<a class="headerlink" href="#user-interface-gridsingularitycom-please-note-that-the-energy-asset-uuid-has-to-be-obtained-first-for-this-option" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span><code>asset_uuid = get_area_uuid_from_area_name_and_collaboration_id(
+<pre class="codehilite"><code>asset_uuid = get_area_uuid_from_area_name_and_collaboration_id(
               &lt;simulation_id&gt;, &lt;asset_name&gt;, &lt;domain_name&gt;
               )
-asset_client = RestAssetClient(asset_uuid, autoregister=True)
-</code></pre></div>
+asset_client = RestAssetClient(asset_uuid, autoregister=True)</code></pre>
 
 
 <h3 id="backend-simulation">Backend simulation<a class="headerlink" href="#backend-simulation" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span><code>asset_client = RedisAssetClient(&lt;asset-uuid&gt;, autoregister=True)
-</code></pre></div>
+<pre class="codehilite"><code>asset_client = RedisAssetClient(&lt;asset-uuid&gt;, autoregister=True)</code></pre>
 
 
 <p>Otherwise, it is also possible to connect manually by doing:</p>
-<div class="codehilite"><pre><span></span><code>asset_client.register()
-</code></pre></div>
+<pre class="codehilite"><code>asset_client.register()</code></pre>
 
 
 <p>To disconnect/unregistering, the following command is available:</p>
-<div class="codehilite"><pre><span></span><code>asset_client.unregister()
-</code></pre></div>
+<pre class="codehilite"><code>asset_client.unregister()</code></pre>
 
 
 <p>There are two options for you to connect live data streaming to the Grid Singularity Exchange:</p>

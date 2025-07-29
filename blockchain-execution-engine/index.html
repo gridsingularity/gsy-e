@@ -1861,18 +1861,16 @@
 <ul>
 <li>
 <p>For the buyer of the trade, if the delivered energy exceeds the traded energy, the engine calculates the penalty as:</p>
-<div class="codehilite"><pre><span></span><code>delta_consumed = measured_energy - traded_energy
-penalty = delta_consumed * penalty_rate
-</code></pre></div>
+<pre class="codehilite"><code>delta_consumed = measured_energy - traded_energy
+penalty = delta_consumed * penalty_rate</code></pre>
 
 
 <p>and the penalty is assigned to the buyer.</p>
 </li>
 <li>
 <p>For the seller of the trade, if the delivered energy is less than the traded energy, the penalty is calculated as:</p>
-<div class="codehilite"><pre><span></span><code>delta_produced = traded_energy - measured_energy
-penalty = delta_produced * penalty_rate
-</code></pre></div>
+<pre class="codehilite"><code>delta_produced = traded_energy - measured_energy
+penalty = delta_produced * penalty_rate</code></pre>
 
 
 <p>and the penalty is assigned to the seller.</p>

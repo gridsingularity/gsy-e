@@ -1707,70 +1707,66 @@
                 
                 <p>A Matching API template script is available <a href="https://github.com/gridsingularity/gsy-matching-engine-sdk/blob/master/gsy_matching_engine_sdk/setups/matching_engine_matcher.py" target="_blank">here</a>. See the TODO flags there connect to your preferred customized clearing algorithm and to request, if desired, bids and offers from specific markets.</p>
 <p>At the beginning of the Matching API script, the <code>MatchingEngineMatcher</code> class is defined as well as the <code>on_area_map_response</code> method, which allows the users to define the list of markets from which they want to request bids and offers from.</p>
-<div class="codehilite"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">MatchingEngineMatcher</span><span class="p">(</span><span class="n">base_matcher</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">is_finished</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">request_area_id_name_map</span><span class="p">()</span>
+<pre class="codehilite"><code class="language-python">class MatchingEngineMatcher(base_matcher):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.is_finished = False
+        self.request_area_id_name_map()
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">on_area_map_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">id_list</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">market_list</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Community&quot;</span><span class="p">]</span>
-        <span class="k">for</span> <span class="n">market</span> <span class="ow">in</span> <span class="n">market_list</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">market_id</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;area_mapping&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="n">market</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">id_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">market_id</span><span class="p">)</span>
-</code></pre></div>
+    def on_area_map_response(self, data):
+        self.id_list = []
+        market_list = [&quot;Community&quot;]
+        for market in market_list:
+            for market_id, name in data[&quot;area_mapping&quot;].items():
+                if name == market:
+                    self.id_list.append(market_id)</code></pre>
 
 
 <p>Right after, the <a href="../matching-api-events/#each-new-market-slot">on_market_cycle</a> and the <a href="../matching-api-events/#on--of-market-completion">on_tick</a> methods are triggered. In the latter, the user requests bids / offers from the market.</p>
-<div class="codehilite"><pre><span></span><code>    <span class="k">def</span><span class="w"> </span><span class="nf">on_market_cycle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-        <span class="k">pass</span>
+<pre class="codehilite"><code class="language-python">    def on_market_cycle(self, data):
+        pass
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">on_tick</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">request_offers_bids</span><span class="p">(</span><span class="n">filters</span><span class="o">=</span><span class="p">{})</span>
-</code></pre></div>
+    def on_tick(self, data):
+        self.request_offers_bids(filters={})</code></pre>
 
 
 <p>In the next section, the bids/offers that had been previously requested from the market are stored in the <code>matching_data</code> variable. The matching algorithm (<a href="https://github.com/gridsingularity/gsy-matching-engine-sdk/blob/master/gsy_matching_engine_sdk/matching_algorithms/attributed_matching_algorithm.py" target="_blank">AttributedMatchingAlgorithm</a> in the example here) takes those data as input and outputs a list of recommendations. Each recommendation is a nested dictionary with the following structure:</p>
-<div class="codehilite"><pre><span></span><code><span class="p">[{</span><span class="err">&#39;marke</span><span class="kc">t</span><span class="err">_id&#39;</span><span class="p">:</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">0</span><span class="kc">f</span><span class="err">d</span><span class="mi">481</span><span class="err">d</span><span class="mi">9-98</span><span class="err">a</span><span class="kc">f</span><span class="mi">-43</span><span class="err">cd</span><span class="mf">-9e98-196</span><span class="err">c</span><span class="mi">1</span><span class="kc">fe</span><span class="mi">9877</span><span class="kc">f</span><span class="err">&#39;</span><span class="p">,</span>
-<span class="w">  </span><span class="err">&#39;</span><span class="kc">t</span><span class="err">ime_slo</span><span class="kc">t</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">2021-12-20</span><span class="err">T</span><span class="mi">00</span><span class="p">:</span><span class="mi">15</span><span class="err">&#39;</span><span class="p">,</span>
-<span class="w">  </span><span class="err">&#39;bids&#39;</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span><span class="err">&#39;</span><span class="kc">t</span><span class="err">ype&#39;</span><span class="p">:</span><span class="w"> </span><span class="err">&#39;Bid&#39;</span><span class="p">,</span>
-<span class="w">    </span><span class="err">&#39;id&#39;</span><span class="p">:</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">6</span><span class="err">d</span><span class="mi">71</span><span class="kc">f</span><span class="mi">933-0474-4</span><span class="err">cd</span><span class="mi">8-</span><span class="err">baa</span><span class="mi">4-97</span><span class="err">a</span><span class="mi">1</span><span class="kc">f</span><span class="mi">01553</span><span class="err">c</span><span class="mi">5</span><span class="err">&#39;</span><span class="p">,</span>
-<span class="w">    </span><span class="err">&#39;e</span><span class="kc">ner</span><span class="err">gy&#39;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.05</span><span class="p">,</span>
-<span class="w">    </span><span class="err">&#39;e</span><span class="kc">ner</span><span class="err">gy_ra</span><span class="kc">te</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mf">22.5</span><span class="p">,</span>
-<span class="w">    </span><span class="err">&#39;origi</span><span class="kc">nal</span><span class="err">_price&#39;</span><span class="p">:</span><span class="w"> </span><span class="mf">1.125</span><span class="p">,</span>
-<span class="w">    </span><span class="err">&#39;crea</span><span class="kc">t</span><span class="err">io</span><span class="kc">n</span><span class="err">_</span><span class="kc">t</span><span class="err">ime&#39;</span><span class="p">:</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">2021-12-20</span><span class="err">T</span><span class="mi">00</span><span class="p">:</span><span class="mi">24</span><span class="p">:</span><span class="mi">00</span><span class="err">&#39;</span><span class="p">,</span>
-<span class="w">    </span><span class="err">&#39;</span><span class="kc">t</span><span class="err">ime_slo</span><span class="kc">t</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">2021-12-20</span><span class="err">T</span><span class="mi">00</span><span class="p">:</span><span class="mi">15</span><span class="p">:</span><span class="mi">00</span><span class="err">&#39;</span><span class="p">,</span>
-<span class="w">    </span><span class="err">&#39;a</span><span class="kc">ttr</span><span class="err">ibu</span><span class="kc">tes</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="err">No</span><span class="kc">ne</span><span class="p">,</span>
-<span class="w">    </span><span class="err">&#39;requireme</span><span class="kc">nts</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="err">No</span><span class="kc">ne</span><span class="p">,</span>
-<span class="w">    </span><span class="err">&#39;buyer_origi</span><span class="kc">n</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="err">&#39;H</span><span class="mi">2</span><span class="w"> </span><span class="err">Ge</span><span class="kc">neral</span><span class="w"> </span><span class="err">Load</span><span class="mi">1</span><span class="err">&#39;</span><span class="p">,</span>
-<span class="w">    </span><span class="err">&#39;buyer_origi</span><span class="kc">n</span><span class="err">_id&#39;</span><span class="p">:</span><span class="w"> </span><span class="err">&#39;d</span><span class="mi">5133</span><span class="err">b</span><span class="mi">0</span><span class="err">b</span><span class="mi">-5</span><span class="err">c</span><span class="mi">06-4</span><span class="err">cc</span><span class="mi">8-</span><span class="err">aaaa</span><span class="mi">-317756659695</span><span class="err">&#39;</span><span class="p">,</span>
-<span class="w">    </span><span class="err">&#39;buyer_id&#39;</span><span class="p">:</span><span class="w"> </span><span class="err">&#39;d</span><span class="mi">5133</span><span class="err">b</span><span class="mi">0</span><span class="err">b</span><span class="mi">-5</span><span class="err">c</span><span class="mi">06-4</span><span class="err">cc</span><span class="mi">8-</span><span class="err">aaaa</span><span class="mi">-317756659695</span><span class="err">&#39;</span><span class="p">,</span>
-<span class="w">    </span><span class="err">&#39;buyer&#39;</span><span class="p">:</span><span class="w"> </span><span class="err">&#39;H</span><span class="mi">2</span><span class="w"> </span><span class="err">Ge</span><span class="kc">neral</span><span class="w"> </span><span class="err">Load</span><span class="mi">1</span><span class="err">&#39;</span><span class="p">}],</span>
-<span class="w">  </span><span class="err">&#39;o</span><span class="kc">ffers</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="p">[{</span><span class="err">&#39;</span><span class="kc">t</span><span class="err">ype&#39;</span><span class="p">:</span><span class="w"> </span><span class="err">&#39;O</span><span class="kc">ffer</span><span class="err">&#39;</span><span class="p">,</span>
-<span class="w">    </span><span class="err">&#39;id&#39;</span><span class="p">:</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">7760</span><span class="err">b</span><span class="kc">f</span><span class="mi">1</span><span class="err">d</span><span class="mi">-</span><span class="err">ddad</span><span class="mi">-47</span><span class="err">bb</span><span class="mi">-</span><span class="err">a</span><span class="mf">2e</span><span class="err">a</span><span class="mf">-7067e</span><span class="err">a</span><span class="mi">177</span><span class="err">c</span><span class="mi">07</span><span class="err">&#39;</span><span class="p">,</span>
-<span class="w">    </span><span class="err">&#39;e</span><span class="kc">ner</span><span class="err">gy&#39;</span><span class="p">:</span><span class="w"> </span><span class="mi">9223372036854775807</span><span class="p">,</span>
-<span class="w">    </span><span class="err">&#39;e</span><span class="kc">ner</span><span class="err">gy_ra</span><span class="kc">te</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mf">22.0</span><span class="p">,</span>
-<span class="w">    </span><span class="err">&#39;origi</span><span class="kc">nal</span><span class="err">_price&#39;</span><span class="p">:</span><span class="w"> </span><span class="mf">2.0291418481080507e+20</span><span class="p">,</span>
-<span class="w">    </span><span class="err">&#39;crea</span><span class="kc">t</span><span class="err">io</span><span class="kc">n</span><span class="err">_</span><span class="kc">t</span><span class="err">ime&#39;</span><span class="p">:</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">2021-12-20</span><span class="err">T</span><span class="mi">00</span><span class="p">:</span><span class="mi">15</span><span class="p">:</span><span class="mi">25</span><span class="err">&#39;</span><span class="p">,</span>
-<span class="w">    </span><span class="err">&#39;</span><span class="kc">t</span><span class="err">ime_slo</span><span class="kc">t</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">2021-12-20</span><span class="err">T</span><span class="mi">00</span><span class="p">:</span><span class="mi">15</span><span class="p">:</span><span class="mi">00</span><span class="err">&#39;</span><span class="p">,</span>
-<span class="w">    </span><span class="err">&#39;a</span><span class="kc">ttr</span><span class="err">ibu</span><span class="kc">tes</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="err">No</span><span class="kc">ne</span><span class="p">,</span>
-<span class="w">    </span><span class="err">&#39;requireme</span><span class="kc">nts</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="err">No</span><span class="kc">ne</span><span class="p">,</span>
-<span class="w">    </span><span class="err">&#39;seller&#39;</span><span class="p">:</span><span class="w"> </span><span class="err">&#39;MA</span><span class="w"> </span><span class="err">House</span><span class="w"> </span><span class="mi">2</span><span class="err">&#39;</span><span class="p">,</span>
-<span class="w">    </span><span class="err">&#39;seller_origi</span><span class="kc">n</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="err">&#39;Marke</span><span class="kc">t</span><span class="w"> </span><span class="err">Maker&#39;</span><span class="p">,</span>
-<span class="w">    </span><span class="err">&#39;seller_origi</span><span class="kc">n</span><span class="err">_id&#39;</span><span class="p">:</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">4493</span><span class="kc">f</span><span class="mi">3</span><span class="err">ce</span><span class="mf">-ee</span><span class="err">ce</span><span class="mi">-4386-8</span><span class="kc">f</span><span class="err">c</span><span class="mf">1-e715</span><span class="err">c</span><span class="kc">f</span><span class="mi">32</span><span class="err">b</span><span class="mi">85</span><span class="kc">f</span><span class="err">&#39;</span><span class="p">,</span>
-<span class="w">    </span><span class="err">&#39;seller_id&#39;</span><span class="p">:</span><span class="w"> </span><span class="err">&#39;</span><span class="mi">0</span><span class="kc">f</span><span class="err">d</span><span class="mi">481</span><span class="err">d</span><span class="mi">9-98</span><span class="err">a</span><span class="kc">f</span><span class="mi">-43</span><span class="err">cd</span><span class="mf">-9e98-196</span><span class="err">c</span><span class="mi">1</span><span class="kc">fe</span><span class="mi">9877</span><span class="kc">f</span><span class="err">&#39;</span><span class="p">}],</span>
-<span class="w">  </span><span class="err">&#39;selec</span><span class="kc">te</span><span class="err">d_e</span><span class="kc">ner</span><span class="err">gy&#39;</span><span class="p">:</span><span class="w"> </span><span class="mf">0.05</span><span class="p">,</span>
-<span class="w">  </span><span class="err">&#39;</span><span class="kc">tra</span><span class="err">de_ra</span><span class="kc">te</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="mf">22.5</span><span class="p">,</span>
-<span class="w">  </span><span class="err">&#39;ma</span><span class="kc">t</span><span class="err">chi</span><span class="kc">n</span><span class="err">g_requireme</span><span class="kc">nts</span><span class="err">&#39;</span><span class="p">:</span><span class="w"> </span><span class="err">No</span><span class="kc">ne</span><span class="p">}]</span>
-</code></pre></div>
+<pre class="codehilite"><code class="language-json">[{'market_id': '0fd481d9-98af-43cd-9e98-196c1fe9877f',
+  'time_slot': '2021-12-20T00:15',
+  'bids': [{'type': 'Bid',
+    'id': '6d71f933-0474-4cd8-baa4-97a1f01553c5',
+    'energy': 0.05,
+    'energy_rate': 22.5,
+    'original_price': 1.125,
+    'creation_time': '2021-12-20T00:24:00',
+    'time_slot': '2021-12-20T00:15:00',
+    'attributes': None,
+    'requirements': None,
+    'buyer_origin': 'H2 General Load1',
+    'buyer_origin_id': 'd5133b0b-5c06-4cc8-aaaa-317756659695',
+    'buyer_id': 'd5133b0b-5c06-4cc8-aaaa-317756659695',
+    'buyer': 'H2 General Load1'}],
+  'offers': [{'type': 'Offer',
+    'id': '7760bf1d-ddad-47bb-a2ea-7067ea177c07',
+    'energy': 9223372036854775807,
+    'energy_rate': 22.0,
+    'original_price': 2.0291418481080507e+20,
+    'creation_time': '2021-12-20T00:15:25',
+    'time_slot': '2021-12-20T00:15:00',
+    'attributes': None,
+    'requirements': None,
+    'seller': 'MA House 2',
+    'seller_origin': 'Market Maker',
+    'seller_origin_id': '4493f3ce-eece-4386-8fc1-e715cf32b85f',
+    'seller_id': '0fd481d9-98af-43cd-9e98-196c1fe9877f'}],
+  'selected_energy': 0.05,
+  'trade_rate': 22.5,
+  'matching_requirements': None}]</code></pre>
 
 
 <p>The matching algorithm can be written as a separate class file and can be referenced in the <a href="../matching-api-events/#on-offers-bids-response">on_offers_bids_response</a> function as:</p>
-<div class="codehilite"><pre><span></span><code>    <span class="n">recommendations</span> <span class="o">=</span> <span class="n">YourMatchingAlgorithm</span><span class="o">.</span><span class="n">get_matches_recommendations</span><span class="p">(</span>
-            <span class="n">matching_data</span><span class="p">)</span>
-</code></pre></div>
+<pre class="codehilite"><code class="language-python">    recommendations = YourMatchingAlgorithm.get_matches_recommendations(
+            matching_data)</code></pre>
 
 
 <p>At the moment, there are 3 default matching algorithms available to use and to build upon:</p>
@@ -1783,31 +1779,28 @@
 </ul>
 </li>
 </ol>
-<div class="codehilite"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">on_offers_bids_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-        <span class="n">matching_data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;bids_offers&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">matching_data</span><span class="p">:</span>
-            <span class="k">return</span>
-        <span class="n">recommendations</span> <span class="o">=</span> <span class="n">AttributedMatchingAlgorithm</span><span class="o">.</span><span class="n">get_matches_recommendations</span><span class="p">(</span>
-            <span class="n">matching_data</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">recommendations</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Submitting </span><span class="si">%s</span><span class="s2"> recommendations.&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">recommendations</span><span class="p">))</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">submit_matches</span><span class="p">(</span><span class="n">recommendations</span><span class="p">)</span>
-</code></pre></div>
+<pre class="codehilite"><code class="language-python">def on_offers_bids_response(self, data):
+        matching_data = data.get(&quot;bids_offers&quot;)
+        if not matching_data:
+            return
+        recommendations = AttributedMatchingAlgorithm.get_matches_recommendations(
+            matching_data)
+        if recommendations:
+            logging.info(&quot;Submitting %s recommendations.&quot;, len(recommendations))
+            self.submit_matches(recommendations)</code></pre>
 
 
 <p>Later in the script, the <a href="../matching-api-events/#on-matched-recommendations-response">on_matched_recommendations_response</a> is triggered and useful information about the recommendation posted, such as seller, buyer, trading price and energy as well as the status, if successful or not, are printed in the terminal window of the user. Later, the <a href="../matching-api-events/#on-event-or-response">on_event_or_response</a> is overwritten. By default we do not perform any operation in this event but the user could add some if needed.</p>
-<div class="codehilite"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">on_matched_recommendations_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-        <span class="k">pass</span>
+<pre class="codehilite"><code class="language-python">def on_matched_recommendations_response(self, data):
+        pass
 
-<span class="k">def</span><span class="w"> </span><span class="nf">on_event_or_response</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Event arrived </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
-</code></pre></div>
+def on_event_or_response(self, data):
+        logging.debug(&quot;Event arrived %s&quot;, data)</code></pre>
 
 
 <p>Lastly, the Matching API Script overwrites the <a href="../matching-api-events/#on-finish">on_finish</a> event so that whenever the function is triggered the script stops. If the user wishes to save some information recorded within the Matching Engine SDK this would be the opportunity to export them to external files.</p>
-<div class="codehilite"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">on_finish</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">is_finished</span> <span class="o">=</span> <span class="kc">True</span>
-</code></pre></div>
+<pre class="codehilite"><code class="language-python">def on_finish(self, data):
+        self.is_finished = True</code></pre>
                 
                   
                 

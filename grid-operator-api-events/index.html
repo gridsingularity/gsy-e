@@ -1870,20 +1870,17 @@
 <h2 id="api-events">API Events<a class="headerlink" href="#api-events" title="Permanent link">&para;</a></h2>
 <p>In the Grid Operator there are 3 events that are triggered while a simulation is running.</p>
 <h3 id="each-new-market-slot">Each new market slot<a class="headerlink" href="#each-new-market-slot" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span><code>def on_market_cycle(self, market_info):
-</code></pre></div>
+<pre class="codehilite"><code>def on_market_cycle(self, market_info):</code></pre>
 
 
 <p>As shown in the schematic above, this event triggered at the start of every market slot. When a new market slot is created the API receives the <code>market_info</code>, containing market information and the code within the script event is executed.</p>
 <h3 id="on-event-or-response">On event or response<a class="headerlink" href="#on-event-or-response" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span><code>def on_event_or_response(self, message):
-</code></pre></div>
+<pre class="codehilite"><code>def on_event_or_response(self, message):</code></pre>
 
 
 <p>In this event, the API receives a message for every event (<code>on_market_cycle</code>) or response for each commands (e.g. submitting new grid fees)</p>
 <h3 id="on-finish">On finish<a class="headerlink" href="#on-finish" title="Permanent link">&para;</a></h3>
-<div class="codehilite"><pre><span></span><code>def on_finish(self, finish_info):
-</code></pre></div>
+<pre class="codehilite"><code>def on_finish(self, finish_info):</code></pre>
 
 
 <p>This event is triggered when the simulation/collaboration finishes. Within that function, information stored during the simulation could potentially be exported for further analysis.</p>
