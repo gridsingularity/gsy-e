@@ -99,7 +99,7 @@ class AllTanksState:
         """Serializable dict with the parameters of all water tanks."""
         return [tank.serialize() for tank in self._tanks_states]
 
-    def get_results_dict(self, current_time_slot: DateTime):
+    def get_results(self, current_time_slot: DateTime) -> list:
         """Results dict with the results from all water tanks."""
         return [tank.get_results_dict(current_time_slot) for tank in self._tanks_states]
 
@@ -142,3 +142,11 @@ class AllTanksState:
 
     def _last_time_slot(self, time_slot: DateTime):
         return time_slot - GlobalConfig.slot_length
+
+    def get_average_soc(self, time_slot: DateTime) -> float:
+        """Return the average SOC of all tanks."""
+        available_energy = sum(
+            tank.get_available_energy_kJ(time_slot) for tank in self._tanks_states
+        )
+        max_capacity = sum(tank.max_capacity_kJ for tank in self._tanks_states)
+        return available_energy / max_capacity * 100

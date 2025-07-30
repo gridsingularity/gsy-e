@@ -54,7 +54,6 @@ class PCMTankState(TankStateBase):
             pcm_type=tank_parameters.pcm_tank_type,
         )
         self._heat_demand_kJ: Dict[DateTime, float] = {}
-        self._max_capacity_kJ = tank_parameters.max_capacity_kJ
 
     def serialize(self):
         """Return serializable dict of class parameters."""
@@ -80,6 +79,10 @@ class PCMTankState(TankStateBase):
         self._soc[GlobalConfig.start_date] = (
             self._params.initial_temp_C - self._params.min_temp_C
         ) / (self._params.max_temp_C - self._params.min_temp_C)
+
+    @property
+    def max_capacity_kJ(self) -> float:
+        return self._params.max_capacity_kJ
 
     def _get_htf_temps_C(self, time_slot: DateTime) -> Optional[list]:
         return self._htf_temps_C.get(time_slot)
@@ -118,7 +121,7 @@ class PCMTankState(TankStateBase):
         )
 
     def _get_heat_demand_kWh_from_deltaT(self, temperature_difference: float) -> float:
-        """Q[W]= m * c_p * dT"""
+        """Q[W]= m[kg/s] * c_p[W * s/ (kg * K)] * dT[K]"""
         return convert_W_to_kWh(
             MASS_FLOW_RATE * SPECIFIC_HEAT_CAPACITY_WATER * temperature_difference,
             GlobalConfig.slot_length,

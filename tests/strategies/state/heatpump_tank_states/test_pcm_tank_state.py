@@ -209,3 +209,6 @@ class TestPCMTankState:
         assert pcm_tank._params.max_temp_C == 100
         assert pcm_tank._params.max_capacity_kJ == 10000
         assert pcm_tank._params.initial_temp_C == 50
+
+    def test_max_capacity_kJ(self, pcm_tank):
+        assert pcm_tank.max_capacity_kJ == 20000

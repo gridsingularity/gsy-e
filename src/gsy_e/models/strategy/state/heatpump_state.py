@@ -162,7 +162,7 @@ class HeatPumpState(StateInterface):
             "cop": self.get_cop(current_time_slot),
             "condenser_temp_C": self.get_condenser_temp(current_time_slot),
             "total_traded_energy_kWh": self._total_traded_energy_kWh,
-            "heat_demand_J": self.get_heat_demand_kJ(current_time_slot),
+            "heat_demand_kJ": self.get_heat_demand_kJ(current_time_slot),
         }
         return retval
 

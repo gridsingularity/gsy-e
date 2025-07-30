@@ -33,7 +33,10 @@ class WaterTankState(TankStateBase):
         self._storage_temp_C: Dict[DateTime, float] = defaultdict(
             lambda: tank_parameters.initial_temp_C
         )
-        self._max_capacity_kJ = convert_kWh_to_kJ(
+
+    @property
+    def max_capacity_kJ(self) -> float:
+        return convert_kWh_to_kJ(
             (self._params.max_temp_C - self._params.min_temp_C) * self._Q_specific
         )
 

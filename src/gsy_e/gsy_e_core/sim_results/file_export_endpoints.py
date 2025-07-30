@@ -233,7 +233,14 @@ class HeatPumpDataExporter(BaseDataExporter):
     @property
     def labels(self) -> Dict[str, List]:
         return {
-            "heat_pump": ["slot", "energy traded [kWh]", "COP", "heat demand kJ"],
+            "heat_pump": [
+                "slot",
+                "energy traded [kWh]",
+                "COP",
+                "heat demand [kJ]",
+                "average SOC",
+                "condenser temperature [C]",
+            ],
             "water_tanks": self._water_tank_labels,
             "pcm_tanks": self._pcm_tank_labels,
         }
@@ -260,13 +267,13 @@ class HeatPumpDataExporter(BaseDataExporter):
     def _row(self, slot, market, file_key):
         rows = [slot]
         if file_key == "heat_pump":
+            hp_stats = self.area.strategy.state.get_results_dict(slot)
             rows += [
                 round(self._traded(market), ROUND_TOLERANCE_EXPORT),
-                round(self.area.strategy.state.heatpump.get_cop(slot), ROUND_TOLERANCE_EXPORT),
-                round(
-                    self.area.strategy.state.heatpump.get_heat_demand_kJ(slot),
-                    ROUND_TOLERANCE_EXPORT,
-                ),
+                round(hp_stats["cop"], ROUND_TOLERANCE_EXPORT),
+                round(hp_stats["heat_demand_kJ"], ROUND_TOLERANCE_EXPORT),
+                round(hp_stats["average_soc"], ROUND_TOLERANCE_EXPORT),
+                round(hp_stats["condenser_temp_C"], ROUND_TOLERANCE_EXPORT),
             ]
         if file_key == "water_tanks":
             for tank in self.area.strategy.state.get_results_dict(slot)["tanks"]:
