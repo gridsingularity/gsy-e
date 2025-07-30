@@ -121,7 +121,7 @@ class PCMTankState(TankStateBase):
         )
 
     def _get_heat_demand_kWh_from_deltaT(self, temperature_difference: float) -> float:
-        """Q[W]= m * c_p * dT"""
+        """Q[W]= m[kg/s] * c_p[W * s/ (kg * K)] * dT[K]"""
         return convert_W_to_kWh(
             MASS_FLOW_RATE * SPECIFIC_HEAT_CAPACITY_WATER * temperature_difference,
             GlobalConfig.slot_length,
