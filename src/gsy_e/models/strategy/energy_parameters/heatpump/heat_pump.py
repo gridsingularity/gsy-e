@@ -119,12 +119,14 @@ class CombinedHeatpumpTanksState:
         cop_model: BaseCOPModel,
         slot_length: pendulum.Duration,
         max_energy_consumption_kWh: float,
+        minimum_cop: float = 1,
     ):
         self._hp_state = hp_state
         self._charger = HeatChargerDischarger(tanks_state)
         self._cop_model = cop_model
         self._slot_length = slot_length
         self._max_energy_consumption_kWh = max_energy_consumption_kWh
+        self.minimum_cop = minimum_cop
 
     def get_results_dict(self, current_time_slot: Optional[DateTime] = None) -> dict:
         """Results dict for all heatpump and tanks results."""
@@ -170,6 +172,9 @@ class CombinedHeatpumpTanksState:
         )
         if cop == 0:
             return 0
+
+        cop = max(cop, self.minimum_cop)
+
         max_energy_consumption_kWh = convert_kJ_to_kWh(max_heat_demand_kJ / cop)
         assert max_energy_consumption_kWh > -FLOATING_POINT_TOLERANCE
         if max_energy_consumption_kWh > self._max_energy_consumption_kWh:
@@ -286,6 +291,7 @@ class HeatPumpEnergyParametersBase(ABC):
         source_temp_C_profile: Optional[Union[str, float, Dict]] = None,
         source_temp_C_profile_uuid: Optional[str] = None,
         source_temp_C_measurement_uuid: Optional[str] = None,
+        minimum_cop: Optional[float] = 1,
     ):
         self._slot_length = GlobalConfig.slot_length
         self._maximum_power_rating_kW = maximum_power_rating_kW
@@ -300,6 +306,7 @@ class HeatPumpEnergyParametersBase(ABC):
             cop_model,
             self._slot_length,
             self._max_energy_consumption_kWh,
+            minimum_cop,
         )
 
         self._source_temp_C: StrategyProfileBase = profile_factory(
@@ -388,6 +395,7 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
         source_type: int = ConstSettings.HeatPumpSettings.SOURCE_TYPE,
         heat_demand_Q_profile: Optional[Union[str, float, Dict]] = None,
         cop_model_type: COPModelType = COPModelType.UNIVERSAL,
+        minimum_cop: Optional[float] = 1,
     ):
         cop_model = cop_model_factory(cop_model_type, source_type)
         super().__init__(
@@ -397,6 +405,7 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
             source_temp_C_profile,
             source_temp_C_profile_uuid,
             source_temp_C_measurement_uuid,
+            minimum_cop,
         )
 
         self._source_type = source_type
