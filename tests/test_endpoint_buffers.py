@@ -586,3 +586,60 @@ class TestSimulationEndpointBufferForward:
         }
 
         assert endpoint_buffer.result_area_uuids == {"AREA", "child-uuid-2", "child-uuid-1"}
+
+    @pytest.mark.parametrize("non_p2p", [True, False])
+    def test_update_stats_sets_no_p2p_correctly(self, forward_setup, non_p2p):
+        # pylint: disable=protected-access
+        area, _ = forward_setup
+        area.spot_market = MagicMock(
+            name="current-market",
+            time_slot=pendulum.DateTime(2022, 10, 30),
+            time_slot_str="2021-10-30T00:00:00+00:00",
+        )
+
+        # Popoulate strategy and children to update the result_area_uuids dictionary
+        child_1 = MagicMock(uuid="child-uuid-1")
+        child_1.name = "child_1"
+        child_1.strategy = MagicMock(_energy_params=MagicMock(capacity_kW=2))
+        child_1.parent = area
+        child_2 = MagicMock(uuid="child-uuid-2")
+        child_2.name = "child_2"
+        child_2.strategy = MagicMock(_energy_params=MagicMock(capacity_kW=1.5))
+        child_2.parent = area
+
+        area.children = [child_1, child_2]
+
+        endpoint_buffer = SimulationEndpointBuffer(
+            job_id="JOB_1", random_seed=41, area=area, should_export_plots=False
+        )
+
+        # We mock this method because it would be too complex to test all its conditionals here.
+        # It would be good to refactor the method into a class and test it independently for each
+        # market type (settlement, future, forward).
+        endpoint_buffer._populate_core_stats_and_sim_state = MagicMock()
+
+        sim_state_mock = MagicMock(name="sim-state")
+        progress_info_mock = MagicMock(
+            name="progress-info",
+            eta=pendulum.duration(minutes=15),
+            elapsed_time=pendulum.duration(minutes=30),
+            percentage_complete=1,
+        )
+
+        with patch("gsy_e.constants.RUN_IN_NON_P2P_MODE", non_p2p):
+            endpoint_buffer.update_stats(
+                area=area,
+                simulation_status="some-state",
+                progress_info=progress_info_mock,
+                sim_state=sim_state_mock,
+                calculate_results=False,
+            )
+        if non_p2p:
+            assert endpoint_buffer.area_result_dict["non_p2p"]
+        else:
+            assert "non_p2p" not in endpoint_buffer.area_result_dict
+        for child in endpoint_buffer.area_result_dict["children"]:
+            if non_p2p:
+                assert child["non_p2p"]
+            else:
+                assert "non_p2p" not in child
