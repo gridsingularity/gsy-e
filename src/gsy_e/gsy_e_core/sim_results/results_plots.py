@@ -1,11 +1,11 @@
 import operator
 import os
-from collections import namedtuple
+import csv
+from collections import namedtuple, defaultdict
 from copy import deepcopy
 from functools import reduce  # forward compatibility for Python 3
 from typing import Dict, Tuple, List, Mapping, TYPE_CHECKING
 
-import pandas as pd
 import plotly as py
 import plotly.graph_objs as go
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig, DATE_TIME_FORMAT
@@ -139,7 +139,7 @@ class PlotEnergyProfile:
             scale_value = ENERGY_BUYER_SIGN_PLOTS
         else:
             raise AssertionError(
-                "_plot_energy_graph agent_label should be either " "'seller' or 'buyer'"
+                "_plot_energy_graph agent_label should be either 'seller' or 'buyer'"
             )
         internal_data = []
         for trader in trades[market_name][agent].keys():
@@ -355,7 +355,7 @@ class PlotSupplyDemandCurve:
                         x=[0, clearing_point.energy],
                         y=[clearing_point.rate, clearing_point.rate],
                         mode="lines+markers",
-                        line=dict(width=5),
+                        line={"width": 5},
                         name=time_slot.format(DATE_TIME_FORMAT) + " Clearing-Rate",
                     )
                     data.append(data_obj)
@@ -363,7 +363,7 @@ class PlotSupplyDemandCurve:
                         x=[clearing_point.energy, clearing_point.energy],
                         y=[0, clearing_point.rate],
                         mode="lines+markers",
-                        line=dict(width=5),
+                        line={"width": 5},
                         name=time_slot.format(DATE_TIME_FORMAT) + " Clearing-Energy",
                     )
                     data.append(data_obj)
@@ -579,7 +579,7 @@ class PlotOrderInfo:
                     y=[info_dict["rate"]],
                     text=tooltip_text,
                     hoverinfo="text",
-                    marker=dict(size=size, color=all_info_dicts[0]["color"]),
+                    marker={"size": size, "color": all_info_dicts[0]["color"]},
                     visible=False,
                 )
             )
@@ -719,9 +719,17 @@ class PlotHPPhysicalStats:
                 self._get_out_filename(sub_dir, device.name),
             )
 
-    @staticmethod
-    def _plot_graph(source_file: str, out_file: str):
-        data = pd.read_csv(source_file)
+    def _read_data_from_csv(self, filename: str):
+        data = defaultdict(list)
+        with open(filename, mode="r", encoding="utf-8") as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                for key, value in row.items():
+                    data[key].append(value)
+        return data
+
+    def _plot_graph(self, source_file: str, out_file: str):
+        data = self._read_data_from_csv(source_file)
 
         fig = make_subplots(
             rows=3,
