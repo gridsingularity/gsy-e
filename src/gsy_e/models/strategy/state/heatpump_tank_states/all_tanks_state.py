@@ -145,8 +145,4 @@ class AllTanksState:
 
     def get_average_soc(self, time_slot: DateTime) -> float:
         """Return the average SOC of all tanks."""
-        available_energy = sum(
-            tank.get_available_energy_kJ(time_slot) for tank in self._tanks_states
-        )
-        max_capacity = sum(tank.max_capacity_kJ for tank in self._tanks_states)
-        return available_energy / max_capacity * 100
+        return mean(tank.get_soc(time_slot) for tank in self._tanks_states)

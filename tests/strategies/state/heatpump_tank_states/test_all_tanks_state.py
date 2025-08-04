@@ -88,6 +88,12 @@ class TestAllTanksState:
         self._tanks._tanks_states[2]._storage_temp_C[self._datetime] = 40
         assert self._tanks.get_average_tank_temperature(self._datetime) == 35
 
+    def test_get_average_soc(self):
+        self._tanks._tanks_states[0]._soc[self._datetime] = 30
+        self._tanks._tanks_states[1]._soc[self._datetime] = 35
+        self._tanks._tanks_states[2]._soc[self._datetime] = 40
+        assert self._tanks.get_average_tank_temperature(self._datetime) == 35
+
     def test_serialize(self):
         tanks_dict = self._tanks.serialize()
         expected_dict = [
