@@ -147,7 +147,7 @@ class SimulationEndpointBuffer:
         sim_state: Dict,
         calculate_results: bool,
     ) -> None:
-        # pylint: disable=too-many-arguments
+        # pylint: disable=too-many-arguments, too-many-positional-arguments
         """Wrapper for handling of all results."""
         self.area_result_dict = self._create_area_tree_dict(area)
         self.status = simulation_status
@@ -256,7 +256,7 @@ class SimulationEndpointBuffer:
         area_dict = {}
         area_dict["name"] = target_area.name
         area_dict["uuid"] = target_area.uuid
-        if target_area.is_home_area and gsy_e.constants.RUN_IN_NON_P2P_MODE:
+        if gsy_e.constants.RUN_IN_NON_P2P_MODE:
             area_dict["non_p2p"] = True
         area_dict["parent_uuid"] = (
             target_area.parent.uuid if target_area.parent is not None else ""

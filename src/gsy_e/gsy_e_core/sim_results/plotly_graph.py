@@ -1,3 +1,4 @@
+# pylint: disable=too-many-positional-arguments
 """
 Copyright 2018 Grid Singularity
 This file is part of Grid Singularity Exchange.
@@ -34,7 +35,7 @@ from gsy_e.models.strategy.market_maker_strategy import MarketMakerStrategy
 from gsy_e.models.strategy.pv import PVStrategy
 from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
 from gsy_e.models.strategy.storage import StorageStrategy
-from gsy_e.models.strategy.heat_pump import HeatPumpStrategy
+from gsy_e.models.strategy.heat_pump import HeatPumpStrategy, MultipleTankHeatPumpStrategy
 
 green = "rgba(20,150,20, alpha)"
 purple = "rgba(156, 110, 177, alpha)"
@@ -60,6 +61,7 @@ DEVICE_YAXIS = {
     "smart_meter_profile_kWh": "Smart Meter Profile [kWh]",
     "soc_history_%": "State of Charge [%]",
     "trade_price_eur": "Energy Rate [EUR/kWh]",
+    "average_soc": "Average SOC [%]",
 }
 
 OPAQUE_ALPHA = 1
@@ -486,7 +488,7 @@ class PlotlyGraph:
         """
         Adds a 10% margin to the y2_range
         """
-        data_max = max([abs(x) for x in list(device_dict[var_name].values()) if x is not None])
+        data_max = max(abs(x) for x in list(device_dict[var_name].values()) if x is not None)
         data_max_margin = data_max + data_max * 0.1
         if start_at_zero:
             return [0, abs(data_max_margin)]
@@ -578,10 +580,10 @@ class PlotlyGraph:
                 "overlay", f"{device_name}", "Time", yaxis_caption_list
             )
 
-        elif isinstance(device_strategy, HeatPumpStrategy):
+        elif isinstance(device_strategy, (HeatPumpStrategy, MultipleTankHeatPumpStrategy)):
             y1axis_key = "trade_price_eur"
             y2axis_key = trade_energy_var_name
-            y3axis_key = "storage_temp_C"
+            y3axis_key = "average_soc"
             yaxis_caption_list = [
                 DEVICE_YAXIS[y1axis_key],
                 DEVICE_YAXIS[y2axis_key],

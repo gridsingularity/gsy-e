@@ -88,6 +88,12 @@ class TestAllTanksState:
         self._tanks._tanks_states[2]._storage_temp_C[self._datetime] = 40
         assert self._tanks.get_average_tank_temperature(self._datetime) == 35
 
+    def test_get_average_soc(self):
+        self._tanks._tanks_states[0]._soc[self._datetime] = 30
+        self._tanks._tanks_states[1]._soc[self._datetime] = 35
+        self._tanks._tanks_states[2]._soc[self._datetime] = 40
+        assert self._tanks.get_average_tank_temperature(self._datetime) == 35
+
     def test_serialize(self):
         tanks_dict = self._tanks.serialize()
         expected_dict = [
@@ -99,7 +105,7 @@ class TestAllTanksState:
         assert len(DeepDiff(tanks_dict, expected_dict)) == 0
 
     def test_get_results_dict(self):
-        results_dict = self._tanks.get_results_dict(self._datetime)
+        results_dict = self._tanks.get_results(self._datetime)
         expected_dict = [
             {"storage_temp_C": 25, "soc": 37.5, "type": "WATER", "name": ""},
             {"storage_temp_C": 20, "soc": 0.0, "type": "WATER", "name": ""},
