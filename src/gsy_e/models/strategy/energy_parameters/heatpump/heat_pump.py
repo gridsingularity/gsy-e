@@ -1,4 +1,4 @@
-# pylint: disable=too-many-positional-arguments
+# pylint: disable=too-many-positional-arguments, disable=pointless-string-statement
 from abc import ABC, abstractmethod
 from typing import Optional, Dict, Union, List
 from statistics import mean
@@ -13,6 +13,7 @@ from gsy_framework.utils import (
 )
 from pendulum import DateTime
 
+import gsy_e.constants
 from gsy_e.models.strategy.energy_parameters.heatpump.cop_models import (
     COPModelType,
     cop_model_factory,
@@ -23,14 +24,6 @@ from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import Tan
 from gsy_e.models.strategy.state import HeatPumpState
 from gsy_e.models.strategy.strategy_profile import profile_factory
 from gsy_e.models.strategy.strategy_profile import StrategyProfileBase
-
-# pylint: disable=pointless-string-statement
-"""
-Description of physical units and parameters:
-- K .. Kelvin:              Si unit, used for temperature differences
-- C .. degrees celsius:     Used for temperatures
-- Q .. heat/thermal energy: Energy that a body has or needs to have/get a certain temperature [kWh]
-"""
 
 
 HEAT_EXCHANGER_EFFICIENCY = 1.0
@@ -181,6 +174,10 @@ class CombinedHeatpumpTanksState:
         )
         if cop == 0:
             return 0
+
+        # limit the cop value to HP_MIN_COP
+        cop = max(cop, gsy_e.constants.HP_MIN_COP)
+
         max_energy_consumption_kWh = convert_kJ_to_kWh(max_heat_demand_kJ / cop)
         assert max_energy_consumption_kWh > -FLOATING_POINT_TOLERANCE
         if max_energy_consumption_kWh > self._max_energy_consumption_kWh:

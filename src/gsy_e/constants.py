@@ -66,6 +66,8 @@ FORWARD_MARKET_MAX_DURATION_YEARS = 6
 
 MIN_OFFER_BID_AGE_P2P_DISABLED = 360
 
+HP_MIN_COP = 1.0
+
 
 class SettlementTemplateStrategiesConstants:
     """Constants related to the configuration of settlement template strategies"""

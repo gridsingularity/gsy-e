@@ -1,6 +1,6 @@
 # pylint: disable = protected-access
 from math import isclose
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 from gsy_framework.constants_limits import GlobalConfig
@@ -42,6 +42,18 @@ class TestCombinedHeatpumpTanksState:
         combined_state._cop_model.calc_cop.assert_called_with(
             source_temp_C=20, condenser_temp_C=30, heat_demand_kW=2.0
         )
+
+    def test_get_energy_to_buy_maximum_kWh_limits_cop_to_global_setting(self, combined_state):
+        # Given
+        combined_state.heatpump.get_heat_demand_kJ = Mock(return_value=5000)
+        combined_state._charger.get_max_heat_energy_charge_kJ = Mock(return_value=1800)
+        combined_state._charger.get_condenser_temperature_C = Mock(return_value=30)
+        combined_state._cop_model.calc_cop = Mock(return_value=2)
+        # When
+        with patch("gsy_e.constants.HP_MIN_COP", 3):
+            ret_value = combined_state.get_energy_to_buy_maximum_kWh(CURRENT_MARKET_SLOT, 20)
+        # Then
+        assert isclose(ret_value, 0.166, abs_tol=0.001)
 
     def test_get_energy_to_buy_minimum_kWh_calls_correct_methods(self, combined_state):
         # Given
