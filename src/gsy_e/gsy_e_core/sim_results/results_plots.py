@@ -1,20 +1,23 @@
-from collections import namedtuple
 import operator
 import os
+import csv
+from collections import namedtuple, defaultdict
 from copy import deepcopy
 from functools import reduce  # forward compatibility for Python 3
 from typing import Dict, Tuple, List, Mapping, TYPE_CHECKING
 
+import plotly as py
 import plotly.graph_objs as go
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig, DATE_TIME_FORMAT
-from gsy_framework.data_classes import (
-    Clearing)
+from gsy_framework.data_classes import Clearing
 from gsy_framework.utils import mkdir_from_str, generate_market_slot_list
 from pendulum import DateTime
+from plotly.subplots import make_subplots
 from slugify import slugify
 from sortedcontainers import SortedDict
 
 from gsy_e.data_classes import PlotDescription
+from gsy_e.gsy_e_core.sim_results.file_export_endpoints import is_heatpump_with_tanks
 from gsy_e.gsy_e_core.sim_results.plotly_graph import PlotlyGraph
 from gsy_e.gsy_e_core.util import round_floats_for_ui
 from gsy_e.models.area import Area
@@ -25,7 +28,6 @@ if TYPE_CHECKING:
     from gsy_e.gsy_e_core.sim_results.file_export_endpoints import FileExportEndpoints
     from gsy_e.gsy_e_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
 
-
 ENERGY_BUYER_SIGN_PLOTS = 1
 ENERGY_SELLER_SIGN_PLOTS = -1 * ENERGY_BUYER_SIGN_PLOTS
 
@@ -34,6 +36,7 @@ SlotDataRange = namedtuple("SlotDataRange", ("start", "end"))
 
 class PlotUnmatchedLoads:
     """Plot the unmatched loads of the whole grid tree."""
+
     def __init__(self, root_area, file_stats_endpoint, plot_dir):
         self._root_area = root_area
         self._file_stats_endpoint = file_stats_endpoint
@@ -44,21 +47,28 @@ class PlotUnmatchedLoads:
         Plot unmatched loads of all loads in the configuration into one plot
         """
         root_name = self._root_area.slug
-        plot_desc = PlotDescription(data=[], barmode="stack",
-                                    xtitle="Time", ytitle="Energy (kWh)",
-                                    title=f"Unmatched Loads for all devices in {root_name}")
+        plot_desc = PlotDescription(
+            data=[],
+            barmode="stack",
+            xtitle="Time",
+            ytitle="Energy (kWh)",
+            title=f"Unmatched Loads for all devices in {root_name}",
+        )
         unmatched_key = "deficit [kWh]"
-        load_list = [child_key for child_key in self._file_stats_endpoint.plot_stats.keys()
-                     if unmatched_key in self._file_stats_endpoint.plot_stats[child_key].keys()]
+        load_list = [
+            child_key
+            for child_key in self._file_stats_endpoint.plot_stats.keys()
+            if unmatched_key in self._file_stats_endpoint.plot_stats[child_key].keys()
+        ]
 
         for li in load_list:
             graph_obj = PlotlyGraph(self._file_stats_endpoint.plot_stats[li], unmatched_key)
             if sum(graph_obj.dataset[unmatched_key]) < 1e-10:
                 continue
             graph_obj.graph_value()
-            data_obj = go.Bar(x=list(graph_obj.umHours.keys()),
-                              y=list(graph_obj.umHours.values()),
-                              name=li)
+            data_obj = go.Bar(
+                x=list(graph_obj.umHours.keys()), y=list(graph_obj.umHours.values()), name=li
+            )
             plot_desc.data.append(data_obj)
         if len(plot_desc.data) == 0:
             return
@@ -70,6 +80,7 @@ class PlotUnmatchedLoads:
 
 class PlotEnergyProfile:
     """Plot the energy profile of all areas."""
+
     def __init__(self, endpoint_buffer: "SimulationEndpointBuffer", plot_dir: str):
         self._endpoint_buffer = endpoint_buffer
         self._plot_dir = plot_dir
@@ -93,24 +104,31 @@ class PlotEnergyProfile:
         if market_name not in energy_profile:
             return
 
-        plot_desc = PlotDescription(data=[], barmode="relative", xtitle="Time",
-                                    ytitle="Energy [kWh]",
-                                    title=f"Energy Trade Profile of {market_name}")
+        plot_desc = PlotDescription(
+            data=[],
+            barmode="relative",
+            xtitle="Time",
+            ytitle="Energy [kWh]",
+            title=f"Energy Trade Profile of {market_name}",
+        )
         key = "energy"
-        plot_desc.data.extend(self._plot_energy_graph(
-            energy_profile,
-            market_name, "sold_energy_lists", "seller", key))
-        plot_desc.data.extend(self._plot_energy_graph(
-            energy_profile,
-            market_name, "bought_energy_lists", "buyer", key))
+        plot_desc.data.extend(
+            self._plot_energy_graph(
+                energy_profile, market_name, "sold_energy_lists", "seller", key
+            )
+        )
+        plot_desc.data.extend(
+            self._plot_energy_graph(
+                energy_profile, market_name, "bought_energy_lists", "buyer", key
+            )
+        )
         if len(plot_desc.data) == 0:
             return
         if all(len(da.y) == 0 for da in plot_desc.data):
             return
         plot_dir = os.path.join(self._plot_dir, subdir)
         mkdir_from_str(plot_dir)
-        output_file = os.path.join(plot_dir,
-                                   f"energy_profile_{market_name}.html")
+        output_file = os.path.join(plot_dir, f"energy_profile_{market_name}.html")
         PlotlyGraph.plot_bar_graph(plot_desc, output_file)
 
     @staticmethod
@@ -120,22 +138,25 @@ class PlotEnergyProfile:
         elif agent_label == "buyer":
             scale_value = ENERGY_BUYER_SIGN_PLOTS
         else:
-            raise AssertionError("_plot_energy_graph agent_label should be either "
-                                 "'seller' or 'buyer'")
+            raise AssertionError(
+                "_plot_energy_graph agent_label should be either 'seller' or 'buyer'"
+            )
         internal_data = []
         for trader in trades[market_name][agent].keys():
-
             graph_obj = PlotlyGraph(trades[market_name][agent][trader], key)
             graph_obj.graph_value(scale_value=scale_value)
-            data_obj = go.Bar(x=list(graph_obj.umHours.keys()),
-                              y=list(graph_obj.umHours.values()),
-                              name=trader + "-" + agent_label)
+            data_obj = go.Bar(
+                x=list(graph_obj.umHours.keys()),
+                y=list(graph_obj.umHours.values()),
+                name=trader + "-" + agent_label,
+            )
             internal_data.append(data_obj)
         return internal_data
 
 
 class PlotDeviceStats:
     """Plot the statistics of all devices."""
+
     def __init__(self, endpoint_buffer: "SimulationEndpointBuffer", plot_dir: str):
         self._endpoint_buffer = endpoint_buffer
         self._plot_dir = plot_dir
@@ -169,8 +190,9 @@ class PlotDeviceStats:
         device_stats = self._endpoint_buffer.results_handler.all_raw_results["device_statistics"]
         device_dict = self._get_from_dict(device_stats, device_address_list)
         # converting address_list into plot_dir by slugifying the members
-        plot_dir = os.path.join(self._plot_dir,
-                                "/".join([slugify(node).lower() for node in address_list][0:-1]))
+        plot_dir = os.path.join(
+            self._plot_dir, "/".join([slugify(node).lower() for node in address_list][0:-1])
+        )
         mkdir_from_str(plot_dir)
         output_file = os.path.join(plot_dir, f"device_profile_{device_name}.html")
         PlotlyGraph.plot_device_profile(device_dict, device_name, output_file, device_strategy)
@@ -190,8 +212,11 @@ class PlotESSSOCHistory:
 
         storage_key = "charge [%]"
         new_subdir = os.path.join(subdir, area.slug)
-        storage_list = [child.slug for child in area.children
-                        if storage_key in self._file_stats_endpoint.plot_stats[child.slug].keys()]
+        storage_list = [
+            child.slug
+            for child in area.children
+            if storage_key in self._file_stats_endpoint.plot_stats[child.slug].keys()
+        ]
         if not storage_list:
             self._plot_ess_soc_history(storage_list, new_subdir, area.slug)
         for child in area.children:
@@ -203,17 +228,21 @@ class PlotESSSOCHistory:
         Plots ess soc for each knot in the hierarchy
         """
         plot_desc = PlotDescription(
-            data=[], barmode="relative", xtitle="Time", ytitle="Charge [%]",
-            title=f"ESS SOC ({root_name})")
+            data=[],
+            barmode="relative",
+            xtitle="Time",
+            ytitle="Charge [%]",
+            title=f"ESS SOC ({root_name})",
+        )
 
         storage_key = "charge [%]"
 
         for si in storage_list:
             graph_obj = PlotlyGraph(self._file_stats_endpoint.plot_stats[si], storage_key)
             graph_obj.graph_value()
-            data_obj = go.Scatter(x=list(graph_obj.umHours.keys()),
-                                  y=list(graph_obj.umHours.values()),
-                                  name=si)
+            data_obj = go.Scatter(
+                x=list(graph_obj.umHours.keys()), y=list(graph_obj.umHours.values()), name=si
+            )
             plot_desc.data.append(data_obj)
         if len(plot_desc.data) == 0:
             return
@@ -235,11 +264,11 @@ class PlotESSEnergyTrace:
         """
 
         new_subdir = os.path.join(subdir, area.slug)
-        storage_list = [child for child in area.children
-                        if isinstance(child.strategy, StorageStrategy)]
+        storage_list = [
+            child for child in area.children if isinstance(child.strategy, StorageStrategy)
+        ]
         for element in storage_list:
-            self._plot(element.strategy.state.time_series_ess_share,
-                       new_subdir, area.slug)
+            self._plot(element.strategy.state.time_series_ess_share, new_subdir, area.slug)
         for child in area.children:
             if child.children:
                 self.plot(child, new_subdir)
@@ -248,23 +277,34 @@ class PlotESSEnergyTrace:
         """
         Plots ess energy trace for each knot in the hierarchy
         """
-        plot_desc = PlotDescription(data=[], barmode="stack", xtitle="Time",
-                                    ytitle="Energy [kWh]",
-                                    title=f"ESS ENERGY SHARE ({root_name})")
+        plot_desc = PlotDescription(
+            data=[],
+            barmode="stack",
+            xtitle="Time",
+            ytitle="Energy [kWh]",
+            title=f"ESS ENERGY SHARE ({root_name})",
+        )
 
-        temp = {ESSEnergyOrigin.UNKNOWN: {slot: 0. for slot in generate_market_slot_list()},
-                ESSEnergyOrigin.LOCAL: {slot: 0. for slot in generate_market_slot_list()},
-                ESSEnergyOrigin.EXTERNAL: {slot: 0. for slot in generate_market_slot_list()}}
+        temp = {
+            ESSEnergyOrigin.UNKNOWN: {slot: 0.0 for slot in generate_market_slot_list()},
+            ESSEnergyOrigin.LOCAL: {slot: 0.0 for slot in generate_market_slot_list()},
+            ESSEnergyOrigin.EXTERNAL: {slot: 0.0 for slot in generate_market_slot_list()},
+        }
 
         for time, energy_info in energy.items():
             temp[ESSEnergyOrigin.EXTERNAL][time] = energy_info[ESSEnergyOrigin.EXTERNAL]
             temp[ESSEnergyOrigin.LOCAL][time] = energy_info[ESSEnergyOrigin.LOCAL]
             temp[ESSEnergyOrigin.UNKNOWN][time] = energy_info[ESSEnergyOrigin.UNKNOWN]
-        for energy_type in [ESSEnergyOrigin.EXTERNAL, ESSEnergyOrigin.LOCAL,
-                            ESSEnergyOrigin.UNKNOWN]:
-            data_obj = go.Bar(x=list(temp[energy_type].keys()),
-                              y=list(temp[energy_type].values()),
-                              name=f"{energy_type}")
+        for energy_type in [
+            ESSEnergyOrigin.EXTERNAL,
+            ESSEnergyOrigin.LOCAL,
+            ESSEnergyOrigin.UNKNOWN,
+        ]:
+            data_obj = go.Bar(
+                x=list(temp[energy_type].keys()),
+                y=list(temp[energy_type].values()),
+                name=f"{energy_type}",
+            )
             plot_desc.data.append(data_obj)
         if len(plot_desc.data) == 0:
             return
@@ -276,6 +316,7 @@ class PlotESSEnergyTrace:
 
 class PlotSupplyDemandCurve:
     """Plot the supply demand curve of the asset"""
+
     def __init__(self, file_stats_endpoint: "FileExportEndpoints", plot_dir: str):
         self._file_stats_endpoint = file_stats_endpoint
         self._plot_dir = plot_dir
@@ -296,11 +337,13 @@ class PlotSupplyDemandCurve:
         for market_slot, clearing in self._file_stats_endpoint.clearing[area.slug].items():
             data = []
             xmax = 0
-            for time_slot, supply_curve in (
-                    self._file_stats_endpoint.cumulative_offers[area.slug][market_slot].items()):
+            for time_slot, supply_curve in self._file_stats_endpoint.cumulative_offers[area.slug][
+                market_slot
+            ].items():
                 data.append(self._render_supply_demand_curve(supply_curve, time_slot, True))
-            for time_slot, demand_curve in (
-                    self._file_stats_endpoint.cumulative_bids[area.slug][market_slot].items()):
+            for time_slot, demand_curve in self._file_stats_endpoint.cumulative_bids[area.slug][
+                market_slot
+            ].items():
                 data.append(self._render_supply_demand_curve(demand_curve, time_slot, False))
 
             if len(data) == 0:
@@ -308,40 +351,43 @@ class PlotSupplyDemandCurve:
 
             for time_slot, clearing_point in clearing.items():
                 if isinstance(clearing_point, Clearing) and clearing_point.energy > 0:
-                    data_obj = go.Scatter(x=[0, clearing_point.energy],
-                                          y=[clearing_point.rate, clearing_point.rate],
-                                          mode="lines+markers",
-                                          line=dict(width=5),
-                                          name=time_slot.format(DATE_TIME_FORMAT)
-                                               + " Clearing-Rate")
+                    data_obj = go.Scatter(
+                        x=[0, clearing_point.energy],
+                        y=[clearing_point.rate, clearing_point.rate],
+                        mode="lines+markers",
+                        line={"width": 5},
+                        name=time_slot.format(DATE_TIME_FORMAT) + " Clearing-Rate",
+                    )
                     data.append(data_obj)
-                    data_obj = go.Scatter(x=[clearing_point.energy, clearing_point.energy],
-                                          y=[0, clearing_point.rate],
-                                          mode="lines+markers",
-                                          line=dict(width=5),
-                                          name=time_slot.format(DATE_TIME_FORMAT)
-                                               + " Clearing-Energy")
+                    data_obj = go.Scatter(
+                        x=[clearing_point.energy, clearing_point.energy],
+                        y=[0, clearing_point.rate],
+                        mode="lines+markers",
+                        line={"width": 5},
+                        name=time_slot.format(DATE_TIME_FORMAT) + " Clearing-Energy",
+                    )
                     data.append(data_obj)
                     xmax = max(xmax, clearing_point.energy) * 3
 
             plot_dir = os.path.join(self._plot_dir, subdir, "mcp")
             mkdir_from_str(plot_dir)
-            output_file = os.path.join(plot_dir,
-                                       f"supply_demand_{market_slot}.html")
-            plot_desc = PlotDescription(data=data, barmode="group", xtitle="Energy (kWh)",
-                                        ytitle="Rate (ct./kWh)",
-                                        title="supply_demand_curve")
+            output_file = os.path.join(plot_dir, f"supply_demand_{market_slot}.html")
+            plot_desc = PlotDescription(
+                data=data,
+                barmode="group",
+                xtitle="Energy (kWh)",
+                ytitle="Rate (ct./kWh)",
+                title="supply_demand_curve",
+            )
             PlotlyGraph.plot_line_graph(plot_desc, output_file, xmax)
 
     @classmethod
-    def _render_supply_demand_curve(cls, dataset: Dict, time: DateTime,
-                                    supply: bool) -> go.Scatter:
+    def _render_supply_demand_curve(
+        cls, dataset: Dict, time: DateTime, supply: bool
+    ) -> go.Scatter:
         rate, energy = cls._calc_supply_demand_curve(dataset, supply=supply)
         name = str(time) + "-" + ("supply" if supply else "demand")
-        data_obj = go.Scatter(x=energy,
-                              y=rate,
-                              mode="lines",
-                              name=name)
+        data_obj = go.Scatter(x=energy, y=rate, mode="lines", name=name)
         return data_obj
 
     @staticmethod
@@ -365,10 +411,10 @@ class PlotSupplyDemandCurve:
                 cond_rate.append(rate[0])
                 cond_energy.append(energy_for_rate)
             else:
-                if energy[i-1] == energy[i] and supply:
+                if energy[i - 1] == energy[i] and supply:
                     continue
                 cond_rate.append(rate[i])
-                cond_energy.append(energy[i-1])
+                cond_energy.append(energy[i - 1])
                 cond_energy.append(energy[i])
                 cond_rate.append(rate[i])
         return cond_rate, cond_energy
@@ -376,6 +422,7 @@ class PlotSupplyDemandCurve:
 
 class PlotAverageTradePrice:
     """Plot the average trade price of the market"""
+
     def __init__(self, file_stats_endpoint, plot_dir):
         self._file_stats_endpoint = file_stats_endpoint
         self._plot_dir = plot_dir
@@ -398,28 +445,41 @@ class PlotAverageTradePrice:
         """
         Plots average trade for the specified level of the hierarchy
         """
-        plot_desc = PlotDescription(data=[], barmode="stack", xtitle="Time",
-                                    ytitle="Rate [ct./kWh]",
-                                    title=f"Average Trade Price {area_list[0]}")
+        plot_desc = PlotDescription(
+            data=[],
+            barmode="stack",
+            xtitle="Time",
+            ytitle="Rate [ct./kWh]",
+            title=f"Average Trade Price {area_list[0]}",
+        )
         key = "avg trade rate [ct./kWh]"
         for area_name in area_list:
             plot_desc.data.append(
-                self._plot_avg_trade_graph(self._file_stats_endpoint.plot_stats,
-                                           area_name, key, area_name)
+                self._plot_avg_trade_graph(
+                    self._file_stats_endpoint.plot_stats, area_name, key, area_name
+                )
             )
-            if (ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET and
-                    self._file_stats_endpoint.plot_balancing_stats[area_name.lower()] is not None):
+            if (
+                ConstSettings.BalancingSettings.ENABLE_BALANCING_MARKET
+                and self._file_stats_endpoint.plot_balancing_stats[area_name.lower()] is not None
+            ):
                 area_name_balancing = area_name.lower() + "-demand-balancing-trades"
-                plot_desc.data.append(self._plot_avg_trade_graph(
-                    self._file_stats_endpoint.plot_balancing_stats, area_name,
-                    "avg demand balancing trade rate [ct./kWh]",
-                    area_name_balancing)
+                plot_desc.data.append(
+                    self._plot_avg_trade_graph(
+                        self._file_stats_endpoint.plot_balancing_stats,
+                        area_name,
+                        "avg demand balancing trade rate [ct./kWh]",
+                        area_name_balancing,
+                    )
                 )
                 area_name_balancing = area_name.lower() + "-supply-balancing-trades"
-                plot_desc.data.append(self._plot_avg_trade_graph(
-                    self._file_stats_endpoint.plot_balancing_stats, area_name,
-                    "avg supply balancing trade rate [ct./kWh]",
-                    area_name_balancing)
+                plot_desc.data.append(
+                    self._plot_avg_trade_graph(
+                        self._file_stats_endpoint.plot_balancing_stats,
+                        area_name,
+                        "avg supply balancing trade rate [ct./kWh]",
+                        area_name_balancing,
+                    )
                 )
 
         if all(len(da.y) == 0 for da in plot_desc.data):
@@ -433,9 +493,11 @@ class PlotAverageTradePrice:
     def _plot_avg_trade_graph(stats, area_name, key, label):
         graph_obj = PlotlyGraph(stats[area_name.lower()], key)
         graph_obj.graph_value()
-        data_obj = go.Scatter(x=list(graph_obj.umHours.keys()),
-                              y=list(graph_obj.umHours.values()),
-                              name=label.lower())
+        data_obj = go.Scatter(
+            x=list(graph_obj.umHours.keys()),
+            y=list(graph_obj.umHours.values()),
+            name=label.lower(),
+        )
         return data_obj
 
 
@@ -473,55 +535,59 @@ class PlotOrderInfo:
                 self._plot_tooltip_for_tick(info_dicts, fig, tick_time)
 
             market_slot_data_mapping[index] = SlotDataRange(start, len(fig.data))
-        PlotlyGraph.plot_slider_graph(
-            fig, plot_dir, area.name, market_slot_data_mapping
-        )
+        PlotlyGraph.plot_slider_graph(fig, plot_dir, area.name, market_slot_data_mapping)
 
     @staticmethod
     def _generate_tooltip_data_for_tick(info_dicts: Dict):
         for info_dict in info_dicts:
             if info_dict["tag"] == "bid":
-                tool_tip = (f"{info_dict['buyer_origin']} "
-                            f"Bid ({info_dict['energy']} kWh @ "
-                            f"{round_floats_for_ui(info_dict['rate'])} € cents / kWh)")
+                tool_tip = (
+                    f"{info_dict['buyer_origin']} "
+                    f"Bid ({info_dict['energy']} kWh @ "
+                    f"{round_floats_for_ui(info_dict['rate'])} € cents / kWh)"
+                )
                 info_dict.update({"tool_tip": tool_tip})
             elif info_dict["tag"] == "offer":
-                tool_tip = (f"{info_dict['seller_origin']} "
-                            f"Offer({info_dict['energy']} kWh @ "
-                            f"{round_floats_for_ui(info_dict['rate'])} € cents / kWh)")
+                tool_tip = (
+                    f"{info_dict['seller_origin']} "
+                    f"Offer({info_dict['energy']} kWh @ "
+                    f"{round_floats_for_ui(info_dict['rate'])} € cents / kWh)"
+                )
                 info_dict.update({"tool_tip": tool_tip})
             elif info_dict["tag"] == "trade":
-                tool_tip = (f"Trade: {info_dict['seller_origin']} --> "
-                            f"{info_dict['buyer_origin']} ({info_dict['energy']} kWh @ "
-                            f"{round_floats_for_ui(info_dict['rate'])} € / kWh)")
+                tool_tip = (
+                    f"Trade: {info_dict['seller_origin']} --> "
+                    f"{info_dict['buyer_origin']} ({info_dict['energy']} kWh @ "
+                    f"{round_floats_for_ui(info_dict['rate'])} € / kWh)"
+                )
                 info_dict.update({"tool_tip": tool_tip})
 
     @staticmethod
     def _plot_tooltip_for_tick(info_dicts: Dict, fig: go.Figure, tick_time: DateTime):
         for info_dict in info_dicts:
             size = 5 if info_dict["tag"] in ["offer", "bid"] else 10
-            all_info_dicts = list([
-                info_dict,
-                *[i for i in info_dicts if i["rate"] == info_dict["rate"]]])
+            all_info_dicts = list(
+                [info_dict, *[i for i in info_dicts if i["rate"] == info_dict["rate"]]]
+            )
             # Removes duplicate dicts from a list of dicts
-            all_info_dicts = [dict(t)
-                              for t in {
-                                  tuple(sorted(d.items())) for d in all_info_dicts
-                              }]
+            all_info_dicts = [dict(t) for t in {tuple(sorted(d.items())) for d in all_info_dicts}]
             all_info_dicts.sort(key=lambda e: e["tool_tip"])
             tooltip_text = "<br />".join(map(lambda e: e["tool_tip"], all_info_dicts))
             fig.add_trace(
-                go.Scatter(x=[tick_time],
-                           y=[info_dict["rate"]],
-                           text=tooltip_text,
-                           hoverinfo="text",
-                           marker=dict(size=size, color=all_info_dicts[0]["color"]),
-                           visible=False)
+                go.Scatter(
+                    x=[tick_time],
+                    y=[info_dict["rate"]],
+                    text=tooltip_text,
+                    hoverinfo="text",
+                    marker={"size": size, "color": all_info_dicts[0]["color"]},
+                    visible=False,
+                )
             )
 
 
 class PlotEnergyTradeProfileHR:
     """Plots the high resolution energy trade profile"""
+
     def __init__(self, endpoint_buffer: "SimulationEndpointBuffer", plot_dir: str):
         self._endpoint_buffer = endpoint_buffer
         self._plot_dir = plot_dir
@@ -542,8 +608,12 @@ class PlotEnergyTradeProfileHR:
         """
         market_name = area.name
         plot_desc = PlotDescription(
-            data=[], barmode="relative", xtitle="Time", ytitle="Energy [kWh]",
-            title=f"High Resolution Energy Trade Profile of {market_name}")
+            data=[],
+            barmode="relative",
+            xtitle="Time",
+            ytitle="Energy [kWh]",
+            title=f"High Resolution Energy Trade Profile of {market_name}",
+        )
 
         area_stats = self._endpoint_buffer.offer_bid_trade_hr.state[area.name]
         plot_dir = os.path.join(self._plot_dir, subdir, "energy_profile_hr")
@@ -553,9 +623,12 @@ class PlotEnergyTradeProfileHR:
             if len(plot_data) > 0:
                 market_slot_str = market_slot.format(DATE_TIME_FORMAT)
                 output_file = os.path.join(
-                    plot_dir, f"energy_profile_hr_{market_name}_{market_slot_str}.html")
-                time_range = [market_slot - GlobalConfig.tick_length,
-                              market_slot + GlobalConfig.slot_length + GlobalConfig.tick_length]
+                    plot_dir, f"energy_profile_hr_{market_name}_{market_slot_str}.html"
+                )
+                time_range = [
+                    market_slot - GlobalConfig.tick_length,
+                    market_slot + GlobalConfig.slot_length + GlobalConfig.tick_length,
+                ]
                 PlotlyGraph.plot_bar_graph(plot_desc, output_file, time_range=time_range)
 
     def get_plotly_graph_dataset(self, market_trades: Dict, market_slot: DateTime) -> List:
@@ -567,29 +640,33 @@ class PlotEnergyTradeProfileHR:
         # Create bar plot objects and collect them in a list
         # The widths of bars in a plotly.Bar is set in milliseconds when axis is in datetime format
         for agent, data in seller_dict.items():
-            data_obj = go.Bar(x=data["timestamp"],
-                              y=data["energy"],
-                              width=GlobalConfig.tick_length.seconds * 1000,
-                              name=agent + "-seller")
+            data_obj = go.Bar(
+                x=data["timestamp"],
+                y=data["energy"],
+                width=GlobalConfig.tick_length.seconds * 1000,
+                name=agent + "-seller",
+            )
             plotly_dataset_list.append(data_obj)
 
         for agent, data in buyer_dict.items():
-            data_obj = go.Bar(x=data["timestamp"],
-                              y=data["energy"],
-                              width=GlobalConfig.tick_length.seconds * 1000,
-                              name=agent + "-buyer")
+            data_obj = go.Bar(
+                x=data["timestamp"],
+                y=data["energy"],
+                width=GlobalConfig.tick_length.seconds * 1000,
+                name=agent + "-buyer",
+            )
             plotly_dataset_list.append(data_obj)
         return plotly_dataset_list
 
     @staticmethod
     def _accumulate_data_by_buyer_seller(
-            market_slot: DateTime, market_trades: Dict) -> Tuple[Dict, Dict]:
+        market_slot: DateTime, market_trades: Dict
+    ) -> Tuple[Dict, Dict]:
         # accumulate data by buyer and seller:
         seller_dict = {}
         buyer_dict = {}
         # This zero point is needed to make plotly also plot the first data point:
-        zero_point_dict = {"timestamp": [market_slot - GlobalConfig.tick_length],
-                           "energy": [0.0]}
+        zero_point_dict = {"timestamp": [market_slot - GlobalConfig.tick_length], "energy": [0.0]}
 
         for market_slot_time, market_slot_trades in market_trades.items():
             for trade in market_slot_trades:
@@ -608,3 +685,85 @@ class PlotEnergyTradeProfileHR:
                     buyer_dict[buyer]["energy"].append(energy * ENERGY_BUYER_SIGN_PLOTS)
 
         return seller_dict, buyer_dict
+
+
+class PlotHPPhysicalStats:
+    """Plots the high resolution energy trade profile"""
+
+    def plot(self, area: Area, subdir: str):
+        """
+        Wrapper for _plot_energy_profile_hr
+        """
+        new_subdir = os.path.join(subdir, area.slug)
+        self._plot_hp_physical_stats(area, new_subdir)
+        for child in area.children:
+            if child.children:
+                self.plot(child, new_subdir)
+
+    @staticmethod
+    def _get_source_csv_filename(sub_dir: str, device_name: str):
+        directory = sub_dir.replace("plot/", "")
+        filename = f"{slugify(device_name).lower()}_heat_pump.csv"
+        return os.path.join(directory, filename)
+
+    @staticmethod
+    def _get_out_filename(sub_dir: str, device_name: str):
+        return os.path.join(sub_dir, f"hp_physical_stats_{slugify(device_name).lower()}.html")
+
+    def _plot_hp_physical_stats(self, area, sub_dir):
+        for device in area.children:
+            if not is_heatpump_with_tanks(device):
+                continue
+            self._plot_graph(
+                self._get_source_csv_filename(sub_dir, device.name),
+                self._get_out_filename(sub_dir, device.name),
+            )
+
+    def _read_data_from_csv(self, filename: str):
+        data = defaultdict(list)
+        with open(filename, mode="r", encoding="utf-8") as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                for key, value in row.items():
+                    data[key].append(value)
+        return data
+
+    def _plot_graph(self, source_file: str, out_file: str):
+        data = self._read_data_from_csv(source_file)
+
+        fig = make_subplots(
+            rows=3,
+            cols=1,
+            shared_xaxes=True,
+            subplot_titles=(
+                "Average SOC [%]",
+                "Coefficient of Performance",
+                "Condenser Temperature [°C]",
+            ),
+        )
+
+        fig.add_trace(
+            go.Scatter(x=data["slot"], y=data["average SOC"], name="Average SOC [%]"), row=1, col=1
+        )
+        fig.add_trace(
+            go.Scatter(x=data["slot"], y=data["COP"], name="Coefficient of Performance"),
+            row=2,
+            col=1,
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=data["slot"],
+                y=data["condenser temperature [C]"],
+                name="Condenser Temperature [°C]",
+            ),
+            row=3,
+            col=1,
+        )
+
+        fig.update_layout(height=700, width=900, hovermode="x", showlegend=False)
+        fig.update_xaxes(title_text="Date", row=3, col=1)
+        fig.update_yaxes(title_text="Average SOC [%]", row=1, col=1)
+        fig.update_yaxes(title_text="COP", row=2, col=1)
+        fig.update_yaxes(title_text="temperature [°C]", row=3, col=1)
+
+        py.offline.plot(fig, filename=out_file, auto_open=False)
