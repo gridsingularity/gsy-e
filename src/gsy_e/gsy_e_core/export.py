@@ -201,7 +201,7 @@ class ExportAndPlot:
         )
         PlotESSSOCHistory(self.file_stats_endpoint, self.plot_dir).plot(self.area, self.plot_dir)
         PlotESSEnergyTrace(self.plot_dir).plot(self.area, self.plot_dir)
-        PlotHPPhysicalStats().plot(self.area, self.plot_dir)
+        PlotHPPhysicalStats(self.directory).plot(self.area, self.plot_dir)
         if ConstSettings.GeneralSettings.EXPORT_OFFER_BID_TRADE_HR:
             PlotOrderInfo(self.endpoint_buffer).plot_per_area_per_market_slot(
                 self.area, self.plot_dir

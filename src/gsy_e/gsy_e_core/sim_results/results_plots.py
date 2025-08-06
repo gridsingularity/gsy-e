@@ -690,6 +690,9 @@ class PlotEnergyTradeProfileHR:
 class PlotHPPhysicalStats:
     """Plots the high resolution energy trade profile"""
 
+    def __init__(self, data_dir: str):
+        self.data_root_dir = data_dir
+
     def plot(self, area: Area, subdir: str):
         """
         Wrapper for _plot_energy_profile_hr
@@ -700,9 +703,9 @@ class PlotHPPhysicalStats:
             if child.children:
                 self.plot(child, new_subdir)
 
-    @staticmethod
-    def _get_source_csv_filename(sub_dir: str, device_name: str):
-        directory = sub_dir.replace("plot/", "")
+    def _get_source_csv_filename(self, sub_dir: str, device_name: str):
+        path_to_area = sub_dir.split(str(self.data_root_dir))[1].replace("/plot/", "")
+        directory = os.path.join(str(self.data_root_dir), path_to_area)
         filename = f"{slugify(device_name).lower()}_heat_pump.csv"
         return os.path.join(directory, filename)
 
@@ -728,6 +731,10 @@ class PlotHPPhysicalStats:
                     data[key].append(value)
         return data
 
+    @staticmethod
+    def _convert_to_float_list(in_list: list[str]) -> list[float]:
+        return [float(d) for d in in_list]
+
     def _plot_graph(self, source_file: str, out_file: str):
         data = self._read_data_from_csv(source_file)
 
@@ -741,19 +748,28 @@ class PlotHPPhysicalStats:
                 "Condenser Temperature [°C]",
             ),
         )
-
         fig.add_trace(
-            go.Scatter(x=data["slot"], y=data["average SOC"], name="Average SOC [%]"), row=1, col=1
+            go.Scatter(
+                x=data["slot"],
+                y=self._convert_to_float_list(data["average SOC"]),
+                name="Average SOC [%]",
+            ),
+            row=1,
+            col=1,
         )
         fig.add_trace(
-            go.Scatter(x=data["slot"], y=data["COP"], name="Coefficient of Performance"),
+            go.Scatter(
+                x=data["slot"],
+                y=self._convert_to_float_list(data["COP"]),
+                name="Coefficient of Performance",
+            ),
             row=2,
             col=1,
         )
         fig.add_trace(
             go.Scatter(
                 x=data["slot"],
-                y=data["condenser temperature [C]"],
+                y=self._convert_to_float_list(data["condenser temperature [C]"]),
                 name="Condenser Temperature [°C]",
             ),
             row=3,
