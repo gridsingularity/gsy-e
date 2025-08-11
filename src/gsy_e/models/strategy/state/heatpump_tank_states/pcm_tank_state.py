@@ -20,7 +20,6 @@ from gsy_e.models.strategy.energy_parameters.heatpump.pcm_tank_model.pcm_models 
     PCMChargeModel,
 )
 from gsy_e.models.strategy.energy_parameters.heatpump.pcm_tank_model.utils_constants import (
-    MASS_FLOW_RATE,
     NUMBER_OF_PCM_ELEMENTS,
 )
 from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import TankParameters
@@ -45,12 +44,12 @@ class PCMTankState(TankStateBase):
         self._pcm_temps_C: Dict[DateTime, list[float]] = {}
         self._pcm_charge_model = PCMChargeModel(
             slot_length=GlobalConfig.slot_length,
-            mass_flow_rate_kg_s=MASS_FLOW_RATE,
+            mass_flow_rate_kg_s=self._mass_flow_rate_per_plate,
             pcm_type=tank_parameters.pcm_tank_type,
         )
         self._pcm_discharge_model = PCMDischargeModel(
             slot_length=GlobalConfig.slot_length,
-            mass_flow_rate_kg_s=MASS_FLOW_RATE,
+            mass_flow_rate_kg_s=self._mass_flow_rate_per_plate,
             pcm_type=tank_parameters.pcm_tank_type,
         )
         self._heat_demand_kJ: Dict[DateTime, float] = {}
@@ -117,13 +116,13 @@ class PCMTankState(TankStateBase):
     def _get_deltaT_from_heat_demand_kWh(self, heat_energy_kWh: float) -> float:
         """dT[K] = Q / (m + c_p)"""
         return convert_kWh_to_W(heat_energy_kWh, GlobalConfig.slot_length) / (
-            MASS_FLOW_RATE * SPECIFIC_HEAT_CAPACITY_WATER
+            self._mass_flow_rate_on_inlet * SPECIFIC_HEAT_CAPACITY_WATER
         )
 
     def _get_heat_demand_kWh_from_deltaT(self, temperature_difference: float) -> float:
         """Q[W]= m[kg/s] * c_p[W * s/ (kg * K)] * dT[K]"""
         return convert_W_to_kWh(
-            MASS_FLOW_RATE * SPECIFIC_HEAT_CAPACITY_WATER * temperature_difference,
+            self._mass_flow_rate_on_inlet * SPECIFIC_HEAT_CAPACITY_WATER * temperature_difference,
             GlobalConfig.slot_length,
         )
 
@@ -258,6 +257,14 @@ class PCMTankState(TankStateBase):
             return 0
         return heat_demand_kJ - available_energy_kJ
 
+    def get_available_energy_kJ(self, time_slot: DateTime) -> float:
+        """Return the available energy stored in the tank."""
+        return convert_kWh_to_kJ(
+            self._get_heat_demand_kWh_from_deltaT(
+                self.get_pcm_temp_C(time_slot) - self._params.min_temp_C
+            )
+        )
+
     def get_max_heat_energy_consumption_kJ(
         self, time_slot: DateTime, heat_demand_kJ: float
     ) -> float:
@@ -273,3 +280,11 @@ class PCMTankState(TankStateBase):
 
     def current_tank_temperature(self, time_slot):
         return mean(self._pcm_temps_C[time_slot])
+
+    @property
+    def _mass_flow_rate_on_inlet(self) -> float:
+        return self._params.mass_flow_rate / 60
+
+    @property
+    def _mass_flow_rate_per_plate(self) -> float:
+        return self._mass_flow_rate_on_inlet / self._params.number_of_plates
