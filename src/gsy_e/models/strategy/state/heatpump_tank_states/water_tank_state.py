@@ -16,7 +16,7 @@ from gsy_e.models.strategy.energy_parameters.heatpump.constants import (
     WATER_DENSITY,
     SPECIFIC_HEAT_CONST_WATER,
 )
-from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import TankParameters
+from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import WaterTankParameters
 from gsy_e.models.strategy.state.base_states import TankStateBase
 from gsy_e.models.strategy.state.heatpump_state import delete_time_slots_in_state
 
@@ -28,7 +28,7 @@ class WaterTankState(TankStateBase):
 
     # pylint: disable=too-many-instance-attributes
 
-    def __init__(self, tank_parameters: TankParameters):
+    def __init__(self, tank_parameters: WaterTankParameters):
         super().__init__(tank_parameters)
         self._storage_temp_C: Dict[DateTime, float] = defaultdict(
             lambda: tank_parameters.initial_temp_C

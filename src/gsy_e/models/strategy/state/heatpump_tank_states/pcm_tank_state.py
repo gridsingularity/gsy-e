@@ -22,7 +22,7 @@ from gsy_e.models.strategy.energy_parameters.heatpump.pcm_tank_model.pcm_models 
 from gsy_e.models.strategy.energy_parameters.heatpump.pcm_tank_model.utils_constants import (
     NUMBER_OF_PCM_ELEMENTS,
 )
-from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import TankParameters
+from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import PCMTankParameters
 from gsy_e.models.strategy.state.base_states import TankStateBase
 from gsy_e.models.strategy.state.heatpump_state import delete_time_slots_in_state
 
@@ -37,7 +37,7 @@ class PCMTankState(TankStateBase):
 
     def __init__(
         self,
-        tank_parameters: TankParameters,
+        tank_parameters: PCMTankParameters,
     ):
         super().__init__(tank_parameters)
         self._htf_temps_C: Dict[DateTime, list[float]] = {}
@@ -58,8 +58,10 @@ class PCMTankState(TankStateBase):
         """Return serializable dict of class parameters."""
         return {
             "initial_temp_C": self._params.initial_temp_C,
-            "min_storage_temp_C": self._params.min_temp_C,
-            "max_storage_temp_C": self._params.max_temp_C,
+            "min_temp_htf_C": self._params.min_temp_htf_C,
+            "max_temp_htf_C": self._params.max_temp_htf_C,
+            "min_temp_pcm_C": self._params.min_temp_pcm_C,
+            "max_temp_pcm_C": self._params.max_temp_pcm_C,
             "max_capacity_kJ": self._params.max_capacity_kJ,
             "type": self._params.type.value,
             "pcm_tank_type": self._params.pcm_tank_type.value,
@@ -76,8 +78,8 @@ class PCMTankState(TankStateBase):
             self._params.initial_temp_C for _ in range(int(NUMBER_OF_PCM_ELEMENTS / 2))
         ]
         self._soc[GlobalConfig.start_date] = (
-            self._params.initial_temp_C - self._params.min_temp_C
-        ) / (self._params.max_temp_C - self._params.min_temp_C)
+            self._params.initial_temp_C - self._params.min_temp_pcm_C
+        ) / (self._params.max_temp_pcm_C - self._params.min_temp_pcm_C)
 
     @property
     def max_capacity_kJ(self) -> float:
@@ -136,22 +138,22 @@ class PCMTankState(TankStateBase):
         return condenser_temp_C
 
     def _limit_condenser_temp(self, condenser_temp_C: float) -> float:
-        if (self._params.min_temp_C - condenser_temp_C) > FLOATING_POINT_TOLERANCE:
+        if (self._params.min_temp_htf_C - condenser_temp_C) > FLOATING_POINT_TOLERANCE:
             log.warning(
                 "The PCM storage tank reached it's minimum (%s), discharging "
                 "condensor temperature of %s is omitted",
-                self._params.min_temp_C,
+                self._params.min_temp_htf_C,
                 round(condenser_temp_C, 2),
             )
-            return self._params.min_temp_C
-        if (condenser_temp_C - self._params.max_temp_C) > FLOATING_POINT_TOLERANCE:
+            return self._params.min_temp_htf_C
+        if (condenser_temp_C - self._params.max_temp_htf_C) > FLOATING_POINT_TOLERANCE:
             log.warning(
                 "The PCM storage tank reached it's maximum (%s), charging "
                 "condensor temperature of %s is omitted",
-                self._params.max_temp_C,
+                self._params.max_temp_htf_C,
                 round(condenser_temp_C, 2),
             )
-            return self._params.max_temp_C
+            return self._params.max_temp_htf_C
         return condenser_temp_C
 
     def increase_tank_temp_from_heat_energy(self, heat_energy_kWh: float, time_slot: DateTime):
@@ -228,8 +230,10 @@ class PCMTankState(TankStateBase):
             "htf_temps_C": convert_pendulum_to_str_in_dict(self._htf_temps_C),
             "pcm_temps_C": convert_pendulum_to_str_in_dict(self._pcm_temps_C),
             "soc": convert_pendulum_to_str_in_dict(self._soc),
-            "min_storage_temp_C": self._params.min_temp_C,
-            "max_storage_temp_C": self._params.max_temp_C,
+            "min_temp_htf_C": self._params.min_temp_htf_C,
+            "max_temp_htf_C": self._params.max_temp_htf_C,
+            "min_temp_pcm_C": self._params.min_temp_pcm_C,
+            "max_temp_pcm_C": self._params.max_temp_pcm_C,
             "max_capacity_kJ": self._params.max_capacity_kJ,
             "initial_temp_C": self._params.initial_temp_C,
         }
@@ -238,8 +242,10 @@ class PCMTankState(TankStateBase):
         self._htf_temps_C = convert_str_to_pendulum_in_dict(state_dict["htf_temps_C"])
         self._pcm_temps_C = convert_str_to_pendulum_in_dict(state_dict["pcm_temps_C"])
         self._soc = convert_str_to_pendulum_in_dict(state_dict["soc"])
-        self._params.min_temp_C = state_dict["min_storage_temp_C"]
-        self._params.max_temp_C = state_dict["max_storage_temp_C"]
+        self._params.min_temp_htf_C = state_dict["min_temp_htf_C"]
+        self._params.max_temp_htf_C = state_dict["max_temp_htf_C"]
+        self._params.min_temp_pcm_C = state_dict["min_temp_pcm_C"]
+        self._params.max_temp_pcm_C = state_dict["max_temp_pcm_C"]
         self._params.max_capacity_kJ = state_dict["max_capacity_kJ"]
         self._params.initial_temp_C = state_dict["initial_temp_C"]
 
@@ -261,7 +267,7 @@ class PCMTankState(TankStateBase):
         """Return the available energy stored in the tank."""
         return convert_kWh_to_kJ(
             self._get_heat_demand_kWh_from_deltaT(
-                self.get_pcm_temp_C(time_slot) - self._params.min_temp_C
+                self.get_pcm_temp_C(time_slot) - self._params.min_temp_pcm_C
             )
         )
 
@@ -272,7 +278,7 @@ class PCMTankState(TankStateBase):
         return (
             convert_kWh_to_kJ(
                 self._get_heat_demand_kWh_from_deltaT(
-                    self._params.max_temp_C - self.get_pcm_temp_C(time_slot)
+                    self._params.max_temp_pcm_C - self.get_pcm_temp_C(time_slot)
                 )
             )
             + heat_demand_kJ

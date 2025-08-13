@@ -4,7 +4,7 @@ from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.enums import AvailableMarketTypes
 from gsy_framework.validators.heat_pump_validator import VirtualHeatPumpValidator
 
-from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import TankParameters
+from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import WaterTankParameters
 from gsy_e.models.strategy.energy_parameters.heatpump.virtual_heat_pump import (
     VirtualHeatpumpEnergyParameters,
 )
@@ -22,7 +22,7 @@ class MultipleTankVirtualHeatpumpStrategy(HeatPumpStrategy):
     def __init__(
         self,
         maximum_power_rating_kW: float = VirtualHPSettings.MAX_POWER_RATING_KW,
-        tank_parameters: List[TankParameters] = None,
+        tank_parameters: List[WaterTankParameters] = None,
         water_supply_temp_C_profile: Optional[Union[str, float, Dict]] = None,
         water_supply_temp_C_profile_uuid: Optional[str] = None,
         water_return_temp_C_profile: Optional[Union[str, float, Dict]] = None,
@@ -115,7 +115,7 @@ class VirtualHeatpumpStrategy(MultipleTankVirtualHeatpumpStrategy):
         self._init_price_params(order_updater_parameters, preferred_buying_rate)
 
         tank_parameters = [
-            TankParameters(
+            WaterTankParameters(
                 min_temp_C=min_temp_C,
                 max_temp_C=max_temp_C,
                 initial_temp_C=initial_temp_C,

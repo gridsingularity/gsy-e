@@ -21,18 +21,35 @@ class PCMType(Enum):
 
 
 @dataclass
-class TankParameters:
+class BaseTankParameters:
     # pylint: disable=too-many-instance-attributes)
-    """Nameplate parameters of a heat tank."""
-    # todo: create class just for PCM tanks and just for water tanks
+    """Base class for tank parameters"""
+
+    type: HeatpumpTankTypes = HeatpumpTankTypes.WATER
+    name: str = ""
+    initial_temp_C: float = ConstSettings.HeatPumpSettings.INIT_TEMP_C
+
+
+@dataclass
+class WaterTankParameters(BaseTankParameters):
+    # pylint: disable=too-many-instance-attributes)
+    """Nameplate parameters of a water tank."""
 
     min_temp_C: float = ConstSettings.HeatPumpSettings.MIN_TEMP_C
     max_temp_C: float = ConstSettings.HeatPumpSettings.MAX_TEMP_C
-    initial_temp_C: float = ConstSettings.HeatPumpSettings.INIT_TEMP_C
     tank_volume_L: float = ConstSettings.HeatPumpSettings.TANK_VOL_L
-    type: HeatpumpTankTypes = HeatpumpTankTypes.WATER
+
+
+@dataclass
+class PCMTankParameters(BaseTankParameters):
+    # pylint: disable=too-many-instance-attributes)
+    """Nameplate parameters of a pcm tank."""
+
+    min_temp_htf_C: float = ConstSettings.HeatPumpSettings.MIN_TEMP_C
+    max_temp_htf_C: float = ConstSettings.HeatPumpSettings.MAX_TEMP_C
+    min_temp_pcm_C: float = ConstSettings.HeatPumpSettings.MIN_TEMP_C
+    max_temp_pcm_C: float = ConstSettings.HeatPumpSettings.MAX_TEMP_C
     max_capacity_kJ: float = 6.0 * 3600
-    name: str = ""
     pcm_tank_type: PCMType = PCMType.OM37
     mass_flow_rate: float = 10  # l/min
     number_of_plates: int = 15

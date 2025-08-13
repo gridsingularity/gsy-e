@@ -14,7 +14,10 @@ from gsy_e.gsy_e_core.util import (
     get_market_maker_rate_from_time_slot,
     get_feed_in_tariff_rate_from_time_slot,
 )
-from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import TankParameters
+from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import (
+    WaterTankParameters,
+    PCMTankParameters,
+)
 from gsy_e.models.strategy.energy_parameters.heatpump.heat_pump import (
     HeatPumpEnergyParameters,
     CombinedHeatpumpTanksState,
@@ -81,7 +84,7 @@ class MultipleTankHeatPumpStrategy(TradingStrategyBase):
     def __init__(
         self,
         maximum_power_rating_kW: float = ConstSettings.HeatPumpSettings.MAX_POWER_RATING_KW,
-        tank_parameters: List[TankParameters] = None,
+        tank_parameters: List[Union[WaterTankParameters, PCMTankParameters]] = None,
         source_temp_C_profile: Optional[Union[str, float, Dict]] = None,
         source_temp_C_profile_uuid: Optional[str] = None,
         source_temp_C_measurement_uuid: Optional[str] = None,
@@ -320,7 +323,7 @@ class HeatPumpStrategy(MultipleTankHeatPumpStrategy):
         cop_model_type: COPModelType = COPModelType.UNIVERSAL,
     ):
         tank_parameters = [
-            TankParameters(
+            WaterTankParameters(
                 min_temp_C=min_temp_C,
                 max_temp_C=max_temp_C,
                 initial_temp_C=initial_temp_C,

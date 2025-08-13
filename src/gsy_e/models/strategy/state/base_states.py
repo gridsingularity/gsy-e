@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from abc import ABC, abstractmethod
 from math import copysign
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 from collections import defaultdict
 
 from pendulum import DateTime
@@ -27,7 +27,10 @@ from gsy_framework.constants_limits import FLOATING_POINT_TOLERANCE, GlobalConfi
 from gsy_framework.utils import convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict
 
 from gsy_e.gsy_e_core.util import is_time_slot_in_past_markets
-from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import TankParameters
+from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import (
+    WaterTankParameters,
+    PCMTankParameters,
+)
 
 
 class UnexpectedStateException(Exception):
@@ -404,7 +407,7 @@ class ProductionState(ProsumptionInterface):
 class TankStateBase(StateInterface):
     """Base class for heat tank states"""
 
-    def __init__(self, tank_parameters: TankParameters):
+    def __init__(self, tank_parameters: Union[WaterTankParameters, PCMTankParameters]):
         self._params = tank_parameters
         self._soc: Dict[DateTime, float] = defaultdict(lambda: 0)
 

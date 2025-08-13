@@ -12,14 +12,17 @@ from gsy_e.models.strategy.state.heatpump_tank_states.water_tank_state import (
     TankStateBase,
 )
 from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import (
-    TankParameters,
+    WaterTankParameters,
+    PCMTankParameters,
     HeatpumpTankTypes,
 )
 
 log = getLogger(__name__)
 
 
-def heatpump_state_factory(tank_parameter: TankParameters) -> TankStateBase:
+def heatpump_state_factory(
+    tank_parameter: Union[WaterTankParameters, PCMTankParameters]
+) -> TankStateBase:
     """Return correct Tank object from the type provided in the tank parameters."""
     if tank_parameter.type == HeatpumpTankTypes.WATER:
         return WaterTankState(tank_parameters=tank_parameter)
@@ -31,7 +34,7 @@ def heatpump_state_factory(tank_parameter: TankParameters) -> TankStateBase:
 class AllTanksState:
     """Manage the operation of heating and extracting temperature from multiple tanks."""
 
-    def __init__(self, tank_parameters: List[TankParameters]):
+    def __init__(self, tank_parameters: List[Union[WaterTankParameters, PCMTankParameters]]):
         self._tanks_states = [heatpump_state_factory(tank) for tank in tank_parameters]
 
     def increase_tanks_temp_from_heat_energy(self, heat_energy_kJ: float, time_slot: DateTime):
