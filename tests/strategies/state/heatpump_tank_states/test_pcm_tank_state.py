@@ -7,7 +7,7 @@ from gsy_framework.constants_limits import GlobalConfig, DATE_TIME_FORMAT
 
 from gsy_e.models.strategy.state.heatpump_tank_states.pcm_tank_state import (
     PCMTankState,
-    TankParameters,
+    PCMTankParameters,
 )
 
 CURRENT_MARKET_SLOT = GlobalConfig.start_date
@@ -17,11 +17,13 @@ NEXT_MARKET_SLOT = CURRENT_MARKET_SLOT + GlobalConfig.slot_length
 @pytest.fixture(name="pcm_tank")
 def fixture_pcm_tank():
     pcm_tank = PCMTankState(
-        tank_parameters=TankParameters(
+        tank_parameters=PCMTankParameters(
             max_capacity_kJ=20000,
             initial_temp_C=37,
-            max_temp_C=42,
-            min_temp_C=32,
+            max_temp_htf_C=42,
+            min_temp_htf_C=32,
+            max_temp_pcm_C=42,
+            min_temp_pcm_C=32,
         )
     )
     pcm_tank.init()
@@ -140,10 +142,12 @@ class TestPCMTankState:
     def test_init(self):
         # Given
         pcm_tank = PCMTankState(
-            tank_parameters=TankParameters(
+            tank_parameters=PCMTankParameters(
                 initial_temp_C=37,
-                max_temp_C=42,
-                min_temp_C=32,
+                max_temp_htf_C=42,
+                min_temp_htf_C=32,
+                max_temp_pcm_C=42,
+                min_temp_pcm_C=32,
             )
         )
         assert pcm_tank._htf_temps_C == {}
@@ -183,8 +187,10 @@ class TestPCMTankState:
             "htf_temps_C": {CURRENT_MARKET_SLOT.format(DATE_TIME_FORMAT): [37] * 5},
             "pcm_temps_C": {CURRENT_MARKET_SLOT.format(DATE_TIME_FORMAT): [37] * 5},
             "soc": {CURRENT_MARKET_SLOT.format(DATE_TIME_FORMAT): 0.5},
-            "min_storage_temp_C": 32,
-            "max_storage_temp_C": 42,
+            "min_temp_htf_C": 32,
+            "max_temp_htf_C": 42,
+            "min_temp_pcm_C": 32,
+            "max_temp_pcm_C": 42,
             "max_capacity_kJ": 20000,
             "initial_temp_C": 37,
         }
@@ -195,8 +201,10 @@ class TestPCMTankState:
                 "htf_temps_C": {CURRENT_MARKET_SLOT.format(DATE_TIME_FORMAT): [50] * 5},
                 "pcm_temps_C": {CURRENT_MARKET_SLOT.format(DATE_TIME_FORMAT): [50] * 5},
                 "soc": {CURRENT_MARKET_SLOT.format(DATE_TIME_FORMAT): 0.5},
-                "min_storage_temp_C": 0,
-                "max_storage_temp_C": 100,
+                "min_temp_htf_C": 0,
+                "max_temp_htf_C": 100,
+                "min_temp_pcm_C": 0,
+                "max_temp_pcm_C": 100,
                 "max_capacity_kJ": 10000,
                 "initial_temp_C": 50,
             }
@@ -205,8 +213,10 @@ class TestPCMTankState:
         assert pcm_tank._htf_temps_C == {CURRENT_MARKET_SLOT: [50] * 5}
         assert pcm_tank._pcm_temps_C == {CURRENT_MARKET_SLOT: [50] * 5}
         assert pcm_tank._soc == {CURRENT_MARKET_SLOT: 0.5}
-        assert pcm_tank._params.min_temp_C == 0.0
-        assert pcm_tank._params.max_temp_C == 100
+        assert pcm_tank._params.min_temp_htf_C == 0.0
+        assert pcm_tank._params.max_temp_htf_C == 100
+        assert pcm_tank._params.min_temp_pcm_C == 0.0
+        assert pcm_tank._params.max_temp_pcm_C == 100
         assert pcm_tank._params.max_capacity_kJ == 10000
         assert pcm_tank._params.initial_temp_C == 50
 

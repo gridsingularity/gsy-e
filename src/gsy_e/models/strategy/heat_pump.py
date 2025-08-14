@@ -14,7 +14,10 @@ from gsy_e.gsy_e_core.util import (
     get_market_maker_rate_from_time_slot,
     get_feed_in_tariff_rate_from_time_slot,
 )
-from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import TankParameters
+from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import (
+    WaterTankParameters,
+    PCMTankParameters,
+)
 from gsy_e.models.strategy.energy_parameters.heatpump.heat_pump import (
     HeatPumpEnergyParameters,
     CombinedHeatpumpTanksState,
@@ -77,11 +80,12 @@ class HeatPumpOrderUpdaterParameters(OrderUpdaterParameters):
 class MultipleTankHeatPumpStrategy(TradingStrategyBase):
     """Strategy for heat pumps with multiple storages."""
 
-    # pylint: disable=too-many-arguments,super-init-not-called
+    # pylint: disable=too-many-arguments,super-init-not-called, too-many-positional-arguments
+    # pxlint: disable=too-many-locals
     def __init__(
         self,
         maximum_power_rating_kW: float = ConstSettings.HeatPumpSettings.MAX_POWER_RATING_KW,
-        tank_parameters: List[TankParameters] = None,
+        tank_parameters: List[Union[WaterTankParameters, PCMTankParameters]] = None,
         source_temp_C_profile: Optional[Union[str, float, Dict]] = None,
         source_temp_C_profile_uuid: Optional[str] = None,
         source_temp_C_measurement_uuid: Optional[str] = None,
@@ -116,19 +120,34 @@ class MultipleTankHeatPumpStrategy(TradingStrategyBase):
         )
 
         for tank in tank_parameters:
-            HeatPumpValidator.validate(
-                maximum_power_rating_kW=maximum_power_rating_kW,
-                min_temp_C=tank.min_temp_C,
-                max_temp_C=tank.max_temp_C,
-                initial_temp_C=tank.initial_temp_C,
-                source_temp_C_profile=source_temp_C_profile,
-                source_temp_C_profile_uuid=source_temp_C_profile_uuid,
-                tank_volume_l=tank.tank_volume_L,
-                consumption_kWh_profile=consumption_kWh_profile,
-                consumption_kWh_profile_uuid=consumption_kWh_profile_uuid,
-                source_type=source_type,
-                heat_demand_Q_profile=heat_demand_Q_profile,
-            )
+            validation_params = {
+                "maximum_power_rating_kW": maximum_power_rating_kW,
+                "initial_temp_C": tank.initial_temp_C,
+                "source_temp_C_profile": source_temp_C_profile,
+                "source_temp_C_profile_uuid": source_temp_C_profile_uuid,
+                "consumption_kWh_profile": consumption_kWh_profile,
+                "consumption_kWh_profile_uuid": consumption_kWh_profile_uuid,
+                "source_type": source_type,
+                "heat_demand_Q_profile": heat_demand_Q_profile,
+            }
+            if isinstance(tank, WaterTankParameters):
+                validation_params.update(
+                    {
+                        "min_temp_C": tank.min_temp_C,
+                        "max_temp_C": tank.max_temp_C,
+                        "tank_volume": tank.tank_volume_L,
+                    }
+                )
+            if isinstance(tank, PCMTankParameters):
+                validation_params.update(
+                    {
+                        "min_temp_C": tank.min_temp_pcm_C,
+                        "max_temp_C": tank.max_temp_pcm_C,
+                        # todo: add validation for all temperatures in the PCMtank
+                    }
+                )
+
+            HeatPumpValidator.validate(**validation_params)
 
         # needed for profile_handler
         self.source_temp_C_profile_uuid = source_temp_C_profile_uuid
@@ -299,6 +318,7 @@ class HeatPumpStrategy(MultipleTankHeatPumpStrategy):
     """Strategy for heat pumps with a single storage tank."""
 
     # pylint: disable=too-many-arguments, super-init-not-called, too-many-locals
+    # pylint: disable=too-many-positional-arguments
     def __init__(
         self,
         maximum_power_rating_kW: float = ConstSettings.HeatPumpSettings.MAX_POWER_RATING_KW,
@@ -320,7 +340,7 @@ class HeatPumpStrategy(MultipleTankHeatPumpStrategy):
         cop_model_type: COPModelType = COPModelType.UNIVERSAL,
     ):
         tank_parameters = [
-            TankParameters(
+            WaterTankParameters(
                 min_temp_C=min_temp_C,
                 max_temp_C=max_temp_C,
                 initial_temp_C=initial_temp_C,

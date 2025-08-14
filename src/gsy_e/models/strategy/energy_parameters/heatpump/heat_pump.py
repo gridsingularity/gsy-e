@@ -20,7 +20,10 @@ from gsy_e.models.strategy.energy_parameters.heatpump.cop_models import (
     BaseCOPModel,
 )
 from gsy_e.models.strategy.state.heatpump_tank_states.all_tanks_state import AllTanksState
-from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import TankParameters
+from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import (
+    WaterTankParameters,
+    PCMTankParameters,
+)
 from gsy_e.models.strategy.state import HeatPumpState
 from gsy_e.models.strategy.strategy_profile import profile_factory
 from gsy_e.models.strategy.strategy_profile import StrategyProfileBase
@@ -289,7 +292,7 @@ class HeatPumpEnergyParametersBase(ABC):
     def __init__(
         self,
         maximum_power_rating_kW: float = ConstSettings.HeatPumpSettings.MAX_POWER_RATING_KW,
-        tank_parameters: List[TankParameters] = None,
+        tank_parameters: List[Union[WaterTankParameters, PCMTankParameters]] = None,
         cop_model: Optional[BaseCOPModel] = None,
         source_temp_C_profile: Optional[Union[str, float, Dict]] = None,
         source_temp_C_profile_uuid: Optional[str] = None,
@@ -384,7 +387,7 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
     def __init__(
         self,
         maximum_power_rating_kW: float = ConstSettings.HeatPumpSettings.MAX_POWER_RATING_KW,
-        tank_parameters: List[TankParameters] = None,
+        tank_parameters: List[Union[WaterTankParameters, PCMTankParameters]] = None,
         source_temp_C_profile: Optional[Union[str, float, Dict]] = None,
         source_temp_C_profile_uuid: Optional[str] = None,
         source_temp_C_measurement_uuid: Optional[str] = None,
