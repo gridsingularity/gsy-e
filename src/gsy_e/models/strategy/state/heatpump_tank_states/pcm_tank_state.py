@@ -1,3 +1,5 @@
+import json
+import os
 import logging
 from statistics import mean
 from typing import Dict, Optional
@@ -8,13 +10,11 @@ from gsy_framework.constants_limits import GlobalConfig, FLOATING_POINT_TOLERANC
 from gsy_framework.utils import (
     convert_pendulum_to_str_in_dict,
     convert_str_to_pendulum_in_dict,
-    convert_kWh_to_W,
-    convert_W_to_kWh,
     convert_kWh_to_kJ,
 )
 
 from gsy_e import constants
-from gsy_e.models.strategy.energy_parameters.heatpump.constants import SPECIFIC_HEAT_CAPACITY_WATER
+from gsy_e.gsy_e_core.util import gsye_root_path
 from gsy_e.models.strategy.energy_parameters.heatpump.pcm_tank_model.pcm_models import (
     PCMDischargeModel,
     PCMChargeModel,
@@ -26,8 +26,8 @@ from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import PCM
 from gsy_e.models.strategy.state.base_states import TankStateBase
 from gsy_e.models.strategy.state.heatpump_state import delete_time_slots_in_state
 
-
 log = logging.getLogger()
+lut_path = os.path.join(gsye_root_path, "resources")
 
 
 class PCMTankState(TankStateBase):
@@ -53,6 +53,32 @@ class PCMTankState(TankStateBase):
             pcm_type=tank_parameters.pcm_tank_type,
         )
         self._heat_demand_kJ: Dict[DateTime, float] = {}
+
+        # todo: put this into a class and inject here
+        self._charging_energy_lut = json.load(
+            open(
+                os.path.join(
+                    lut_path,
+                    f"charging_energy_"
+                    f"{GlobalConfig.slot_length.minutes}min_"
+                    f"{self._params.mass_flow_rate}lmin_{self._params.number_of_plates}np"
+                    f".json",
+                ),
+                "r",
+            )
+        )
+        self._discharging_energy_lut = json.load(
+            open(
+                os.path.join(
+                    lut_path,
+                    f"discharging_energy_"
+                    f"{GlobalConfig.slot_length.minutes}min_"
+                    f"{self._params.mass_flow_rate}lmin_{self._params.number_of_plates}np"
+                    f".json",
+                ),
+                "r",
+            )
+        )
 
     def serialize(self):
         """Return serializable dict of class parameters."""
@@ -115,33 +141,11 @@ class PCMTankState(TankStateBase):
         pcm_temps = self._get_pcm_temps_C(time_slot)
         return None if pcm_temps is None else mean(pcm_temps)
 
-    def _get_deltaT_from_heat_demand_kWh(self, heat_energy_kWh: float) -> float:
-        """dT[K] = Q / (m + c_p)"""
-        return convert_kWh_to_W(heat_energy_kWh, GlobalConfig.slot_length) / (
-            self._mass_flow_rate_on_inlet * SPECIFIC_HEAT_CAPACITY_WATER
-        )
-
-    def _get_heat_demand_kWh_from_deltaT(self, temperature_difference: float) -> float:
-        """Q[W]= m[kg/s] * c_p[W * s/ (kg * K)] * dT[K]"""
-        return convert_W_to_kWh(
-            self._mass_flow_rate_on_inlet * SPECIFIC_HEAT_CAPACITY_WATER * temperature_difference,
-            GlobalConfig.slot_length,
-        )
-
-    def _get_condenser_temp_from_heat_demand_kWh(
-        self, heat_energy_kWh: float, time_slot: DateTime
-    ):
-        condenser_temp_C = self.get_htf_temp_C(time_slot) + self._get_deltaT_from_heat_demand_kWh(
-            heat_energy_kWh
-        )
-        assert 0 < condenser_temp_C < 100, f"unrealistic condenser temp {condenser_temp_C}"
-        return condenser_temp_C
-
     def _limit_condenser_temp(self, condenser_temp_C: float) -> float:
         if (self._params.min_temp_htf_C - condenser_temp_C) > FLOATING_POINT_TOLERANCE:
             log.warning(
                 "The PCM storage tank reached it's minimum (%s), discharging "
-                "condensor temperature of %s is omitted",
+                "condensor temperature of %s is limited to the minimum",
                 self._params.min_temp_htf_C,
                 round(condenser_temp_C, 2),
             )
@@ -149,7 +153,7 @@ class PCMTankState(TankStateBase):
         if (condenser_temp_C - self._params.max_temp_htf_C) > FLOATING_POINT_TOLERANCE:
             log.warning(
                 "The PCM storage tank reached it's maximum (%s), charging "
-                "condensor temperature of %s is omitted",
+                "condensor temperature of %s is limited to the maximum",
                 self._params.max_temp_htf_C,
                 round(condenser_temp_C, 2),
             )
@@ -158,17 +162,12 @@ class PCMTankState(TankStateBase):
 
     def increase_tank_temp_from_heat_energy(self, heat_energy_kWh: float, time_slot: DateTime):
         """Increase the temperature of the water tank with the provided heat energy."""
-        temp_cond_C = self._get_condenser_temp_from_heat_demand_kWh(
-            heat_energy_kWh, self._last_time_slot(time_slot)
-        )
-        self._increase_storage_temp_from_condenser_temp(temp_cond_C, time_slot)
+        # todo: merge with daughter
+        self._increase_storage_temp_from_condenser_temp(self._params.max_temp_htf_C, time_slot)
 
     def decrease_tank_temp_from_heat_energy(self, heat_energy_kWh: float, time_slot: DateTime):
         """Decrease the temperature of the water tank with the provided heat energy."""
-        temp_cond_C = self._get_condenser_temp_from_heat_demand_kWh(
-            -heat_energy_kWh, self._last_time_slot(time_slot)
-        )
-        self._decrease_storage_temp_from_condenser_temp(temp_cond_C, time_slot)
+        self._decrease_storage_temp_from_condenser_temp(self._params.min_temp_htf_C, time_slot)
 
     def _increase_storage_temp_from_condenser_temp(
         self, condenser_temp_C: float, time_slot: DateTime
@@ -265,24 +264,32 @@ class PCMTankState(TankStateBase):
 
     def get_available_energy_kJ(self, time_slot: DateTime) -> float:
         """Return the available energy stored in the tank."""
-        return convert_kWh_to_kJ(
-            self._get_heat_demand_kWh_from_deltaT(
-                self.get_pcm_temp_C(time_slot) - self._params.min_temp_pcm_C
-            )
-        )
+        if self.get_pcm_temp_C(time_slot) - self._params.min_temp_pcm_C < FLOATING_POINT_TOLERANCE:
+            return 0
+        discharging_temp = round(self._params.min_temp_htf_C * 2) / 2
+        initial_temp = round(self.get_pcm_temp_C(time_slot) * 2) / 2
+        discharge_energy_kWh = self._discharging_energy_lut[str(discharging_temp)][
+            str(initial_temp)
+        ]
+        return convert_kWh_to_kJ(discharge_energy_kWh)
 
     def get_max_heat_energy_consumption_kJ(
         self, time_slot: DateTime, heat_demand_kJ: float
     ) -> float:
         """Return the available energy stored in the tank."""
-        return (
-            convert_kWh_to_kJ(
-                self._get_heat_demand_kWh_from_deltaT(
-                    self._params.max_temp_pcm_C - self.get_pcm_temp_C(time_slot)
-                )
-            )
-            + heat_demand_kJ
-        )
+        available_charge_energy_kJ = self.get_dod_energy_kJ(time_slot)
+        return available_charge_energy_kJ + heat_demand_kJ
+
+    def get_dod_energy_kJ(self, time_slot: DateTime) -> float:
+        """Return depth of discharge as an energy value in kJ."""
+        if self._params.max_temp_pcm_C - self.get_pcm_temp_C(time_slot) < FLOATING_POINT_TOLERANCE:
+            return 0
+
+        charging_temp = round(self._params.max_temp_htf_C * 2) / 2
+        initial_temp = round(self.get_pcm_temp_C(time_slot) * 2) / 2
+        charge_energy_kWh = self._charging_energy_lut[str(charging_temp)][str(initial_temp)]
+        available_charge_energy_kJ = convert_kWh_to_kJ(charge_energy_kWh)
+        return available_charge_energy_kJ
 
     def current_tank_temperature(self, time_slot):
         return mean(self._pcm_temps_C[time_slot])

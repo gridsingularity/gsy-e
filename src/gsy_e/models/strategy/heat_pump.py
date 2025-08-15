@@ -120,6 +120,7 @@ class MultipleTankHeatPumpStrategy(TradingStrategyBase):
         )
 
         for tank in tank_parameters:
+            # todo: move validation of type into the Validator class
             validation_params = {
                 "maximum_power_rating_kW": maximum_power_rating_kW,
                 "initial_temp_C": tank.initial_temp_C,
@@ -141,8 +142,8 @@ class MultipleTankHeatPumpStrategy(TradingStrategyBase):
             if isinstance(tank, PCMTankParameters):
                 validation_params.update(
                     {
-                        "min_temp_C": tank.min_temp_pcm_C,
-                        "max_temp_C": tank.max_temp_pcm_C,
+                        "min_temp_C": tank.min_temp_htf_C,
+                        "max_temp_C": tank.max_temp_htf_C,
                         # todo: add validation for all temperatures in the PCMtank
                     }
                 )
@@ -231,15 +232,14 @@ class MultipleTankHeatPumpStrategy(TradingStrategyBase):
         self._update_open_orders()
 
     def event_bid_traded(self, *, market_id: str, bid_trade: Trade) -> None:
+        if bid_trade.buyer.origin_uuid != self.owner.uuid:
+            return
         spot_market = self.area.spot_market
         if not spot_market:
             return
         if market_id != spot_market.id:
             return
-
         time_slot = bid_trade.time_slot
-        if bid_trade.buyer.origin_uuid != self.owner.uuid:
-            return
 
         self._energy_params.event_traded_energy(time_slot, bid_trade.traded_energy)
 
