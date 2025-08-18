@@ -18,7 +18,7 @@ VirtualHPSettings = ConstSettings.HeatPumpSettings
 class MultipleTankVirtualHeatpumpStrategy(HeatPumpStrategy):
     """Virtual Heatpump strategy with support of multiple water tanks per heatpump."""
 
-    # pylint: disable=super-init-not-called,too-many-arguments
+    # pylint: disable=super-init-not-called,too-many-arguments, too-many-positional-arguments
     def __init__(
         self,
         maximum_power_rating_kW: float = VirtualHPSettings.MAX_POWER_RATING_KW,
@@ -85,7 +85,7 @@ class VirtualHeatpumpStrategy(MultipleTankVirtualHeatpumpStrategy):
     heating network connection would work if there was a heatpump installed.
     """
 
-    # pylint: disable=too-many-locals
+    # pylint: disable=too-many-locals, too-many-positional-arguments
     def __init__(
         self,
         maximum_power_rating_kW: float = VirtualHPSettings.MAX_POWER_RATING_KW,
