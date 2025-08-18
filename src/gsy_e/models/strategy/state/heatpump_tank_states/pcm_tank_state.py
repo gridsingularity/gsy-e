@@ -179,7 +179,7 @@ class PCMTankState(TankStateBase):
 
     def increase_tank_temp_from_heat_energy(self, heat_energy_kWh: float, time_slot: DateTime):
         """Increase the temperature of the water tank with the provided heat energy."""
-        assert heat_energy_kWh < FLOATING_POINT_TOLERANCE
+        assert heat_energy_kWh > FLOATING_POINT_TOLERANCE
         temp_cond_C = self._get_condenser_temp_from_heat_demand_kWh(
             heat_energy_kWh, self._last_time_slot(time_slot)
         )
@@ -187,7 +187,7 @@ class PCMTankState(TankStateBase):
 
     def decrease_tank_temp_from_heat_energy(self, heat_energy_kWh: float, time_slot: DateTime):
         """Decrease the temperature of the water tank with the provided heat energy."""
-        assert heat_energy_kWh < FLOATING_POINT_TOLERANCE
+        assert heat_energy_kWh > FLOATING_POINT_TOLERANCE
         temp_cond_C = self._get_condenser_temp_from_heat_demand_kWh(
             -heat_energy_kWh, self._last_time_slot(time_slot)
         )
