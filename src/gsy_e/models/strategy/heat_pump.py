@@ -120,35 +120,17 @@ class MultipleTankHeatPumpStrategy(TradingStrategyBase):
         )
 
         for tank in tank_parameters:
-            # todo: move validation of type into the Validator class
-            validation_params = {
-                "maximum_power_rating_kW": maximum_power_rating_kW,
-                "initial_temp_C": tank.initial_temp_C,
-                "source_temp_C_profile": source_temp_C_profile,
-                "source_temp_C_profile_uuid": source_temp_C_profile_uuid,
-                "consumption_kWh_profile": consumption_kWh_profile,
-                "consumption_kWh_profile_uuid": consumption_kWh_profile_uuid,
-                "source_type": source_type,
-                "heat_demand_Q_profile": heat_demand_Q_profile,
-            }
-            if isinstance(tank, WaterTankParameters):
-                validation_params.update(
-                    {
-                        "min_temp_C": tank.min_temp_C,
-                        "max_temp_C": tank.max_temp_C,
-                        "tank_volume": tank.tank_volume_L,
-                    }
-                )
-            if isinstance(tank, PCMTankParameters):
-                validation_params.update(
-                    {
-                        "min_temp_C": tank.min_temp_htf_C,
-                        "max_temp_C": tank.max_temp_htf_C,
-                        # todo: add validation for all temperatures in the PCMtank
-                    }
-                )
 
-            HeatPumpValidator.validate(**validation_params)
+            HeatPumpValidator.validate(
+                maximum_power_rating_kW=maximum_power_rating_kW,
+                source_temp_C_profile=source_temp_C_profile,
+                source_temp_C_profile_uuid=source_temp_C_profile_uuid,
+                consumption_kWh_profile=consumption_kWh_profile,
+                consumption_kWh_profile_uuid=consumption_kWh_profile_uuid,
+                source_type=source_type,
+                heat_demand_Q_profile=heat_demand_Q_profile,
+                **tank.__dict__,
+            )
 
         # needed for profile_handler
         self.source_temp_C_profile_uuid = source_temp_C_profile_uuid
