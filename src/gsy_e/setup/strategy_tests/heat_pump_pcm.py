@@ -68,7 +68,7 @@ def get_setup(config):
                                     min_temp_pcm_C=MIN_PCM_TEMP_C,
                                     max_temp_htf_C=MAX_HTF_TEMP_C,
                                     min_temp_htf_C=MIN_HTF_TEMP_C,
-                                    mass_flow_rate=15,
+                                    volume_flow_rate_l_min=15,
                                     number_of_plates=23,
                                 ),
                             ],

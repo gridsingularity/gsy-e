@@ -63,7 +63,7 @@ class PCMTankState(TankStateBase):
                     lut_path,
                     f"charging_energy_"
                     f"{GlobalConfig.slot_length.minutes}min_"
-                    f"{self._params.mass_flow_rate}lmin_{self._params.number_of_plates}np"
+                    f"{self._params.volume_flow_rate_l_min}lmin_{self._params.number_of_plates}np"
                     f".json",
                 ),
                 "r",
@@ -75,7 +75,7 @@ class PCMTankState(TankStateBase):
                     lut_path,
                     f"discharging_energy_"
                     f"{GlobalConfig.slot_length.minutes}min_"
-                    f"{self._params.mass_flow_rate}lmin_{self._params.number_of_plates}np"
+                    f"{self._params.volume_flow_rate_l_min}lmin_{self._params.number_of_plates}np"
                     f".json",
                 ),
                 "r",
@@ -313,7 +313,7 @@ class PCMTankState(TankStateBase):
 
     @property
     def _mass_flow_rate_on_inlet(self) -> float:
-        return self._params.mass_flow_rate / 60
+        return self._params.volume_flow_rate_l_min / 60
 
     @property
     def _mass_flow_rate_per_plate(self) -> float:

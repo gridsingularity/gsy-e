@@ -50,5 +50,5 @@ class PCMTankParameters(BaseTankParameters):
     min_temp_pcm_C: float = ConstSettings.HeatPumpSettings.MIN_TEMP_C
     max_temp_pcm_C: float = ConstSettings.HeatPumpSettings.MAX_TEMP_C
     pcm_tank_type: PCMType = PCMType.OM37
-    mass_flow_rate: float = 10  # l/min # todo: rename in volume_flow_rate
+    volume_flow_rate_l_min: float = 10
     number_of_plates: int = 15
