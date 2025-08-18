@@ -23,7 +23,8 @@ from gsy_framework.constants_limits import ConstSettings
 from gsy_e.gsy_e_core.util import gsye_root_path
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import (
-    TankParameters,
+    WaterTankParameters,
+    PCMTankParameters,
     HeatpumpTankTypes,
 )
 from gsy_e.models.strategy.heat_pump import MultipleTankHeatPumpStrategy
@@ -34,6 +35,12 @@ ConstSettings.MASettings.MARKET_TYPE = 2
 ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL = 5
 
 preferred_buying_rate = 0
+
+MIN_HTF_TEMP_C = 33
+MAX_HTF_TEMP_C = 60
+
+MIN_PCM_TEMP_C = 40
+MAX_PCM_TEMP_C = 48
 
 
 def get_setup(config):
@@ -47,19 +54,22 @@ def get_setup(config):
                         f"HeatPumpWithMultipleTanks_{preferred_buying_rate}",
                         strategy=MultipleTankHeatPumpStrategy(
                             tank_parameters=[
-                                TankParameters(
+                                WaterTankParameters(
                                     name="water tank 1",
                                     initial_temp_C=50,
                                     max_temp_C=80,
                                     min_temp_C=30,
                                 ),
-                                TankParameters(
+                                PCMTankParameters(
                                     name="pcm tank 1",
                                     type=HeatpumpTankTypes.PCM,
-                                    max_capacity_kJ=20000,
-                                    initial_temp_C=37,
-                                    max_temp_C=42,
-                                    min_temp_C=32,
+                                    initial_temp_C=MIN_PCM_TEMP_C,
+                                    max_temp_pcm_C=MAX_PCM_TEMP_C,
+                                    min_temp_pcm_C=MIN_PCM_TEMP_C,
+                                    max_temp_htf_C=MAX_HTF_TEMP_C,
+                                    min_temp_htf_C=MIN_HTF_TEMP_C,
+                                    mass_flow_rate=15,
+                                    number_of_plates=23,
                                 ),
                             ],
                             preferred_buying_rate=preferred_buying_rate,

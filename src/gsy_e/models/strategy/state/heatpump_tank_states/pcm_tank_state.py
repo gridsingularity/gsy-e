@@ -90,7 +90,6 @@ class PCMTankState(TankStateBase):
             "max_temp_htf_C": self._params.max_temp_htf_C,
             "min_temp_pcm_C": self._params.min_temp_pcm_C,
             "max_temp_pcm_C": self._params.max_temp_pcm_C,
-            "max_capacity_kJ": self._params.max_capacity_kJ,
             "type": self._params.type.value,
             "pcm_tank_type": self._params.pcm_tank_type.value,
         }
@@ -108,10 +107,6 @@ class PCMTankState(TankStateBase):
         self._soc[GlobalConfig.start_date] = (
             self._params.initial_temp_C - self._params.min_temp_pcm_C
         ) / (self._params.max_temp_pcm_C - self._params.min_temp_pcm_C)
-
-    @property
-    def max_capacity_kJ(self) -> float:
-        return self._params.max_capacity_kJ
 
     def _get_htf_temps_C(self, time_slot: DateTime) -> Optional[list]:
         return self._htf_temps_C.get(time_slot)
@@ -257,7 +252,6 @@ class PCMTankState(TankStateBase):
             "max_temp_htf_C": self._params.max_temp_htf_C,
             "min_temp_pcm_C": self._params.min_temp_pcm_C,
             "max_temp_pcm_C": self._params.max_temp_pcm_C,
-            "max_capacity_kJ": self._params.max_capacity_kJ,
             "initial_temp_C": self._params.initial_temp_C,
         }
 
@@ -269,7 +263,6 @@ class PCMTankState(TankStateBase):
         self._params.max_temp_htf_C = state_dict["max_temp_htf_C"]
         self._params.min_temp_pcm_C = state_dict["min_temp_pcm_C"]
         self._params.max_temp_pcm_C = state_dict["max_temp_pcm_C"]
-        self._params.max_capacity_kJ = state_dict["max_capacity_kJ"]
         self._params.initial_temp_C = state_dict["initial_temp_C"]
 
     def delete_past_state_values(self, current_time_slot: DateTime):
