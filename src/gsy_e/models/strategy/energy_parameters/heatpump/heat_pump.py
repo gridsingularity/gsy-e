@@ -234,7 +234,11 @@ class CombinedHeatpumpTanksState:
     ):
         """Update the COP of the heat pump in its state class."""
         heat_demand_kJ = self._hp_state.get_heat_demand_kJ(last_time_slot)
-        cop = self._calc_cop(heat_demand_kJ, source_temp_C, last_time_slot)
+        if heat_demand_kJ < FLOATING_POINT_TOLERANCE:
+            cop = self._hp_state.get_cop(last_time_slot)
+        else:
+            cop = self._calc_cop(heat_demand_kJ, source_temp_C, last_time_slot)
+
         # Set the calculated COP on both the last and the current time slot to use in calculations
         self._hp_state.set_cop(last_time_slot, cop)
         self._hp_state.set_cop(time_slot, cop)
