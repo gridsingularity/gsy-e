@@ -11,6 +11,7 @@ from gsy_e.models.strategy.energy_parameters.heatpump.virtual_heat_pump import (
 from gsy_e.models.strategy.energy_parameters.heatpump.constants import DEFAULT_SOURCE_TEMPERATURE_C
 
 from gsy_e.models.strategy.heat_pump import HeatPumpOrderUpdaterParameters, HeatPumpStrategy
+from gsy_e.models.strategy.heat_pump_soc_management import heat_pump_soc_management_factory
 
 VirtualHPSettings = ConstSettings.HeatPumpSettings
 
@@ -76,6 +77,10 @@ class MultipleTankVirtualHeatpumpStrategy(HeatPumpStrategy):
                 dh_water_flow_m3_profile=dh_water_flow_m3_profile,
                 dh_water_flow_m3_profile_uuid=dh_water_flow_m3_profile_uuid,
             )
+
+        self._soc_management = heat_pump_soc_management_factory(
+            self._energy_params, self.preferred_buying_rate
+        )
 
 
 class VirtualHeatpumpStrategy(MultipleTankVirtualHeatpumpStrategy):

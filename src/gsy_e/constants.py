@@ -19,6 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # Need to import required settings from gsy-framework in order to be available in d3a,
 # thus avoiding accessing the gsy-framework constants.
 # pylint: disable=unused-import
+from enum import Enum
 import os
 
 ROUND_TOLERANCE_EXPORT = 2
@@ -82,3 +83,13 @@ class SettlementTemplateStrategiesConstants:
 
 class FutureTemplateStrategiesConstants(SettlementTemplateStrategiesConstants):
     """Constants related to the configuration of future template strategies"""
+
+
+class HeatPumpSOCManagementAlgorithm(Enum):
+    """Selection of the Heat Storage SOC management algorithm."""
+
+    PREFERRED_BUYING_RATE = 0
+    MINIMISE_SWITCH_COUNT = 1
+
+
+HEAT_PUMP_SOC_MANAGEMENT_ALGORITHM = HeatPumpSOCManagementAlgorithm.PREFERRED_BUYING_RATE
