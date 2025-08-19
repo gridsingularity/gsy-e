@@ -1,6 +1,4 @@
-import json
 import logging
-import os
 from statistics import mean
 from typing import Dict, Optional
 
@@ -10,16 +8,18 @@ from gsy_framework.constants_limits import GlobalConfig, FLOATING_POINT_TOLERANC
 from gsy_framework.utils import (
     convert_pendulum_to_str_in_dict,
     convert_str_to_pendulum_in_dict,
-    convert_kWh_to_kJ,
     convert_kWh_to_W,
 )
 
 from gsy_e import constants
-from gsy_e.gsy_e_core.util import gsye_root_path
+
 from gsy_e.models.strategy.energy_parameters.heatpump.constants import SPECIFIC_HEAT_CAPACITY_WATER
 from gsy_e.models.strategy.energy_parameters.heatpump.pcm_tank_model.pcm_models import (
     PCMDischargeModel,
     PCMChargeModel,
+)
+from gsy_e.models.strategy.energy_parameters.heatpump.pcm_tank_model.pcm_energy_model import (
+    PCMEnergyModel,
 )
 from gsy_e.models.strategy.energy_parameters.heatpump.pcm_tank_model.utils_constants import (
     NUMBER_OF_PCM_ELEMENTS,
@@ -29,7 +29,6 @@ from gsy_e.models.strategy.state.base_states import TankStateBase
 from gsy_e.models.strategy.state.heatpump_state import delete_time_slots_in_state
 
 log = logging.getLogger()
-lut_path = os.path.join(gsye_root_path, "resources")
 
 
 class PCMTankState(TankStateBase):
@@ -56,30 +55,10 @@ class PCMTankState(TankStateBase):
         )
         self._heat_demand_kJ: Dict[DateTime, float] = {}
 
-        # todo: put this into a class and inject here
-        self._charging_energy_lut = json.load(
-            open(
-                os.path.join(
-                    lut_path,
-                    f"charging_energy_"
-                    f"{GlobalConfig.slot_length.minutes}min_"
-                    f"{self._params.volume_flow_rate_l_min}lmin_{self._params.number_of_plates}np"
-                    f".json",
-                ),
-                "r",
-            )
-        )
-        self._discharging_energy_lut = json.load(
-            open(
-                os.path.join(
-                    lut_path,
-                    f"discharging_energy_"
-                    f"{GlobalConfig.slot_length.minutes}min_"
-                    f"{self._params.volume_flow_rate_l_min}lmin_{self._params.number_of_plates}np"
-                    f".json",
-                ),
-                "r",
-            )
+        self._pcm_energy_model = PCMEnergyModel(
+            charging_time=GlobalConfig.slot_length,
+            volume_flow_rate_l_min=int(self._params.volume_flow_rate_l_min),
+            number_of_plates=int(self._params.number_of_plates),
         )
 
     def serialize(self):
@@ -283,30 +262,25 @@ class PCMTankState(TankStateBase):
         """Return the available energy stored in the tank."""
         if self.get_pcm_temp_C(time_slot) - self._params.min_temp_pcm_C < FLOATING_POINT_TOLERANCE:
             return 0
-        discharging_temp = round(self._params.min_temp_htf_C * 2) / 2
-        initial_temp = round(self.get_pcm_temp_C(time_slot) * 2) / 2
-        discharge_energy_kWh = self._discharging_energy_lut[str(discharging_temp)][
-            str(initial_temp)
-        ]
-        return convert_kWh_to_kJ(discharge_energy_kWh * self._params.number_of_plates)
+        return self._pcm_energy_model.get_soc_energy_kJ(
+            current_storage_temp=self.get_pcm_temp_C(time_slot),
+            discharging_temp=self._params.min_temp_htf_C,
+        )
 
     def get_max_heat_energy_consumption_kJ(
         self, time_slot: DateTime, heat_demand_kJ: float
     ) -> float:
-        """Return the available energy stored in the tank."""
-        available_charge_energy_kJ = self.get_dod_energy_kJ(time_slot)
-        return available_charge_energy_kJ + heat_demand_kJ
+        return self.get_dod_energy_kJ(time_slot) + heat_demand_kJ
 
     def get_dod_energy_kJ(self, time_slot: DateTime) -> float:
         """Return depth of discharge as an energy value in kJ."""
         if self._params.max_temp_pcm_C - self.get_pcm_temp_C(time_slot) < FLOATING_POINT_TOLERANCE:
             return 0
 
-        charging_temp = round(self._params.max_temp_htf_C * 2) / 2
-        initial_temp = round(self.get_pcm_temp_C(time_slot) * 2) / 2
-        charge_energy_kWh = self._charging_energy_lut[str(charging_temp)][str(initial_temp)]
-        available_charge_energy_kJ = convert_kWh_to_kJ(charge_energy_kWh)
-        return available_charge_energy_kJ * self._params.number_of_plates
+        return self._pcm_energy_model.get_dod_energy_kJ(
+            current_storage_temp=self.get_pcm_temp_C(time_slot),
+            charging_temp=self._params.max_temp_htf_C,
+        )
 
     def current_tank_temperature(self, time_slot):
         return mean(self._pcm_temps_C[time_slot])
