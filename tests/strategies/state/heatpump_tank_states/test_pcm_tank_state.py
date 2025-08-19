@@ -110,7 +110,7 @@ class TestPCMTankState:
         assert pcm_tank._htf_temps_C.get(CURRENT_MARKET_SLOT) == [37] * 5
         assert pcm_tank._pcm_temps_C.get(CURRENT_MARKET_SLOT) == [37] * 5
 
-    @pytest.mark.parametrize("heat_demand_kJ, expected_energy_kJ", [[5000, 5966.3], [0, 966.32]])
+    @pytest.mark.parametrize("heat_demand_kJ, expected_energy_kJ", [[5000, 5966.32], [0, 966.32]])
     def test_get_max_heat_energy_consumption_kJ_returns_the_correct_energy_value(
         self, pcm_tank, heat_demand_kJ, expected_energy_kJ
     ):
