@@ -6,6 +6,7 @@ from pendulum import Duration
 
 from gsy_framework.utils import convert_kWh_to_kJ
 
+from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import PCMType
 from gsy_e.gsy_e_core.util import gsye_root_path
 
 lut_path = os.path.join(gsye_root_path, "resources")
@@ -16,21 +17,25 @@ class PCMEnergyModel:
     """Class that handles temperature energy conversion"""
 
     def __init__(
-        self, charging_time: Duration, volume_flow_rate_l_min: int, number_of_plates: int
+        self,
+        charging_time: Duration,
+        volume_flow_rate_l_min: int,
+        number_of_plates: int,
+        pcm_type: PCMType = PCMType.OM37,
     ):
         self._number_of_plates = number_of_plates
         self._charging_energy_lut = self._read_lut(
             os.path.join(
                 lut_path,
                 f"charging_energy_{charging_time.minutes}min_{volume_flow_rate_l_min}"
-                f"lmin_{number_of_plates}np.json",
+                f"lmin_{number_of_plates}np_{pcm_type.name}.json",
             )
         )
         self._discharging_energy_lut = self._read_lut(
             os.path.join(
                 lut_path,
                 f"discharging_energy_{charging_time.minutes}min_{volume_flow_rate_l_min}"
-                f"lmin_{number_of_plates}np.json",
+                f"lmin_{number_of_plates}np_{pcm_type.name}.json",
             )
         )
         self._charging_temps = self._charging_energy_lut.keys()
