@@ -9,7 +9,7 @@ from pendulum import duration, today
 from gsy_e.models.strategy.energy_parameters.heatpump.virtual_heat_pump import (
     VirtualHeatpumpEnergyParameters,
 )
-from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import TankParameters
+from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import WaterTankParameters
 
 CURRENT_MARKET_SLOT = today(tz=TIME_ZONE)
 
@@ -27,7 +27,7 @@ def fixture_heatpump_virtual_energy_params() -> VirtualHeatpumpEnergyParameters:
     virtual_energy_params = VirtualHeatpumpEnergyParameters(
         maximum_power_rating_kW=30,
         tank_parameters=[
-            TankParameters(
+            WaterTankParameters(
                 min_temp_C=10,
                 max_temp_C=60,
                 initial_temp_C=20,

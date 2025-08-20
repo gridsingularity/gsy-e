@@ -7,7 +7,7 @@ from gsy_framework.constants_limits import GlobalConfig
 
 from gsy_e.models.strategy.state.heatpump_tank_states.water_tank_state import (
     WaterTankState,
-    TankParameters,
+    WaterTankParameters,
 )
 
 CURRENT_MARKET_SLOT = GlobalConfig.start_date
@@ -17,7 +17,7 @@ NEXT_MARKET_SLOT = CURRENT_MARKET_SLOT + GlobalConfig.slot_length
 @pytest.fixture(name="water_tank")
 def fixture_water_tank():
     water_tank = WaterTankState(
-        tank_parameters=TankParameters(
+        tank_parameters=WaterTankParameters(
             min_temp_C=30, max_temp_C=70, initial_temp_C=50, tank_volume_L=1000
         )
     )
@@ -98,7 +98,7 @@ class TestWaterTankState:
     def test_init(self):
         # Given
         water_tank = WaterTankState(
-            tank_parameters=TankParameters(
+            tank_parameters=WaterTankParameters(
                 min_temp_C=30, max_temp_C=70, initial_temp_C=50, tank_volume_L=1000
             )
         )

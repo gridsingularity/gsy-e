@@ -20,7 +20,10 @@ from gsy_e.models.strategy.energy_parameters.heatpump.cop_models import (
     BaseCOPModel,
 )
 from gsy_e.models.strategy.state.heatpump_tank_states.all_tanks_state import AllTanksState
-from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import TankParameters
+from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import (
+    WaterTankParameters,
+    PCMTankParameters,
+)
 from gsy_e.models.strategy.state import HeatPumpState
 from gsy_e.models.strategy.strategy_profile import profile_factory
 from gsy_e.models.strategy.strategy_profile import StrategyProfileBase
@@ -44,9 +47,13 @@ class HeatChargerDischarger:
         self.tanks = tanks
         self._efficiency = HEAT_EXCHANGER_EFFICIENCY
 
-    def get_condenser_temperature_C(self, time_slot: DateTime):
-        """Get the temperature on the condenser side of the heat pump."""
-        return self.tanks.get_average_tank_temperature(time_slot) / self._efficiency
+    def get_average_tank_temp_C(self, time_slot: DateTime):
+        """Get the average temperature of the tanks."""
+        return self.tanks.get_average_tank_temperature(time_slot)
+
+    def get_average_condenser_temp_C(self, time_slot: DateTime):
+        """Get the average temperature of the condenser."""
+        return self.tanks.get_average_condenser_temperature(time_slot)
 
     def charge(self, heat_energy_kJ: float, time_slot: DateTime):
         """
@@ -134,7 +141,11 @@ class CombinedHeatpumpTanksState:
             "average_soc": self._charger.get_average_soc(current_time_slot),
             **self._hp_state.get_results_dict(current_time_slot),
             "storage_temp_C": mean([tank["storage_temp_C"] for tank in tanks_results]),
-            "condenser_temp_C": self._charger.get_condenser_temperature_C(current_time_slot),
+            "average_tank_temp_C": self._charger.get_average_tank_temp_C(current_time_slot),
+            "average_condenser_temp_C": self._charger.get_average_condenser_temp_C(
+                current_time_slot
+            ),
+            "net_heat_consumed_kJ": self._hp_state.get_net_heat_consumed_kJ(current_time_slot),
         }
 
     def get_state(self) -> Dict:
@@ -223,6 +234,8 @@ class CombinedHeatpumpTanksState:
         else:
             self._charger.no_charge(time_slot)
 
+        self._hp_state.set_net_heat_consumed_kJ(last_time_slot, net_energy_kJ)
+
     def update_cop(
         self,
         source_temp_C: float,
@@ -231,7 +244,11 @@ class CombinedHeatpumpTanksState:
     ):
         """Update the COP of the heat pump in its state class."""
         heat_demand_kJ = self._hp_state.get_heat_demand_kJ(last_time_slot)
-        cop = self._calc_cop(heat_demand_kJ, source_temp_C, last_time_slot)
+        if heat_demand_kJ < FLOATING_POINT_TOLERANCE:
+            cop = self._hp_state.get_cop(last_time_slot)
+        else:
+            cop = self._calc_cop(heat_demand_kJ, source_temp_C, last_time_slot)
+
         # Set the calculated COP on both the last and the current time slot to use in calculations
         self._hp_state.set_cop(last_time_slot, cop)
         self._hp_state.set_cop(time_slot, cop)
@@ -251,7 +268,7 @@ class CombinedHeatpumpTanksState:
         heat_demand_kW = convert_kJ_to_kW(heat_demand_Q_kJ, GlobalConfig.slot_length)
         return self._cop_model.calc_cop(
             source_temp_C=source_temp_C,
-            condenser_temp_C=self._charger.get_condenser_temperature_C(time_slot),
+            condenser_temp_C=self._charger.get_average_condenser_temp_C(time_slot),
             heat_demand_kW=heat_demand_kW,
         )
 
@@ -289,7 +306,7 @@ class HeatPumpEnergyParametersBase(ABC):
     def __init__(
         self,
         maximum_power_rating_kW: float = ConstSettings.HeatPumpSettings.MAX_POWER_RATING_KW,
-        tank_parameters: List[TankParameters] = None,
+        tank_parameters: List[Union[WaterTankParameters, PCMTankParameters]] = None,
         cop_model: Optional[BaseCOPModel] = None,
         source_temp_C_profile: Optional[Union[str, float, Dict]] = None,
         source_temp_C_profile_uuid: Optional[str] = None,
@@ -384,7 +401,7 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
     def __init__(
         self,
         maximum_power_rating_kW: float = ConstSettings.HeatPumpSettings.MAX_POWER_RATING_KW,
-        tank_parameters: List[TankParameters] = None,
+        tank_parameters: List[Union[WaterTankParameters, PCMTankParameters]] = None,
         source_temp_C_profile: Optional[Union[str, float, Dict]] = None,
         source_temp_C_profile_uuid: Optional[str] = None,
         source_temp_C_measurement_uuid: Optional[str] = None,

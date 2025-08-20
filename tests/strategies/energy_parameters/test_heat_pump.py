@@ -1,17 +1,17 @@
 # pylint: disable=protected-access
-from unittest.mock import Mock, patch
 from math import isclose
+from unittest.mock import Mock, patch
 
 import pytest
 from gsy_framework.constants_limits import GlobalConfig, TIME_ZONE
 from gsy_framework.utils import generate_market_slot_list
 from pendulum import duration, today
 
-from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import TankParameters
+from gsy_e.models.strategy.energy_parameters.heatpump.cop_models import COPModelType
 from gsy_e.models.strategy.energy_parameters.heatpump.heat_pump import (
     HeatPumpEnergyParameters,
 )
-from gsy_e.models.strategy.energy_parameters.heatpump.cop_models import COPModelType
+from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import WaterTankParameters
 
 CURRENT_MARKET_SLOT = today(tz=TIME_ZONE)
 
@@ -34,7 +34,7 @@ def fixture_heatpump_energy_params() -> HeatPumpEnergyParameters:
     energy_params = HeatPumpEnergyParameters(
         maximum_power_rating_kW=30,
         tank_parameters=[
-            TankParameters(
+            WaterTankParameters(
                 min_temp_C=10,
                 max_temp_C=60,
                 initial_temp_C=20,
@@ -68,7 +68,7 @@ def fixture_heatpump_energy_params_heat_profile() -> HeatPumpEnergyParameters:
     energy_params = HeatPumpEnergyParameters(
         maximum_power_rating_kW=30,
         tank_parameters=[
-            TankParameters(
+            WaterTankParameters(
                 min_temp_C=10,
                 max_temp_C=60,
                 initial_temp_C=45,

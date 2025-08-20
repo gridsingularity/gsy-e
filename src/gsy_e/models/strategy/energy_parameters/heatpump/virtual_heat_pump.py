@@ -11,7 +11,7 @@ from gsy_e.models.strategy.energy_parameters.heatpump.constants import (
     DEFAULT_SOURCE_TEMPERATURE_C,
 )
 from gsy_e.models.strategy.energy_parameters.heatpump.heat_pump import HeatPumpEnergyParametersBase
-from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import TankParameters
+from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import WaterTankParameters
 from gsy_e.models.strategy.energy_parameters.heatpump.virtual_heatpump_solver import (
     VirtualHeatpumpSolverParameters,
     VirtualHeatpumpStorageEnergySolver,
@@ -31,7 +31,7 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
     def __init__(
         self,
         maximum_power_rating_kW: float = ConstSettings.HeatPumpSettings.MAX_POWER_RATING_KW,
-        tank_parameters: List[TankParameters] = None,
+        tank_parameters: List[WaterTankParameters] = None,
         water_supply_temp_C_profile: Optional[Union[str, float, Dict]] = None,
         water_supply_temp_C_profile_uuid: Optional[str] = None,
         water_return_temp_C_profile: Optional[Union[str, float, Dict]] = None,
@@ -46,7 +46,7 @@ class VirtualHeatpumpEnergyParameters(HeatPumpEnergyParametersBase):
             maximum_power_rating_kW=maximum_power_rating_kW, tank_parameters=tank_parameters
         )
         if not tank_parameters:
-            tank_parameters = [TankParameters()]
+            tank_parameters = [WaterTankParameters()]
 
         self._tanks = VirtualHeatpumpAllTanksState(tank_parameters)
 
