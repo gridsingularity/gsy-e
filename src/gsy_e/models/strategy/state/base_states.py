@@ -432,12 +432,22 @@ class TankStateBase(StateInterface):
         """Return the minimal energy consumption."""
 
     @abstractmethod
-    def current_tank_temperature(self, time_slot):
+    def current_tank_temperature(self, time_slot: DateTime):
         """Return current temperature of the tank."""
 
     @abstractmethod
+    def current_condenser_temperature(self, time_slot: DateTime):
+        """Return current temperature of the condenser."""
+
+    def get_soc_energy_kJ(self, time_slot: DateTime):
+        """Return the available energy stored in the tank."""
+
+    def get_dod_energy_kJ(self, time_slot: DateTime):
+        """Return the energy that could be stored in the tank."""
+
+    @abstractmethod
     def serialize(self):
-        """Serialize the memebrs of the class."""
+        """Serialize the members of the class."""
 
     @abstractmethod
     def init(self):

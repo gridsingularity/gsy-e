@@ -239,7 +239,9 @@ class HeatPumpDataExporter(BaseDataExporter):
                 "COP",
                 "heat demand [kJ]",
                 "average SOC",
-                "condenser temperature [C]",
+                "average tank temp [C]",
+                "average condenser temperature [C]",
+                "net heat consumed [kJ]",
             ],
             "water_tanks": self._water_tank_labels,
             "pcm_tanks": self._pcm_tank_labels,
@@ -273,7 +275,9 @@ class HeatPumpDataExporter(BaseDataExporter):
                 round(hp_stats["cop"], ROUND_TOLERANCE_EXPORT),
                 round(hp_stats["heat_demand_kJ"], ROUND_TOLERANCE_EXPORT),
                 round(hp_stats["average_soc"], ROUND_TOLERANCE_EXPORT),
-                round(hp_stats["condenser_temp_C"], ROUND_TOLERANCE_EXPORT),
+                round(hp_stats["average_tank_temp_C"], ROUND_TOLERANCE_EXPORT),
+                round(hp_stats["average_condenser_temp_C"], ROUND_TOLERANCE_EXPORT),
+                round(hp_stats["net_heat_consumed_kJ"], ROUND_TOLERANCE_EXPORT),
             ]
         if file_key == "water_tanks":
             for tank in self.area.strategy.state.get_results_dict(slot)["tanks"]:

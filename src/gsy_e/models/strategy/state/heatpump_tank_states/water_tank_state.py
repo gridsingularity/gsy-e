@@ -157,6 +157,10 @@ class WaterTankState(TankStateBase):
         """Get current tank temperature for timeslot."""
         return self.get_storage_temp_C(time_slot)
 
+    def current_condenser_temperature(self, time_slot: DateTime) -> float:
+        """Get current tank temperature for timeslot."""
+        return self.get_storage_temp_C(time_slot)
+
     def _Q_kWh_to_temp_diff(self, energy_kWh: float) -> float:
         return energy_kWh / self._Q_specific
 
@@ -175,6 +179,6 @@ class WaterTankState(TankStateBase):
         """Return depth of discharge as an energy value in kJ."""
         return (1 - self._soc[time_slot]) * self.max_capacity_kJ
 
-    def get_available_energy_kJ(self, time_slot: DateTime) -> float:
+    def get_soc_energy_kJ(self, time_slot: DateTime) -> float:
         """Return the available energy stored in the tank."""
         return self._soc.get(time_slot, 0) * self.max_capacity_kJ

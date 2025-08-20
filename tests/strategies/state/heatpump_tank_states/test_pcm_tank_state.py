@@ -110,11 +110,12 @@ class TestPCMTankState:
         assert pcm_tank._htf_temps_C.get(CURRENT_MARKET_SLOT) == [37] * 5
         assert pcm_tank._pcm_temps_C.get(CURRENT_MARKET_SLOT) == [37] * 5
 
-    @pytest.mark.parametrize("heat_demand_kJ, expected_energy_kJ", [[5000, 5966.32], [0, 966.32]])
+    @pytest.mark.parametrize("heat_demand_kJ, expected_energy_kJ", [[5000, 5100], [0, 100]])
     def test_get_max_heat_energy_consumption_kJ_returns_the_correct_energy_value(
         self, pcm_tank, heat_demand_kJ, expected_energy_kJ
     ):
         # When
+        pcm_tank.get_dod_energy_kJ = Mock(return_value=100)
         max_energy = pcm_tank.get_max_heat_energy_consumption_kJ(
             CURRENT_MARKET_SLOT, heat_demand_kJ
         )
@@ -129,7 +130,7 @@ class TestPCMTankState:
         self, pcm_tank, current_heat_charge_kJ, expected_energy_kJ
     ):
         # Given
-        pcm_tank.get_available_energy_kJ = Mock(return_value=current_heat_charge_kJ)
+        pcm_tank.get_soc_energy_kJ = Mock(return_value=current_heat_charge_kJ)
         # When
         max_energy = pcm_tank.get_min_heat_energy_consumption_kJ(CURRENT_MARKET_SLOT, 5000)
         # Then
@@ -173,12 +174,13 @@ class TestPCMTankState:
 
     def test_get_results_dict_returns_correct_values(self, pcm_tank):
         assert pcm_tank.get_results_dict(CURRENT_MARKET_SLOT) == {
-            "soc": 50,
+            "soc": 50.0,
             "htf_temp_C": 37,
             "pcm_temp_C": 37,
             "storage_temp_C": 37,
             "type": "PCM",
             "name": "",
+            "condenser_temp_C": 37,
         }
 
     def test_get_state_returns_correct_values(self, pcm_tank):
@@ -186,6 +188,7 @@ class TestPCMTankState:
             "htf_temps_C": {CURRENT_MARKET_SLOT.format(DATE_TIME_FORMAT): [37] * 5},
             "pcm_temps_C": {CURRENT_MARKET_SLOT.format(DATE_TIME_FORMAT): [37] * 5},
             "soc": {CURRENT_MARKET_SLOT.format(DATE_TIME_FORMAT): 0.5},
+            "condenser_temp_C": {CURRENT_MARKET_SLOT.format(DATE_TIME_FORMAT): 37},
             "min_temp_htf_C": 32,
             "max_temp_htf_C": 42,
             "min_temp_pcm_C": 32,
@@ -198,6 +201,7 @@ class TestPCMTankState:
             {
                 "htf_temps_C": {CURRENT_MARKET_SLOT.format(DATE_TIME_FORMAT): [50] * 5},
                 "pcm_temps_C": {CURRENT_MARKET_SLOT.format(DATE_TIME_FORMAT): [50] * 5},
+                "condenser_temp_C": {CURRENT_MARKET_SLOT.format(DATE_TIME_FORMAT): 37},
                 "soc": {CURRENT_MARKET_SLOT.format(DATE_TIME_FORMAT): 0.5},
                 "min_temp_htf_C": 0,
                 "max_temp_htf_C": 100,
@@ -215,3 +219,4 @@ class TestPCMTankState:
         assert pcm_tank._params.min_temp_pcm_C == 0.0
         assert pcm_tank._params.max_temp_pcm_C == 100
         assert pcm_tank._params.initial_temp_C == 50
+        assert pcm_tank._condenser_temp_C == {CURRENT_MARKET_SLOT: 37}

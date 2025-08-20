@@ -47,9 +47,13 @@ class HeatChargerDischarger:
         self.tanks = tanks
         self._efficiency = HEAT_EXCHANGER_EFFICIENCY
 
-    def get_condenser_temperature_C(self, time_slot: DateTime):
-        """Get the temperature on the condenser side of the heat pump."""
-        return self.tanks.get_average_tank_temperature(time_slot) / self._efficiency
+    def get_average_tank_temp_C(self, time_slot: DateTime):
+        """Get the average temperature of the tanks."""
+        return self.tanks.get_average_tank_temperature(time_slot)
+
+    def get_average_condenser_temp_C(self, time_slot: DateTime):
+        """Get the average temperature of the condenser."""
+        return self.tanks.get_average_condenser_temperature(time_slot)
 
     def charge(self, heat_energy_kJ: float, time_slot: DateTime):
         """
@@ -137,7 +141,11 @@ class CombinedHeatpumpTanksState:
             "average_soc": self._charger.get_average_soc(current_time_slot),
             **self._hp_state.get_results_dict(current_time_slot),
             "storage_temp_C": mean([tank["storage_temp_C"] for tank in tanks_results]),
-            "condenser_temp_C": self._charger.get_condenser_temperature_C(current_time_slot),
+            "average_tank_temp_C": self._charger.get_average_tank_temp_C(current_time_slot),
+            "average_condenser_temp_C": self._charger.get_average_condenser_temp_C(
+                current_time_slot
+            ),
+            "net_heat_consumed_kJ": self._hp_state.get_net_heat_consumed_kJ(current_time_slot),
         }
 
     def get_state(self) -> Dict:
@@ -226,6 +234,8 @@ class CombinedHeatpumpTanksState:
         else:
             self._charger.no_charge(time_slot)
 
+        self._hp_state.set_net_heat_consumed_kJ(last_time_slot, net_energy_kJ)
+
     def update_cop(
         self,
         source_temp_C: float,
@@ -258,7 +268,7 @@ class CombinedHeatpumpTanksState:
         heat_demand_kW = convert_kJ_to_kW(heat_demand_Q_kJ, GlobalConfig.slot_length)
         return self._cop_model.calc_cop(
             source_temp_C=source_temp_C,
-            condenser_temp_C=self._charger.get_condenser_temperature_C(time_slot),
+            condenser_temp_C=self._charger.get_average_condenser_temp_C(time_slot),
             heat_demand_kW=heat_demand_kW,
         )
 
