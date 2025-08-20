@@ -18,7 +18,6 @@ NEXT_MARKET_SLOT = CURRENT_MARKET_SLOT + GlobalConfig.slot_length
 def fixture_pcm_tank():
     pcm_tank = PCMTankState(
         tank_parameters=PCMTankParameters(
-            max_capacity_kJ=20000,
             initial_temp_C=37,
             max_temp_htf_C=42,
             min_temp_htf_C=32,
@@ -111,7 +110,7 @@ class TestPCMTankState:
         assert pcm_tank._htf_temps_C.get(CURRENT_MARKET_SLOT) == [37] * 5
         assert pcm_tank._pcm_temps_C.get(CURRENT_MARKET_SLOT) == [37] * 5
 
-    @pytest.mark.parametrize("heat_demand_kJ, expected_energy_kJ", [[5000, 8136.5], [0, 3136.5]])
+    @pytest.mark.parametrize("heat_demand_kJ, expected_energy_kJ", [[5000, 5966.32], [0, 966.32]])
     def test_get_max_heat_energy_consumption_kJ_returns_the_correct_energy_value(
         self, pcm_tank, heat_demand_kJ, expected_energy_kJ
     ):
@@ -191,7 +190,6 @@ class TestPCMTankState:
             "max_temp_htf_C": 42,
             "min_temp_pcm_C": 32,
             "max_temp_pcm_C": 42,
-            "max_capacity_kJ": 20000,
             "initial_temp_C": 37,
         }
 
@@ -205,7 +203,6 @@ class TestPCMTankState:
                 "max_temp_htf_C": 100,
                 "min_temp_pcm_C": 0,
                 "max_temp_pcm_C": 100,
-                "max_capacity_kJ": 10000,
                 "initial_temp_C": 50,
             }
         )
@@ -217,8 +214,4 @@ class TestPCMTankState:
         assert pcm_tank._params.max_temp_htf_C == 100
         assert pcm_tank._params.min_temp_pcm_C == 0.0
         assert pcm_tank._params.max_temp_pcm_C == 100
-        assert pcm_tank._params.max_capacity_kJ == 10000
         assert pcm_tank._params.initial_temp_C == 50
-
-    def test_max_capacity_kJ(self, pcm_tank):
-        assert pcm_tank.max_capacity_kJ == 20000

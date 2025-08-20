@@ -36,6 +36,7 @@ class WaterTankState(TankStateBase):
 
     @property
     def max_capacity_kJ(self) -> float:
+        """return the maximal energy capacity of the storage."""
         return convert_kWh_to_kJ(
             (self._params.max_temp_C - self._params.min_temp_C) * self._Q_specific
         )
@@ -169,3 +170,11 @@ class WaterTankState(TankStateBase):
 
     def init(self):
         self._update_soc(GlobalConfig.start_date)
+
+    def get_dod_energy_kJ(self, time_slot: DateTime) -> float:
+        """Return depth of discharge as an energy value in kJ."""
+        return (1 - self._soc[time_slot]) * self.max_capacity_kJ
+
+    def get_available_energy_kJ(self, time_slot: DateTime) -> float:
+        """Return the available energy stored in the tank."""
+        return self._soc.get(time_slot, 0) * self.max_capacity_kJ

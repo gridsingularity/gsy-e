@@ -120,6 +120,7 @@ class MultipleTankHeatPumpStrategy(TradingStrategyBase):
         )
 
         for tank in tank_parameters:
+
             HeatPumpValidator.validate(
                 maximum_power_rating_kW=maximum_power_rating_kW,
                 source_temp_C_profile=source_temp_C_profile,
@@ -217,15 +218,14 @@ class MultipleTankHeatPumpStrategy(TradingStrategyBase):
         self._update_open_orders()
 
     def event_bid_traded(self, *, market_id: str, bid_trade: Trade) -> None:
+        if bid_trade.buyer.origin_uuid != self.owner.uuid:
+            return
         spot_market = self.area.spot_market
         if not spot_market:
             return
         if market_id != spot_market.id:
             return
-
         time_slot = bid_trade.time_slot
-        if bid_trade.buyer.origin_uuid != self.owner.uuid:
-            return
 
         self._energy_params.event_traded_energy(time_slot, bid_trade.traded_energy)
 

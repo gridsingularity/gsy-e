@@ -443,23 +443,9 @@ class TankStateBase(StateInterface):
     def init(self):
         """Initiate class members of the tank"""
 
-    def get_dod_energy_kJ(self, time_slot: DateTime) -> float:
-        """Return depth of discharge as an energy value in kJ."""
-        return (1 - self._soc[time_slot]) * self.max_capacity_kJ
-
-    def get_available_energy_kJ(self, time_slot: DateTime) -> float:
-        """Return the available energy stored in the tank."""
-        return self._soc.get(time_slot, 0) * self.max_capacity_kJ
-
     def get_soc(self, time_slot: DateTime) -> float:
         """Return SOC in percent for the provided time slot"""
         return self._soc.get(time_slot) * 100
-
-    @property
-    @abstractmethod
-    def max_capacity_kJ(self) -> float:
-        """Return the maximum capacity of the tank in kJ."""
-        return 0
 
     def _last_time_slot(self, time_slot: DateTime):
         return time_slot - GlobalConfig.slot_length
