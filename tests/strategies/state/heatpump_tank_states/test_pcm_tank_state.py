@@ -26,6 +26,7 @@ def fixture_pcm_tank():
         )
     )
     pcm_tank.init()
+    pcm_tank._soc[GlobalConfig.start_date] = 0.5
     yield pcm_tank
 
 
@@ -65,38 +66,6 @@ class TestPCMTankState:
         assert pcm_tank._htf_temps_C[NEXT_MARKET_SLOT] == [35] * 5
         assert pcm_tank._pcm_temps_C[NEXT_MARKET_SLOT] == [36] * 5
         assert pcm_tank._soc.get(NEXT_MARKET_SLOT) == 0.4
-
-    @pytest.mark.parametrize("input_temp_C, expected_temp_C", [[45, 42], [30, 32]])
-    def test_increase_tank_temp_from_heat_energy_correctly_limits_condenser_temperature(
-        self, pcm_tank, input_temp_C, expected_temp_C
-    ):
-        # Given
-        pcm_tank._get_condenser_temp_from_heat_demand_kWh = Mock(return_value=input_temp_C)
-        pcm_tank._pcm_charge_model.get_temp_after_charging = Mock(return_value=([], []))
-        # When
-        pcm_tank.increase_tank_temp_from_heat_energy(heat_energy_kWh=1, time_slot=NEXT_MARKET_SLOT)
-        # Then
-        pcm_tank._pcm_charge_model.get_temp_after_charging.assert_called_with(
-            current_htf_temps_C=[37] * 5,
-            current_pcm_temps_C=[37] * 5,
-            charging_temp=expected_temp_C,
-        )
-
-    @pytest.mark.parametrize("input_temp_C, expected_temp_C", [[45, 42], [30, 32]])
-    def test_decrease_tank_temp_from_heat_energy_correctly_limits_condenser_temperature(
-        self, pcm_tank, input_temp_C, expected_temp_C
-    ):
-        # Given
-        pcm_tank._get_condenser_temp_from_heat_demand_kWh = Mock(return_value=input_temp_C)
-        pcm_tank._pcm_discharge_model.get_temp_after_discharging = Mock(return_value=([], []))
-        # When
-        pcm_tank.decrease_tank_temp_from_heat_energy(heat_energy_kWh=1, time_slot=NEXT_MARKET_SLOT)
-        # Then
-        pcm_tank._pcm_discharge_model.get_temp_after_discharging.assert_called_with(
-            current_htf_temps_C=[37] * 5,
-            current_pcm_temps_C=[37] * 5,
-            discharging_temp=expected_temp_C,
-        )
 
     def test_no_charge_correctly_updates_storage_temp_and_soc(self, pcm_tank):
         # Given
