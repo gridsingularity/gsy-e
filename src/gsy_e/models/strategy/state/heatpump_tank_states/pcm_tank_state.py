@@ -20,9 +20,6 @@ from gsy_e.models.strategy.energy_parameters.heatpump.pcm_tank_model.pcm_models 
     PCMDischargeModel,
     PCMChargeModel,
 )
-from gsy_e.models.strategy.energy_parameters.heatpump.pcm_tank_model.pcm_energy_model import (
-    PCMEnergyModel,
-)
 from gsy_e.models.strategy.energy_parameters.heatpump.pcm_tank_model.utils_constants import (
     NUMBER_OF_PCM_ELEMENTS,
 )
@@ -57,13 +54,6 @@ class PCMTankState(TankStateBase):
             pcm_type=tank_parameters.pcm_tank_type,
         )
         self._heat_demand_kJ: Dict[DateTime, float] = {}
-
-        self._pcm_energy_model = PCMEnergyModel(
-            charging_time=GlobalConfig.slot_length,
-            volume_flow_rate_l_min=int(self._params.volume_flow_rate_l_min),
-            number_of_plates=int(self._params.number_of_plates),
-            pcm_type=tank_parameters.pcm_tank_type,
-        )
 
     def serialize(self):
         """Return serializable dict of class parameters."""
