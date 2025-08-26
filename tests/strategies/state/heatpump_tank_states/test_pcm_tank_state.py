@@ -25,8 +25,8 @@ def fixture_pcm_tank():
             min_temp_pcm_C=32,
         )
     )
+    pcm_tank._pcm_charge_model.get_soc = Mock(return_value=0.5)
     pcm_tank.init()
-    pcm_tank._soc[GlobalConfig.start_date] = 0.5
     yield pcm_tank
 
 
@@ -122,6 +122,8 @@ class TestPCMTankState:
         assert pcm_tank._htf_temps_C == {}
         assert pcm_tank._pcm_temps_C == {}
         assert pcm_tank._soc == {}
+        pcm_tank._pcm_charge_model.get_soc = Mock(return_value=0.5)
+        pcm_tank._pcm_discharge_model.get_soc = Mock(return_value=0.5)
         # When
         pcm_tank.init()
         # Then
