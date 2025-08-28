@@ -1,12 +1,14 @@
 from dataclasses import dataclass
 from typing import Optional, Union, List
 
-from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings, FLOATING_POINT_TOLERANCE
 from gsy_framework.exceptions import GSyException
 from gsy_framework.utils import convert_pendulum_to_str_in_dict
 from pendulum import duration, DateTime, Duration
 
 from gsy_e.models.market import MarketSlotParams
+
+FINAL_RATE_TOLERANCE = 3 * FLOATING_POINT_TOLERANCE
 
 
 @dataclass
@@ -86,6 +88,8 @@ class OrderUpdater:
     def __init__(self, parameters: OrderUpdaterParameters, market_params: MarketSlotParams):
         self._initial_rate = parameters.get_initial_rate(market_params.opening_time)
         self._final_rate = parameters.get_final_rate(market_params.opening_time)
+        # in order to make sure that the final rate is indeed reached, we add a tolerance
+        self._final_rate = self._final_rate + FINAL_RATE_TOLERANCE
         self._update_interval = parameters.get_update_interval()
         self._market_params = market_params
         self._update_times: List[DateTime] = self._calculate_update_timepoints(
