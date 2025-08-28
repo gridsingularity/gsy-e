@@ -58,7 +58,9 @@ class TestOrderUpdater:
             expected_rate = 30 + rate_range * (
                 (current_time - opening_time) / (update_time - UPDATE_INTERVAL)
             )
-            assert isclose(updater.get_energy_rate(current_time), expected_rate, abs_tol=0.0001)
+            assert isclose(updater.get_energy_rate(current_time), expected_rate, abs_tol=0.00008)
             current_time += duration(minutes=5)
 
-        assert isclose(updater.get_energy_rate(closing_time - UPDATE_INTERVAL), 70, abs_tol=0.0001)
+        assert isclose(
+            updater.get_energy_rate(closing_time - UPDATE_INTERVAL), 70, abs_tol=0.00008
+        )
