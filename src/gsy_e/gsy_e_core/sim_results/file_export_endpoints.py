@@ -276,7 +276,7 @@ class HeatPumpDataExporter(BaseDataExporter):
                 round(hp_stats["heat_demand_kJ"], ROUND_TOLERANCE_EXPORT),
                 round(hp_stats["average_soc"], ROUND_TOLERANCE_EXPORT),
                 round(hp_stats["average_tank_temp_C"], ROUND_TOLERANCE_EXPORT),
-                round(hp_stats["average_condenser_temp_C"], ROUND_TOLERANCE_EXPORT),
+                round(hp_stats["average_inlet_temperature_C"], ROUND_TOLERANCE_EXPORT),
                 round(hp_stats["net_heat_consumed_kJ"], ROUND_TOLERANCE_EXPORT),
             ]
         if file_key == "water_tanks":

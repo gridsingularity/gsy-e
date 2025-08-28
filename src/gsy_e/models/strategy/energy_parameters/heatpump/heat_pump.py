@@ -1,7 +1,6 @@
 # pylint: disable=too-many-positional-arguments, disable=pointless-string-statement
 from abc import ABC, abstractmethod
 from typing import Optional, Dict, Union, List
-from statistics import mean
 
 import pendulum
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig, FLOATING_POINT_TOLERANCE
@@ -51,7 +50,7 @@ class HeatChargerDischarger:
         """Get the average temperature of the tanks."""
         return self.tanks.get_average_tank_temperature(time_slot)
 
-    def get_average_condenser_temp_C(self, time_slot: DateTime):
+    def get_average_inlet_temperature_C(self, time_slot: DateTime):
         """Get the average temperature of the condenser."""
         return self.tanks.get_average_condenser_temperature(time_slot)
 
@@ -140,9 +139,8 @@ class CombinedHeatpumpTanksState:
             "tanks": tanks_results,
             "average_soc": self._charger.get_average_soc(current_time_slot),
             **self._hp_state.get_results_dict(current_time_slot),
-            "storage_temp_C": mean([tank["storage_temp_C"] for tank in tanks_results]),
             "average_tank_temp_C": self._charger.get_average_tank_temp_C(current_time_slot),
-            "average_condenser_temp_C": self._charger.get_average_condenser_temp_C(
+            "average_inlet_temperature_C": self._charger.get_average_inlet_temperature_C(
                 current_time_slot
             ),
             "net_heat_consumed_kJ": self._hp_state.get_net_heat_consumed_kJ(current_time_slot),
@@ -268,7 +266,7 @@ class CombinedHeatpumpTanksState:
         heat_demand_kW = convert_kJ_to_kW(heat_demand_Q_kJ, GlobalConfig.slot_length)
         return self._cop_model.calc_cop(
             source_temp_C=source_temp_C,
-            condenser_temp_C=self._charger.get_average_condenser_temp_C(time_slot),
+            condenser_temp_C=self._charger.get_average_inlet_temperature_C(time_slot),
             heat_demand_kW=heat_demand_kW,
         )
 
