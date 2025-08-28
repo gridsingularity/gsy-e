@@ -8,7 +8,7 @@ from pendulum import duration, DateTime, Duration
 
 from gsy_e.models.market import MarketSlotParams
 
-FINAL_RATE_TOLERANCE = 3 * FLOATING_POINT_TOLERANCE
+FINAL_RATE_TOLERANCE = 4 * FLOATING_POINT_TOLERANCE
 
 
 @dataclass
