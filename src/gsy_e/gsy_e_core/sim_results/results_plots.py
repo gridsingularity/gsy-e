@@ -746,7 +746,7 @@ class PlotHPPhysicalStats:
                 "Average SOC [%]",
                 "Coefficient of Performance",
                 "Average Tank Temperature [°C]",
-                "Condenser Temperature [°C]",
+                "Storage Inlet Temperature [°C]",
                 "Net Charging Heat energy [kJ]",
             ),
         )
@@ -780,8 +780,8 @@ class PlotHPPhysicalStats:
         fig.add_trace(
             go.Scatter(
                 x=data["slot"],
-                y=self._convert_to_float_list(data["average condenser temperature [C]"]),
-                name="Condenser Temperature [°C]",
+                y=self._convert_to_float_list(data["storage inlet temperature [C]"]),
+                name="Storage Inlet Temperature [°C]",
             ),
             row=4,
             col=1,

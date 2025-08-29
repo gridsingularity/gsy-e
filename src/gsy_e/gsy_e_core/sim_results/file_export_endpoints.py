@@ -240,7 +240,7 @@ class HeatPumpDataExporter(BaseDataExporter):
                 "heat demand [kJ]",
                 "average SOC",
                 "average tank temp [C]",
-                "average condenser temperature [C]",
+                "storage inlet temperature [C]",
                 "net heat consumed [kJ]",
             ],
             "water_tanks": self._water_tank_labels,
