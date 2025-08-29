@@ -1,17 +1,17 @@
 # pylint: disable=protected-access
-from unittest.mock import Mock, patch
 from math import isclose
+from unittest.mock import Mock, patch
 
 import pytest
 from gsy_framework.constants_limits import GlobalConfig, TIME_ZONE
 from gsy_framework.utils import generate_market_slot_list
 from pendulum import duration, today
 
-from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import TankParameters
+from gsy_e.models.strategy.energy_parameters.heatpump.cop_models import COPModelType
 from gsy_e.models.strategy.energy_parameters.heatpump.heat_pump import (
     HeatPumpEnergyParameters,
 )
-from gsy_e.models.strategy.energy_parameters.heatpump.cop_models import COPModelType
+from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import WaterTankParameters
 
 CURRENT_MARKET_SLOT = today(tz=TIME_ZONE)
 
@@ -34,7 +34,7 @@ def fixture_heatpump_energy_params() -> HeatPumpEnergyParameters:
     energy_params = HeatPumpEnergyParameters(
         maximum_power_rating_kW=30,
         tank_parameters=[
-            TankParameters(
+            WaterTankParameters(
                 min_temp_C=10,
                 max_temp_C=60,
                 initial_temp_C=20,
@@ -68,7 +68,7 @@ def fixture_heatpump_energy_params_heat_profile() -> HeatPumpEnergyParameters:
     energy_params = HeatPumpEnergyParameters(
         maximum_power_rating_kW=30,
         tank_parameters=[
-            TankParameters(
+            WaterTankParameters(
                 min_temp_C=10,
                 max_temp_C=60,
                 initial_temp_C=45,
@@ -192,6 +192,7 @@ class TestHeatPumpEnergyParameters:
         assert energy_params._state.heatpump._cop[CURRENT_MARKET_SLOT] == 0
         energy_params.event_activate()
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
+        energy_params._bought_energy_kWh = 0.1
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT + duration(minutes=60))
         assert energy_params._state.heatpump._cop[CURRENT_MARKET_SLOT] == 6.5425
 
@@ -217,10 +218,11 @@ class TestHeatPumpEnergyParameters:
     def test_cop_model_is_correctly_selected(energy_params_heat_profile):
         energy_params_heat_profile.event_activate()
         energy_params_heat_profile.event_market_cycle(CURRENT_MARKET_SLOT)
+        energy_params_heat_profile._bought_energy_kWh = 3.6
         energy_params_heat_profile.event_market_cycle(CURRENT_MARKET_SLOT + duration(minutes=60))
         assert isclose(
             energy_params_heat_profile._state.heatpump.get_cop(CURRENT_MARKET_SLOT),
-            10.992,
+            4.42,
             abs_tol=0.001,
         )
 

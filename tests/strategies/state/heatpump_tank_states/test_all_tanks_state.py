@@ -6,7 +6,7 @@ from pendulum import datetime
 
 from gsy_framework.constants_limits import GlobalConfig
 
-from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import TankParameters
+from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import WaterTankParameters
 from gsy_e.models.strategy.state.heatpump_tank_states.all_tanks_state import AllTanksState
 
 from gsy_e.models.strategy.energy_parameters.heatpump.virtual_heatpump_tank import (
@@ -21,9 +21,15 @@ class TestAllTanksState:
     def setup_method(self):
         self._tanks = AllTanksState(
             [
-                TankParameters(10, 50, 25, 500),
-                TankParameters(20, 40, 20, 800),
-                TankParameters(30, 60, 60, 1000),
+                WaterTankParameters(
+                    min_temp_C=10, max_temp_C=50, initial_temp_C=25, tank_volume_L=500
+                ),
+                WaterTankParameters(
+                    min_temp_C=20, max_temp_C=40, initial_temp_C=20, tank_volume_L=800
+                ),
+                WaterTankParameters(
+                    min_temp_C=30, max_temp_C=60, initial_temp_C=60, tank_volume_L=1000
+                ),
             ]
         )
         self._datetime = datetime(2023, 1, 1, 0, 0)
@@ -119,9 +125,15 @@ class TestVirtualHeatpumpAllTanksEnergyParameters:
     def setup_method(self):
         self._tanks = VirtualHeatpumpAllTanksState(
             [
-                TankParameters(10, 50, 25, 500),
-                TankParameters(20, 40, 20, 800),
-                TankParameters(30, 60, 60, 1000),
+                WaterTankParameters(
+                    min_temp_C=10, max_temp_C=50, initial_temp_C=25, tank_volume_L=500
+                ),
+                WaterTankParameters(
+                    min_temp_C=20, max_temp_C=40, initial_temp_C=20, tank_volume_L=800
+                ),
+                WaterTankParameters(
+                    min_temp_C=30, max_temp_C=60, initial_temp_C=60, tank_volume_L=1000
+                ),
             ]
         )
         self._datetime = datetime(2023, 1, 1, 0, 0)

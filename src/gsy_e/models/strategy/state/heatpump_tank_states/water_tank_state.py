@@ -16,7 +16,7 @@ from gsy_e.models.strategy.energy_parameters.heatpump.constants import (
     WATER_DENSITY,
     SPECIFIC_HEAT_CONST_WATER,
 )
-from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import TankParameters
+from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import WaterTankParameters
 from gsy_e.models.strategy.state.base_states import TankStateBase
 from gsy_e.models.strategy.state.heatpump_state import delete_time_slots_in_state
 
@@ -28,7 +28,7 @@ class WaterTankState(TankStateBase):
 
     # pylint: disable=too-many-instance-attributes
 
-    def __init__(self, tank_parameters: TankParameters):
+    def __init__(self, tank_parameters: WaterTankParameters):
         super().__init__(tank_parameters)
         self._storage_temp_C: Dict[DateTime, float] = defaultdict(
             lambda: tank_parameters.initial_temp_C
@@ -36,6 +36,7 @@ class WaterTankState(TankStateBase):
 
     @property
     def max_capacity_kJ(self) -> float:
+        """return the maximal energy capacity of the storage."""
         return convert_kWh_to_kJ(
             (self._params.max_temp_C - self._params.min_temp_C) * self._Q_specific
         )
@@ -156,6 +157,10 @@ class WaterTankState(TankStateBase):
         """Get current tank temperature for timeslot."""
         return self.get_storage_temp_C(time_slot)
 
+    def current_condenser_temperature(self, time_slot: DateTime) -> float:
+        """Get current tank temperature for timeslot."""
+        return self.get_storage_temp_C(time_slot)
+
     def _Q_kWh_to_temp_diff(self, energy_kWh: float) -> float:
         return energy_kWh / self._Q_specific
 
@@ -169,3 +174,11 @@ class WaterTankState(TankStateBase):
 
     def init(self):
         self._update_soc(GlobalConfig.start_date)
+
+    def get_dod_energy_kJ(self, time_slot: DateTime) -> float:
+        """Return depth of discharge as an energy value in kJ."""
+        return (1 - self._soc[time_slot]) * self.max_capacity_kJ
+
+    def get_soc_energy_kJ(self, time_slot: DateTime) -> float:
+        """Return the available energy stored in the tank."""
+        return self._soc.get(time_slot, 0) * self.max_capacity_kJ

@@ -739,13 +739,15 @@ class PlotHPPhysicalStats:
         data = self._read_data_from_csv(source_file)
 
         fig = make_subplots(
-            rows=3,
+            rows=5,
             cols=1,
             shared_xaxes=True,
             subplot_titles=(
                 "Average SOC [%]",
                 "Coefficient of Performance",
-                "Condenser Temperature [°C]",
+                "Average Tank Temperature [°C]",
+                "Storage Inlet Temperature [°C]",
+                "Net Charging Heat energy [kJ]",
             ),
         )
         fig.add_trace(
@@ -769,17 +771,33 @@ class PlotHPPhysicalStats:
         fig.add_trace(
             go.Scatter(
                 x=data["slot"],
-                y=self._convert_to_float_list(data["condenser temperature [C]"]),
-                name="Condenser Temperature [°C]",
+                y=self._convert_to_float_list(data["average tank temp [C]"]),
+                name="Average Tank Temperature [°C]",
             ),
             row=3,
             col=1,
         )
+        fig.add_trace(
+            go.Scatter(
+                x=data["slot"],
+                y=self._convert_to_float_list(data["storage inlet temperature [C]"]),
+                name="Storage Inlet Temperature [°C]",
+            ),
+            row=4,
+            col=1,
+        )
+        fig.add_trace(
+            go.Bar(x=data["slot"], y=self._convert_to_float_list(data["net heat consumed [kJ]"])),
+            row=5,
+            col=1,
+        )
 
-        fig.update_layout(height=700, width=900, hovermode="x", showlegend=False)
-        fig.update_xaxes(title_text="Date", row=3, col=1)
+        fig.update_layout(height=900, width=900, hovermode="x", showlegend=False)
+        fig.update_xaxes(title_text="Date", row=5, col=1)
         fig.update_yaxes(title_text="Average SOC [%]", row=1, col=1)
         fig.update_yaxes(title_text="COP", row=2, col=1)
         fig.update_yaxes(title_text="temperature [°C]", row=3, col=1)
+        fig.update_yaxes(title_text="temperature [°C]", row=4, col=1)
+        fig.update_yaxes(title_text="heat energy [kJ]", row=5, col=1)
 
         py.offline.plot(fig, filename=out_file, auto_open=False)

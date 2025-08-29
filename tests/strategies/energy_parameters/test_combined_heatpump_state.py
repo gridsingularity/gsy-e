@@ -30,7 +30,7 @@ class TestCombinedHeatpumpTanksState:
         # Given
         combined_state.heatpump.get_heat_demand_kJ = Mock(return_value=5000)
         combined_state._charger.get_max_heat_energy_charge_kJ = Mock(return_value=1800)
-        combined_state._charger.get_condenser_temperature_C = Mock(return_value=30)
+        combined_state._charger.get_average_inlet_temperature_C = Mock(return_value=30)
         combined_state._cop_model.calc_cop = Mock(return_value=4)
         # When
         ret_value = combined_state.get_energy_to_buy_maximum_kWh(CURRENT_MARKET_SLOT, 20)
@@ -47,7 +47,7 @@ class TestCombinedHeatpumpTanksState:
         # Given
         combined_state.heatpump.get_heat_demand_kJ = Mock(return_value=5000)
         combined_state._charger.get_max_heat_energy_charge_kJ = Mock(return_value=1800)
-        combined_state._charger.get_condenser_temperature_C = Mock(return_value=30)
+        combined_state._charger.get_average_tank_temp_C = Mock(return_value=30)
         combined_state._cop_model.calc_cop = Mock(return_value=2)
         # When
         with patch("gsy_e.constants.HP_MIN_COP", 3):
@@ -59,7 +59,7 @@ class TestCombinedHeatpumpTanksState:
         # Given
         combined_state.heatpump.get_heat_demand_kJ = Mock(return_value=5000)
         combined_state._charger.get_min_heat_energy_charge_kJ = Mock(return_value=1800)
-        combined_state._charger.get_condenser_temperature_C = Mock(return_value=30)
+        combined_state._charger.get_average_inlet_temperature_C = Mock(return_value=30)
         combined_state._cop_model.calc_cop = Mock(return_value=4)
         # When
         ret_value = combined_state.get_energy_to_buy_minimum_kWh(CURRENT_MARKET_SLOT, 20)

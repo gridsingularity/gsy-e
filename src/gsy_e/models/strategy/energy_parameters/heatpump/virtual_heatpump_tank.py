@@ -11,7 +11,7 @@ from gsy_e.models.strategy.energy_parameters.heatpump.constants import (
 )
 from gsy_e.models.strategy.state.heatpump_tank_states.all_tanks_state import AllTanksState
 from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import (
-    TankParameters,
+    WaterTankParameters,
     HeatpumpTankTypes,
 )
 from gsy_e.models.strategy.state.heatpump_tank_states.water_tank_state import (
@@ -32,7 +32,7 @@ class VirtualHeatpumpTankState(WaterTankState):
     Uses the sympy solver in order to model the water tank.
     """
 
-    def __init__(self, tank_parameters: TankParameters):
+    def __init__(self, tank_parameters: WaterTankParameters):
         assert tank_parameters.type == HeatpumpTankTypes.WATER, (
             "only water tanks are allowed " "in the virtual heat pump "
         )
@@ -149,7 +149,7 @@ class VirtualHeatpumpAllTanksState(AllTanksState):
     """Manage the operation of all tanks for the virtual heatpump. Uses sympy solver."""
 
     # pylint: disable=super-init-not-called
-    def __init__(self, tank_parameters: List[TankParameters]):
+    def __init__(self, tank_parameters: List[WaterTankParameters]):
         self._tanks_states = [VirtualHeatpumpTankState(tank) for tank in tank_parameters]
 
     def update_tanks_temperature(self, time_slot: DateTime):
