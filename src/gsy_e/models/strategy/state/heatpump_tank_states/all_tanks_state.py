@@ -52,12 +52,15 @@ class AllTanksState:
         scaling_factors = self._get_scaling_factors_for_discharging(
             self._last_time_slot(time_slot)
         )
+        discharged = False
         for num, tank in enumerate(self._tanks_states):
             heat_energy_per_tank_kWh = convert_kJ_to_kWh(heat_energy_kJ * scaling_factors[num])
             if heat_energy_per_tank_kWh < FLOATING_POINT_TOLERANCE:
                 tank.no_charge(time_slot)
             else:
                 tank.decrease_tank_temp_from_heat_energy(heat_energy_per_tank_kWh, time_slot)
+                discharged = True
+        return discharged
 
     def no_charge(self, time_slot: DateTime):
         """Trigger no_charge method for all tanks"""

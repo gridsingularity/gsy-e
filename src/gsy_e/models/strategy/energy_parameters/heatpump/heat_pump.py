@@ -1,6 +1,7 @@
 # pylint: disable=too-many-positional-arguments, disable=pointless-string-statement
 from abc import ABC, abstractmethod
 from typing import Optional, Dict, Union, List
+import logging
 
 import pendulum
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig, FLOATING_POINT_TOLERANCE
@@ -27,6 +28,8 @@ from gsy_e.models.strategy.state import HeatPumpState
 from gsy_e.models.strategy.strategy_profile import profile_factory
 from gsy_e.models.strategy.strategy_profile import StrategyProfileBase
 
+
+log = logging.getLogger()
 
 HEAT_EXCHANGER_EFFICIENCY = 1.0
 
@@ -64,9 +67,12 @@ class HeatChargerDischarger:
 
     def discharge(self, heat_energy_kJ: float, time_slot: DateTime):
         """Decrease temperature from the heat storage by the provided heat demand energy."""
-        self.tanks.decrease_tanks_temp_from_heat_energy(
+        discharged = self.tanks.decrease_tanks_temp_from_heat_energy(
             heat_energy_kJ * self._efficiency, time_slot
         )
+        if not discharged:
+            return False
+        return True
 
     def no_charge(self, time_slot: DateTime):
         """Trigger update of state in case of no trades"""
@@ -128,6 +134,7 @@ class CombinedHeatpumpTanksState:
         self._cop_model = cop_model
         self._slot_length = slot_length
         self._max_energy_consumption_kWh = max_energy_consumption_kWh
+        self.unmatched_demand_kJ = {}
 
     def get_results_dict(self, current_time_slot: Optional[DateTime] = None) -> dict:
         """Results dict for all heatpump and tanks results."""
@@ -228,7 +235,28 @@ class CombinedHeatpumpTanksState:
         if net_energy_kJ > FLOATING_POINT_TOLERANCE_UPDATE:
             self._charger.charge(net_energy_kJ, time_slot)
         elif net_energy_kJ < -FLOATING_POINT_TOLERANCE_UPDATE:
-            self._charger.discharge(abs(net_energy_kJ), time_slot)
+            discharged = self._charger.discharge(abs(net_energy_kJ), time_slot)
+            if (
+                not discharged
+                and abs(heat_demand_kJ - traded_heat_energy_kJ) > FLOATING_POINT_TOLERANCE_UPDATE
+            ):
+                cop = self._calc_cop(
+                    produced_heat_kJ=heat_demand_kJ,
+                    source_temp_C=source_temp_C,
+                    time_slot=time_slot,
+                )
+                log.error(
+                    "update_tanks_temperature %s, %s, %s, %s, %s",
+                    last_time_slot,
+                    heat_demand_kJ,
+                    traded_heat_energy_kJ,
+                    bought_energy_kWh,
+                    heat_demand_kJ / 3600 / cop,
+                )
+                if traded_heat_energy_kJ < FLOATING_POINT_TOLERANCE:
+                    log.error("##########")
+                self.unmatched_demand_kJ[last_time_slot] = abs(net_energy_kJ)
+
         else:
             self._charger.no_charge(time_slot)
 
