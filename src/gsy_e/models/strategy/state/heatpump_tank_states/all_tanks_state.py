@@ -98,6 +98,8 @@ class AllTanksState:
 
     def get_average_tank_temperature(self, time_slot: DateTime):
         """Get average tank temperature of all tanks."""
+        if time_slot is None:
+            return 0
         return mean(tank.current_tank_temperature(time_slot) for tank in self._tanks_states)
 
     def get_average_condenser_temperature(self, time_slot: DateTime):
