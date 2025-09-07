@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from copy import deepcopy
+from decimal import Decimal
 from logging import getLogger
 from math import isclose
 from typing import Union, Dict, Optional, Callable, Tuple
@@ -24,7 +25,6 @@ from typing import Union, Dict, Optional, Callable, Tuple
 from gsy_framework.constants_limits import ConstSettings, FLOATING_POINT_TOLERANCE
 from gsy_framework.data_classes import Offer, Trade, TradeBidOfferInfo, TraderDetails, Bid
 from gsy_framework.enums import SpotMarketTypeEnum
-from gsy_framework.utils import limit_float_precision
 from pendulum import DateTime
 
 from gsy_e.events.event_structures import MarketEvent
@@ -48,7 +48,9 @@ class OneSidedMarket(MarketBase):
     Only devices that supply energy (producers) are able to place offers on the markets.
     """
 
-    def __init__(  # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-positional-arguments,too-many-arguments
+
+    def __init__(
         self,
         time_slot: Optional[DateTime] = None,
         bc=None,
@@ -93,12 +95,15 @@ class OneSidedMarket(MarketBase):
         :param energy: Energy of the offer
         :return: Updated price for the forwarded offer on this market, in cents
         """
-        return (
+        price_dec = Decimal(price)
+        energy_dec = Decimal(energy)
+        original_price_dec = Decimal(original_price)
+        return float(
             self.fee_class.update_incoming_offer_with_fee(
-                limit_float_precision(price / energy),
-                limit_float_precision(original_price / energy),
+                price_dec / energy_dec,
+                original_price_dec / energy_dec,
             )
-            * energy
+            * energy_dec
         )
 
     @lock_market_action
@@ -114,7 +119,7 @@ class OneSidedMarket(MarketBase):
         return deepcopy(self.offers)
 
     @lock_market_action
-    def offer(  # pylint: disable=too-many-arguments, too-many-locals
+    def offer(  # pylint: disable=too-many-locals
         self,
         price: float,
         energy: float,
@@ -196,8 +201,12 @@ class OneSidedMarket(MarketBase):
         self._notify_listeners(MarketEvent.OFFER_DELETED, offer=offer)
 
     def _update_offer_fee_and_calculate_final_price(
-        self, energy, trade_rate, energy_portion, original_price
-    ):
+        self,
+        energy: Decimal,
+        trade_rate: Decimal,
+        energy_portion: Decimal,
+        original_price: Decimal,
+    ) -> Tuple[Decimal, Decimal]:
         if self._is_constant_fees:
             fees = self.fee_class.grid_fee_rate * energy
         else:
@@ -205,38 +214,43 @@ class OneSidedMarket(MarketBase):
         return fees, energy * trade_rate
 
     def split_offer(
-        self, original_offer: Offer, energy: float, orig_offer_price: float
+        self, original_offer: Offer, energy: Decimal, orig_offer_price: Decimal
     ) -> Tuple[Offer, Offer]:
         """Split offer into two, one with provided energy, the other with the residual."""
 
         self.offers.pop(original_offer.id, None)
 
+        original_energy_dec = Decimal(original_offer.energy)
+        original_price_from_offer_dec = Decimal(original_offer.price)
+
         # same offer id is used for the new accepted_offer
-        original_accepted_price = energy / original_offer.energy * orig_offer_price
+        original_accepted_price = energy / original_energy_dec * orig_offer_price
         accepted_offer = self.offer(
             offer_id=original_offer.id,
-            price=original_offer.price * (energy / original_offer.energy),
-            energy=energy,
+            price=float(original_price_from_offer_dec * (energy / original_energy_dec)),
+            energy=float(energy),
             seller=original_offer.seller,
-            original_price=original_accepted_price,
+            original_price=float(original_accepted_price),
             dispatch_event=False,
             adapt_price_with_fees=False,
             add_to_history=False,
             time_slot=original_offer.time_slot,
         )
 
-        residual_price = (1 - energy / original_offer.energy) * original_offer.price
-        residual_energy = original_offer.energy - energy
+        residual_price = (
+            Decimal(1) - energy / original_energy_dec
+        ) * original_price_from_offer_dec
+        residual_energy = original_energy_dec - energy
 
         original_residual_price = (
-            (original_offer.energy - energy) / original_offer.energy
-        ) * orig_offer_price
+            (original_energy_dec - energy) / original_energy_dec
+        ) * original_price_from_offer_dec
 
         residual_offer = self.offer(
-            price=residual_price,
-            energy=residual_energy,
+            price=float(residual_price),
+            energy=float(residual_energy),
             seller=original_offer.seller,
-            original_price=original_residual_price,
+            original_price=float(original_residual_price),
             dispatch_event=False,
             adapt_price_with_fees=False,
             add_to_history=True,
@@ -265,8 +279,13 @@ class OneSidedMarket(MarketBase):
         return accepted_offer, residual_offer
 
     def _determine_offer_price(  # pylint: disable=too-many-arguments
-        self, energy_portion, energy, trade_rate, trade_bid_info, orig_offer_price
-    ):
+        self,
+        energy_portion: Decimal,
+        energy: Decimal,
+        trade_rate: Decimal,
+        trade_bid_info: TradeBidOfferInfo,
+        orig_offer_price: Decimal,
+    ) -> Tuple[Decimal, Decimal]:
         if is_one_sided_market_simulation():
             return self._update_offer_fee_and_calculate_final_price(
                 energy, trade_rate, energy_portion, orig_offer_price
@@ -274,7 +293,7 @@ class OneSidedMarket(MarketBase):
 
         if not trade_bid_info:
             # If trade bid info is not populated, return zero grid fees
-            return 0.0, energy * trade_rate
+            return Decimal(0.0), energy * trade_rate
 
         _, grid_fee_rate, trade_rate_incl_fees = self.fee_class.calculate_trade_price_and_fees(
             trade_bid_info
@@ -316,24 +335,30 @@ class OneSidedMarket(MarketBase):
 
         orig_offer_price = offer.original_price or offer.price
 
+        energy_dec = Decimal(energy)
+        orig_offer_price_dec = Decimal(orig_offer_price)
+        trade_rate_dec = Decimal(trade_rate)
+
         try:
             if abs(energy) < FLOATING_POINT_TOLERANCE:
                 raise InvalidTrade("Energy can not be zero.")
             if (offer.energy - energy) > FLOATING_POINT_TOLERANCE:
                 # partial energy is requested
 
-                accepted_offer, residual_offer = self.split_offer(offer, energy, orig_offer_price)
+                accepted_offer, residual_offer = self.split_offer(
+                    offer, energy_dec, orig_offer_price_dec
+                )
 
                 fee_price, trade_price = self._determine_offer_price(
-                    energy_portion=energy / accepted_offer.energy,
-                    energy=energy,
-                    trade_rate=trade_rate,
+                    energy_portion=energy_dec / Decimal(accepted_offer.energy),
+                    energy=energy_dec,
+                    trade_rate=trade_rate_dec,
                     trade_bid_info=trade_bid_info,
-                    orig_offer_price=orig_offer_price,
+                    orig_offer_price=orig_offer_price_dec,
                 )
 
                 offer = accepted_offer
-                offer.update_price(trade_price)
+                offer.update_price(float(trade_price))
 
             elif (offer.energy - energy) < -FLOATING_POINT_TOLERANCE:
                 raise InvalidTrade(
@@ -342,9 +367,9 @@ class OneSidedMarket(MarketBase):
             else:
                 # Requested energy is equal to offer's energy - just proceed normally
                 fee_price, trade_price = self._determine_offer_price(
-                    1, energy, trade_rate, trade_bid_info, orig_offer_price
+                    Decimal(1), energy_dec, trade_rate_dec, trade_bid_info, orig_offer_price
                 )
-                offer.update_price(trade_price)
+                offer.update_price(float(trade_price))
         except Exception as ex:
             # Exception happened - restore offer
             self.offers[offer.id] = offer
@@ -369,10 +394,10 @@ class OneSidedMarket(MarketBase):
             offer=offer,
             bid=bid,
             traded_energy=energy,
-            trade_price=trade_price,
+            trade_price=float(trade_price),
             residual=residual_offer,
             offer_bid_trade_info=offer_bid_trade_info,
-            fee_price=fee_price,
+            fee_price=float(fee_price),
             time_slot=offer.time_slot,
         )
 

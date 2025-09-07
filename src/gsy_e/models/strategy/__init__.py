@@ -22,12 +22,13 @@ import logging
 import sys
 from abc import ABC
 from dataclasses import dataclass
+from decimal import Decimal
 from logging import getLogger
 from typing import TYPE_CHECKING, Callable, Dict, Generator, List, Optional, Union
 from uuid import uuid4
+
 from gsy_framework.constants_limits import ConstSettings, FLOATING_POINT_TOLERANCE
 from gsy_framework.data_classes import Bid, Offer, Trade, TraderDetails
-from gsy_framework.utils import limit_float_precision
 from pendulum import DateTime
 
 from gsy_e import constants
@@ -48,10 +49,9 @@ log = getLogger(__name__)
 
 
 if TYPE_CHECKING:
-    from gsy_framework.data_classes import TradeBidOfferInfo
-
-    from gsy_e.models.market.one_sided import OneSidedMarket
-    from gsy_e.models.market.two_sided import TwoSidedMarket
+    from gsy_framework.data_classes import TradeBidOfferInfo  # noqa: F401
+    from gsy_e.models.market.one_sided import OneSidedMarket  # noqa: F401
+    from gsy_e.models.market.two_sided import TwoSidedMarket  # noqa: F401
 
 INF_ENERGY = int(sys.maxsize)
 
@@ -270,6 +270,8 @@ class Offers:
     open_in_market() only those who have not been sold.
     """
 
+    # pylint: disable=too-many-positional-arguments
+
     def __init__(self, strategy: "BaseStrategy"):
         self.strategy = strategy
         self.bought = {}  # type: Dict[Offer, str]
@@ -486,7 +488,7 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
     has posted. Define a common interface which all strategies should implement.
     """
 
-    # pylint: disable=too-many-public-methods
+    # pylint: disable=too-many-public-methods,too-many-positional-arguments
     def __init__(self):
         super().__init__()
         self.offers = Offers(self)
@@ -761,14 +763,15 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
             return
 
         for offer in self.get_posted_offers(market, time_slot):
-            updated_price = limit_float_precision(offer.energy * updated_rate)
-            if abs(offer.price - updated_price) <= FLOATING_POINT_TOLERANCE:
+            updated_price = Decimal(offer.energy) * Decimal(updated_rate)
+            offer_price_dec = Decimal(offer.price)
+            if abs(offer_price_dec - updated_price) <= FLOATING_POINT_TOLERANCE:
                 continue
             try:
                 # Delete the old offer and create a new equivalent one with an updated price
                 market.delete_offer(offer.id)
                 new_offer = market.offer(
-                    updated_price,
+                    float(updated_price),
                     offer.energy,
                     TraderDetails(
                         self.owner.name,
@@ -776,7 +779,7 @@ class BaseStrategy(EventMixin, AreaBehaviorBase, ABC):
                         offer.seller.origin,
                         offer.seller.origin_uuid,
                     ),
-                    original_price=updated_price,
+                    original_price=float(updated_price),
                     time_slot=offer.time_slot or market.time_slot or time_slot,
                 )
                 self.offers.replace(offer, new_offer, market.id)
@@ -793,6 +796,7 @@ class BidEnabledStrategy(BaseStrategy):
     two sided market
     """
 
+    # pylint: disable=too-many-positional-arguments
     def __init__(self):
         super().__init__()
         self._bids = {}

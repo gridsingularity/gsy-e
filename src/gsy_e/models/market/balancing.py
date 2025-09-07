@@ -17,8 +17,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import uuid
+from decimal import Decimal
 from logging import getLogger
-from typing import Union, Dict, List, Optional  # noqa
+from typing import Union, Optional, Tuple  # noqa
 
 from gsy_framework.constants_limits import ConstSettings, FLOATING_POINT_TOLERANCE
 from gsy_framework.data_classes import (
@@ -47,6 +48,8 @@ log = getLogger(__name__)
 
 class BalancingMarket(OneSidedMarket):
     """Market that regulates the supply and demand of energy."""
+
+    # pylint: disable=too-many-positional-arguments
 
     def __init__(  # pylint: disable=too-many-arguments
         self,
@@ -91,7 +94,7 @@ class BalancingMarket(OneSidedMarket):
     ):
         assert False
 
-    def balancing_offer(  # pylint: disable=too-many-arguments
+    def balancing_offer(  # pylint: disable=too-many-arguments,unused-argument
         self,
         price: float,
         energy: float,
@@ -104,7 +107,7 @@ class BalancingMarket(OneSidedMarket):
     ) -> BalancingOffer:
         """Create a balancing offer."""
 
-        if seller.name not in DeviceRegistry.REGISTRY.keys() and not from_agent:
+        if seller.name not in DeviceRegistry.REGISTRY and not from_agent:
             raise DeviceNotInRegistryError(
                 f"Device {seller.name} " f"not in registry ({DeviceRegistry.REGISTRY})."
             )
@@ -130,7 +133,11 @@ class BalancingMarket(OneSidedMarket):
             self._notify_listeners(MarketEvent.BALANCING_OFFER, offer=offer)
         return offer
 
-    def split_offer(self, original_offer, energy, orig_offer_price=None):
+    def split_offer(
+        self, original_offer, energy: Decimal, orig_offer_price: Decimal = None
+    ) -> Tuple[BalancingOffer, BalancingOffer]:
+        energy = float(energy)
+        orig_offer_price = float(orig_offer_price)
 
         self.offers.pop(original_offer.id, None)
         # same offer id is used for the new accepted_offer
@@ -182,14 +189,19 @@ class BalancingMarket(OneSidedMarket):
 
         return accepted_offer, residual_offer
 
-    def _determine_offer_price(
-        self, energy_portion, energy, trade_rate, trade_bid_info, orig_offer_price
+    def _determine_offer_price(  # pylint: disable=too-many-arguments
+        self,
+        energy_portion: Decimal,
+        energy: Decimal,
+        trade_rate: Decimal,
+        trade_bid_info: TradeBidOfferInfo,
+        orig_offer_price: Decimal,
     ):
         return self._update_offer_fee_and_calculate_final_price(
             energy, trade_rate, energy_portion, orig_offer_price
         )
 
-    def accept_offer(  # pylint: disable=too-many-locals
+    def accept_offer(  # pylint: disable=too-many-locals,arguments-differ
         self,
         offer_or_id: Union[str, BalancingOffer],
         buyer: TraderDetails,
@@ -207,7 +219,7 @@ class BalancingMarket(OneSidedMarket):
             raise OfferNotFoundException()
 
         if (offer.energy > 0 > energy) or (offer.energy < 0 < energy):
-            raise InvalidBalancingTradeException("BalancingOffer and energy " "are not compatible")
+            raise InvalidBalancingTradeException("BalancingOffer and energy are not compatible")
         if energy is None:
             energy = offer.energy
 
@@ -230,10 +242,14 @@ class BalancingMarket(OneSidedMarket):
                 accepted_offer, residual_offer = self.split_offer(offer, energy, orig_offer_price)
 
                 fees, trade_price = self._determine_offer_price(
-                    energy / offer.energy, energy, trade_rate, trade_bid_info, orig_offer_price
+                    Decimal(energy / offer.energy),
+                    Decimal(energy),
+                    Decimal(trade_rate),
+                    trade_bid_info,
+                    Decimal(orig_offer_price),
                 )
                 offer = accepted_offer
-                offer.update_price(trade_price)
+                offer.update_price(float(trade_price))
 
             elif abs(energy - offer.energy) > FLOATING_POINT_TOLERANCE:
                 raise InvalidBalancingTradeException(
@@ -242,9 +258,9 @@ class BalancingMarket(OneSidedMarket):
             else:
                 # Requested energy is equal to offer's energy - just proceed normally
                 fees, trade_price = self._update_offer_fee_and_calculate_final_price(
-                    energy, trade_rate, 1, orig_offer_price
+                    Decimal(energy), Decimal(trade_rate), Decimal(1), Decimal(orig_offer_price)
                 )
-                offer.update_price(trade_price)
+                offer.update_price(float(trade_price))
 
         except Exception:
             # Exception happened - restore offer
@@ -264,9 +280,9 @@ class BalancingMarket(OneSidedMarket):
             buyer=buyer,
             offer=offer,
             traded_energy=energy,
-            trade_price=trade_price,
+            trade_price=float(trade_price),
             residual=residual_offer,
-            fee_price=fees,
+            fee_price=float(fees),
             time_slot=offer.time_slot,
         )
         self.bc_interface.track_trade_event(self.time_slot, trade)

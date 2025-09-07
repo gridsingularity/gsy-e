@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import uuid
 from copy import deepcopy
+from decimal import Decimal
 from logging import getLogger
 from math import isclose
 from typing import Dict, List, Union, Tuple, Optional
@@ -33,7 +34,6 @@ from gsy_framework.data_classes import (
 )
 from gsy_framework.enums import BidOfferMatchAlgoEnum
 from gsy_framework.matching_algorithms.requirements_validators import RequirementsSatisfiedChecker
-from gsy_framework.utils import limit_float_precision
 from pendulum import DateTime
 
 from gsy_e.events.event_structures import MarketEvent
@@ -61,6 +61,8 @@ class TwoSidedMarket(OneSidedMarket):
     Contrary to the one sided market, where the offers are selected directly by the consumers,
     the offers and bids are being matched via some matching algorithm.
     """
+
+    # pylint: disable=too-many-positional-arguments
 
     def __init__(
         self,
@@ -209,37 +211,39 @@ class TwoSidedMarket(OneSidedMarket):
         )
         self._notify_listeners(MarketEvent.BID_DELETED, bid=bid)
 
-    def split_bid(self, original_bid: Bid, energy: float, orig_bid_price: float):
+    def split_bid(self, original_bid: Bid, energy: Decimal, orig_bid_price: Decimal):
         """Split bid into two, one with provided energy, the other with the residual."""
 
         self.bids.pop(original_bid.id, None)
 
         # same bid id is used for the new accepted_bid
-        original_accepted_price = energy / original_bid.energy * orig_bid_price
+        original_energy_dec = Decimal(original_bid.energy)
+        original_accepted_price = energy / original_energy_dec * orig_bid_price
+
         accepted_bid = self.bid(
             bid_id=original_bid.id,
-            price=original_bid.price * (energy / original_bid.energy),
-            energy=energy,
+            price=float(orig_bid_price * (energy / orig_bid_price)),
+            energy=float(energy),
             buyer=original_bid.buyer,
-            original_price=original_accepted_price,
+            original_price=float(original_accepted_price),
             adapt_price_with_fees=False,
             add_to_history=False,
             dispatch_event=False,
             time_slot=original_bid.time_slot,
         )
 
-        residual_price = (1 - energy / original_bid.energy) * original_bid.price
-        residual_energy = original_bid.energy - energy
+        residual_price = (Decimal(1) - energy / original_energy_dec) * orig_bid_price
+        residual_energy = original_energy_dec - energy
 
         original_residual_price = (
-            (original_bid.energy - energy) / original_bid.energy
+            (original_energy_dec - energy) / original_energy_dec
         ) * orig_bid_price
 
         residual_bid = self.bid(
-            price=residual_price,
-            energy=residual_energy,
+            price=float(residual_price),
+            energy=float(residual_energy),
             buyer=original_bid.buyer,
-            original_price=original_residual_price,
+            original_price=float(original_residual_price),
             adapt_price_with_fees=False,
             add_to_history=True,
             dispatch_event=False,
@@ -265,7 +269,7 @@ class TwoSidedMarket(OneSidedMarket):
 
         return accepted_bid, residual_bid
 
-    def _determine_bid_price(self, trade_offer_info, energy):
+    def _determine_bid_price(self, trade_offer_info, energy: Decimal) -> Tuple[Decimal, Decimal]:
         _, grid_fee_rate, final_trade_rate = self.fee_class.calculate_trade_price_and_fees(
             trade_offer_info
         )
@@ -296,16 +300,20 @@ class TwoSidedMarket(OneSidedMarket):
         orig_price = bid.original_price if bid.original_price is not None else bid.price
         residual_bid = None
 
+        energy_dec = Decimal(energy)
+        market_bid_energy_dec = Decimal(market_bid.energy)
+        orig_price_dec = Decimal(orig_price)
+
         if energy <= 0:
             raise NegativeEnergyTradeException("Energy cannot be negative or zero.")
-        if market_bid.energy - energy < -FLOATING_POINT_TOLERANCE:
+        if market_bid_energy_dec - energy_dec < -FLOATING_POINT_TOLERANCE:
             raise InvalidTrade(
-                f"Traded energy ({energy}) cannot be more than the "
-                f"bid energy ({market_bid.energy})."
+                f"Traded energy ({energy_dec}) cannot be more than the "
+                f"bid energy ({market_bid_energy_dec})."
             )
-        if market_bid.energy - energy > FLOATING_POINT_TOLERANCE:
+        if market_bid_energy_dec - energy_dec > FLOATING_POINT_TOLERANCE:
             # partial bid trade
-            accepted_bid, residual_bid = self.split_bid(market_bid, energy, orig_price)
+            accepted_bid, residual_bid = self.split_bid(market_bid, energy_dec, orig_price_dec)
             bid = accepted_bid
 
             # Delete the accepted bid from self.bids:
@@ -319,10 +327,8 @@ class TwoSidedMarket(OneSidedMarket):
             # full bid trade, nothing further to do here
             pass
 
-        fee_price, trade_price = self._determine_bid_price(trade_offer_info, energy)
-        fee_price = limit_float_precision(fee_price)
-        trade_price = limit_float_precision(trade_price)
-        bid.update_price(trade_price)
+        fee_price, trade_price = self._determine_bid_price(trade_offer_info, energy_dec)
+        bid.update_price(float(trade_price))
 
         # Do not adapt grid fees when creating the bid_trade_info structure, to mimic
         # the behavior of the forwarded bids which use the source market fee.
@@ -338,10 +344,10 @@ class TwoSidedMarket(OneSidedMarket):
             bid=bid,
             offer=offer,
             traded_energy=energy,
-            trade_price=trade_price,
+            trade_price=float(trade_price),
             residual=residual_bid,
             offer_bid_trade_info=updated_bid_trade_info,
-            fee_price=fee_price,
+            fee_price=float(fee_price),
             time_slot=bid.time_slot,
         )
 
@@ -424,8 +430,11 @@ class TwoSidedMarket(OneSidedMarket):
     def match_recommendations(
         self, recommendations: List[BidOfferMatch.serializable_dict]
     ) -> bool:
-        """Match a list of bid/offer pairs, create trades and residual offers/bids.
-        Returns True if trades were actually performed, False otherwise."""
+        """
+        Match a list of bid/offer pairs, create trades and residual offers/bids.
+        Returns True if trades were actually performed, False otherwise.
+        """
+        # pylint: disable=fixme
         were_trades_performed = False
         while recommendations:
             recommended_pair = BidOfferMatch.from_dict(recommendations.pop(0))

@@ -59,7 +59,7 @@ class FakeArea:
         return self.future_market
 
 
-# pylint: disable=too-many-instance-attributes
+# pylint: disable=too-many-instance-attributes,too-many-positional-arguments
 class FakeMarket:
     # pylint: disable=too-many-arguments
     def __init__(self, offers, bids=None, m_id=123, transfer_fees=TRANSFER_FEES, name=None):
@@ -170,7 +170,7 @@ class FakeMarket:
         pass
 
     def _update_new_offer_price_with_fee(self, offer_price, original_price, energy):
-        return offer_price + self.fee_class.grid_fee_rate * original_price
+        return offer_price + float(self.fee_class.grid_fee_rate) * original_price
 
     def _update_new_bid_price_with_fee(self, bid_price, original_price):
         return self.fee_class.update_incoming_bid_with_fee(bid_price, original_price)
@@ -430,7 +430,7 @@ def market_agent_double_sided_fixture():
     yield market_agent
 
 
-# pylint: disable=protected-access
+# pylint: disable=protected-access,too-many-positional-arguments
 class TestMABid:
 
     @staticmethod
@@ -582,7 +582,7 @@ class TestMABid:
         assert len(market_agent_double_sided.lower_market.calls_energy_bids) == 1
 
         expected_price = 10 * (1 - market_agent_double_sided.lower_market.fee_class.grid_fee_rate)
-        assert market_agent_double_sided.higher_market.forwarded_bid.price == expected_price
+        assert isclose(market_agent_double_sided.higher_market.forwarded_bid.price, expected_price)
         assert market_agent_double_sided.lower_market.calls_bids_price[-1] == 10.0
 
     @staticmethod
@@ -601,7 +601,7 @@ class TestMABid:
         )
         assert len(market_agent_double_sided.lower_market.calls_energy_bids) == 1
         expected_price = 10 * (1 - market_agent_double_sided.lower_market.fee_class.grid_fee_rate)
-        assert market_agent_double_sided.higher_market.forwarded_bid.price == expected_price
+        assert isclose(market_agent_double_sided.higher_market.forwarded_bid.price, expected_price)
 
         assert market_agent_double_sided.lower_market.calls_bids_price[-1] == 10
 

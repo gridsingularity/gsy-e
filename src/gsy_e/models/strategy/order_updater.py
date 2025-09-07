@@ -1,14 +1,13 @@
 from dataclasses import dataclass
+from decimal import Decimal
 from typing import Optional, Union, List
 
-from gsy_framework.constants_limits import ConstSettings, FLOATING_POINT_TOLERANCE
+from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.exceptions import GSyException
 from gsy_framework.utils import convert_pendulum_to_str_in_dict
 from pendulum import duration, DateTime, Duration
 
 from gsy_e.models.market import MarketSlotParams
-
-FINAL_RATE_TOLERANCE = 0 * FLOATING_POINT_TOLERANCE
 
 
 @dataclass
@@ -52,7 +51,7 @@ class OrderUpdaterParameters:
     def _get_default_value_final_rate(_time_slot: DateTime):
         return 0
 
-    def get_initial_rate(self, time_slot: DateTime):
+    def get_initial_rate(self, time_slot: DateTime) -> float:
         """Return initial rate for time slot. If not set, return default value."""
         if self.initial_rate is None:
             return self._get_default_value_initial_rate(time_slot)
@@ -65,7 +64,7 @@ class OrderUpdaterParameters:
                 f"Initial rate profile does not contain timestamp {time_slot}"
             ) from exc
 
-    def get_final_rate(self, time_slot: DateTime):
+    def get_final_rate(self, time_slot: DateTime) -> float:
         """Return final rate for time slot. If not set, return default value."""
         if self.final_rate is None:
             return self._get_default_value_final_rate(time_slot)
@@ -86,10 +85,10 @@ class OrderUpdater:
     """
 
     def __init__(self, parameters: OrderUpdaterParameters, market_params: MarketSlotParams):
-        self._initial_rate = parameters.get_initial_rate(market_params.opening_time)
-        self._final_rate = parameters.get_final_rate(market_params.opening_time)
+
+        self._initial_rate = Decimal(parameters.get_initial_rate(market_params.opening_time))
+        self._final_rate = Decimal(parameters.get_final_rate(market_params.opening_time))
         # in order to make sure that the final rate is indeed reached, we add a tolerance
-        self._final_rate = self._final_rate + FINAL_RATE_TOLERANCE
         self._update_interval = parameters.get_update_interval()
         self._market_params = market_params
         self._update_times: List[DateTime] = self._calculate_update_timepoints(
@@ -114,7 +113,7 @@ class OrderUpdater:
         """Check if the orders need to be updated."""
         return current_time in self._update_times
 
-    def get_energy_rate(self, current_time: DateTime) -> float:
+    def get_energy_rate(self, current_time: DateTime) -> Decimal:
         """Calculate energy rate for the current time slot."""
         assert current_time >= self._market_params.opening_time
         time_elapsed_since_start = current_time - self._market_params.opening_time
@@ -124,7 +123,8 @@ class OrderUpdater:
             - self._market_params.opening_time
         )
         rate_range = abs(self._final_rate - self._initial_rate)
-        rate_diff_from_initial = (time_elapsed_since_start / total_slot_length) * rate_range
+        rate_diff_from_initial = Decimal(time_elapsed_since_start / total_slot_length) * rate_range
+
         if self._initial_rate < self._final_rate:
             return self._initial_rate + rate_diff_from_initial
 
