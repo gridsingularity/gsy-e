@@ -281,14 +281,14 @@ class MAEngine:
             # offer was split in target market, also split in source market
 
             local_offer = self.forwarded_offers[original_offer.id].source_offer
-            original_price = (
+            original_price = Decimal(
                 local_offer.original_price
                 if local_offer.original_price is not None
                 else local_offer.price
             )
 
             local_split_offer, local_residual_offer = self.markets.source.split_offer(
-                local_offer, accepted_offer.energy, original_price
+                local_offer, Decimal(accepted_offer.energy), original_price
             )
 
             #  add the new offers to forwarded_offers
@@ -305,14 +305,14 @@ class MAEngine:
 
             local_offer = self.forwarded_offers[original_offer.id].source_offer
 
-            original_price = (
+            original_price = Decimal(
                 local_offer.original_price
                 if local_offer.original_price is not None
                 else local_offer.price
             )
 
             local_split_offer, local_residual_offer = self.markets.target.split_offer(
-                local_offer, accepted_offer.energy, original_price
+                local_offer, Decimal(accepted_offer.energy), original_price
             )
 
             #  add the new offers to forwarded_offers

@@ -367,7 +367,7 @@ class OneSidedMarket(MarketBase):
             else:
                 # Requested energy is equal to offer's energy - just proceed normally
                 fee_price, trade_price = self._determine_offer_price(
-                    Decimal(1), energy_dec, trade_rate_dec, trade_bid_info, orig_offer_price
+                    Decimal(1), energy_dec, trade_rate_dec, trade_bid_info, orig_offer_price_dec
                 )
                 offer.update_price(float(trade_price))
         except Exception as ex:

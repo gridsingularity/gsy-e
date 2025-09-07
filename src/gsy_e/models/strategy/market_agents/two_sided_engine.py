@@ -184,9 +184,11 @@ class TwoSidedEngine(MAEngine):
 
             source_rate = bid_info.source_bid.energy_rate
             target_rate = bid_info.target_bid.energy_rate
-            assert abs(source_rate) + FLOATING_POINT_TOLERANCE >= abs(
-                target_rate
-            ), f"bid: source_rate ({source_rate}) is not lower than target_rate ({target_rate})"
+            assert abs(source_rate) + FLOATING_POINT_TOLERANCE >= abs(target_rate), (
+                f"bid: source_rate ({source_rate}) is not lower than "
+                f"target_rate ({target_rate}) {bid_info.source_bid} {bid_info.source_bid.energy} "
+                f"{bid_info.source_bid.price}"
+            )
 
             if bid_trade.offer_bid_trade_info is not None:
                 # Adapt trade_offer_info received by the trade to include source market grid fees,
@@ -266,14 +268,14 @@ class TwoSidedEngine(MAEngine):
             # in the source market
 
             local_bid = self.forwarded_bids[original_bid.id].source_bid
-            original_price = (
+            original_price = Decimal(
                 local_bid.original_price
                 if local_bid.original_price is not None
                 else local_bid.price
             )
 
             local_split_bid, local_residual_bid = self.markets.source.split_bid(
-                local_bid, accepted_bid.energy, original_price
+                local_bid, Decimal(accepted_bid.energy), original_price
             )
 
             #  add the new bids to forwarded_bids
@@ -292,14 +294,14 @@ class TwoSidedEngine(MAEngine):
 
             local_bid = self.forwarded_bids[original_bid.id].source_bid
 
-            original_price = (
+            original_price = Decimal(
                 local_bid.original_price
                 if local_bid.original_price is not None
                 else local_bid.price
             )
 
             local_split_bid, local_residual_bid = self.markets.target.split_bid(
-                local_bid, accepted_bid.energy, original_price
+                local_bid, Decimal(accepted_bid.energy), original_price
             )
 
             #  add the new bids to forwarded_bids

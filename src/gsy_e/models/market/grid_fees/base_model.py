@@ -16,8 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from decimal import Decimal
+from typing import Tuple, Optional
+
 from gsy_framework.data_classes import TradeBidOfferInfo
-from narwhals import Decimal
 
 from gsy_e.models.market.grid_fees import BaseClassGridFees
 
@@ -43,21 +45,25 @@ class GridFees(BaseClassGridFees):
     # pylint: disable=too-many-positional-arguments
     def _calculate_fee_revenue_from_clearing_trade(
         self,
-        bid_propagated_rate,
-        bid_original_rate,
-        offer_propagated_rate,
-        offer_original_rate,
-        trade_rate_source,
-    ):
+        bid_propagated_rate: Decimal,
+        bid_original_rate: Decimal,
+        offer_propagated_rate: Decimal,
+        offer_original_rate: Decimal,
+        trade_rate_source: Decimal,
+    ) -> Tuple[Decimal, Decimal, Decimal]:
         # pylint: disable=too-many-arguments
         demand_side_tax = (
-            0 if bid_original_rate == 0 else 1 - bid_propagated_rate / bid_original_rate
+            Decimal(0.0)
+            if bid_original_rate == 0
+            else Decimal(1.0) - bid_propagated_rate / bid_original_rate
         )
         supply_side_tax = (
-            0 if offer_original_rate == 0 else offer_propagated_rate / offer_original_rate - 1
+            Decimal(0.0)
+            if offer_original_rate == 0
+            else offer_propagated_rate / offer_original_rate - Decimal(1.0)
         )
         total_grid_fee_rate = demand_side_tax + supply_side_tax
-        revenue = trade_rate_source / (1 + total_grid_fee_rate)
+        revenue = trade_rate_source / (Decimal(1.0) + total_grid_fee_rate)
         grid_fee_rate = revenue * self.grid_fee_rate
         trade_price = revenue + revenue * supply_side_tax
         return revenue, grid_fee_rate, trade_price
@@ -102,43 +108,49 @@ class GridFees(BaseClassGridFees):
         )
         return trade_bid_info
 
-    def propagate_original_bid_info_on_offer_trade(self, trade_original_info):
+    def propagate_original_bid_info_on_offer_trade(
+        self, trade_original_info: TradeBidOfferInfo
+    ) -> Optional[TradeBidOfferInfo]:
         if trade_original_info is None or trade_original_info.propagated_bid_rate is None:
             return None
         bid_rate = (
-            trade_original_info.propagated_bid_rate
-            - trade_original_info.original_bid_rate * self.grid_fee_rate
+            Decimal(trade_original_info.propagated_bid_rate)
+            - Decimal(trade_original_info.original_bid_rate) * self.grid_fee_rate
         )
         trade_bid_info = TradeBidOfferInfo(
             original_bid_rate=trade_original_info.original_bid_rate,
-            propagated_bid_rate=bid_rate,
+            propagated_bid_rate=float(bid_rate),
             original_offer_rate=None,
             propagated_offer_rate=None,
             trade_rate=trade_original_info.trade_rate,
         )
         return trade_bid_info
 
-    def propagate_original_offer_info_on_bid_trade(self, trade_original_info, ignore_fees=False):
-        grid_fee_rate = self.grid_fee_rate if not ignore_fees else 0.0
+    def propagate_original_offer_info_on_bid_trade(
+        self, trade_original_info: TradeBidOfferInfo, ignore_fees: bool = False
+    ) -> TradeBidOfferInfo:
+        grid_fee_rate = self.grid_fee_rate if not ignore_fees else Decimal(0.0)
         offer_rate = (
-            trade_original_info.propagated_offer_rate
-            + trade_original_info.original_offer_rate * grid_fee_rate
+            Decimal(trade_original_info.propagated_offer_rate)
+            + Decimal(trade_original_info.original_offer_rate) * grid_fee_rate
         )
         trade_offer_info = TradeBidOfferInfo(
             original_bid_rate=None,
             propagated_bid_rate=None,
             original_offer_rate=trade_original_info.original_offer_rate,
-            propagated_offer_rate=offer_rate,
+            propagated_offer_rate=float(offer_rate),
             trade_rate=trade_original_info.trade_rate,
         )
         return trade_offer_info
 
-    def calculate_trade_price_and_fees(self, trade_bid_info):
+    def calculate_trade_price_and_fees(
+        self, trade_bid_info: TradeBidOfferInfo
+    ) -> tuple[Decimal, Decimal, Decimal]:
         revenue, grid_fee_rate, trade_price = self._calculate_fee_revenue_from_clearing_trade(
-            bid_propagated_rate=trade_bid_info.propagated_bid_rate,
-            bid_original_rate=trade_bid_info.original_bid_rate,
-            offer_propagated_rate=trade_bid_info.propagated_offer_rate,
-            offer_original_rate=trade_bid_info.original_offer_rate,
-            trade_rate_source=trade_bid_info.trade_rate,
+            bid_propagated_rate=Decimal(trade_bid_info.propagated_bid_rate),
+            bid_original_rate=Decimal(trade_bid_info.original_bid_rate),
+            offer_propagated_rate=Decimal(trade_bid_info.propagated_offer_rate),
+            offer_original_rate=Decimal(trade_bid_info.original_offer_rate),
+            trade_rate_source=Decimal(trade_bid_info.trade_rate),
         )
         return revenue, grid_fee_rate, trade_price

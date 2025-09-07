@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # pylint: disable=missing-function-docstring
 
 from copy import deepcopy
+from decimal import Decimal
 from math import isclose
 from uuid import uuid4
 
@@ -169,10 +170,14 @@ class FakeMarket:
     def delete_bid(self, *args):
         pass
 
-    def _update_new_offer_price_with_fee(self, offer_price, original_price, energy):
+    def _update_new_offer_price_with_fee(
+        self, offer_price: float, original_price: float, energy: float
+    ) -> float:
         return offer_price + float(self.fee_class.grid_fee_rate) * original_price
 
-    def _update_new_bid_price_with_fee(self, bid_price, original_price):
+    def _update_new_bid_price_with_fee(
+        self, bid_price: Decimal, original_price: Decimal
+    ) -> Decimal:
         return self.fee_class.update_incoming_bid_with_fee(bid_price, original_price)
 
     def offer(
@@ -226,30 +231,37 @@ class FakeMarket:
             bid_id = "uuid"
 
         if adapt_price_with_fees:
-            price = self._update_new_bid_price_with_fee(price, original_price)
+            price = self._update_new_bid_price_with_fee(Decimal(price), original_price)
 
-        bid = Bid(bid_id, pendulum.now(), price, energy, buyer, original_price=original_price)
+        bid = Bid(
+            bid_id,
+            pendulum.now(),
+            float(price),
+            float(energy),
+            buyer,
+            original_price=original_price,
+        )
         self._bids.append(bid)
         self.forwarded_bid = bid
 
         return bid
 
-    def split_offer(self, original_offer, energy, orig_offer_price):
+    def split_offer(self, original_offer, energy: Decimal, orig_offer_price: Decimal):
         self.offers.pop(original_offer.id, None)
         # same offer id is used for the new accepted_offer
         accepted_offer = self.offer(
             offer_id=original_offer.id,
-            price=original_offer.price * (energy / original_offer.energy),
-            energy=energy,
+            price=original_offer.price * (float(energy) / original_offer.energy),
+            energy=float(energy),
             seller=original_offer.seller,
             dispatch_event=False,
         )
 
-        residual_price = (1 - energy / original_offer.energy) * original_offer.price
-        residual_energy = original_offer.energy - energy
+        residual_price = (1 - float(energy) / original_offer.energy) * original_offer.price
+        residual_energy = original_offer.energy - float(energy)
         original_residual_price = (
-            (original_offer.energy - energy) / original_offer.energy
-        ) * orig_offer_price
+            (original_offer.energy - float(energy)) / original_offer.energy
+        ) * float(orig_offer_price)
 
         residual_offer = self.offer(
             price=residual_price,

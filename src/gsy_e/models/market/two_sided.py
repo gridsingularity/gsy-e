@@ -222,7 +222,7 @@ class TwoSidedMarket(OneSidedMarket):
 
         accepted_bid = self.bid(
             bid_id=original_bid.id,
-            price=float(orig_bid_price * (energy / orig_bid_price)),
+            price=float(orig_bid_price * (energy / original_energy_dec)),
             energy=float(energy),
             buyer=original_bid.buyer,
             original_price=float(original_accepted_price),
