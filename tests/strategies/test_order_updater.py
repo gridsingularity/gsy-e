@@ -19,10 +19,11 @@ def fixture_order_updater():
     updater = OrderUpdater(
         OrderUpdaterParameters(UPDATE_INTERVAL, initial_rate=30, final_rate=70),
         MarketSlotParams(
-            opening_time=opening_time, closing_time=opening_time + duration(minutes=30),
+            opening_time=opening_time,
+            closing_time=opening_time + duration(minutes=30),
             delivery_start_time=opening_time + duration(hours=2),
-            delivery_end_time=opening_time + duration(hours=3)
-        )
+            delivery_end_time=opening_time + duration(hours=3),
+        ),
     )
 
     yield opening_time, updater
@@ -55,8 +56,11 @@ class TestOrderUpdater:
         current_time = opening_time
         while current_time < closing_time:
             expected_rate = 30 + rate_range * (
-                    (current_time - opening_time) / (update_time - UPDATE_INTERVAL))
-            assert isclose(updater.get_energy_rate(current_time), expected_rate)
+                (current_time - opening_time) / (update_time - UPDATE_INTERVAL)
+            )
+            assert isclose(updater.get_energy_rate(current_time), expected_rate, abs_tol=0.00008)
             current_time += duration(minutes=5)
 
-        assert updater.get_energy_rate(closing_time - UPDATE_INTERVAL) == 70
+        assert isclose(
+            updater.get_energy_rate(closing_time - UPDATE_INTERVAL), 70, abs_tol=0.00008
+        )

@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from abc import ABC, abstractmethod
 from math import copysign
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 from collections import defaultdict
 
 from pendulum import DateTime
@@ -27,7 +27,10 @@ from gsy_framework.constants_limits import FLOATING_POINT_TOLERANCE, GlobalConfi
 from gsy_framework.utils import convert_pendulum_to_str_in_dict, convert_str_to_pendulum_in_dict
 
 from gsy_e.gsy_e_core.util import is_time_slot_in_past_markets
-from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import TankParameters
+from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import (
+    WaterTankParameters,
+    PCMTankParameters,
+)
 
 
 class UnexpectedStateException(Exception):
@@ -404,7 +407,7 @@ class ProductionState(ProsumptionInterface):
 class TankStateBase(StateInterface):
     """Base class for heat tank states"""
 
-    def __init__(self, tank_parameters: TankParameters):
+    def __init__(self, tank_parameters: Union[WaterTankParameters, PCMTankParameters]):
         self._params = tank_parameters
         self._soc: Dict[DateTime, float] = defaultdict(lambda: 0)
 
@@ -429,34 +432,30 @@ class TankStateBase(StateInterface):
         """Return the minimal energy consumption."""
 
     @abstractmethod
-    def current_tank_temperature(self, time_slot):
+    def current_tank_temperature(self, time_slot: DateTime):
         """Return current temperature of the tank."""
 
     @abstractmethod
+    def current_condenser_temperature(self, time_slot: DateTime):
+        """Return current temperature of the condenser."""
+
+    def get_soc_energy_kJ(self, time_slot: DateTime):
+        """Return the available energy stored in the tank."""
+
+    def get_dod_energy_kJ(self, time_slot: DateTime):
+        """Return the energy that could be stored in the tank."""
+
+    @abstractmethod
     def serialize(self):
-        """Serialize the memebrs of the class."""
+        """Serialize the members of the class."""
 
     @abstractmethod
     def init(self):
         """Initiate class members of the tank"""
 
-    def get_dod_energy_kJ(self, time_slot: DateTime) -> float:
-        """Return depth of discharge as an energy value in kJ."""
-        return (1 - self._soc[time_slot]) * self.max_capacity_kJ
-
-    def get_available_energy_kJ(self, time_slot: DateTime) -> float:
-        """Return the available energy stored in the tank."""
-        return self._soc.get(time_slot, 0) * self.max_capacity_kJ
-
     def get_soc(self, time_slot: DateTime) -> float:
         """Return SOC in percent for the provided time slot"""
         return self._soc.get(time_slot) * 100
-
-    @property
-    @abstractmethod
-    def max_capacity_kJ(self) -> float:
-        """Return the maximum capacity of the tank in kJ."""
-        return 0
 
     def _last_time_slot(self, time_slot: DateTime):
         return time_slot - GlobalConfig.slot_length

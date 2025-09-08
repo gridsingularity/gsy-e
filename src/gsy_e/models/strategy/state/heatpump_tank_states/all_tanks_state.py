@@ -12,14 +12,17 @@ from gsy_e.models.strategy.state.heatpump_tank_states.water_tank_state import (
     TankStateBase,
 )
 from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import (
-    TankParameters,
+    WaterTankParameters,
+    PCMTankParameters,
     HeatpumpTankTypes,
 )
 
 log = getLogger(__name__)
 
 
-def heatpump_state_factory(tank_parameter: TankParameters) -> TankStateBase:
+def heatpump_state_factory(
+    tank_parameter: Union[WaterTankParameters, PCMTankParameters]
+) -> TankStateBase:
     """Return correct Tank object from the type provided in the tank parameters."""
     if tank_parameter.type == HeatpumpTankTypes.WATER:
         return WaterTankState(tank_parameters=tank_parameter)
@@ -31,20 +34,21 @@ def heatpump_state_factory(tank_parameter: TankParameters) -> TankStateBase:
 class AllTanksState:
     """Manage the operation of heating and extracting temperature from multiple tanks."""
 
-    def __init__(self, tank_parameters: List[TankParameters]):
+    def __init__(self, tank_parameters: List[Union[WaterTankParameters, PCMTankParameters]]):
         self._tanks_states = [heatpump_state_factory(tank) for tank in tank_parameters]
 
     def increase_tanks_temp_from_heat_energy(self, heat_energy_kJ: float, time_slot: DateTime):
-        """Increase the temperature of the water tanks with the provided heat energy."""
+        """Increase the temperature of the tanks with the provided heat energy."""
         scaling_factors = self._get_scaling_factors_for_charging(self._last_time_slot(time_slot))
         for num, tank in enumerate(self._tanks_states):
             heat_energy_per_tank_kWh = convert_kJ_to_kWh(heat_energy_kJ * scaling_factors[num])
             if heat_energy_per_tank_kWh < FLOATING_POINT_TOLERANCE:
                 tank.no_charge(time_slot)
-            tank.increase_tank_temp_from_heat_energy(heat_energy_per_tank_kWh, time_slot)
+            else:
+                tank.increase_tank_temp_from_heat_energy(heat_energy_per_tank_kWh, time_slot)
 
     def decrease_tanks_temp_from_heat_energy(self, heat_energy_kJ: float, time_slot: DateTime):
-        """Decrease the temperature of the water tanks with the provided heat energy."""
+        """Decrease the temperature of the tanks with the provided heat energy."""
         scaling_factors = self._get_scaling_factors_for_discharging(
             self._last_time_slot(time_slot)
         )
@@ -52,7 +56,8 @@ class AllTanksState:
             heat_energy_per_tank_kWh = convert_kJ_to_kWh(heat_energy_kJ * scaling_factors[num])
             if heat_energy_per_tank_kWh < FLOATING_POINT_TOLERANCE:
                 tank.no_charge(time_slot)
-            tank.decrease_tank_temp_from_heat_energy(heat_energy_per_tank_kWh, time_slot)
+            else:
+                tank.decrease_tank_temp_from_heat_energy(heat_energy_per_tank_kWh, time_slot)
 
     def no_charge(self, time_slot: DateTime):
         """Trigger no_charge method for all tanks"""
@@ -60,7 +65,7 @@ class AllTanksState:
             tank.no_charge(time_slot)
 
     def get_max_heat_energy_consumption_kJ(self, time_slot: DateTime, heat_demand_kJ: float):
-        """Get max heat energy consumption from all water tanks."""
+        """Get max heat energy consumption from all tanks."""
         max_heat_energies = []
         scaling_factors = self._get_scaling_factors_for_charging(time_slot)
         if sum(scaling_factors) == 0:
@@ -76,7 +81,7 @@ class AllTanksState:
         return max_energy_consumption_kJ
 
     def get_min_heat_energy_consumption_kJ(self, time_slot: DateTime, heat_demand_kJ: float):
-        """Get min heat energy consumption from all water tanks."""
+        """Get min heat energy consumption from all tanks."""
         min_heat_energies = []
         scaling_factors = self._get_scaling_factors_for_discharging(time_slot)
         if sum(scaling_factors) == 0:
@@ -92,15 +97,19 @@ class AllTanksState:
         return min_energy_consumption_kJ
 
     def get_average_tank_temperature(self, time_slot: DateTime):
-        """Get average tank temperature of all water tanks."""
+        """Get average tank temperature of all tanks."""
         return mean(tank.current_tank_temperature(time_slot) for tank in self._tanks_states)
 
+    def get_average_condenser_temperature(self, time_slot: DateTime):
+        """Get average condenser temperature of all tanks."""
+        return mean(tank.current_condenser_temperature(time_slot) for tank in self._tanks_states)
+
     def serialize(self) -> Union[Dict, List]:
-        """Serializable dict with the parameters of all water tanks."""
+        """Serializable dict with the parameters of all tanks."""
         return [tank.serialize() for tank in self._tanks_states]
 
     def get_results(self, current_time_slot: DateTime) -> list:
-        """Results dict with the results from all water tanks."""
+        """Results dict with the results from all tanks."""
         return [tank.get_results_dict(current_time_slot) for tank in self._tanks_states]
 
     def get_state(self) -> Union[List, Dict]:
@@ -131,9 +140,7 @@ class AllTanksState:
         return [energy / total_energy for energy in _current_dod_tanks]
 
     def _get_scaling_factors_for_discharging(self, time_slot):
-        available_energies = [
-            tank.get_available_energy_kJ(time_slot) for tank in self._tanks_states
-        ]
+        available_energies = [tank.get_soc_energy_kJ(time_slot) for tank in self._tanks_states]
         total_available_energy = sum(available_energies)
         if total_available_energy == 0:
             log.info("No available capacity for discharging in any tanks. Skipping discharging.")
