@@ -348,7 +348,6 @@ class OneSidedMarket(MarketBase):
                 accepted_offer, residual_offer = self.split_offer(
                     offer, energy_dec, orig_offer_price_dec
                 )
-
                 fee_price, trade_price = self._determine_offer_price(
                     energy_portion=energy_dec / Decimal(accepted_offer.energy),
                     energy=energy_dec,

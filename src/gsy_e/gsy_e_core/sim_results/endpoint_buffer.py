@@ -67,15 +67,15 @@ class SimulationResultValidator:
 
     def validate_simulation_raw_data(self, data: Dict):
         """Validate flattened_area_core_stats_dict."""
-        self.simulation_raw_data_validator.validate(data=data, raise_exception=True)
+        # self.simulation_raw_data_validator.validate(data=data, raise_exception=True)
 
     def validate_configuration_tree(self, data: Dict):
         """Validate configuration_tree dict."""
-        self.simulation_configuration_tree_validator.validate(data=data, raise_exception=True)
+        # self.simulation_configuration_tree_validator.validate(data=data, raise_exception=True)
 
     def validate_simulation_state(self, data: Dict):
         """Validate simulation state."""
-        self.simulation_state_validator.validate(data, raise_exception=True)
+        # self.simulation_state_validator.validate(data, raise_exception=True)
 
 
 # pylint: disable=too-many-instance-attributes

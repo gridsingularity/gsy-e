@@ -19,7 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import json
 import logging
-import sys
 from abc import ABC
 from dataclasses import dataclass
 from decimal import Decimal
@@ -53,7 +52,7 @@ if TYPE_CHECKING:
     from gsy_e.models.market.one_sided import OneSidedMarket  # noqa: F401
     from gsy_e.models.market.two_sided import TwoSidedMarket  # noqa: F401
 
-INF_ENERGY = int(sys.maxsize)
+INF_ENERGY = int(10000000)
 
 
 # pylint: disable=too-many-instance-attributes

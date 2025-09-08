@@ -119,14 +119,18 @@ class TwoSidedMarket(OneSidedMarket):
         for requirement in bid.requirements or []:
             updated_requirement = {**requirement}
             if "price" in updated_requirement:
-                energy = updated_requirement.get("energy") or bid.energy
-                original_bid_price = updated_requirement["price"] + bid.accumulated_grid_fees
+                energy_dec = Decimal(updated_requirement.get("energy") or bid.energy)
+                updated_requirement_price_dec = Decimal(updated_requirement["price"])
+                original_bid_price_dec = updated_requirement_price_dec + Decimal(
+                    bid.accumulated_grid_fees
+                )
                 updated_price = (
                     self.fee_class.update_incoming_bid_with_fee(
-                        updated_requirement["price"] / energy, original_bid_price / energy
+                        updated_requirement_price_dec / energy_dec,
+                        original_bid_price_dec / energy_dec,
                     )
-                ) * energy
-                updated_requirement["price"] = updated_price
+                ) * energy_dec
+                updated_requirement["price"] = float(updated_price)
             requirements.append(updated_requirement)
         return requirements
 
@@ -154,12 +158,16 @@ class TwoSidedMarket(OneSidedMarket):
         if original_price is None:
             original_price = price
 
+        energy_dec = Decimal(energy)
+        price_dec = Decimal(price)
+        original_price_dec = Decimal(original_price)
+
         if adapt_price_with_fees:
-            price = (
+            price_dec = (
                 self.fee_class.update_incoming_bid_with_fee(
-                    price / energy, original_price / energy
+                    price_dec / energy_dec, original_price_dec / energy_dec
                 )
-                * energy
+                * energy_dec
             )
 
         if price < 0.0:
@@ -168,7 +176,7 @@ class TwoSidedMarket(OneSidedMarket):
         bid = Bid(
             str(uuid.uuid4()) if bid_id is None else bid_id,
             self.now,
-            price,
+            float(price_dec),
             energy,
             buyer,
             original_price,

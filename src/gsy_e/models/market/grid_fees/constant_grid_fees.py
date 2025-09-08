@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from decimal import Decimal
-from typing import Tuple
+from typing import Tuple, Optional
 
 from gsy_framework.data_classes import TradeBidOfferInfo
 
@@ -30,7 +30,9 @@ class ConstantGridFees(BaseClassGridFees):
     trade that is cleared.
     """
 
-    def update_incoming_bid_with_fee(self, source_rate, original_rate):
+    def update_incoming_bid_with_fee(
+        self, source_rate: Decimal, original_rate: Decimal
+    ) -> Decimal:
         if source_rate is not None:
             return source_rate
         return original_rate
@@ -84,7 +86,9 @@ class ConstantGridFees(BaseClassGridFees):
         )
         return trade_bid_info
 
-    def propagate_original_bid_info_on_offer_trade(self, trade_original_info):
+    def propagate_original_bid_info_on_offer_trade(
+        self, trade_original_info
+    ) -> Optional[TradeBidOfferInfo]:
         if trade_original_info is None or trade_original_info.propagated_bid_rate is None:
             return None
         bid_rate = Decimal(trade_original_info.propagated_bid_rate) - self.grid_fee_rate
