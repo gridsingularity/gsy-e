@@ -58,6 +58,7 @@ class AllTanksState:
                 tank.no_charge(time_slot)
             else:
                 tank.decrease_tank_temp_from_heat_energy(heat_energy_per_tank_kWh, time_slot)
+        return
 
     def no_charge(self, time_slot: DateTime):
         """Trigger no_charge method for all tanks"""
@@ -98,6 +99,8 @@ class AllTanksState:
 
     def get_average_tank_temperature(self, time_slot: DateTime):
         """Get average tank temperature of all tanks."""
+        if time_slot is None:
+            return 0
         return mean(tank.current_tank_temperature(time_slot) for tank in self._tanks_states)
 
     def get_average_condenser_temperature(self, time_slot: DateTime):

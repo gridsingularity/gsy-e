@@ -1,5 +1,6 @@
 # pylint: disable=too-many-positional-arguments, disable=pointless-string-statement
 from abc import ABC, abstractmethod
+from decimal import Decimal
 from typing import Optional, Dict, Union, List
 
 import pendulum
@@ -48,10 +49,14 @@ class HeatChargerDischarger:
 
     def get_average_tank_temp_C(self, time_slot: DateTime):
         """Get the average temperature of the tanks."""
+        if time_slot is None:
+            return 0
         return self.tanks.get_average_tank_temperature(time_slot)
 
     def get_average_inlet_temperature_C(self, time_slot: DateTime):
         """Get the average temperature of the condenser."""
+        if time_slot is None:
+            return 0
         return self.tanks.get_average_condenser_temperature(time_slot)
 
     def charge(self, heat_energy_kJ: float, time_slot: DateTime):
@@ -92,6 +97,8 @@ class HeatChargerDischarger:
 
     def get_average_soc(self, current_time_slot: DateTime) -> float:
         """Return average SOC of all tanks."""
+        if current_time_slot is None:
+            return 0
         return self.tanks.get_average_soc(current_time_slot)
 
     def get_state(self) -> Dict:
@@ -132,9 +139,6 @@ class CombinedHeatpumpTanksState:
     def get_results_dict(self, current_time_slot: Optional[DateTime] = None) -> dict:
         """Results dict for all heatpump and tanks results."""
         tanks_results = self._charger.get_tanks_results(current_time_slot)
-        if current_time_slot is None:
-            # used in file_export_endpoints
-            return {"tanks": tanks_results}
         return {
             "tanks": tanks_results,
             "average_soc": self._charger.get_average_soc(current_time_slot),
@@ -224,6 +228,9 @@ class CombinedHeatpumpTanksState:
         traded_heat_energy_kJ = self.calc_Q_kJ_from_energy_kWh(
             last_time_slot, bought_energy_kWh, source_temp_C
         )
+
+        heat_demand_kJ = float(Decimal(heat_demand_kJ))
+        traded_heat_energy_kJ = float(Decimal(traded_heat_energy_kJ))
         net_energy_kJ = traded_heat_energy_kJ - heat_demand_kJ
         if net_energy_kJ > FLOATING_POINT_TOLERANCE_UPDATE:
             self._charger.charge(net_energy_kJ, time_slot)

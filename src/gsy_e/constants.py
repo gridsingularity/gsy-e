@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # thus avoiding accessing the gsy-framework constants.
 # pylint: disable=unused-import
 from enum import Enum
+from decimal import getcontext
 import os
 
 ROUND_TOLERANCE_EXPORT = 2
@@ -93,3 +94,6 @@ class HeatPumpSOCManagementAlgorithm(Enum):
 
 
 HEAT_PUMP_SOC_MANAGEMENT_ALGORITHM = HeatPumpSOCManagementAlgorithm.PREFERRED_BUYING_RATE
+
+# Set the precision of the decimal numbers used in the simulation.
+getcontext().prec = 12

@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from decimal import Decimal
 import logging
 
 from gsy_framework.constants_limits import ConstSettings
@@ -88,13 +89,14 @@ class CommercialStrategy(BaseStrategy):
 
     def offer_energy(self, market):
         """Method for offering energy on a market."""
-        energy_rate = self._sell_energy_profile.get_value(market.time_slot)
+        energy_rate = Decimal(self._sell_energy_profile.get_value(market.time_slot))
+        price_dec = Decimal(self.energy_per_slot_kWh) * energy_rate
         try:
             offer = market.offer(
-                self.energy_per_slot_kWh * energy_rate,
+                float(price_dec),
                 self.energy_per_slot_kWh,
                 TraderDetails(self.owner.name, self.owner.uuid, self.owner.name, self.owner.uuid),
-                original_price=self.energy_per_slot_kWh * energy_rate,
+                original_price=float(price_dec),
             )
 
             self.offers.post(offer, market.id)

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Dict, TYPE_CHECKING, Optional, Union, List
+from decimal import Decimal
 
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.constants_limits import FLOATING_POINT_TOLERANCE
@@ -237,14 +238,17 @@ class MultipleTankHeatPumpStrategy(TradingStrategyBase):
     ):
         if not order_rate:
             order_rate = self._order_updaters[market][market_slot].get_energy_rate(self.area.now)
-        order_energy_kWh = self._soc_management.calculate(market_slot, order_rate)
+        else:
+            order_rate = Decimal(order_rate)
+
+        order_energy_kWh = self._soc_management.calculate(market_slot, float(order_rate))
 
         if order_energy_kWh <= FLOATING_POINT_TOLERANCE:
             return
         market.bid(
-            order_rate * order_energy_kWh,
-            order_energy_kWh,
-            original_price=order_rate * order_energy_kWh,
+            float(order_rate * order_energy_kWh),
+            float(order_energy_kWh),
+            original_price=float(order_rate * order_energy_kWh),
             buyer=TraderDetails(
                 self.owner.name, self.owner.uuid, self.owner.name, self.owner.uuid
             ),

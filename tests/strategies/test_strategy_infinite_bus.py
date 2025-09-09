@@ -19,7 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # pylint: disable=no-member, redefined-outer-name, missing-function-docstring, protected-access
 # pylint: disable=too-many-instance-attributes, missing-class-docstring, unused-argument
 import os
-import sys
 from math import isclose
 from uuid import uuid4
 
@@ -31,6 +30,7 @@ from gsy_framework.data_classes import Offer, Trade, BalancingOffer, Bid, Trader
 from gsy_e import constants
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.util import gsye_root_path
+from gsy_e.models.strategy import INF_ENERGY
 from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
 
 TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
@@ -174,7 +174,7 @@ def testing_offer_is_created_at_first_market_not_on_activate(bus_test1, area_tes
     assert len(area_test1.test_market.created_offers) == 0
     bus_test1.event_market_cycle()
     assert len(area_test1.test_market.created_offers) == 1
-    assert area_test1.test_market.created_offers[0].energy == sys.maxsize
+    assert area_test1.test_market.created_offers[0].energy == INF_ENERGY
 
 
 def test_balancing_offers_are_not_sent_to_all_markets_if_device_not_in_registry(
@@ -192,11 +192,11 @@ def test_balancing_offers_are_sent_to_all_markets_if_device_in_registry(bus_test
     bus_test1.event_activate()
     bus_test1.event_market_cycle()
     assert len(area_test1.test_balancing_market.created_balancing_offers) == 1
-    assert area_test1.test_balancing_market.created_balancing_offers[0].energy == sys.maxsize
-    assert area_test1.test_balancing_market.created_balancing_offers[0].price == sys.maxsize * 40
+    assert area_test1.test_balancing_market.created_balancing_offers[0].energy == INF_ENERGY
+    assert area_test1.test_balancing_market.created_balancing_offers[0].price == INF_ENERGY * 40
     assert len(area_test1.test_balancing_market_2.created_balancing_offers) == 1
-    assert area_test1.test_balancing_market_2.created_balancing_offers[0].energy == sys.maxsize
-    assert area_test1.test_balancing_market_2.created_balancing_offers[0].price == sys.maxsize * 40
+    assert area_test1.test_balancing_market_2.created_balancing_offers[0].energy == INF_ENERGY
+    assert area_test1.test_balancing_market_2.created_balancing_offers[0].price == INF_ENERGY * 40
 
     DeviceRegistry.REGISTRY = {}
 
@@ -220,8 +220,8 @@ def test_event_market_cycle_creates_balancing_offer_on_last_market_if_in_registr
     bus_test1.event_market_cycle()
     assert len(area_test1.test_balancing_market.created_balancing_offers) == 1
     assert len(area_test1.test_balancing_market_2.created_balancing_offers) == 1
-    assert area_test1.test_balancing_market_2.created_balancing_offers[0].energy == sys.maxsize
-    assert area_test1.test_balancing_market_2.created_balancing_offers[0].price == sys.maxsize * 50
+    assert area_test1.test_balancing_market_2.created_balancing_offers[0].energy == INF_ENERGY
+    assert area_test1.test_balancing_market_2.created_balancing_offers[0].price == INF_ENERGY * 50
 
 
 @pytest.fixture()
@@ -260,7 +260,7 @@ def test_event_trade(area_test2, bus_test2):
         ),
     )
     assert len(area_test2.test_market.created_offers) == 1
-    assert area_test2.test_market.created_offers[-1].energy == sys.maxsize
+    assert area_test2.test_market.created_offers[-1].energy == INF_ENERGY
 
 
 def test_on_offer_changed(area_test2, bus_test2):
@@ -372,8 +372,8 @@ def testing_event_market_cycle_post_offers(bus_test3, area_test3):
     bus_test3.event_activate()
     bus_test3.event_market_cycle()
     assert len(area_test3.test_market.created_offers) == 1
-    assert area_test3.test_market.created_offers[-1].energy == sys.maxsize
-    assert isclose(area_test3.test_market.created_offers[-1].price, float(30 * sys.maxsize))
+    assert area_test3.test_market.created_offers[-1].energy == INF_ENERGY
+    assert isclose(area_test3.test_market.created_offers[-1].price, float(30 * INF_ENERGY))
 
 
 @pytest.fixture()
@@ -396,8 +396,8 @@ def testing_event_market_cycle_posting_bids(bus_test4, area_test1):
     bus_test4.event_activate()
     bus_test4.event_market_cycle()
     assert len(bus_test4._bids) == 1
-    assert bus_test4._bids[area_test1.test_market.id][-1].energy == sys.maxsize
-    assert isclose(bus_test4._bids[area_test1.test_market.id][-1].price, 25 * sys.maxsize)
+    assert bus_test4._bids[area_test1.test_market.id][-1].energy == INF_ENERGY
+    assert isclose(bus_test4._bids[area_test1.test_market.id][-1].price, 25 * INF_ENERGY)
 
 
 def test_global_market_maker_rate_single_value(bus_test4):
