@@ -55,6 +55,7 @@ class HeatPumpState(StateInterface):
         self._cop: Dict[DateTime, float] = defaultdict(lambda: 0)
         self._condenser_temp_C: Dict[DateTime, float] = defaultdict(lambda: 0)
         self._heat_demand_kJ: Dict[DateTime, float] = defaultdict(lambda: 0)
+        self._net_heat_consumed_kJ: Dict[DateTime, float] = defaultdict(lambda: 0)
         self._total_traded_energy_kWh: float = 0
         self._slot_length = slot_length
 
@@ -65,6 +66,14 @@ class HeatPumpState(StateInterface):
     def get_heat_demand_kJ(self, time_slot: DateTime) -> float:
         """Return the heat demand in J for a given time slot."""
         return self._heat_demand_kJ.get(time_slot, 0)
+
+    def set_net_heat_consumed_kJ(self, time_slot: DateTime, heat_energy_kJ: float):
+        """Set net heat consumed."""
+        self._net_heat_consumed_kJ[time_slot] = heat_energy_kJ
+
+    def get_net_heat_consumed_kJ(self, time_slot: DateTime) -> float:
+        """Return net heat consumed for provided market slot."""
+        return self._net_heat_consumed_kJ.get(time_slot, 0)
 
     def set_min_energy_demand_kWh(self, time_slot: DateTime, energy_kWh: float):
         """Set the minimal energy demanded for a given time slot."""

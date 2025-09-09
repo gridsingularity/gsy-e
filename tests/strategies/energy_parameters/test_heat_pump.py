@@ -192,6 +192,7 @@ class TestHeatPumpEnergyParameters:
         assert energy_params._state.heatpump._cop[CURRENT_MARKET_SLOT] == 0
         energy_params.event_activate()
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
+        energy_params._bought_energy_kWh = 0.1
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT + duration(minutes=60))
         assert energy_params._state.heatpump._cop[CURRENT_MARKET_SLOT] == 6.5425
 
@@ -217,10 +218,11 @@ class TestHeatPumpEnergyParameters:
     def test_cop_model_is_correctly_selected(energy_params_heat_profile):
         energy_params_heat_profile.event_activate()
         energy_params_heat_profile.event_market_cycle(CURRENT_MARKET_SLOT)
+        energy_params_heat_profile._bought_energy_kWh = 3.6
         energy_params_heat_profile.event_market_cycle(CURRENT_MARKET_SLOT + duration(minutes=60))
         assert isclose(
             energy_params_heat_profile._state.heatpump.get_cop(CURRENT_MARKET_SLOT),
-            10.992,
+            4.42,
             abs_tol=0.001,
         )
 

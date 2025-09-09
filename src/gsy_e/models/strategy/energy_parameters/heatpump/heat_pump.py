@@ -1,7 +1,6 @@
 # pylint: disable=too-many-positional-arguments, disable=pointless-string-statement
 from abc import ABC, abstractmethod
 from typing import Optional, Dict, Union, List
-from statistics import mean
 
 import pendulum
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig, FLOATING_POINT_TOLERANCE
@@ -47,9 +46,13 @@ class HeatChargerDischarger:
         self.tanks = tanks
         self._efficiency = HEAT_EXCHANGER_EFFICIENCY
 
-    def get_condenser_temperature_C(self, time_slot: DateTime):
-        """Get the temperature on the condenser side of the heat pump."""
-        return self.tanks.get_average_tank_temperature(time_slot) / self._efficiency
+    def get_average_tank_temp_C(self, time_slot: DateTime):
+        """Get the average temperature of the tanks."""
+        return self.tanks.get_average_tank_temperature(time_slot)
+
+    def get_average_inlet_temperature_C(self, time_slot: DateTime):
+        """Get the average temperature of the condenser."""
+        return self.tanks.get_average_condenser_temperature(time_slot)
 
     def charge(self, heat_energy_kJ: float, time_slot: DateTime):
         """
@@ -136,8 +139,11 @@ class CombinedHeatpumpTanksState:
             "tanks": tanks_results,
             "average_soc": self._charger.get_average_soc(current_time_slot),
             **self._hp_state.get_results_dict(current_time_slot),
-            "storage_temp_C": mean([tank["storage_temp_C"] for tank in tanks_results]),
-            "condenser_temp_C": self._charger.get_condenser_temperature_C(current_time_slot),
+            "average_tank_temp_C": self._charger.get_average_tank_temp_C(current_time_slot),
+            "average_inlet_temperature_C": self._charger.get_average_inlet_temperature_C(
+                current_time_slot
+            ),
+            "net_heat_consumed_kJ": self._hp_state.get_net_heat_consumed_kJ(current_time_slot),
         }
 
     def get_state(self) -> Dict:
@@ -173,7 +179,7 @@ class CombinedHeatpumpTanksState:
             time_slot, self.heatpump.get_heat_demand_kJ(time_slot)
         )
         cop = self._calc_cop(
-            heat_demand_Q_kJ=max_heat_demand_kJ, source_temp_C=source_temp_C, time_slot=time_slot
+            produced_heat_kJ=max_heat_demand_kJ, source_temp_C=source_temp_C, time_slot=time_slot
         )
         if cop == 0:
             return 0
@@ -193,7 +199,7 @@ class CombinedHeatpumpTanksState:
             time_slot, self.heatpump.get_heat_demand_kJ(time_slot)
         )
         cop = self._calc_cop(
-            heat_demand_Q_kJ=min_heat_demand_kJ, source_temp_C=source_temp_C, time_slot=time_slot
+            produced_heat_kJ=min_heat_demand_kJ, source_temp_C=source_temp_C, time_slot=time_slot
         )
         if cop == 0:
             return 0
@@ -226,25 +232,31 @@ class CombinedHeatpumpTanksState:
         else:
             self._charger.no_charge(time_slot)
 
-    def update_cop(
+        self._hp_state.set_net_heat_consumed_kJ(last_time_slot, net_energy_kJ)
+
+    def update_cop_after_dis_charging(
         self,
         source_temp_C: float,
         time_slot: DateTime,
         last_time_slot: DateTime,
+        bought_energy_kWh: float,
     ):
         """Update the COP of the heat pump in its state class."""
-        heat_demand_kJ = self._hp_state.get_heat_demand_kJ(last_time_slot)
-        if heat_demand_kJ < FLOATING_POINT_TOLERANCE:
+        if bought_energy_kWh < FLOATING_POINT_TOLERANCE:
             cop = self._hp_state.get_cop(last_time_slot)
         else:
-            cop = self._calc_cop(heat_demand_kJ, source_temp_C, last_time_slot)
+            cop = self._calc_cop(
+                produced_heat_kJ=convert_kWh_to_kJ(bought_energy_kWh),
+                source_temp_C=source_temp_C,
+                time_slot=last_time_slot,
+            )
 
         # Set the calculated COP on both the last and the current time slot to use in calculations
         self._hp_state.set_cop(last_time_slot, cop)
         self._hp_state.set_cop(time_slot, cop)
 
     def _calc_cop(
-        self, heat_demand_Q_kJ: float, source_temp_C: float, time_slot: DateTime
+        self, produced_heat_kJ: float, source_temp_C: float, time_slot: DateTime
     ) -> float:
         """
         Return the coefficient of performance (COP) for a given ambient and storage temperature.
@@ -253,12 +265,12 @@ class CombinedHeatpumpTanksState:
         Generally, the higher the temperature difference between the source and the sink,
         the lower the efficiency of the heat pump (the lower COP).
         """
-        if heat_demand_Q_kJ < FLOATING_POINT_TOLERANCE:
+        if produced_heat_kJ < FLOATING_POINT_TOLERANCE:
             return 0
-        heat_demand_kW = convert_kJ_to_kW(heat_demand_Q_kJ, GlobalConfig.slot_length)
+        heat_demand_kW = convert_kJ_to_kW(produced_heat_kJ, GlobalConfig.slot_length)
         return self._cop_model.calc_cop(
             source_temp_C=source_temp_C,
-            condenser_temp_C=self._charger.get_condenser_temperature_C(time_slot),
+            condenser_temp_C=self._charger.get_average_inlet_temperature_C(time_slot),
             heat_demand_kW=heat_demand_kW,
         )
 
@@ -268,7 +280,7 @@ class CombinedHeatpumpTanksState:
         """Calculate heat in kJ from energy in kWh."""
         energy_kJ = convert_kWh_to_kJ(energy_kWh)
         cop = self._calc_cop(
-            heat_demand_Q_kJ=energy_kJ,
+            produced_heat_kJ=energy_kJ,
             source_temp_C=source_temp_C,
             time_slot=time_slot,
         )
@@ -490,13 +502,14 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
             self._source_temp_C.get_value(last_time_slot),
         )
 
-        self._bought_energy_kWh = 0.0
-
-        self.combined_state.update_cop(
+        self.combined_state.update_cop_after_dis_charging(
             self._source_temp_C.get_value(last_time_slot),
             time_slot,
             last_time_slot,
+            self._bought_energy_kWh,
         )
+
+        self._bought_energy_kWh = 0.0
 
     def _populate_state(self, time_slot: DateTime):
         self._update_last_time_slot_data(time_slot)
