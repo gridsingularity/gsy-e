@@ -232,11 +232,6 @@ class PCMTankState(TankStateBase):
             "pcm_temps_C": convert_pendulum_to_str_in_dict(self._pcm_temps_C),
             "condenser_temp_C": convert_pendulum_to_str_in_dict(self._condenser_temp_C),
             "soc": convert_pendulum_to_str_in_dict(self._soc),
-            "min_temp_htf_C": self._params.min_temp_htf_C,
-            "max_temp_htf_C": self._params.max_temp_htf_C,
-            "min_temp_pcm_C": self._params.min_temp_pcm_C,
-            "max_temp_pcm_C": self._params.max_temp_pcm_C,
-            "initial_temp_C": self._params.initial_temp_C,
         }
 
     def restore_state(self, state_dict: Dict):

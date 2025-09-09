@@ -160,11 +160,6 @@ class TestPCMTankState:
             "pcm_temps_C": {CURRENT_MARKET_SLOT.format(DATE_TIME_FORMAT): [37] * 5},
             "soc": {CURRENT_MARKET_SLOT.format(DATE_TIME_FORMAT): 0.5},
             "condenser_temp_C": {CURRENT_MARKET_SLOT.format(DATE_TIME_FORMAT): 37},
-            "min_temp_htf_C": 32,
-            "max_temp_htf_C": 42,
-            "min_temp_pcm_C": 32,
-            "max_temp_pcm_C": 42,
-            "initial_temp_C": 37,
         }
 
     def test_restore_state_restores_values_correctly(self, pcm_tank):
