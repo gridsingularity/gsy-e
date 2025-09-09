@@ -226,11 +226,12 @@ class TwoSidedMarket(OneSidedMarket):
 
         # same bid id is used for the new accepted_bid
         original_energy_dec = Decimal(original_bid.energy)
+        original_price_from_bid_dec = Decimal(original_bid.price)
         original_accepted_price = energy / original_energy_dec * orig_bid_price
 
         accepted_bid = self.bid(
             bid_id=original_bid.id,
-            price=float(orig_bid_price * (energy / original_energy_dec)),
+            price=float(original_price_from_bid_dec * (energy / original_energy_dec)),
             energy=float(energy),
             buyer=original_bid.buyer,
             original_price=float(original_accepted_price),
@@ -240,7 +241,7 @@ class TwoSidedMarket(OneSidedMarket):
             time_slot=original_bid.time_slot,
         )
 
-        residual_price = (Decimal(1) - energy / original_energy_dec) * orig_bid_price
+        residual_price = (Decimal(1) - energy / original_energy_dec) * original_price_from_bid_dec
         residual_energy = original_energy_dec - energy
 
         original_residual_price = (

@@ -244,7 +244,7 @@ class OneSidedMarket(MarketBase):
 
         original_residual_price = (
             (original_energy_dec - energy) / original_energy_dec
-        ) * original_price_from_offer_dec
+        ) * orig_offer_price
 
         residual_offer = self.offer(
             price=float(residual_price),
