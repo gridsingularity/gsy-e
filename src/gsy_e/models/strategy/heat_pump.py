@@ -241,7 +241,7 @@ class MultipleTankHeatPumpStrategy(TradingStrategyBase):
         else:
             order_rate = Decimal(order_rate)
 
-        order_energy_kWh = self._soc_management.calculate(market_slot, float(order_rate))
+        order_energy_kWh = Decimal(self._soc_management.calculate(market_slot, float(order_rate)))
 
         if order_energy_kWh <= FLOATING_POINT_TOLERANCE:
             return
