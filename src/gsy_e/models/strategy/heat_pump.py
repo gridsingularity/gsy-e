@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Dict, TYPE_CHECKING, Optional, Union, List
+from decimal import Decimal
 
 from pendulum import DateTime, duration
 from gsy_framework.constants_limits import ConstSettings
@@ -234,14 +235,17 @@ class MultipleTankHeatPumpStrategy(TradingStrategyBase):
 
         if not order_rate:
             order_rate = self._order_updaters[market][market_slot].get_energy_rate(self.area.now)
-        order_energy_kWh = self._get_energy_buy_energy(order_rate, market_slot)
+        else:
+            order_rate = Decimal(order_rate)
+
+        order_energy_kWh = Decimal(self._get_energy_buy_energy(order_rate, market_slot))
 
         if order_energy_kWh <= FLOATING_POINT_TOLERANCE:
             return
         market.bid(
-            order_rate * order_energy_kWh,
-            order_energy_kWh,
-            original_price=order_rate * order_energy_kWh,
+            float(order_rate * order_energy_kWh),
+            float(order_energy_kWh),
+            original_price=float(order_rate * order_energy_kWh),
             buyer=TraderDetails(
                 self.owner.name, self.owner.uuid, self.owner.name, self.owner.uuid
             ),
@@ -261,7 +265,7 @@ class MultipleTankHeatPumpStrategy(TradingStrategyBase):
         for bid in bids:
             market.delete_bid(bid)
 
-    def _get_energy_buy_energy(self, buy_rate: float, market_slot: DateTime) -> float:
+    def _get_energy_buy_energy(self, buy_rate: Decimal, market_slot: DateTime) -> float:
         if buy_rate > self.preferred_buying_rate:
             return self._energy_params.get_min_energy_demand_kWh(market_slot)
         return self._energy_params.get_max_energy_demand_kWh(market_slot)

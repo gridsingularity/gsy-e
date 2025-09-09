@@ -16,18 +16,18 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import sys
 from uuid import uuid4
 
 import pendulum
 import pytest
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.constants_limits import TIME_ZONE, TIME_FORMAT
 from gsy_framework.data_classes import Offer, Trade, BalancingOffer, TraderDetails
 
-from gsy_framework.constants_limits import TIME_ZONE, TIME_FORMAT
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.util import change_global_config
 from gsy_e.models.config import create_simulation_config_from_global_config
+from gsy_e.models.strategy import INF_ENERGY
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
 from gsy_e.models.strategy.market_maker_strategy import MarketMakerStrategy
 
@@ -138,7 +138,7 @@ def test_offer_is_created_at_first_market_not_on_activate(commercial_test1, area
     assert len(area_test1.test_market.created_offers) == 0
     commercial_test1.event_market_cycle()
     assert len(area_test1.test_market.created_offers) == 1
-    assert area_test1.test_market.created_offers[0].energy == sys.maxsize
+    assert area_test1.test_market.created_offers[0].energy == INF_ENERGY
 
 
 def test_balancing_offers_are_not_sent_to_all_markets_if_device_not_in_registry(
@@ -158,11 +158,11 @@ def test_balancing_offers_are_sent_to_all_markets_if_device_in_registry(
     commercial_test1.event_activate()
     commercial_test1.event_market_cycle()
     assert len(area_test1.test_balancing_market.created_balancing_offers) == 1
-    assert area_test1.test_balancing_market.created_balancing_offers[0].energy == sys.maxsize
-    assert area_test1.test_balancing_market.created_balancing_offers[0].price == sys.maxsize * 40
+    assert area_test1.test_balancing_market.created_balancing_offers[0].energy == INF_ENERGY
+    assert area_test1.test_balancing_market.created_balancing_offers[0].price == INF_ENERGY * 40
     assert len(area_test1.test_balancing_market_2.created_balancing_offers) == 1
-    assert area_test1.test_balancing_market_2.created_balancing_offers[0].energy == sys.maxsize
-    assert area_test1.test_balancing_market_2.created_balancing_offers[0].price == sys.maxsize * 40
+    assert area_test1.test_balancing_market_2.created_balancing_offers[0].energy == INF_ENERGY
+    assert area_test1.test_balancing_market_2.created_balancing_offers[0].price == INF_ENERGY * 40
 
     DeviceRegistry.REGISTRY = {}
 
@@ -186,8 +186,8 @@ def test_event_market_cycle_creates_balancing_offer_on_last_market_if_in_registr
     commercial_test1.event_market_cycle()
     assert len(area_test1.test_balancing_market.created_balancing_offers) == 1
     assert len(area_test1.test_balancing_market_2.created_balancing_offers) == 1
-    assert area_test1.test_balancing_market_2.created_balancing_offers[0].energy == sys.maxsize
-    assert area_test1.test_balancing_market_2.created_balancing_offers[0].price == sys.maxsize * 50
+    assert area_test1.test_balancing_market_2.created_balancing_offers[0].energy == INF_ENERGY
+    assert area_test1.test_balancing_market_2.created_balancing_offers[0].price == INF_ENERGY * 50
 
     DeviceRegistry.REGISTRY = {}
 
@@ -228,7 +228,7 @@ def test_event_trade(area_test2, commercial_test2):
         ),
     )
     assert len(area_test2.test_market.created_offers) == 1
-    assert area_test2.test_market.created_offers[-1].energy == sys.maxsize
+    assert area_test2.test_market.created_offers[-1].energy == INF_ENERGY
 
 
 def test_on_offer_split(area_test2, commercial_test2):
@@ -341,7 +341,7 @@ def test_event_market_cycle(commercial_test3, area_test3):
     commercial_test3.event_activate()
     commercial_test3.event_market_cycle()
     assert len(area_test3.test_market.created_offers) == 1
-    assert area_test3.test_market.created_offers[-1].energy == sys.maxsize
+    assert area_test3.test_market.created_offers[-1].energy == INF_ENERGY
 
 
 # TODO: Re-add test once validator is implemented in gsy-framework

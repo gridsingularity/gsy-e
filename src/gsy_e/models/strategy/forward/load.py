@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Dict, TYPE_CHECKING
 
 from pendulum import DateTime, duration
@@ -89,10 +90,12 @@ class ForwardLoadStrategy(ForwardStrategyBase):
     ):
         if not order_rate:
             order_rate = self._order_updaters[market][market_slot].get_energy_rate(self.area.now)
+        else:
+            order_rate = Decimal(order_rate)
         capacity_percent = kwargs.get("capacity_percent")
         if not capacity_percent:
             capacity_percent = self._order_updaters[market][market_slot].capacity_percent / 100.0
-        max_energy_kWh = self._energy_params.peak_energy_kWh * capacity_percent
+        max_energy_kWh = Decimal(self._energy_params.peak_energy_kWh) * Decimal(capacity_percent)
         available_energy_kWh = self._energy_params.get_available_energy_kWh(
             market_slot, market.market_type
         )
@@ -101,21 +104,21 @@ class ForwardLoadStrategy(ForwardStrategyBase):
             market_slot, market.market_type
         )
 
-        order_energy_kWh = min(available_energy_kWh - posted_energy_kWh, max_energy_kWh)
+        order_energy_kWh = Decimal(min(available_energy_kWh - posted_energy_kWh, max_energy_kWh))
 
         if order_energy_kWh <= FLOATING_POINT_TOLERANCE:
             return
         market.bid(
-            order_rate * order_energy_kWh,
-            order_energy_kWh,
+            float(order_rate * order_energy_kWh),
+            float(order_energy_kWh),
             buyer=TraderDetails(
                 self.owner.name, self.owner.uuid, self.owner.name, self.owner.uuid
             ),
-            original_price=order_rate * order_energy_kWh,
+            original_price=float(order_rate * order_energy_kWh),
             time_slot=market_slot,
         )
         self._energy_params.increment_posted_energy(
-            market_slot, order_energy_kWh, market.market_type
+            market_slot, float(order_energy_kWh), market.market_type
         )
 
     def event_bid_traded(self, *, market_id: str, bid_trade: "Trade"):

@@ -17,18 +17,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from collections import namedtuple
+from decimal import Decimal
 from typing import Dict, TYPE_CHECKING
 
-from gsy_framework.data_classes import Bid, TraderDetails
-from gsy_framework.utils import limit_float_precision
-
 from gsy_framework.constants_limits import FLOATING_POINT_TOLERANCE
+from gsy_framework.data_classes import Bid, TraderDetails
+
 from gsy_e.gsy_e_core.exceptions import BidNotFoundException, MarketException
 from gsy_e.gsy_e_core.util import short_offer_bid_log_str, is_two_sided_market_simulation
 from gsy_e.models.strategy.market_agents.one_sided_engine import MAEngine
 
 if TYPE_CHECKING:
-    from gsy_e.models.strategy.market_agents.market_agent import MarketAgent
+    from gsy_e.models.strategy.market_agents.market_agent import MarketAgent  # noqa: F401
+
 
 BidInfo = namedtuple("BidInfo", ("source_bid", "target_bid"))
 
@@ -38,7 +39,7 @@ class TwoSidedEngine(MAEngine):
 
     # pylint: disable = too-many-arguments
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-positional-arguments
         self,
         name: str,
         market_1,
@@ -64,15 +65,17 @@ class TwoSidedEngine(MAEngine):
         for requirement in bid.requirements or []:
             updated_requirement = {**requirement}
             if "price" in updated_requirement:
-                energy = updated_requirement.get("energy") or bid.energy
-                original_bid_price = updated_requirement["price"] + bid.accumulated_grid_fees
+                energy_dec = Decimal(updated_requirement.get("energy") or bid.energy)
+                updated_req_price_dec = Decimal(updated_requirement["price"])
+                accumulated_grid_fees_dec = Decimal(bid.accumulated_grid_fees)
+                original_bid_price = updated_req_price_dec + accumulated_grid_fees_dec
                 updated_price = (
                     self.markets.source.fee_class.update_forwarded_bid_with_fee(
-                        updated_requirement["price"] / energy, original_bid_price / energy
+                        updated_req_price_dec / energy_dec, original_bid_price / energy_dec
                     )
-                    * energy
+                    * energy_dec
                 )
-                updated_requirement["price"] = updated_price
+                updated_requirement["price"] = float(updated_price)
             requirements.append(updated_requirement)
         return requirements
 
@@ -84,17 +87,17 @@ class TwoSidedEngine(MAEngine):
             self.owner.log.debug("Bid is not forwarded because price < 0")
             return None
         try:
-            updated_price = limit_float_precision(
-                (
-                    self.markets.source.fee_class.update_forwarded_bid_with_fee(
-                        bid.energy_rate, bid.original_energy_rate
-                    )
+            bid_energy_dec = Decimal(bid.energy)
+            bid_rate_dec = Decimal(bid.energy_rate)
+            bid_original_rate_dec = Decimal(bid.original_energy_rate)
+            updated_price = (
+                self.markets.source.fee_class.update_forwarded_bid_with_fee(
+                    bid_rate_dec, bid_original_rate_dec
                 )
-                * bid.energy
-            )
+            ) * bid_energy_dec
 
             forwarded_bid = self.markets.target.bid(
-                price=updated_price,
+                price=float(updated_price),
                 energy=bid.energy,
                 buyer=TraderDetails(
                     self.owner.name, self.owner.uuid, bid.buyer.origin, bid.buyer.origin_uuid
@@ -181,9 +184,11 @@ class TwoSidedEngine(MAEngine):
 
             source_rate = bid_info.source_bid.energy_rate
             target_rate = bid_info.target_bid.energy_rate
-            assert abs(source_rate) + FLOATING_POINT_TOLERANCE >= abs(
-                target_rate
-            ), f"bid: source_rate ({source_rate}) is not lower than target_rate ({target_rate})"
+            assert abs(source_rate) + FLOATING_POINT_TOLERANCE >= abs(target_rate), (
+                f"bid: source_rate ({source_rate}) is not lower than "
+                f"target_rate ({target_rate}) {bid_info.source_bid} {bid_info.source_bid.energy} "
+                f"{bid_info.source_bid.price}"
+            )
 
             if bid_trade.offer_bid_trade_info is not None:
                 # Adapt trade_offer_info received by the trade to include source market grid fees,
@@ -226,7 +231,7 @@ class TwoSidedEngine(MAEngine):
             if bid_trade.residual:
                 self._forward_bid(bid_trade.residual)
         else:
-            raise Exception(
+            raise MarketException(
                 f"Invalid bid state for MA {self.owner.name}: "
                 f"traded bid {bid_trade} was not in offered bids tuple {bid_info}"
             )
@@ -263,14 +268,14 @@ class TwoSidedEngine(MAEngine):
             # in the source market
 
             local_bid = self.forwarded_bids[original_bid.id].source_bid
-            original_price = (
+            original_price = Decimal(
                 local_bid.original_price
                 if local_bid.original_price is not None
                 else local_bid.price
             )
 
             local_split_bid, local_residual_bid = self.markets.source.split_bid(
-                local_bid, accepted_bid.energy, original_price
+                local_bid, Decimal(accepted_bid.energy), original_price
             )
 
             #  add the new bids to forwarded_bids
@@ -289,14 +294,14 @@ class TwoSidedEngine(MAEngine):
 
             local_bid = self.forwarded_bids[original_bid.id].source_bid
 
-            original_price = (
+            original_price = Decimal(
                 local_bid.original_price
                 if local_bid.original_price is not None
                 else local_bid.price
             )
 
             local_split_bid, local_residual_bid = self.markets.target.split_bid(
-                local_bid, accepted_bid.energy, original_price
+                local_bid, Decimal(accepted_bid.energy), original_price
             )
 
             #  add the new bids to forwarded_bids

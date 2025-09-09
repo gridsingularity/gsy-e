@@ -58,6 +58,7 @@ class AllTanksState:
                 tank.no_charge(time_slot)
             else:
                 tank.decrease_tank_temp_from_heat_energy(heat_energy_per_tank_kWh, time_slot)
+        return
 
     def no_charge(self, time_slot: DateTime):
         """Trigger no_charge method for all tanks"""

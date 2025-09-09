@@ -98,7 +98,7 @@ class MarketBase:  # pylint: disable=too-many-instance-attributes
     Market classes keep track of the orders placed, grid fees and trades in the market.
     """
 
-    def __init__(  # pylint: disable=too-many-arguments
+    def __init__(  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self,
         time_slot: Optional[DateTime] = None,
         bc=None,
@@ -204,7 +204,7 @@ class MarketBase:  # pylint: disable=too-many-instance-attributes
                 self.fee_class = ConstantGridFees(0.0)
             else:
                 self.fee_class = ConstantGridFees(grid_fees.grid_fee_const)
-            self.const_fee_rate = self.fee_class.grid_fee_rate
+            self.const_fee_rate = float(self.fee_class.grid_fee_rate)
         else:
             if grid_fees.grid_fee_percentage is None or grid_fees.grid_fee_percentage <= 0.0:
                 self.fee_class = GridFees(0.0)

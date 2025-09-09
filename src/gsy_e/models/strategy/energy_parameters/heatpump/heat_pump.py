@@ -1,5 +1,6 @@
 # pylint: disable=too-many-positional-arguments, disable=pointless-string-statement
 from abc import ABC, abstractmethod
+from decimal import Decimal
 from typing import Optional, Dict, Union, List
 
 import pendulum
@@ -227,6 +228,9 @@ class CombinedHeatpumpTanksState:
         traded_heat_energy_kJ = self.calc_Q_kJ_from_energy_kWh(
             last_time_slot, bought_energy_kWh, source_temp_C
         )
+
+        heat_demand_kJ = float(Decimal(heat_demand_kJ))
+        traded_heat_energy_kJ = float(Decimal(traded_heat_energy_kJ))
         net_energy_kJ = traded_heat_energy_kJ - heat_demand_kJ
         if net_energy_kJ > FLOATING_POINT_TOLERANCE_UPDATE:
             self._charger.charge(net_energy_kJ, time_slot)
