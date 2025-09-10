@@ -327,7 +327,6 @@ class AggregatorHandler:
         Returns:
 
         """
-        print(self.batch_market_cycle_events)
         self._publish_all_events_from_one_type(redis, self.batch_market_cycle_events, "market")
         self._publish_all_events_from_one_type(redis, self.batch_tick_events, "tick")
         self._publish_all_events_from_one_type(redis, self.batch_finished_events, "finish")
