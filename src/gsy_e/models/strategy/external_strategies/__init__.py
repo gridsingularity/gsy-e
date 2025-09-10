@@ -188,7 +188,6 @@ class ExternalMixin:
             asset_name=self.device.name,
         )
 
-    # pylint: disable=no-self-use
     def _create_future_market_strategy(self):
         """
         Disable future market template strategy in order to leave this respsonsibility
@@ -573,7 +572,7 @@ class ExternalMixin:
                 "traded_energy": trade.traded_energy,
                 "total_fee": trade.fee_price,
                 "local_market_fee": (
-                    self.area.current_market.fee_class.grid_fee_rate
+                    float(self.area.current_market.fee_class.grid_fee_rate)
                     if self.area.current_market is not None
                     else "None"
                 ),
