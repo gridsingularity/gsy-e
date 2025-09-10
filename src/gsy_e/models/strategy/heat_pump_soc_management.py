@@ -54,8 +54,8 @@ class MinimiseHeatpumpSwitchStrategy(HeatPumpSOCManagement):
     """
 
     MINUTES_BEFORE_SWITCH_ALLOWED = 120
-    MIN_SOC_TOLERANCE = 5
-    MAX_SOC_TOLERANCE = 100
+    MIN_SOC_TOLERANCE = 15
+    MAX_SOC_TOLERANCE = 85
 
     def __init__(self, energy_params: "HeatPumpEnergyParameters"):
         self._last_switch: Optional[DateTime] = None
