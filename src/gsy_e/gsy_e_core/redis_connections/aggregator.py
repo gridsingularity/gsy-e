@@ -18,6 +18,7 @@ class AggregatorHandler:
     """
     Handles event sending, command responses to all connected aggregators
     """
+
     def __init__(self, redis_db: Redis):
         self.redis_db = redis_db
         self.pubsub = self.redis_db.pubsub()
@@ -63,12 +64,14 @@ class AggregatorHandler:
         to the same aggregator from the to be sent area_stats_tree_dict"""
         for area_uuid, area_dict in indict.items():
             if "children" in area_dict:
-                self._delete_not_owned_devices(indict[area_uuid]["children"],
-                                               aggregator_uuid,
-                                               outdict[area_uuid]["children"])
+                self._delete_not_owned_devices(
+                    indict[area_uuid]["children"], aggregator_uuid, outdict[area_uuid]["children"]
+                )
             else:
-                if (area_uuid not in self.device_aggregator_mapping or
-                        area_uuid not in self.aggregator_device_mapping[aggregator_uuid]):
+                if (
+                    area_uuid not in self.device_aggregator_mapping
+                    or area_uuid not in self.aggregator_device_mapping[aggregator_uuid]
+                ):
                     outdict[area_uuid] = {"area_name": area_dict["area_name"]}
 
     def _create_grid_tree_event_dict(self, aggregator_uuid: str) -> dict:
@@ -76,11 +79,13 @@ class AggregatorHandler:
         to be sent to the client"""
         if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
             return {"grid_tree": global_objects.scm_external_global_stats.area_stats_tree_dict}
-        return {"grid_tree": self._delete_not_owned_devices_from_dict(
-            global_objects.external_global_stats.area_stats_tree_dict, aggregator_uuid),
+        return {
+            "grid_tree": self._delete_not_owned_devices_from_dict(
+                global_objects.external_global_stats.area_stats_tree_dict, aggregator_uuid
+            ),
             "feed_in_tariff_rate": global_objects.external_global_stats.current_feed_in_tariff,
-            "market_maker_rate":
-            global_objects.external_global_stats.current_market_maker_rate}
+            "market_maker_rate": global_objects.external_global_stats.current_market_maker_rate,
+        }
 
     def add_batch_market_event(self, device_uuid: str, market_info: dict):
         """Add market_cycle event to the event buffer."""
@@ -105,14 +110,17 @@ class AggregatorHandler:
             self.batch_trade_events[aggregator_uuid] = {"trade_list": []}
 
         self.batch_trade_events[aggregator_uuid].update(
-            self._create_grid_tree_event_dict(aggregator_uuid))
+            self._create_grid_tree_event_dict(aggregator_uuid)
+        )
         self.batch_trade_events[aggregator_uuid]["trade_list"].append(trade_info)
 
     def aggregator_callback(self, payload):
         """Entrypoint for aggregator related commands"""
         message = json.loads(payload["data"])
-        if gsy_e.constants.EXTERNAL_CONNECTION_WEB is True and \
-                message["config_uuid"] != gsy_e.constants.CONFIGURATION_ID:
+        if (
+            gsy_e.constants.EXTERNAL_CONNECTION_WEB is True
+            and message["config_uuid"] != gsy_e.constants.CONFIGURATION_ID
+        ):
             return
         if message["type"] == "CREATE":
             self._create_aggregator(message)
@@ -126,75 +134,88 @@ class AggregatorHandler:
     def _select_aggregator(self, message):
         if message["aggregator_uuid"] not in self.aggregator_device_mapping:
             self.aggregator_device_mapping[message["aggregator_uuid"]] = []
-            self.aggregator_device_mapping[message["aggregator_uuid"]].\
-                append(message["device_uuid"])
+            self.aggregator_device_mapping[message["aggregator_uuid"]].append(
+                message["device_uuid"]
+            )
             self.device_aggregator_mapping[message["device_uuid"]] = message["aggregator_uuid"]
             response_message = {
-                "status": "SELECTED", "aggregator_uuid": message["aggregator_uuid"],
-                "device_uuid": message["device_uuid"],
-                "transaction_id": message["transaction_id"]}
-        elif message["device_uuid"] in self.device_aggregator_mapping:
-            msg = f"Device already have selected " \
-                  f"{self.device_aggregator_mapping[message['device_uuid']]}"
-            response_message = {
-                "status": "error", "aggregator_uuid": message["aggregator_uuid"],
+                "status": "SELECTED",
+                "aggregator_uuid": message["aggregator_uuid"],
                 "device_uuid": message["device_uuid"],
                 "transaction_id": message["transaction_id"],
-                "msg": msg
+            }
+        elif message["device_uuid"] in self.device_aggregator_mapping:
+            msg = (
+                f"Device already have selected "
+                f"{self.device_aggregator_mapping[message['device_uuid']]}"
+            )
+            response_message = {
+                "status": "error",
+                "aggregator_uuid": message["aggregator_uuid"],
+                "device_uuid": message["device_uuid"],
+                "transaction_id": message["transaction_id"],
+                "msg": msg,
             }
         else:
-            self.aggregator_device_mapping[message["aggregator_uuid"]].\
-                append(message["device_uuid"])
+            self.aggregator_device_mapping[message["aggregator_uuid"]].append(
+                message["device_uuid"]
+            )
             self.device_aggregator_mapping[message["device_uuid"]] = message["aggregator_uuid"]
             response_message = {
-                "status": "SELECTED", "aggregator_uuid": message["aggregator_uuid"],
+                "status": "SELECTED",
+                "aggregator_uuid": message["aggregator_uuid"],
                 "device_uuid": message["device_uuid"],
-                "transaction_id": message["transaction_id"]}
-        self.redis_db.publish(
-            AggregatorChannels().response, json.dumps(response_message)
-        )
+                "transaction_id": message["transaction_id"],
+            }
+        self.redis_db.publish(AggregatorChannels().response, json.dumps(response_message))
 
     def _unselect_aggregator(self, message):
-        if message["device_uuid"] in self.device_aggregator_mapping and \
-                message["aggregator_uuid"] in self.aggregator_device_mapping:
+        if (
+            message["device_uuid"] in self.device_aggregator_mapping
+            and message["aggregator_uuid"] in self.aggregator_device_mapping
+        ):
             try:
                 with self.lock:
                     del self.device_aggregator_mapping[message["device_uuid"]]
-                    self.aggregator_device_mapping[message["aggregator_uuid"]]\
-                        .remove(message["device_uuid"])
+                    self.aggregator_device_mapping[message["aggregator_uuid"]].remove(
+                        message["device_uuid"]
+                    )
                 response_message = {
-                    "status": "UNSELECTED", "aggregator_uuid": message["aggregator_uuid"],
-                    "device_uuid": message["device_uuid"],
-                    "transaction_id": message["transaction_id"]}
-                self.redis_db.publish(
-                    AggregatorChannels().response, json.dumps(response_message)
-                )
-            except Exception as e:  # pylint: disable=broad-except
-                response_message = {
-                    "status": "error", "aggregator_uuid": message["aggregator_uuid"],
+                    "status": "UNSELECTED",
+                    "aggregator_uuid": message["aggregator_uuid"],
                     "device_uuid": message["device_uuid"],
                     "transaction_id": message["transaction_id"],
-                    "msg": f"Error unselecting aggregator : {e}"
                 }
-            self.redis_db.publish(
-                AggregatorChannels().response, json.dumps(response_message)
-            )
+                self.redis_db.publish(AggregatorChannels().response, json.dumps(response_message))
+            except Exception as e:  # pylint: disable=broad-except
+                response_message = {
+                    "status": "error",
+                    "aggregator_uuid": message["aggregator_uuid"],
+                    "device_uuid": message["device_uuid"],
+                    "transaction_id": message["transaction_id"],
+                    "msg": f"Error unselecting aggregator : {e}",
+                }
+            self.redis_db.publish(AggregatorChannels().response, json.dumps(response_message))
 
     def _create_aggregator(self, message):
         if message["transaction_id"] not in self.aggregator_device_mapping:
             with self.lock:
                 self.aggregator_device_mapping[message["transaction_id"]] = []
             success_response_message = {
-                "status": "ready", "name": message["name"],
-                "transaction_id": message["transaction_id"]}
+                "status": "ready",
+                "name": message["name"],
+                "transaction_id": message["transaction_id"],
+            }
             self.redis_db.publish(
                 AggregatorChannels().response, json.dumps(success_response_message)
             )
 
         else:
             error_response_message = {
-                "status": "error", "aggregator_uuid": message["transaction_id"],
-                "transaction_id": message["transaction_id"]}
+                "status": "error",
+                "aggregator_uuid": message["transaction_id"],
+                "transaction_id": message["transaction_id"],
+            }
             self.redis_db.publish(
                 AggregatorChannels().response, json.dumps(error_response_message)
             )
@@ -203,15 +224,19 @@ class AggregatorHandler:
         if message["aggregator_uuid"] in self.aggregator_device_mapping:
             del self.aggregator_device_mapping[message["aggregator_uuid"]]
             success_response_message = {
-                "status": "deleted", "aggregator_uuid": message["aggregator_uuid"],
-                "transaction_id": message["transaction_id"]}
+                "status": "deleted",
+                "aggregator_uuid": message["aggregator_uuid"],
+                "transaction_id": message["transaction_id"],
+            }
             self.redis_db.publish(
                 AggregatorChannels().response, json.dumps(success_response_message)
             )
         else:
             error_response_message = {
-                "status": "error", "aggregator_uuid": message["aggregator_uuid"],
-                "transaction_id": message["transaction_id"]}
+                "status": "error",
+                "aggregator_uuid": message["aggregator_uuid"],
+                "transaction_id": message["transaction_id"],
+            }
             self.redis_db.publish(
                 AggregatorChannels().response, json.dumps(error_response_message)
             )
@@ -223,7 +248,7 @@ class AggregatorHandler:
         with self.lock:
             self.pending_batch_commands[transaction_id] = {
                 "aggregator_uuid": batch_command_message["aggregator_uuid"],
-                "batch_commands": batch_command_message["batch_commands"]
+                "batch_commands": batch_command_message["batch_commands"],
             }
 
     def approve_batch_commands(self):
@@ -237,23 +262,31 @@ class AggregatorHandler:
         """Processing all batch commands and collecting and sending responses."""
         for transaction_id, command_to_process in self.processing_batch_commands.items():
             if "aggregator_uuid" not in command_to_process:
-                logging.error("Aggregator uuid parameter missing from transaction with "
-                              "id %s. Full command %s.", transaction_id, command_to_process)
+                logging.error(
+                    "Aggregator uuid parameter missing from transaction with "
+                    "id %s. Full command %s.",
+                    transaction_id,
+                    command_to_process,
+                )
                 continue
             aggregator_uuid = command_to_process["aggregator_uuid"]
             area_commands = command_to_process["batch_commands"].pop(area_uuid, None)
             if area_commands is None:
                 continue
 
-            response = [strategy_method({**command, "transaction_id": transaction_id})
-                        for command in area_commands]
+            response = [
+                strategy_method({**command, "transaction_id": transaction_id})
+                for command in area_commands
+            ]
             if transaction_id not in self.responses_batch_commands:
                 self.responses_batch_commands[transaction_id] = {aggregator_uuid: {}}
             if area_uuid not in self.responses_batch_commands[transaction_id][aggregator_uuid]:
-                self.responses_batch_commands[transaction_id][aggregator_uuid] \
-                    .update({area_uuid: []})
-            self.responses_batch_commands[transaction_id][aggregator_uuid][area_uuid] \
-                .extend(response)
+                self.responses_batch_commands[transaction_id][aggregator_uuid].update(
+                    {area_uuid: []}
+                )
+            self.responses_batch_commands[transaction_id][aggregator_uuid][area_uuid].extend(
+                response
+            )
 
     @staticmethod
     def _publish_all_events_from_one_type(redis, event_dict: dict, event_type: str):
@@ -269,20 +302,25 @@ class AggregatorHandler:
             publish_event_dict = {
                 **event,
                 "event": event_type,
-                "simulation_id": gsy_e.constants.CONFIGURATION_ID if
-                gsy_e.constants.EXTERNAL_CONNECTION_WEB else None
+                "simulation_id": (
+                    gsy_e.constants.CONFIGURATION_ID
+                    if gsy_e.constants.EXTERNAL_CONNECTION_WEB
+                    else None
+                ),
             }
             if ConstSettings.MASettings.MARKET_TYPE != SpotMarketTypeEnum.COEFFICIENTS.value:
                 publish_event_dict["num_ticks"] = (
-                        100 / gsy_e.constants.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT)
+                    100 / gsy_e.constants.DISPATCH_EVENT_TICK_FREQUENCY_PERCENT
+                )
             redis.publish_json(
                 AggregatorChannels(gsy_e.constants.CONFIGURATION_ID, aggregator_uuid).events,
-                publish_event_dict)
+                publish_event_dict,
+            )
 
         event_dict.clear()
 
     def publish_all_events(self, redis):
-        """ Wrapper for _publish_all_events_from_one_type for all event types
+        """Wrapper for _publish_all_events_from_one_type for all event types
         Args:
             redis: ExternalConnectionCommunicator
 
@@ -301,13 +339,14 @@ class AggregatorHandler:
             for aggregator_uuid, response_body in batch_commands.items():
                 redis.publish_json(
                     AggregatorChannels(
-                        gsy_e.constants.CONFIGURATION_ID, aggregator_uuid).batch_commands_response,
+                        gsy_e.constants.CONFIGURATION_ID, aggregator_uuid
+                    ).batch_commands_response,
                     {
                         "command": "batch_commands",
                         "transaction_id": transaction_id,
                         "aggregator_uuid": aggregator_uuid,
-                        "responses": response_body
-                     }
+                        "responses": response_body,
+                    },
                 )
 
         self.responses_batch_commands = {}
