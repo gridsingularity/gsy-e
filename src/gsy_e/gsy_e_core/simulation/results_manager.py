@@ -78,6 +78,7 @@ class SimulationResultsManager:
                 self.export_subdir,
                 self._endpoint_buffer,
                 self.carbon_ratio_file,
+                config_params,
             )
 
     @property

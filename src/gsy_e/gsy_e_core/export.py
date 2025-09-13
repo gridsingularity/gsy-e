@@ -63,6 +63,7 @@ from gsy_e.models.area import Area
 
 if TYPE_CHECKING:
     from gsy_e.gsy_e_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
+    from gsy_e.gsy_e_core.simulation.setup import SimulationSetup
     from gsy_e.models.market.future import FutureMarkets
 
 _log = logging.getLogger(__name__)
@@ -103,12 +104,14 @@ class ExportAndPlot:
         subdir: str,
         endpoint_buffer: "SimulationEndpointBuffer",
         carbon_ratio_file: str,
+        config_params: "SimulationSetup",
     ):
         self.area = root_area
         self.endpoint_buffer = endpoint_buffer
         self.file_stats_endpoint = self._file_export_endpoints_class()
         self.raw_data_subdir = None
         self.carbon_ratio_file = carbon_ratio_file
+        self.config_params = config_params
         try:
             if path is not None:
                 path = os.path.abspath(path)
@@ -147,6 +150,19 @@ class ExportAndPlot:
             with open(json_file, "w", encoding="utf-8") as outfile:
                 json.dump(value, outfile, indent=2)
 
+        # Export PV ROI
+        pv_assets = self.area.get_pv_assets()
+        for pv in pv_assets:
+            print("pv.uuid", pv.uuid)
+            cumulative_grid_trades = json_report.get("cumulative_grid_trades")
+            energy_produced_kWh = cumulative_grid_trades[pv.uuid]["produced"]
+            summary = pv.strategy.roi(
+                duration_days=self.config_params.config.sim_duration.days,
+                energy_produced_kWh=energy_produced_kWh,
+            )
+            print("summary ", summary)
+
+        # Export Carbon Emissions
         if self.carbon_ratio_file:
             carbon_emissions_handler = CarbonEmissionsHandler()
             carbon_ratio = (

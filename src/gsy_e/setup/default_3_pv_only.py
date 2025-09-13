@@ -29,30 +29,39 @@ def get_setup(config):
             Area(
                 "House 1",
                 [
-                    Area("H1 General Load", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                                       hrs_of_day=list(
-                                                                           range(12, 16))),
-                         ),
-                ]
+                    Area(
+                        "H1 General Load",
+                        strategy=LoadHoursStrategy(
+                            avg_power_W=100, hrs_of_day=list(range(12, 16))
+                        ),
+                    ),
+                ],
             ),
             Area(
                 "House 2",
                 [
-                    Area("H2 General Load", strategy=LoadHoursStrategy(avg_power_W=100,
-                                                                       hrs_of_day=list(
-                                                                           range(12, 16))),
-                         ),
-                    Area("H2 PV", strategy=PVStrategy(1, 80),
-                         ),
-                ]
+                    Area(
+                        "H2 General Load",
+                        strategy=LoadHoursStrategy(
+                            avg_power_W=100, hrs_of_day=list(range(12, 16))
+                        ),
+                    ),
+                    Area(
+                        "H2 PV",
+                        strategy=PVStrategy(
+                            panel_count=1,
+                            initial_selling_rate=80,
+                            capacity_kW=1,
+                            price_installation_per_kW=100,
+                        ),
+                    ),
+                ],
             ),
-
             # Area("Commercial Energy Producer",
             #      strategy=CommercialStrategy(energy_range_wh=(40, 120), energy_price=30),
             #
             #      ),
-
         ],
-        config=config
+        config=config,
     )
     return area

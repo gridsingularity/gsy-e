@@ -42,8 +42,8 @@ from gsy_e.models.area.throughput_parameters import ThroughputParameters
 from gsy_e.models.config import SimulationConfig
 from gsy_e.models.market.forward import ForwardMarketBase
 from gsy_e.models.market.future import FutureMarkets
-
 from gsy_e.models.strategy.external_strategies import ExternalMixin
+from gsy_e.models.strategy.pv import PVStrategy
 
 log = getLogger(__name__)
 
@@ -629,6 +629,22 @@ class Area(AreaBase):
                 self.current_market.const_fee_rate if self.current_market is not None else 0.0
             ),
         }
+
+    def get_pv_assets(self) -> List["Asset"]:
+        """Return a list of all PV assets or areas with PV strategy in this area and sub-areas."""
+        pv_assets = []
+
+        for child in self.children:
+            has_pv_strategy = hasattr(child, "strategy") and isinstance(child.strategy, PVStrategy)
+
+            if isinstance(child, Asset) and has_pv_strategy:
+                pv_assets.append(child)
+            elif has_pv_strategy:
+                pv_assets.append(child)
+            elif isinstance(child, Area):
+                pv_assets.extend(child.get_pv_assets())
+
+        return pv_assets
 
 
 class Market(Area):

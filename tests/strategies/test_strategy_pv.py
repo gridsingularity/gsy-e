@@ -35,6 +35,7 @@ from gsy_e.gsy_e_core.util import gsye_root_path
 from gsy_e.models.config import create_simulation_config_from_global_config
 from gsy_e.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
 from gsy_e.models.strategy.pv import PVStrategy
+from gsy_e.setup.default_3_pv_only import get_setup
 
 ENERGY_FORECAST = {}  # type: Dict[pendulum.DateTime, float]
 TIME = pendulum.today(tz=TIME_ZONE).at(hour=10, minute=45, second=0)
@@ -679,3 +680,11 @@ def test_set_energy_measurement_of_last_market(utils_mock, pv_strategy):
     pv_strategy.state.set_energy_measurement_kWh.assert_called_once_with(
         100, pv_strategy.area.current_market.time_slot
     )
+
+
+def test_pv_roi(pv_strategy):
+    """The ROI calculation for a 25-year period returns the expected value."""
+    area = get_setup({})
+    pv_assets = area.get_pv_assets()
+    summary = pv_assets[0].strategy.roi()
+    assert False

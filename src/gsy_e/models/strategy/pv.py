@@ -15,6 +15,7 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
 import traceback
 from logging import getLogger
 
@@ -22,8 +23,7 @@ from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import TraderDetails
 from gsy_framework.exceptions import GSyException
 from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
-from gsy_framework.utils import (
-    get_from_profile_same_weekday_and_time, key_in_dict_and_not_none)
+from gsy_framework.utils import get_from_profile_same_weekday_and_time, key_in_dict_and_not_none
 from gsy_framework.validators import PVValidator
 from pendulum import duration
 
@@ -45,16 +45,18 @@ class PVStrategy(BidEnabledStrategy, UseMarketMakerMixin):
     """PV Strategy class for gaussian generation profile."""
 
     # pylint: disable=too-many-arguments
-    def __init__(self, panel_count: int = 1,
-                 initial_selling_rate:
-                 float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
-                 final_selling_rate:
-                 float = ConstSettings.PVSettings.SELLING_RATE_RANGE.final,
-                 fit_to_limit: bool = True,
-                 update_interval=None,
-                 energy_rate_decrease_per_update=None,
-                 capacity_kW: float = None,
-                 use_market_maker_rate: bool = False):
+    def __init__(
+        self,
+        panel_count: int = 1,
+        initial_selling_rate: float = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE,
+        final_selling_rate: float = ConstSettings.PVSettings.SELLING_RATE_RANGE.final,
+        fit_to_limit: bool = True,
+        update_interval=None,
+        energy_rate_decrease_per_update=None,
+        capacity_kW: float = None,
+        use_market_maker_rate: bool = False,
+        price_installation_per_kW: float = 100,
+    ):
         """
         Args:
              panel_count: Number of solar panels for this PV plant
@@ -63,20 +65,28 @@ class PVStrategy(BidEnabledStrategy, UseMarketMakerMixin):
              fit_to_limit: Linear curve following initial_selling_rate & initial_selling_rate
              update_interval: Interval after which PV will update its offer
              energy_rate_decrease_per_update: Slope of PV Offer change per update
-             capacity_kW: power rating of the predefined profiles
+             capacity_kW: Power rating of the predefined profiles
+             price_installation_per_kW: Installation cost per kW of capacity_kW
         """
         super().__init__()
         self._energy_params = PVEnergyParameters(panel_count, capacity_kW)
         self.use_market_maker_rate = use_market_maker_rate
-        self._init_price_update(update_interval, initial_selling_rate, final_selling_rate,
-                                fit_to_limit, energy_rate_decrease_per_update)
+        self._init_price_update(
+            update_interval,
+            initial_selling_rate,
+            final_selling_rate,
+            fit_to_limit,
+            energy_rate_decrease_per_update,
+        )
+        self._price_installation_per_kW = price_installation_per_kW
 
     def serialize(self):
         """Return dict with the current strategy parameter values."""
         return {
             **self._energy_params.serialize(),
             **self.offer_update.serialize(),
-            "use_market_maker_rate": self.use_market_maker_rate
+            "use_market_maker_rate": self.use_market_maker_rate,
+            "price_installation_per_kW": self._price_installation_per_kW,
         }
 
     @classmethod
@@ -91,27 +101,38 @@ class PVStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         return self._energy_params._state  # pylint: disable=protected-access
 
     # pylint: disable=too-many-arguments
-    def _init_price_update(self, update_interval, initial_selling_rate, final_selling_rate,
-                           fit_to_limit, energy_rate_decrease_per_update):
+    def _init_price_update(
+        self,
+        update_interval,
+        initial_selling_rate,
+        final_selling_rate,
+        fit_to_limit,
+        energy_rate_decrease_per_update,
+    ):
 
         # Instantiate instance variables that should not be shared with child classes
         self.final_selling_rate = final_selling_rate
 
         if update_interval is None:
-            update_interval = \
-                duration(minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL)
+            update_interval = duration(
+                minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL
+            )
 
         if isinstance(update_interval, int):
             update_interval = duration(minutes=update_interval)
 
         PVValidator.validate_rate(
             fit_to_limit=fit_to_limit,
-            energy_rate_decrease_per_update=energy_rate_decrease_per_update)
+            energy_rate_decrease_per_update=energy_rate_decrease_per_update,
+        )
 
-        self.offer_update = TemplateStrategyOfferUpdater(initial_selling_rate, final_selling_rate,
-                                                         fit_to_limit,
-                                                         energy_rate_decrease_per_update,
-                                                         update_interval)
+        self.offer_update = TemplateStrategyOfferUpdater(
+            initial_selling_rate,
+            final_selling_rate,
+            fit_to_limit,
+            energy_rate_decrease_per_update,
+            update_interval,
+        )
 
     def area_reconfigure_event(self, *args, **kwargs):
         """Reconfigure the device properties at runtime using the provided arguments."""
@@ -125,23 +146,28 @@ class PVStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         initial_rate = (
             read_arbitrary_profile(InputProfileTypes.IDENTITY, kwargs["initial_selling_rate"])
             if kwargs.get("initial_selling_rate") is not None
-            else self.offer_update.initial_rate_profile_buffer)
+            else self.offer_update.initial_rate_profile_buffer
+        )
 
         final_rate = (
             read_arbitrary_profile(InputProfileTypes.IDENTITY, kwargs["final_selling_rate"])
             if kwargs.get("final_selling_rate") is not None
-            else self.offer_update.final_rate_profile_buffer)
+            else self.offer_update.final_rate_profile_buffer
+        )
 
         energy_rate_change_per_update = (
-            read_arbitrary_profile(InputProfileTypes.IDENTITY,
-                                   kwargs["energy_rate_decrease_per_update"])
+            read_arbitrary_profile(
+                InputProfileTypes.IDENTITY, kwargs["energy_rate_decrease_per_update"]
+            )
             if kwargs.get("energy_rate_decrease_per_update") is not None
-            else self.offer_update.energy_rate_change_per_update_profile_buffer)
+            else self.offer_update.energy_rate_change_per_update_profile_buffer
+        )
 
         fit_to_limit = (
             kwargs["fit_to_limit"]
             if kwargs.get("fit_to_limit") is not None
-            else self.offer_update.fit_to_limit)
+            else self.offer_update.fit_to_limit
+        )
 
         if key_in_dict_and_not_none(kwargs, "update_interval"):
             if isinstance(kwargs["update_interval"], int):
@@ -155,11 +181,15 @@ class PVStrategy(BidEnabledStrategy, UseMarketMakerMixin):
             self.use_market_maker_rate = kwargs["use_market_maker_rate"]
 
         try:
-            self._validate_rates(initial_rate, final_rate, energy_rate_change_per_update,
-                                 fit_to_limit)
+            self._validate_rates(
+                initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit
+            )
         except GSyException as e:  # pylint: disable=broad-except
-            log.error("PVStrategy._area_reconfigure_prices failed. Exception: %s. "
-                      "Traceback: %s", e, traceback.format_exc())
+            log.error(
+                "PVStrategy._area_reconfigure_prices failed. Exception: %s. " "Traceback: %s",
+                e,
+                traceback.format_exc(),
+            )
             return
 
         self.offer_update.set_parameters(
@@ -167,23 +197,33 @@ class PVStrategy(BidEnabledStrategy, UseMarketMakerMixin):
             final_rate=final_rate,
             energy_rate_change_per_update=energy_rate_change_per_update,
             fit_to_limit=fit_to_limit,
-            update_interval=update_interval
+            update_interval=update_interval,
         )
 
-    def _validate_rates(self, initial_rate, final_rate, energy_rate_change_per_update,
-                        fit_to_limit):
+    def _validate_rates(
+        self, initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit
+    ):
         # all parameters have to be validated for each time slot here
         for time_slot in initial_rate.keys():
-            if self.area and self.area.current_market \
-                    and time_slot < self.area.current_market.time_slot:
+            if (
+                self.area
+                and self.area.current_market
+                and time_slot < self.area.current_market.time_slot
+            ):
                 continue
-            rate_change = None if fit_to_limit else \
-                get_from_profile_same_weekday_and_time(energy_rate_change_per_update, time_slot)
+            rate_change = (
+                None
+                if fit_to_limit
+                else get_from_profile_same_weekday_and_time(
+                    energy_rate_change_per_update, time_slot
+                )
+            )
             PVValidator.validate_rate(
                 initial_selling_rate=initial_rate[time_slot],
                 final_selling_rate=get_from_profile_same_weekday_and_time(final_rate, time_slot),
                 energy_rate_decrease_per_update=rate_change,
-                fit_to_limit=fit_to_limit)
+                fit_to_limit=fit_to_limit,
+            )
 
     def event_activate(self, **kwargs):
         self.event_activate_price()
@@ -194,10 +234,12 @@ class PVStrategy(BidEnabledStrategy, UseMarketMakerMixin):
     def event_activate_price(self):
         self._replace_rates_with_market_maker_rates()
 
-        self._validate_rates(self.offer_update.initial_rate_profile_buffer,
-                             self.offer_update.final_rate_profile_buffer,
-                             self.offer_update.energy_rate_change_per_update_profile_buffer,
-                             self.offer_update.fit_to_limit)
+        self._validate_rates(
+            self.offer_update.initial_rate_profile_buffer,
+            self.offer_update.final_rate_profile_buffer,
+            self.offer_update.energy_rate_change_per_update_profile_buffer,
+            self.offer_update.fit_to_limit,
+        )
 
     def event_activate_energy(self):
         """Activate energy parameters of the PV."""
@@ -228,7 +270,8 @@ class PVStrategy(BidEnabledStrategy, UseMarketMakerMixin):
             time_slots.extend(self.area.future_market_time_slots)
         for time_slot in time_slots:
             self._energy_params.set_produced_energy_forecast(
-                time_slot, self.simulation_config.slot_length)
+                time_slot, self.simulation_config.slot_length
+            )
 
     def event_market_cycle(self):
         super().event_market_cycle()
@@ -246,14 +289,15 @@ class PVStrategy(BidEnabledStrategy, UseMarketMakerMixin):
             self._energy_params.set_energy_measurement_kWh(self.area.current_market.time_slot)
 
     def _delete_past_state(self):
-        if (constants.RETAIN_PAST_MARKET_STRATEGIES_STATE is True or
-                self.area.current_market is None):
+        if (
+            constants.RETAIN_PAST_MARKET_STRATEGIES_STATE is True
+            or self.area.current_market is None
+        ):
             return
 
         self.state.delete_past_state_values(self.area.current_market.time_slot)
         self.offer_update.delete_past_state_values(self.area.current_market.time_slot)
-        self._future_market_strategy.delete_past_state_values(
-            self.area.current_market.time_slot)
+        self._future_market_strategy.delete_past_state_values(self.area.current_market.time_slot)
 
     def event_market_cycle_price(self):
         """Manage price parameters during the market cycle event."""
@@ -266,16 +310,16 @@ class PVStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         # market in order to validate that more offers need to be posted.
         offer_energy_kWh -= self.offers.open_offer_energy(market.id)
         if offer_energy_kWh > 0:
-            offer_price = \
-                self.offer_update.initial_rate[market.time_slot] * offer_energy_kWh
+            offer_price = self.offer_update.initial_rate[market.time_slot] * offer_energy_kWh
             try:
                 offer = market.offer(
                     offer_price,
                     offer_energy_kWh,
-                    TraderDetails(self.owner.name, self.owner.uuid, self.owner.name,
-                                  self.owner.uuid),
+                    TraderDetails(
+                        self.owner.name, self.owner.uuid, self.owner.name, self.owner.uuid
+                    ),
                     original_price=offer_price,
-                    time_slot=market.time_slot
+                    time_slot=market.time_slot,
                 )
                 self.offers.post(offer, market.id)
             except MarketException:
@@ -292,11 +336,20 @@ class PVStrategy(BidEnabledStrategy, UseMarketMakerMixin):
 
         if trade.seller.name == self.owner.name:
             self.state.decrement_available_energy(
-                trade.traded_energy, trade.time_slot, self.owner.name)
+                trade.traded_energy, trade.time_slot, self.owner.name
+            )
 
     def event_bid_traded(self, *, market_id, bid_trade):
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
         self._settlement_market_strategy.event_bid_traded(self, market_id, bid_trade)
+
+    def roi(self, area_uuid, duration_days, energy_produced_kWh):
+        """Calculate the return on investment (ROI) for the PV asset."""
+        print("self", self)
+        print("duration_days", duration_days)
+        print("energy_produced_kWh", energy_produced_kWh)
+
+        pass
 
     @property
     def asset_type(self):
