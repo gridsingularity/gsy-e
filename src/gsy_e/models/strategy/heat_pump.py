@@ -82,7 +82,7 @@ class MultipleTankHeatPumpStrategy(TradingStrategyBase):
     """Strategy for heat pumps with multiple storages."""
 
     # pylint: disable=too-many-arguments,super-init-not-called, too-many-positional-arguments
-    # pylint: disable=too-many-locals
+    # pylint: disable=too-many-locals, too-many-instance-attributes
     def __init__(
         self,
         maximum_power_rating_kW: float = ConstSettings.HeatPumpSettings.MAX_POWER_RATING_KW,
@@ -97,7 +97,7 @@ class MultipleTankHeatPumpStrategy(TradingStrategyBase):
         order_updater_parameters: Dict[
             AvailableMarketTypes, HeatPumpOrderUpdaterParameters
         ] = None,
-        preferred_buying_rate: float = ConstSettings.HeatPumpSettings.PREFERRED_BUYING_RATE,
+        preferred_buying_rate: Optional[float] = None,
         heat_demand_Q_profile: Optional[Union[str, float, Dict]] = None,
         cop_model_type: COPModelType = COPModelType.UNIVERSAL,
     ):
@@ -203,6 +203,7 @@ class MultipleTankHeatPumpStrategy(TradingStrategyBase):
 
     def event_activate(self, **kwargs):
         self._energy_params.event_activate()
+        self._soc_management.event_activate()
 
     def event_market_cycle(self) -> None:
         super().event_market_cycle()

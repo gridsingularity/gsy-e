@@ -6,7 +6,8 @@ from typing import Optional, TYPE_CHECKING
 from gsy_framework.constants_limits import GlobalConfig
 from pendulum import DateTime, duration
 
-from gsy_e.constants import HEAT_PUMP_SOC_MANAGEMENT_ALGORITHM, HeatPumpSOCManagementAlgorithm
+# from gsy_e.constants import HEAT_PUMP_SOC_MANAGEMENT_ALGORITHM, HeatPumpSOCManagementAlgorithm
+import gsy_e.constants
 
 if TYPE_CHECKING:
     from gsy_e.models.strategy.energy_parameters.heatpump.heat_pump import HeatPumpEnergyParameters
@@ -14,6 +15,9 @@ if TYPE_CHECKING:
 
 class HeatPumpSOCManagement(ABC):
     """Abstract base class for all heat pump SOC management classes."""
+
+    def event_activate(self):
+        """Base method for the activate event"""
 
     @abstractmethod
     def calculate(self, time_slot: DateTime, buy_rate: float) -> float:
@@ -62,10 +66,13 @@ class MinimiseHeatpumpSwitchStrategy(HeatPumpSOCManagement):
         self._energy_params = energy_params
         self._charger = energy_params.combined_state._charger
         self._current_state = HeatPumpChargingState.CHARGE
-        if isinstance(GlobalConfig.MARKET_MAKER_RATE, dict):
-            self._average_rate = mean(GlobalConfig.MARKET_MAKER_RATE.values())
+        self._average_rate = None
+
+    def event_activate(self):
+        if isinstance(GlobalConfig.market_maker_rate, dict):
+            self._average_rate = mean(GlobalConfig.market_maker_rate.values())
         else:
-            assert False
+            assert False, "GlobalConfig.market_maker_rate was not initiated yet."
 
     def calculate(self, time_slot: DateTime, _buy_rate: float = 0.0):
         """
@@ -114,7 +121,7 @@ class MinimiseHeatpumpSwitchStrategy(HeatPumpSOCManagement):
         return self._energy_params.get_min_energy_demand_kWh(time_slot)
 
     def _should_charge_or_discharge(self, time_slot: DateTime) -> HeatPumpChargingState:
-        if GlobalConfig.MARKET_MAKER_RATE[time_slot] <= self._average_rate:
+        if GlobalConfig.market_maker_rate[time_slot] <= self._average_rate:
             # If the market maker rate is lower than the average rate, charge except if the SOC is
             # too high.
             if self._charger.get_average_soc(time_slot) >= self.MAX_SOC_TOLERANCE:
@@ -132,6 +139,9 @@ def heat_pump_soc_management_factory(
     energy_params: "HeatPumpEnergyParameters", preferred_buying_rate: float
 ):
     """Factory class for selecting the SOC management strategy based on the constant value."""
-    if HEAT_PUMP_SOC_MANAGEMENT_ALGORITHM == HeatPumpSOCManagementAlgorithm.PREFERRED_BUYING_RATE:
+    if (
+        gsy_e.constants.HEAT_PUMP_SOC_MANAGEMENT_ALGORITHM
+        == gsy_e.constants.HeatPumpSOCManagementAlgorithm.PREFERRED_BUYING_RATE
+    ):
         return HeatPumpPreferredBuyingRateStrategy(energy_params, preferred_buying_rate)
     return MinimiseHeatpumpSwitchStrategy(energy_params)
