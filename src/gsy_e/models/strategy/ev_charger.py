@@ -19,7 +19,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from logging import getLogger
 from typing import Union, Optional
 
-from pendulum import duration
+from pendulum import duration, DateTime
 from gsy_framework.validators import EVChargerValidator, StorageValidator
 from gsy_framework.enums import GridIntegrationType
 from gsy_framework.constants_limits import (
@@ -31,7 +31,7 @@ from gsy_framework.utils import get_from_profile_same_weekday_and_time
 from gsy_e.models.strategy import BidEnabledStrategy
 from gsy_e.gsy_e_core.exceptions import MarketException
 from gsy_e.models.strategy.mixins import UseMarketMakerMixin
-from gsy_e.models.strategy.state.evcharger_state import EVChargerState
+from gsy_e.models.strategy.state.evcharger_state import EVChargerState, EVChargingSession
 from gsy_e.gsy_e_core.util import is_one_sided_market_simulation, is_two_sided_market_simulation
 from gsy_e.models.strategy.update_frequency import (
     TemplateStrategyBidUpdater,
@@ -46,32 +46,6 @@ EVChargerSettings = ConstSettings.EVChargerSettings
 StorageSettings = ConstSettings.StorageSettings
 
 
-class EVChargingSession:
-    """Class to represent an EV charging/discharging session."""
-
-    def __init__(
-        self,
-        plug_in_time: str,
-        duration_minutes: int,
-        initial_soc_percent: float = 20.0,
-        min_soc_percent: float = 50.0,
-        battery_capacity_kWh: float = 100.0,
-    ):
-        """
-        Args:
-            plug_in_time (datetime): Timestamp when EV plugs into the charger.
-            duration_minutes (int): Total plugged-in duration (minutes).
-            initial_soc_percent (float): Initial state of charge (%). Default: 20.
-            min_soc_percent (float): Minimum allowed SoC threshold (%). Default: 50.
-            battery_capacity_kWh (float): Total battery capacity (kWh). Default: 100.
-        """
-        self.plug_in_time = plug_in_time
-        self.duration_minutes = duration_minutes
-        self.initial_soc_percent = initial_soc_percent
-        self.min_soc_percent = min_soc_percent
-        self.battery_capacity_kWh = battery_capacity_kWh
-
-
 class EVChargerStrategy(StorageStrategy):
     """Strategy class EV Charger."""
 
@@ -80,6 +54,7 @@ class EVChargerStrategy(StorageStrategy):
         self,
         grid_integration: GridIntegrationType = GridIntegrationType.BIDIRECTIONAL,
         maximum_power_rating_kW: float = EVChargerSettings.MAX_POWER_RATING_KW,
+        charging_sessions: list[EVChargingSession] = [],
         initial_selling_rate: Union[float, dict] = StorageSettings.SELLING_RATE_RANGE.initial,
         final_selling_rate: Union[float, dict] = StorageSettings.SELLING_RATE_RANGE.final,
         initial_buying_rate: Union[float, dict] = StorageSettings.BUYING_RATE_RANGE.initial,
@@ -100,9 +75,9 @@ class EVChargerStrategy(StorageStrategy):
 
         super().__init__()
 
-        self._state = EVChargerState(
-            grid_integration=grid_integration,
-        )
+        self.grid_integration = grid_integration
+        self.charging_sessions = sorted(charging_sessions, key=lambda s: s.plug_in_time)
+        self.active_session_index = None
 
         if update_interval is None:
             update_interval = duration(
@@ -144,3 +119,44 @@ class EVChargerStrategy(StorageStrategy):
     @property
     def state(self) -> EVChargerState:
         return self._state
+
+    def _maybe_update_session(self, now: DateTime):
+        """Switch StorageStrategy state when entering a new session."""
+        for idx, charging_session in enumerate(self.charging_sessions):
+            start = charging_session.plug_in_time
+            end = start.add(minutes=charging_session.duration_minutes)
+
+            if start <= now < end:
+                if self.active_session_index != idx:
+                    # switch session
+                    self.active_session_index = idx
+                    self._state = EVChargerState(
+                        active_charging_session=charging_session,
+                        grid_integration=self.grid_integration,
+                    )
+                    # reset price updaters and defaults
+                    self.offer_update.reset(self)
+                    self.bid_update.reset(self)
+
+                    self._update_profiles_with_default_values()
+
+                    self._state.activate(
+                        self.simulation_config.slot_length,
+                        now,
+                    )
+                return True
+        return False
+
+    def event_market_cycle(self):
+        now = self.area.spot_market.time_slot
+
+        if not self._maybe_update_session(now):
+            return  # skip if we are in an active charging session
+        super().event_market_cycle()
+
+    def event_tick(self):
+        now = self.area.spot_market.time_slot
+
+        if not self._maybe_update_session(now):
+            return  # skip if we are in an active charging session
+        super().event_tick()

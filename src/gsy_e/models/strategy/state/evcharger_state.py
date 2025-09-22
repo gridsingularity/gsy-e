@@ -36,18 +36,38 @@ from gsy_e.models.strategy.state.storage_state import (
 EVChargerSettings = ConstSettings.EVChargerSettings
 
 
+class EVChargingSession:
+    """Class to represent an EV charging/discharging session."""
+
+    def __init__(
+        self,
+        plug_in_time: str,
+        duration_minutes: int,
+        initial_soc_percent: float = 20.0,
+        min_soc_percent: float = 50.0,
+        battery_capacity_kWh: float = 100.0,
+    ):
+        self.plug_in_time = plug_in_time
+        self.duration_minutes = duration_minutes
+        self.initial_soc_percent = initial_soc_percent
+        self.min_soc_percent = min_soc_percent
+        self.battery_capacity_kWh = battery_capacity_kWh
+
+
 # pylint: disable= too-many-instance-attributes, too-many-arguments, too-many-public-methods
 class EVChargerState(StorageState):
     """State for the EV charger asset."""
 
     def __init__(
         self,
+        active_charging_session: EVChargingSession,
         grid_integration: Optional[GridIntegrationType] = None,
         max_abs_battery_power_kW=EVChargerSettings.MAX_POWER_RATING_KW,
         initial_soc=StorageSettings.MIN_ALLOWED_SOC,
         capacity=StorageSettings.CAPACITY,
         initial_energy_origin=ESSEnergyOrigin.EXTERNAL,
     ):
+        self.active_charging_session = active_charging_session
         self.grid_integration = grid_integration
         self.max_abs_battery_power_kW = max_abs_battery_power_kW
         self.initial_soc = initial_soc

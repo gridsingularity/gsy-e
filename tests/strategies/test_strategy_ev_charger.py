@@ -18,24 +18,35 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import pytest
 
-from gsy_e.models.strategy.ev_charger import EVChargerStrategy
+from pendulum import now, DateTime
+from gsy_framework.constants_limits import (
+    TIME_ZONE,
+)
+
+from gsy_e.models.strategy.ev_charger import EVChargerStrategy, EVChargingSession
 
 from .test_strategy_storage import FakeArea, area_test1, FakeMarket, auto_fixture
 
 
 @pytest.fixture()
 def ev_charger_strategy(area_test1, called):
-    s = EVChargerStrategy(
+    strategy = EVChargerStrategy(
         maximum_power_rating_kW=2.01,
         initial_buying_rate=23.6,
         final_buying_rate=23.6,
         initial_selling_rate=23.7,
         final_selling_rate=23.7,
+        charging_sessions=[
+            EVChargingSession(
+                DateTime.now(tz=TIME_ZONE).start_of("day"),
+                duration_minutes=120,
+            )
+        ],
     )
-    s.owner = area_test1
-    s.area = area_test1
-    s.accept_offer = called
-    return s
+    strategy.owner = area_test1
+    strategy.area = area_test1
+    strategy.accept_offer = called
+    return strategy
 
 
 def test_if_ev_charger_buys_cheap_energy(ev_charger_strategy, area_test1):
