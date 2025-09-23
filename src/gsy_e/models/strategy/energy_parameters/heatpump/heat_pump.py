@@ -212,6 +212,19 @@ class CombinedHeatpumpTanksState:
             return self._max_energy_consumption_kWh
         return min_energy_consumption_kWh
 
+    def get_energy_demand_kWh(self, time_slot: DateTime, source_temp_C: float) -> float:
+        """Return the energy demand in kWh that is needed to be traded by the heat pump."""
+        heat_demand_kJ = self.heatpump.get_heat_demand_kJ(time_slot)
+        cop = self._calc_cop(
+            produced_heat_kJ=heat_demand_kJ, source_temp_C=source_temp_C, time_slot=time_slot
+        )
+        if cop == 0:
+            return 0
+        energy_consumption_kWh = convert_kJ_to_kWh(heat_demand_kJ / cop)
+        if energy_consumption_kWh > self._max_energy_consumption_kWh:
+            return self._max_energy_consumption_kWh
+        return energy_consumption_kWh
+
     def update_tanks_temperature(
         self,
         last_time_slot: DateTime,
@@ -370,6 +383,10 @@ class HeatPumpEnergyParametersBase(ABC):
         """Get energy that is needed to heat up the storage to temp_max."""
         return self._state.heatpump.get_max_energy_demand_kWh(time_slot)
 
+    def get_energy_demand_kWh(self, time_slot: DateTime) -> float:
+        """Get energy that is needed to fulfill the demand of the house"""
+        return self._state.heatpump.get_energy_demand_kWh(time_slot)
+
     @abstractmethod
     def _rotate_profiles(self, current_time_slot: Optional[DateTime] = None):
         self._state.delete_past_state_values(current_time_slot)
@@ -378,11 +395,17 @@ class HeatPumpEnergyParametersBase(ABC):
         self._calc_energy_demand(time_slot)
 
     def _calc_energy_demand(self, time_slot: DateTime):
+
         self._state.heatpump.set_min_energy_demand_kWh(
             time_slot,
             self._state.get_energy_to_buy_minimum_kWh(
                 time_slot, self._source_temp_C.get_value(time_slot)
             ),
+        )
+        # todo: we can save this step if HeatPumpPreferredBuyingRateStrategy is selected
+        self._state.heatpump.set_energy_demand_kWh(
+            time_slot,
+            self._state.get_energy_demand_kWh(time_slot, self._source_temp_C.get_value(time_slot)),
         )
         self._state.heatpump.set_max_energy_demand_kWh(
             time_slot,
@@ -398,8 +421,10 @@ class HeatPumpEnergyParametersBase(ABC):
         updated_max_energy_demand_kWh = max(
             0.0, self.get_max_energy_demand_kWh(time_slot) - energy_kWh
         )
+        updated_energy_demand_kWh = max(0.0, self.get_energy_demand_kWh(time_slot) - energy_kWh)
         self._state.heatpump.set_min_energy_demand_kWh(time_slot, updated_min_energy_demand_kWh)
         self._state.heatpump.set_max_energy_demand_kWh(time_slot, updated_max_energy_demand_kWh)
+        self._state.heatpump.set_energy_demand_kWh(time_slot, updated_energy_demand_kWh)
         self._state.heatpump.increase_total_traded_energy_kWh(energy_kWh)
 
 

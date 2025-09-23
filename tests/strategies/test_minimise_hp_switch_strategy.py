@@ -61,7 +61,7 @@ class TestMinimiseHeatpumpSwitchStrategy:
 
         energy = strategy.calculate(time_slot=self._start_time_slot + duration(minutes=30))
 
-        assert math.isclose(energy, 0.0)
+        assert math.isclose(energy, 1.0)
 
     def test_maintain_soc_when_rate_is_expensive_and_soc_min(self):
         energy_params = self._energy_params_mock(
@@ -102,7 +102,7 @@ class TestMinimiseHeatpumpSwitchStrategy:
 
         energy = strategy.calculate(time_slot=self._start_time_slot + duration(minutes=120))
         # After 2 hours charge allowed, start discharging
-        assert math.isclose(energy, 0.0)
+        assert math.isclose(energy, 1.0)
 
     def test_do_not_switch_from_discharge_to_charge_before_time_limit(self):
         GlobalConfig.market_maker_rate[self._start_time_slot] = 50
@@ -112,15 +112,15 @@ class TestMinimiseHeatpumpSwitchStrategy:
 
         energy = strategy.calculate(time_slot=self._start_time_slot)
         # Now discharging
-        assert math.isclose(energy, 0.0)
+        assert math.isclose(energy, 1.0)
 
         energy = strategy.calculate(time_slot=self._start_time_slot + duration(minutes=15))
         # Energy above average, still fully discharging
-        assert math.isclose(energy, 0.0)
+        assert math.isclose(energy, 1.0)
 
         energy = strategy.calculate(time_slot=self._start_time_slot + duration(minutes=30))
         # Should still not charge despite the rate being cheap, still fully charging
-        assert math.isclose(energy, 0.0)
+        assert math.isclose(energy, 1.0)
 
         energy = strategy.calculate(time_slot=self._start_time_slot + duration(minutes=120))
         # After 2 hours discharge allowed, start charging
@@ -134,7 +134,7 @@ class TestMinimiseHeatpumpSwitchStrategy:
 
         energy = strategy.calculate(time_slot=self._start_time_slot)
         # Now discharging
-        assert math.isclose(energy, 0.0)
+        assert math.isclose(energy, 1.0)
 
         # Set the SOC to min
         energy_params.combined_state._charger.get_average_soc = MagicMock(
