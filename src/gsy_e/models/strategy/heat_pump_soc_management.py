@@ -6,7 +6,6 @@ from typing import Optional, TYPE_CHECKING
 from gsy_framework.constants_limits import GlobalConfig
 from pendulum import DateTime, duration
 
-# from gsy_e.constants import HEAT_PUMP_SOC_MANAGEMENT_ALGORITHM, HeatPumpSOCManagementAlgorithm
 import gsy_e.constants
 
 if TYPE_CHECKING:
@@ -117,8 +116,8 @@ class MinimiseHeatpumpSwitchStrategy(HeatPumpSOCManagement):
         if target_state == HeatPumpChargingState.CHARGE:
             return self._energy_params.get_max_energy_demand_kWh(time_slot)
         if target_state == HeatPumpChargingState.DISCHARGE:
-            return 0
-        return self._energy_params.get_min_energy_demand_kWh(time_slot)
+            return self._energy_params.get_min_energy_demand_kWh(time_slot)
+        return self._energy_params.get_energy_demand_kWh(time_slot)
 
     def _should_charge_or_discharge(self, time_slot: DateTime) -> HeatPumpChargingState:
         if GlobalConfig.market_maker_rate[time_slot] <= self._average_rate:
