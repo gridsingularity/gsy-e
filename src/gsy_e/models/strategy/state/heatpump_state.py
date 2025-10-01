@@ -50,6 +50,7 @@ class HeatPumpState(StateInterface):
         # the defaultdict was only selected for the initial slot
         self._min_energy_demand_kWh: Dict[DateTime, float] = {}
         self._max_energy_demand_kWh: Dict[DateTime, float] = {}
+        self._energy_demand_kWh: Dict[DateTime, float] = {}
         # buffers for increase and  decrease of storage
         self._energy_consumption_kWh: Dict[DateTime, float] = defaultdict(lambda: 0)
         self._cop: Dict[DateTime, float] = defaultdict(lambda: 0)
@@ -78,6 +79,10 @@ class HeatPumpState(StateInterface):
     def set_min_energy_demand_kWh(self, time_slot: DateTime, energy_kWh: float):
         """Set the minimal energy demanded for a given time slot."""
         self._min_energy_demand_kWh[time_slot] = energy_kWh
+
+    def set_energy_demand_kWh(self, time_slot: DateTime, energy_kWh: float):
+        """Set the minimal energy demanded for a given time slot."""
+        self._energy_demand_kWh[time_slot] = energy_kWh
 
     def set_max_energy_demand_kWh(self, time_slot: DateTime, energy_kWh: float):
         """Set the maximal energy demanded for a given time slot."""
@@ -110,6 +115,10 @@ class HeatPumpState(StateInterface):
     def get_max_energy_demand_kWh(self, time_slot: DateTime) -> float:
         """Return the maximal energy demanded for a given time slot."""
         return self._max_energy_demand_kWh.get(time_slot, 0)
+
+    def get_energy_demand_kWh(self, time_slot: DateTime) -> float:
+        """Return the energy demanded for a given time slot."""
+        return self._energy_demand_kWh.get(time_slot, 0)
 
     def get_energy_consumption_kWh(self, time_slot: DateTime) -> float:
         """Return the temperature increase for a given time slot."""

@@ -81,7 +81,7 @@ class TestHeatPumpStrategy:
     def test_heatpump_creates_order_updater_on_spot_on_market_cycle(heatpump_fixture):
         strategy = heatpump_fixture[0]
         area = heatpump_fixture[1]
-        strategy._get_energy_buy_energy = MagicMock(return_value=1)
+        strategy._energy_params.get_max_energy_demand_kWh = MagicMock(return_value=1)
         strategy.event_market_cycle()
         market_object = area.spot_market
         assert len(strategy._order_updaters[market_object].keys()) == 1
@@ -93,7 +93,7 @@ class TestHeatPumpStrategy:
         strategy = heatpump_fixture[0]
         area = heatpump_fixture[1]
         energy_to_buy = 100
-        strategy._get_energy_buy_energy = MagicMock(return_value=energy_to_buy)
+        strategy._energy_params.get_max_energy_demand_kWh = MagicMock(return_value=energy_to_buy)
         strategy.event_market_cycle()
         self._assert_bid(
             list(area.spot_market.bids.values()),
@@ -111,7 +111,7 @@ class TestHeatPumpStrategy:
         strategy = heatpump_fixture[0]
         area = heatpump_fixture[1]
         energy_to_buy = 100
-        strategy._get_energy_buy_energy = MagicMock(return_value=energy_to_buy)
+        strategy._energy_params.get_max_energy_demand_kWh = MagicMock(return_value=energy_to_buy)
         # post initial bid
         strategy.event_market_cycle()
         market_object = area.spot_market
@@ -142,7 +142,7 @@ class TestHeatPumpStrategy:
         strategy = heatpump_fixture[0]
         area = heatpump_fixture[1]
         energy_to_buy = 100
-        strategy._get_energy_buy_energy = MagicMock(return_value=energy_to_buy)
+        strategy._energy_params.get_max_energy_demand_kWh = MagicMock(return_value=energy_to_buy)
         # post initial bid
         strategy.event_market_cycle()
         market_object = area.spot_market
@@ -163,7 +163,7 @@ class TestHeatPumpStrategy:
     @patch("gsy_framework.constants_limits.GlobalConfig.market_maker_rate", 30)
     def test_order_updater_parameters_return_default_values_correctly(heatpump_fixture):
         strategy = heatpump_fixture[0]
-        strategy._get_energy_buy_energy = MagicMock(return_value=1)
+        strategy._energy_params.get_max_energy_demand_kWh = MagicMock(return_value=1)
         strategy.event_market_cycle()
         assert (
             strategy._order_updater_params[AvailableMarketTypes.SPOT].get_initial_rate(
@@ -192,7 +192,7 @@ class TestHeatPumpStrategy:
     def test_order_updater_parameters_get_initiated_with_default_profile(heatpump_fixture):
         strategy = heatpump_fixture[0]
         area = heatpump_fixture[1]
-        strategy._get_energy_buy_energy = MagicMock(return_value=1)
+        strategy._energy_params.get_max_energy_demand_kWh = MagicMock(return_value=1)
         strategy.event_market_cycle()
         assert (
             strategy._order_updater_params[AvailableMarketTypes.SPOT].get_initial_rate(
@@ -251,7 +251,7 @@ class TestHeatPumpStrategy:
     )
     def test_order_updater_parameters_get_initiated_with_user_input(heatpump_fixture):
         strategy = heatpump_fixture[0]
-        strategy._get_energy_buy_energy = MagicMock(return_value=1)
+        strategy._energy_params.get_max_energy_demand_kWh = MagicMock(return_value=1)
         strategy.event_market_cycle()
         assert (
             strategy._order_updater_params[AvailableMarketTypes.SPOT].get_initial_rate(
@@ -305,7 +305,7 @@ class TestHeatPumpStrategy:
     )
     def test_order_updater_parameters_get_initiated_with_user_input_profile(heatpump_fixture):
         strategy = heatpump_fixture[0]
-        strategy._get_energy_buy_energy = MagicMock(return_value=1)
+        strategy._energy_params.get_max_energy_demand_kWh = MagicMock(return_value=1)
         strategy.event_market_cycle()
         assert (
             strategy._order_updater_params[AvailableMarketTypes.SPOT].get_initial_rate(
@@ -327,18 +327,19 @@ class TestHeatPumpStrategy:
     def test_get_energy_buy_energy_returns_correct_value(heatpump_fixture):
         strategy = heatpump_fixture[0]
         strategy.preferred_buying_rate = 15
+        strategy._soc_management._preferred_buying_rate = 15
         tank_parameters = strategy._energy_params._state._charger.tanks._tanks_states[0]
         tank_parameters._min_storage_temp_C = 10
         tank_parameters.get_storage_temp_C = MagicMock(return_value=20)
         tank_parameters.get_temp_decrease = MagicMock(return_value=10)
         strategy._energy_params.get_min_energy_demand_kWh = MagicMock(return_value=1)
         strategy._energy_params.get_max_energy_demand_kWh = MagicMock(return_value=2)
-        assert strategy._get_energy_buy_energy(14, CURRENT_MARKET_SLOT) == 2
-        assert strategy._get_energy_buy_energy(15, CURRENT_MARKET_SLOT) == 2
-        assert strategy._get_energy_buy_energy(16, CURRENT_MARKET_SLOT) == 1
+        assert strategy._soc_management.calculate(CURRENT_MARKET_SLOT, 14) == 2
+        assert strategy._soc_management.calculate(CURRENT_MARKET_SLOT, 15) == 2
+        assert strategy._soc_management.calculate(CURRENT_MARKET_SLOT, 16) == 1
         strategy.state.get_storage_temp_C = MagicMock(return_value=20)
         strategy._energy_params._state.heatpump.get_temp_decrease_K = MagicMock(return_value=1)
-        assert strategy._get_energy_buy_energy(16, CURRENT_MARKET_SLOT) == 1
+        assert strategy._soc_management.calculate(CURRENT_MARKET_SLOT, 16) == 1
 
     @staticmethod
     @pytest.mark.parametrize(
