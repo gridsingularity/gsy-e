@@ -30,6 +30,7 @@ from gsy_e.models.area import Area
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_e.models.strategy.pv import PVStrategy
 from gsy_e.models.strategy.storage import StorageStrategy
+from gsy_e.models.strategy.ev_charger import EVChargerStrategy
 from gsy_e.models.strategy.heat_pump import (
     HeatPumpStrategy,
     MultipleTankHeatPumpStrategy,
@@ -171,7 +172,7 @@ class LeafDataExporter(BaseDataExporter):
         ] + self._specific_labels()
 
     def _specific_labels(self):
-        if isinstance(self.area.strategy, StorageStrategy):
+        if type(self.area.strategy) is StorageStrategy:
             return [
                 "bought [kWh]",
                 "sold [kWh]",
@@ -179,9 +180,18 @@ class LeafDataExporter(BaseDataExporter):
                 "offered [kWh]",
                 "charge [%], losses[kWh]",
             ]
-        if isinstance(self.area.strategy, LoadHoursStrategy):
+        if type(self.area.strategy) is EVChargerStrategy:
+            return [
+                "charging-session",
+                "bought [kWh]",
+                "sold [kWh]",
+                "charge [kWh]",
+                "offered [kWh]",
+                "charge [%], losses[kWh]",
+            ]
+        if type(self.area.strategy) is LoadHoursStrategy:
             return ["desired energy [kWh]", "deficit [kWh]"]
-        if isinstance(self.area.strategy, PVStrategy):
+        if type(self.area.strategy) is PVStrategy:
             return ["produced [kWh]", "not sold [kWh]"]
         return []
 
@@ -201,7 +211,7 @@ class LeafDataExporter(BaseDataExporter):
         ] + self._specific_row(slot, market)
 
     def _specific_row(self, slot, market):
-        if isinstance(self.area.strategy, StorageStrategy):
+        if type(self.area.strategy) is StorageStrategy:
             s = self.area.strategy.state
             return [
                 market.bought_energy(self.area.name),
@@ -211,14 +221,28 @@ class LeafDataExporter(BaseDataExporter):
                 s.charge_history[slot],
                 s.loss_history.get(slot, 0),
             ]
-        if isinstance(self.area.strategy, LoadHoursStrategy):
+        if type(self.area.strategy) is EVChargerStrategy:
+            s = self.area.strategy.state
+            return [
+                (
+                    s.active_charging_session.session_id
+                    if s.active_charging_session
+                    else "EV_NOT_CONNECTED"
+                ),
+                market.bought_energy(self.area.name),
+                market.sold_energy(self.area.name),
+                s.charge_history_kWh[slot],
+                s.offered_history[slot],
+                s.charge_history[slot],
+                s.loss_history.get(slot, 0),
+            ]
+        if type(self.area.strategy) is LoadHoursStrategy:
             desired = self.area.strategy.state.get_desired_energy_Wh(slot) / 1000
             return [desired, self._traded(market) + desired]
-        if isinstance(self.area.strategy, PVStrategy):
+        if type(self.area.strategy) is PVStrategy:
             not_sold = self.area.strategy.state.get_available_energy_kWh(slot)
             produced = self.area.strategy.state.get_energy_production_forecast_kWh(slot, 0.0)
             return [produced, not_sold]
-
         return []
 
 
