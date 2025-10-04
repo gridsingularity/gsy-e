@@ -47,74 +47,32 @@ StorageSettings = ConstSettings.StorageSettings
 
 
 class EVChargerStrategy(StorageStrategy):
-    """Strategy class EV Charger."""
+    """Strategy class EV Charger. Similar to StorageStrategy but only during active sessions."""
 
     # pylint: disable=too-many-arguments
     def __init__(
         self,
         grid_integration: GridIntegrationType = GridIntegrationType.BIDIRECTIONAL,
-        maximum_power_rating_kW: float = EVChargerSettings.MAX_POWER_RATING_KW,
         charging_sessions: list[EVChargingSession] = [],
-        initial_selling_rate: Union[float, dict] = StorageSettings.SELLING_RATE_RANGE.initial,
-        final_selling_rate: Union[float, dict] = StorageSettings.SELLING_RATE_RANGE.final,
-        initial_buying_rate: Union[float, dict] = StorageSettings.BUYING_RATE_RANGE.initial,
-        final_buying_rate: Union[float, dict] = StorageSettings.BUYING_RATE_RANGE.final,
-        fit_to_limit=True,
-        energy_rate_increase_per_update=None,
-        energy_rate_decrease_per_update=None,
-        update_interval=None,
+        maximum_power_rating_kW: float = ConstSettings.EVChargerSettings.MAX_POWER_RATING_KW,
+        **kwargs,
     ):
         """
         Args:
              grid_integration: connection between the grid and EVs
         """
         EVChargerValidator.validate(
-            maximum_power_rating_kW=maximum_power_rating_kW,
             grid_integration=grid_integration,
+            maximum_power_rating_kW=maximum_power_rating_kW,
         )
 
-        super().__init__()
+        super().__init__(**kwargs)
 
         self.grid_integration = grid_integration
+        self.maximum_power_rating_kW = maximum_power_rating_kW
         self.charging_sessions = sorted(charging_sessions, key=lambda s: s.plug_in_time)
-        self.active_session_index = None
-
-        if update_interval is None:
-            update_interval = duration(
-                minutes=ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL
-            )
-        if isinstance(update_interval, int):
-            update_interval = duration(minutes=update_interval)
-
-        self.offer_update = TemplateStrategyOfferUpdater(
-            initial_rate=initial_selling_rate,
-            final_rate=final_selling_rate,
-            fit_to_limit=fit_to_limit,
-            energy_rate_change_per_update=energy_rate_decrease_per_update,
-            update_interval=update_interval,
-        )
-        for time_slot in self.offer_update.initial_rate_profile_buffer.keys():
-            StorageValidator.validate(
-                initial_selling_rate=self.offer_update.initial_rate_profile_buffer[time_slot],
-                final_selling_rate=get_from_profile_same_weekday_and_time(
-                    self.offer_update.final_rate_profile_buffer, time_slot
-                ),
-            )
-        self.bid_update = TemplateStrategyBidUpdater(
-            initial_rate=initial_buying_rate,
-            final_rate=final_buying_rate,
-            fit_to_limit=fit_to_limit,
-            energy_rate_change_per_update=energy_rate_increase_per_update,
-            update_interval=update_interval,
-            rate_limit_object=min,
-        )
-        for time_slot in self.bid_update.initial_rate_profile_buffer.keys():
-            StorageValidator.validate(
-                initial_buying_rate=self.bid_update.initial_rate_profile_buffer[time_slot],
-                final_buying_rate=get_from_profile_same_weekday_and_time(
-                    self.bid_update.final_rate_profile_buffer, time_slot
-                ),
-            )
+        self.active_session_index: Optional[int] = None
+        self._state: Optional[EVChargerState] = None
 
     @property
     def state(self) -> EVChargerState:
@@ -131,21 +89,22 @@ class EVChargerStrategy(StorageStrategy):
                     # switch session
                     self.active_session_index = idx
                     self._state = EVChargerState(
-                        active_charging_session=charging_session,
                         grid_integration=self.grid_integration,
+                        maximum_power_rating_kW=self.maximum_power_rating_kW,
+                        active_charging_session=charging_session,
                     )
-                    # reset price updaters and defaults
-                    self.offer_update.reset(self)
-                    self.bid_update.reset(self)
-
                     self._update_profiles_with_default_values()
-
-                    self._state.activate(
-                        self.simulation_config.slot_length,
-                        now,
-                    )
+                    self._state.activate(self.simulation_config.slot_length, now)
                 return True
         return False
+
+    def event_activate(self):
+        now = self.area.spot_market.time_slot
+
+        self._maybe_update_session(now)
+        if self._state is None:
+            return  # skip StorageStrategy activation when no session active
+        super().event_activate()
 
     def event_market_cycle(self):
         now = self.area.spot_market.time_slot
@@ -160,3 +119,8 @@ class EVChargerStrategy(StorageStrategy):
         if not self._maybe_update_session(now):
             return  # skip if we are in an active charging session
         super().event_tick()
+
+    def _sell_energy_to_spot_market(self):
+        if self.grid_integration == GridIntegrationType.UNIDIRECTIONAL:
+            return  # Do not sell in unidirectional chargers
+        super()._sell_energy_to_spot_market()

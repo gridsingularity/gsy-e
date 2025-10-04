@@ -16,21 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from typing import Dict, List, Optional
-from pendulum import DateTime
-from math import isclose
-
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.enums import GridIntegrationType
-from gsy_framework.utils import convert_kW_to_kWh, limit_float_precision
 
-from gsy_e.gsy_e_core.util import write_default_to_dict
-from gsy_e.models.strategy.state.base_states import StateInterface
 from gsy_e.models.strategy.state.storage_state import (
-    StorageSettings,
     StorageState,
     ESSEnergyOrigin,
-    EnergyOrigin,
 )
 
 EVChargerSettings = ConstSettings.EVChargerSettings
@@ -60,79 +51,30 @@ class EVChargerState(StorageState):
 
     def __init__(
         self,
+        grid_integration: GridIntegrationType,
+        maximum_power_rating_kW: float,
         active_charging_session: EVChargingSession,
-        grid_integration: Optional[GridIntegrationType] = None,
-        max_abs_battery_power_kW=EVChargerSettings.MAX_POWER_RATING_KW,
-        initial_soc=StorageSettings.MIN_ALLOWED_SOC,
-        capacity=StorageSettings.CAPACITY,
-        initial_energy_origin=ESSEnergyOrigin.EXTERNAL,
     ):
+        super().__init__(
+            initial_soc=active_charging_session.initial_soc_percent,
+            capacity=active_charging_session.battery_capacity_kWh,
+            max_abs_battery_power_kW=maximum_power_rating_kW,
+            min_allowed_soc=active_charging_session.min_soc_percent,
+            initial_energy_origin=ESSEnergyOrigin.EXTERNAL,
+        )
         self.active_charging_session = active_charging_session
         self.grid_integration = grid_integration
-        self.max_abs_battery_power_kW = max_abs_battery_power_kW
-        self.initial_soc = initial_soc
-        self.initial_capacity_kWh = capacity * initial_soc / 100
-        self.capacity = capacity
-
-        # storage capacity, that is already sold:
-        self.pledged_sell_kWh = {}
-        # storage capacity, that has been offered (but not traded yet):
-        self.offered_sell_kWh = {}
-        # energy, that has been bought:
-        self.pledged_buy_kWh = {}
-        # energy, that the storage wants to buy (but not traded yet):
-        self.offered_buy_kWh = {}
-        self.time_series_ess_share = {}
-
-        self.charge_history = {}
-        self.charge_history_kWh = {}
-
-        self.offered_history = {}
-        self.energy_to_buy_dict = {}
-        self.energy_to_sell_dict = {}
-
-        self._used_storage = self.initial_capacity_kWh
-        self._battery_energy_per_slot = 0.0
-        self.initial_energy_origin = initial_energy_origin
-        self._used_storage_share = [EnergyOrigin(initial_energy_origin, self.initial_capacity_kWh)]
-        self._current_market_slot = None
-
-    def get_state(self):
-        return {"grid_integration": self.grid_integration}
-
-    def restore_state(self, state):
-        self.grid_integration = state.get("grid_integration")
-
-    def delete_past_state_values(self, market_time_slot):
-        pass
 
     def get_results_dict(self):
-        return {"grid_integration": self.grid_integration}
-
-    def activate(self, slot_length: int, current_time_slot: DateTime) -> None:
-        """Set the battery energy in kWh per current time_slot."""
-        self._battery_energy_per_slot = convert_kW_to_kWh(
-            self.max_abs_battery_power_kW, slot_length
-        )
-        self._current_market_slot = current_time_slot
+        return {
+            "grid_integration": self.grid_integration,
+            "session_start": self.active_charging_session.plug_in_time,
+            "session_duration": self.active_charging_session.duration_minutes,
+        }
 
     def check_state(self, time_slot):
-        """
-        Sanity check of the state variables.
-        """
-        assert True
-
-    def add_default_values_to_state_profiles(self, future_time_slots: List):
-        """Add default values to the state profiles if time_slot key doesn't exist."""
-        for time_slot in future_time_slots:
-            write_default_to_dict(self.pledged_sell_kWh, time_slot, 0)
-            write_default_to_dict(self.pledged_buy_kWh, time_slot, 0)
-            write_default_to_dict(self.offered_sell_kWh, time_slot, 0)
-            write_default_to_dict(self.offered_buy_kWh, time_slot, 0)
-
-            write_default_to_dict(self.charge_history, time_slot, self.initial_soc)
-            write_default_to_dict(self.charge_history_kWh, time_slot, self.initial_capacity_kWh)
-
-            write_default_to_dict(self.energy_to_buy_dict, time_slot, 0)
-            write_default_to_dict(self.energy_to_sell_dict, time_slot, 0)
-            write_default_to_dict(self.offered_history, time_slot, "-")
+        """Skip SOC sanity check for EV chargers (they can start below min SOC)."""
+        # reuse parent checks but skip the min SOC assertion
+        self._clamp_energy_to_sell_kWh([time_slot])
+        self._clamp_energy_to_buy_kWh([time_slot])
+        self._calculate_and_update_soc(time_slot)
