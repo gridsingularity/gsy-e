@@ -17,26 +17,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from logging import getLogger
-from typing import Union, Optional
+from typing import Optional
 
-from pendulum import duration, DateTime
-from gsy_framework.validators import EVChargerValidator, StorageValidator
-from gsy_framework.enums import GridIntegrationType
-from gsy_framework.constants_limits import (
-    ConstSettings,
-    FLOATING_POINT_TOLERANCE,
-)
-from gsy_framework.utils import get_from_profile_same_weekday_and_time
+from pendulum import DateTime
+from gsy_framework.validators import EVChargerValidator
+from gsy_framework.enums import GridIntegrationType, EVChargerStatus
+from gsy_framework.constants_limits import ConstSettings
 
-from gsy_e.models.strategy import BidEnabledStrategy
-from gsy_e.gsy_e_core.exceptions import MarketException
-from gsy_e.models.strategy.mixins import UseMarketMakerMixin
 from gsy_e.models.strategy.state.evcharger_state import EVChargerState, EVChargingSession
-from gsy_e.gsy_e_core.util import is_one_sided_market_simulation, is_two_sided_market_simulation
-from gsy_e.models.strategy.update_frequency import (
-    TemplateStrategyBidUpdater,
-    TemplateStrategyOfferUpdater,
-)
 from gsy_e.models.strategy.storage import StorageStrategy
 
 log = getLogger(__name__)
@@ -72,39 +60,49 @@ class EVChargerStrategy(StorageStrategy):
         self.maximum_power_rating_kW = maximum_power_rating_kW
         self.charging_sessions = sorted(charging_sessions, key=lambda s: s.plug_in_time)
         self.active_session_index: Optional[int] = None
-        self._state: Optional[EVChargerState] = None
+        self.status = EVChargerStatus.IDLE
+
+        self._state = EVChargerState(
+            maximum_power_rating_kW=self.maximum_power_rating_kW,
+        )
 
     @property
     def state(self) -> EVChargerState:
         return self._state
 
-    def _maybe_update_session(self, now: DateTime):
+    def _maybe_update_session(self, now: DateTime) -> bool:
         """Switch StorageStrategy state when entering a new session."""
+        active_session = None
         for idx, charging_session in enumerate(self.charging_sessions):
             start = charging_session.plug_in_time
             end = start.add(minutes=charging_session.duration_minutes)
 
             if start <= now < end:
+                active_session = charging_session
+
                 if self.active_session_index != idx:
                     # switch session
                     self.active_session_index = idx
-                    self._state = EVChargerState(
-                        grid_integration=self.grid_integration,
-                        maximum_power_rating_kW=self.maximum_power_rating_kW,
-                        active_charging_session=charging_session,
-                    )
+                    self._state.reinitialize(active_session)
                     self._update_profiles_with_default_values()
                     self._state.activate(self.simulation_config.slot_length, now)
+                    self._state.add_default_values_to_state_profiles([now])
+                    self.status = EVChargerStatus.ACTIVE
                 return True
+
+        if active_session is None and self.status == EVChargerStatus.ACTIVE:
+            self.active_session_index = None
+            self._state.reset()
+            self.status = EVChargerStatus.IDLE
         return False
 
-    def event_activate(self):
+    def event_activate(self, **kwargs):
         now = self.area.spot_market.time_slot
 
         self._maybe_update_session(now)
-        if self._state is None:
+        if self.status == EVChargerStatus.IDLE:
             return  # skip StorageStrategy activation when no session active
-        super().event_activate()
+        super().event_activate(**kwargs)
 
     def event_market_cycle(self):
         now = self.area.spot_market.time_slot
