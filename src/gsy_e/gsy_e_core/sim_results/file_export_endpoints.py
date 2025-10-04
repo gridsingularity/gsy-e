@@ -223,18 +223,25 @@ class LeafDataExporter(BaseDataExporter):
             ]
         if type(self.area.strategy) is EVChargerStrategy:
             s = self.area.strategy.state
+
+            if s.active_charging_session:
+                return [
+                    s.active_charging_session.session_id,
+                    market.bought_energy(self.area.name),
+                    market.sold_energy(self.area.name),
+                    s.charge_history_kWh[slot],
+                    s.offered_history[slot],
+                    s.charge_history[slot],
+                    s.loss_history.get(slot, 0),
+                ]
             return [
-                (
-                    s.active_charging_session.session_id
-                    if s.active_charging_session
-                    else "EV_NOT_CONNECTED"
-                ),
-                market.bought_energy(self.area.name),
-                market.sold_energy(self.area.name),
-                s.charge_history_kWh[slot],
-                s.offered_history[slot],
-                s.charge_history[slot],
-                s.loss_history.get(slot, 0),
+                "EV_NOT_CONNECTED",
+                "-",
+                "-",
+                "-",
+                "-",
+                "-",
+                "-",
             ]
         if type(self.area.strategy) is LoadHoursStrategy:
             desired = self.area.strategy.state.get_desired_energy_Wh(slot) / 1000
