@@ -2,31 +2,31 @@ from dataclasses import dataclass
 from typing import Dict, TYPE_CHECKING, Optional, Union, List
 from decimal import Decimal
 
-from pendulum import DateTime, duration
 from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.constants_limits import FLOATING_POINT_TOLERANCE
 from gsy_framework.data_classes import Trade, TraderDetails
 from gsy_framework.enums import AvailableMarketTypes
 from gsy_framework.exceptions import GSyException
 from gsy_framework.utils import convert_pendulum_to_str_in_dict
 from gsy_framework.validators.heat_pump_validator import HeatPumpValidator
+from pendulum import DateTime, duration
 
-from gsy_framework.constants_limits import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.util import (
     get_market_maker_rate_from_time_slot,
     get_feed_in_tariff_rate_from_time_slot,
+)
+from gsy_e.models.strategy.energy_parameters.heatpump.cop_models import COPModelType
+from gsy_e.models.strategy.energy_parameters.heatpump.heat_pump import (
+    HeatPumpEnergyParameters,
+    CombinedHeatpumpTanksState,
 )
 from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import (
     WaterTankParameters,
     PCMTankParameters,
 )
-from gsy_e.models.strategy.energy_parameters.heatpump.heat_pump import (
-    HeatPumpEnergyParameters,
-    CombinedHeatpumpTanksState,
-)
+from gsy_e.models.strategy.heat_pump_soc_management import heat_pump_soc_management_factory
 from gsy_e.models.strategy.order_updater import OrderUpdaterParameters, OrderUpdater
 from gsy_e.models.strategy.trading_strategy_base import TradingStrategyBase
-from gsy_e.models.strategy.energy_parameters.heatpump.cop_models import COPModelType
-
 
 if TYPE_CHECKING:
     from gsy_e.models.market import MarketBase
@@ -82,7 +82,7 @@ class MultipleTankHeatPumpStrategy(TradingStrategyBase):
     """Strategy for heat pumps with multiple storages."""
 
     # pylint: disable=too-many-arguments,super-init-not-called, too-many-positional-arguments
-    # pxlint: disable=too-many-locals
+    # pylint: disable=too-many-locals, too-many-instance-attributes
     def __init__(
         self,
         maximum_power_rating_kW: float = ConstSettings.HeatPumpSettings.MAX_POWER_RATING_KW,
@@ -97,7 +97,7 @@ class MultipleTankHeatPumpStrategy(TradingStrategyBase):
         order_updater_parameters: Dict[
             AvailableMarketTypes, HeatPumpOrderUpdaterParameters
         ] = None,
-        preferred_buying_rate: float = ConstSettings.HeatPumpSettings.PREFERRED_BUYING_RATE,
+        preferred_buying_rate: Optional[float] = None,
         heat_demand_Q_profile: Optional[Union[str, float, Dict]] = None,
         cop_model_type: COPModelType = COPModelType.UNIVERSAL,
     ):
@@ -138,6 +138,10 @@ class MultipleTankHeatPumpStrategy(TradingStrategyBase):
         self.consumption_kWh_profile_uuid = consumption_kWh_profile_uuid
         self.source_temp_C_measurement_uuid = source_temp_C_measurement_uuid
         self.consumption_kWh_measurement_uuid = consumption_kWh_measurement_uuid
+
+        self._soc_management = heat_pump_soc_management_factory(
+            self._energy_params, self.preferred_buying_rate
+        )
 
     def _init_price_params(self, order_updater_parameters, preferred_buying_rate):
         self.use_default_updater_params: bool = not order_updater_parameters
@@ -199,6 +203,7 @@ class MultipleTankHeatPumpStrategy(TradingStrategyBase):
 
     def event_activate(self, **kwargs):
         self._energy_params.event_activate()
+        self._soc_management.event_activate()
 
     def event_market_cycle(self) -> None:
         super().event_market_cycle()
@@ -232,13 +237,12 @@ class MultipleTankHeatPumpStrategy(TradingStrategyBase):
     def post_order(
         self, market: "MarketBase", market_slot: DateTime, order_rate: float = None, **kwargs
     ):
-
         if not order_rate:
             order_rate = self._order_updaters[market][market_slot].get_energy_rate(self.area.now)
         else:
             order_rate = Decimal(order_rate)
 
-        order_energy_kWh = Decimal(self._get_energy_buy_energy(order_rate, market_slot))
+        order_energy_kWh = Decimal(self._soc_management.calculate(market_slot, float(order_rate)))
 
         if order_energy_kWh <= FLOATING_POINT_TOLERANCE:
             return
@@ -264,11 +268,6 @@ class MultipleTankHeatPumpStrategy(TradingStrategyBase):
 
         for bid in bids:
             market.delete_bid(bid)
-
-    def _get_energy_buy_energy(self, buy_rate: Decimal, market_slot: DateTime) -> float:
-        if buy_rate > self.preferred_buying_rate:
-            return self._energy_params.get_min_energy_demand_kWh(market_slot)
-        return self._energy_params.get_max_energy_demand_kWh(market_slot)
 
     def _create_order_updaters(
         self, market: "MarketBase", market_slot: DateTime, market_type: AvailableMarketTypes

@@ -394,7 +394,7 @@ class Simulation:
             "paused_time": self._time.paused_time,
             "slot_number": self.progress_info.current_slot_number,
             "slot_length_realtime_s": (
-                str(self._time.slot_length_realtime.seconds)
+                int(self._time.slot_length_realtime.seconds)
                 if self._time.slot_length_realtime
                 else 0
             ),
