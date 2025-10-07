@@ -29,7 +29,7 @@ from gsy_framework.constants_limits import (
     ProfileUuidScenarioKeyNames,
     MeasurementProfileUuidScenarioKeyNames,
 )
-from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from gsy_framework.read_user_profile import UserProfileReader, InputProfileTypes
 from gsy_framework.utils import generate_market_slot_list
 from pendulum import DateTime, instance, duration
 from pony.orm import Database, Required, db_session, select, Optional
@@ -480,10 +480,10 @@ class ProfilesHandler:
                 db_profile = self.db.get_first_data_from_profile(
                     profile_uuid, self.current_timestamp
                 )
-            return read_arbitrary_profile(
+            return UserProfileReader().read_arbitrary_profile(
                 profile_type, db_profile, current_timestamp=self.current_timestamp
             )
-        return read_arbitrary_profile(
+        return UserProfileReader().read_arbitrary_profile(
             profile_type, profile, current_timestamp=self.current_timestamp
         )
 
@@ -493,6 +493,7 @@ class ProfilesHandler:
         profile,
         profile_uuid: str = None,
         input_profile_path: str = None,
+        read_full_profile: bool = False,
     ) -> Dict[DateTime, float]:
         """Reads a new chunk of profile if the buffer does not contain the current time stamp
         Profile chunks are either generated from single values, input daily profiles or profiles
@@ -511,7 +512,7 @@ class ProfilesHandler:
         if profile_uuid is None and self.should_create_profile(profile):
             if input_profile_path:
                 profile = input_profile_path
-            return read_arbitrary_profile(
+            return UserProfileReader(read_full_profile).read_arbitrary_profile(
                 profile_type, profile, current_timestamp=self.current_timestamp
             )
         if self.time_to_rotate_profile(profile):

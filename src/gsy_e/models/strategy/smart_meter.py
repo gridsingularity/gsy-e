@@ -19,7 +19,7 @@ from typing import Dict, Union
 
 from gsy_framework.constants_limits import ConstSettings, FLOATING_POINT_TOLERANCE
 from gsy_framework.data_classes import Offer, TraderDetails
-from gsy_framework.read_user_profile import InputProfileTypes, read_arbitrary_profile
+from gsy_framework.read_user_profile import InputProfileTypes, UserProfileReader
 from gsy_framework.utils import get_from_profile_same_weekday_and_time, limit_float_precision
 from gsy_framework.validators.smart_meter_validator import SmartMeterValidator
 from numpy import random
@@ -133,6 +133,7 @@ class SmartMeterStrategy(BidEnabledStrategy, UseMarketMakerMixin):
             update_interval=update_interval,
             rate_limit_object=max,
         )
+        self._reader = UserProfileReader()
 
     @property
     def state(self) -> SmartMeterState:
@@ -284,19 +285,23 @@ class SmartMeterStrategy(BidEnabledStrategy, UseMarketMakerMixin):
 
     def _area_reconfigure_production_prices(self, **kwargs):
         initial_rate = (
-            read_arbitrary_profile(InputProfileTypes.IDENTITY, kwargs["initial_selling_rate"])
+            self._reader.read_arbitrary_profile(
+                InputProfileTypes.IDENTITY, kwargs["initial_selling_rate"]
+            )
             if kwargs.get("initial_selling_rate") is not None
             else self.offer_update.initial_rate_profile_buffer
         )
 
         final_rate = (
-            read_arbitrary_profile(InputProfileTypes.IDENTITY, kwargs["final_selling_rate"])
+            self._reader.read_arbitrary_profile(
+                InputProfileTypes.IDENTITY, kwargs["final_selling_rate"]
+            )
             if kwargs.get("final_selling_rate") is not None
             else self.offer_update.final_rate_profile_buffer
         )
 
         energy_rate_change_per_update = (
-            read_arbitrary_profile(
+            self._reader.read_arbitrary_profile(
                 InputProfileTypes.IDENTITY, kwargs["energy_rate_decrease_per_update"]
             )
             if kwargs.get("energy_rate_decrease_per_update") is not None
@@ -338,19 +343,23 @@ class SmartMeterStrategy(BidEnabledStrategy, UseMarketMakerMixin):
 
     def _area_reconfigure_consumption_prices(self, **kwargs):
         initial_rate = (
-            read_arbitrary_profile(InputProfileTypes.IDENTITY, kwargs["initial_buying_rate"])
+            self._reader.read_arbitrary_profile(
+                InputProfileTypes.IDENTITY, kwargs["initial_buying_rate"]
+            )
             if kwargs.get("initial_buying_rate") is not None
             else self.bid_update.initial_rate_profile_buffer
         )
 
         final_rate = (
-            read_arbitrary_profile(InputProfileTypes.IDENTITY, kwargs["final_buying_rate"])
+            self._reader.read_arbitrary_profile(
+                InputProfileTypes.IDENTITY, kwargs["final_buying_rate"]
+            )
             if kwargs.get("final_buying_rate") is not None
             else self.bid_update.final_rate_profile_buffer
         )
 
         energy_rate_change_per_update = (
-            read_arbitrary_profile(
+            self._reader.read_arbitrary_profile(
                 InputProfileTypes.IDENTITY, kwargs["energy_rate_increase_per_update"]
             )
             if kwargs.get("energy_rate_increase_per_update") is not None
