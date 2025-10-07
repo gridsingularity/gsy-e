@@ -29,7 +29,7 @@ from gsy_framework.constants_limits import (
     ProfileUuidScenarioKeyNames,
     MeasurementProfileUuidScenarioKeyNames,
 )
-from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from gsy_framework.read_user_profile import UserProfileReader, InputProfileTypes
 from gsy_framework.utils import generate_market_slot_list
 from pendulum import DateTime, instance, duration
 from pony.orm import Database, Required, db_session, select, Optional
@@ -422,6 +422,7 @@ class ProfilesHandler:
         self._start_date = GlobalConfig.start_date
         self._duration = GlobalConfig.sim_duration
         self._scm_data_profiles = {}
+        self._reader = UserProfileReader()
 
     def activate(self):
         """Connect to DB, update current timestamp and get the first chunk of data from the DB"""
@@ -480,10 +481,10 @@ class ProfilesHandler:
                 db_profile = self.db.get_first_data_from_profile(
                     profile_uuid, self.current_timestamp
                 )
-            return read_arbitrary_profile(
+            return self._reader.read_arbitrary_profile(
                 profile_type, db_profile, current_timestamp=self.current_timestamp
             )
-        return read_arbitrary_profile(
+        return self._reader.read_arbitrary_profile(
             profile_type, profile, current_timestamp=self.current_timestamp
         )
 
@@ -511,7 +512,7 @@ class ProfilesHandler:
         if profile_uuid is None and self.should_create_profile(profile):
             if input_profile_path:
                 profile = input_profile_path
-            return read_arbitrary_profile(
+            return self._reader.read_arbitrary_profile(
                 profile_type, profile, current_timestamp=self.current_timestamp
             )
         if self.time_to_rotate_profile(profile):

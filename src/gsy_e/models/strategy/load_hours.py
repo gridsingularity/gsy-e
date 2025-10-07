@@ -22,7 +22,7 @@ from typing import Union, Dict
 from gsy_framework.constants_limits import ConstSettings, FLOATING_POINT_TOLERANCE
 from gsy_framework.data_classes import Offer, TraderDetails
 from gsy_framework.exceptions import GSyDeviceException
-from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from gsy_framework.read_user_profile import UserProfileReader, InputProfileTypes
 from gsy_framework.utils import (
     limit_float_precision,
     get_from_profile_same_weekday_and_time,
@@ -110,6 +110,7 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         self._calculate_active_markets()
         self._cycled_market = set()
         self._simulation_start_timestamp = None
+        self._reader = UserProfileReader()
 
     @property
     def state(self) -> LoadState:
@@ -231,19 +232,19 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
 
     def _area_reconfigure_prices(self, **kwargs):
         if kwargs.get("initial_buying_rate") is not None:
-            initial_rate = read_arbitrary_profile(
+            initial_rate = self._reader.read_arbitrary_profile(
                 InputProfileTypes.IDENTITY, kwargs["initial_buying_rate"]
             )
         else:
             initial_rate = self.bid_update.initial_rate_profile_buffer
         if kwargs.get("final_buying_rate") is not None:
-            final_rate = read_arbitrary_profile(
+            final_rate = self._reader.read_arbitrary_profile(
                 InputProfileTypes.IDENTITY, kwargs["final_buying_rate"]
             )
         else:
             final_rate = self.bid_update.final_rate_profile_buffer
         if kwargs.get("energy_rate_increase_per_update") is not None:
-            energy_rate_change_per_update = read_arbitrary_profile(
+            energy_rate_change_per_update = self._reader.read_arbitrary_profile(
                 InputProfileTypes.IDENTITY, kwargs["energy_rate_increase_per_update"]
             )
         else:

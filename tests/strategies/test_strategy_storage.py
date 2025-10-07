@@ -32,7 +32,7 @@ from gsy_framework.constants_limits import (
 )
 from gsy_framework.data_classes import Offer, Trade, BalancingOffer, Bid, TraderDetails
 from gsy_framework.exceptions import GSyDeviceException
-from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from gsy_framework.read_user_profile import UserProfileReader, InputProfileTypes
 from pendulum import Duration, DateTime, now
 
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
@@ -292,10 +292,10 @@ def storage_strategy_test3(area_test3, called):
 
 
 def test_if_storage_doesnt_buy_too_expensive(storage_strategy_test3, area_test3):
-    storage_strategy_test3.bid_update.initial_rate = read_arbitrary_profile(
+    storage_strategy_test3.bid_update.initial_rate = UserProfileReader().read_arbitrary_profile(
         InputProfileTypes.IDENTITY, 0
     )
-    storage_strategy_test3.bid_update.final_rate = read_arbitrary_profile(
+    storage_strategy_test3.bid_update.final_rate = UserProfileReader().read_arbitrary_profile(
         InputProfileTypes.IDENTITY, 1
     )
     storage_strategy_test3.event_activate()
