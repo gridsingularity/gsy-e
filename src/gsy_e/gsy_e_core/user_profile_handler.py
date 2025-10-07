@@ -422,7 +422,6 @@ class ProfilesHandler:
         self._start_date = GlobalConfig.start_date
         self._duration = GlobalConfig.sim_duration
         self._scm_data_profiles = {}
-        self._reader = UserProfileReader()
 
     def activate(self):
         """Connect to DB, update current timestamp and get the first chunk of data from the DB"""
@@ -481,10 +480,10 @@ class ProfilesHandler:
                 db_profile = self.db.get_first_data_from_profile(
                     profile_uuid, self.current_timestamp
                 )
-            return self._reader.read_arbitrary_profile(
+            return UserProfileReader().read_arbitrary_profile(
                 profile_type, db_profile, current_timestamp=self.current_timestamp
             )
-        return self._reader.read_arbitrary_profile(
+        return UserProfileReader().read_arbitrary_profile(
             profile_type, profile, current_timestamp=self.current_timestamp
         )
 
@@ -494,6 +493,7 @@ class ProfilesHandler:
         profile,
         profile_uuid: str = None,
         input_profile_path: str = None,
+        read_full_profile: bool = False,
     ) -> Dict[DateTime, float]:
         """Reads a new chunk of profile if the buffer does not contain the current time stamp
         Profile chunks are either generated from single values, input daily profiles or profiles
@@ -512,7 +512,7 @@ class ProfilesHandler:
         if profile_uuid is None and self.should_create_profile(profile):
             if input_profile_path:
                 profile = input_profile_path
-            return self._reader.read_arbitrary_profile(
+            return UserProfileReader(read_full_profile).read_arbitrary_profile(
                 profile_type, profile, current_timestamp=self.current_timestamp
             )
         if self.time_to_rotate_profile(profile):

@@ -59,6 +59,7 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
             buying_rate_profile_uuid,
             energy_buy_rate,
             profile_type=InputProfileTypes.IDENTITY,
+            read_full_profile=True,
         )
 
         # sell
@@ -72,6 +73,7 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
             energy_rate_profile_uuid,
             energy_sell_rate,
             profile_type=InputProfileTypes.IDENTITY,
+            read_full_profile=True,
         )
 
         # This is done to support the UI which handles the Infinite Bus only as a Market Maker.

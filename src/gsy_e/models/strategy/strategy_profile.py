@@ -62,6 +62,7 @@ class StrategyProfile(StrategyProfileBase):
         input_profile_uuid=None,
         input_energy_rate=None,
         profile_type: InputProfileTypes = None,
+        read_full_profile=False,
     ):
         # pylint: disable=super-init-not-called
         self.input_profile = input_profile
@@ -81,6 +82,7 @@ class StrategyProfile(StrategyProfileBase):
         self.profile = {}
 
         self.profile_type = profile_type
+        self._read_full_profile = read_full_profile
 
     def get_value(self, time_slot: DateTime) -> float:
         if not self.profile:
@@ -147,6 +149,7 @@ class StrategyProfile(StrategyProfileBase):
             profile=profile,
             profile_uuid=self.input_profile_uuid,
             input_profile_path=self.input_profile,
+            read_full_profile=self._read_full_profile,
         )
 
         self.profile = self._add_last_slot_value_to_new_profile_rotation(new_profile_chunk)
