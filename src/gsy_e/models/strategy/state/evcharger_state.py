@@ -16,10 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from typing import Optional
-
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.enums import GridIntegrationType, EVChargerStatus
+from gsy_framework.enums import EVChargerStatus
 
 from gsy_e.models.strategy.state.storage_state import (
     StorageState,

@@ -31,6 +31,8 @@ from gsy_e.models.strategy.ev_charger import (
     GridIntegrationType,
 )
 
+
+# flake8: noqa
 from .test_strategy_storage import FakeArea, area_test1, FakeMarket, auto_fixture, area_test7
 
 
