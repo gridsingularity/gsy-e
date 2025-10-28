@@ -149,6 +149,11 @@ class ProfileDBConnectionHandler:
             host=os.environ.get("PROFILE_DB_HOST", "localhost"),
             port=os.environ.get("PROFILE_DB_PORT", "5432"),
             database=os.environ.get("PROFILE_DB_NAME", "d3a_web"),
+            keepalives=1,
+            keepalives_idle=30,
+            keepalives_interval=10,
+            keepalives_count=5,
+            connect_timeout=10,
         )
 
         self._db.generate_mapping(check_tables=True)
