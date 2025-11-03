@@ -137,4 +137,3 @@ class EVChargerStrategy(StorageStrategy):
         if self.grid_integration == GridIntegrationType.UNIDIRECTIONAL:
             return  # Do not sell in unidirectional chargers
         super()._sell_energy_to_spot_market()
-
