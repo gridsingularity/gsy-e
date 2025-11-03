@@ -40,7 +40,9 @@ class CommercialStrategy(BaseStrategy):
 
         if energy_rate is None:
             energy_rate = ConstSettings.GeneralSettings.DEFAULT_MARKET_MAKER_RATE
-        self._sell_energy_profile = StrategyProfile(input_energy_rate=energy_rate)
+        self._sell_energy_profile = StrategyProfile(
+            input_energy_rate=energy_rate, read_full_profile=True
+        )
         CommercialProducerValidator.validate(energy_rate=self._sell_energy_profile.profile)
 
     @property

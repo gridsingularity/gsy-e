@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from typing import Union, Optional
 
-from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from gsy_framework.read_user_profile import UserProfileReader, InputProfileTypes
 from gsy_framework.utils import convert_str_to_pendulum_in_dict, convert_pendulum_to_str_in_dict
 from gsy_framework.utils import get_from_profile_same_weekday_and_time, convert_kW_to_kWh
 from gsy_framework.validators import FiniteDieselGeneratorValidator
@@ -46,7 +46,7 @@ class FinitePowerPlant(CommercialStrategy):
 
     def event_activate(self, **kwargs):
         super().event_activate()
-        self.max_available_power_kW = read_arbitrary_profile(
+        self.max_available_power_kW = UserProfileReader().read_arbitrary_profile(
             InputProfileTypes.IDENTITY, self.max_available_power_kW
         )
 

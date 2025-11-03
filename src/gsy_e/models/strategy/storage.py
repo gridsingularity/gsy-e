@@ -24,7 +24,7 @@ from typing import Union, Optional
 from gsy_framework.constants_limits import ConstSettings, FLOATING_POINT_TOLERANCE
 from gsy_framework.data_classes import TraderDetails
 from gsy_framework.exceptions import GSyException
-from gsy_framework.read_user_profile import InputProfileTypes, read_arbitrary_profile
+from gsy_framework.read_user_profile import InputProfileTypes, UserProfileReader
 from gsy_framework.utils import get_from_profile_same_weekday_and_time, key_in_dict_and_not_none
 from gsy_framework.validators import StorageValidator
 from pendulum import duration
@@ -153,6 +153,7 @@ class StorageStrategy(BidEnabledStrategy):
         )
         self.cap_price_strategy = cap_price_strategy
         self.balancing_energy_ratio = BalancingRatio(*balancing_energy_ratio)
+        self._reader = UserProfileReader()
 
     def _create_future_market_strategy(self):
         return future_market_strategy_factory(self.asset_type)
@@ -163,31 +164,31 @@ class StorageStrategy(BidEnabledStrategy):
 
     def _area_reconfigure_prices(self, **kwargs):  # pylint: disable=too-many-branches
         if key_in_dict_and_not_none(kwargs, "initial_selling_rate"):
-            initial_selling_rate = read_arbitrary_profile(
+            initial_selling_rate = self._reader.read_arbitrary_profile(
                 InputProfileTypes.IDENTITY, kwargs["initial_selling_rate"]
             )
         else:
             initial_selling_rate = self.offer_update.initial_rate_profile_buffer
         if key_in_dict_and_not_none(kwargs, "final_selling_rate"):
-            final_selling_rate = read_arbitrary_profile(
+            final_selling_rate = self._reader.read_arbitrary_profile(
                 InputProfileTypes.IDENTITY, kwargs["final_selling_rate"]
             )
         else:
             final_selling_rate = self.offer_update.final_rate_profile_buffer
         if key_in_dict_and_not_none(kwargs, "initial_buying_rate"):
-            initial_buying_rate = read_arbitrary_profile(
+            initial_buying_rate = self._reader.read_arbitrary_profile(
                 InputProfileTypes.IDENTITY, kwargs["initial_buying_rate"]
             )
         else:
             initial_buying_rate = self.bid_update.initial_rate_profile_buffer
         if key_in_dict_and_not_none(kwargs, "final_buying_rate"):
-            final_buying_rate = read_arbitrary_profile(
+            final_buying_rate = self._reader.read_arbitrary_profile(
                 InputProfileTypes.IDENTITY, kwargs["final_buying_rate"]
             )
         else:
             final_buying_rate = self.bid_update.final_rate_profile_buffer
         if key_in_dict_and_not_none(kwargs, "energy_rate_decrease_per_update"):
-            energy_rate_decrease_per_update = read_arbitrary_profile(
+            energy_rate_decrease_per_update = self._reader.read_arbitrary_profile(
                 InputProfileTypes.IDENTITY, kwargs["energy_rate_decrease_per_update"]
             )
         else:
@@ -195,7 +196,7 @@ class StorageStrategy(BidEnabledStrategy):
                 self.offer_update.energy_rate_change_per_update_profile_buffer
             )
         if key_in_dict_and_not_none(kwargs, "energy_rate_increase_per_update"):
-            energy_rate_increase_per_update = read_arbitrary_profile(
+            energy_rate_increase_per_update = self._reader.read_arbitrary_profile(
                 InputProfileTypes.IDENTITY, kwargs["energy_rate_increase_per_update"]
             )
         else:
@@ -332,8 +333,8 @@ class StorageStrategy(BidEnabledStrategy):
         self.event_activate_energy()
         self.event_activate_price()
 
-    @staticmethod
     def _validate_constructor_arguments(  # pylint: disable=too-many-arguments, too-many-branches
+        self,
         initial_soc=None,
         min_allowed_soc=None,
         battery_capacity_kWh=None,
@@ -369,10 +370,10 @@ class StorageStrategy(BidEnabledStrategy):
             ):
                 raise ValueError("Final selling rate must be greater equal 0.")
         if initial_selling_rate is not None and final_selling_rate is not None:
-            initial_selling_rate = read_arbitrary_profile(
+            initial_selling_rate = self._reader.read_arbitrary_profile(
                 InputProfileTypes.IDENTITY, initial_selling_rate
             )
-            final_selling_rate = read_arbitrary_profile(
+            final_selling_rate = self._reader.read_arbitrary_profile(
                 InputProfileTypes.IDENTITY, final_selling_rate
             )
             if any(
@@ -383,16 +384,16 @@ class StorageStrategy(BidEnabledStrategy):
         if initial_buying_rate is not None and initial_buying_rate < 0:
             raise ValueError("Initial buying rate must be greater equal 0.")
         if final_buying_rate is not None:
-            final_buying_rate = read_arbitrary_profile(
+            final_buying_rate = self._reader.read_arbitrary_profile(
                 InputProfileTypes.IDENTITY, final_buying_rate
             )
             if any(rate < 0 for _, rate in final_buying_rate.items()):
                 raise ValueError("Final buying rate must be greater equal 0.")
         if initial_buying_rate is not None and final_buying_rate is not None:
-            initial_buying_rate = read_arbitrary_profile(
+            initial_buying_rate = self._reader.read_arbitrary_profile(
                 InputProfileTypes.IDENTITY, initial_buying_rate
             )
-            final_buying_rate = read_arbitrary_profile(
+            final_buying_rate = self._reader.read_arbitrary_profile(
                 InputProfileTypes.IDENTITY, final_buying_rate
             )
             if any(
@@ -401,10 +402,10 @@ class StorageStrategy(BidEnabledStrategy):
             ):
                 raise ValueError("Initial buying rate must be less than final buying rate.")
         if final_selling_rate is not None and final_buying_rate is not None:
-            final_selling_rate = read_arbitrary_profile(
+            final_selling_rate = self._reader.read_arbitrary_profile(
                 InputProfileTypes.IDENTITY, final_selling_rate
             )
-            final_buying_rate = read_arbitrary_profile(
+            final_buying_rate = self._reader.read_arbitrary_profile(
                 InputProfileTypes.IDENTITY, final_buying_rate
             )
             if any(

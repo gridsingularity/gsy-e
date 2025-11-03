@@ -3,7 +3,7 @@
     "sim_duration": "24h",
     "slot_length": "15m",
     "tick_length": "15s",
-    "start_date": "2025-09-06"
+    "start_date": "2025-10-07"
   },
   "advanced_settings": {
     "GeneralSettings": {
@@ -219,7 +219,7 @@
       ],
       "TEMP_C_LIMIT": [
         0.0,
-        200.0
+        100.0
       ],
       "TANK_VOLUME_L_LIMIT": [
         0,
