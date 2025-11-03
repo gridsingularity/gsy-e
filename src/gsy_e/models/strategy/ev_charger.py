@@ -23,7 +23,7 @@ from pendulum import DateTime
 from gsy_framework.validators import EVChargerValidator
 from gsy_framework.enums import GridIntegrationType, EVChargerStatus
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
-from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from gsy_framework.read_user_profile import UserProfileReader, InputProfileTypes
 
 from gsy_e.models.strategy.state.evcharger_state import EVChargerState, EVChargingSession
 from gsy_e.models.strategy.storage import StorageStrategy
@@ -71,7 +71,7 @@ class EVChargerStrategy(StorageStrategy):
         # Convert preferred_charging_power to profile if provided
         preferred_power_profile = None
         if preferred_charging_power is not None:
-            preferred_power_profile = read_arbitrary_profile(
+            preferred_power_profile = UserProfileReader().read_arbitrary_profile(
                 InputProfileTypes.IDENTITY, preferred_charging_power
             )
 
