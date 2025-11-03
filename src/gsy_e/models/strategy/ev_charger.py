@@ -17,12 +17,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from logging import getLogger
-from typing import Optional
+from typing import Optional, Union, Dict
 
 from pendulum import DateTime
 from gsy_framework.validators import EVChargerValidator
 from gsy_framework.enums import GridIntegrationType, EVChargerStatus
-from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
+from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
 
 from gsy_e.models.strategy.state.evcharger_state import EVChargerState, EVChargingSession
 from gsy_e.models.strategy.storage import StorageStrategy
@@ -43,27 +44,41 @@ class EVChargerStrategy(StorageStrategy):
         grid_integration: GridIntegrationType = GridIntegrationType.BIDIRECTIONAL,
         charging_sessions: list[EVChargingSession] = [],
         maximum_power_rating_kW: float = ConstSettings.EVChargerSettings.MAX_POWER_RATING_KW,
+        preferred_charging_power: Optional[Union[float, Dict[DateTime, float]]] = None,
         **kwargs,
     ):
         """
         Args:
              grid_integration: connection between the grid and EVs
+             preferred_charging_power: User-specified charging power (kW) per market slot that
+                replaces default strategy. Can be a constant value or time-based profile.
         """
         EVChargerValidator.validate(
             grid_integration=grid_integration,
             maximum_power_rating_kW=maximum_power_rating_kW,
+            preferred_charging_power=preferred_charging_power,
         )
 
         super().__init__(**kwargs)
 
         self.grid_integration = grid_integration
         self.maximum_power_rating_kW = maximum_power_rating_kW
+        self.preferred_charging_power = preferred_charging_power
         self.charging_sessions = sorted(charging_sessions, key=lambda s: s.plug_in_time)
         self.active_session_index: Optional[int] = None
         self.status = EVChargerStatus.IDLE
 
+        # Convert preferred_charging_power to profile if provided
+        preferred_power_profile = None
+        if preferred_charging_power is not None:
+            preferred_power_profile = read_arbitrary_profile(
+                InputProfileTypes.IDENTITY, preferred_charging_power
+            )
+
         self._state = EVChargerState(
             maximum_power_rating_kW=self.maximum_power_rating_kW,
+            preferred_power_profile=preferred_power_profile,
+            slot_length=GlobalConfig.slot_length,
         )
 
     @property
@@ -122,3 +137,4 @@ class EVChargerStrategy(StorageStrategy):
         if self.grid_integration == GridIntegrationType.UNIDIRECTIONAL:
             return  # Do not sell in unidirectional chargers
         super()._sell_energy_to_spot_market()
+

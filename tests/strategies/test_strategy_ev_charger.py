@@ -132,3 +132,29 @@ def test_if_unidirectional_ev_charger_doesnt_sell_energy(ev_charger_strategy, ar
     # Then
     assert ev_charger_strategy.state.offered_sell_kWh[sell_market.time_slot] == 0
     assert len(ev_charger_strategy.offers.posted_in_market(sell_market.id)) == 0
+
+
+def test_if_preferred_charging_power_overrides_bought_energy(ev_charger_strategy, area_test1):
+    # Given
+    preferred_power_kW = 1.5
+    strategy = EVChargerStrategy(
+        maximum_power_rating_kW=ev_charger_strategy.maximum_power_rating_kW,
+        initial_buying_rate=ev_charger_strategy.bid_update.initial_rate_profile_buffer,
+        final_buying_rate=ev_charger_strategy.bid_update.final_rate_profile_buffer,
+        initial_selling_rate=ev_charger_strategy.offer_update.initial_rate_profile_buffer,
+        final_selling_rate=ev_charger_strategy.offer_update.final_rate_profile_buffer,
+        charging_sessions=ev_charger_strategy.charging_sessions,
+        preferred_charging_power=preferred_power_kW,
+    )
+    strategy.owner = area_test1
+    strategy.area = area_test1
+
+    # When
+    strategy.event_activate()
+    time_slot = area_test1.spot_market.time_slot
+
+    # Then
+    slot_length_hours = area_test1.config.slot_length.total_hours()
+    expected_energy_kWh = preferred_power_kW * slot_length_hours
+    actual_energy_kWh = strategy.state.get_available_energy_to_buy_kWh(time_slot)
+    assert isclose(actual_energy_kWh, expected_energy_kWh, rel_tol=1e-03)
