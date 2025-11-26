@@ -105,7 +105,7 @@ class EVChargerState(StorageState):
 
     def get_results_dict(self, current_time_slot):
         """Return EV charger state summary for results reporting."""
-        if not getattr(self, "active_charging_session", None):
+        if self.active_charging_session is None:
             return {
                 "status": EVChargerStatus.IDLE,
             }
@@ -145,7 +145,7 @@ class EVChargerState(StorageState):
         Override to use preferred charging power when configured.
 
         Positive preferred power = charging (buy energy from grid)
-        Negative preferred power = discharging (handled by sell logic)
+        Negative preferred power = discharging (no buying allowed)
         """
         preferred_power_kW = self._get_preferred_power_for_slot(time_slot)
 
@@ -153,26 +153,31 @@ class EVChargerState(StorageState):
             # No preferred power set, use default storage behavior
             return super().get_available_energy_to_buy_kWh(time_slot)
 
-        # Only buy if positive (charging mode)
-        energy_kWh = self._convert_power_to_energy(preferred_power_kW, time_slot)
-        if energy_kWh > 0:
-            max_energy_to_buy = super().get_available_energy_to_buy_kWh(time_slot)
-            return min(energy_kWh, max_energy_to_buy)
+        if preferred_power_kW < 0:
+            # Preferred power is discharging - no buying allowed
+            return 0.0
 
-        return 0.0
+        # Positive preferred power means charging at specified rate
+        energy_kWh = self._convert_power_to_energy(preferred_power_kW, time_slot)
+        max_energy_to_buy = super().get_available_energy_to_buy_kWh(time_slot)
+        return min(energy_kWh, max_energy_to_buy)
 
     def get_available_energy_to_sell_kWh(self, time_slot: DateTime) -> float:
         """
         Override to use preferred charging power when configured.
 
         Negative preferred power = discharging (sell energy to grid)
-        Positive preferred power = charging (handled by buy logic)
+        Positive preferred power = charging (no selling allowed)
         """
         preferred_power_kW = self._get_preferred_power_for_slot(time_slot)
 
-        if preferred_power_kW is None or preferred_power_kW >= 0:
-            # No preferred power or it's positive (charging), use default storage behavior
+        if preferred_power_kW is None:
+            # No preferred power set, use default storage behavior
             return super().get_available_energy_to_sell_kWh(time_slot)
+
+        if preferred_power_kW >= 0:
+            # Preferred power is charging/neutral - no selling allowed
+            return 0.0
 
         # Convert negative power (discharging) to positive energy to sell
         energy_kWh = abs(self._convert_power_to_energy(preferred_power_kW, time_slot))
