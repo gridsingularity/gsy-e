@@ -111,8 +111,9 @@ class EVChargerStrategy(StorageStrategy):
             self.active_session_index = None
             self._state.reset()
             self.status = EVChargerStatus.IDLE
+            return False
 
-        return active_session is not None
+        return True
 
     def event_activate(self, **kwargs):
         if not self._is_charging_active():
