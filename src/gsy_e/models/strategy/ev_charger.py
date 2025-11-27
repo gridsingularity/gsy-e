@@ -85,8 +85,8 @@ class EVChargerStrategy(StorageStrategy):
     def state(self) -> EVChargerState:
         return self._state
 
-    def _is_charging_active(self) -> bool:
-        """Check if a charging session is active and update state accordingly."""
+    def _update_session_state(self) -> None:
+        """Update charging session state based on current time slot."""
         now = self.area.spot_market.time_slot
         active_session = None
 
@@ -105,28 +105,28 @@ class EVChargerStrategy(StorageStrategy):
                     self._state.activate(self.simulation_config.slot_length, now)
                     self._state.add_default_values_to_state_profiles([now])
                     self.status = EVChargerStatus.ACTIVE
-                return True
+                return
 
         if active_session is None and self.status == EVChargerStatus.ACTIVE:
             self.active_session_index = None
             self._state.reset()
             self.status = EVChargerStatus.IDLE
-            return False
-
-        return True
 
     def event_activate(self, **kwargs):
-        if not self._is_charging_active():
+        self._update_session_state()
+        if self.status == EVChargerStatus.IDLE:
             return  # skip StorageStrategy activation when no session active
         super().event_activate(**kwargs)
 
     def event_market_cycle(self):
-        if not self._is_charging_active():
+        self._update_session_state()
+        if self.status == EVChargerStatus.IDLE:
             return  # skip if no charging session is active
         super().event_market_cycle()
 
     def event_tick(self):
-        if not self._is_charging_active():
+        self._update_session_state()
+        if self.status == EVChargerStatus.IDLE:
             return  # skip if no charging session is active
         super().event_tick()
 
