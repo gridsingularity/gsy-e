@@ -190,3 +190,16 @@ class TestPCMTankState:
         assert pcm_tank._params.max_temp_pcm_C == 100
         assert pcm_tank._params.initial_temp_C == 50
         assert pcm_tank._condenser_temp_C == {CURRENT_MARKET_SLOT: 37}
+
+    def test_event_market_cycle_applies_losses(self, pcm_tank):
+        # Given
+        pcm_tank._htf_temps_C[CURRENT_MARKET_SLOT] = [40] * 5
+        pcm_tank._pcm_temps_C[CURRENT_MARKET_SLOT] = [50] * 5
+        pcm_tank._params.loss_per_day_percent = 96  # = 1% per market slot
+
+        # When
+        pcm_tank.event_market_cycle(CURRENT_MARKET_SLOT)
+
+        # Then
+        assert pcm_tank._pcm_temps_C[CURRENT_MARKET_SLOT] == [49.5] * 5
+        assert pcm_tank._htf_temps_C[CURRENT_MARKET_SLOT] == [39.6] * 5

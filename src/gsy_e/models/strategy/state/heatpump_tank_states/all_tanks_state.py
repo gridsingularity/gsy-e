@@ -58,7 +58,6 @@ class AllTanksState:
                 tank.no_charge(time_slot)
             else:
                 tank.decrease_tank_temp_from_heat_energy(heat_energy_per_tank_kWh, time_slot)
-        return
 
     def no_charge(self, time_slot: DateTime):
         """Trigger no_charge method for all tanks"""
@@ -133,6 +132,11 @@ class AllTanksState:
         """Perform steps when activate event is called"""
         for tank in self._tanks_states:
             tank.init()
+
+    def event_market_cycle(self, time_slot: DateTime):
+        """Perform steps when market cycle event is emitted."""
+        for tank in self._tanks_states:
+            tank.event_market_cycle(time_slot)
 
     def _get_scaling_factors_for_charging(self, time_slot):
         _current_dod_tanks = [tank.get_dod_energy_kJ(time_slot) for tank in self._tanks_states]

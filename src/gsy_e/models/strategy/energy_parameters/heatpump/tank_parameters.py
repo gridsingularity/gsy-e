@@ -1,7 +1,8 @@
 from enum import Enum
 from dataclasses import dataclass
+from pendulum import duration
 
-from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 
 
 class HeatpumpTankTypes(Enum):
@@ -28,6 +29,12 @@ class BaseTankParameters:
     type: HeatpumpTankTypes = HeatpumpTankTypes.WATER
     name: str = ""
     initial_temp_C: float = ConstSettings.HeatPumpSettings.INIT_TEMP_C
+    loss_per_day_percent: float = 0
+
+    @property
+    def per_market_slot_loss(self):
+        """Return the loss per market slot."""
+        return (self.loss_per_day_percent / (duration(hours=24) / GlobalConfig.slot_length)) / 100
 
 
 @dataclass
