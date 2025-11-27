@@ -200,8 +200,8 @@ class PCMTankState(TankStateBase):
 
     def no_charge(self, time_slot: DateTime):
         self._htf_temps_C[time_slot] = self._get_htf_temps_C(self._last_time_slot(time_slot))
-        self._pcm_temps_C[time_slot] = self._get_pcm_temps_C(self._last_time_slot(time_slot))
-        self._soc[time_slot] = self._soc[self._last_time_slot(time_slot)]
+        self._pcm_temps_C[time_slot] = self._get_htf_temps_C(self._last_time_slot(time_slot))
+        self._set_soc_after_charging(time_slot)
         self._set_condenser_temp_C(self.get_htf_temp_C(time_slot), time_slot)
 
     def get_results_dict(self, current_time_slot: Optional[DateTime] = None) -> dict:
