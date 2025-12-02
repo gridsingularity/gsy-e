@@ -156,7 +156,7 @@ class EVChargerState(StorageState):
             return 0.0
 
         # Positive preferred power means charging at specified rate
-        energy_kWh = self._convert_power_to_energy(preferred_power_kW, time_slot)
+        energy_kWh = self._convert_power_to_energy(preferred_power_kW)
         max_energy_to_buy = super().get_available_energy_to_buy_kWh(time_slot)
         return min(energy_kWh, max_energy_to_buy)
 
