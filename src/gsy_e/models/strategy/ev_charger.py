@@ -26,6 +26,7 @@ from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.read_user_profile import UserProfileReader, InputProfileTypes
 
 from gsy_e.models.strategy.state.evcharger_state import EVChargerState, EVChargingSession
+from gsy_e.models.strategy.state.storage_state import StorageLosses
 from gsy_e.models.strategy.storage import StorageStrategy
 
 log = getLogger(__name__)
@@ -41,10 +42,11 @@ class EVChargerStrategy(StorageStrategy):
     # pylint: disable=too-many-arguments
     def __init__(
         self,
-        grid_integration: GridIntegrationType = GridIntegrationType.BIDIRECTIONAL,
+        grid_integration: GridIntegrationType = GridIntegrationType.UNIDIRECTIONAL,
         charging_sessions: list[EVChargingSession] = [],
         maximum_power_rating_kW: float = ConstSettings.EVChargerSettings.MAX_POWER_RATING_KW,
         preferred_charging_power: Optional[Union[float, Dict[DateTime, float]]] = None,
+        charging_efficiency: float = 0.9,
         **kwargs,
     ):
         """
@@ -52,12 +54,23 @@ class EVChargerStrategy(StorageStrategy):
              grid_integration: connection between the grid and EVs
              preferred_charging_power: User-specified charging power (kW) per market slot that
                 replaces default strategy. Can be a constant value or time-based profile.
+             charging_efficiency: Efficiency of charging/discharging (default 0.9 = 90%)
         """
         EVChargerValidator.validate(
             grid_integration=grid_integration,
             maximum_power_rating_kW=maximum_power_rating_kW,
             preferred_charging_power=preferred_charging_power,
         )
+
+        # Convert efficiency to loss percentage for both charging and discharging
+        loss_percent = 1.0 - charging_efficiency
+        losses = kwargs.get("losses")
+        if not losses:
+            losses = StorageLosses(
+                charging_loss_percent=loss_percent,
+                discharging_loss_percent=loss_percent,
+            )
+            kwargs["losses"] = losses
 
         super().__init__(**kwargs)
 
@@ -79,6 +92,7 @@ class EVChargerStrategy(StorageStrategy):
             maximum_power_rating_kW=self.maximum_power_rating_kW,
             preferred_power_profile=preferred_power_profile,
             slot_length=GlobalConfig.slot_length,
+            losses=losses,
         )
 
     @property

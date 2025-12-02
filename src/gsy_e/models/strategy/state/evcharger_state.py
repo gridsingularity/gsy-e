@@ -27,6 +27,7 @@ from gsy_framework.utils import get_from_profile_same_weekday_and_time
 from gsy_e.models.strategy.state.storage_state import (
     StorageState,
     ESSEnergyOrigin,
+    StorageLosses,
 )
 
 EVChargerSettings = ConstSettings.EVChargerSettings
@@ -65,11 +66,13 @@ class EVChargerState(StorageState):
         maximum_power_rating_kW: float,
         preferred_power_profile: dict = None,
         slot_length: duration = None,
+        losses: StorageLosses = None,
     ):
         self.maximum_power_rating_kW = maximum_power_rating_kW
         self.active_charging_session = None
         self._preferred_power_profile = preferred_power_profile
         self._slot_length = slot_length
+        self._losses = losses
 
         # dummy initialization of base storage
         super().__init__(
@@ -78,6 +81,7 @@ class EVChargerState(StorageState):
             max_abs_battery_power_kW=0,
             min_allowed_soc=0,
             initial_energy_origin=ESSEnergyOrigin.EXTERNAL,
+            losses=losses,
         )
 
     def reinitialize(self, session: EVChargingSession):
@@ -90,6 +94,7 @@ class EVChargerState(StorageState):
             max_abs_battery_power_kW=self.maximum_power_rating_kW,
             min_allowed_soc=session.min_soc_percent,
             initial_energy_origin=ESSEnergyOrigin.EXTERNAL,
+            losses=self._losses,
         )
 
     def reset(self):

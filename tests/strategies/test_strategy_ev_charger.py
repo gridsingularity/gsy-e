@@ -95,6 +95,7 @@ def test_if_ev_charger_sells_energy(ev_charger_strategy, area_test7):
         battery_capacity_kWh=3.01,
     )
     ev_charger_strategy.charging_sessions[0] = new_session
+    ev_charger_strategy.grid_integration = GridIntegrationType.BIDIRECTIONAL
 
     # When
     ev_charger_strategy.event_activate()
