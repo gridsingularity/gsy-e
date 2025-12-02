@@ -22,7 +22,6 @@ from pendulum import DateTime, duration
 
 from gsy_framework.constants_limits import ConstSettings, DATE_TIME_FORMAT
 from gsy_framework.enums import EVChargerStatus
-from gsy_framework.utils import get_from_profile_same_weekday_and_time
 
 from gsy_e.models.strategy.state.storage_state import (
     StorageState,
@@ -131,15 +130,9 @@ class EVChargerState(StorageState):
         if time_slot in self._preferred_power_profile:
             return self._preferred_power_profile[time_slot]
 
-        # For canary network, try weekday/time matching
-        if ConstSettings.GeneralSettings.IS_CANARY_NETWORK:
-            return get_from_profile_same_weekday_and_time(
-                self._preferred_power_profile, time_slot, ignore_not_found=True
-            )
-
         return None
 
-    def _convert_power_to_energy(self, power_kW: float, time_slot: DateTime) -> float:
+    def _convert_power_to_energy(self, power_kW: float) -> float:
         """Convert power (kW) to energy (kWh) based on slot length for the given time slot."""
         if self._slot_length is None:
             return 0.0
