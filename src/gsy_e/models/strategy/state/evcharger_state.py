@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from typing import Optional
+from typing import Optional, Dict, List
 
 from pendulum import DateTime, duration
 
@@ -49,11 +49,198 @@ class EVChargingSession:
         self.min_soc_percent = min_soc_percent
         self.battery_capacity_kWh = battery_capacity_kWh
 
+        # Internal state tracking for the session
+        self._current_soc_percent = initial_soc_percent
+        self._current_energy_kWh = (initial_soc_percent / 100.0) * battery_capacity_kWh
+
     @property
     def session_id(self) -> str:
-        """Generate a short, human-readable identifier."""
+        """Generate a unique identifier for this charging session."""
         start_str = self.plug_in_time.format(DATE_TIME_FORMAT)
-        return f"EV-PLUG{start_str}-CAP{int(self.battery_capacity_kWh)}kWh"
+        return f"EV-PLUG{start_str}-CAP{int(self.battery_capacity_kWh)}kWh-{id(self)}"
+
+    @property
+    def end_time(self) -> DateTime:
+        """Calculate session end time."""
+        return self.plug_in_time.add(minutes=self.duration_minutes)
+
+    def is_active(self, time_slot: DateTime) -> bool:
+        """Check if session is active at given time slot."""
+        return self.plug_in_time <= time_slot < self.end_time
+
+    @property
+    def current_soc_percent(self) -> float:
+        """Get current state of charge percentage."""
+        return self._current_soc_percent
+
+    @property
+    def current_energy_kWh(self) -> float:
+        """Get current stored energy in kWh."""
+        return self._current_energy_kWh
+
+    def get_available_energy_to_buy_kWh(self, max_power_kW: float, slot_length: duration) -> float:
+        """Calculate available energy to buy for this session."""
+        # Energy based on power rating and slot length
+        max_energy_from_power = max_power_kW * (slot_length / duration(hours=1))
+
+        # Energy based on remaining capacity
+        max_capacity = self.battery_capacity_kWh
+        current_energy = self._current_energy_kWh
+        available_capacity = max_capacity - current_energy
+
+        return min(max_energy_from_power, available_capacity)
+
+    def get_available_energy_to_sell_kWh(
+        self, max_power_kW: float, slot_length: duration
+    ) -> float:
+        """Calculate available energy to sell for this session."""
+        # Energy based on power rating and slot length
+        max_energy_from_power = max_power_kW * (slot_length / duration(hours=1))
+
+        # Energy based on available stored energy above minimum SOC
+        min_energy = (self.min_soc_percent / 100.0) * self.battery_capacity_kWh
+        available_energy = max(0, self._current_energy_kWh - min_energy)
+
+        return min(max_energy_from_power, available_energy)
+
+    def add_energy(self, energy_kWh: float):
+        """Add bought energy to the session."""
+        self._current_energy_kWh += energy_kWh
+        self._current_soc_percent = (self._current_energy_kWh / self.battery_capacity_kWh) * 100.0
+
+    def remove_energy(self, energy_kWh: float):
+        """Remove sold energy from the session."""
+        self._current_energy_kWh -= energy_kWh
+        self._current_soc_percent = (self._current_energy_kWh / self.battery_capacity_kWh) * 100.0
+
+
+class EVSessionsManager:
+    """Manages multiple concurrent EV charging sessions."""
+
+    def __init__(
+        self,
+        sessions: List[EVChargingSession],
+        slot_length: duration,
+        losses: StorageLosses,
+    ):
+        self.sessions = sessions
+        self.slot_length = slot_length
+        self.losses = losses
+
+    def get_active_sessions(self, time_slot: DateTime) -> List[EVChargingSession]:
+        """Get all sessions active at the given time slot."""
+        return [session for session in self.sessions if session.is_active(time_slot)]
+
+    def get_aggregate_energy_to_buy_kWh(self, time_slot: DateTime, max_power_kW: float) -> float:
+        """
+        Calculate aggregate energy to buy across all active sessions.
+        Sessions are limited by the provided max power rating.
+        """
+        active_sessions = self.get_active_sessions(time_slot)
+        if not active_sessions:
+            return 0.0
+
+        # Sum up energy requirements from all sessions
+        total_energy_needed = sum(
+            session.get_available_energy_to_buy_kWh(max_power_kW, self.slot_length)
+            for session in active_sessions
+        )
+
+        return total_energy_needed
+
+    def get_aggregate_energy_to_sell_kWh(self, time_slot: DateTime, max_power_kW: float) -> float:
+        """
+        Calculate aggregate energy to sell across all active sessions.
+        Sessions are limited by the provided max power rating.
+        """
+        active_sessions = self.get_active_sessions(time_slot)
+        if not active_sessions:
+            return 0.0
+
+        # Sum up energy available from all sessions
+        total_energy_available = sum(
+            session.get_available_energy_to_sell_kWh(max_power_kW, self.slot_length)
+            for session in active_sessions
+        )
+
+        return total_energy_available
+
+    def distribute_bought_energy(
+        self, time_slot: DateTime, total_energy_bought_kWh: float
+    ) -> Dict[str, float]:
+        """
+        Distribute bought energy proportionally to SOC levels of active sessions.
+        EVs with lower SOC receive more energy.
+
+        Weighting: Uses inverse SOC (100 - SOC), so lower SOC gets higher priority.
+        If all sessions are at 100% SOC, energy is distributed equally.
+        Charging losses are applied before distribution to sessions.
+        """
+        active_sessions = self.get_active_sessions(time_slot)
+        if not active_sessions:
+            return {}
+
+        effective_energy = total_energy_bought_kWh * (1.0 - self.losses.charging_loss_percent)
+
+        weights = {
+            session.session_id: (100.0 - session.current_soc_percent)
+            for session in active_sessions
+        }
+        total_weight = sum(weights.values())
+
+        if total_weight == 0:
+            energy_per_session = effective_energy / len(active_sessions)
+            distribution = {session.session_id: energy_per_session for session in active_sessions}
+        else:
+            distribution = {
+                session.session_id: effective_energy * (weights[session.session_id] / total_weight)
+                for session in active_sessions
+            }
+
+        for session in active_sessions:
+            energy = distribution[session.session_id]
+            session.add_energy(energy)
+
+        return distribution
+
+    def distribute_sold_energy(
+        self, time_slot: DateTime, total_energy_sold_kWh: float
+    ) -> Dict[str, float]:
+        """
+        Distribute sold energy proportionally to SOC levels of active sessions.
+        EVs with higher SOC contribute more energy.
+
+        Weighting: Uses SOC above minimum (higher SOC = more contribution).
+        If all sessions are at minimum SOC, no energy can be distributed.
+        Discharging losses are applied after energy removal from sessions.
+        """
+        active_sessions = self.get_active_sessions(time_slot)
+        if not active_sessions:
+            return {}
+
+        weights = {
+            session.session_id: max(0, session.current_soc_percent - session.min_soc_percent)
+            for session in active_sessions
+        }
+        total_weight = sum(weights.values())
+
+        if total_weight == 0:
+            return {}
+
+        distribution = {
+            session.session_id: total_energy_sold_kWh
+            * (weights[session.session_id] / total_weight)
+            for session in active_sessions
+        }
+
+        for session in active_sessions:
+            energy = distribution[session.session_id]
+            session.remove_energy(energy)
+
+        for session_id in distribution:
+            distribution[session_id] *= 1.0 - self.losses.discharging_loss_percent
+
+        return distribution
 
 
 # pylint: disable= too-many-instance-attributes, too-many-arguments, too-many-public-methods
@@ -63,15 +250,22 @@ class EVChargerState(StorageState):
     def __init__(
         self,
         maximum_power_rating_kW: float,
+        losses: StorageLosses,
+        charging_sessions: List[EVChargingSession] = None,
         preferred_power_profile: dict = None,
         slot_length: duration = None,
-        losses: StorageLosses = None,
     ):
         self.maximum_power_rating_kW = maximum_power_rating_kW
-        self.active_charging_session = None
         self._preferred_power_profile = preferred_power_profile
         self._slot_length = slot_length
         self._losses = losses
+        sessions = charging_sessions or []
+
+        self.ev_sessions_manager = EVSessionsManager(
+            sessions=sessions,
+            slot_length=slot_length,
+            losses=losses,
+        )
 
         # dummy initialization of base storage
         super().__init__(
@@ -83,41 +277,60 @@ class EVChargerState(StorageState):
             losses=losses,
         )
 
-    def reinitialize(self, session: EVChargingSession):
-        """Reinitialize the storage strategy state when a session becomes active."""
-        self.active_charging_session = session
+    @property
+    def used_storage(self) -> float:
+        """Return total stored energy across all sessions."""
+        return sum(session.current_energy_kWh for session in self.ev_sessions_manager.sessions)
 
-        super().__init__(
-            initial_soc=session.initial_soc_percent,
-            capacity=session.battery_capacity_kWh,
-            max_abs_battery_power_kW=self.maximum_power_rating_kW,
-            min_allowed_soc=session.min_soc_percent,
-            initial_energy_origin=ESSEnergyOrigin.EXTERNAL,
-            losses=self._losses,
-        )
+    def update_sessions(self, sessions: List[EVChargingSession]) -> None:
+        """Update the charging sessions managed by this state."""
+        self.ev_sessions_manager.sessions = sessions
 
-    def reset(self):
-        """Resets the state of the EV charger by clearing the active charging session."""
-        self.active_charging_session = None
+    def has_active_sessions(self, time_slot: DateTime) -> bool:
+        """Check if there are any active sessions at the given time slot."""
+        return len(self.ev_sessions_manager.get_active_sessions(time_slot)) > 0
 
     def check_state(self, time_slot):
         """Skip SOC sanity check for EV chargers (they can start below min SOC)."""
-        # reuse parent checks but skip the min SOC assertion
-        self._clamp_energy_to_sell_kWh([time_slot])
-        self._clamp_energy_to_buy_kWh([time_slot])
-        self._calculate_and_update_soc(time_slot)
+
+    def _clamp_energy_to_sell_kWh(self, market_slot_time_list):
+        """
+        Determines available energy to sell for each active market.
+        For EV chargers, delegates to get_available_energy_to_sell_kWh for each time slot.
+        """
+        storage_dict = {}
+        for time_slot in market_slot_time_list:
+            storage_dict[time_slot] = self.get_available_energy_to_sell_kWh(time_slot)
+        return storage_dict
 
     def get_results_dict(self, current_time_slot):
         """Return EV charger state summary for results reporting."""
-        if self.active_charging_session is None:
+        active_sessions = self.ev_sessions_manager.get_active_sessions(current_time_slot)
+
+        if not active_sessions:
             return {
                 "status": EVChargerStatus.IDLE,
             }
 
+        total_energy = sum(session.current_energy_kWh for session in active_sessions)
+        soc_values = [session.current_soc_percent for session in active_sessions]
+        min_soc = min(soc_values)
+        max_soc = max(soc_values)
+
         return {
             "status": EVChargerStatus.ACTIVE,
-            "used_storage_kWh": getattr(self, "used_storage", 0.0),
-            "soc_history_%": self.charge_history.get(current_time_slot, 0.0),
+            "active_sessions_count": len(active_sessions),
+            "total_stored_energy_kWh": total_energy,
+            "min_soc_%": min_soc,
+            "max_soc_%": max_soc,
+            "sessions": [
+                {
+                    "session_id": session.session_id,
+                    "soc_%": session.current_soc_percent,
+                    "energy_kWh": session.current_energy_kWh,
+                }
+                for session in active_sessions
+            ],
         }
 
     def _get_preferred_power_for_slot(self, time_slot: DateTime) -> Optional[float]:
@@ -140,44 +353,50 @@ class EVChargerState(StorageState):
 
     def get_available_energy_to_buy_kWh(self, time_slot: DateTime) -> float:
         """
-        Override to use preferred charging power when configured.
-
-        Positive preferred power = charging (buy energy from grid)
-        Negative preferred power = discharging (no buying allowed)
+        Get aggregated energy to buy across all active sessions.
+        Respects maximum power rating and preferred charging power limit if configured.
         """
         preferred_power_kW = self._get_preferred_power_for_slot(time_slot)
 
-        if preferred_power_kW is None:
-            # No preferred power set, use default storage behavior
-            return super().get_available_energy_to_buy_kWh(time_slot)
+        if preferred_power_kW is not None and preferred_power_kW < 0:
+            return 0.0  # preferred power is discharging
 
-        if preferred_power_kW < 0:
-            # Preferred power is discharging - no buying allowed
-            return 0.0
+        if preferred_power_kW is not None and preferred_power_kW >= 0:
+            effective_max_power_kW = preferred_power_kW
+        else:
+            effective_max_power_kW = self.maximum_power_rating_kW
 
-        # Positive preferred power means charging at specified rate
-        energy_kWh = self._convert_power_to_energy(preferred_power_kW, time_slot)
-        max_energy_to_buy = super().get_available_energy_to_buy_kWh(time_slot)
-        return min(energy_kWh, max_energy_to_buy)
+        aggregate_energy = self.ev_sessions_manager.get_aggregate_energy_to_buy_kWh(
+            time_slot, effective_max_power_kW
+        )
+        max_energy_from_charger = self.maximum_power_rating_kW * (
+            self._slot_length / duration(hours=1)
+        )
+        energy_to_buy = min(aggregate_energy, max_energy_from_charger)
+
+        return energy_to_buy
 
     def get_available_energy_to_sell_kWh(self, time_slot: DateTime) -> float:
         """
-        Override to use preferred charging power when configured.
-
-        Negative preferred power = discharging (sell energy to grid)
-        Positive preferred power = charging (no selling allowed)
+        Get aggregated energy to sell across all active sessions.
+        Respects maximum power rating and preferred charging power limit if configured.
         """
         preferred_power_kW = self._get_preferred_power_for_slot(time_slot)
 
-        if preferred_power_kW is None:
-            # No preferred power set, use default storage behavior
-            return super().get_available_energy_to_sell_kWh(time_slot)
+        if preferred_power_kW is not None and preferred_power_kW >= 0:
+            return 0.0  # preferred power is charging/neutral
 
-        if preferred_power_kW >= 0:
-            # Preferred power is charging/neutral - no selling allowed
-            return 0.0
+        if preferred_power_kW is not None and preferred_power_kW < 0:
+            effective_max_power_kW = abs(preferred_power_kW)
+        else:
+            effective_max_power_kW = self.maximum_power_rating_kW
 
-        # Convert negative power (discharging) to positive energy to sell
-        energy_kWh = abs(self._convert_power_to_energy(preferred_power_kW, time_slot))
-        max_energy_to_sell = super().get_available_energy_to_sell_kWh(time_slot)
-        return min(energy_kWh, max_energy_to_sell)
+        aggregate_energy = self.ev_sessions_manager.get_aggregate_energy_to_sell_kWh(
+            time_slot, effective_max_power_kW
+        )
+        max_energy_from_charger = self.maximum_power_rating_kW * (
+            self._slot_length / duration(hours=1)
+        )
+        energy_to_sell = min(aggregate_energy, max_energy_from_charger)
+
+        return energy_to_sell
