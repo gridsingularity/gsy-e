@@ -184,6 +184,8 @@ class WaterTankState(TankStateBase):
         return self._soc.get(time_slot, 0) * self.max_capacity_kJ
 
     def _apply_losses(self, time_slot: DateTime):
+        if self.get_storage_temp_C(time_slot) is None:
+            return
         per_market_slot_loss_C = (
             self.get_storage_temp_C(time_slot) * self._params.per_market_slot_loss
         )

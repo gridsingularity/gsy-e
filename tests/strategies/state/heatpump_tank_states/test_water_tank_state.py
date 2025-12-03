@@ -125,7 +125,7 @@ class TestWaterTankState:
         water_tank._params.loss_per_day_percent = 96  # = 1% per market slot
 
         # When
-        water_tank.event_market_cycle(CURRENT_MARKET_SLOT)
+        water_tank.event_market_cycle(NEXT_MARKET_SLOT)
 
         # Then
         assert water_tank.get_storage_temp_C(CURRENT_MARKET_SLOT) == 49.5

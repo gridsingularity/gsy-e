@@ -198,7 +198,7 @@ class TestPCMTankState:
         pcm_tank._params.loss_per_day_percent = 96  # = 1% per market slot
 
         # When
-        pcm_tank.event_market_cycle(CURRENT_MARKET_SLOT)
+        pcm_tank.event_market_cycle(NEXT_MARKET_SLOT)
 
         # Then
         assert pcm_tank._pcm_temps_C[CURRENT_MARKET_SLOT] == [49.5] * 5

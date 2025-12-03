@@ -463,7 +463,7 @@ class TankStateBase(StateInterface):
 
     def event_market_cycle(self, time_slot: DateTime):
         """Run commants on market cycle."""
-        self._apply_losses(time_slot)
+        self._apply_losses(self._last_time_slot(time_slot))
 
     def _last_time_slot(self, time_slot: DateTime):
         return time_slot - GlobalConfig.slot_length
