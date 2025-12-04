@@ -22,8 +22,8 @@ from logging import getLogger
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import TraderDetails
 from gsy_framework.exceptions import GSyException
-from gsy_framework.read_user_profile import UserProfileReader, InputProfileTypes
-from gsy_framework.utils import get_from_profile_same_weekday_and_time, key_in_dict_and_not_none
+from gsy_framework.read_user_profile import InputProfileTypes, UserProfileReader
+from gsy_framework.utils import key_in_dict_and_not_none
 from gsy_framework.validators import PVValidator
 from pendulum import duration
 
@@ -37,6 +37,7 @@ from gsy_e.models.strategy.mixins import UseMarketMakerMixin
 from gsy_e.models.strategy.settlement.strategy import settlement_market_strategy_factory
 from gsy_e.models.strategy.state import PVState
 from gsy_e.models.strategy.update_frequency import TemplateStrategyOfferUpdater
+from gsy_e.models.strategy.strategy_profile import StrategyProfileBase, profile_factory
 
 log = getLogger(__name__)
 
@@ -134,35 +135,35 @@ class PVStrategy(BidEnabledStrategy, UseMarketMakerMixin):
     def area_reconfigure_event(self, *args, **kwargs):
         """Reconfigure the device properties at runtime using the provided arguments."""
         self._area_reconfigure_prices(**kwargs)
-        self.offer_update.update_and_populate_price_settings(self.area)
         self._energy_params.reset(**kwargs)
         self.set_produced_energy_forecast_in_state(reconfigure=True)
 
     def _area_reconfigure_prices(self, **kwargs):
-
-        initial_rate = (
-            self._reader.read_arbitrary_profile(
-                InputProfileTypes.IDENTITY, kwargs["initial_selling_rate"]
+        if kwargs.get("initial_selling_rate") is not None:
+            initial_rate = profile_factory(
+                profile_type=InputProfileTypes.IDENTITY,
+                input_profile=kwargs["initial_selling_rate"],
             )
-            if kwargs.get("initial_selling_rate") is not None
-            else self.offer_update.initial_rate_profile_buffer
-        )
-
-        final_rate = (
-            self._reader.read_arbitrary_profile(
-                InputProfileTypes.IDENTITY, kwargs["final_selling_rate"]
+            initial_rate.read_or_rotate_profiles()
+        else:
+            initial_rate = self.offer_update.initial_rate_profile_buffer
+        if kwargs.get("final_selling_rate") is not None:
+            final_rate = profile_factory(
+                profile_type=InputProfileTypes.IDENTITY, input_profile=kwargs["final_selling_rate"]
             )
-            if kwargs.get("final_selling_rate") is not None
-            else self.offer_update.final_rate_profile_buffer
-        )
-
-        energy_rate_change_per_update = (
-            self._reader.read_arbitrary_profile(
-                InputProfileTypes.IDENTITY, kwargs["energy_rate_decrease_per_update"]
+            final_rate.read_or_rotate_profiles()
+        else:
+            final_rate = self.offer_update.final_rate_profile_buffer
+        if kwargs.get("energy_rate_increase_per_update") is not None:
+            energy_rate_change_per_update = profile_factory(
+                profile_type=InputProfileTypes.IDENTITY,
+                input_profile=kwargs["energy_rate_increase_per_update"],
             )
-            if kwargs.get("energy_rate_decrease_per_update") is not None
-            else self.offer_update.energy_rate_change_per_update_profile_buffer
-        )
+            energy_rate_change_per_update.read_or_rotate_profiles()
+        else:
+            energy_rate_change_per_update = (
+                self.offer_update.energy_rate_change_per_update_profile_buffer
+            )
 
         fit_to_limit = (
             kwargs["fit_to_limit"]
@@ -187,25 +188,29 @@ class PVStrategy(BidEnabledStrategy, UseMarketMakerMixin):
             )
         except GSyException as e:  # pylint: disable=broad-except
             log.error(
-                "PVStrategy._area_reconfigure_prices failed. Exception: %s. " "Traceback: %s",
+                "PVStrategy._area_reconfigure_prices failed. Exception: %s. Traceback: %s",
                 e,
                 traceback.format_exc(),
             )
             return
-
         self.offer_update.set_parameters(
-            initial_rate=initial_rate,
-            final_rate=final_rate,
-            energy_rate_change_per_update=energy_rate_change_per_update,
+            initial_rate=initial_rate.profile,
+            final_rate=final_rate.profile,
+            energy_rate_change_per_update=energy_rate_change_per_update.profile,
             fit_to_limit=fit_to_limit,
             update_interval=update_interval,
         )
+        self.offer_update.update_and_populate_price_settings(self.area)
 
     def _validate_rates(
-        self, initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit
+        self,
+        initial_rate: StrategyProfileBase,
+        final_rate: StrategyProfileBase,
+        energy_rate_change_per_update: StrategyProfileBase,
+        fit_to_limit,
     ):
         # all parameters have to be validated for each time slot here
-        for time_slot in initial_rate.keys():
+        for time_slot in initial_rate.profile.keys():
             if (
                 self.area
                 and self.area.current_market
@@ -213,15 +218,11 @@ class PVStrategy(BidEnabledStrategy, UseMarketMakerMixin):
             ):
                 continue
             rate_change = (
-                None
-                if fit_to_limit
-                else get_from_profile_same_weekday_and_time(
-                    energy_rate_change_per_update, time_slot
-                )
+                None if fit_to_limit else energy_rate_change_per_update.get_value(time_slot)
             )
             PVValidator.validate_rate(
-                initial_selling_rate=initial_rate[time_slot],
-                final_selling_rate=get_from_profile_same_weekday_and_time(final_rate, time_slot),
+                initial_selling_rate=initial_rate.get_value(time_slot),
+                final_selling_rate=final_rate.get_value(time_slot),
                 energy_rate_decrease_per_update=rate_change,
                 fit_to_limit=fit_to_limit,
             )

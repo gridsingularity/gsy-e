@@ -454,7 +454,11 @@ def get_market_maker_rate_from_time_slot(time_slot: Optional[DateTime]) -> float
     if isinstance(GlobalConfig.market_maker_rate, dict):
         if time_slot is None:
             assert time_slot, "time_slot parameter is missing to get market_maker"
-        return get_from_profile_same_weekday_and_time(GlobalConfig.market_maker_rate, time_slot)
+        if GlobalConfig.is_canary_network():
+            return get_from_profile_same_weekday_and_time(
+                GlobalConfig.market_maker_rate, time_slot
+            )
+        return GlobalConfig.market_maker_rate.get(time_slot)
     return GlobalConfig.market_maker_rate
 
 
