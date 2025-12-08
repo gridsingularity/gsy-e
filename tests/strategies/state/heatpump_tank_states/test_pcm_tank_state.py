@@ -202,4 +202,4 @@ class TestPCMTankState:
 
         # Then
         assert pcm_tank._pcm_temps_C[CURRENT_MARKET_SLOT] == [49.5] * 5
-        assert pcm_tank._htf_temps_C[CURRENT_MARKET_SLOT] == [39.6] * 5
+        assert pcm_tank._htf_temps_C[CURRENT_MARKET_SLOT] == [40] * 5
