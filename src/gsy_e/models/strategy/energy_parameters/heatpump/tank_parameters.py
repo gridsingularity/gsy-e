@@ -4,6 +4,8 @@ from pendulum import duration
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 
+from gsy_e.constants import HeatPumpSettingsDefaultParameters
+
 
 class HeatpumpTankTypes(Enum):
     """Supported types of heat tanks"""
@@ -29,7 +31,7 @@ class BaseTankParameters:
     type: HeatpumpTankTypes = HeatpumpTankTypes.WATER
     name: str = ""
     initial_temp_C: float = ConstSettings.HeatPumpSettings.INIT_TEMP_C
-    loss_per_day_percent: float = ConstSettings.HeatPumpSettings.TANK_LOSS_PERCENT_DAY
+    loss_per_day_percent: float = HeatPumpSettingsDefaultParameters.TANK_LOSS_PERCENT_DAY
 
     @property
     def per_market_slot_loss(self):
