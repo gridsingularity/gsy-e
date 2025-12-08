@@ -29,7 +29,7 @@ class BaseTankParameters:
     type: HeatpumpTankTypes = HeatpumpTankTypes.WATER
     name: str = ""
     initial_temp_C: float = ConstSettings.HeatPumpSettings.INIT_TEMP_C
-    loss_per_day_percent: float = 0
+    loss_per_day_percent: float = ConstSettings.HeatPumpSettings.TANK_LOSS_PERCENT_DAY
 
     @property
     def per_market_slot_loss(self):
