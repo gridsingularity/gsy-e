@@ -174,12 +174,12 @@ class LeafDataExporter(BaseDataExporter):
     def _specific_labels(self):
         if isinstance(self.area.strategy, EVChargerStrategy):
             return [
-                "charging-session",
                 "bought [kWh]",
                 "sold [kWh]",
+                "sessions",
                 "charge [kWh]",
-                "offered [kWh]",
-                "charge [%], losses[kWh]",
+                "charge [%]",
+                "losses [kWh]",
             ]
         if isinstance(self.area.strategy, StorageStrategy):
             return [
@@ -214,21 +214,43 @@ class LeafDataExporter(BaseDataExporter):
         if isinstance(self.area.strategy, EVChargerStrategy):
             s = self.area.strategy.state
 
-            if s.active_charging_session:
+            active_sessions = s.ev_sessions_manager.get_active_sessions(slot)
+            if active_sessions:
+                if len(active_sessions) > 1:
+                    # only use tuples when there's more than one session
+                    session_ids = "(" + "; ".join(s.session_id for s in active_sessions) + ")"
+                    charge_kWh = (
+                        "(" + "; ".join(str(s.current_energy_kWh) for s in active_sessions) + ")"
+                    )
+                    charge_percent = (
+                        "(" + "; ".join(str(s.current_soc_percent) for s in active_sessions) + ")"
+                    )
+                    bought = market.bought_energy(self.area.name)
+                    losses = bought * s.losses.charging_loss_percent if bought > 0 else 0
+                    loss_per_session = losses / len(active_sessions)
+                    losses_tuple = (
+                        "(" + "; ".join(str(loss_per_session) for _ in active_sessions) + ")"
+                    )
+                else:
+                    session = active_sessions[0]
+                    session_ids = session.session_id
+                    charge_kWh = session.current_energy_kWh
+                    charge_percent = session.current_soc_percent
+                    bought = market.bought_energy(self.area.name)
+                    losses_tuple = bought * s.losses.charging_loss_percent if bought > 0 else 0
+
                 return [
-                    s.active_charging_session.session_id,
                     market.bought_energy(self.area.name),
                     market.sold_energy(self.area.name),
-                    s.charge_history_kWh[slot],
-                    s.offered_history[slot],
-                    s.charge_history[slot],
-                    s.loss_history.get(slot, 0),
+                    session_ids,
+                    charge_kWh,
+                    charge_percent,
+                    losses_tuple,
                 ]
             return [
+                "-",
+                "-",
                 "EV_NOT_CONNECTED",
-                "-",
-                "-",
-                "-",
                 "-",
                 "-",
                 "-",

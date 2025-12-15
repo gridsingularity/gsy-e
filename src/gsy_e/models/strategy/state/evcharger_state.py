@@ -16,13 +16,14 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from math import isclose
 from typing import Optional, Dict, List
 
 from pendulum import DateTime, duration
 
-from gsy_framework.constants_limits import ConstSettings, DATE_TIME_FORMAT
+from gsy_framework.constants_limits import ConstSettings, FLOATING_POINT_TOLERANCE
 from gsy_framework.enums import EVChargerStatus
-from gsy_framework.utils import convert_kW_to_kWh
+from gsy_framework.utils import convert_kW_to_kWh, limit_float_precision
 
 from gsy_e.models.strategy.state.storage_state import (
     StorageState,
@@ -57,8 +58,7 @@ class EVChargingSession:
     @property
     def session_id(self) -> str:
         """Generate a unique identifier for this charging session."""
-        start_str = self.plug_in_time.format(DATE_TIME_FORMAT)
-        return f"EV-PLUG{start_str}-CAP{int(self.battery_capacity_kWh)}kWh-{id(self)}"
+        return f"EV-{id(self)}-CAP{int(self.battery_capacity_kWh)}"
 
     @property
     def end_time(self) -> DateTime:
@@ -81,28 +81,21 @@ class EVChargingSession:
 
     def get_available_energy_to_buy_kWh(self, max_power_kW: float, slot_length: duration) -> float:
         """Calculate available energy to buy for this session."""
-        # Energy based on power rating and slot length
         max_energy_kWh = convert_kW_to_kWh(max_power_kW, slot_length)
+        available_capacity_kWh = self.battery_capacity_kWh - self._current_energy_kWh
 
-        # Energy based on remaining capacity
-        max_capacity = self.battery_capacity_kWh
-        current_energy = self._current_energy_kWh
-        available_capacity = max_capacity - current_energy
-
-        return min(max_energy_kWh, available_capacity)
+        return min(max_energy_kWh, available_capacity_kWh)
 
     def get_available_energy_to_sell_kWh(
         self, max_power_kW: float, slot_length: duration
     ) -> float:
         """Calculate available energy to sell for this session."""
-        # Energy based on power rating and slot length
         max_energy_kWh = convert_kW_to_kWh(max_power_kW, slot_length)
+        min_energy_kWh = (self.min_soc_percent / 100.0) * self.battery_capacity_kWh
 
-        # Energy based on available stored energy above minimum SOC
-        min_energy = (self.min_soc_percent / 100.0) * self.battery_capacity_kWh
-        available_energy = max(0, self._current_energy_kWh - min_energy)
+        available_energy_kWh = max(0, self._current_energy_kWh - min_energy_kWh)
 
-        return min(max_energy_kWh, available_energy)
+        return min(max_energy_kWh, available_energy_kWh)
 
     def add_energy(self, energy_kWh: float):
         """Add bought energy to the session."""
@@ -134,35 +127,45 @@ class EVSessionsManager:
 
     def get_aggregate_energy_to_buy_kWh(self, time_slot: DateTime, max_power_kW: float) -> float:
         """
-        Calculate aggregate energy to buy across all active sessions.
-        Sessions are limited by the provided max power rating.
+        Calculate aggregate energy demand across all active sessions.
+        Returns the total energy needed by all sessions combined (not limited by charger power).
+        The charger power limit is applied afterwards at the EVChargerState level.
         """
         active_sessions = self.get_active_sessions(time_slot)
         if not active_sessions:
             return 0.0
 
-        # Sum up energy requirements from all sessions
-        total_energy_needed = sum(
-            session.get_available_energy_to_buy_kWh(max_power_kW, self.slot_length)
-            for session in active_sessions
-        )
+        # Each session reports what it needs, ignoring the power constraint
+        total_energy_needed = 0.0
+        for session in active_sessions:
+            remaining_capacity = session.battery_capacity_kWh - session.current_energy_kWh
+            total_energy_needed += min(
+                convert_kW_to_kWh(max_power_kW, self.slot_length),
+                remaining_capacity,
+            )
 
         return total_energy_needed
 
     def get_aggregate_energy_to_sell_kWh(self, time_slot: DateTime, max_power_kW: float) -> float:
         """
-        Calculate aggregate energy to sell across all active sessions.
-        Sessions are limited by the provided max power rating.
+        Calculate aggregate energy available to sell across all active sessions.
+        Returns the total energy available from all sessions combined (not limited
+        by charger power). The charger power limit is applied afterward at the
+        EVChargerState level.
         """
         active_sessions = self.get_active_sessions(time_slot)
         if not active_sessions:
             return 0.0
 
-        # Sum up energy available from all sessions
-        total_energy_available = sum(
-            session.get_available_energy_to_sell_kWh(max_power_kW, self.slot_length)
-            for session in active_sessions
-        )
+        # Each session reports what it can provide, ignoring the power constraint
+        total_energy_available = 0.0
+        for session in active_sessions:
+            min_energy = (session.min_soc_percent / 100.0) * session.battery_capacity_kWh
+            available_energy = max(0, session.current_energy_kWh - min_energy)
+            total_energy_available += min(
+                convert_kW_to_kWh(max_power_kW, self.slot_length),
+                available_energy,
+            )
 
         return total_energy_available
 
@@ -292,20 +295,119 @@ class EVChargerState(StorageState):
         return len(self.ev_sessions_manager.get_active_sessions(time_slot)) > 0
 
     def check_state(self, time_slot):
-        """Skip SOC sanity check for EV chargers (they can start below min SOC)."""
+        """
+        Validate state for EV chargers with concurrent sessions.
+        Based on StorageState.check_state() but adapted for dynamic capacity.
+        Reference: storage_state.py lines 274-295
+        """
+        # Clamp energy to realistic bounds based on active sessions
+        self._clamp_energy_to_sell_kWh([time_slot])
+        self._clamp_energy_to_buy_kWh([time_slot])
+
+        # Note: _calculate_and_update_soc() not needed - each EV session tracks its own SOC
+        # Storage uses charge_history dict, but EV sessions track SOC individually
+
+        active_sessions = self.ev_sessions_manager.get_active_sessions(time_slot)
+        if not active_sessions:
+            return
+
+        # Validate total energy doesn't exceed total capacity across all sessions
+        total_capacity_kWh = sum(session.battery_capacity_kWh for session in active_sessions)
+        total_energy_kWh = sum(session.current_energy_kWh for session in active_sessions)
+
+        assert limit_float_precision(total_energy_kWh) <= total_capacity_kWh or isclose(
+            total_energy_kWh, total_capacity_kWh, rel_tol=1e-06
+        ), (
+            f"Total EV energy ({total_energy_kWh} kWh) exceeds total capacity "
+            f"({total_capacity_kWh} kWh)"
+        )
+
+        # Validate pledged/offered energy is within reasonable bounds
+        # Unlike storage, we use total_capacity_kWh which is dynamic based on active sessions
+        max_value_kWh = total_capacity_kWh
+        assert 0 <= limit_float_precision(self.offered_sell_kWh[time_slot]) <= max_value_kWh
+        assert 0 <= limit_float_precision(self.pledged_sell_kWh[time_slot]) <= max_value_kWh
+        assert 0 <= limit_float_precision(self.pledged_buy_kWh[time_slot]) <= max_value_kWh
+        assert 0 <= limit_float_precision(self.offered_buy_kWh[time_slot]) <= max_value_kWh
+
+    def _get_total_capacity_for_time_slot(self, time_slot: DateTime) -> float:
+        """Get total battery capacity for all active sessions at given time slot."""
+        active_sessions = self.ev_sessions_manager.get_active_sessions(time_slot)
+        return sum(session.battery_capacity_kWh for session in active_sessions)
+
+    def _clamp_energy_to_buy_kWh(self, market_slot_time_list):
+        """
+        Override to handle dynamic capacity based on active EV sessions.
+        Based on StorageState._clamp_energy_to_buy_kWh() but uses dynamic capacity.
+        Reference: storage_state.py lines 243-268
+        Key difference: Uses total_capacity_kWh per slot instead of static self.capacity
+        """
+        accumulated_bought = 0
+        accumulated_sought = 0
+        for time_slot, offered_buy_energy in self.offered_buy_kWh.items():
+            if time_slot >= self._current_market_slot:
+                accumulated_bought += self.pledged_buy_kWh[time_slot]
+                accumulated_sought += offered_buy_energy
+
+        for time_slot in market_slot_time_list:
+            total_capacity_kWh = self._get_total_capacity_for_time_slot(time_slot)
+            available_energy_for_slot = limit_float_precision(
+                total_capacity_kWh - self.used_storage - accumulated_bought - accumulated_sought
+            )
+
+            if available_energy_for_slot < -FLOATING_POINT_TOLERANCE:
+                self.energy_to_buy_dict[time_slot] = 0
+                continue
+
+            available_energy_kWh = self.get_available_energy_to_buy_kWh(time_slot)
+            clamped_energy = limit_float_precision(
+                min(available_energy_for_slot, available_energy_kWh)
+            )
+            clamped_energy = max(clamped_energy, 0)
+            self.energy_to_buy_dict[time_slot] = clamped_energy
+            accumulated_bought += clamped_energy
 
     def _clamp_energy_to_sell_kWh(self, market_slot_time_list):
         """
-        Determines available energy to sell for each active market.
-        For EV chargers, delegates to get_available_energy_to_sell_kWh for each time slot.
+        Override to handle dynamic capacity and skip min SOC for EV sessions.
+        Based on StorageState._clamp_energy_to_sell_kWh() but without min_allowed_soc_ratio.
+        Reference: storage_state.py lines 210-240
+        Key difference: Skips min_allowed_soc_ratio * capacity term since each EV session
+        handles its own min_soc_percent constraint in get_aggregate_energy_to_sell_kWh()
         """
+        accumulated_pledged = 0
+        accumulated_offered = 0
+        for time_slot, offered_sell_energy in self.offered_sell_kWh.items():
+            if time_slot >= self._current_market_slot:
+                accumulated_pledged += self.pledged_sell_kWh[time_slot]
+                accumulated_offered += offered_sell_energy
+
+        # Skip min_allowed_soc_ratio * capacity term since EVs can start below min SOC
+        available_energy_for_all_slots = (
+            self.used_storage - accumulated_pledged - accumulated_offered
+        )
+
         storage_dict = {}
         for time_slot in market_slot_time_list:
-            storage_dict[time_slot] = self.get_available_energy_to_sell_kWh(time_slot)
+            if available_energy_for_all_slots < -FLOATING_POINT_TOLERANCE:
+                break
+
+            available_energy_kWh = self.get_available_energy_to_sell_kWh(time_slot)
+            storage_dict[time_slot] = limit_float_precision(
+                min(available_energy_for_all_slots, available_energy_kWh)
+            )
+            self.energy_to_sell_dict[time_slot] = storage_dict[time_slot]
+            available_energy_for_all_slots -= storage_dict[time_slot]
         return storage_dict
 
     def get_results_dict(self, current_time_slot):
         """Return EV charger state summary for results reporting."""
+        # Handle case when current_time_slot is None (simulation not started or ended)
+        if current_time_slot is None:
+            return {
+                "status": EVChargerStatus.IDLE,
+            }
+
         active_sessions = self.ev_sessions_manager.get_active_sessions(current_time_slot)
 
         if not active_sessions:
@@ -346,48 +448,62 @@ class EVChargerState(StorageState):
 
         return None
 
+    def _get_effective_power_kW(self, time_slot: DateTime, is_buying: bool) -> Optional[float]:
+        """
+        Get effective power limit for buying or selling based on preferred power profile.
+        """
+        preferred_power_kW = self._get_preferred_power_for_slot(time_slot)
+
+        if preferred_power_kW is None:
+            return self.maximum_power_rating_kW
+
+        if is_buying:
+            if preferred_power_kW < 0:
+                return None  # Discharging - can't buy
+            return preferred_power_kW
+        else:
+            if preferred_power_kW >= 0:
+                return None  # Charging/neutral - can't sell
+            return abs(preferred_power_kW)
+
     def get_available_energy_to_buy_kWh(self, time_slot: DateTime) -> float:
         """
         Get aggregated energy to buy across all active sessions.
         Respects maximum power rating and preferred charging power limit if configured.
+        Returns clamped value that accounts for already-posted bids.
         """
-        preferred_power_kW = self._get_preferred_power_for_slot(time_slot)
+        # Prevent buying more if we've already traded for this slot
+        if time_slot in self.pledged_buy_kWh and self.pledged_buy_kWh[time_slot] > 0:
+            return 0.0
 
-        if preferred_power_kW is not None and preferred_power_kW < 0:
-            return 0.0  # preferred power is discharging
-
-        if preferred_power_kW is not None and preferred_power_kW >= 0:
-            effective_max_power_kW = preferred_power_kW
-        else:
-            effective_max_power_kW = self.maximum_power_rating_kW
+        effective_power_kW = self._get_effective_power_kW(time_slot, is_buying=True)
+        if effective_power_kW is None:
+            return 0.0
 
         aggregate_energy = self.ev_sessions_manager.get_aggregate_energy_to_buy_kWh(
-            time_slot, effective_max_power_kW
+            time_slot, effective_power_kW
         )
         max_energy_kWh = convert_kW_to_kWh(self.maximum_power_rating_kW, self._slot_length)
-        energy_to_buy = min(aggregate_energy, max_energy_kWh)
 
-        return energy_to_buy
+        return min(aggregate_energy, max_energy_kWh)
 
     def get_available_energy_to_sell_kWh(self, time_slot: DateTime) -> float:
         """
         Get aggregated energy to sell across all active sessions.
         Respects maximum power rating and preferred charging power limit if configured.
+        Returns clamped value that accounts for already-posted offers.
         """
-        preferred_power_kW = self._get_preferred_power_for_slot(time_slot)
+        # Prevent selling more if we've already traded for this slot
+        if time_slot in self.pledged_sell_kWh and self.pledged_sell_kWh[time_slot] > 0:
+            return 0.0
 
-        if preferred_power_kW is not None and preferred_power_kW >= 0:
-            return 0.0  # preferred power is charging/neutral
-
-        if preferred_power_kW is not None and preferred_power_kW < 0:
-            effective_max_power_kW = abs(preferred_power_kW)
-        else:
-            effective_max_power_kW = self.maximum_power_rating_kW
+        effective_power_kW = self._get_effective_power_kW(time_slot, is_buying=False)
+        if effective_power_kW is None:
+            return 0.0
 
         aggregate_energy = self.ev_sessions_manager.get_aggregate_energy_to_sell_kWh(
-            time_slot, effective_max_power_kW
+            time_slot, effective_power_kW
         )
         max_energy_kWh = convert_kW_to_kWh(self.maximum_power_rating_kW, self._slot_length)
-        energy_to_sell = min(aggregate_energy, max_energy_kWh)
 
-        return energy_to_sell
+        return min(aggregate_energy, max_energy_kWh)

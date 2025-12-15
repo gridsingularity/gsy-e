@@ -136,3 +136,21 @@ class EVChargerStrategy(StorageStrategy):
         if self.grid_integration == GridIntegrationType.UNIDIRECTIONAL:
             return  # Do not sell in unidirectional chargers
         super()._sell_energy_to_spot_market()
+
+    def event_offer_traded(self, *, market_id, trade):
+        """Handle offer trades (selling energy from EVs)."""
+        super().event_offer_traded(market_id=market_id, trade=trade)
+
+        if trade.seller.name == self.owner.name:
+            self._state.ev_sessions_manager.distribute_sold_energy(
+                trade.time_slot, trade.traded_energy
+            )
+
+    def event_bid_traded(self, *, market_id, bid_trade):
+        """Handle bid trades (buying energy for EVs)."""
+        super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
+
+        if bid_trade.buyer.name == self.owner.name:
+            self._state.ev_sessions_manager.distribute_bought_energy(
+                bid_trade.time_slot, bid_trade.traded_energy
+            )
