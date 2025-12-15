@@ -28,6 +28,7 @@ from gsy_framework.read_user_profile import UserProfileReader, InputProfileTypes
 from gsy_e.models.strategy.state.evcharger_state import EVChargerState, EVChargingSession
 from gsy_e.models.strategy.state.storage_state import StorageLosses
 from gsy_e.models.strategy.storage import StorageStrategy
+from gsy_e.constants import EV_CHARGER_DEFAULT_CHARGING_EFFICIENCY
 
 log = getLogger(__name__)
 
@@ -46,7 +47,7 @@ class EVChargerStrategy(StorageStrategy):
         charging_sessions: list[EVChargingSession] = [],
         maximum_power_rating_kW: float = ConstSettings.EVChargerSettings.MAX_POWER_RATING_KW,
         preferred_charging_power: Optional[Union[float, Dict[DateTime, float]]] = None,
-        charging_efficiency: float = 0.9,
+        charging_efficiency: float = EV_CHARGER_DEFAULT_CHARGING_EFFICIENCY,
         **kwargs,
     ):
         """
