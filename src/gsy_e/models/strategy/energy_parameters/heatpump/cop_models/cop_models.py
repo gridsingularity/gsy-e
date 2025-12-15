@@ -54,8 +54,8 @@ class IndividualCOPModel(BaseCOPModel):
     def _calc_power(self, source_temp_C: float, condenser_temp_C: float, heat_demand_kW: float):
         CAPFT = (
             self._model["CAPFT"][0]
-            + self._model["CAPFT"][1] * condenser_temp_C
-            + self._model["CAPFT"][3] * condenser_temp_C**2
+            + self._model["CAPFT"][1] * source_temp_C
+            + self._model["CAPFT"][3] * source_temp_C**2
             + self._model["CAPFT"][2] * condenser_temp_C
             + self._model["CAPFT"][5] * condenser_temp_C**2
             + self._model["CAPFT"][4] * source_temp_C * condenser_temp_C
