@@ -22,6 +22,7 @@ from pendulum import DateTime, duration
 
 from gsy_framework.constants_limits import ConstSettings, DATE_TIME_FORMAT
 from gsy_framework.enums import EVChargerStatus
+from gsy_framework.utils import convert_kW_to_kWh
 
 from gsy_e.models.strategy.state.storage_state import (
     StorageState,
@@ -81,27 +82,27 @@ class EVChargingSession:
     def get_available_energy_to_buy_kWh(self, max_power_kW: float, slot_length: duration) -> float:
         """Calculate available energy to buy for this session."""
         # Energy based on power rating and slot length
-        max_energy_from_power = max_power_kW * (slot_length / duration(hours=1))
+        max_energy_kWh = convert_kW_to_kWh(max_power_kW, slot_length)
 
         # Energy based on remaining capacity
         max_capacity = self.battery_capacity_kWh
         current_energy = self._current_energy_kWh
         available_capacity = max_capacity - current_energy
 
-        return min(max_energy_from_power, available_capacity)
+        return min(max_energy_kWh, available_capacity)
 
     def get_available_energy_to_sell_kWh(
         self, max_power_kW: float, slot_length: duration
     ) -> float:
         """Calculate available energy to sell for this session."""
         # Energy based on power rating and slot length
-        max_energy_from_power = max_power_kW * (slot_length / duration(hours=1))
+        max_energy_kWh = convert_kW_to_kWh(max_power_kW, slot_length)
 
         # Energy based on available stored energy above minimum SOC
         min_energy = (self.min_soc_percent / 100.0) * self.battery_capacity_kWh
         available_energy = max(0, self._current_energy_kWh - min_energy)
 
-        return min(max_energy_from_power, available_energy)
+        return min(max_energy_kWh, available_energy)
 
     def add_energy(self, energy_kWh: float):
         """Add bought energy to the session."""
@@ -345,12 +346,6 @@ class EVChargerState(StorageState):
 
         return None
 
-    def _convert_power_to_energy(self, power_kW: float) -> float:
-        """Convert power (kW) to energy (kWh) based on slot length for the given time slot."""
-        if self._slot_length is None:
-            return 0.0
-        return power_kW * (self._slot_length / duration(hours=1))
-
     def get_available_energy_to_buy_kWh(self, time_slot: DateTime) -> float:
         """
         Get aggregated energy to buy across all active sessions.
@@ -369,10 +364,8 @@ class EVChargerState(StorageState):
         aggregate_energy = self.ev_sessions_manager.get_aggregate_energy_to_buy_kWh(
             time_slot, effective_max_power_kW
         )
-        max_energy_from_charger = self.maximum_power_rating_kW * (
-            self._slot_length / duration(hours=1)
-        )
-        energy_to_buy = min(aggregate_energy, max_energy_from_charger)
+        max_energy_kWh = convert_kW_to_kWh(self.maximum_power_rating_kW, self._slot_length)
+        energy_to_buy = min(aggregate_energy, max_energy_kWh)
 
         return energy_to_buy
 
@@ -394,9 +387,7 @@ class EVChargerState(StorageState):
         aggregate_energy = self.ev_sessions_manager.get_aggregate_energy_to_sell_kWh(
             time_slot, effective_max_power_kW
         )
-        max_energy_from_charger = self.maximum_power_rating_kW * (
-            self._slot_length / duration(hours=1)
-        )
-        energy_to_sell = min(aggregate_energy, max_energy_from_charger)
+        max_energy_kWh = convert_kW_to_kWh(self.maximum_power_rating_kW, self._slot_length)
+        energy_to_sell = min(aggregate_energy, max_energy_kWh)
 
         return energy_to_sell
