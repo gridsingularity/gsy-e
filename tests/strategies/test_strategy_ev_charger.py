@@ -202,18 +202,18 @@ def test_multiple_concurrent_ev_sessions_aggregate_energy():
     total_energy_to_buy = manager.get_aggregate_energy_to_buy_kWh(now, 10.0)
     total_energy_to_sell = manager.get_aggregate_energy_to_sell_kWh(now, 10.0)
 
-    # Then - Should aggregate needs from all 3 sessions
-    # session1: 50 * 0.8 = 40 kWh available capacity
-    # session2: 75 * 0.5 = 37.5 kWh available capacity
-    # session3: 100 * 0.2 = 20 kWh available capacity
-    expected_buy = 3 * 2.5  # 3 sessions * 2.5 kWh each
+    # Then - Should aggregate remaining capacity from all 3 sessions (not limited by power yet)
+    # session1: 50 - (50 * 0.2) = 50 - 10 = 40 kWh remaining capacity
+    # session2: 75 - (75 * 0.5) = 75 - 37.5 = 37.5 kWh remaining capacity
+    # session3: 100 - (100 * 0.8) = 100 - 80 = 20 kWh remaining capacity
+    expected_buy = 40.0 + 37.5 + 20.0  # Total remaining capacity across all sessions
     assert isclose(total_energy_to_buy, expected_buy, rel_tol=1e-03)
 
-    # For selling:
+    # For selling - aggregate energy above min_soc from all sessions (not limited by power yet)
     # session1: (20-10)% of 50 = 5 kWh available
     # session2: (50-20)% of 75 = 22.5 kWh available
     # session3: (80-30)% of 100 = 50 kWh available
-    expected_sell = 3 * 2.5  # 3 sessions * 2.5 kWh each
+    expected_sell = 5.0 + 22.5 + 50.0  # Total available energy above min_soc
     assert isclose(total_energy_to_sell, expected_sell, rel_tol=1e-03)
 
 
