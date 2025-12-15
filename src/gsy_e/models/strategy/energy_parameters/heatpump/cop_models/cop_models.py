@@ -83,8 +83,22 @@ class IndividualCOPModel(BaseCOPModel):
         # Power consumption (P) calculation
         return self._model["Pref"] * CAPFT * HEIRFT * HEIRFPLR
 
-    def calc_cop(self, source_temp_C: float, condenser_temp_C: float, heat_demand_kW: float):
+    def _limit_heat_demand_kW(self, heat_demand_kW: float) -> float:
         assert heat_demand_kW is not None, "heat demand should be provided"
+        if heat_demand_kW > self._model["Q_max"]:
+            log.debug(
+                "calc_cop: heat demand exceeds maximum heat_demand_kW: %s", self._model["Q_max"]
+            )
+            return self._model["Q_max"]
+        if heat_demand_kW < self._model["Q_min"]:
+            log.debug(
+                "calc_cop: heat demand exceeds minimum heat_demand_kW: %s", self._model["Q_min"]
+            )
+            return self._model["Q_min"]
+        return heat_demand_kW
+
+    def calc_cop(self, source_temp_C: float, condenser_temp_C: float, heat_demand_kW: float):
+        heat_demand_kW = self._limit_heat_demand_kW(heat_demand_kW)
         if heat_demand_kW == 0:
             return 0
         electrical_power_kW = self._calc_power(source_temp_C, condenser_temp_C, heat_demand_kW)

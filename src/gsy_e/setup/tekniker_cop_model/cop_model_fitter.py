@@ -128,11 +128,13 @@ class COPModelFitter:
             "HEIRFPLR": x_heirfplr_params,
             "Qref": self.calibration_data.q_ref,
             "Pref": self.calibration_data.p_ref,
+            "Q_min": data_fT["Q"].min(),
+            "Q_max": data_fT["Q"].max(),
             "PLR_min": self.calibration_data.plr_min,
         }
         return model
 
 
 if __name__ == "__main__":
-    for filename in glob.glob("input_data/*.xlsx"):
+    for filename in glob.glob(os.path.join(os.path.dirname(__file__), "input_data/*.xlsx")):
         COPModelFitter(filename).export_model_parameters_to_json("model_parameters/")
