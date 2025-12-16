@@ -449,3 +449,46 @@ class TestHeatPumpStrategy:
                 )
             }
         }
+
+
+@staticmethod
+@pytest.mark.parametrize(
+    "heatpump_fixture",
+    [
+        {
+            "is_virtual": True,
+            "order_updater_parameters": {
+                AvailableMarketTypes.SPOT: HeatPumpOrderUpdaterParameters(
+                    initial_rate=0, final_rate=15, use_market_maker_rate=True
+                )
+            },
+        },
+        {
+            "is_virtual": False,
+            "order_updater_parameters": {
+                AvailableMarketTypes.SPOT: HeatPumpOrderUpdaterParameters(
+                    initial_rate=0, final_rate=15, use_market_maker_rate=True
+                )
+            },
+        },
+    ],
+    indirect=True,
+)
+def test_order_updater_respects_use_market_maker_rate_with_grid_fees(heatpump_fixture):
+    strategy, area = heatpump_fixture
+    assert strategy._order_updater_params == {
+        AvailableMarketTypes.SPOT: HeatPumpOrderUpdaterParameters(
+            update_interval=None, initial_rate=0, final_rate=15, use_market_maker_rate=True
+        )
+    }
+    area.grid_fee_constant = 1
+    area.children[0].grid_fee_constant = 2
+    strategy.event_activate()
+    with patch("gsy_e.models.strategy.heat_pump.HeatPumpStrategy.post_order", Mock()):
+        strategy.event_market_cycle()
+    assert (
+        strategy._order_updater_params[AvailableMarketTypes.SPOT].get_final_rate(
+            CURRENT_MARKET_SLOT
+        )
+        == 33
+    )
