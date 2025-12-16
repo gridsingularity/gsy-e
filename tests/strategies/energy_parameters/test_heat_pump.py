@@ -222,7 +222,7 @@ class TestHeatPumpEnergyParameters:
         energy_params_heat_profile.event_market_cycle(CURRENT_MARKET_SLOT + duration(minutes=60))
         assert isclose(
             energy_params_heat_profile._state.heatpump.get_cop(CURRENT_MARKET_SLOT),
-            4.444,
+            3.163,
             abs_tol=0.001,
         )
 

@@ -63,6 +63,8 @@ class COPModelFitter:
                 data_fT["Q"][idx] = data_aux["Q_fT"][i, j]
                 data_fT["P"][idx] = data_aux["P_fT"][i, j]
 
+        COP = data_fT["Q"] / data_fT["P"]
+
         data_fT_df = pd.DataFrame(data_fT)
         # Remove NaN values
         data_fT_df = data_fT_df.dropna(subset=["Q"])
@@ -130,6 +132,9 @@ class COPModelFitter:
             "Pref": self.calibration_data.p_ref,
             "Q_min": data_fT["Q"].min(),
             "Q_max": data_fT["Q"].max(),
+            "COP_min": np.nanmin(COP),
+            "COP_max": np.nanmax(COP),
+            "COP_med": np.nanmedian(COP),
             "PLR_min": self.calibration_data.plr_min,
         }
         return model
@@ -137,4 +142,5 @@ class COPModelFitter:
 
 if __name__ == "__main__":
     for filename in glob.glob(os.path.join(os.path.dirname(__file__), "input_data/*.xlsx")):
+        print(filename)
         COPModelFitter(filename).export_model_parameters_to_json("model_parameters/")

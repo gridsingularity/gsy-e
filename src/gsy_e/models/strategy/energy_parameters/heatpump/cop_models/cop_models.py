@@ -34,7 +34,11 @@ class BaseCOPModel:
 
     @abstractmethod
     def calc_cop(
-        self, source_temp_C: float, condenser_temp_C: float, heat_demand_kW: Optional[float]
+        self,
+        source_temp_C: float,
+        condenser_temp_C: float,
+        heat_demand_kW: Optional[float],
+        electrical_demand_kW: Optional[float] = None,
     ):
         """Return COP value for provided inputs"""
 
@@ -97,7 +101,21 @@ class IndividualCOPModel(BaseCOPModel):
             return self._model["Q_min"]
         return heat_demand_kW
 
-    def calc_cop(self, source_temp_C: float, condenser_temp_C: float, heat_demand_kW: float):
+    def calc_cop(
+        self,
+        source_temp_C: float,
+        condenser_temp_C: float,
+        heat_demand_kW: float,
+        electrical_demand_kW: Optional[float] = None,
+    ):
+
+        if (electrical_demand_kW is None) == (heat_demand_kW is None):
+            assert False, "heat_demand_kW and electrical_demand_kW can only be set exclusively"
+
+        if electrical_demand_kW:
+            # estimate the heat demand by using the median COP of the model fitting data
+            heat_demand_kW = electrical_demand_kW * self._model["COP_med"]
+
         heat_demand_kW = self._limit_heat_demand_kW(heat_demand_kW)
         if heat_demand_kW == 0:
             return 0
@@ -115,7 +133,7 @@ class IndividualCOPModel(BaseCOPModel):
             )
             return 0
         cop = heat_demand_kW / electrical_power_kW
-        if cop > 6:
+        if cop > self._model["COP_max"] or cop < self._model["COP_min"]:
             log.error(
                 "calculated COP (%s) is unrealistic: "
                 "hp model: %s  source_temp: %s, "
@@ -137,7 +155,11 @@ class UniversalCOPModel(BaseCOPModel):
         self._source_type = source_type
 
     def calc_cop(
-        self, source_temp_C: float, condenser_temp_C: float, heat_demand_kW: Optional[float]
+        self,
+        source_temp_C: float,
+        condenser_temp_C: float,
+        heat_demand_kW: Optional[float],
+        electrical_demand_kW: Optional[float] = None,
     ) -> float:
         """COP model following https://www.nature.com/articles/s41597-019-0199-y"""
         delta_temp = condenser_temp_C - source_temp_C
