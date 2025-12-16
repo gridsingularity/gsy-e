@@ -22,7 +22,6 @@ from gsy_framework.constants_limits import ConstSettings
 
 from gsy_e.gsy_e_core.util import gsye_root_path
 from gsy_e.models.area import Area
-from gsy_e.models.strategy.energy_parameters.heatpump.cop_models.cop_models import COPModelType
 from gsy_e.models.strategy.heat_pump import HeatPumpStrategy
 from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
 from gsy_e.models.strategy.pv import PVStrategy
@@ -47,17 +46,8 @@ def get_setup(config):
                             source_temp_C_profile=os.path.join(
                                 gsye_root_path, "resources", "hp_external_temp_C.csv"
                             ),
-                            preferred_buying_rate=25,
-                            maximum_power_rating_kW=50,
-                            # cop_model_type=COPModelType.ELCO_AEROTOP_S09_IR,
-                            # min_temp_C=25,
-                            # initial_temp_C=25,
-                            # max_temp_C=40
-                            cop_model_type=COPModelType.AERMEC_NXP_0600_4L_HEAT,
-                            min_temp_C=35,
-                            initial_temp_C=35,
-                            max_temp_C=40,
-                            tank_volume_l=1,
+                            preferred_buying_rate=100,
+                            maximum_power_rating_kW=500,
                         ),
                     ),
                 ],
