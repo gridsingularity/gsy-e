@@ -17,6 +17,7 @@ class COPModelType(Enum):
     ELCO_AEROTOP_S09_IR = 1
     ELCO_AEROTOP_G07_14M = 2
     HOVAL_ULTRASOURCE_B_COMFORT_C11 = 3
+    AERMEC_NXP_0600_4L_HEAT = 4
 
 
 MODEL_FILE_DIR = os.path.join(os.path.dirname(__file__), "model_data")
@@ -26,6 +27,7 @@ MODEL_TYPE_FILENAME_MAPPING = {
     COPModelType.ELCO_AEROTOP_G07_14M: "Elco_Aerotop_G07-14M_model_parameters.json",
     COPModelType.HOVAL_ULTRASOURCE_B_COMFORT_C11: "hoval_UltraSource_B_comfort_C_11_model_"
     "parameters.json",
+    COPModelType.AERMEC_NXP_0600_4L_HEAT: "AERMEC_NXP_0600_4L_HEAT_model_parameters.json",
 }
 
 

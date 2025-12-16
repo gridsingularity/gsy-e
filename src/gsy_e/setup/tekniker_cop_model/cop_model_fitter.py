@@ -7,10 +7,11 @@ import numpy as np
 import pandas as pd
 from scipy.optimize import curve_fit
 
-from calibration_data_reader import CalibrationDataReader
+from gsy_e.setup.tekniker_cop_model.calibration_data_reader import CalibrationDataReader
+from gsy_e.setup.tekniker_cop_model.base_model_fitter import BaseModelFitter
 
 
-class COPModelFitter:
+class COPModelFitter(BaseModelFitter):
     """class that handles fitting teknikers' COP model"""
 
     def __init__(self, calibration_data_filename: str):
@@ -123,21 +124,16 @@ class COPModelFitter:
             poly2, data_fTPLR_df["x_PLR"], data_fTPLR_df["x_heirfplr"]
         )
 
-        # Save curve coefficients in a dictionary (the equivalent of a MATLAB struct)
-        model = {
-            "CAPFT": x_capft_params,
-            "HEIRFT": x_heirft_params,
-            "HEIRFPLR": x_heirfplr_params,
-            "Qref": self.calibration_data.q_ref,
-            "Pref": self.calibration_data.p_ref,
-            "Q_min": data_fT["Q"].min(),
-            "Q_max": data_fT["Q"].max(),
-            "COP_min": np.nanmin(COP),
-            "COP_max": np.nanmax(COP),
-            "COP_med": np.nanmedian(COP),
-            "PLR_min": self.calibration_data.plr_min,
-        }
-        return model
+        # Pack output model dictionary
+        return self.pack_model_into_dict(
+            x_capft_params,
+            x_heirft_params,
+            x_heirfplr_params,
+            self.calibration_data.q_ref,
+            self.calibration_data.p_ref,
+            data_fT["Q"].tolist(),
+            COP,
+        )
 
 
 if __name__ == "__main__":
