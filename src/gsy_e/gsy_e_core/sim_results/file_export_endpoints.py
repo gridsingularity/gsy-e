@@ -212,48 +212,38 @@ class LeafDataExporter(BaseDataExporter):
 
     def _specific_row(self, slot, market):
         if isinstance(self.area.strategy, EVChargerStrategy):
-            s = self.area.strategy.state
+            state = self.area.strategy.state
 
-            active_sessions = s.ev_sessions_manager.get_active_sessions(slot)
-            if active_sessions:
-                if len(active_sessions) > 1:
-                    # only use tuples when there's more than one session
-                    session_ids = "(" + "; ".join(s.session_id for s in active_sessions) + ")"
-                    charge_kWh = (
-                        "(" + "; ".join(str(s.current_energy_kWh) for s in active_sessions) + ")"
-                    )
-                    charge_percent = (
-                        "(" + "; ".join(str(s.current_soc_percent) for s in active_sessions) + ")"
-                    )
-                    bought = market.bought_energy(self.area.name)
-                    losses = bought * s.losses.charging_loss_percent if bought > 0 else 0
-                    loss_per_session = losses / len(active_sessions)
-                    losses_tuple = (
-                        "(" + "; ".join(str(loss_per_session) for _ in active_sessions) + ")"
-                    )
-                else:
-                    session = active_sessions[0]
-                    session_ids = session.session_id
-                    charge_kWh = session.current_energy_kWh
-                    charge_percent = session.current_soc_percent
-                    bought = market.bought_energy(self.area.name)
-                    losses_tuple = bought * s.losses.charging_loss_percent if bought > 0 else 0
+            # Read from historical snapshot instead of current session state
+            if slot not in state.session_energy_history:
+                return ["-", "-", "EV_NOT_CONNECTED", "-", "-", "-"]
 
-                return [
-                    market.bought_energy(self.area.name),
-                    market.sold_energy(self.area.name),
-                    session_ids,
-                    charge_kWh,
-                    charge_percent,
-                    losses_tuple,
-                ]
+            sessions_at_slot = state.session_energy_history[slot]
+            if not sessions_at_slot:
+                return ["-", "-", "EV_NOT_CONNECTED", "-", "-", "-"]
+
+            bought = market.bought_energy(self.area.name)
+            total_losses = bought * state.losses.charging_loss_percent if bought > 0 else 0
+            loss_per_session = total_losses / len(sessions_at_slot)
+
+            session_ids = ""
+            charge_kWh = ""
+            charge_percent = ""
+            losses = ""
+            for idx, (session_id, session_history) in enumerate(sessions_at_slot.items()):
+                sep = "; " if idx > 0 else ""
+                session_ids += f"{sep}{session_id}"
+                charge_kWh += f"{sep}{session_history['energy_kWh']}"
+                charge_percent += f"{sep}{session_history['soc_percent']}"
+                losses += f"{sep}{loss_per_session}"
+
             return [
-                "-",
-                "-",
-                "EV_NOT_CONNECTED",
-                "-",
-                "-",
-                "-",
+                bought,
+                market.sold_energy(self.area.name),
+                f"({session_ids})",
+                f"({charge_kWh})",
+                f"({charge_percent})",
+                f"({losses})",
             ]
         if isinstance(self.area.strategy, StorageStrategy):
             s = self.area.strategy.state
