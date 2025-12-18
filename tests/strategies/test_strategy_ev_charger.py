@@ -115,7 +115,7 @@ def test_if_ev_charger_sells_energy(ev_charger_strategy, area_test7):
         energy_sell_dict[sell_market.time_slot],
         rel_tol=1e-03,
     )
-    assert isclose(ev_charger_strategy.state.used_storage, 3.0, rel_tol=1e-03)
+    assert isclose(ev_charger_strategy.state.ev_sessions_manager.used_storage, 3.0, rel_tol=1e-03)
     assert len(ev_charger_strategy.offers.posted_in_market(sell_market.id)) > 0
 
 
@@ -167,7 +167,7 @@ def test_if_preferred_charging_power_overrides_bought_energy(ev_charger_strategy
     assert isclose(actual_energy_kWh, expected_energy_kWh, rel_tol=1e-03)
 
 
-def test_multiple_concurrent_ev_sessions_aggregate_energy():
+def test_get_aggregate_energy_return_correct_values():
     # Given
     now = DateTime.now(tz=TIME_ZONE).start_of("day")
     session1 = EVChargingSession(
@@ -198,9 +198,8 @@ def test_multiple_concurrent_ev_sessions_aggregate_energy():
     )
 
     # When
-    manager = strategy.state.ev_sessions_manager
-    total_energy_to_buy = manager.get_aggregate_energy_to_buy_kWh(now, 10.0)
-    total_energy_to_sell = manager.get_aggregate_energy_to_sell_kWh(now, 10.0)
+    total_energy_to_buy = strategy.state.ev_sessions_manager.get_aggregate_energy_to_buy_kWh(now)
+    total_energy_to_sell = strategy.state.ev_sessions_manager.get_aggregate_energy_to_sell_kWh(now)
 
     # Then - Should aggregate remaining capacity from all 3 sessions (not limited by power yet)
     # session1: 50 - (50 * 0.2) = 50 - 10 = 40 kWh remaining capacity
@@ -427,7 +426,7 @@ def test_used_storage_aggregates_all_sessions(area_test1):
     # session1: 50% of 50 kWh = 25 kWh
     # session2: 60% of 100 kWh = 60 kWh
     expected_total = 25.0 + 60.0
-    assert isclose(strategy.state.used_storage, expected_total, rel_tol=1e-03)
+    assert isclose(strategy.state.ev_sessions_manager.used_storage, expected_total, rel_tol=1e-03)
 
 
 def test_charging_efficiency_applies_losses(area_test1):

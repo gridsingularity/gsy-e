@@ -137,33 +137,24 @@ class EVChargerStrategy(StorageStrategy):
             return  # Do not sell in unidirectional chargers
         super()._sell_energy_to_spot_market()
 
-    def _distribute_energy_to_sessions(
-        self, time_slot: DateTime, traded_energy: float, buyer_name: str, seller_name: str
-    ):
-        """Distribute energy to/from EV sessions based on trade direction."""
-        is_buyer = buyer_name == self.owner.name
-        is_seller = seller_name == self.owner.name
-
-        if is_buyer:
-            # We bought energy - distribute to EV sessions
-            self._state.ev_sessions_manager.distribute_bought_energy(time_slot, traded_energy)
-        elif is_seller:
-            # We sold energy - distribute from EV sessions
-            self._state.ev_sessions_manager.distribute_sold_energy(time_slot, traded_energy)
-
     def event_offer_traded(self, *, market_id, trade):
-        """Handle offer trades in ONE_SIDED markets."""
+        """Handle offer trades (selling energy from EVs)."""
         super().event_offer_traded(market_id=market_id, trade=trade)
-        self._distribute_energy_to_sessions(
-            trade.time_slot, trade.traded_energy, trade.buyer.name, trade.seller.name
-        )
+
+        if trade.seller.name == self.owner.name:
+            self._state.ev_sessions_manager.distribute_sold_energy(
+                trade.time_slot, trade.traded_energy
+            )
+        elif trade.buyer.name == self.owner.name:
+            self._state.ev_sessions_manager.distribute_bought_energy(
+                trade.time_slot, trade.traded_energy
+            )
 
     def event_bid_traded(self, *, market_id, bid_trade):
-        """Handle bid trades."""
+        """Handle bid trades (buying energy for EVs)."""
         super().event_bid_traded(market_id=market_id, bid_trade=bid_trade)
-        self._distribute_energy_to_sessions(
-            bid_trade.time_slot,
-            bid_trade.traded_energy,
-            bid_trade.buyer.name,
-            bid_trade.seller.name,
-        )
+
+        if bid_trade.buyer.name == self.owner.name:
+            self._state.ev_sessions_manager.distribute_bought_energy(
+                bid_trade.time_slot, bid_trade.traded_energy
+            )
