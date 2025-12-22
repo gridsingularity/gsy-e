@@ -40,11 +40,11 @@ StorageSettings = ConstSettings.StorageSettings
 class EVChargerStrategy(StorageStrategy):
     """Strategy class EV Charger. Similar to StorageStrategy but only during active sessions."""
 
-    # pylint: disable=too-many-arguments
+    # pylint: disable=too-many-arguments,too-many-positional-arguments
     def __init__(
         self,
         grid_integration: GridIntegrationType = GridIntegrationType.UNIDIRECTIONAL,
-        charging_sessions: list[EVChargingSession] = [],
+        charging_sessions: list[EVChargingSession] = None,
         maximum_power_rating_kW: float = ConstSettings.EVChargerSettings.MAX_POWER_RATING_KW,
         preferred_charging_power: Optional[Union[float, Dict[DateTime, float]]] = None,
         charging_efficiency: float = EV_CHARGER_DEFAULT_CHARGING_EFFICIENCY,
@@ -57,6 +57,8 @@ class EVChargerStrategy(StorageStrategy):
                 replaces default strategy. Can be a constant value or time-based profile.
              charging_efficiency: Efficiency of charging/discharging (default 0.9 = 90%)
         """
+        if not charging_sessions:
+            charging_sessions = []
         EVChargerValidator.validate(
             grid_integration=grid_integration,
             maximum_power_rating_kW=maximum_power_rating_kW,
@@ -144,10 +146,6 @@ class EVChargerStrategy(StorageStrategy):
 
         if trade.seller.name == self.owner.name:
             self._state.ev_sessions_manager.distribute_sold_energy(
-                trade.time_slot, trade.traded_energy
-            )
-        elif trade.buyer.name == self.owner.name:
-            self._state.ev_sessions_manager.distribute_bought_energy(
                 trade.time_slot, trade.traded_energy
             )
 
