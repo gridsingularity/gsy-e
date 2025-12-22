@@ -42,14 +42,22 @@ def get_setup(config):
                         "H1 EV Charger",
                         strategy=EVChargerStrategy(
                             grid_integration=GridIntegrationType.BIDIRECTIONAL,
-                            maximum_power_rating_kW=10,  # same as storage_buys_and_offers
+                            maximum_power_rating_kW=12,
                             charging_sessions=[
                                 EVChargingSession(
                                     plug_in_time=DateTime.now(tz=timezone("UTC")).start_of("day"),
                                     duration_minutes=60,
-                                    initial_soc_percent=50,  # same as storage_buys_and_offers
-                                    battery_capacity_kWh=30,  # same as storage_buys_and_offers
-                                )
+                                    initial_soc_percent=10,
+                                    battery_capacity_kWh=5,
+                                ),
+                                EVChargingSession(
+                                    plug_in_time=DateTime.now(tz=timezone("UTC"))
+                                    .start_of("day")
+                                    .add(minutes=30),
+                                    duration_minutes=90,
+                                    initial_soc_percent=5,
+                                    battery_capacity_kWh=20,
+                                ),
                             ],
                         ),
                     ),

@@ -70,6 +70,8 @@ MIN_OFFER_BID_AGE_P2P_DISABLED = 360
 
 HP_MIN_COP = 1.0
 
+EV_CHARGER_DEFAULT_CHARGING_EFFICIENCY = 0.9
+
 
 class SettlementTemplateStrategiesConstants:
     """Constants related to the configuration of settlement template strategies"""
