@@ -47,8 +47,7 @@ class OrderUpdaterParameters:
     def _get_default_value_initial_rate(_time_slot: DateTime):
         return 0
 
-    @staticmethod
-    def _get_default_value_final_rate(_time_slot: DateTime):
+    def _get_default_value_final_rate(self, _time_slot: DateTime):
         return 0
 
     def get_initial_rate(self, time_slot: DateTime) -> float:

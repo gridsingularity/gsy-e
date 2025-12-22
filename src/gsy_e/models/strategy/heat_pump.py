@@ -40,14 +40,14 @@ class HeatPumpOrderUpdaterParameters(OrderUpdaterParameters):
     initial_rate: Optional[Union[dict[DateTime, float], float, int]] = None
     final_rate: Optional[Union[dict[DateTime, float], float, int]] = None
     use_market_maker_rate: bool = False
+    grid_fee: float = 0
 
     @staticmethod
     def _get_default_value_initial_rate(time_slot: DateTime):
         return get_feed_in_tariff_rate_from_time_slot(time_slot)
 
-    @staticmethod
-    def _get_default_value_final_rate(time_slot: DateTime):
-        return get_market_maker_rate_from_time_slot(time_slot)
+    def _get_default_value_final_rate(self, time_slot: DateTime):
+        return get_market_maker_rate_from_time_slot(time_slot) + self.grid_fee
 
     def get_final_rate(self, time_slot: DateTime):
         if self.final_rate is None or self.use_market_maker_rate:
@@ -202,6 +202,7 @@ class MultipleTankHeatPumpStrategy(TradingStrategyBase):
         return self._energy_params.combined_state
 
     def event_activate(self, **kwargs):
+        self._update_grid_fees_in_order_updater_params()
         self._energy_params.event_activate()
         self._soc_management.event_activate()
 
