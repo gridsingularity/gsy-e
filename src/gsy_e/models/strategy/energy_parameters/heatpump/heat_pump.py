@@ -11,6 +11,8 @@ from gsy_framework.utils import (
     convert_kWh_to_kJ,
     convert_kJ_to_kW,
     convert_kWh_to_W,
+    convert_kWh_to_kW,
+    convert_kW_to_kWh,
 )
 from pendulum import DateTime
 
@@ -313,13 +315,12 @@ class CombinedHeatpumpTanksState:
         self, time_slot: DateTime, energy_kWh: float, source_temp_C: float
     ) -> float:
         """Calculate heat in kJ from energy in kWh."""
-        cop = self._calc_cop(
-            electrical_energy_kWh=energy_kWh,
+        heat_energy_kW = self._cop_model.calc_q_from_p_kW(
             source_temp_C=source_temp_C,
-            time_slot=time_slot,
-            heat_energy_kJ=None,
+            condenser_temp_C=self._charger.get_average_inlet_temperature_C(time_slot),
+            electrical_demand_kW=convert_kWh_to_kW(energy_kWh, GlobalConfig.slot_length),
         )
-        return convert_kWh_to_kJ(energy_kWh) * cop
+        return convert_kWh_to_kJ(convert_kW_to_kWh(heat_energy_kW, GlobalConfig.slot_length))
 
     def calc_energy_kWh_from_Q_kJ(self, time_slot: DateTime, Q_energy_kJ: float) -> float:
         """Calculate energy in kWh from heat in kJ."""

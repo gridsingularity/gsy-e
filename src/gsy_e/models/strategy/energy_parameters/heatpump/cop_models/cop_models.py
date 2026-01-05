@@ -4,6 +4,7 @@ from abc import abstractmethod
 from enum import Enum
 from typing import Optional
 from logging import getLogger
+import sympy as sp
 
 from gsy_framework.enums import HeatPumpSourceType
 
@@ -43,6 +44,15 @@ class BaseCOPModel:
         electrical_demand_kW: Optional[float] = None,
     ):
         """Return COP value for provided inputs"""
+
+    @abstractmethod
+    def calc_q_from_p_kW(
+        self,
+        source_temp_C: float,
+        condenser_temp_C: float,
+        electrical_demand_kW: Optional[float] = None,
+    ):
+        """Calculate heat energy from provided inputs."""
 
 
 class IndividualCOPModel(BaseCOPModel):
@@ -89,6 +99,73 @@ class IndividualCOPModel(BaseCOPModel):
         # Power consumption (P) calculation
         return self._model["Pref"] * CAPFT * HEIRFT * HEIRFPLR
 
+    def _resolve_heat(
+        self, source_temp_C: float, condenser_temp_C: float, electricity_demand_kW: float
+    ):
+        CAPFT = (
+            self._model["CAPFT"][0]
+            + self._model["CAPFT"][1] * source_temp_C
+            + self._model["CAPFT"][3] * source_temp_C**2
+            + self._model["CAPFT"][2] * condenser_temp_C
+            + self._model["CAPFT"][5] * condenser_temp_C**2
+            + self._model["CAPFT"][4] * source_temp_C * condenser_temp_C
+        )
+
+        HEIRFT = (
+            self._model["HEIRFT"][0]
+            + self._model["HEIRFT"][1] * source_temp_C
+            + self._model["HEIRFT"][3] * source_temp_C**2
+            + self._model["HEIRFT"][2] * condenser_temp_C
+            + self._model["HEIRFT"][5] * condenser_temp_C**2
+            + self._model["HEIRFT"][4] * source_temp_C * condenser_temp_C
+        )
+
+        # Partial Load Ratio (PLR)
+        Q = sp.symbols("Q")
+        PLR = Q / (self._model["Qref"] * CAPFT)
+
+        # HEIRFPLR calculation
+        HEIRFPLR = (
+            self._model["HEIRFPLR"][0]
+            + self._model["HEIRFPLR"][1] * PLR
+            + self._model["HEIRFPLR"][2] * PLR**2
+        )
+
+        solutions = sp.solve(
+            sp.Eq(electricity_demand_kW, self._model["Pref"] * CAPFT * HEIRFT * HEIRFPLR), Q
+        )
+        Q = self._select_Q_solution(solutions, CAPFT)
+        if Q is None:
+            # fallback: use median COP of training dataset to calculate Q
+            Q = self._model["COP_med"] * electricity_demand_kW
+        return Q
+
+    def _select_Q_solution(self, Q_solutions, CAPFT) -> Optional[float]:
+        """
+        Selects the correct Q and PLR solution based on:
+        - PLR = Q / (Qref * fCAPFT)
+        - both PLRs must be between 0 and 1
+        - the correct branch is the one with the LARGER PLR
+          (as indicated by the training dataset)
+        """
+
+        # Compute PLRs for each Q
+        PLR_list = [q / (self._model["Qref"] * CAPFT) for q in Q_solutions]
+
+        # Collect indices of physically valid PLRs
+        # the upper boarder is slightly increased (by 0.05) because of numerical errors that can
+        # occur.
+        valid_indices = [i for i, plr in enumerate(PLR_list) if 0 < plr <= 1.0]
+
+        if not valid_indices:
+            log.error("IndividualCOPModel: No physically feasible PLR solutions. %s", PLR_list)
+            return None
+
+        # Choose the one with the LARGEST PLR
+        best_index = max(valid_indices, key=lambda i: PLR_list[i])
+
+        return float(Q_solutions[best_index])
+
     def _limit_heat_demand_kW(self, heat_demand_kW: float) -> float:
         assert heat_demand_kW is not None, "heat demand should be provided"
         if heat_demand_kW > self._model["Q_max"]:
@@ -102,6 +179,18 @@ class IndividualCOPModel(BaseCOPModel):
             )
             return self._model["Q_min"]
         return heat_demand_kW
+
+    def calc_q_from_p_kW(
+        self,
+        source_temp_C: float,
+        condenser_temp_C: float,
+        electrical_demand_kW: Optional[float] = None,
+    ):
+        return self._resolve_heat(
+            source_temp_C=source_temp_C,
+            condenser_temp_C=condenser_temp_C,
+            electricity_demand_kW=electrical_demand_kW,
+        )
 
     def calc_cop(
         self,
@@ -156,6 +245,18 @@ class UniversalCOPModel(BaseCOPModel):
     def __init__(self, source_type: int = HeatPumpSourceType.AIR.value):
         self._source_type = source_type
 
+    def _calc_cop_from_temps(
+        self,
+        source_temp_C: float,
+        condenser_temp_C: float,
+    ):
+        delta_temp = condenser_temp_C - source_temp_C
+        if self._source_type == HeatPumpSourceType.AIR.value:
+            return 6.08 - 0.09 * delta_temp + 0.0005 * delta_temp**2
+        if self._source_type == HeatPumpSourceType.GROUND.value:
+            return 10.29 - 0.21 * delta_temp + 0.0012 * delta_temp**2
+        assert False, "Source type not supported"
+
     def calc_cop(
         self,
         source_temp_C: float,
@@ -164,12 +265,15 @@ class UniversalCOPModel(BaseCOPModel):
         electrical_demand_kW: Optional[float] = None,
     ) -> float:
         """COP model following https://www.nature.com/articles/s41597-019-0199-y"""
-        delta_temp = condenser_temp_C - source_temp_C
-        if self._source_type == HeatPumpSourceType.AIR.value:
-            return 6.08 - 0.09 * delta_temp + 0.0005 * delta_temp**2
-        if self._source_type == HeatPumpSourceType.GROUND.value:
-            return 10.29 - 0.21 * delta_temp + 0.0012 * delta_temp**2
-        assert False, "Source type not supported"
+        return self._calc_cop_from_temps(source_temp_C, condenser_temp_C)
+
+    def calc_q_from_p_kW(
+        self,
+        source_temp_C: float,
+        condenser_temp_C: float,
+        electrical_demand_kW: Optional[float] = None,
+    ):
+        return electrical_demand_kW * self._calc_cop_from_temps(source_temp_C, condenser_temp_C)
 
 
 def cop_model_factory(
