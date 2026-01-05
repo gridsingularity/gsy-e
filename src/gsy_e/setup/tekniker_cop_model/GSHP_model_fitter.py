@@ -23,7 +23,7 @@ class GshpModelFitter(BaseModelFitter):
         self.ref_cond_temp = ref_cond_temp
 
     def fit_end_export_data(self):
-
+        """Fit and export model data"""
         export_filename = os.path.join(
             EXPORT_PATH,
             f"{self.calibration_data_filename.split('.')[0]}" f"_model_parameters.json",
@@ -52,11 +52,6 @@ class GshpModelFitter(BaseModelFitter):
     def _poly2(PLR, a, b, c):
         """Quadratic polynomial: a*PLR^2 + b*PLR + c."""
         return a * PLR**2 + b * PLR + c
-
-    @staticmethod
-    def _eer_fplr(plr):
-        """Typical EER-PLR curve (user may update this if real PLR data are available)"""
-        return 4.1922 + 2.6988 * plr - 4.0581 * plr**2
 
     def _fit_model(self):
         df = self.raw_data.copy()
@@ -155,19 +150,24 @@ class GshpModelFitter(BaseModelFitter):
         # 4) Fit quadratic EIRFPLR(PLR) and inverse the order to fit to gsy-e implementation
         # --------------------------------------------------------------
         popt_eirfplr, _ = curve_fit(self._poly2, PLR_fit, EIRFPLR_fit)
-        popt_eirfplr = popt_eirfplr[::-1]
         # --------------------------------------------------------------
         # 5) Pack output model dictionary
         # --------------------------------------------------------------
-        return self.pack_model_into_dict(
-            popt_capft,
-            popt_eirft,
-            popt_eirfplr,
-            Qref,
-            Pref,
-            df["Q"].tolist(),
-            df["EER"].to_numpy(),
-        )
+        model = {
+            "CAPFT": popt_capft,
+            "HEIRFT": popt_eirft,
+            "HEIRFPLR": popt_eirfplr,
+            "Qref": Qref,
+            "Pref": Pref,
+            "Q_min": df["Q"].min(),
+            "Q_max": df["Q"].max(),
+            "PLR_min": PLR_fit.min(),
+            "COP_min": df["EER"].min(),
+            "COP_max": df["EER"].max(),
+            "COP_med": df["EER"].median(),
+        }
+
+        return model
 
 
 if __name__ == "__main__":
