@@ -118,3 +118,14 @@ class TestWaterTankState:
 
     def test_max_capacity_kJ(self, water_tank):
         assert water_tank.max_capacity_kJ == 167040.0
+
+    def test_event_market_cycle_applies_losses(self, water_tank):
+        # Given
+        water_tank._storage_temp_C[CURRENT_MARKET_SLOT] = 50
+        water_tank._params.loss_per_day_percent = 96  # = 1% per market slot
+
+        # When
+        water_tank.event_market_cycle(NEXT_MARKET_SLOT)
+
+        # Then
+        assert water_tank.get_storage_temp_C(CURRENT_MARKET_SLOT) == 49.5

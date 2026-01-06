@@ -120,6 +120,10 @@ class HeatChargerDischarger:
         """Runs on activate event."""
         self.tanks.event_activate()
 
+    def event_market_cycle(self, time_slot: DateTime):
+        """Runs event_market_cycle method."""
+        self.tanks.event_market_cycle(time_slot)
+
 
 class CombinedHeatpumpTanksState:
     """Combined state that includes both heatpump and tanks state."""
@@ -333,6 +337,10 @@ class CombinedHeatpumpTanksState:
         """Runs on activate event."""
         self._charger.event_activate()
 
+    def event_market_cycle(self, time_slot: DateTime):
+        """Runs on market_cycle event."""
+        self._charger.event_market_cycle(time_slot)
+
 
 class HeatPumpEnergyParametersBase(ABC):
     """
@@ -388,6 +396,8 @@ class HeatPumpEnergyParametersBase(ABC):
 
     def event_market_cycle(self, current_time_slot):
         """To be called at the start of the market slot."""
+        # Order matters here
+        self._state.event_market_cycle(current_time_slot)
         self._rotate_profiles(current_time_slot)
         self._populate_state(current_time_slot)
 
