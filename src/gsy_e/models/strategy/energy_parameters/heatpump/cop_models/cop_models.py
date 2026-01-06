@@ -149,22 +149,16 @@ class IndividualCOPModel(BaseCOPModel):
           (as indicated by the training dataset)
         """
 
-        # Compute PLRs for each Q
-        PLR_list = [q / (self._model["Qref"] * CAPFT) for q in Q_solutions]
-
-        # Collect indices of physically valid PLRs
-        # the upper boarder is slightly increased (by 0.05) because of numerical errors that can
-        # occur.
-        valid_indices = [i for i, plr in enumerate(PLR_list) if 0 < plr <= 1.0]
-
-        if not valid_indices:
+        PLR_dict = {
+            q / (self._model["Qref"] * CAPFT): q
+            for q in Q_solutions
+            if 0 <= q / (self._model["Qref"] * CAPFT) <= 1
+        }
+        if not PLR_dict:
+            PLR_list = [q / (self._model["Qref"] * CAPFT) for q in Q_solutions]
             log.error("IndividualCOPModel: No physically feasible PLR solutions. %s", PLR_list)
             return None
-
-        # Choose the one with the LARGEST PLR
-        best_index = max(valid_indices, key=lambda i: PLR_list[i])
-
-        return float(Q_solutions[best_index])
+        return float(PLR_dict[max(PLR_dict)])
 
     def _limit_heat_demand_kW(self, heat_demand_kW: float) -> float:
         assert heat_demand_kW is not None, "heat demand should be provided"
