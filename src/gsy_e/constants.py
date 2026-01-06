@@ -70,6 +70,8 @@ MIN_OFFER_BID_AGE_P2P_DISABLED = 360
 
 HP_MIN_COP = 1.0
 
+EV_CHARGER_DEFAULT_CHARGING_EFFICIENCY = 0.9
+
 
 class SettlementTemplateStrategiesConstants:
     """Constants related to the configuration of settlement template strategies"""
@@ -91,6 +93,12 @@ class HeatPumpSOCManagementAlgorithm(Enum):
 
     PREFERRED_BUYING_RATE = 0
     MINIMISE_SWITCH_COUNT = 1
+
+
+class HeatPumpSettingsDefaultParameters:
+    """Collection of heat pump default parameter values."""
+
+    TANK_LOSS_PERCENT_DAY = 0
 
 
 HEAT_PUMP_SOC_MANAGEMENT_ALGORITHM = HeatPumpSOCManagementAlgorithm.PREFERRED_BUYING_RATE

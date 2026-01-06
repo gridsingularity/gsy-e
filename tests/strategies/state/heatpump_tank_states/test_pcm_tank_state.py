@@ -49,6 +49,7 @@ class TestPCMTankState:
         assert pcm_tank._htf_temps_C[NEXT_MARKET_SLOT] == [40] * 5
         assert pcm_tank._pcm_temps_C[NEXT_MARKET_SLOT] == [39] * 5
         assert pcm_tank._soc.get(NEXT_MARKET_SLOT) == 0.6
+        assert pcm_tank._condenser_temp_C.get(NEXT_MARKET_SLOT) == 45
 
     def test_decrease_tank_temp_from_heat_energy_correctly_updates_storage_temp_and_soc(
         self, pcm_tank
@@ -66,18 +67,21 @@ class TestPCMTankState:
         assert pcm_tank._htf_temps_C[NEXT_MARKET_SLOT] == [35] * 5
         assert pcm_tank._pcm_temps_C[NEXT_MARKET_SLOT] == [36] * 5
         assert pcm_tank._soc.get(NEXT_MARKET_SLOT) == 0.4
+        assert pcm_tank._condenser_temp_C.get(NEXT_MARKET_SLOT) == 40
 
     def test_no_charge_correctly_updates_storage_temp_and_soc(self, pcm_tank):
         # Given
-        assert pcm_tank._soc.get(CURRENT_MARKET_SLOT) == 0.5
-        assert pcm_tank._htf_temps_C.get(CURRENT_MARKET_SLOT) == [37] * 5
-        assert pcm_tank._pcm_temps_C.get(CURRENT_MARKET_SLOT) == [37] * 5
+        pcm_tank._soc[CURRENT_MARKET_SLOT] = 0.4
+        pcm_tank._htf_temps_C[CURRENT_MARKET_SLOT] = [37] * 5
+        pcm_tank._pcm_temps_C[CURRENT_MARKET_SLOT] = [36] * 5
+        pcm_tank._pcm_charge_model.get_soc = Mock(return_value=0.5)
         # When
         pcm_tank.no_charge(time_slot=NEXT_MARKET_SLOT)
         # Then
         assert pcm_tank._soc.get(NEXT_MARKET_SLOT) == 0.5
-        assert pcm_tank._htf_temps_C.get(CURRENT_MARKET_SLOT) == [37] * 5
-        assert pcm_tank._pcm_temps_C.get(CURRENT_MARKET_SLOT) == [37] * 5
+        assert pcm_tank._htf_temps_C.get(NEXT_MARKET_SLOT) == [37] * 5
+        assert pcm_tank._pcm_temps_C.get(NEXT_MARKET_SLOT) == [37] * 5
+        assert pcm_tank._condenser_temp_C.get(NEXT_MARKET_SLOT) == 37
 
     @pytest.mark.parametrize("heat_demand_kJ, expected_energy_kJ", [[5000, 5100], [0, 100]])
     def test_get_max_heat_energy_consumption_kJ_returns_the_correct_energy_value(
@@ -186,3 +190,16 @@ class TestPCMTankState:
         assert pcm_tank._params.max_temp_pcm_C == 100
         assert pcm_tank._params.initial_temp_C == 50
         assert pcm_tank._condenser_temp_C == {CURRENT_MARKET_SLOT: 37}
+
+    def test_event_market_cycle_applies_losses(self, pcm_tank):
+        # Given
+        pcm_tank._htf_temps_C[CURRENT_MARKET_SLOT] = [40] * 5
+        pcm_tank._pcm_temps_C[CURRENT_MARKET_SLOT] = [50] * 5
+        pcm_tank._params.loss_per_day_percent = 96  # = 1% per market slot
+
+        # When
+        pcm_tank.event_market_cycle(NEXT_MARKET_SLOT)
+
+        # Then
+        assert pcm_tank._pcm_temps_C[CURRENT_MARKET_SLOT] == [49.5] * 5
+        assert pcm_tank._htf_temps_C[CURRENT_MARKET_SLOT] == [40] * 5

@@ -3,7 +3,7 @@
     "sim_duration": "24h",
     "slot_length": "15m",
     "tick_length": "15s",
-    "start_date": "2025-10-07"
+    "start_date": "2025-12-22"
   },
   "advanced_settings": {
     "GeneralSettings": {
@@ -247,6 +247,13 @@
         0,
         1
       ]
+    },
+    "EVChargerSettings": {
+      "MAX_POWER_RATING_KW_LIMIT": [
+        0,
+        9223372036854775807
+      ],
+      "MAX_POWER_RATING_KW": 10
     },
     "MASettings": {
       "GRID_FEE_TYPE": 1,
