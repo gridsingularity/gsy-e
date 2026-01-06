@@ -200,8 +200,8 @@ class PCMTankState(TankStateBase):
 
     def no_charge(self, time_slot: DateTime):
         self._htf_temps_C[time_slot] = self._get_htf_temps_C(self._last_time_slot(time_slot))
-        self._pcm_temps_C[time_slot] = self._get_pcm_temps_C(self._last_time_slot(time_slot))
-        self._soc[time_slot] = self._soc[self._last_time_slot(time_slot)]
+        self._pcm_temps_C[time_slot] = self._get_htf_temps_C(self._last_time_slot(time_slot))
+        self._set_soc_after_charging(time_slot)
         self._set_condenser_temp_C(self.get_htf_temp_C(time_slot), time_slot)
 
     def get_results_dict(self, current_time_slot: Optional[DateTime] = None) -> dict:
@@ -306,3 +306,13 @@ class PCMTankState(TankStateBase):
     @property
     def _mass_flow_rate_per_plate(self) -> float:
         return self._mass_flow_rate_on_inlet / self._params.number_of_plates
+
+    def _apply_losses(self, time_slot: DateTime):
+        if self.get_pcm_temp_C(time_slot) is None:
+            return
+        per_market_slot_loss_pcm_C = (
+            self.get_pcm_temp_C(time_slot) * self._params.per_market_slot_loss
+        )
+        self._pcm_temps_C[time_slot] = [
+            plate_temp - per_market_slot_loss_pcm_C for plate_temp in self._pcm_temps_C[time_slot]
+        ]

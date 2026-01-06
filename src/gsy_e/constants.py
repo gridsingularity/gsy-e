@@ -95,6 +95,12 @@ class HeatPumpSOCManagementAlgorithm(Enum):
     MINIMISE_SWITCH_COUNT = 1
 
 
+class HeatPumpSettingsDefaultParameters:
+    """Collection of heat pump default parameter values."""
+
+    TANK_LOSS_PERCENT_DAY = 0
+
+
 HEAT_PUMP_SOC_MANAGEMENT_ALGORITHM = HeatPumpSOCManagementAlgorithm.PREFERRED_BUYING_RATE
 
 # Set the precision of the decimal numbers used in the simulation.

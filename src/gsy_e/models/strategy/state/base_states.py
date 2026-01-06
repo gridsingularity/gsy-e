@@ -412,6 +412,10 @@ class TankStateBase(StateInterface):
         self._soc: Dict[DateTime, float] = defaultdict(lambda: 0)
 
     @abstractmethod
+    def _apply_losses(self, time_slot: DateTime):
+        """Apply loss factor if configured."""
+
+    @abstractmethod
     def increase_tank_temp_from_heat_energy(self, heat_energy_kWh: float, time_slot: DateTime):
         """Set the tank temperature increase from heat energy."""
 
@@ -456,6 +460,10 @@ class TankStateBase(StateInterface):
     def get_soc(self, time_slot: DateTime) -> float:
         """Return SOC in percent for the provided time slot"""
         return self._soc.get(time_slot) * 100
+
+    def event_market_cycle(self, time_slot: DateTime):
+        """Run commants on market cycle."""
+        self._apply_losses(self._last_time_slot(time_slot))
 
     def _last_time_slot(self, time_slot: DateTime):
         return time_slot - GlobalConfig.slot_length
