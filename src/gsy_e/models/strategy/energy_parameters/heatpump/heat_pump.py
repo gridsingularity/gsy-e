@@ -117,7 +117,7 @@ class HeatChargerDischarger:
         """Runs on activate event."""
         self.tanks.event_activate()
 
-    def evet_market_cylce(self, time_slot: DateTime):
+    def event_market_cylce(self, time_slot: DateTime):
         """Runs event_market_cycle method."""
         self.tanks.event_market_cycle(time_slot)
 
@@ -323,7 +323,7 @@ class CombinedHeatpumpTanksState:
 
     def event_market_cycle(self, time_slot: DateTime):
         """Runs on market_cycle event."""
-        self._charger.evet_market_cylce(time_slot)
+        self._charger.event_market_cylce(time_slot)
 
 
 class HeatPumpEnergyParametersBase(ABC):

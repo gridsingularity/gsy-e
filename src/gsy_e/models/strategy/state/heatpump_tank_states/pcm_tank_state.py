@@ -314,5 +314,5 @@ class PCMTankState(TankStateBase):
             self.get_pcm_temp_C(time_slot) * self._params.per_market_slot_loss
         )
         self._pcm_temps_C[time_slot] = [
-            v - per_market_slot_loss_pcm_C for v in self._pcm_temps_C[time_slot]
+            plate_temp - per_market_slot_loss_pcm_C for plate_temp in self._pcm_temps_C[time_slot]
         ]
