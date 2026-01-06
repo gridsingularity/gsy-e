@@ -174,12 +174,12 @@ class LeafDataExporter(BaseDataExporter):
     def _specific_labels(self):
         if isinstance(self.area.strategy, EVChargerStrategy):
             return [
-                "charging-session",
                 "bought [kWh]",
                 "sold [kWh]",
+                "sessions",
                 "charge [kWh]",
-                "offered [kWh]",
-                "charge [%], losses[kWh]",
+                "charge [%]",
+                "losses [kWh]",
             ]
         if isinstance(self.area.strategy, StorageStrategy):
             return [
@@ -212,26 +212,38 @@ class LeafDataExporter(BaseDataExporter):
 
     def _specific_row(self, slot, market):
         if isinstance(self.area.strategy, EVChargerStrategy):
-            s = self.area.strategy.state
+            state = self.area.strategy.state
 
-            if s.active_charging_session:
-                return [
-                    s.active_charging_session.session_id,
-                    market.bought_energy(self.area.name),
-                    market.sold_energy(self.area.name),
-                    s.charge_history_kWh[slot],
-                    s.offered_history[slot],
-                    s.charge_history[slot],
-                    s.loss_history.get(slot, 0),
-                ]
+            # Read from historical snapshot instead of current session state
+            if slot not in state.session_energy_history:
+                return ["-", "-", "EV_NOT_CONNECTED", "-", "-", "-"]
+
+            sessions_at_slot = state.session_energy_history[slot]
+            if not sessions_at_slot:
+                return ["-", "-", "EV_NOT_CONNECTED", "-", "-", "-"]
+
+            bought = market.bought_energy(self.area.name)
+            total_losses = bought * state.losses.charging_loss_percent if bought > 0 else 0
+            loss_per_session = total_losses / len(sessions_at_slot)
+
+            session_ids = ""
+            charge_kWh = ""
+            charge_percent = ""
+            losses = ""
+            for idx, (session_id, session_history) in enumerate(sessions_at_slot.items()):
+                sep = "; " if idx > 0 else ""
+                session_ids += f"{sep}{session_id}"
+                charge_kWh += f"{sep}{session_history['energy_kWh']}"
+                charge_percent += f"{sep}{session_history['soc_percent']}"
+                losses += f"{sep}{loss_per_session}"
+
             return [
-                "EV_NOT_CONNECTED",
-                "-",
-                "-",
-                "-",
-                "-",
-                "-",
-                "-",
+                bought,
+                market.sold_energy(self.area.name),
+                f"({session_ids})",
+                f"({charge_kWh})",
+                f"({charge_percent})",
+                f"({losses})",
             ]
         if isinstance(self.area.strategy, StorageStrategy):
             s = self.area.strategy.state
