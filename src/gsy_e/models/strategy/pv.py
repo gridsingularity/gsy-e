@@ -207,7 +207,7 @@ class PVStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         initial_rate: StrategyProfileBase,
         final_rate: StrategyProfileBase,
         energy_rate_change_per_update: StrategyProfileBase,
-        fit_to_limit,
+        fit_to_limit: bool,
     ):
         # all parameters have to be validated for each time slot here
         for time_slot in initial_rate.profile.keys():

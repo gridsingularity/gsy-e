@@ -159,9 +159,9 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         initial_rate: StrategyProfileBase,
         final_rate: StrategyProfileBase,
         energy_rate_change_per_update: StrategyProfileBase,
-        fit_to_limit,
+        fit_to_limit: bool,
     ):
-        # all parameters have to be validated for each time slot starting from the current time
+        # all parameters have pvto be validated for each time slot starting from the current time
         for time_slot in initial_rate.profile.keys():
             if not is_time_slot_in_simulation_duration(time_slot, self.area.config):
                 continue

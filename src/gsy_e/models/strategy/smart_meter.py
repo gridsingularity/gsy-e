@@ -480,7 +480,7 @@ class SmartMeterStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         initial_rate: StrategyProfileBase,
         final_rate: StrategyProfileBase,
         energy_rate_change_per_update: StrategyProfileBase,
-        fit_to_limit,
+        fit_to_limit: bool,
     ):
         for time_slot in initial_rate.profile.keys():
             rate_change = (
@@ -499,7 +499,7 @@ class SmartMeterStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         initial_rate: StrategyProfileBase,
         final_rate: StrategyProfileBase,
         energy_rate_change_per_update: StrategyProfileBase,
-        fit_to_limit,
+        fit_to_limit: bool,
     ):
         for time_slot in initial_rate.profile.keys():
             rate_change = (

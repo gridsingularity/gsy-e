@@ -273,10 +273,10 @@ class StorageStrategy(BidEnabledStrategy):
         final_selling_rate: StrategyProfileBase,
         initial_buying_rate: StrategyProfileBase,
         final_buying_rate: StrategyProfileBase,
-        energy_rate_increase_per_update,
-        energy_rate_decrease_per_update,
-        bid_fit_to_limit,
-        offer_fit_to_limit,
+        energy_rate_increase_per_update: StrategyProfileBase,
+        energy_rate_decrease_per_update: StrategyProfileBase,
+        bid_fit_to_limit: bool,
+        offer_fit_to_limit: bool,
     ):
 
         for time_slot in initial_selling_rate.profile.keys():
