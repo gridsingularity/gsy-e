@@ -43,6 +43,10 @@ class TradingStrategyBase(EventMixin, AreaBehaviorBase, ABC):
             }
         return constructor_args
 
+    def _update_grid_fees_in_order_updater_params(self):
+        for order_updater_params in self._order_updater_params.values():
+            order_updater_params.grid_fee = self.owner.get_path_to_root_fees()
+
     def _order_updater_for_market_slot_exists(self, market: "MarketBase", market_slot):
         if market not in self._order_updaters:
             return False
