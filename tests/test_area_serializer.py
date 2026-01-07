@@ -113,7 +113,9 @@ def test_non_attr_param():
     recovered1 = area_from_string(area_to_string(area1), _create_config())
     assert recovered1.strategy._energy_params.capacity_kW is None
     assert (
-        recovered1.strategy.offer_update.final_rate_profile_buffer[area1.config.start_date]
+        recovered1.strategy.offer_update.final_rate_profile_buffer.get_value(
+            area1.config.start_date
+        )
         == ConstSettings.PVSettings.SELLING_RATE_RANGE.final
     )
 

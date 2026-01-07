@@ -1,8 +1,9 @@
 from typing import TYPE_CHECKING
 
-from gsy_framework.read_user_profile import InputProfileTypes, UserProfileReader
+from gsy_framework.read_user_profile import InputProfileTypes
 
 from gsy_e.gsy_e_core.util import get_market_maker_rate_from_config
+from gsy_e.models.strategy.strategy_profile import profile_factory
 
 if TYPE_CHECKING:
     from gsy_e.models.area import Area
@@ -23,16 +24,18 @@ class UseMarketMakerMixin:
 
     def _reconfigure_initial_selling_rate(self, initial_selling_rate: float):
         """validation is not needed"""
-        initial_selling_rate = UserProfileReader().read_arbitrary_profile(
-            InputProfileTypes.IDENTITY, initial_selling_rate
+        initial_selling_rate = profile_factory(
+            profile_type=InputProfileTypes.IDENTITY, input_profile=initial_selling_rate
         )
-        self.offer_update.set_parameters(initial_rate=initial_selling_rate)
+        initial_selling_rate.read_or_rotate_profiles()
+        self.offer_update.set_parameters(initial_rate=initial_selling_rate.profile)
 
     def _reconfigure_final_buying_rate(self, final_buying_rate: float):
-        final_buying_rate = UserProfileReader().read_arbitrary_profile(
-            InputProfileTypes.IDENTITY, final_buying_rate
+        final_buying_rate = profile_factory(
+            profile_type=InputProfileTypes.IDENTITY, input_profile=final_buying_rate
         )
-        self.bid_update.set_parameters(final_rate=final_buying_rate)
+        final_buying_rate.read_or_rotate_profiles()
+        self.bid_update.set_parameters(final_rate=final_buying_rate.profile)
 
     def _replace_rates_with_market_maker_rates(self):
         if not self.use_market_maker_rate:

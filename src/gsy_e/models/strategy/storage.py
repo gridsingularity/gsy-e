@@ -24,8 +24,8 @@ from typing import Union, Optional
 from gsy_framework.constants_limits import ConstSettings, FLOATING_POINT_TOLERANCE
 from gsy_framework.data_classes import TraderDetails
 from gsy_framework.exceptions import GSyException
-from gsy_framework.read_user_profile import InputProfileTypes, UserProfileReader
-from gsy_framework.utils import get_from_profile_same_weekday_and_time, key_in_dict_and_not_none
+from gsy_framework.read_user_profile import InputProfileTypes
+from gsy_framework.utils import key_in_dict_and_not_none
 from gsy_framework.validators import StorageValidator
 from pendulum import duration
 
@@ -41,6 +41,7 @@ from gsy_e.models.strategy.update_frequency import (
     TemplateStrategyBidUpdater,
     TemplateStrategyOfferUpdater,
 )
+from gsy_e.models.strategy.strategy_profile import profile_factory, StrategyProfileBase
 
 log = getLogger(__name__)
 
@@ -121,11 +122,13 @@ class StorageStrategy(BidEnabledStrategy):
             energy_rate_change_per_update=energy_rate_decrease_per_update,
             update_interval=update_interval,
         )
-        for time_slot in self.offer_update.initial_rate_profile_buffer.keys():
+        for time_slot in self.offer_update.initial_rate_profile_buffer.profile.keys():
             StorageValidator.validate(
-                initial_selling_rate=self.offer_update.initial_rate_profile_buffer[time_slot],
-                final_selling_rate=get_from_profile_same_weekday_and_time(
-                    self.offer_update.final_rate_profile_buffer, time_slot
+                initial_selling_rate=self.offer_update.initial_rate_profile_buffer.get_value(
+                    time_slot
+                ),
+                final_selling_rate=self.offer_update.final_rate_profile_buffer.get_value(
+                    time_slot
                 ),
             )
         self.bid_update = TemplateStrategyBidUpdater(
@@ -136,12 +139,12 @@ class StorageStrategy(BidEnabledStrategy):
             update_interval=update_interval,
             rate_limit_object=min,
         )
-        for time_slot in self.bid_update.initial_rate_profile_buffer.keys():
+        for time_slot in self.bid_update.initial_rate_profile_buffer.profile.keys():
             StorageValidator.validate(
-                initial_buying_rate=self.bid_update.initial_rate_profile_buffer[time_slot],
-                final_buying_rate=get_from_profile_same_weekday_and_time(
-                    self.bid_update.final_rate_profile_buffer, time_slot
+                initial_buying_rate=self.bid_update.initial_rate_profile_buffer.get_value(
+                    time_slot
                 ),
+                final_buying_rate=self.bid_update.final_rate_profile_buffer.get_value(time_slot),
             )
         self._state = StorageState(
             initial_soc=initial_soc,
@@ -153,7 +156,6 @@ class StorageStrategy(BidEnabledStrategy):
         )
         self.cap_price_strategy = cap_price_strategy
         self.balancing_energy_ratio = BalancingRatio(*balancing_energy_ratio)
-        self._reader = UserProfileReader()
 
     def _create_future_market_strategy(self):
         return future_market_strategy_factory(self.asset_type)
@@ -164,41 +166,51 @@ class StorageStrategy(BidEnabledStrategy):
 
     def _area_reconfigure_prices(self, **kwargs):  # pylint: disable=too-many-branches
         if key_in_dict_and_not_none(kwargs, "initial_selling_rate"):
-            initial_selling_rate = self._reader.read_arbitrary_profile(
-                InputProfileTypes.IDENTITY, kwargs["initial_selling_rate"]
+            initial_selling_rate = profile_factory(
+                profile_type=InputProfileTypes.IDENTITY,
+                input_profile=kwargs["initial_selling_rate"],
             )
+            initial_selling_rate.read_or_rotate_profiles()
         else:
             initial_selling_rate = self.offer_update.initial_rate_profile_buffer
         if key_in_dict_and_not_none(kwargs, "final_selling_rate"):
-            final_selling_rate = self._reader.read_arbitrary_profile(
-                InputProfileTypes.IDENTITY, kwargs["final_selling_rate"]
+            final_selling_rate = profile_factory(
+                profile_type=InputProfileTypes.IDENTITY, input_profile=kwargs["final_selling_rate"]
             )
+            final_selling_rate.read_or_rotate_profiles()
         else:
             final_selling_rate = self.offer_update.final_rate_profile_buffer
         if key_in_dict_and_not_none(kwargs, "initial_buying_rate"):
-            initial_buying_rate = self._reader.read_arbitrary_profile(
-                InputProfileTypes.IDENTITY, kwargs["initial_buying_rate"]
+            initial_buying_rate = profile_factory(
+                profile_type=InputProfileTypes.IDENTITY,
+                input_profile=kwargs["initial_buying_rate"],
             )
+            initial_buying_rate.read_or_rotate_profiles()
         else:
             initial_buying_rate = self.bid_update.initial_rate_profile_buffer
         if key_in_dict_and_not_none(kwargs, "final_buying_rate"):
-            final_buying_rate = self._reader.read_arbitrary_profile(
-                InputProfileTypes.IDENTITY, kwargs["final_buying_rate"]
+            final_buying_rate = profile_factory(
+                profile_type=InputProfileTypes.IDENTITY, input_profile=kwargs["final_buying_rate"]
             )
+            final_buying_rate.read_or_rotate_profiles()
         else:
             final_buying_rate = self.bid_update.final_rate_profile_buffer
         if key_in_dict_and_not_none(kwargs, "energy_rate_decrease_per_update"):
-            energy_rate_decrease_per_update = self._reader.read_arbitrary_profile(
-                InputProfileTypes.IDENTITY, kwargs["energy_rate_decrease_per_update"]
+            energy_rate_decrease_per_update = profile_factory(
+                profile_type=InputProfileTypes.IDENTITY,
+                input_profile=kwargs["energy_rate_decrease_per_update"],
             )
+            energy_rate_decrease_per_update.read_or_rotate_profiles()
         else:
             energy_rate_decrease_per_update = (
                 self.offer_update.energy_rate_change_per_update_profile_buffer
             )
         if key_in_dict_and_not_none(kwargs, "energy_rate_increase_per_update"):
-            energy_rate_increase_per_update = self._reader.read_arbitrary_profile(
-                InputProfileTypes.IDENTITY, kwargs["energy_rate_increase_per_update"]
+            energy_rate_increase_per_update = profile_factory(
+                profile_type=InputProfileTypes.IDENTITY,
+                input_profile=kwargs["energy_rate_increase_per_update"],
             )
+            energy_rate_increase_per_update.read_or_rotate_profiles()
         else:
             energy_rate_increase_per_update = (
                 self.bid_update.energy_rate_change_per_update_profile_buffer
@@ -233,19 +245,22 @@ class StorageStrategy(BidEnabledStrategy):
             return
 
         self.offer_update.set_parameters(
-            initial_rate=initial_selling_rate,
-            final_rate=final_selling_rate,
-            energy_rate_change_per_update=energy_rate_decrease_per_update,
+            initial_rate=initial_selling_rate.profile,
+            final_rate=final_selling_rate.profile,
+            energy_rate_change_per_update=energy_rate_decrease_per_update.profile,
             fit_to_limit=offer_fit_to_limit,
             update_interval=update_interval,
         )
+        self.offer_update.update_and_populate_price_settings(self.area)
+
         self.bid_update.set_parameters(
-            initial_rate=initial_buying_rate,
-            final_rate=final_buying_rate,
-            energy_rate_change_per_update=energy_rate_increase_per_update,
+            initial_rate=initial_buying_rate.profile,
+            final_rate=final_buying_rate.profile,
+            energy_rate_change_per_update=energy_rate_increase_per_update.profile,
             fit_to_limit=bid_fit_to_limit,
             update_interval=update_interval,
         )
+        self.bid_update.update_and_populate_price_settings(self.area)
 
     def area_reconfigure_event(self, *args, **kwargs):
         """Reconfigure the device properties at runtime using the provided arguments."""
@@ -254,17 +269,17 @@ class StorageStrategy(BidEnabledStrategy):
 
     def _validate_rates(  # pylint: disable=too-many-arguments
         self,
-        initial_selling_rate,
-        final_selling_rate,
-        initial_buying_rate,
-        final_buying_rate,
-        energy_rate_increase_per_update,
-        energy_rate_decrease_per_update,
-        bid_fit_to_limit,
-        offer_fit_to_limit,
+        initial_selling_rate: StrategyProfileBase,
+        final_selling_rate: StrategyProfileBase,
+        initial_buying_rate: StrategyProfileBase,
+        final_buying_rate: StrategyProfileBase,
+        energy_rate_increase_per_update: StrategyProfileBase,
+        energy_rate_decrease_per_update: StrategyProfileBase,
+        bid_fit_to_limit: bool,
+        offer_fit_to_limit: bool,
     ):
 
-        for time_slot in initial_selling_rate.keys():
+        for time_slot in initial_selling_rate.profile.keys():
             if (
                 self.area
                 and self.area.current_market
@@ -273,30 +288,18 @@ class StorageStrategy(BidEnabledStrategy):
                 continue
 
             bid_rate_change = (
-                None
-                if bid_fit_to_limit
-                else get_from_profile_same_weekday_and_time(
-                    energy_rate_increase_per_update, time_slot
-                )
+                None if bid_fit_to_limit else energy_rate_increase_per_update.get_value(time_slot)
             )
             offer_rate_change = (
                 None
                 if offer_fit_to_limit
-                else get_from_profile_same_weekday_and_time(
-                    energy_rate_decrease_per_update, time_slot
-                )
+                else energy_rate_decrease_per_update.get_value(time_slot)
             )
             StorageValidator.validate(
-                initial_selling_rate=initial_selling_rate[time_slot],
-                final_selling_rate=get_from_profile_same_weekday_and_time(
-                    final_selling_rate, time_slot
-                ),
-                initial_buying_rate=get_from_profile_same_weekday_and_time(
-                    initial_buying_rate, time_slot
-                ),
-                final_buying_rate=get_from_profile_same_weekday_and_time(
-                    final_buying_rate, time_slot
-                ),
+                initial_selling_rate=initial_selling_rate.get_value(time_slot),
+                final_selling_rate=final_selling_rate.get_value(time_slot),
+                initial_buying_rate=initial_buying_rate.get_value(time_slot),
+                final_buying_rate=final_buying_rate.get_value(time_slot),
                 energy_rate_increase_per_update=bid_rate_change,
                 energy_rate_decrease_per_update=offer_rate_change,
             )
@@ -332,89 +335,6 @@ class StorageStrategy(BidEnabledStrategy):
         self._update_profiles_with_default_values()
         self.event_activate_energy()
         self.event_activate_price()
-
-    def _validate_constructor_arguments(  # pylint: disable=too-many-arguments, too-many-branches
-        self,
-        initial_soc=None,
-        min_allowed_soc=None,
-        battery_capacity_kWh=None,
-        max_abs_battery_power_kW=None,
-        initial_selling_rate=None,
-        final_selling_rate=None,
-        initial_buying_rate=None,
-        final_buying_rate=None,
-        energy_rate_change_per_update=None,
-    ):
-
-        if battery_capacity_kWh is not None and battery_capacity_kWh < 0:
-            raise ValueError("Battery capacity should be a positive integer")
-        if max_abs_battery_power_kW is not None and max_abs_battery_power_kW < 0:
-            raise ValueError("Battery Power rating must be a positive integer.")
-        if initial_soc is not None and 0 < initial_soc > 100:
-            raise ValueError("initial SOC must be in between 0-100 %")
-        if min_allowed_soc is not None and 0 < min_allowed_soc > 100:
-            raise ValueError("initial SOC must be in between 0-100 %")
-        if (
-            initial_soc is not None
-            and min_allowed_soc is not None
-            and initial_soc < min_allowed_soc
-        ):
-            raise ValueError("Initial charge must be more than the minimum allowed soc.")
-        if initial_selling_rate is not None and initial_selling_rate < 0:
-            raise ValueError("Initial selling rate must be greater equal 0.")
-        if final_selling_rate is not None:
-            if isinstance(final_selling_rate, float) and final_selling_rate < 0:
-                raise ValueError("Final selling rate must be greater equal 0.")
-            if isinstance(final_selling_rate, dict) and any(
-                rate < 0 for _, rate in final_selling_rate.items()
-            ):
-                raise ValueError("Final selling rate must be greater equal 0.")
-        if initial_selling_rate is not None and final_selling_rate is not None:
-            initial_selling_rate = self._reader.read_arbitrary_profile(
-                InputProfileTypes.IDENTITY, initial_selling_rate
-            )
-            final_selling_rate = self._reader.read_arbitrary_profile(
-                InputProfileTypes.IDENTITY, final_selling_rate
-            )
-            if any(
-                initial_selling_rate[hour] < final_selling_rate[hour]
-                for hour, _ in initial_selling_rate.items()
-            ):
-                raise ValueError("Initial selling rate must be greater than final selling rate.")
-        if initial_buying_rate is not None and initial_buying_rate < 0:
-            raise ValueError("Initial buying rate must be greater equal 0.")
-        if final_buying_rate is not None:
-            final_buying_rate = self._reader.read_arbitrary_profile(
-                InputProfileTypes.IDENTITY, final_buying_rate
-            )
-            if any(rate < 0 for _, rate in final_buying_rate.items()):
-                raise ValueError("Final buying rate must be greater equal 0.")
-        if initial_buying_rate is not None and final_buying_rate is not None:
-            initial_buying_rate = self._reader.read_arbitrary_profile(
-                InputProfileTypes.IDENTITY, initial_buying_rate
-            )
-            final_buying_rate = self._reader.read_arbitrary_profile(
-                InputProfileTypes.IDENTITY, final_buying_rate
-            )
-            if any(
-                initial_buying_rate[hour] > final_buying_rate[hour]
-                for hour, _ in initial_buying_rate.items()
-            ):
-                raise ValueError("Initial buying rate must be less than final buying rate.")
-        if final_selling_rate is not None and final_buying_rate is not None:
-            final_selling_rate = self._reader.read_arbitrary_profile(
-                InputProfileTypes.IDENTITY, final_selling_rate
-            )
-            final_buying_rate = self._reader.read_arbitrary_profile(
-                InputProfileTypes.IDENTITY, final_buying_rate
-            )
-            if any(
-                final_buying_rate[hour] >= final_selling_rate[hour]
-                for hour, _ in final_selling_rate.items()
-            ):
-                raise ValueError("final_buying_rate should be higher than final_selling_rate.")
-        if energy_rate_change_per_update is not None and energy_rate_change_per_update < 0:
-            raise ValueError("energy_rate_change_per_update should be a non-negative value.")
 
     def event_tick(self):
         """Post bids or update existing bid prices on market tick.

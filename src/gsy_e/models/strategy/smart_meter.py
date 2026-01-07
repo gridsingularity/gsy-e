@@ -19,8 +19,8 @@ from typing import Dict, Union
 
 from gsy_framework.constants_limits import ConstSettings, FLOATING_POINT_TOLERANCE
 from gsy_framework.data_classes import Offer, TraderDetails
-from gsy_framework.read_user_profile import InputProfileTypes, UserProfileReader
-from gsy_framework.utils import get_from_profile_same_weekday_and_time, limit_float_precision
+from gsy_framework.read_user_profile import InputProfileTypes
+from gsy_framework.utils import limit_float_precision
 from gsy_framework.validators.smart_meter_validator import SmartMeterValidator
 from numpy import random
 from pendulum import duration
@@ -38,6 +38,7 @@ from gsy_e.models.strategy.update_frequency import (
     TemplateStrategyBidUpdater,
     TemplateStrategyOfferUpdater,
 )
+from gsy_e.models.strategy.strategy_profile import profile_factory, StrategyProfileBase
 
 log = getLogger(__name__)
 
@@ -133,7 +134,6 @@ class SmartMeterStrategy(BidEnabledStrategy, UseMarketMakerMixin):
             update_interval=update_interval,
             rate_limit_object=max,
         )
-        self._reader = UserProfileReader()
 
     @property
     def state(self) -> SmartMeterState:
@@ -284,29 +284,31 @@ class SmartMeterStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         self._energy_params.reset(time_slots=time_slots, **kwargs)
 
     def _area_reconfigure_production_prices(self, **kwargs):
-        initial_rate = (
-            self._reader.read_arbitrary_profile(
-                InputProfileTypes.IDENTITY, kwargs["initial_selling_rate"]
+        if kwargs.get("initial_selling_rate") is not None:
+            initial_rate = profile_factory(
+                profile_type=InputProfileTypes.IDENTITY,
+                input_profile=kwargs["initial_selling_rate"],
             )
-            if kwargs.get("initial_selling_rate") is not None
-            else self.offer_update.initial_rate_profile_buffer
-        )
-
-        final_rate = (
-            self._reader.read_arbitrary_profile(
-                InputProfileTypes.IDENTITY, kwargs["final_selling_rate"]
+            initial_rate.read_or_rotate_profiles()
+        else:
+            initial_rate = self.offer_update.initial_rate_profile_buffer
+        if kwargs.get("final_selling_rate") is not None:
+            final_rate = profile_factory(
+                profile_type=InputProfileTypes.IDENTITY, input_profile=kwargs["final_selling_rate"]
             )
-            if kwargs.get("final_selling_rate") is not None
-            else self.offer_update.final_rate_profile_buffer
-        )
-
-        energy_rate_change_per_update = (
-            self._reader.read_arbitrary_profile(
-                InputProfileTypes.IDENTITY, kwargs["energy_rate_decrease_per_update"]
+            final_rate.read_or_rotate_profiles()
+        else:
+            final_rate = self.offer_update.final_rate_profile_buffer
+        if kwargs.get("energy_rate_increase_per_update") is not None:
+            energy_rate_change_per_update = profile_factory(
+                profile_type=InputProfileTypes.IDENTITY,
+                input_profile=kwargs["energy_rate_increase_per_update"],
             )
-            if kwargs.get("energy_rate_decrease_per_update") is not None
-            else self.offer_update.energy_rate_change_per_update_profile_buffer
-        )
+            energy_rate_change_per_update.read_or_rotate_profiles()
+        else:
+            energy_rate_change_per_update = (
+                self.offer_update.energy_rate_change_per_update_profile_buffer
+            )
 
         fit_to_limit = (
             kwargs["fit_to_limit"]
@@ -334,37 +336,40 @@ class SmartMeterStrategy(BidEnabledStrategy, UseMarketMakerMixin):
             return
 
         self.offer_update.set_parameters(
-            initial_rate=initial_rate,
-            final_rate=final_rate,
-            energy_rate_change_per_update=energy_rate_change_per_update,
+            initial_rate=initial_rate.profile,
+            final_rate=final_rate.profile,
+            energy_rate_change_per_update=energy_rate_change_per_update.profile,
             fit_to_limit=fit_to_limit,
             update_interval=update_interval,
         )
+        self.offer_update.update_and_populate_price_settings(self.area)
 
     def _area_reconfigure_consumption_prices(self, **kwargs):
-        initial_rate = (
-            self._reader.read_arbitrary_profile(
-                InputProfileTypes.IDENTITY, kwargs["initial_buying_rate"]
+        if kwargs.get("initial_buying_rate") is not None:
+            initial_rate = profile_factory(
+                profile_type=InputProfileTypes.IDENTITY,
+                input_profile=kwargs["initial_buying_rate"],
             )
-            if kwargs.get("initial_buying_rate") is not None
-            else self.bid_update.initial_rate_profile_buffer
-        )
-
-        final_rate = (
-            self._reader.read_arbitrary_profile(
-                InputProfileTypes.IDENTITY, kwargs["final_buying_rate"]
+            initial_rate.read_or_rotate_profiles()
+        else:
+            initial_rate = self.bid_update.initial_rate_profile_buffer
+        if kwargs.get("final_buying_rate") is not None:
+            final_rate = profile_factory(
+                profile_type=InputProfileTypes.IDENTITY, input_profile=kwargs["final_buying_rate"]
             )
-            if kwargs.get("final_buying_rate") is not None
-            else self.bid_update.final_rate_profile_buffer
-        )
-
-        energy_rate_change_per_update = (
-            self._reader.read_arbitrary_profile(
-                InputProfileTypes.IDENTITY, kwargs["energy_rate_increase_per_update"]
+            final_rate.read_or_rotate_profiles()
+        else:
+            final_rate = self.bid_update.final_rate_profile_buffer
+        if kwargs.get("energy_rate_increase_per_update") is not None:
+            energy_rate_change_per_update = profile_factory(
+                profile_type=InputProfileTypes.IDENTITY,
+                input_profile=kwargs["energy_rate_increase_per_update"],
             )
-            if kwargs.get("energy_rate_increase_per_update") is not None
-            else self.bid_update.energy_rate_change_per_update_profile_buffer
-        )
+            energy_rate_change_per_update.read_or_rotate_profiles()
+        else:
+            energy_rate_change_per_update = (
+                self.bid_update.energy_rate_change_per_update_profile_buffer
+            )
 
         fit_to_limit = (
             kwargs["fit_to_limit"]
@@ -392,12 +397,13 @@ class SmartMeterStrategy(BidEnabledStrategy, UseMarketMakerMixin):
             return
 
         self.bid_update.set_parameters(
-            initial_rate=initial_rate,
-            final_rate=final_rate,
-            energy_rate_change_per_update=energy_rate_change_per_update,
+            initial_rate=initial_rate.profile,
+            final_rate=final_rate.profile,
+            energy_rate_change_per_update=energy_rate_change_per_update.profile,
             fit_to_limit=fit_to_limit,
             update_interval=update_interval,
         )
+        self.bid_update.update_and_populate_price_settings(self.area)
 
     def _reset_rates_and_update_prices(self):
         """Set the initial/final rates and update the price of all bids/offers consequently."""
@@ -470,39 +476,39 @@ class SmartMeterStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         self._future_market_strategy.delete_past_state_values(self.area.current_market.time_slot)
 
     def _validate_consumption_rates(
-        self, initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit
+        self,
+        initial_rate: StrategyProfileBase,
+        final_rate: StrategyProfileBase,
+        energy_rate_change_per_update: StrategyProfileBase,
+        fit_to_limit: bool,
     ):
-        for time_slot in initial_rate.keys():
+        for time_slot in initial_rate.profile.keys():
             rate_change = (
-                None
-                if fit_to_limit
-                else get_from_profile_same_weekday_and_time(
-                    energy_rate_change_per_update, time_slot
-                )
+                None if fit_to_limit else energy_rate_change_per_update.get_value(time_slot)
             )
 
             self.validator.validate_rate(
-                initial_buying_rate=initial_rate[time_slot],
+                initial_buying_rate=initial_rate.get_value(time_slot),
                 energy_rate_increase_per_update=rate_change,
-                final_buying_rate=get_from_profile_same_weekday_and_time(final_rate, time_slot),
+                final_buying_rate=final_rate.get_value(time_slot),
                 fit_to_limit=fit_to_limit,
             )
 
     def _validate_production_rates(
-        self, initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit
+        self,
+        initial_rate: StrategyProfileBase,
+        final_rate: StrategyProfileBase,
+        energy_rate_change_per_update: StrategyProfileBase,
+        fit_to_limit: bool,
     ):
-        for time_slot in initial_rate.keys():
+        for time_slot in initial_rate.profile.keys():
             rate_change = (
-                None
-                if fit_to_limit
-                else get_from_profile_same_weekday_and_time(
-                    energy_rate_change_per_update, time_slot
-                )
+                None if fit_to_limit else energy_rate_change_per_update.get_value(time_slot)
             )
 
             self.validator.validate_rate(
-                initial_selling_rate=initial_rate[time_slot],
-                final_selling_rate=get_from_profile_same_weekday_and_time(final_rate, time_slot),
+                initial_selling_rate=initial_rate.get_value(time_slot),
+                final_selling_rate=final_rate.get_value(time_slot),
                 energy_rate_decrease_per_update=rate_change,
                 fit_to_limit=fit_to_limit,
             )
