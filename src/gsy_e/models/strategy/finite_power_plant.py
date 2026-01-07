@@ -18,12 +18,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from typing import Union, Optional
 
-from gsy_framework.read_user_profile import UserProfileReader, InputProfileTypes
+from gsy_framework.read_user_profile import InputProfileTypes
 from gsy_framework.utils import convert_str_to_pendulum_in_dict, convert_pendulum_to_str_in_dict
-from gsy_framework.utils import get_from_profile_same_weekday_and_time, convert_kW_to_kWh
+from gsy_framework.utils import convert_kW_to_kWh
 from gsy_framework.validators import FiniteDieselGeneratorValidator
 
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
+from gsy_e.models.strategy.strategy_profile import profile_factory, StrategyProfileBase
 
 
 class FinitePowerPlant(CommercialStrategy):
@@ -43,12 +44,11 @@ class FinitePowerPlant(CommercialStrategy):
         FiniteDieselGeneratorValidator.validate(max_available_power_kW=max_available_power_kW)
         super().__init__(energy_rate=energy_rate)
         self.max_available_power_kW = max_available_power_kW
+        self._max_available_power_kW_profile: StrategyProfileBase = None
 
     def event_activate(self, **kwargs):
         super().event_activate()
-        self.max_available_power_kW = UserProfileReader().read_arbitrary_profile(
-            InputProfileTypes.IDENTITY, self.max_available_power_kW
-        )
+        self._init_max_power_profile(self.max_available_power_kW)
 
     def event_offer_traded(self, *, market_id, trade):
         # Disable offering more energy than the initial offer, in order to adhere to the max
@@ -56,11 +56,9 @@ class FinitePowerPlant(CommercialStrategy):
         pass
 
     def event_market_cycle(self):
-        power_from_profile = get_from_profile_same_weekday_and_time(
-            self.max_available_power_kW, self.area.spot_market.time_slot
-        )
         self.energy_per_slot_kWh = convert_kW_to_kWh(
-            power_from_profile, self.simulation_config.slot_length
+            self._max_available_power_kW_profile.get_value(self.area.spot_market.time_slot),
+            self.simulation_config.slot_length,
         )
         if self.energy_per_slot_kWh <= 0.0:
             return
@@ -69,13 +67,19 @@ class FinitePowerPlant(CommercialStrategy):
     def get_state(self):
         return {
             "energy_rate": convert_pendulum_to_str_in_dict(self._sell_energy_profile.profile),
-            "max_available_power_kW": convert_pendulum_to_str_in_dict(self.max_available_power_kW),
+            "max_available_power_kW": convert_pendulum_to_str_in_dict(
+                self._max_available_power_kW_profile.profile
+            ),
         }
 
     def restore_state(self, saved_state):
         self._sell_energy_profile.profile = convert_str_to_pendulum_in_dict(
             saved_state["energy_rate"]
         )
-        self.max_available_power_kW.update(
-            convert_str_to_pendulum_in_dict(saved_state["max_available_power_kW"])
+        self._init_max_power_profile(saved_state["max_available_power_kW"])
+
+    def _init_max_power_profile(self, max_available_power_kW: Union[float, dict, str]):
+        self._max_available_power_kW_profile = profile_factory(
+            input_profile=max_available_power_kW, profile_type=InputProfileTypes.IDENTITY
         )
+        self._max_available_power_kW_profile.read_or_rotate_profiles()

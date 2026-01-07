@@ -146,10 +146,10 @@ def test_if_preferred_charging_power_overrides_bought_energy(ev_charger_strategy
     preferred_power_kW = 1.5
     strategy = EVChargerStrategy(
         maximum_power_rating_kW=ev_charger_strategy.maximum_power_rating_kW,
-        initial_buying_rate=ev_charger_strategy.bid_update.initial_rate_profile_buffer,
-        final_buying_rate=ev_charger_strategy.bid_update.final_rate_profile_buffer,
-        initial_selling_rate=ev_charger_strategy.offer_update.initial_rate_profile_buffer,
-        final_selling_rate=ev_charger_strategy.offer_update.final_rate_profile_buffer,
+        initial_buying_rate=ev_charger_strategy.bid_update.initial_rate_profile_buffer.profile,
+        final_buying_rate=ev_charger_strategy.bid_update.final_rate_profile_buffer.profile,
+        initial_selling_rate=ev_charger_strategy.offer_update.initial_rate_profile_buffer.profile,
+        final_selling_rate=ev_charger_strategy.offer_update.final_rate_profile_buffer.profile,
         charging_sessions=ev_charger_strategy.charging_sessions,
         preferred_charging_power=preferred_power_kW,
     )

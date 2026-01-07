@@ -22,10 +22,9 @@ from typing import Union, Dict
 from gsy_framework.constants_limits import ConstSettings, FLOATING_POINT_TOLERANCE
 from gsy_framework.data_classes import Offer, TraderDetails
 from gsy_framework.exceptions import GSyDeviceException
-from gsy_framework.read_user_profile import UserProfileReader, InputProfileTypes
+from gsy_framework.read_user_profile import InputProfileTypes
 from gsy_framework.utils import (
     limit_float_precision,
-    get_from_profile_same_weekday_and_time,
     is_time_slot_in_simulation_duration,
 )
 from gsy_framework.validators.load_validator import LoadValidator
@@ -45,6 +44,7 @@ from gsy_e.models.strategy.mixins import UseMarketMakerMixin
 from gsy_e.models.strategy.settlement.strategy import settlement_market_strategy_factory
 from gsy_e.models.strategy.state import LoadState
 from gsy_e.models.strategy.update_frequency import TemplateStrategyBidUpdater
+from gsy_e.models.strategy.strategy_profile import profile_factory, StrategyProfileBase
 
 BalancingRatio = namedtuple("BalancingRatio", ("demand", "supply"))
 
@@ -110,7 +110,6 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         self._calculate_active_markets()
         self._cycled_market = set()
         self._simulation_start_timestamp = None
-        self._reader = UserProfileReader()
 
     @property
     def state(self) -> LoadState:
@@ -156,10 +155,14 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         )
 
     def _validate_rates(
-        self, initial_rate, final_rate, energy_rate_change_per_update, fit_to_limit
+        self,
+        initial_rate: StrategyProfileBase,
+        final_rate: StrategyProfileBase,
+        energy_rate_change_per_update: StrategyProfileBase,
+        fit_to_limit: bool,
     ):
-        # all parameters have to be validated for each time slot starting from the current time
-        for time_slot in initial_rate.keys():
+        # all parameters have pvto be validated for each time slot starting from the current time
+        for time_slot in initial_rate.profile.keys():
             if not is_time_slot_in_simulation_duration(time_slot, self.area.config):
                 continue
 
@@ -170,16 +173,12 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
             ):
                 continue
             rate_change = (
-                None
-                if fit_to_limit
-                else get_from_profile_same_weekday_and_time(
-                    energy_rate_change_per_update, time_slot
-                )
+                None if fit_to_limit else energy_rate_change_per_update.get_value(time_slot)
             )
             LoadValidator.validate_rate(
-                initial_buying_rate=initial_rate[time_slot],
+                initial_buying_rate=initial_rate.get_value(time_slot),
                 energy_rate_increase_per_update=rate_change,
-                final_buying_rate=get_from_profile_same_weekday_and_time(final_rate, time_slot),
+                final_buying_rate=final_rate.get_value(time_slot),
                 fit_to_limit=fit_to_limit,
             )
 
@@ -232,21 +231,26 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
 
     def _area_reconfigure_prices(self, **kwargs):
         if kwargs.get("initial_buying_rate") is not None:
-            initial_rate = self._reader.read_arbitrary_profile(
-                InputProfileTypes.IDENTITY, kwargs["initial_buying_rate"]
+            initial_rate = profile_factory(
+                profile_type=InputProfileTypes.IDENTITY,
+                input_profile=kwargs["initial_buying_rate"],
             )
+            initial_rate.read_or_rotate_profiles()
         else:
             initial_rate = self.bid_update.initial_rate_profile_buffer
         if kwargs.get("final_buying_rate") is not None:
-            final_rate = self._reader.read_arbitrary_profile(
-                InputProfileTypes.IDENTITY, kwargs["final_buying_rate"]
+            final_rate = profile_factory(
+                profile_type=InputProfileTypes.IDENTITY, input_profile=kwargs["final_buying_rate"]
             )
+            final_rate.read_or_rotate_profiles()
         else:
             final_rate = self.bid_update.final_rate_profile_buffer
         if kwargs.get("energy_rate_increase_per_update") is not None:
-            energy_rate_change_per_update = self._reader.read_arbitrary_profile(
-                InputProfileTypes.IDENTITY, kwargs["energy_rate_increase_per_update"]
+            energy_rate_change_per_update = profile_factory(
+                profile_type=InputProfileTypes.IDENTITY,
+                input_profile=kwargs["energy_rate_increase_per_update"],
             )
+            energy_rate_change_per_update.read_or_rotate_profiles()
         else:
             energy_rate_change_per_update = (
                 self.bid_update.energy_rate_change_per_update_profile_buffer
@@ -276,19 +280,19 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
             return
 
         self.bid_update.set_parameters(
-            initial_rate=initial_rate,
-            final_rate=final_rate,
-            energy_rate_change_per_update=energy_rate_change_per_update,
+            initial_rate=initial_rate.profile,
+            final_rate=final_rate.profile,
+            energy_rate_change_per_update=energy_rate_change_per_update.profile,
             fit_to_limit=fit_to_limit,
             update_interval=update_interval,
         )
+        self.bid_update.update_and_populate_price_settings(self.area)
 
     def area_reconfigure_event(self, *args, **kwargs):
         """Reconfigure the device properties at runtime using the provided arguments."""
         self._energy_params.reset(self.area.spot_market.time_slot, **kwargs)
         self._update_energy_requirement_in_state()
         self._area_reconfigure_prices(**kwargs)
-        self.bid_update.update_and_populate_price_settings(self.area)
 
     def event_activate_price(self):
         """Update the strategy prices upon the activation and validate them afterwards."""

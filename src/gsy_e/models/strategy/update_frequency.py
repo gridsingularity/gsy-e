@@ -22,14 +22,13 @@ from typing import TYPE_CHECKING, Callable, List, Dict
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.read_user_profile import InputProfileTypes
 from gsy_framework.utils import (
-    get_from_profile_same_weekday_and_time,
     is_time_slot_in_simulation_duration,
 )
 from pendulum import duration, DateTime, Duration
 
 import gsy_e.constants
-from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.gsy_e_core.util import write_default_to_dict, is_time_slot_in_past_markets
+from gsy_e.models.strategy.strategy_profile import profile_factory
 
 if TYPE_CHECKING:
     from gsy_e.models.area import Area
@@ -92,10 +91,7 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
         self.final_rate_input = final_rate
         self.energy_rate_change_per_update_input = energy_rate_change_per_update
 
-        # buffer of populated input values Dict[DateTime, float]
-        self.initial_rate_profile_buffer = {}
-        self.final_rate_profile_buffer = {}
-        self.energy_rate_change_per_update_profile_buffer = {}
+        self._reset_buffer_profiles()
 
         # dicts that are used for price calculations, contain only
         # all_markets Dict[DateTime, float]
@@ -103,7 +99,7 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
         self.final_rate = {}
         self.energy_rate_change_per_update = {}
 
-        self._read_or_rotate_rate_profiles()
+        self._read_or_rotate_rate_buffer_profiles()
 
         self.update_interval = update_interval
         self.update_counter = {}
@@ -119,35 +115,15 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
         """Return dict with configuration parameters."""
         return {"fit_to_limit": self.fit_to_limit, "update_interval": self.update_interval}
 
-    def _read_or_rotate_rate_profiles(self, reconfigure=False) -> None:
+    def _read_or_rotate_rate_buffer_profiles(self, reconfigure=False) -> None:
         """
         Creates a new chunk of profiles if the current_timestamp is not in the profile buffers
         """
-
-        self.initial_rate_profile_buffer = global_objects.profiles_handler.rotate_profile(
-            profile_type=InputProfileTypes.IDENTITY,
-            profile=(
-                self.initial_rate_input
-                if reconfigure or not self.initial_rate_profile_buffer
-                else self.initial_rate_profile_buffer
-            ),
-            input_profile_path=self.initial_rate_input,
-        )
-        self.final_rate_profile_buffer = global_objects.profiles_handler.rotate_profile(
-            profile_type=InputProfileTypes.IDENTITY,
-            profile=(
-                self.final_rate_input
-                if reconfigure or not self.final_rate_profile_buffer
-                else self.final_rate_profile_buffer
-            ),
-            input_profile_path=self.final_rate_input,
-        )
-        if self.fit_to_limit is False:
-            self.energy_rate_change_per_update_profile_buffer = (
-                global_objects.profiles_handler.rotate_profile(
-                    InputProfileTypes.IDENTITY, self.energy_rate_change_per_update_input
-                )
-            )
+        self.initial_rate_profile_buffer.read_or_rotate_profiles(reconfigure)
+        self.final_rate_profile_buffer.read_or_rotate_profiles(reconfigure)
+        if self.fit_to_limit:
+            return
+        self.energy_rate_change_per_update_profile_buffer.read_or_rotate_profiles(reconfigure)
 
     def _delete_market_slot_data(self, market_time_slot: DateTime) -> None:
         self.initial_rate.pop(market_time_slot, None)
@@ -183,16 +159,10 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
                 continue
             if self.fit_to_limit is False:
                 self.energy_rate_change_per_update[time_slot] = (
-                    get_from_profile_same_weekday_and_time(
-                        self.energy_rate_change_per_update_profile_buffer, time_slot
-                    )
+                    self.energy_rate_change_per_update_profile_buffer.get_value(time_slot)
                 )
-            initial_rate = get_from_profile_same_weekday_and_time(
-                self.initial_rate_profile_buffer, time_slot
-            )
-            final_rate = get_from_profile_same_weekday_and_time(
-                self.final_rate_profile_buffer, time_slot
-            )
+            initial_rate = self.initial_rate_profile_buffer.get_value(time_slot)
+            final_rate = self.final_rate_profile_buffer.get_value(time_slot)
 
             if initial_rate is None or final_rate is None:
                 logging.warning(
@@ -201,13 +171,9 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
                     gsy_e.constants.CONFIGURATION_ID,
                     area.uuid,
                 )
-                self._read_or_rotate_rate_profiles()
-                initial_rate = get_from_profile_same_weekday_and_time(
-                    self.initial_rate_profile_buffer, time_slot
-                )
-                final_rate = get_from_profile_same_weekday_and_time(
-                    self.final_rate_profile_buffer, time_slot
-                )
+                self._read_or_rotate_rate_buffer_profiles()
+                initial_rate = self.initial_rate_profile_buffer.get_value(time_slot)
+                final_rate = self.final_rate_profile_buffer.get_value(time_slot)
 
             # Hackathon TODO: get rid of self.initial_rate, self.final_rate, self.update_counter
             # and self.market_slot_added_time_mapping in favor of one object
@@ -230,26 +196,19 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
     def _set_or_update_energy_rate_change_per_update(self, time_slot: DateTime) -> None:
         energy_rate_change_per_update = {}
         if self.fit_to_limit:
-            initial_rate = get_from_profile_same_weekday_and_time(
-                self.initial_rate_profile_buffer, time_slot
-            )
-            final_rate = get_from_profile_same_weekday_and_time(
-                self.final_rate_profile_buffer, time_slot
-            )
+            initial_rate = self.initial_rate_profile_buffer.get_value(time_slot)
+            final_rate = self.final_rate_profile_buffer.get_value(time_slot)
             energy_rate_change_per_update[time_slot] = (
                 initial_rate - final_rate
             ) / self.number_of_available_updates
         else:
             if self.rate_limit_object is min:
                 energy_rate_change_per_update[time_slot] = (
-                    -1
-                    * get_from_profile_same_weekday_and_time(
-                        self.energy_rate_change_per_update_profile_buffer, time_slot
-                    )
+                    -1 * self.energy_rate_change_per_update_profile_buffer.get_value(time_slot)
                 )
             elif self.rate_limit_object is max:
-                energy_rate_change_per_update[time_slot] = get_from_profile_same_weekday_and_time(
-                    self.energy_rate_change_per_update_profile_buffer, time_slot
+                energy_rate_change_per_update[time_slot] = (
+                    self.energy_rate_change_per_update_profile_buffer.get_value(time_slot)
                 )
         self.energy_rate_change_per_update.update(energy_rate_change_per_update)
 
@@ -266,7 +225,7 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
 
     def update_and_populate_price_settings(self, area: "Area") -> None:
         """Populate the price profiles for every available time slot."""
-        self._read_or_rotate_rate_profiles()
+        self._read_or_rotate_rate_buffer_profiles()
         # Handling the case where future markets are disabled during a simulation.
         if self._time_slot_duration_in_seconds <= 0:
             return
@@ -320,6 +279,19 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
             self.update_interval.seconds * self.update_counter[time_slot]
         )
 
+    def _reset_buffer_profiles(self):
+        self.initial_rate_profile_buffer = profile_factory(
+            input_profile=self.initial_rate_input, profile_type=InputProfileTypes.IDENTITY
+        )
+        self.final_rate_profile_buffer = profile_factory(
+            input_profile=self.final_rate_input, profile_type=InputProfileTypes.IDENTITY
+        )
+        self.energy_rate_change_per_update_profile_buffer = profile_factory(
+            input_profile=self.energy_rate_change_per_update_input,
+            profile_type=InputProfileTypes.IDENTITY,
+        )
+        self._read_or_rotate_rate_buffer_profiles()
+
     def set_parameters(
         self,
         *,
@@ -341,7 +313,7 @@ class TemplateStrategyUpdaterBase(TemplateStrategyUpdaterInterface):
             self.fit_to_limit = fit_to_limit
         if update_interval is not None:
             self.update_interval = update_interval
-        self._read_or_rotate_rate_profiles(reconfigure=True)
+        self._reset_buffer_profiles()
 
     def reset(self, strategy: "BaseStrategy") -> None:
         raise NotImplementedError
