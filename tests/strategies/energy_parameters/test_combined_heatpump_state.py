@@ -40,7 +40,7 @@ class TestCombinedHeatpumpTanksState:
             CURRENT_MARKET_SLOT, 5000
         )
         combined_state._cop_model.calc_cop.assert_called_with(
-            source_temp_C=20, condenser_temp_C=30, heat_demand_kW=2.0
+            source_temp_C=20, condenser_temp_C=30, heat_demand_kW=2.0, electrical_demand_kW=None
         )
 
     def test_get_energy_to_buy_maximum_kWh_limits_cop_to_global_setting(self, combined_state):
@@ -69,7 +69,7 @@ class TestCombinedHeatpumpTanksState:
             CURRENT_MARKET_SLOT, 5000
         )
         combined_state._cop_model.calc_cop.assert_called_with(
-            source_temp_C=20, condenser_temp_C=30, heat_demand_kW=2.0
+            source_temp_C=20, condenser_temp_C=30, heat_demand_kW=2.0, electrical_demand_kW=None
         )
 
     @pytest.mark.parametrize(
