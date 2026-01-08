@@ -27,21 +27,30 @@ from gsy_e.constants import ROUND_TOLERANCE_EXPORT
 from gsy_e.gsy_e_core.matching_engine_singleton import bid_offer_matcher
 from gsy_e.gsy_e_core.util import is_two_sided_market_simulation
 from gsy_e.models.area import Area
-from gsy_e.models.strategy.load_hours import LoadHoursStrategy
-from gsy_e.models.strategy.pv import PVStrategy
-from gsy_e.models.strategy.storage import StorageStrategy
 from gsy_e.models.strategy.ev_charger import EVChargerStrategy
 from gsy_e.models.strategy.heat_pump import (
     HeatPumpStrategy,
     MultipleTankHeatPumpStrategy,
+    HeatPumpStrategyWithoutTanks,
 )
+from gsy_e.models.strategy.load_hours import LoadHoursStrategy
+from gsy_e.models.strategy.pv import PVStrategy
+from gsy_e.models.strategy.storage import StorageStrategy
 from gsy_e.models.strategy.virtual_heatpump import (
     VirtualHeatpumpStrategy,
     MultipleTankVirtualHeatpumpStrategy,
 )
 
 
-def is_heatpump_with_tanks(area: Area):
+def is_heatpump_strategy_without_tanks(area: Area):
+    """Return if area has a heat pump strategy without tanks."""
+    return isinstance(
+        area.strategy,
+        (HeatPumpStrategyWithoutTanks),
+    )
+
+
+def is_heatpump_strategy_with_tanks(area: Area):
     """Return if area has a heat pump strategy."""
     return isinstance(
         area.strategy,
@@ -269,7 +278,7 @@ class HeatPumpDataExporter(BaseDataExporter):
     """Data exporter dedicated to heat pump areas"""
 
     def __init__(self, area, past_markets):
-        assert is_heatpump_with_tanks(area)
+        assert is_heatpump_strategy_with_tanks(area)
         self.area = area
         self.past_markets = past_markets
 
@@ -361,6 +370,43 @@ class HeatPumpDataExporter(BaseDataExporter):
         return labels
 
 
+class HeatPumpWithoutTanksDataExporter(BaseDataExporter):
+    """Data exporter dedicated to heat pump areas"""
+
+    def __init__(self, area, past_markets):
+        assert is_heatpump_strategy_without_tanks(area)
+        self.area = area
+        self.past_markets = past_markets
+
+    @property
+    def labels(self) -> List:
+        return [
+            "slot",
+            "energy traded [kWh]",
+            "COP",
+            "heat demand [kJ]",
+        ]
+
+    @property
+    def rows(self) -> List:
+        return [self._row(market.time_slot, market) for market in self.past_markets]
+
+    def _traded(self, market):
+        return (
+            market.traded_energy[self.area.name] if self.area.name in market.traded_energy else 0
+        )
+
+    def _row(self, slot, market):
+        rows = [slot]
+        hp_stats = self.area.strategy.state.get_results_dict(slot)
+        rows += [
+            round(self._traded(market), ROUND_TOLERANCE_EXPORT),
+            round(hp_stats["cop"], ROUND_TOLERANCE_EXPORT),
+            round(hp_stats["heat_demand_kJ"], ROUND_TOLERANCE_EXPORT),
+        ]
+        return rows
+
+
 class FileExportEndpoints:
     """Handle data preparation for csv-file and plot export."""
 
@@ -389,11 +435,11 @@ class FileExportEndpoints:
         if past_market_type == AvailableMarketTypes.SPOT:
             if len(area.children) > 0:
                 return UpperLevelDataExporter(area.past_markets)
-            return (
-                HeatPumpDataExporter(area, area.parent.past_markets)
-                if is_heatpump_with_tanks(area)
-                else LeafDataExporter(area, area.parent.past_markets)
-            )
+            if is_heatpump_strategy_with_tanks(area):
+                return HeatPumpWithoutTanksDataExporter(area, area.parent.past_markets)
+            if is_heatpump_strategy_without_tanks(area):
+                return HeatPumpWithoutTanksDataExporter(area, area.parent.past_markets)
+            return LeafDataExporter(area, area.parent.past_markets)
         if past_market_type == AvailableMarketTypes.BALANCING:
             return BalancingDataExporter(area.past_balancing_markets)
         if past_market_type == AvailableMarketTypes.SETTLEMENT:

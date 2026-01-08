@@ -46,7 +46,7 @@ from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.gsy_e_core.matching_engine_singleton import bid_offer_matcher
 from gsy_e.gsy_e_core.sim_results.file_export_endpoints import (
     FileExportEndpoints,
-    is_heatpump_with_tanks,
+    is_heatpump_strategy_with_tanks,
 )
 from gsy_e.gsy_e_core.sim_results.results_plots import (
     PlotAverageTradePrice,
@@ -488,7 +488,7 @@ class ExportAndPlot:
         """Export trade statistics in *.csv files."""
         file_name = f"{area.slug}{PAST_MARKET_TYPE_FILE_SUFFIX_MAPPING[past_market_type]}"
         data = self.file_stats_endpoint.export_data_factory(area, past_market_type)
-        if is_heatpump_with_tanks(area):
+        if is_heatpump_strategy_with_tanks(area):
             for file_key in ["heat_pump", "water_tanks", "pcm_tanks"]:
                 if not data.labels.get(file_key):
                     # case when specific tank is not configured

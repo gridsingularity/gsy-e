@@ -42,21 +42,14 @@ def delete_time_slots_in_state(profile: Dict, current_time_stamp: DateTime):
         profile.pop(stamp, None)
 
 
-class HeatPumpState(StateInterface):
-    # pylint: disable=too-many-instance-attributes, too-many-public-methods
-    """State for the heat pump strategy."""
+class HeatPumpStateBase(StateInterface):
+    """Base clase for Heat Pump strategy states"""
 
     def __init__(self, slot_length: duration):
-        # the defaultdict was only selected for the initial slot
-        self._min_energy_demand_kWh: Dict[DateTime, float] = {}
-        self._max_energy_demand_kWh: Dict[DateTime, float] = {}
         self._energy_demand_kWh: Dict[DateTime, float] = {}
-        # buffers for increase and  decrease of storage
         self._energy_consumption_kWh: Dict[DateTime, float] = defaultdict(lambda: 0)
         self._cop: Dict[DateTime, float] = defaultdict(lambda: 0)
-        self._condenser_temp_C: Dict[DateTime, float] = defaultdict(lambda: 0)
         self._heat_demand_kJ: Dict[DateTime, float] = defaultdict(lambda: 0)
-        self._net_heat_consumed_kJ: Dict[DateTime, float] = defaultdict(lambda: 0)
         self._total_traded_energy_kWh: float = 0
         self._slot_length = slot_length
 
@@ -67,6 +60,38 @@ class HeatPumpState(StateInterface):
     def get_heat_demand_kJ(self, time_slot: DateTime) -> float:
         """Return the heat demand in J for a given time slot."""
         return self._heat_demand_kJ.get(time_slot, 0)
+
+    def increase_total_traded_energy_kWh(self, energy_kWh: float):
+        """Add to the total traded energy of the heatpump for a given time slot."""
+        self._total_traded_energy_kWh += energy_kWh
+
+    def get_cop(self, time_slot: DateTime) -> float:
+        """Return the cop for a given time slot."""
+        return self._cop.get(time_slot, 0)
+
+    def set_cop(self, time_slot: DateTime, cop: float):
+        """Set cop for the given time slot."""
+        self._cop[time_slot] = cop
+
+    def _last_time_slot(self, current_market_slot: DateTime) -> DateTime:
+        return current_market_slot - self._slot_length
+
+    @staticmethod
+    def _delete_time_slots(profile: Dict, current_time_stamp: DateTime):
+        delete_time_slots_in_state(profile, current_time_stamp)
+
+
+class HeatPumpState(HeatPumpStateBase):
+    """State for the heat pump strategy with tanks"""
+
+    # pylint: disable=too-many-instance-attributes
+    def __init__(self, slot_length: duration):
+        super().__init__(slot_length)
+        self._min_energy_demand_kWh: Dict[DateTime, float] = {}
+        self._max_energy_demand_kWh: Dict[DateTime, float] = {}
+        self._condenser_temp_C: Dict[DateTime, float] = defaultdict(lambda: 0)
+        self._net_heat_consumed_kJ: Dict[DateTime, float] = defaultdict(lambda: 0)
+        self._condenser_temp_C: Dict[DateTime, float] = defaultdict(lambda: 0)
 
     def set_net_heat_consumed_kJ(self, time_slot: DateTime, heat_energy_kJ: float):
         """Set net heat consumed."""
@@ -88,17 +113,9 @@ class HeatPumpState(StateInterface):
         """Set the maximal energy demanded for a given time slot."""
         self._max_energy_demand_kWh[time_slot] = energy_kWh
 
-    def increase_total_traded_energy_kWh(self, energy_kWh: float):
-        """Add to the total traded energy of the heatpump for a given time slot."""
-        self._total_traded_energy_kWh += energy_kWh
-
     def set_energy_consumption_kWh(self, time_slot: DateTime, energy_kWh: float):
         """Set the energy consumption of the heatpump for a given time slot."""
         self._energy_consumption_kWh[time_slot] = energy_kWh
-
-    def set_cop(self, time_slot: DateTime, cop: float):
-        """Set cop for the given time slot."""
-        self._cop[time_slot] = cop
 
     def set_condenser_temp(self, time_slot: DateTime, condenser_temp_C: float):
         """Set condenser temperature for the given time slot."""
@@ -123,10 +140,6 @@ class HeatPumpState(StateInterface):
     def get_energy_consumption_kWh(self, time_slot: DateTime) -> float:
         """Return the temperature increase for a given time slot."""
         return self._energy_consumption_kWh.get(time_slot, 0)
-
-    def get_cop(self, time_slot: DateTime) -> float:
-        """Return the cop for a given time slot."""
-        return self._cop.get(time_slot, 0)
 
     def get_condenser_temp(self, time_slot: DateTime) -> float:
         """Return the condenser temperature for a given time slot."""
@@ -183,12 +196,38 @@ class HeatPumpState(StateInterface):
         }
         return retval
 
-    def _last_time_slot(self, current_market_slot: DateTime) -> DateTime:
-        return current_market_slot - self._slot_length
-
-    @staticmethod
-    def _delete_time_slots(profile: Dict, current_time_stamp: DateTime):
-        delete_time_slots_in_state(profile, current_time_stamp)
-
     def __str__(self):
         return self.__class__.__name__
+
+
+class HeatPumpStateWithoutTanks(HeatPumpStateBase):
+    """State class for heat pump strategy without tanks"""
+
+    def delete_past_state_values(self, current_time_slot: DateTime):
+        if not current_time_slot or constants.RETAIN_PAST_MARKET_STRATEGIES_STATE:
+            return
+        last_time_slot = self._last_time_slot(current_time_slot)
+        self._delete_time_slots(self._energy_consumption_kWh, last_time_slot)
+        self._delete_time_slots(self._cop, last_time_slot)
+        self._delete_time_slots(self._heat_demand_kJ, last_time_slot)
+
+    def get_state(self) -> Dict:
+        return {
+            "cop": convert_pendulum_to_str_in_dict(self._cop),
+            "heat_demand_J": convert_pendulum_to_str_in_dict(self._heat_demand_kJ),
+            "total_traded_energy_kWh": self._total_traded_energy_kWh,
+        }
+
+    def restore_state(self, state_dict: Dict):
+        self._cop = convert_str_to_pendulum_in_dict(state_dict["cop"])
+        self._heat_demand_kJ = convert_str_to_pendulum_in_dict(state_dict["heat_demand_J"])
+        self._total_traded_energy_kWh = state_dict["total_traded_energy_kWh"]
+        self._slot_length = duration(seconds=state_dict["slot_length"])
+
+    def get_results_dict(self, current_time_slot: DateTime) -> Dict:
+        retval = {
+            "cop": self.get_cop(current_time_slot),
+            "total_traded_energy_kWh": self._total_traded_energy_kWh,
+            "heat_demand_kJ": self.get_heat_demand_kJ(current_time_slot),
+        }
+        return retval

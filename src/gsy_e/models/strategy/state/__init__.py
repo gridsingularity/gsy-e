@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from gsy_e.models.strategy.state.base_states import StateInterface
-from gsy_e.models.strategy.state.heatpump_state import HeatPumpState
+from gsy_e.models.strategy.state.heatpump_state import HeatPumpState, HeatPumpStateWithoutTanks
 from gsy_e.models.strategy.state.load_state import LoadState
 from gsy_e.models.strategy.state.pv_state import PVState
 from gsy_e.models.strategy.state.smart_meter_state import SmartMeterState
@@ -38,4 +38,5 @@ __all__ = [
     "EnergyOrigin",
     "StateInterface",
     "StorageLosses",
+    "HeatPumpStateWithoutTanks",
 ]

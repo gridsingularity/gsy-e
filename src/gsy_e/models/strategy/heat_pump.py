@@ -19,6 +19,7 @@ from gsy_e.models.strategy.energy_parameters.heatpump.cop_models import COPModel
 from gsy_e.models.strategy.energy_parameters.heatpump.heat_pump import (
     HeatPumpEnergyParameters,
     CombinedHeatpumpTanksState,
+    HeatPumpEnergyParametersWithoutTanks,
 )
 from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import (
     WaterTankParameters,
@@ -78,7 +79,134 @@ class HeatPumpOrderUpdaterParameters(OrderUpdaterParameters):
         }
 
 
-class MultipleTankHeatPumpStrategy(TradingStrategyBase):
+class HeatPumpStrategyBase(TradingStrategyBase):
+    """Heat pump strategy base class"""
+
+    # pylint: disable=no-member
+    def event_market_cycle(self) -> None:
+        super().event_market_cycle()
+        spot_market = self.area.spot_market
+        if not spot_market:
+            return
+
+        # Order matters: First update the energy state and then post orders
+        self._energy_params.event_market_cycle(spot_market.time_slot)
+
+        self._post_orders_to_new_markets()
+
+    def event_activate(self, **kwargs):
+        self._update_grid_fees_in_order_updater_params()
+        self._energy_params.event_activate()
+
+    def event_tick(self):
+        self._update_open_orders()
+
+    def event_bid_traded(self, *, market_id: str, bid_trade: Trade) -> None:
+        if bid_trade.buyer.origin_uuid != self.owner.uuid:
+            return
+        spot_market = self.area.spot_market
+        if not spot_market:
+            return
+        if market_id != spot_market.id:
+            return
+        time_slot = bid_trade.time_slot
+
+        self._energy_params.event_traded_energy(time_slot, bid_trade.traded_energy)
+
+    def remove_order(self, market: "MarketBase", market_slot: DateTime, order_uuid: str):
+        pass
+
+    def _post_order(
+        self,
+        market: "MarketBase",
+        market_slot: DateTime,
+        order_energy_kWh: float,
+        order_rate: float = None,
+    ):
+
+        if order_energy_kWh <= FLOATING_POINT_TOLERANCE:
+            return
+        market.bid(
+            float(order_rate * order_energy_kWh),
+            float(order_energy_kWh),
+            original_price=float(order_rate * order_energy_kWh),
+            buyer=TraderDetails(
+                self.owner.name, self.owner.uuid, self.owner.name, self.owner.uuid
+            ),
+            time_slot=market_slot,
+        )
+
+    def post_order(
+        self, market: "MarketBase", market_slot: DateTime, order_rate: float = None, **kwargs
+    ):
+        pass
+
+    def remove_open_orders(self, market: "MarketBase", market_slot: DateTime):
+        if self.area.is_market_spot(market.id):
+            bids = [bid for bid in market.bids.values() if bid.buyer.name == self.owner.name]
+        else:
+            bids = [
+                bid
+                for bid in market.slot_bid_mapping[market_slot]
+                if bid.buyer.name == self.owner.name
+            ]
+
+        for bid in bids:
+            market.delete_bid(bid)
+
+    def _create_order_updaters(
+        self, market: "MarketBase", market_slot: DateTime, market_type: AvailableMarketTypes
+    ):
+        if not self._order_updater_for_market_slot_exists(market, market_slot):
+            if market not in self._order_updaters:
+                self._order_updaters[market] = {}
+            self._order_updaters[market][market_slot] = OrderUpdater(
+                self._order_updater_params[market_type],
+                market.get_market_parameters_for_market_slot(market_slot),
+            )
+
+    def _post_order_to_new_market(
+        self, market, market_slot, market_type=AvailableMarketTypes.SPOT
+    ):
+        self._create_order_updaters(market, market_slot, market_type)
+        self.post_order(market, market_slot)
+
+    def _post_orders_to_new_markets(self):
+        self._post_order_to_new_market(self.area.spot_market, self.area.spot_market.time_slot)
+
+    def _update_open_orders(self):
+        for market, market_slot_updater_dict in self._order_updaters.items():
+            if market is None:
+                continue
+            for market_slot, updater in market_slot_updater_dict.items():
+                if updater.is_time_for_update(self.area.now):
+                    self.remove_open_orders(market, market_slot)
+                    self.post_order(market, market_slot)
+
+    @staticmethod
+    def deserialize_args(constructor_args: Dict) -> Dict:
+        """Deserialize the constructor arguments for the HeatPump strategy."""
+        if "order_updater_parameters" not in constructor_args:
+            constructor_args["order_updater_parameters"] = {
+                AvailableMarketTypes.SPOT: HeatPumpOrderUpdaterParameters(
+                    update_interval=(
+                        duration(minutes=constructor_args.get("update_interval"))
+                        if constructor_args.get("update_interval") is not None
+                        else None
+                    ),
+                    initial_rate=constructor_args.get("initial_buying_rate", None),
+                    final_rate=constructor_args.get("final_buying_rate", None),
+                    use_market_maker_rate=constructor_args.get("use_market_maker_rate", False),
+                )
+            }
+            constructor_args.pop("initial_buying_rate", None)
+            constructor_args.pop("final_buying_rate", None)
+            constructor_args.pop("update_interval", None)
+            constructor_args.pop("use_market_maker_rate", None)
+        return constructor_args
+
+
+class MultipleTankHeatPumpStrategy(HeatPumpStrategyBase):
     """Strategy for heat pumps with multiple storages."""
 
     # pylint: disable=too-many-arguments,super-init-not-called, too-many-positional-arguments
@@ -175,65 +303,13 @@ class MultipleTankHeatPumpStrategy(TradingStrategyBase):
             **self._order_updater_params.get(AvailableMarketTypes.SPOT).serialize(),
         }
 
-    @staticmethod
-    def deserialize_args(constructor_args: Dict) -> Dict:
-        """Deserialize the constructor arguments for the HeatPump strategy."""
-        if "order_updater_parameters" not in constructor_args:
-            constructor_args["order_updater_parameters"] = {
-                AvailableMarketTypes.SPOT: HeatPumpOrderUpdaterParameters(
-                    update_interval=(
-                        duration(minutes=constructor_args.get("update_interval"))
-                        if constructor_args.get("update_interval") is not None
-                        else None
-                    ),
-                    initial_rate=constructor_args.get("initial_buying_rate", None),
-                    final_rate=constructor_args.get("final_buying_rate", None),
-                    use_market_maker_rate=constructor_args.get("use_market_maker_rate", False),
-                )
-            }
-            constructor_args.pop("initial_buying_rate", None)
-            constructor_args.pop("final_buying_rate", None)
-            constructor_args.pop("update_interval", None)
-            constructor_args.pop("use_market_maker_rate", None)
-        return constructor_args
-
     @property
     def state(self) -> CombinedHeatpumpTanksState:
         return self._energy_params.combined_state
 
     def event_activate(self, **kwargs):
-        self._update_grid_fees_in_order_updater_params()
-        self._energy_params.event_activate()
+        super().event_activate()
         self._soc_management.event_activate()
-
-    def event_market_cycle(self) -> None:
-        super().event_market_cycle()
-        spot_market = self.area.spot_market
-        if not spot_market:
-            return
-
-        # Order matters: First update the energy state and then post orders
-        self._energy_params.event_market_cycle(spot_market.time_slot)
-
-        self._post_orders_to_new_markets()
-
-    def event_tick(self):
-        self._update_open_orders()
-
-    def event_bid_traded(self, *, market_id: str, bid_trade: Trade) -> None:
-        if bid_trade.buyer.origin_uuid != self.owner.uuid:
-            return
-        spot_market = self.area.spot_market
-        if not spot_market:
-            return
-        if market_id != spot_market.id:
-            return
-        time_slot = bid_trade.time_slot
-
-        self._energy_params.event_traded_energy(time_slot, bid_trade.traded_energy)
-
-    def remove_order(self, market: "MarketBase", market_slot: DateTime, order_uuid: str):
-        pass
 
     def post_order(
         self, market: "MarketBase", market_slot: DateTime, order_rate: float = None, **kwargs
@@ -245,59 +321,7 @@ class MultipleTankHeatPumpStrategy(TradingStrategyBase):
 
         order_energy_kWh = Decimal(self._soc_management.calculate(market_slot, float(order_rate)))
 
-        if order_energy_kWh <= FLOATING_POINT_TOLERANCE:
-            return
-        market.bid(
-            float(order_rate * order_energy_kWh),
-            float(order_energy_kWh),
-            original_price=float(order_rate * order_energy_kWh),
-            buyer=TraderDetails(
-                self.owner.name, self.owner.uuid, self.owner.name, self.owner.uuid
-            ),
-            time_slot=market_slot,
-        )
-
-    def remove_open_orders(self, market: "MarketBase", market_slot: DateTime):
-        if self.area.is_market_spot(market.id):
-            bids = [bid for bid in market.bids.values() if bid.buyer.name == self.owner.name]
-        else:
-            bids = [
-                bid
-                for bid in market.slot_bid_mapping[market_slot]
-                if bid.buyer.name == self.owner.name
-            ]
-
-        for bid in bids:
-            market.delete_bid(bid)
-
-    def _create_order_updaters(
-        self, market: "MarketBase", market_slot: DateTime, market_type: AvailableMarketTypes
-    ):
-        if not self._order_updater_for_market_slot_exists(market, market_slot):
-            if market not in self._order_updaters:
-                self._order_updaters[market] = {}
-            self._order_updaters[market][market_slot] = OrderUpdater(
-                self._order_updater_params[market_type],
-                market.get_market_parameters_for_market_slot(market_slot),
-            )
-
-    def _post_order_to_new_market(
-        self, market, market_slot, market_type=AvailableMarketTypes.SPOT
-    ):
-        self._create_order_updaters(market, market_slot, market_type)
-        self.post_order(market, market_slot)
-
-    def _post_orders_to_new_markets(self):
-        self._post_order_to_new_market(self.area.spot_market, self.area.spot_market.time_slot)
-
-    def _update_open_orders(self):
-        for market, market_slot_updater_dict in self._order_updaters.items():
-            if market is None:
-                continue
-            for market_slot, updater in market_slot_updater_dict.items():
-                if updater.is_time_for_update(self.area.now):
-                    self.remove_open_orders(market, market_slot)
-                    self.post_order(market, market_slot)
+        super()._post_order(market, market_slot, order_energy_kWh, order_rate)
 
 
 class HeatPumpStrategy(MultipleTankHeatPumpStrategy):
@@ -347,3 +371,87 @@ class HeatPumpStrategy(MultipleTankHeatPumpStrategy):
             preferred_buying_rate,
             cop_model_type=cop_model_type,
         )
+
+
+class HeatPumpStrategyWithoutTanks(HeatPumpStrategyBase):
+    """Heat pump strategy without tanks."""
+
+    # pylint: disable=too-many-arguments, too-many-positional-arguments, super-init-not-called
+    def __init__(
+        self,
+        target_temp_C_profile: Optional[Union[str, float, Dict]] = None,
+        target_temp_C_profile_uuid: Optional[str] = None,
+        source_temp_C_profile: Optional[Union[str, float, Dict]] = None,
+        source_temp_C_profile_uuid: Optional[str] = None,
+        consumption_kWh_profile: Optional[Union[str, float, Dict]] = None,
+        consumption_kWh_profile_uuid: Optional[str] = None,
+        source_type: int = ConstSettings.HeatPumpSettings.SOURCE_TYPE,
+        order_updater_parameters: Dict[
+            AvailableMarketTypes, HeatPumpOrderUpdaterParameters
+        ] = None,
+        heat_demand_Q_profile: Optional[Union[str, float, Dict]] = None,
+        cop_model_type: COPModelType = COPModelType.UNIVERSAL,
+    ):
+        self._init_price_params(order_updater_parameters)
+
+        self._energy_params = HeatPumpEnergyParametersWithoutTanks(
+            target_temp_C_profile=target_temp_C_profile,
+            target_temp_C_profile_uuid=target_temp_C_profile_uuid,
+            source_temp_C_profile=source_temp_C_profile,
+            source_temp_C_profile_uuid=source_temp_C_profile_uuid,
+            consumption_kWh_profile=consumption_kWh_profile,
+            consumption_kWh_profile_uuid=consumption_kWh_profile_uuid,
+            source_type=source_type,
+            heat_demand_Q_profile=heat_demand_Q_profile,
+            cop_model_type=cop_model_type,
+        )
+
+        # needed for profile_handler
+        self.target_temp_C_profile_uuid = target_temp_C_profile_uuid
+        self.source_temp_C_profile_uuid = source_temp_C_profile_uuid
+        self.consumption_kWh_profile_uuid = consumption_kWh_profile_uuid
+
+    @property
+    def state(self) -> HeatPumpEnergyParametersWithoutTanks:
+        return self._energy_params.state
+
+    def serialize(self):
+        """Serialize strategy parameters."""
+        return {
+            **self._energy_params.serialize(),
+            **self._order_updater_params.get(AvailableMarketTypes.SPOT).serialize(),
+        }
+
+    def _init_price_params(self, order_updater_parameters):
+        self.use_default_updater_params: bool = not order_updater_parameters
+        if self.use_default_updater_params:
+            order_updater_parameters = {
+                AvailableMarketTypes.SPOT: HeatPumpOrderUpdaterParameters()
+            }
+        else:
+            for market_type in AvailableMarketTypes:
+                if not order_updater_parameters.get(market_type):
+                    continue
+                HeatPumpValidator.validate_rate(
+                    initial_buying_rate=order_updater_parameters[market_type].initial_rate,
+                    final_buying_rate=order_updater_parameters[market_type].final_rate,
+                    update_interval=order_updater_parameters[market_type].update_interval,
+                    use_market_maker_rate=(
+                        order_updater_parameters[market_type].use_market_maker_rate
+                    ),
+                )
+
+        super().__init__(order_updater_parameters=order_updater_parameters)
+
+    def post_order(
+        self, market: "MarketBase", market_slot: DateTime, order_rate: float = None, **kwargs
+    ):
+        if not order_rate:
+            order_rate = self._order_updaters[market][market_slot].get_energy_rate(self.area.now)
+        else:
+            order_rate = Decimal(order_rate)
+
+        order_energy_kWh = Decimal(
+            self._energy_params.get_energy_demand_kWh(time_slot=market_slot)
+        )
+        super()._post_order(market, market_slot, order_energy_kWh, order_rate)
