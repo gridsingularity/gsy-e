@@ -156,6 +156,7 @@ class HeatPumpState(HeatPumpStateBase):
             "condenser_temp_C": convert_pendulum_to_str_in_dict(self._condenser_temp_C),
             "heat_demand_J": convert_pendulum_to_str_in_dict(self._heat_demand_kJ),
             "total_traded_energy_kWh": self._total_traded_energy_kWh,
+            "slot_length": self._slot_length,
         }
 
     def restore_state(self, state_dict: Dict):
@@ -207,7 +208,6 @@ class HeatPumpStateWithoutTanks(HeatPumpStateBase):
         if not current_time_slot or constants.RETAIN_PAST_MARKET_STRATEGIES_STATE:
             return
         last_time_slot = self._last_time_slot(current_time_slot)
-        self._delete_time_slots(self._energy_consumption_kWh, last_time_slot)
         self._delete_time_slots(self._cop, last_time_slot)
         self._delete_time_slots(self._heat_demand_kJ, last_time_slot)
 
@@ -215,19 +215,17 @@ class HeatPumpStateWithoutTanks(HeatPumpStateBase):
         return {
             "cop": convert_pendulum_to_str_in_dict(self._cop),
             "heat_demand_J": convert_pendulum_to_str_in_dict(self._heat_demand_kJ),
-            "total_traded_energy_kWh": self._total_traded_energy_kWh,
+            "slot_length": self._slot_length,
         }
 
     def restore_state(self, state_dict: Dict):
         self._cop = convert_str_to_pendulum_in_dict(state_dict["cop"])
         self._heat_demand_kJ = convert_str_to_pendulum_in_dict(state_dict["heat_demand_J"])
-        self._total_traded_energy_kWh = state_dict["total_traded_energy_kWh"]
         self._slot_length = duration(seconds=state_dict["slot_length"])
 
     def get_results_dict(self, current_time_slot: DateTime) -> Dict:
         retval = {
             "cop": self.get_cop(current_time_slot),
-            "total_traded_energy_kWh": self._total_traded_energy_kWh,
             "heat_demand_kJ": self.get_heat_demand_kJ(current_time_slot),
         }
         return retval
