@@ -436,7 +436,7 @@ class FileExportEndpoints:
             if len(area.children) > 0:
                 return UpperLevelDataExporter(area.past_markets)
             if is_heatpump_strategy_with_tanks(area):
-                return HeatPumpWithoutTanksDataExporter(area, area.parent.past_markets)
+                return HeatPumpDataExporter(area, area.parent.past_markets)
             if is_heatpump_strategy_without_tanks(area):
                 return HeatPumpWithoutTanksDataExporter(area, area.parent.past_markets)
             return LeafDataExporter(area, area.parent.past_markets)
