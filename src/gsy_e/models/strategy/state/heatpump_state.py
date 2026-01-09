@@ -154,7 +154,7 @@ class HeatPumpState(HeatPumpStateBase):
             "max_energy_demand_kWh": convert_pendulum_to_str_in_dict(self._max_energy_demand_kWh),
             "cop": convert_pendulum_to_str_in_dict(self._cop),
             "condenser_temp_C": convert_pendulum_to_str_in_dict(self._condenser_temp_C),
-            "heat_demand_J": convert_pendulum_to_str_in_dict(self._heat_demand_kJ),
+            "heat_demand_kJ": convert_pendulum_to_str_in_dict(self._heat_demand_kJ),
             "total_traded_energy_kWh": self._total_traded_energy_kWh,
             "slot_length": self._slot_length,
         }
@@ -170,7 +170,7 @@ class HeatPumpState(HeatPumpStateBase):
             state_dict["max_energy_demand_kWh"]
         )
         self._cop = convert_str_to_pendulum_in_dict(state_dict["cop"])
-        self._heat_demand_kJ = convert_str_to_pendulum_in_dict(state_dict["heat_demand_J"])
+        self._heat_demand_kJ = convert_str_to_pendulum_in_dict(state_dict["heat_demand_kJ"])
         self._condenser_temp_C = convert_str_to_pendulum_in_dict(state_dict["condenser_temp_C"])
         self._total_traded_energy_kWh = state_dict["total_traded_energy_kWh"]
         self._slot_length = duration(seconds=state_dict["slot_length"])
@@ -214,13 +214,13 @@ class HeatPumpStateWithoutTanks(HeatPumpStateBase):
     def get_state(self) -> Dict:
         return {
             "cop": convert_pendulum_to_str_in_dict(self._cop),
-            "heat_demand_J": convert_pendulum_to_str_in_dict(self._heat_demand_kJ),
+            "heat_demand_kJ": convert_pendulum_to_str_in_dict(self._heat_demand_kJ),
             "slot_length": self._slot_length,
         }
 
     def restore_state(self, state_dict: Dict):
         self._cop = convert_str_to_pendulum_in_dict(state_dict["cop"])
-        self._heat_demand_kJ = convert_str_to_pendulum_in_dict(state_dict["heat_demand_J"])
+        self._heat_demand_kJ = convert_str_to_pendulum_in_dict(state_dict["heat_demand_kJ"])
         self._slot_length = duration(seconds=state_dict["slot_length"])
 
     def get_results_dict(self, current_time_slot: DateTime) -> Dict:
