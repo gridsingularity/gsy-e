@@ -24,7 +24,8 @@ from gsy_framework.utils import (
     convert_pendulum_to_str_in_dict,
     convert_str_to_pendulum_in_dict,
 )
-from pendulum import DateTime, duration
+from gsy_framework.constants_limits import GlobalConfig
+from pendulum import DateTime
 
 from gsy_e import constants
 from gsy_e.models.strategy.state.base_states import StateInterface
@@ -45,13 +46,12 @@ def delete_time_slots_in_state(profile: Dict, current_time_stamp: DateTime):
 class HeatPumpStateBase(StateInterface):
     """Base clase for Heat Pump strategy states"""
 
-    def __init__(self, slot_length: duration):
+    def __init__(self):
         self._energy_demand_kWh: Dict[DateTime, float] = {}
         self._energy_consumption_kWh: Dict[DateTime, float] = defaultdict(lambda: 0)
         self._cop: Dict[DateTime, float] = defaultdict(lambda: 0)
         self._heat_demand_kJ: Dict[DateTime, float] = defaultdict(lambda: 0)
         self._total_traded_energy_kWh: float = 0
-        self._slot_length = slot_length
 
     def set_heat_demand_kJ(self, time_slot: DateTime, heat_demand_kJ: float):
         """Set heat demand for the given time slot."""
@@ -74,7 +74,7 @@ class HeatPumpStateBase(StateInterface):
         self._cop[time_slot] = cop
 
     def _last_time_slot(self, current_market_slot: DateTime) -> DateTime:
-        return current_market_slot - self._slot_length
+        return current_market_slot - GlobalConfig.slot_length
 
     @staticmethod
     def _delete_time_slots(profile: Dict, current_time_stamp: DateTime):
@@ -85,8 +85,8 @@ class HeatPumpState(HeatPumpStateBase):
     """State for the heat pump strategy with tanks"""
 
     # pylint: disable=too-many-instance-attributes
-    def __init__(self, slot_length: duration):
-        super().__init__(slot_length)
+    def __init__(self):
+        super().__init__()
         self._min_energy_demand_kWh: Dict[DateTime, float] = {}
         self._max_energy_demand_kWh: Dict[DateTime, float] = {}
         self._condenser_temp_C: Dict[DateTime, float] = defaultdict(lambda: 0)
@@ -156,7 +156,6 @@ class HeatPumpState(HeatPumpStateBase):
             "condenser_temp_C": convert_pendulum_to_str_in_dict(self._condenser_temp_C),
             "heat_demand_kJ": convert_pendulum_to_str_in_dict(self._heat_demand_kJ),
             "total_traded_energy_kWh": self._total_traded_energy_kWh,
-            "slot_length": self._slot_length,
         }
 
     def restore_state(self, state_dict: Dict):
@@ -173,7 +172,6 @@ class HeatPumpState(HeatPumpStateBase):
         self._heat_demand_kJ = convert_str_to_pendulum_in_dict(state_dict["heat_demand_kJ"])
         self._condenser_temp_C = convert_str_to_pendulum_in_dict(state_dict["condenser_temp_C"])
         self._total_traded_energy_kWh = state_dict["total_traded_energy_kWh"]
-        self._slot_length = duration(seconds=state_dict["slot_length"])
 
     def delete_past_state_values(self, current_time_slot: DateTime):
         if not current_time_slot or constants.RETAIN_PAST_MARKET_STRATEGIES_STATE:
@@ -215,13 +213,11 @@ class HeatPumpStateWithoutTanks(HeatPumpStateBase):
         return {
             "cop": convert_pendulum_to_str_in_dict(self._cop),
             "heat_demand_kJ": convert_pendulum_to_str_in_dict(self._heat_demand_kJ),
-            "slot_length": self._slot_length,
         }
 
     def restore_state(self, state_dict: Dict):
         self._cop = convert_str_to_pendulum_in_dict(state_dict["cop"])
         self._heat_demand_kJ = convert_str_to_pendulum_in_dict(state_dict["heat_demand_kJ"])
-        self._slot_length = duration(seconds=state_dict["slot_length"])
 
     def get_results_dict(self, current_time_slot: DateTime) -> Dict:
         retval = {

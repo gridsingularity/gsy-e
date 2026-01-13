@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 from decimal import Decimal
 from typing import Optional, Dict, Union, List
 
-import pendulum
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig, FLOATING_POINT_TOLERANCE
 from gsy_framework.read_user_profile import InputProfileTypes
 from gsy_framework.utils import (
@@ -132,13 +131,11 @@ class CombinedHeatpumpTanksState:
         hp_state: HeatPumpState,
         tanks_state: AllTanksState,
         cop_model: BaseCOPModel,
-        slot_length: pendulum.Duration,
         max_energy_consumption_kWh: float,
     ):
         self._hp_state = hp_state
         self._charger = HeatChargerDischarger(tanks_state)
         self._cop_model = cop_model
-        self._slot_length = slot_length
         self._max_energy_consumption_kWh = max_energy_consumption_kWh
 
     def get_results_dict(self, current_time_slot: Optional[DateTime] = None) -> dict:
@@ -356,16 +353,14 @@ class HeatPumpEnergyParametersBase(ABC):
         source_temp_C_profile_uuid: Optional[str] = None,
         source_temp_C_measurement_uuid: Optional[str] = None,
     ):
-        self._slot_length = GlobalConfig.slot_length
         self._maximum_power_rating_kW = maximum_power_rating_kW
         self._max_energy_consumption_kWh = (
-            maximum_power_rating_kW * self._slot_length.total_hours()
+            maximum_power_rating_kW * GlobalConfig.slot_length.total_hours()
         )
         self._state = CombinedHeatpumpTanksState(
-            hp_state=HeatPumpState(self._slot_length),
+            hp_state=HeatPumpState(),
             tanks_state=AllTanksState(tank_parameters),
             cop_model=cop_model,
-            slot_length=self._slot_length,
             max_energy_consumption_kWh=self._max_energy_consumption_kWh,
         )
 
@@ -385,7 +380,7 @@ class HeatPumpEnergyParametersBase(ABC):
 
     def last_time_slot(self, current_market_slot: DateTime) -> DateTime:
         """Calculate the previous time slot from the current one."""
-        return current_market_slot - self._slot_length
+        return current_market_slot - GlobalConfig.slot_length
 
     def event_activate(self):
         """Runs on activate event."""
@@ -609,7 +604,7 @@ class HeatPumpEnergyParametersWithoutTanks:
     ):
         self._cop_model = cop_model_factory(cop_model_type, source_type)
 
-        self._state = HeatPumpStateWithoutTanks(slot_length=GlobalConfig.slot_length)
+        self._state = HeatPumpStateWithoutTanks()
 
         self._source_type = source_type
 
@@ -637,7 +632,6 @@ class HeatPumpEnergyParametersWithoutTanks:
             profile_type=InputProfileTypes.IDENTITY,
         )
 
-        self._slot_length = GlobalConfig.slot_length
         self._bought_energy_kWh = 0.0
 
     @property
@@ -661,7 +655,7 @@ class HeatPumpEnergyParametersWithoutTanks:
 
     def last_time_slot(self, current_market_slot: DateTime) -> DateTime:
         """Calculate the previous time slot from the current one."""
-        return current_market_slot - self._slot_length
+        return current_market_slot - GlobalConfig.slot_length
 
     def event_traded_energy(self, _time_slot: DateTime, energy_kWh: float):
         """React to an event_traded_energy."""
