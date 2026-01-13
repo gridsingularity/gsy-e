@@ -46,7 +46,7 @@ def is_heatpump_strategy_without_tanks(area: Area):
     """Return if area has a heat pump strategy without tanks."""
     return isinstance(
         area.strategy,
-        (HeatPumpStrategyWithoutTanks),
+        HeatPumpStrategyWithoutTanks,
     )
 
 

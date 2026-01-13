@@ -80,6 +80,30 @@ class HeatPumpStateBase(StateInterface):
     def _delete_time_slots(profile: Dict, current_time_stamp: DateTime):
         delete_time_slots_in_state(profile, current_time_stamp)
 
+    def delete_past_state_values(self, current_time_slot: DateTime):
+        if not current_time_slot or constants.RETAIN_PAST_MARKET_STRATEGIES_STATE:
+            return
+        last_time_slot = self._last_time_slot(current_time_slot)
+        self._delete_time_slots(self._cop, last_time_slot)
+        self._delete_time_slots(self._heat_demand_kJ, last_time_slot)
+
+    def get_state(self) -> Dict:
+        return {
+            "cop": convert_pendulum_to_str_in_dict(self._cop),
+            "heat_demand_kJ": convert_pendulum_to_str_in_dict(self._heat_demand_kJ),
+        }
+
+    def restore_state(self, state_dict: Dict):
+        self._cop = convert_str_to_pendulum_in_dict(state_dict["cop"])
+        self._heat_demand_kJ = convert_str_to_pendulum_in_dict(state_dict["heat_demand_kJ"])
+
+    def get_results_dict(self, current_time_slot: DateTime) -> Dict:
+        retval = {
+            "cop": self.get_cop(current_time_slot),
+            "heat_demand_kJ": self.get_heat_demand_kJ(current_time_slot),
+        }
+        return retval
+
 
 class HeatPumpState(HeatPumpStateBase):
     """State for the heat pump strategy with tanks"""
@@ -197,31 +221,3 @@ class HeatPumpState(HeatPumpStateBase):
 
     def __str__(self):
         return self.__class__.__name__
-
-
-class HeatPumpStateWithoutTanks(HeatPumpStateBase):
-    """State class for heat pump strategy without tanks"""
-
-    def delete_past_state_values(self, current_time_slot: DateTime):
-        if not current_time_slot or constants.RETAIN_PAST_MARKET_STRATEGIES_STATE:
-            return
-        last_time_slot = self._last_time_slot(current_time_slot)
-        self._delete_time_slots(self._cop, last_time_slot)
-        self._delete_time_slots(self._heat_demand_kJ, last_time_slot)
-
-    def get_state(self) -> Dict:
-        return {
-            "cop": convert_pendulum_to_str_in_dict(self._cop),
-            "heat_demand_kJ": convert_pendulum_to_str_in_dict(self._heat_demand_kJ),
-        }
-
-    def restore_state(self, state_dict: Dict):
-        self._cop = convert_str_to_pendulum_in_dict(state_dict["cop"])
-        self._heat_demand_kJ = convert_str_to_pendulum_in_dict(state_dict["heat_demand_kJ"])
-
-    def get_results_dict(self, current_time_slot: DateTime) -> Dict:
-        retval = {
-            "cop": self.get_cop(current_time_slot),
-            "heat_demand_kJ": self.get_heat_demand_kJ(current_time_slot),
-        }
-        return retval
