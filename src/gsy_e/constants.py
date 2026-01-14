@@ -72,6 +72,8 @@ HP_MIN_COP = 1.0
 
 EV_CHARGER_DEFAULT_CHARGING_EFFICIENCY = 0.9
 
+DEFAULT_COP = 3
+
 
 class SettlementTemplateStrategiesConstants:
     """Constants related to the configuration of settlement template strategies"""

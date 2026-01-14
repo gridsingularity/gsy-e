@@ -321,13 +321,6 @@ class CombinedHeatpumpTanksState:
         )
         return convert_kWh_to_kJ(convert_kW_to_kWh(heat_energy_kW, GlobalConfig.slot_length))
 
-    def calc_energy_kWh_from_Q_kJ(self, time_slot: DateTime, Q_energy_kJ: float) -> float:
-        """Calculate energy in kWh from heat in kJ."""
-        cop = self._hp_state.get_cop(time_slot)
-        if cop == 0:
-            return 0
-        return convert_kJ_to_kWh(Q_energy_kJ / cop)
-
     def event_activate(self):
         """Runs on activate event."""
         self._charger.event_activate()
@@ -573,10 +566,6 @@ class HeatPumpEnergyParameters(HeatPumpEnergyParametersBase):
             )
         else:
             produced_heat_energy_kJ = self._heat_demand_Q_J.get_value(time_slot) / 1000.0
-            energy_demand_kWh = self.combined_state.calc_energy_kWh_from_Q_kJ(
-                time_slot, produced_heat_energy_kJ
-            )
-            self._consumption_kWh.profile[time_slot] = energy_demand_kWh
 
         self._state.heatpump.set_heat_demand_kJ(time_slot, produced_heat_energy_kJ)
 
@@ -653,7 +642,7 @@ class HeatPumpEnergyParametersWithoutTanks:
 
     def get_energy_demand_kWh(self, time_slot: DateTime) -> float:
         """Return the energy demand kWh of the heat pump for the provided time_slot."""
-        return self._consumption_kWh.get_value(time_slot)
+        return self._state.get_energy_demand_kWh(time_slot)
 
     def last_time_slot(self, current_market_slot: DateTime) -> DateTime:
         """Calculate the previous time slot from the current one."""
@@ -738,6 +727,7 @@ class HeatPumpEnergyParametersWithoutTanks:
     def _update_last_time_slot_data(self, time_slot: DateTime):
         last_time_slot = self.last_time_slot(time_slot)
         if last_time_slot not in self._source_temp_C.profile:
+            self.state.set_cop(time_slot, gsy_e.constants.DEFAULT_COP)
             return
 
         self._update_cop_after_dis_charging(
@@ -752,13 +742,13 @@ class HeatPumpEnergyParametersWithoutTanks:
         self._update_last_time_slot_data(time_slot)
 
         if not self._heat_demand_Q_J:
+            energy_demand_kWh = self._consumption_kWh.get_value(time_slot)
             produced_heat_energy_kJ = self._calc_Q_kJ_from_energy_kWh(
                 time_slot=time_slot,
-                energy_kWh=self._consumption_kWh.get_value(time_slot),
+                energy_kWh=energy_demand_kWh,
             )
         else:
             produced_heat_energy_kJ = self._heat_demand_Q_J.get_value(time_slot) / 1000.0
             energy_demand_kWh = self._calc_energy_kWh_from_Q_kJ(time_slot, produced_heat_energy_kJ)
-            self._consumption_kWh.profile[time_slot] = energy_demand_kWh
-
         self._state.set_heat_demand_kJ(time_slot, produced_heat_energy_kJ)
+        self._state.set_energy_demand_kWh(time_slot, energy_demand_kWh)

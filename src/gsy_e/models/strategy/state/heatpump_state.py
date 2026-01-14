@@ -53,6 +53,14 @@ class HeatPumpStateBase(StateInterface):
         self._heat_demand_kJ: Dict[DateTime, float] = defaultdict(lambda: 0)
         self._total_traded_energy_kWh: float = 0
 
+    def get_energy_demand_kWh(self, time_slot: DateTime) -> float:
+        """Return the energy demanded for a given time slot."""
+        return self._energy_demand_kWh.get(time_slot, 0)
+
+    def set_energy_demand_kWh(self, time_slot: DateTime, energy_kWh: float):
+        """Set the minimal energy demanded for a given time slot."""
+        self._energy_demand_kWh[time_slot] = energy_kWh
+
     def set_heat_demand_kJ(self, time_slot: DateTime, heat_demand_kJ: float):
         """Set heat demand for the given time slot."""
         self._heat_demand_kJ[time_slot] = heat_demand_kJ
@@ -129,10 +137,6 @@ class HeatPumpState(HeatPumpStateBase):
         """Set the minimal energy demanded for a given time slot."""
         self._min_energy_demand_kWh[time_slot] = energy_kWh
 
-    def set_energy_demand_kWh(self, time_slot: DateTime, energy_kWh: float):
-        """Set the minimal energy demanded for a given time slot."""
-        self._energy_demand_kWh[time_slot] = energy_kWh
-
     def set_max_energy_demand_kWh(self, time_slot: DateTime, energy_kWh: float):
         """Set the maximal energy demanded for a given time slot."""
         self._max_energy_demand_kWh[time_slot] = energy_kWh
@@ -156,10 +160,6 @@ class HeatPumpState(HeatPumpStateBase):
     def get_max_energy_demand_kWh(self, time_slot: DateTime) -> float:
         """Return the maximal energy demanded for a given time slot."""
         return self._max_energy_demand_kWh.get(time_slot, 0)
-
-    def get_energy_demand_kWh(self, time_slot: DateTime) -> float:
-        """Return the energy demanded for a given time slot."""
-        return self._energy_demand_kWh.get(time_slot, 0)
 
     def get_energy_consumption_kWh(self, time_slot: DateTime) -> float:
         """Return the temperature increase for a given time slot."""
