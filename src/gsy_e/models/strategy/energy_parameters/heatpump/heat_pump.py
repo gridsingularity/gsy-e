@@ -634,6 +634,8 @@ class HeatPumpEnergyParametersWithoutTanks:
 
         self._bought_energy_kWh = 0.0
 
+        self._cop_model_type = cop_model_type
+
     @property
     def state(self) -> HeatPumpStateWithoutTanks:
         """Return heatpump state."""
@@ -667,11 +669,14 @@ class HeatPumpEnergyParametersWithoutTanks:
             "consumption_kWh": self._consumption_kWh.input_profile,
             "consumption_profile_uuid": self._consumption_kWh.input_profile_uuid,
             "source_temp_C": self._source_temp_C.input_profile,
-            "source": self._source_temp_C.input_profile_uuid,
+            "source_temp_C_profile_uuid": self._source_temp_C.input_profile_uuid,
+            "target_temp_C": self._target_temp_C.input_profile,
+            "target_temp_C_profile_uuid": self._target_temp_C.input_profile_uuid,
             "source_type": self._source_type,
             "heat_demand_Q_profile": (
                 self._heat_demand_Q_J.input_profile if self._heat_demand_Q_J else None
             ),
+            "cop_model_type": self._cop_model_type.value,
         }
 
     def _rotate_profiles(self, current_time_slot: Optional[DateTime] = None):
