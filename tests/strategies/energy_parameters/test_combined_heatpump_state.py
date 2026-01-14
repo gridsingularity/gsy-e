@@ -17,7 +17,6 @@ def fixture_combined_state():
         hp_state=Mock(),
         tanks_state=Mock(),
         cop_model=Mock(),
-        slot_length=GlobalConfig.slot_length,
         max_energy_consumption_kWh=5,
     )
 

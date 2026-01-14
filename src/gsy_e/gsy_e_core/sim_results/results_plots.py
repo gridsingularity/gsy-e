@@ -17,7 +17,7 @@ from slugify import slugify
 from sortedcontainers import SortedDict
 
 from gsy_e.data_classes import PlotDescription
-from gsy_e.gsy_e_core.sim_results.file_export_endpoints import is_heatpump_with_tanks
+from gsy_e.gsy_e_core.sim_results.file_export_endpoints import is_heatpump_strategy_with_tanks
 from gsy_e.gsy_e_core.sim_results.plotly_graph import PlotlyGraph
 from gsy_e.gsy_e_core.util import round_floats_for_ui
 from gsy_e.models.area import Area
@@ -715,7 +715,7 @@ class PlotHPPhysicalStats:
 
     def _plot_hp_physical_stats(self, area, sub_dir):
         for device in area.children:
-            if not is_heatpump_with_tanks(device):
+            if not is_heatpump_strategy_with_tanks(device):
                 continue
             self._plot_graph(
                 self._get_source_csv_filename(sub_dir, device.name),
