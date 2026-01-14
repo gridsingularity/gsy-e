@@ -171,18 +171,18 @@ class HeatPumpState(HeatPumpStateBase):
 
     def get_state(self) -> Dict:
         return {
+            **super().get_state(),
             "energy_consumption_kWh": convert_pendulum_to_str_in_dict(
                 self._energy_consumption_kWh
             ),
             "min_energy_demand_kWh": convert_pendulum_to_str_in_dict(self._min_energy_demand_kWh),
             "max_energy_demand_kWh": convert_pendulum_to_str_in_dict(self._max_energy_demand_kWh),
-            "cop": convert_pendulum_to_str_in_dict(self._cop),
             "condenser_temp_C": convert_pendulum_to_str_in_dict(self._condenser_temp_C),
-            "heat_demand_kJ": convert_pendulum_to_str_in_dict(self._heat_demand_kJ),
             "total_traded_energy_kWh": self._total_traded_energy_kWh,
         }
 
     def restore_state(self, state_dict: Dict):
+        super().restore_state(state_dict)
         self._energy_consumption_kWh = convert_str_to_pendulum_in_dict(
             state_dict["energy_consumption_kWh"]
         )
@@ -192,8 +192,6 @@ class HeatPumpState(HeatPumpStateBase):
         self._max_energy_demand_kWh = convert_str_to_pendulum_in_dict(
             state_dict["max_energy_demand_kWh"]
         )
-        self._cop = convert_str_to_pendulum_in_dict(state_dict["cop"])
-        self._heat_demand_kJ = convert_str_to_pendulum_in_dict(state_dict["heat_demand_kJ"])
         self._condenser_temp_C = convert_str_to_pendulum_in_dict(state_dict["condenser_temp_C"])
         self._total_traded_energy_kWh = state_dict["total_traded_energy_kWh"]
 
@@ -210,6 +208,7 @@ class HeatPumpState(HeatPumpStateBase):
 
     def get_results_dict(self, current_time_slot: DateTime) -> Dict:
         retval = {
+            **super().get_results_dict(current_time_slot),
             "energy_consumption_kWh": self.get_energy_consumption_kWh(current_time_slot),
             "max_energy_demand_kWh": self.get_max_energy_demand_kWh(current_time_slot),
             "min_energy_demand_kWh": self.get_min_energy_demand_kWh(current_time_slot),
