@@ -121,13 +121,15 @@ class TestHeatPumpParametersWithoutTanks:
         assert energy_params_heat_profile._state._heat_demand_kJ[current_market_slot] == 18
         assert energy_params_heat_profile._state._energy_demand_kWh[current_market_slot] == 0.001
 
-    def test_event_traded_energy_increases_energies(self, energy_params):
+    def test_event_traded_energy_updates_energy_state_variables(self, energy_params):
         # Given
         energy_params.event_activate()
+        energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
         # When
-        energy_params.event_traded_energy(CURRENT_MARKET_SLOT, 2)
+        energy_params.event_traded_energy(CURRENT_MARKET_SLOT, 0.2)
         # Then
-        assert energy_params._bought_energy_kWh == 2
+        assert energy_params._bought_energy_kWh == 0.2
+        assert energy_params.state.get_energy_demand_kWh(CURRENT_MARKET_SLOT) == 0.8
 
     def test_serialize_returns_correct_input_arguments(self, energy_params):
         # When

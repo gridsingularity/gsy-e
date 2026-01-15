@@ -648,9 +648,10 @@ class HeatPumpEnergyParametersWithoutTanks:
         """Calculate the previous time slot from the current one."""
         return current_market_slot - GlobalConfig.slot_length
 
-    def event_traded_energy(self, _time_slot: DateTime, energy_kWh: float):
+    def event_traded_energy(self, time_slot: DateTime, energy_kWh: float):
         """React to an event_traded_energy."""
         self._bought_energy_kWh += energy_kWh
+        self._decrement_posted_energy(time_slot, energy_kWh)
 
     def serialize(self):
         """Return dict with the current energy parameter values."""
@@ -752,3 +753,7 @@ class HeatPumpEnergyParametersWithoutTanks:
             energy_demand_kWh = self._calc_energy_kWh_from_Q_kJ(time_slot, produced_heat_energy_kJ)
         self._state.set_heat_demand_kJ(time_slot, produced_heat_energy_kJ)
         self._state.set_energy_demand_kWh(time_slot, energy_demand_kWh)
+
+    def _decrement_posted_energy(self, time_slot: DateTime, energy_kWh: float):
+        updated_energy_demand_kWh = max(0.0, self.get_energy_demand_kWh(time_slot) - energy_kWh)
+        self._state.set_energy_demand_kWh(time_slot, updated_energy_demand_kWh)
