@@ -199,6 +199,7 @@ class IndividualCOPModel(BaseCOPModel):
 
         if electrical_demand_kW:
             # estimate the heat demand by using the median COP of the model fitting data
+            # this is only for heaving an initial value for the model call
             heat_demand_kW = electrical_demand_kW * self._model["COP_med"]
 
         heat_demand_kW = self._limit_heat_demand_kW(heat_demand_kW)
