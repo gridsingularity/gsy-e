@@ -264,15 +264,12 @@ class CombinedHeatpumpTanksState:
         bought_energy_kWh: float,
     ):
         """Update the COP of the heat pump in its state class."""
-        if bought_energy_kWh < FLOATING_POINT_TOLERANCE:
-            cop = self._hp_state.get_cop(last_time_slot)
-        else:
-            cop = self._calc_cop(
-                heat_energy_kJ=None,
-                source_temp_C=source_temp_C,
-                time_slot=last_time_slot,
-                electrical_energy_kWh=bought_energy_kWh,
-            )
+        cop = self._calc_cop(
+            heat_energy_kJ=None,
+            source_temp_C=source_temp_C,
+            time_slot=last_time_slot,
+            electrical_energy_kWh=bought_energy_kWh,
+        )
 
         # Set the calculated COP on both the last and the current time slot to use in calculations
         self._hp_state.set_cop(last_time_slot, cop)
@@ -686,13 +683,10 @@ class HeatPumpEnergyParametersWithoutTanks:
         bought_energy_kWh: float,
     ):
         """Update the COP of the heat pump in its state class."""
-        if bought_energy_kWh < FLOATING_POINT_TOLERANCE:
-            cop = self._state.get_cop(last_time_slot)
-        else:
-            cop = self._calc_cop(
-                time_slot=last_time_slot,
-                electrical_energy_kWh=bought_energy_kWh,
-            )
+        cop = self._calc_cop(
+            time_slot=last_time_slot,
+            electrical_energy_kWh=bought_energy_kWh,
+        )
 
         # Set the calculated COP on both the last and the current time slot to use in calculations
         self.state.set_cop(last_time_slot, cop)

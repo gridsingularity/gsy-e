@@ -49,7 +49,7 @@ class TestPCMTankState:
         assert pcm_tank._htf_temps_C[NEXT_MARKET_SLOT] == [40] * 5
         assert pcm_tank._pcm_temps_C[NEXT_MARKET_SLOT] == [39] * 5
         assert pcm_tank._soc.get(NEXT_MARKET_SLOT) == 0.6
-        assert pcm_tank._condenser_temp_C.get(NEXT_MARKET_SLOT) == 45
+        assert pcm_tank._condenser_temp_C.get(NEXT_MARKET_SLOT) == 42
 
     def test_decrease_tank_temp_from_heat_energy_correctly_updates_storage_temp_and_soc(
         self, pcm_tank

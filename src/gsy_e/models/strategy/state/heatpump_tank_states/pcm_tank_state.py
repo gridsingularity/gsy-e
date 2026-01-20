@@ -141,6 +141,7 @@ class PCMTankState(TankStateBase):
                 self._params.min_temp_htf_C,
                 round(condenser_temp_C, 2),
             )
+            return self._params.min_temp_htf_C
         if (condenser_temp_C - self._params.max_temp_htf_C) > FLOATING_POINT_TOLERANCE:
             log.warning(
                 "The PCM storage tank reached it's maximum (%s), charging "
@@ -148,6 +149,7 @@ class PCMTankState(TankStateBase):
                 self._params.max_temp_htf_C,
                 round(condenser_temp_C, 2),
             )
+            return self._params.max_temp_htf_C
         return condenser_temp_C
 
     def increase_tank_temp_from_heat_energy(self, heat_energy_kWh: float, time_slot: DateTime):
