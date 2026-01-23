@@ -7,6 +7,7 @@ from logging import getLogger
 import sympy as sp
 
 from gsy_framework.enums import HeatPumpSourceType
+from gsy_framework.constants_limits import FLOATING_POINT_TOLERANCE
 
 log = getLogger(__name__)
 
@@ -19,6 +20,7 @@ class COPModelType(Enum):
     ELCO_AEROTOP_G07_14M = 2
     HOVAL_ULTRASOURCE_B_COMFORT_C11 = 3
     AERMEC_NXP_0600_4L_HEAT = 4
+    AERMEC_NXP_0600_4L_COOL = 5
 
 
 MODEL_FILE_DIR = os.path.join(os.path.dirname(__file__), "model_data")
@@ -29,6 +31,7 @@ MODEL_TYPE_FILENAME_MAPPING = {
     COPModelType.HOVAL_ULTRASOURCE_B_COMFORT_C11: "hoval_UltraSource_B_comfort_C_11_model_"
     "parameters.json",
     COPModelType.AERMEC_NXP_0600_4L_HEAT: "AERMEC_NXP_0600_4L_HEAT_model_parameters.json",
+    COPModelType.AERMEC_NXP_0600_4L_COOL: "AERMEC_NXP_0600_4L_COOL_model_parameters.json",
 }
 
 
@@ -156,20 +159,28 @@ class IndividualCOPModel(BaseCOPModel):
         }
         if not PLR_dict:
             PLR_list = [q / (self._model["Qref"] * CAPFT) for q in Q_solutions]
-            log.error("IndividualCOPModel: No physically feasible PLR solutions. %s", PLR_list)
+            log.error(
+                "IndividualCOPModel: No physically feasible PLR solutions Q: %s, PLR: %s ",
+                Q_solutions,
+                PLR_list,
+            )
             return None
         return float(PLR_dict[max(PLR_dict)])
 
     def _limit_heat_demand_kW(self, heat_demand_kW: float) -> float:
         assert heat_demand_kW is not None, "heat demand should be provided"
         if heat_demand_kW > self._model["Q_max"]:
-            log.debug(
-                "calc_cop: heat demand exceeds maximum heat_demand_kW: %s", self._model["Q_max"]
+            log.error(
+                "calc_cop: heat demand (%s kW) exceeds maximum heat_demand_kW: %s",
+                heat_demand_kW,
+                self._model["Q_max"],
             )
             return self._model["Q_max"]
         if heat_demand_kW < self._model["Q_min"]:
-            log.debug(
-                "calc_cop: heat demand exceeds minimum heat_demand_kW: %s", self._model["Q_min"]
+            log.error(
+                "calc_cop: heat demand (%s kW) exceeds minimum heat_demand_kW: %s",
+                heat_demand_kW,
+                self._model["Q_min"],
             )
             return self._model["Q_min"]
         return heat_demand_kW
@@ -197,13 +208,15 @@ class IndividualCOPModel(BaseCOPModel):
         if (electrical_demand_kW is None) == (heat_demand_kW is None):
             assert False, "heat_demand_kW and electrical_demand_kW can only be set exclusively"
 
+        if electrical_demand_kW < FLOATING_POINT_TOLERANCE:
+            return 0
         if electrical_demand_kW:
             # estimate the heat demand by using the median COP of the model fitting data
             # this is only for heaving an initial value for the model call
             heat_demand_kW = electrical_demand_kW * self._model["COP_med"]
 
         heat_demand_kW = self._limit_heat_demand_kW(heat_demand_kW)
-        if heat_demand_kW == 0:
+        if heat_demand_kW < FLOATING_POINT_TOLERANCE:
             return 0
         electrical_power_kW = self._calc_power(source_temp_C, condenser_temp_C, heat_demand_kW)
         if electrical_power_kW <= 0:
