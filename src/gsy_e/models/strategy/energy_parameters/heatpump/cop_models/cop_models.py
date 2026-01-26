@@ -2,12 +2,12 @@ import json
 import os
 from abc import abstractmethod
 from enum import Enum
-from typing import Optional
 from logging import getLogger
-import sympy as sp
+from typing import Optional
 
-from gsy_framework.enums import HeatPumpSourceType
+import sympy as sp
 from gsy_framework.constants_limits import FLOATING_POINT_TOLERANCE
+from gsy_framework.enums import HeatPumpSourceType
 
 log = getLogger(__name__)
 
@@ -43,8 +43,7 @@ class BaseCOPModel:
         self,
         source_temp_C: float,
         condenser_temp_C: float,
-        heat_demand_kW: Optional[float],
-        electrical_demand_kW: Optional[float] = None,
+        heat_demand_kW: Optional[float] = None,
     ):
         """Return COP value for provided inputs"""
 
@@ -139,6 +138,8 @@ class IndividualCOPModel(BaseCOPModel):
         )
         Q = self._select_Q_solution(solutions, CAPFT)
         if Q is None:
+            print("no solution")
+            print(source_temp_C, condenser_temp_C, electricity_demand_kW)
             # fallback: use median COP of training dataset to calculate Q
             Q = self._model["COP_med"] * electricity_demand_kW
         return Q
@@ -201,20 +202,8 @@ class IndividualCOPModel(BaseCOPModel):
         self,
         source_temp_C: float,
         condenser_temp_C: float,
-        heat_demand_kW: float,
-        electrical_demand_kW: Optional[float] = None,
+        heat_demand_kW: Optional[float] = None,
     ):
-
-        if (electrical_demand_kW is None) == (heat_demand_kW is None):
-            assert False, "heat_demand_kW and electrical_demand_kW can only be set exclusively"
-
-        if electrical_demand_kW < FLOATING_POINT_TOLERANCE:
-            return 0
-        if electrical_demand_kW:
-            # estimate the heat demand by using the median COP of the model fitting data
-            # this is only for heaving an initial value for the model call
-            heat_demand_kW = electrical_demand_kW * self._model["COP_med"]
-
         heat_demand_kW = self._limit_heat_demand_kW(heat_demand_kW)
         if heat_demand_kW < FLOATING_POINT_TOLERANCE:
             return 0
@@ -269,8 +258,7 @@ class UniversalCOPModel(BaseCOPModel):
         self,
         source_temp_C: float,
         condenser_temp_C: float,
-        heat_demand_kW: Optional[float],
-        electrical_demand_kW: Optional[float] = None,
+        heat_demand_kW: Optional[float] = None,
     ) -> float:
         """COP model following https://www.nature.com/articles/s41597-019-0199-y"""
         return self._calc_cop_from_temps(source_temp_C, condenser_temp_C)
