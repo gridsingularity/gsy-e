@@ -235,3 +235,44 @@ class TestHeatPumpEnergyParameters:
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
         # Then
         energy_params._state.delete_past_state_values.assert_called_once()
+
+    @staticmethod
+    def test_event_market_cycle_populates_state_correctly(energy_params):
+        # Given
+        current_market_slot = CURRENT_MARKET_SLOT + duration(minutes=60)
+        last_market_slot = CURRENT_MARKET_SLOT
+        energy_params.event_activate()
+        energy_params._bought_energy_kWh = 5
+        energy_params.combined_state._cop_model.calc_q_from_p_kW = Mock(return_value=25)
+        energy_params.combined_state._cop_model.calc_cop = Mock(return_value=5)
+        # When
+        # Event market cycle has to be called twice in order to have a last_market_slot
+        energy_params.event_market_cycle(last_market_slot)
+        energy_params.event_market_cycle(current_market_slot)
+        # Then
+        assert energy_params.combined_state._hp_state._cop[last_market_slot] == 5
+        assert energy_params.combined_state._hp_state._cop[current_market_slot] == 5
+        assert energy_params._bought_energy_kWh == 0
+        assert energy_params._consumption_kWh.get_value(current_market_slot) == 5
+        assert energy_params.combined_state._hp_state._energy_demand_kWh[current_market_slot] == 5
+
+    @staticmethod
+    def test_event_market_cycle_populates_state_correctly_even_if_cop_model_fails(energy_params):
+        # Given
+        current_market_slot = CURRENT_MARKET_SLOT + duration(minutes=60)
+        last_market_slot = CURRENT_MARKET_SLOT
+        energy_params.event_activate()
+        energy_params._bought_energy_kWh = 1
+        energy_params.combined_state._cop_model.calc_q_from_p_kW = Mock(return_value=None)
+        energy_params.combined_state._cop_model.calc_cop = Mock(return_value=6)
+        energy_params.combined_state._hp_state.get_cop = Mock(return_value=6)
+        # When
+        # Event market cycle has to be called twice in order to have a last_market_slot
+        energy_params.event_market_cycle(last_market_slot)
+        energy_params.event_market_cycle(current_market_slot)
+        # Then
+        assert energy_params.combined_state._hp_state._cop[last_market_slot] == 6
+        assert energy_params.combined_state._hp_state._cop[current_market_slot] == 6
+        assert energy_params._bought_energy_kWh == 0
+        assert energy_params._consumption_kWh.get_value(current_market_slot) == 5
+        assert energy_params.combined_state._hp_state._energy_demand_kWh[current_market_slot] == 5

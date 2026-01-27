@@ -136,11 +136,8 @@ class IndividualCOPModel(BaseCOPModel):
         solutions = sp.solve(
             sp.Eq(electricity_demand_kW, self._model["Pref"] * CAPFT * HEIRFT * HEIRFPLR), Q
         )
-        Q = self._select_Q_solution(solutions, CAPFT)
-        if Q is None:
-            # fallback: use median COP of training dataset to calculate Q
-            Q = self._model["COP_med"] * electricity_demand_kW
-        return Q
+
+        return self._select_Q_solution(solutions, CAPFT)
 
     def _select_Q_solution(self, Q_solutions, CAPFT) -> Optional[float]:
         """
@@ -150,11 +147,10 @@ class IndividualCOPModel(BaseCOPModel):
         - the correct branch is the one with the LARGER PLR
           (as indicated by the training dataset)
         """
-
         PLR_dict = {
             q / (self._model["Qref"] * CAPFT): q
             for q in Q_solutions
-            if 0 <= q / (self._model["Qref"] * CAPFT) <= 1
+            if isinstance(q, sp.core.numbers.Float) and 0 <= q / (self._model["Qref"] * CAPFT) <= 1
         }
         if not PLR_dict:
             PLR_list = [q / (self._model["Qref"] * CAPFT) for q in Q_solutions]
@@ -189,7 +185,7 @@ class IndividualCOPModel(BaseCOPModel):
         source_temp_C: float,
         condenser_temp_C: float,
         electrical_demand_kW: Optional[float] = None,
-    ):
+    ) -> Optional[float]:
         return self._resolve_heat(
             source_temp_C=source_temp_C,
             condenser_temp_C=condenser_temp_C,
