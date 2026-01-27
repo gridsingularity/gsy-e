@@ -106,7 +106,7 @@ class TestHeatPumpParametersWithoutTanks:
         current_market_slot = CURRENT_MARKET_SLOT + duration(minutes=60)
         last_market_slot = CURRENT_MARKET_SLOT
         energy_params_heat_profile.event_activate()
-        energy_params_heat_profile._calc_cop = Mock(return_value=5)
+        energy_params_heat_profile.state.get_cop = Mock(return_value=5)
         energy_params_heat_profile._calc_Q_kJ_from_energy_kWh = Mock(return_value=5000)
         energy_params_heat_profile._bought_energy_kWh = 1
         # When

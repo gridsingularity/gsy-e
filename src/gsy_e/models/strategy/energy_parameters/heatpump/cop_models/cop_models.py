@@ -138,8 +138,6 @@ class IndividualCOPModel(BaseCOPModel):
         )
         Q = self._select_Q_solution(solutions, CAPFT)
         if Q is None:
-            print("no solution")
-            print(source_temp_C, condenser_temp_C, electricity_demand_kW)
             # fallback: use median COP of training dataset to calculate Q
             Q = self._model["COP_med"] * electricity_demand_kW
         return Q
