@@ -53,6 +53,9 @@ class GshpModelFitter(BaseModelFitter):
         """Quadratic polynomial: a*PLR^2 + b*PLR + c."""
         return a * PLR**2 + b * PLR + c
 
+    def _eer_fplr(self, plr):
+        return 4.1922 + 2.6988 * plr - 4.0581 * plr**2
+
     def _fit_model(self):
         df = self.raw_data.copy()
 
@@ -120,7 +123,7 @@ class GshpModelFitter(BaseModelFitter):
         synthetic_rows = []
         for plr in plr_targets:
             Q_syn = Qref * capft_ref * plr
-            EER_syn = self.eer_fplr(plr)
+            EER_syn = self._eer_fplr(plr)
             P_syn = Q_syn / EER_syn
             EIR_syn = P_syn / (Pref * capft_ref * eirft_ref)
 
@@ -156,7 +159,7 @@ class GshpModelFitter(BaseModelFitter):
         model = {
             "CAPFT": popt_capft,
             "HEIRFT": popt_eirft,
-            "HEIRFPLR": popt_eirfplr,
+            "HEIRFPLR": popt_eirfplr[::-1],
             "Qref": Qref,
             "Pref": Pref,
             "Q_min": df["Q"].min(),
