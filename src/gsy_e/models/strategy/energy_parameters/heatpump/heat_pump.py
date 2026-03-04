@@ -708,7 +708,9 @@ class HeatPumpEnergyParametersWithoutTanks:
             electrical_demand_kW=convert_kWh_to_kW(energy_kWh, GlobalConfig.slot_length),
         )
         if heat_energy_kW is None:
-            heat_energy_kW = energy_kWh * self.state.get_cop(self.last_time_slot(time_slot))
+            heat_energy_kW = convert_kWh_to_kW(
+                energy_kWh, GlobalConfig.slot_length
+            ) * self.state.get_cop(self.last_time_slot(time_slot))
         return convert_kWh_to_kJ(convert_kW_to_kWh(heat_energy_kW, GlobalConfig.slot_length))
 
     def _calc_energy_kWh_from_Q_kJ(self, time_slot: DateTime, Q_energy_kJ: float) -> float:

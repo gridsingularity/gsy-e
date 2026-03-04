@@ -2,7 +2,7 @@
 from unittest.mock import Mock
 
 import pytest
-from gsy_framework.constants_limits import GlobalConfig, TIME_ZONE
+from gsy_framework.constants_limits import TIME_ZONE
 from gsy_framework.utils import generate_market_slot_list
 from pendulum import duration, today
 
@@ -11,6 +11,7 @@ from gsy_e.models.strategy.energy_parameters.heatpump.heat_pump import (
 )
 
 CURRENT_MARKET_SLOT = today(tz=TIME_ZONE)
+NEXT_MARKET_SLOT = today(tz=TIME_ZONE) + duration(minutes=15)
 TARGET_TEMP_PROFILE = {
     timestamp: 25 for timestamp in generate_market_slot_list(CURRENT_MARKET_SLOT)
 }
@@ -27,30 +28,22 @@ HEAT_PROFILE = {
 
 @pytest.fixture(name="energy_params")
 def fixture_heatpump_energy_params() -> HeatPumpEnergyParametersWithoutTanks:
-    original_slot_length = GlobalConfig.slot_length
-    GlobalConfig.slot_length = duration(minutes=60)
-
     energy_params = HeatPumpEnergyParametersWithoutTanks(
         target_temp_C_profile=TARGET_TEMP_PROFILE,
         source_temp_C_profile=SOURCE_TEMP_PROFILE,
         consumption_kWh_profile=CONSUMPTION_PROFILE,
     )
     yield energy_params
-    GlobalConfig.slot_length = original_slot_length
 
 
 @pytest.fixture(name="energy_params_heat_profile")
 def fixture_heatpump_energy_params_heat_profile() -> HeatPumpEnergyParametersWithoutTanks:
-    original_slot_length = GlobalConfig.slot_length
-    GlobalConfig.slot_length = duration(minutes=60)
-
     energy_params = HeatPumpEnergyParametersWithoutTanks(
         target_temp_C_profile=TARGET_TEMP_PROFILE,
         source_temp_C_profile=SOURCE_TEMP_PROFILE,
         heat_demand_Q_profile=HEAT_PROFILE,
     )
     yield energy_params
-    GlobalConfig.slot_length = original_slot_length
 
 
 class TestHeatPumpParametersWithoutTanks:
@@ -81,12 +74,13 @@ class TestHeatPumpParametersWithoutTanks:
 
     def test_event_market_cycle_populates_state_correctly(self, energy_params):
         # Given
-        current_market_slot = CURRENT_MARKET_SLOT + duration(minutes=60)
+        current_market_slot = NEXT_MARKET_SLOT
         last_market_slot = CURRENT_MARKET_SLOT
         energy_params.event_activate()
         energy_params._cop_model.calc_q_from_p_kW = Mock(return_value=5)
         energy_params._calc_Q_kJ_from_energy_kWh = Mock(return_value=5000)
-        energy_params._bought_energy_kWh = 1
+        energy_params._bought_energy_kWh = 5 / 4 / 5
+
         # When
         # Event market cycle has to be called twice in order to have a last_market_slot
         energy_params.event_market_cycle(last_market_slot)
@@ -103,12 +97,12 @@ class TestHeatPumpParametersWithoutTanks:
         self, energy_params_heat_profile
     ):
         # Given
-        current_market_slot = CURRENT_MARKET_SLOT + duration(minutes=60)
+        current_market_slot = NEXT_MARKET_SLOT
         last_market_slot = CURRENT_MARKET_SLOT
         energy_params_heat_profile.event_activate()
         energy_params_heat_profile._cop_model.calc_q_from_p_kW = Mock(return_value=5)
         energy_params_heat_profile._calc_Q_kJ_from_energy_kWh = Mock(return_value=5000)
-        energy_params_heat_profile._bought_energy_kWh = 1
+        energy_params_heat_profile._bought_energy_kWh = 5 / 4 / 5
         # When
         # Event market cycle has to be called twice in order to have a last_market_slot
         energy_params_heat_profile.event_market_cycle(last_market_slot)
@@ -166,10 +160,10 @@ class TestHeatPumpParametersWithoutTanks:
         self, energy_params
     ):
         # Given
-        current_market_slot = CURRENT_MARKET_SLOT + duration(minutes=60)
+        current_market_slot = NEXT_MARKET_SLOT
         last_market_slot = CURRENT_MARKET_SLOT
         energy_params.event_activate()
-        energy_params._bought_energy_kWh = 1
+        energy_params._bought_energy_kWh = 5 / 4 / 5
         energy_params._cop_model.calc_q_from_p_kW = Mock(return_value=None)
         energy_params.state.get_cop = Mock(return_value=6)
         # When
