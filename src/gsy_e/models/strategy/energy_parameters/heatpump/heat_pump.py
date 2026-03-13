@@ -683,7 +683,7 @@ class HeatPumpEnergyParametersWithoutTanks:
     ):
         """Update the COP of the heat pump in its state class."""
         if bought_energy_kWh < FLOATING_POINT_TOLERANCE:
-            self._hp_state.set_cop(time_slot, self._hp_state.get_cop(last_time_slot))
+            self.state.set_cop(time_slot, self.state.get_cop(last_time_slot))
             return
         bought_energy_kW = convert_kWh_to_kW(bought_energy_kWh, GlobalConfig.slot_length)
         heat_energy_kW = self._cop_model.calc_q_from_p_kW(
@@ -752,3 +752,4 @@ class HeatPumpEnergyParametersWithoutTanks:
     def _decrement_posted_energy(self, time_slot: DateTime, energy_kWh: float):
         updated_energy_demand_kWh = max(0.0, self.get_energy_demand_kWh(time_slot) - energy_kWh)
         self._state.set_energy_demand_kWh(time_slot, updated_energy_demand_kWh)
+        self._state.increase_total_traded_energy_kWh(energy_kWh)
