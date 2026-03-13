@@ -124,6 +124,7 @@ class TestHeatPumpParametersWithoutTanks:
         # Then
         assert energy_params._bought_energy_kWh == 0.2
         assert energy_params.state.get_energy_demand_kWh(CURRENT_MARKET_SLOT) == 0.8
+        assert energy_params._state._total_traded_energy_kWh == 0.2
 
     def test_serialize_returns_correct_input_arguments(self, energy_params):
         # When
