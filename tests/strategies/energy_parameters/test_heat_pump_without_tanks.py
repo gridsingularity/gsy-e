@@ -8,6 +8,7 @@ from pendulum import duration, today
 
 from gsy_e.models.strategy.energy_parameters.heatpump.heat_pump import (
     HeatPumpEnergyParametersWithoutTanks,
+    COPModelType,
 )
 
 CURRENT_MARKET_SLOT = today(tz=TIME_ZONE)
@@ -77,7 +78,7 @@ class TestHeatPumpParametersWithoutTanks:
         current_market_slot = NEXT_MARKET_SLOT
         last_market_slot = CURRENT_MARKET_SLOT
         energy_params.event_activate()
-        energy_params._cop_model.calc_q_from_p_kW = Mock(return_value=5)
+        energy_params._cop_model.calc_cop = Mock(return_value=5)
         energy_params._calc_Q_kJ_from_energy_kWh = Mock(return_value=5000)
         energy_params._bought_energy_kWh = 5 / 4 / 5
 
@@ -100,7 +101,7 @@ class TestHeatPumpParametersWithoutTanks:
         current_market_slot = NEXT_MARKET_SLOT
         last_market_slot = CURRENT_MARKET_SLOT
         energy_params_heat_profile.event_activate()
-        energy_params_heat_profile._cop_model.calc_q_from_p_kW = Mock(return_value=5)
+        energy_params_heat_profile._cop_model.calc_cop = Mock(return_value=5)
         energy_params_heat_profile._calc_Q_kJ_from_energy_kWh = Mock(return_value=5000)
         energy_params_heat_profile._bought_energy_kWh = 5 / 4 / 5
         # When
@@ -157,23 +158,29 @@ class TestHeatPumpParametersWithoutTanks:
         # When / Then
         assert energy_params_heat_profile.get_energy_demand_kWh(CURRENT_MARKET_SLOT) == 0.001
 
+    @pytest.mark.parametrize(
+        "cop_model_type", [COPModelType.UNIVERSAL, COPModelType.ELCO_AEROTOP_G07_14M]
+    )
     def test_event_market_cycle_populates_state_correctly_even_if_cop_model_fails(
-        self, energy_params
+        self, cop_model_type, energy_params
     ):
         # Given
         current_market_slot = NEXT_MARKET_SLOT
         last_market_slot = CURRENT_MARKET_SLOT
         energy_params.event_activate()
         energy_params._bought_energy_kWh = 5 / 4 / 5
+        energy_params._cop_model_type = cop_model_type
         energy_params._cop_model.calc_q_from_p_kW = Mock(return_value=None)
+        energy_params._cop_model.calc_cop = Mock(return_value=4)
         energy_params.state.get_cop = Mock(return_value=6)
         # When
         # Event market cycle has to be called twice in order to have a last_market_slot
         energy_params.event_market_cycle(last_market_slot)
         energy_params.event_market_cycle(current_market_slot)
         # Then
-        assert energy_params._state._cop[last_market_slot] == 6
-        assert energy_params._state._cop[current_market_slot] == 6
+        expected_cop = 4 if cop_model_type == COPModelType.UNIVERSAL else 6
+        assert energy_params._state._cop[last_market_slot] == expected_cop
+        assert energy_params._state._cop[current_market_slot] == expected_cop
         assert energy_params._bought_energy_kWh == 0
         assert energy_params._consumption_kWh.get_value(current_market_slot) == 1
         assert energy_params._state._heat_demand_kJ[current_market_slot] == 21600.0
