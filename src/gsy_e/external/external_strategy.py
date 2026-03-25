@@ -1,16 +1,17 @@
-from dataclasses import dataclass
-from typing import Dict, TYPE_CHECKING, Optional, Union
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
 from decimal import Decimal
+from enum import auto, Enum
+from typing import Dict, List, Optional, Union, TYPE_CHECKING
 
 from gsy_framework.constants_limits import FLOATING_POINT_TOLERANCE
 from gsy_framework.data_classes import Trade, TraderDetails
 from gsy_framework.enums import AvailableMarketTypes
-from gsy_framework.exceptions import GSyException
 from gsy_framework.utils import convert_pendulum_to_str_in_dict
 from pendulum import DateTime, duration
 
-from gsy_e.models.strategy.order_updater import OrderUpdaterParameters, OrderUpdater  # NOQA
-from gsy_e.models.strategy.trading_strategy_base import TradingStrategyBase  # NOQA
+from gsy_e.models.strategy.order_updater import OrderUpdaterParameters, OrderUpdater
+from gsy_e.models.strategy.trading_strategy_base import TradingStrategyBase
 
 if TYPE_CHECKING:
     from gsy_e.models.market import MarketBase
@@ -20,262 +21,445 @@ COMMUNITY_MIN_PRICE = 10
 COMMUNITY_MAX_PRICE = 50
 
 
-class ExternalValidator:
-    """Validator for ExternalStrategy"""
+class OrderDispatchMode(Enum):
+    """Determines how bid/offer orders are dispatched."""
 
-    @staticmethod
-    def validate_rate(*args, **kwargs):
-        """Validate ExternalStrategy energy rates."""
-        # TODO: Add validation of the energy rates inputs
+    HTTP = auto()
+    LOCAL_MARKET = auto()
+
+
+@dataclass
+class ExternalOrderInput:
+    """
+    Input parameters provided by the caller for a bid or offer to be managed
+    over a single market slot.
+
+    Attributes:
+        energy_kWh: Amount of energy to bid or offer.
+        min_price: Lower bound of the price range (initial bid rate / final offer rate).
+        max_price: Upper bound of the price range (final bid rate / initial offer rate).
+        market_type: Which market the order targets.
+        time_slot: The delivery time slot for the order.
+    """
+
+    energy_kWh: float
+    min_price: float
+    max_price: float
+    market_type: AvailableMarketTypes
+    time_slot: DateTime
 
 
 @dataclass
 class ExternalOrderUpdaterParameters(OrderUpdaterParameters):
-    """Order updater parameters for the HeatPump"""
+    """Order updater parameters for the external strategy."""
 
     update_interval: Optional[duration] = None
     initial_rate: Optional[Union[dict[DateTime, float], float, int]] = None
     final_rate: Optional[Union[dict[DateTime, float], float, int]] = None
-    use_market_maker_rate: bool = False
-    grid_fee: float = 0
 
     @staticmethod
     def _get_default_value_initial_rate(_):
         return COMMUNITY_MIN_PRICE
 
     def _get_default_value_final_rate(self, _):
-        return COMMUNITY_MAX_PRICE + self.grid_fee
-
-    def get_final_rate(self, time_slot: DateTime):
-        if self.final_rate is None or self.use_market_maker_rate:
-            return self._get_default_value_final_rate(time_slot)
-        if isinstance(self.final_rate, (float, int)):
-            return self.final_rate
-        try:
-            return self.final_rate[time_slot]
-        except KeyError as exc:
-            raise GSyException(
-                f"Final rate profile does not contain timestamp {time_slot}"
-            ) from exc
+        return COMMUNITY_MAX_PRICE
 
     def serialize(self):
         return {
             "update_interval": self.update_interval,
-            "initial_buying_rate": (
+            "initial_rate": (
                 self.initial_rate
                 if isinstance(self.initial_rate, (type(None), int, float))
                 else convert_pendulum_to_str_in_dict(self.initial_rate)
             ),
-            "final_buying_rate": (
+            "final_rate": (
                 self.final_rate
                 if isinstance(self.final_rate, (type(None), int, float))
                 else convert_pendulum_to_str_in_dict(self.final_rate)
             ),
-            "use_market_maker_rate": self.use_market_maker_rate,
         }
 
 
-class ExternalEnergyParameters:
-    """Energy parameters for the external strategy. Available and traded energy management."""
+@dataclass
+class ExternalOrderSlotState:
+    """Tracks active OrderUpdaters and open order IDs for a single market slot.
 
-    def event_activate(self):
-        """Update energy parameters during strategy startup."""
+    Each list is parallel to the bid/offer inputs: index *i* in ``bid_updaters``
+    corresponds to index *i* in ``open_bid_ids``, and likewise for offers.
+    """
 
-    def event_market_cycle(self, time_slot: DateTime):
-        """Update energy parameters during the cycling of the markets."""
-
-    def event_traded_energy(self, time_slot: DateTime, energy_kWh: Decimal):
-        """Update energy parameters when a new trade has been created."""
-
-    def serialize(self):
-        """Get serializable dict of energy parameters."""
-
-    def get_energy_demand_kWh(self, time_slot: DateTime):
-        """Get the available energy demand or supply for specific timeslot."""
+    bid_updaters: List[OrderUpdater] = field(default_factory=list)
+    offer_updaters: List[OrderUpdater] = field(default_factory=list)
+    open_bid_ids: List[Optional[str]] = field(default_factory=list)
+    open_offer_ids: List[Optional[str]] = field(default_factory=list)
+    closing_time: Optional[DateTime] = None
 
 
-class ExternalMarket:
+class OrderDispatcherBase(ABC):
+    """
+    ABC for order dispatching.
 
-    def __init__(self, time_slot: DateTime):
-        self.time_slot = time_slot
+    Concrete implementations either route orders to an HTTP service or place them
+    directly in a gsy-e market object. The active implementation is chosen via
+    ``OrderDispatchMode`` and can be swapped at construction time of
+    ``ExternalStrategyBase``.
+    """
 
-    def get_market_parameters_for_market_slot(self, time_slot: DateTime):
-        pass
+    @abstractmethod
+    def post_bid(
+        self,
+        market: "MarketBase",
+        market_slot: DateTime,
+        energy_kWh: float,
+        rate: Decimal,
+    ) -> Optional[str]:
+        """Post a bid. Returns the order ID, or None if the order was not placed."""
+
+    @abstractmethod
+    def delete_bid(
+        self,
+        market: "MarketBase",
+        market_slot: DateTime,
+        order_id: str,
+    ) -> None:
+        """Delete a bid by order ID."""
+
+    @abstractmethod
+    def post_offer(
+        self,
+        market: "MarketBase",
+        market_slot: DateTime,
+        energy_kWh: float,
+        rate: Decimal,
+    ) -> Optional[str]:
+        """Post an offer. Returns the order ID, or None if the order was not placed."""
+
+    @abstractmethod
+    def delete_offer(
+        self,
+        market: "MarketBase",
+        market_slot: DateTime,
+        order_id: str,
+    ) -> None:
+        """Delete an offer by order ID."""
+
+
+class HttpOrderDispatcher(OrderDispatcherBase):
+    """
+    Routes orders to an external service via HTTP.
+
+    All method bodies are stubs pending definition of the external HTTP interface.
+    """
+
+    def post_bid(
+        self,
+        market: "MarketBase",
+        market_slot: DateTime,
+        energy_kWh: float,
+        rate: Decimal,
+    ) -> Optional[str]:
+        """Send HTTP request to post a bid. To be implemented."""
+
+    def delete_bid(
+        self,
+        market: "MarketBase",
+        market_slot: DateTime,
+        order_id: str,
+    ) -> None:
+        """Send HTTP request to delete a bid. To be implemented."""
+
+    def post_offer(
+        self,
+        market: "MarketBase",
+        market_slot: DateTime,
+        energy_kWh: float,
+        rate: Decimal,
+    ) -> Optional[str]:
+        """Send HTTP request to post an offer. To be implemented."""
+
+    def delete_offer(
+        self,
+        market: "MarketBase",
+        market_slot: DateTime,
+        order_id: str,
+    ) -> None:
+        """Send HTTP request to delete an offer. To be implemented."""
+
+
+class LocalMarketOrderDispatcher(OrderDispatcherBase):
+    """Places orders directly into a gsy-e market object."""
+
+    def __init__(self, owner_name: str, owner_uuid: str):
+        self._owner = TraderDetails(owner_name, owner_uuid, owner_name, owner_uuid)
+
+    def post_bid(
+        self,
+        market: "MarketBase",
+        market_slot: DateTime,
+        energy_kWh: float,
+        rate: Decimal,
+    ) -> Optional[str]:
+        if energy_kWh <= FLOATING_POINT_TOLERANCE:
+            return None
+        price = float(rate * Decimal(str(energy_kWh)))
+        bid = market.bid(
+            price=price,
+            energy=energy_kWh,
+            buyer=self._owner,
+            original_price=price,
+            time_slot=market_slot,
+        )
+        return bid.id
+
+    def delete_bid(
+        self,
+        market: "MarketBase",
+        market_slot: DateTime,
+        order_id: str,
+    ) -> None:
+        market.delete_bid(order_id)
+
+    def post_offer(
+        self,
+        market: "MarketBase",
+        market_slot: DateTime,
+        energy_kWh: float,
+        rate: Decimal,
+    ) -> Optional[str]:
+        if energy_kWh <= FLOATING_POINT_TOLERANCE:
+            return None
+        price = float(rate * Decimal(str(energy_kWh)))
+        offer = market.offer(
+            price=price,
+            energy=energy_kWh,
+            seller=self._owner,
+            original_price=price,
+            time_slot=market_slot,
+        )
+        return offer.id
+
+    def delete_offer(
+        self,
+        market: "MarketBase",
+        market_slot: DateTime,
+        order_id: str,
+    ) -> None:
+        market.delete_offer(order_id)
+
+
+def create_order_dispatcher(
+    mode: OrderDispatchMode,
+    owner_name: str = "AssetOwner",
+    owner_uuid: str = "",
+) -> OrderDispatcherBase:
+    """Factory: returns the appropriate ``OrderDispatcherBase`` for the given mode."""
+    if mode == OrderDispatchMode.HTTP:
+        return HttpOrderDispatcher()
+    if mode == OrderDispatchMode.LOCAL_MARKET:
+        return LocalMarketOrderDispatcher(owner_name, owner_uuid)
+    raise ValueError(f"Unsupported OrderDispatchMode: {mode}")
 
 
 class ExternalStrategyBase(TradingStrategyBase):
-    """Heat pump strategy base class"""
+    """
+    Trading strategy for an externally-managed asset.
+
+    Accepts bid and/or offer inputs containing energy amounts and min/max prices.
+    An ``OrderUpdater`` linearly interpolates the price across each market slot:
+
+    * **Bids**: price starts at ``min_price`` and rises toward ``max_price``.
+    * **Offers**: price starts at ``max_price`` and falls toward ``min_price``.
+
+    On every price update the active ``OrderDispatcherBase`` implementation either
+    sends HTTP requests or writes directly to the gsy-e market – swappable via
+    ``OrderDispatchMode`` (or by injecting a custom dispatcher instance).
+    """
 
     def __init__(
         self,
-        order_updater_parameters: Dict[
-            AvailableMarketTypes, ExternalOrderUpdaterParameters
-        ] = None,
+        bid_inputs: Optional[List[ExternalOrderInput]] = None,
+        offer_inputs: Optional[List[ExternalOrderInput]] = None,
+        dispatcher: Optional[OrderDispatcherBase] = None,
+        dispatch_mode: OrderDispatchMode = OrderDispatchMode.LOCAL_MARKET,
     ):
-        self._owner_name = "AssetOwner"
-        self._owner_uuid = "OwnerUuid"
-        self._spot_market = None
-        self._energy_params = ExternalEnergyParameters()
-        self.use_default_updater_params: bool = not order_updater_parameters
-        if self.use_default_updater_params:
-            order_updater_parameters = {
-                AvailableMarketTypes.SPOT: ExternalOrderUpdaterParameters(),
-            }
-        else:
-            for market_type in AvailableMarketTypes:
-                if not order_updater_parameters.get(market_type):
-                    continue
-                ExternalValidator.validate_rate(
-                    initial_buying_rate=order_updater_parameters[market_type].initial_rate,
-                    final_buying_rate=order_updater_parameters[market_type].final_rate,
-                    update_interval=order_updater_parameters[market_type].update_interval,
-                    use_market_maker_rate=(
-                        order_updater_parameters[market_type].use_market_maker_rate
-                    ),
-                )
+        super().__init__(
+            order_updater_parameters={AvailableMarketTypes.SPOT: ExternalOrderUpdaterParameters()}
+        )
+        self._bid_inputs: List[ExternalOrderInput] = bid_inputs or []
+        self._offer_inputs: List[ExternalOrderInput] = offer_inputs or []
+        self._dispatcher: OrderDispatcherBase = dispatcher or create_order_dispatcher(
+            dispatch_mode
+        )
+        self._slot_states: Dict[DateTime, ExternalOrderSlotState] = {}
 
-        super().__init__(order_updater_parameters=order_updater_parameters)
+    # ------------------------------------------------------------------
+    # Input update helpers (called by the external owner before each cycle)
+    # ------------------------------------------------------------------
+
+    def update_bid_inputs(self, bid_inputs: List[ExternalOrderInput]) -> None:
+        """Replace the list of bid inputs. Call this before the market cycle to update bids."""
+        self._bid_inputs = bid_inputs
+
+    def update_offer_inputs(self, offer_inputs: List[ExternalOrderInput]) -> None:
+        """Replace the list of offer inputs. Call this before the market cycle to update offers."""
+        self._offer_inputs = offer_inputs
+
+    # ------------------------------------------------------------------
+    # Event handlers
+    # ------------------------------------------------------------------
 
     # pylint: disable=no-member
     def event_market_cycle(self) -> None:
-        super().event_market_cycle()
-        # TODO: Update market
-        self._spot_market = self.area.spot_market
-        if not self._spot_market:
+        super().event_market_cycle()  # cleans up _order_updaters (no-op here)
+        self._clean_past_slot_states()
+        spot_market = self.area.spot_market
+        if spot_market is None:
             return
+        self._open_slot(spot_market)
 
-        # Order matters: First update the energy state and then post orders
-        self._energy_params.event_market_cycle(self._spot_market.time_slot)
-
-        self._post_orders_to_new_markets()
-
-    def event_activate(self, **_kwargs):
-        """Received activate event, signaling the trading strategy on-chain registration."""
-        self._energy_params.event_activate()
-
-    def event_tick(self):
-        """Received tick event, signaling a new block creation."""
+    def event_tick(self) -> None:
         self._update_open_orders()
 
     def event_bid_traded(self, *, market_id: str, bid_trade: Trade) -> None:
-        """Received bid traded event, signaling a new trade event from a bid."""
-        if bid_trade.buyer.origin_uuid != self._owner_uuid:
-            return
-        if not self._spot_market:
-            return
-        if market_id != self._spot_market.id:
-            return
-        time_slot = bid_trade.time_slot
+        """Handle a bid trade. Override in subclasses to update energy accounting."""
 
-        self._energy_params.event_traded_energy(time_slot, Decimal(-bid_trade.traded_energy))
+    def event_offer_traded(self, *, market_id: str, trade: Trade) -> None:
+        """Handle an offer trade. Override in subclasses to update energy accounting."""
 
-    def event_offer_traded(self, *, market_id: str, bid_trade: Trade) -> None:
-        """Received offer traded event, signaling a new trade event from an offer."""
-        if bid_trade.buyer.origin_uuid != self._owner_uuid:
-            return
-        if not self._spot_market:
-            return
-        if market_id != self._spot_market.id:
-            return
-        time_slot = bid_trade.time_slot
+    # ------------------------------------------------------------------
+    # TradingStrategyBase abstract method implementations
+    # ------------------------------------------------------------------
 
-        self._energy_params.event_traded_energy(time_slot, Decimal(bid_trade.traded_energy))
-
-    def _post_order(
+    def post_order(
         self,
-        order_energy_kWh: Decimal,
-        order_rate: Optional[Decimal] = None,
-    ):
-
-        if order_energy_kWh <= FLOATING_POINT_TOLERANCE:
+        market: "MarketBase",
+        market_slot: DateTime,
+        order_rate: float = None,
+        **kwargs,
+    ) -> None:
+        state = self._slot_states.get(market_slot)
+        if state is None:
             return
-        self._spot_market.bid(
-            float(order_rate * order_energy_kWh),
-            float(order_energy_kWh),
-            original_price=float(order_rate * order_energy_kWh),
-            buyer=TraderDetails(
-                self._owner_name, self._owner_uuid, self._owner_name, self._owner_uuid
-            ),
-            time_slot=self._spot_market.time_slot,
-        )
+        now = self.area.now  # pylint: disable=no-member
 
-    def remove_open_orders(self):
-        bids = [
-            bid for bid in self._spot_market.bids.values() if bid.buyer.uuid == self._owner_uuid
-        ]
-
-        for bid in bids:
-            self._spot_market.delete_bid(bid)
-
-    def _create_order_updaters(self, market_type: AvailableMarketTypes):
-        if not self._order_updater_for_market_slot_exists(
-            self._spot_market.market, self._spot_market.time_slot
-        ):
-            if self._spot_market not in self._order_updaters:
-                self._order_updaters[self._spot_market] = {}
-            self._order_updaters[self._spot_market][self._spot_market.time_slot] = OrderUpdater(
-                self._order_updater_params[market_type],
-                self._spot_market.get_market_parameters_for_market_slot(
-                    self._spot_market.time_slot
-                ),
+        for i, (bid_updater, bid_input) in enumerate(zip(state.bid_updaters, self._bid_inputs)):
+            rate = Decimal(str(order_rate)) if order_rate else bid_updater.get_energy_rate(now)
+            state.open_bid_ids[i] = self._dispatcher.post_bid(
+                market, market_slot, bid_input.energy_kWh, rate
             )
 
-    def _post_order_to_new_market(self, market_type=AvailableMarketTypes.SPOT):
-        self._create_order_updaters(market, market_slot, market_type)
-        self.post_order(market, market_slot)
+        for i, (offer_updater, offer_input) in enumerate(
+            zip(state.offer_updaters, self._offer_inputs)
+        ):
+            rate = Decimal(str(order_rate)) if order_rate else offer_updater.get_energy_rate(now)
+            state.open_offer_ids[i] = self._dispatcher.post_offer(
+                market, market_slot, offer_input.energy_kWh, rate
+            )
 
-    def _post_orders_to_new_markets(self) -> None:
-        # TODO: If separate supply demand, should be managed here
-        self._post_order_to_new_market()
+    def remove_open_orders(self, market: "MarketBase", market_slot: DateTime) -> None:
+        state = self._slot_states.get(market_slot)
+        if state is None:
+            return
+        for i, bid_id in enumerate(state.open_bid_ids):
+            if bid_id is not None:
+                self._dispatcher.delete_bid(market, market_slot, bid_id)
+                state.open_bid_ids[i] = None
+        for i, offer_id in enumerate(state.open_offer_ids):
+            if offer_id is not None:
+                self._dispatcher.delete_offer(market, market_slot, offer_id)
+                state.open_offer_ids[i] = None
 
-    def _update_open_orders(self):
-        for market, market_slot_updater_dict in self._order_updaters.items():
-            if market is None:
-                continue
-            for market_slot, updater in market_slot_updater_dict.items():
-                if updater.is_time_for_update(self.area.now):
-                    self.remove_open_orders()
-                    self.post_order(market, market_slot)
+    def remove_order(self, market: "MarketBase", market_slot: DateTime, order_uuid: str) -> None:
+        state = self._slot_states.get(market_slot)
+        if state is None:
+            return
+        for i, bid_id in enumerate(state.open_bid_ids):
+            if bid_id == order_uuid:
+                self._dispatcher.delete_bid(market, market_slot, order_uuid)
+                state.open_bid_ids[i] = None
+                return
+        for i, offer_id in enumerate(state.open_offer_ids):
+            if offer_id == order_uuid:
+                self._dispatcher.delete_offer(market, market_slot, order_uuid)
+                state.open_offer_ids[i] = None
+                return
 
-    @staticmethod
-    def deserialize_args(constructor_args: Dict) -> Dict:
-        """Deserialize the constructor arguments for the HeatPump strategy."""
-        if "order_updater_parameters" not in constructor_args:
-            constructor_args["order_updater_parameters"] = {
-                AvailableMarketTypes.SPOT: ExternalOrderUpdaterParameters(
-                    update_interval=(
-                        duration(minutes=constructor_args.get("update_interval"))
-                        if constructor_args.get("update_interval") is not None
-                        else None
-                    ),
-                    initial_rate=constructor_args.get("initial_buying_rate", None),
-                    final_rate=constructor_args.get("final_buying_rate", None),
-                    use_market_maker_rate=constructor_args.get("use_market_maker_rate", False),
-                )
-            }
-            constructor_args.pop("initial_buying_rate", None)
-            constructor_args.pop("final_buying_rate", None)
-            constructor_args.pop("update_interval", None)
-            constructor_args.pop("use_market_maker_rate", None)
-        return constructor_args
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
 
-    def serialize(self):
-        """Serialize strategy parameters."""
-        return {
-            **self._energy_params.serialize(),
-            **self._order_updater_params.get(AvailableMarketTypes.SPOT).serialize(),
-        }
+    def _open_slot(self, spot_market: "MarketBase") -> None:
+        """Create slot state and post initial orders for a newly opened market slot."""
+        market_slot = spot_market.time_slot
+        if market_slot in self._slot_states:
+            return
 
-    def post_order(self, order_rate: float = None, **_kwargs):
-        """Submit new energy order."""
-        if not order_rate:
-            order_rate = self._order_updaters[self._spot_market][
-                self._spot_market.time_slot
-            ].get_energy_rate(self.area.now)
-        else:
-            order_rate = Decimal(order_rate)
-
-        order_energy_kWh = Decimal(
-            self._energy_params.get_energy_demand_kWh(time_slot=self._spot_market.time_slot)
+        market_params = spot_market.get_market_parameters_for_market_slot(market_slot)
+        state = ExternalOrderSlotState(
+            closing_time=market_params.closing_time if market_params else None,
         )
-        self._post_order(order_energy_kWh, order_rate)
+
+        if market_params is not None:
+            for bid_input in self._bid_inputs:
+                state.bid_updaters.append(
+                    OrderUpdater(
+                        ExternalOrderUpdaterParameters(
+                            initial_rate=bid_input.min_price,
+                            final_rate=bid_input.max_price,
+                        ),
+                        market_params,
+                    )
+                )
+                state.open_bid_ids.append(None)
+
+            for offer_input in self._offer_inputs:
+                state.offer_updaters.append(
+                    OrderUpdater(
+                        ExternalOrderUpdaterParameters(
+                            initial_rate=offer_input.max_price,
+                            final_rate=offer_input.min_price,
+                        ),
+                        market_params,
+                    )
+                )
+                state.open_offer_ids.append(None)
+
+        self._slot_states[market_slot] = state
+        self.post_order(spot_market, market_slot)
+
+    def _update_open_orders(self) -> None:
+        spot_market = self.area.spot_market  # pylint: disable=no-member
+        if spot_market is None:
+            return
+        market_slot = spot_market.time_slot
+        state = self._slot_states.get(market_slot)
+        if state is None:
+            return
+
+        now = self.area.now  # pylint: disable=no-member
+        bid_due = any(u.is_time_for_update(now) for u in state.bid_updaters)
+        offer_due = any(u.is_time_for_update(now) for u in state.offer_updaters)
+        if bid_due or offer_due:
+            self.remove_open_orders(spot_market, market_slot)
+            self.post_order(spot_market, market_slot)
+
+    def _clean_past_slot_states(self) -> None:
+        now = self.area.now  # pylint: disable=no-member
+        expired = [
+            slot
+            for slot, state in self._slot_states.items()
+            if state.closing_time is not None and state.closing_time <= now
+        ]
+        for slot in expired:
+            del self._slot_states[slot]
+
+    # ------------------------------------------------------------------
+    # Serialization
+    # ------------------------------------------------------------------
+
+    def serialize(self) -> Dict:
+        return self._order_updater_params[AvailableMarketTypes.SPOT].serialize()
+
+    @property
+    def state(self):
+        return None
