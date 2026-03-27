@@ -19,6 +19,7 @@ from gsy_e.models.strategy.energy_parameters.heatpump.cop_models import (
     COPModelType,
     cop_model_factory,
     BaseCOPModel,
+    UniversalCOPModel,
 )
 from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import (
     WaterTankParameters,
@@ -263,19 +264,25 @@ class CombinedHeatpumpTanksState:
         bought_energy_kWh: float,
     ):
         """Update the COP of the heat pump in its state class."""
-        if bought_energy_kWh < FLOATING_POINT_TOLERANCE:
-            self._hp_state.set_cop(time_slot, self._hp_state.get_cop(last_time_slot))
-            return
-        bought_energy_kW = convert_kWh_to_kW(bought_energy_kWh, GlobalConfig.slot_length)
-        heat_energy_kW = self._cop_model.calc_q_from_p_kW(
-            source_temp_C=source_temp_C,
-            condenser_temp_C=self._charger.get_average_inlet_temperature_C(last_time_slot),
-            electrical_demand_kW=bought_energy_kW,
-        )
-        if heat_energy_kW is None:
-            cop = self._hp_state.get_cop(last_time_slot)
+        if isinstance(self._cop_model, UniversalCOPModel):
+            cop = self._cop_model.calc_cop(
+                source_temp_C=source_temp_C,
+                condenser_temp_C=self._charger.get_average_inlet_temperature_C(last_time_slot),
+            )
         else:
-            cop = heat_energy_kW / bought_energy_kW
+            if bought_energy_kWh < FLOATING_POINT_TOLERANCE:
+                self._hp_state.set_cop(time_slot, self._hp_state.get_cop(last_time_slot))
+                return
+            bought_energy_kW = convert_kWh_to_kW(bought_energy_kWh, GlobalConfig.slot_length)
+            heat_energy_kW = self._cop_model.calc_q_from_p_kW(
+                source_temp_C=source_temp_C,
+                condenser_temp_C=self._charger.get_average_inlet_temperature_C(last_time_slot),
+                electrical_demand_kW=bought_energy_kW,
+            )
+            if heat_energy_kW is None:
+                cop = self._hp_state.get_cop(last_time_slot)
+            else:
+                cop = heat_energy_kW / bought_energy_kW
 
         # Set the calculated COP on both the last and the current time slot to use in calculations
         self._hp_state.set_cop(last_time_slot, cop)
@@ -682,19 +689,25 @@ class HeatPumpEnergyParametersWithoutTanks:
         bought_energy_kWh: float,
     ):
         """Update the COP of the heat pump in its state class."""
-        if bought_energy_kWh < FLOATING_POINT_TOLERANCE:
-            self._hp_state.set_cop(time_slot, self._hp_state.get_cop(last_time_slot))
-            return
-        bought_energy_kW = convert_kWh_to_kW(bought_energy_kWh, GlobalConfig.slot_length)
-        heat_energy_kW = self._cop_model.calc_q_from_p_kW(
-            source_temp_C=self._source_temp_C.get_value(last_time_slot),
-            condenser_temp_C=self._target_temp_C.get_value(last_time_slot),
-            electrical_demand_kW=bought_energy_kW,
-        )
-        if heat_energy_kW is None:
-            cop = self.state.get_cop(last_time_slot)
+        if self._cop_model_type == COPModelType.UNIVERSAL:
+            cop = self._cop_model.calc_cop(
+                source_temp_C=self._source_temp_C.get_value(last_time_slot),
+                condenser_temp_C=self._target_temp_C.get_value(last_time_slot),
+            )
         else:
-            cop = heat_energy_kW / bought_energy_kW
+            if bought_energy_kWh < FLOATING_POINT_TOLERANCE:
+                self.state.set_cop(time_slot, self.state.get_cop(last_time_slot))
+                return
+            bought_energy_kW = convert_kWh_to_kW(bought_energy_kWh, GlobalConfig.slot_length)
+            heat_energy_kW = self._cop_model.calc_q_from_p_kW(
+                source_temp_C=self._source_temp_C.get_value(last_time_slot),
+                condenser_temp_C=self._target_temp_C.get_value(last_time_slot),
+                electrical_demand_kW=bought_energy_kW,
+            )
+            if heat_energy_kW is None:
+                cop = self.state.get_cop(last_time_slot)
+            else:
+                cop = heat_energy_kW / bought_energy_kW
 
         # Set the calculated COP on both the last and the current time slot to use in calculations
         self.state.set_cop(last_time_slot, cop)
@@ -752,3 +765,4 @@ class HeatPumpEnergyParametersWithoutTanks:
     def _decrement_posted_energy(self, time_slot: DateTime, energy_kWh: float):
         updated_energy_demand_kWh = max(0.0, self.get_energy_demand_kWh(time_slot) - energy_kWh)
         self._state.set_energy_demand_kWh(time_slot, updated_energy_demand_kWh)
+        self._state.increase_total_traded_energy_kWh(energy_kWh)

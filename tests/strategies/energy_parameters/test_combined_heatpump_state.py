@@ -4,7 +4,9 @@ from unittest.mock import Mock, patch
 
 import pytest
 from gsy_framework.constants_limits import GlobalConfig
+from gsy_framework.utils import convert_kWh_to_kW
 
+from gsy_e.models.strategy.energy_parameters.heatpump.cop_models import UniversalCOPModel
 from gsy_e.models.strategy.energy_parameters.heatpump.heat_pump import CombinedHeatpumpTanksState
 
 CURRENT_MARKET_SLOT = GlobalConfig.start_date
@@ -109,3 +111,82 @@ class TestCombinedHeatpumpTanksState:
 
         combined_state._hp_state.delete_past_state_values.assert_called_once()
         combined_state._charger.delete_past_state_values.assert_called_once()
+
+    def test_update_cop_after_dis_charging_universal_cop_model_sets_cop_on_both_slots(self):
+        # Given
+        cop_model = Mock(spec=UniversalCOPModel)
+        cop_model.calc_cop.return_value = 3.5
+        combined_state = CombinedHeatpumpTanksState(
+            hp_state=Mock(),
+            tanks_state=Mock(),
+            cop_model=cop_model,
+            max_energy_consumption_kWh=5,
+        )
+        combined_state._charger.get_average_inlet_temperature_C = Mock(return_value=40)
+        # When
+        combined_state.update_cop_after_dis_charging(
+            source_temp_C=10,
+            time_slot=CURRENT_MARKET_SLOT,
+            last_time_slot=LAST_MARKET_SLOT,
+            bought_energy_kWh=1.0,
+        )
+        # Then
+        cop_model.calc_cop.assert_called_once_with(source_temp_C=10, condenser_temp_C=40)
+        combined_state._hp_state.set_cop.assert_any_call(LAST_MARKET_SLOT, 3.5)
+        combined_state._hp_state.set_cop.assert_any_call(CURRENT_MARKET_SLOT, 3.5)
+
+    def test_update_cop_after_dis_charging_zero_energy_sets_only_current_slot_cop(
+        self, combined_state
+    ):
+        # Given
+        combined_state._hp_state.get_cop.return_value = 2.5
+        # When
+        combined_state.update_cop_after_dis_charging(
+            source_temp_C=10,
+            time_slot=CURRENT_MARKET_SLOT,
+            last_time_slot=LAST_MARKET_SLOT,
+            bought_energy_kWh=0.0,
+        )
+        # Then
+        combined_state._hp_state.get_cop.assert_called_once_with(LAST_MARKET_SLOT)
+        combined_state._hp_state.set_cop.assert_called_once_with(CURRENT_MARKET_SLOT, 2.5)
+
+    def test_update_cop_after_dis_charging_valid_heat_energy_calculates_correct_cop(
+        self, combined_state
+    ):
+        # Given
+        heat_energy_kW = 8.0
+        bought_energy_kWh = 1.0
+        combined_state._charger.get_average_inlet_temperature_C = Mock(return_value=40)
+        combined_state._cop_model.calc_q_from_p_kW.return_value = heat_energy_kW
+        # When
+        combined_state.update_cop_after_dis_charging(
+            source_temp_C=10,
+            time_slot=CURRENT_MARKET_SLOT,
+            last_time_slot=LAST_MARKET_SLOT,
+            bought_energy_kWh=bought_energy_kWh,
+        )
+        # Then
+        bought_energy_kW = convert_kWh_to_kW(bought_energy_kWh, GlobalConfig.slot_length)
+        expected_cop = heat_energy_kW / bought_energy_kW
+        combined_state._hp_state.set_cop.assert_any_call(LAST_MARKET_SLOT, expected_cop)
+        combined_state._hp_state.set_cop.assert_any_call(CURRENT_MARKET_SLOT, expected_cop)
+
+    def test_update_cop_after_dis_charging_none_heat_energy_uses_last_slot_cop(
+        self, combined_state
+    ):
+        # Given
+        combined_state._charger.get_average_inlet_temperature_C = Mock(return_value=40)
+        combined_state._cop_model.calc_q_from_p_kW.return_value = None
+        combined_state._hp_state.get_cop.return_value = 2.8
+        # When
+        combined_state.update_cop_after_dis_charging(
+            source_temp_C=10,
+            time_slot=CURRENT_MARKET_SLOT,
+            last_time_slot=LAST_MARKET_SLOT,
+            bought_energy_kWh=1.0,
+        )
+        # Then
+        combined_state._hp_state.get_cop.assert_called_once_with(LAST_MARKET_SLOT)
+        combined_state._hp_state.set_cop.assert_any_call(LAST_MARKET_SLOT, 2.8)
+        combined_state._hp_state.set_cop.assert_any_call(CURRENT_MARKET_SLOT, 2.8)

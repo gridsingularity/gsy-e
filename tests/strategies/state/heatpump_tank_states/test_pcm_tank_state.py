@@ -19,10 +19,8 @@ def fixture_pcm_tank():
     pcm_tank = PCMTankState(
         tank_parameters=PCMTankParameters(
             initial_temp_C=37,
-            max_temp_htf_C=42,
-            min_temp_htf_C=32,
-            max_temp_pcm_C=42,
-            min_temp_pcm_C=32,
+            max_temp_C=42,
+            min_temp_C=32,
         )
     )
     pcm_tank._pcm_charge_model.get_soc = Mock(return_value=0.5)
@@ -117,10 +115,8 @@ class TestPCMTankState:
         pcm_tank = PCMTankState(
             tank_parameters=PCMTankParameters(
                 initial_temp_C=37,
-                max_temp_htf_C=42,
-                min_temp_htf_C=32,
-                max_temp_pcm_C=42,
-                min_temp_pcm_C=32,
+                max_temp_C=42,
+                min_temp_C=32,
             )
         )
         assert pcm_tank._htf_temps_C == {}
@@ -173,10 +169,8 @@ class TestPCMTankState:
                 "pcm_temps_C": {CURRENT_MARKET_SLOT.format(DATE_TIME_FORMAT): [50] * 5},
                 "condenser_temp_C": {CURRENT_MARKET_SLOT.format(DATE_TIME_FORMAT): 37},
                 "soc": {CURRENT_MARKET_SLOT.format(DATE_TIME_FORMAT): 0.5},
-                "min_temp_htf_C": 0,
-                "max_temp_htf_C": 100,
-                "min_temp_pcm_C": 0,
-                "max_temp_pcm_C": 100,
+                "min_temp_C": 0,
+                "max_temp_C": 100,
                 "initial_temp_C": 50,
             }
         )
@@ -184,10 +178,8 @@ class TestPCMTankState:
         assert pcm_tank._htf_temps_C == {CURRENT_MARKET_SLOT: [50] * 5}
         assert pcm_tank._pcm_temps_C == {CURRENT_MARKET_SLOT: [50] * 5}
         assert pcm_tank._soc == {CURRENT_MARKET_SLOT: 0.5}
-        assert pcm_tank._params.min_temp_htf_C == 0.0
-        assert pcm_tank._params.max_temp_htf_C == 100
-        assert pcm_tank._params.min_temp_pcm_C == 0.0
-        assert pcm_tank._params.max_temp_pcm_C == 100
+        assert pcm_tank._params.min_temp_C == 0.0
+        assert pcm_tank._params.max_temp_C == 100
         assert pcm_tank._params.initial_temp_C == 50
         assert pcm_tank._condenser_temp_C == {CURRENT_MARKET_SLOT: 37}
 
