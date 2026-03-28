@@ -3,7 +3,6 @@
 from decimal import Decimal
 from unittest.mock import MagicMock
 
-import pytest
 import pendulum
 from gsy_framework.enums import AvailableMarketTypes
 
@@ -13,9 +12,7 @@ from gsy_e.external.external_strategy import (
     ExternalOrderSlotState,
     ExternalStrategyBase,
     LocalMarketOrderDispatcher,
-    OrderDispatchMode,
     OrderUpdater,
-    create_order_dispatcher,
 )
 
 
@@ -87,16 +84,16 @@ def make_mock_market(time_slot=SLOT_START):
 
 
 def make_strategy(bid_inputs=None, offer_inputs=None, dispatcher=None):
-    """Build an ExternalStrategyBase with a mocked area and the given dispatcher."""
+    """Build an ExternalStrategyBase with a mocked area and an optional mock dispatcher."""
     strategy = ExternalStrategyBase(
         bid_inputs=bid_inputs,
         offer_inputs=offer_inputs,
-        dispatcher=dispatcher,
-        dispatch_mode=OrderDispatchMode.LOCAL_MARKET,
     )
     area_mock = MagicMock()
     area_mock.now = SLOT_START
     strategy.area = area_mock
+    if dispatcher is not None:
+        strategy._dispatcher = dispatcher
     return strategy
 
 
@@ -156,33 +153,15 @@ class TestLocalMarketOrderDispatcher:
     def test_delete_bid_calls_market_delete_bid():
         market = make_mock_market()
         dispatcher = LocalMarketOrderDispatcher("owner", "owner-uuid")
-        dispatcher.delete_bid(market, SLOT_START, "some-bid-id")
+        dispatcher.delete_bid(market, "some-bid-id")
         market.delete_bid.assert_called_once_with("some-bid-id")
 
     @staticmethod
     def test_delete_offer_calls_market_delete_offer():
         market = make_mock_market()
         dispatcher = LocalMarketOrderDispatcher("owner", "owner-uuid")
-        dispatcher.delete_offer(market, SLOT_START, "some-offer-id")
+        dispatcher.delete_offer(market, "some-offer-id")
         market.delete_offer.assert_called_once_with("some-offer-id")
-
-
-# ---------------------------------------------------------------------------
-# Tests: create_order_dispatcher factory
-# ---------------------------------------------------------------------------
-
-
-class TestCreateOrderDispatcher:
-
-    @staticmethod
-    def test_returns_local_market_dispatcher():
-        dispatcher = create_order_dispatcher(OrderDispatchMode.LOCAL_MARKET, "name", "uuid")
-        assert isinstance(dispatcher, LocalMarketOrderDispatcher)
-
-    @staticmethod
-    def test_raises_for_unknown_mode():
-        with pytest.raises(ValueError, match="Unsupported OrderDispatchMode"):
-            create_order_dispatcher(MagicMock(name="UNKNOWN_MODE"))
 
 
 # ---------------------------------------------------------------------------
@@ -379,7 +358,7 @@ class TestExternalStrategyBaseRemoveOrders:
 
         strategy.remove_open_orders(market, SLOT_START)
 
-        dispatcher.delete_bid.assert_called_once_with(market, SLOT_START, "bid-2")
+        dispatcher.delete_bid.assert_called_once_with(market, "bid-2")
         dispatcher.delete_offer.assert_not_called()
 
     @staticmethod
@@ -407,7 +386,7 @@ class TestExternalStrategyBaseRemoveOrders:
 
         strategy.remove_order(market, SLOT_START, "bid-xyz")
 
-        dispatcher.delete_bid.assert_called_once_with(market, SLOT_START, "bid-xyz")
+        dispatcher.delete_bid.assert_called_once_with(market, "bid-xyz")
         dispatcher.delete_offer.assert_not_called()
         assert state.open_bid_ids == ["bid-1", None]
         assert state.open_offer_ids == ["offer-xyz"]
@@ -426,7 +405,7 @@ class TestExternalStrategyBaseRemoveOrders:
 
         strategy.remove_order(market, SLOT_START, "offer-xyz")
 
-        dispatcher.delete_offer.assert_called_once_with(market, SLOT_START, "offer-xyz")
+        dispatcher.delete_offer.assert_called_once_with(market, "offer-xyz")
         dispatcher.delete_bid.assert_not_called()
         assert state.open_offer_ids == ["offer-1", None]
         assert state.open_bid_ids == ["bid-xyz"]
@@ -552,7 +531,7 @@ class TestExternalStrategyBaseEvents:
 
         strategy.event_market_cycle()
 
-        assert strategy._slot_states == {}
+        assert not strategy._slot_states
 
     @staticmethod
     def test_event_tick_updates_all_orders_when_any_updater_is_due():

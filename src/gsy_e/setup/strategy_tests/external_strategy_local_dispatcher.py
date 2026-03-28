@@ -27,7 +27,6 @@ from gsy_framework.enums import AvailableMarketTypes
 from gsy_e.external.external_strategy import (
     ExternalOrderInput,
     ExternalStrategyBase,
-    OrderDispatchMode,
 )
 from gsy_e.models.area import Area
 
@@ -59,7 +58,6 @@ def get_setup(config):
                 time_slot=_NOMINAL_SLOT,
             ),
         ],
-        dispatch_mode=OrderDispatchMode.LOCAL_MARKET,
     )
 
     producer = ExternalStrategyBase(
@@ -72,7 +70,6 @@ def get_setup(config):
                 time_slot=_NOMINAL_SLOT,
             ),
         ],
-        dispatch_mode=OrderDispatchMode.LOCAL_MARKET,
     )
 
     area = Area(
