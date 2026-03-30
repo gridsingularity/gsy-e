@@ -1,6 +1,6 @@
 # pylint: disable=missing-function-docstring, protected-access, missing-class-docstring
 from decimal import Decimal
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, PropertyMock, patch
 
 import pendulum
 import pytest
@@ -45,16 +45,20 @@ def make_slot_info(
 
 
 def make_bid_input(energy=BID_ENERGY, min_price=MIN_PRICE, max_price=MAX_PRICE) -> HttpOrderInput:
-    return HttpOrderInput(energy_kWh=energy, min_price=min_price, max_price=max_price)
+    return HttpOrderInput(
+        energy_kWh=energy, min_price=min_price, max_price=max_price, time_slot=DELIVERY_START
+    )
 
 
 def make_offer_input(
     energy=OFFER_ENERGY, min_price=MIN_PRICE, max_price=MAX_PRICE
 ) -> HttpOrderInput:
-    return HttpOrderInput(energy_kWh=energy, min_price=min_price, max_price=max_price)
+    return HttpOrderInput(
+        energy_kWh=energy, min_price=min_price, max_price=max_price, time_slot=DELIVERY_START
+    )
 
 
-def make_connector(slot_infos=None) -> MagicMock:
+def make_connector() -> MagicMock:
     """Return a mock connector."""
     connector = MagicMock()
     connector.post_bid.return_value = "bid-id-001"
@@ -277,8 +281,9 @@ class TestEWCGExternalStrategy:
         strategy = make_strategy(bid_inputs=[make_bid_input()], connector=connector)
 
         slot = make_slot_info(opening=SLOT_OPEN, closing=SLOT_CLOSE)
-        strategy.on_market_slot(slot)
-        strategy.on_market_slot(slot)
+        with patch.object(strategy, "_clean_expired_slots"):
+            strategy.on_market_slot(slot)
+            strategy.on_market_slot(slot)
 
         assert connector.post_bid.call_count == 1
 
@@ -292,7 +297,7 @@ class TestEWCGExternalStrategy:
             delivery_start=past_slot_close,
             delivery_end=past_slot_close.add(minutes=15),
         )
-        connector = make_connector(slot_infos=[make_slot_info()])
+        connector = make_connector()
         strategy = make_strategy(bid_inputs=[make_bid_input()], connector=connector)
 
         strategy._slot_states.append(MarketSlotState(slot_info=past_slot_info))
@@ -309,11 +314,14 @@ class TestEWCGExternalStrategy:
         connector.post_bid.side_effect = ["old-bid", "new-bid"]
         strategy = make_strategy(bid_inputs=[make_bid_input()], connector=connector)
 
-        strategy.on_market_cycle(SLOT_OPEN)
+        slot = make_slot_info()
+        with patch.object(strategy, "_clean_expired_slots"):
+            strategy.on_market_slot(slot)
 
         # Advance to the first scheduled update timepoint after opening
         tick = SLOT_OPEN.add(minutes=5)
-        strategy.on_tick(tick)
+        with patch.object(type(strategy), "now", new_callable=PropertyMock, return_value=tick):
+            strategy.on_tick()
 
         assert connector.delete_bid.call_count == 1
         assert connector.post_bid.call_count == 2
@@ -330,7 +338,8 @@ class TestEWCGExternalStrategy:
 
         # Tick at a time that is not a scheduled update point
         between = SLOT_OPEN.add(minutes=2)
-        strategy.on_tick(between)
+        with patch.object(type(strategy), "now", new_callable=PropertyMock, return_value=between):
+            strategy.on_tick()
 
         connector.delete_bid.assert_not_called()
         assert connector.post_bid.call_count == 1  # only the initial post
@@ -365,9 +374,24 @@ class TestEWCGExternalStrategy:
     def test_on_offer_traded_reduces_remaining_energy():
         connector = make_connector()
         strategy = make_strategy(offer_inputs=[make_offer_input(energy=3.0)], connector=connector)
-        strategy.on_market_cycle(SLOT_OPEN)
 
-        strategy.on_offer_traded(SLOT_OPEN, 1.0)
+        slot = make_slot_info()
+        with patch.object(strategy, "_clean_expired_slots"):
+            strategy.on_market_slot(slot)
+
+        strategy.on_order_traded(
+            EnergyTrade(
+                market_id=MARKET_ID,
+                offer_id="offer-id-001",
+                bid_id="not-a-bid",
+                price=0.0,
+                energy_kWh=1.0,
+                seller="seller",
+                buyer="buyer",
+                residual_offer_id=None,
+                residual_bid_id=None,
+            )
+        )
 
         assert _get_state(strategy, SLOT_OPEN).remaining_offer_energy_kWh == pytest.approx(2.0)
 
@@ -375,9 +399,24 @@ class TestEWCGExternalStrategy:
     def test_remaining_energy_does_not_go_negative():
         connector = make_connector()
         strategy = make_strategy(bid_inputs=[make_bid_input(energy=1.0)], connector=connector)
-        strategy.on_market_cycle(SLOT_OPEN)
 
-        strategy.on_bid_traded(SLOT_OPEN, 999.0)
+        slot = make_slot_info()
+        with patch.object(strategy, "_clean_expired_slots"):
+            strategy.on_market_slot(slot)
+
+        strategy.on_order_traded(
+            EnergyTrade(
+                market_id=MARKET_ID,
+                bid_id="bid-id-001",
+                offer_id="not-an-offer",
+                price=0.0,
+                energy_kWh=999.0,
+                seller="seller",
+                buyer="buyer",
+                residual_offer_id=None,
+                residual_bid_id=None,
+            )
+        )
 
         assert _get_state(strategy, SLOT_OPEN).remaining_bid_energy_kWh == 0.0
 
@@ -386,8 +425,19 @@ class TestEWCGExternalStrategy:
         connector = make_connector()
         strategy = make_strategy(bid_inputs=[make_bid_input()], connector=connector)
 
-        unknown_slot = SLOT_OPEN.add(hours=10)
-        strategy.on_bid_traded(unknown_slot, 1.0)  # must not raise
+        strategy.on_order_traded(
+            EnergyTrade(
+                market_id="unknown-market-id",
+                bid_id="bid-id-001",
+                offer_id="not-an-offer",
+                price=0.0,
+                energy_kWh=1.0,
+                seller="seller",
+                buyer="buyer",
+                residual_offer_id=None,
+                residual_bid_id=None,
+            )
+        )  # must not raise
 
     @staticmethod
     def test_subsequent_post_uses_reduced_energy():
@@ -395,12 +445,30 @@ class TestEWCGExternalStrategy:
         connector.post_bid.side_effect = ["bid-1", "bid-2"]
         strategy = make_strategy(bid_inputs=[make_bid_input(energy=2.0)], connector=connector)
 
-        strategy.on_market_cycle(SLOT_OPEN)
-        strategy.on_bid_traded(SLOT_OPEN, 1.0)
+        slot = make_slot_info()
+        with patch.object(strategy, "_clean_expired_slots"):
+            strategy.on_market_slot(slot)
+
+        strategy.on_order_traded(
+            EnergyTrade(
+                market_id=MARKET_ID,
+                bid_id="bid-1",
+                offer_id="not-an-offer",
+                price=0.0,
+                energy_kWh=1.0,
+                seller="seller",
+                buyer="buyer",
+                residual_offer_id=None,
+                residual_bid_id=None,
+            )
+        )
 
         # Trigger a price update to cause a re-post
         update_tick = SLOT_OPEN.add(minutes=5)
-        strategy.on_tick(update_tick)
+        with patch.object(
+            type(strategy), "now", new_callable=PropertyMock, return_value=update_tick
+        ):
+            strategy.on_tick()
 
         # Second post_bid call should use the reduced remaining energy (1.0 kWh)
         second_call_args = connector.post_bid.call_args_list[1]
@@ -419,10 +487,16 @@ class TestEWCGExternalStrategy:
             connector=connector,
         )
 
-        strategy.on_market_cycle(SLOT_OPEN)
+        slot = make_slot_info()
+        with patch.object(strategy, "_clean_expired_slots"):
+            strategy.on_market_slot(slot)
 
         connector.post_bid.side_effect = ["new-bid-1", "new-bid-2"]
-        strategy.on_tick(SLOT_OPEN.add(minutes=5))
+        update_tick = SLOT_OPEN.add(minutes=5)
+        with patch.object(
+            type(strategy), "now", new_callable=PropertyMock, return_value=update_tick
+        ):
+            strategy.on_tick()
 
         # Both deletes were attempted despite the first failing
         assert connector.delete_bid.call_count == 2
