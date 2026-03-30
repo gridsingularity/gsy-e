@@ -1,16 +1,16 @@
 # pylint: disable=missing-function-docstring, protected-access, missing-class-docstring
 from decimal import Decimal
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pendulum
 import pytest
 
-from gsy_e.external.proxy.ewds_strategy import (
-    EWDSExternalStrategy,
+from gsy_e.external.proxy.ewcg_strategy import (
+    EWCGExternalStrategy,
     HttpOrderInput,
+    MarketSlotState,
 )
-from gsy_e.external.proxy.connection import StubEWDSConnection, EWDSMarketSlotInfo
-from gsy_e.external.proxy.ewds_strategy import _HttpSlotState
+from gsy_e.external.proxy.connection import StubConnection, MarketSlotInfo, EnergyTrade
 from gsy_e.external.proxy.price_updater import SlotPriceUpdater
 
 
@@ -19,6 +19,7 @@ SLOT_CLOSE = SLOT_OPEN.add(minutes=15)
 DELIVERY_START = SLOT_CLOSE
 DELIVERY_END = DELIVERY_START.add(minutes=15)
 MARKET_ID = "market-uuid-001"
+COMMUNITY_ID = "community-uuid"
 
 BID_ENERGY = 1.0
 OFFER_ENERGY = 2.0
@@ -32,9 +33,10 @@ def make_slot_info(
     delivery_start=DELIVERY_START,
     delivery_end=DELIVERY_END,
     market_id=MARKET_ID,
-) -> EWDSMarketSlotInfo:
-    return EWDSMarketSlotInfo(
+) -> MarketSlotInfo:
+    return MarketSlotInfo(
         market_id=market_id,
+        community_id=COMMUNITY_ID,
         opening_time=opening,
         closing_time=closing,
         delivery_start_time=delivery_start,
@@ -53,24 +55,31 @@ def make_offer_input(
 
 
 def make_connector(slot_infos=None) -> MagicMock:
-    """Return a mock connector whose get_active_market_slots returns slot_infos."""
+    """Return a mock connector."""
     connector = MagicMock()
-    connector.get_active_market_slots.return_value = (
-        [make_slot_info()] if slot_infos is None else slot_infos
-    )
     connector.post_bid.return_value = "bid-id-001"
     connector.post_offer.return_value = "offer-id-001"
     return connector
 
 
-def make_strategy(bid_inputs=None, offer_inputs=None, connector=None) -> EWDSExternalStrategy:
+def make_strategy(bid_inputs=None, offer_inputs=None, connector=None) -> EWCGExternalStrategy:
     if connector is None:
         connector = make_connector()
-    return EWDSExternalStrategy(
+    return EWCGExternalStrategy(
         connector=connector,
         bid_inputs=bid_inputs,
         offer_inputs=offer_inputs,
     )
+
+
+def _get_state(strategy: EWCGExternalStrategy, opening_time) -> MarketSlotState:
+    """Return the MarketSlotState for the given slot opening time."""
+    return next(s for s in strategy._slot_states if s.slot_info.opening_time == opening_time)
+
+
+def _has_slot(strategy: EWCGExternalStrategy, opening_time) -> bool:
+    """Return True if a slot with the given opening time is tracked."""
+    return any(s.slot_info.opening_time == opening_time for s in strategy._slot_states)
 
 
 class TestSlotPriceUpdater:
@@ -176,14 +185,12 @@ class TestSlotPriceUpdater:
         assert updater.get_rate(after) == Decimal("50")
 
 
-class TestStubEWDSConnection:
+class TestStubConnection:
 
     @staticmethod
     def test_all_methods_raise_not_implemented():
-        connector = StubEWDSConnection(created_by="trader-1")
+        connector = StubConnection(created_by="trader-1")
         slot = SLOT_OPEN
-        with pytest.raises(NotImplementedError):
-            connector.get_active_market_slots()
         with pytest.raises(NotImplementedError):
             connector.post_bid(MARKET_ID, slot, 1.0, Decimal("20"))
         with pytest.raises(NotImplementedError):
@@ -194,7 +201,7 @@ class TestStubEWDSConnection:
             connector.delete_offer(slot, "id")
 
 
-class TestHttpExternalStrategyInputUpdates:
+class TestEWCGExternalStrategy:
 
     @staticmethod
     def test_default_inputs_are_empty():
@@ -216,19 +223,18 @@ class TestHttpExternalStrategyInputUpdates:
         strategy.update_offer_inputs(new_inputs)
         assert strategy._offer_inputs is new_inputs
 
-
-class TestHttpExternalStrategyOnMarketCycle:
-
     @staticmethod
     def test_opens_slot_and_posts_bid():
         connector = make_connector()
         connector.post_bid.return_value = "bid-1"
         strategy = make_strategy(bid_inputs=[make_bid_input()], connector=connector)
 
-        strategy.on_market_cycle(SLOT_OPEN)
+        slot = make_slot_info(opening=SLOT_OPEN, closing=SLOT_CLOSE)
+        with patch.object(strategy, "_clean_expired_slots"):
+            strategy.on_market_slot(slot)
 
         connector.post_bid.assert_called_once()
-        assert SLOT_OPEN in strategy._slot_states
+        assert _has_slot(strategy, SLOT_OPEN)
 
     @staticmethod
     def test_opens_slot_and_posts_offer():
@@ -236,10 +242,12 @@ class TestHttpExternalStrategyOnMarketCycle:
         connector.post_offer.return_value = "offer-1"
         strategy = make_strategy(offer_inputs=[make_offer_input()], connector=connector)
 
-        strategy.on_market_cycle(SLOT_OPEN)
+        slot = make_slot_info(opening=SLOT_OPEN, closing=SLOT_CLOSE)
+        with patch.object(strategy, "_clean_expired_slots"):
+            strategy.on_market_slot(slot)
 
         connector.post_offer.assert_called_once()
-        assert SLOT_OPEN in strategy._slot_states
+        assert _has_slot(strategy, SLOT_OPEN)
 
     @staticmethod
     def test_posts_multiple_bids_and_offers():
@@ -252,11 +260,13 @@ class TestHttpExternalStrategyOnMarketCycle:
             connector=connector,
         )
 
-        strategy.on_market_cycle(SLOT_OPEN)
+        slot = make_slot_info(opening=SLOT_OPEN, closing=SLOT_CLOSE)
+        with patch.object(strategy, "_clean_expired_slots"):
+            strategy.on_market_slot(slot)
 
         assert connector.post_bid.call_count == 2
         assert connector.post_offer.call_count == 1
-        state = strategy._slot_states[SLOT_OPEN]
+        state = _get_state(strategy, SLOT_OPEN)
         assert state.open_bid_ids == ["bid-1", "bid-2"]
         assert state.open_offer_ids == ["offer-1"]
 
@@ -266,8 +276,9 @@ class TestHttpExternalStrategyOnMarketCycle:
         connector.post_bid.return_value = "bid-1"
         strategy = make_strategy(bid_inputs=[make_bid_input()], connector=connector)
 
-        strategy.on_market_cycle(SLOT_OPEN)
-        strategy.on_market_cycle(SLOT_OPEN)
+        slot = make_slot_info(opening=SLOT_OPEN, closing=SLOT_CLOSE)
+        strategy.on_market_slot(slot)
+        strategy.on_market_slot(slot)
 
         assert connector.post_bid.call_count == 1
 
@@ -284,15 +295,13 @@ class TestHttpExternalStrategyOnMarketCycle:
         connector = make_connector(slot_infos=[make_slot_info()])
         strategy = make_strategy(bid_inputs=[make_bid_input()], connector=connector)
 
-        strategy._slot_states[past_slot_open] = _HttpSlotState(slot_info=past_slot_info)
+        strategy._slot_states.append(MarketSlotState(slot_info=past_slot_info))
 
-        strategy.on_market_cycle(SLOT_OPEN)
+        slot = make_slot_info(opening=SLOT_OPEN, closing=SLOT_CLOSE)
+        strategy.on_market_slot(slot)
 
-        assert past_slot_open not in strategy._slot_states
-        assert SLOT_OPEN in strategy._slot_states
-
-
-class TestHttpExternalStrategyOnTick:
+        assert not _has_slot(strategy, past_slot_open)
+        assert _has_slot(strategy, SLOT_OPEN)
 
     @staticmethod
     def test_updates_orders_when_updater_is_due():
@@ -315,7 +324,9 @@ class TestHttpExternalStrategyOnTick:
         connector.post_bid.return_value = "bid-1"
         strategy = make_strategy(bid_inputs=[make_bid_input()], connector=connector)
 
-        strategy.on_market_cycle(SLOT_OPEN)
+        slot = make_slot_info(opening=SLOT_OPEN, closing=SLOT_CLOSE)
+        with patch.object(strategy, "_clean_expired_slots"):
+            strategy.on_market_slot(slot)
 
         # Tick at a time that is not a scheduled update point
         between = SLOT_OPEN.add(minutes=2)
@@ -325,28 +336,30 @@ class TestHttpExternalStrategyOnTick:
         assert connector.post_bid.call_count == 1  # only the initial post
 
     @staticmethod
-    def test_no_op_when_no_slot_states():
-        connector = make_connector(slot_infos=[])
-        strategy = make_strategy(bid_inputs=[make_bid_input()], connector=connector)
-
-        strategy.on_market_cycle(SLOT_OPEN)
-        strategy.on_tick(SLOT_OPEN.add(minutes=5))
-
-        connector.delete_bid.assert_not_called()
-        connector.post_bid.assert_not_called()
-
-
-class TestHttpExternalStrategyTraded:
-
-    @staticmethod
-    def test_on_bid_traded_reduces_remaining_energy():
+    def test_on_order_traded_for_bid_reduces_remaining_energy():
         connector = make_connector()
-        strategy = make_strategy(bid_inputs=[make_bid_input(energy=2.0)], connector=connector)
-        strategy.on_market_cycle(SLOT_OPEN)
+        bid = make_bid_input(energy=2.0)
+        strategy = make_strategy(bid_inputs=[bid], connector=connector)
 
-        strategy.on_bid_traded(SLOT_OPEN, 0.5)
+        slot = make_slot_info(opening=SLOT_OPEN, closing=SLOT_CLOSE)
+        with patch.object(strategy, "_clean_expired_slots"):
+            strategy.on_market_slot(slot)
 
-        assert strategy._slot_states[SLOT_OPEN].remaining_bid_energy_kWh == pytest.approx(1.5)
+        strategy.on_order_traded(
+            EnergyTrade(
+                market_id=MARKET_ID,
+                bid_id="bid-id-001",  # matches connector.post_bid.return_value
+                offer_id="offer-id-001",
+                residual_bid_id=None,
+                residual_offer_id=None,
+                energy_kWh=0.5,
+                price=10,
+                buyer="buyer",
+                seller="seller",
+            )
+        )
+
+        assert _get_state(strategy, SLOT_OPEN).remaining_bid_energy_kWh == pytest.approx(1.5)
 
     @staticmethod
     def test_on_offer_traded_reduces_remaining_energy():
@@ -356,7 +369,7 @@ class TestHttpExternalStrategyTraded:
 
         strategy.on_offer_traded(SLOT_OPEN, 1.0)
 
-        assert strategy._slot_states[SLOT_OPEN].remaining_offer_energy_kWh == pytest.approx(2.0)
+        assert _get_state(strategy, SLOT_OPEN).remaining_offer_energy_kWh == pytest.approx(2.0)
 
     @staticmethod
     def test_remaining_energy_does_not_go_negative():
@@ -366,7 +379,7 @@ class TestHttpExternalStrategyTraded:
 
         strategy.on_bid_traded(SLOT_OPEN, 999.0)
 
-        assert strategy._slot_states[SLOT_OPEN].remaining_bid_energy_kWh == 0.0
+        assert _get_state(strategy, SLOT_OPEN).remaining_bid_energy_kWh == 0.0
 
     @staticmethod
     def test_traded_for_unknown_slot_is_silently_ignored():
@@ -395,9 +408,6 @@ class TestHttpExternalStrategyTraded:
             2
         ]  # positional arg: energy_kWh (after market_id, time_slot)
         assert posted_energy == pytest.approx(1.0)
-
-
-class TestHttpExternalStrategyCancelOrders:
 
     @staticmethod
     def test_cancel_continues_after_connector_error():
