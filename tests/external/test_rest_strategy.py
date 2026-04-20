@@ -9,7 +9,12 @@ from fastapi.testclient import TestClient
 from gsy_framework.enums import AvailableMarketTypes
 
 from gsy_e.external.external_strategy import ExternalOrderInput
-from gsy_e.external.rest_strategy import OrderInputRequest, RestExternalStrategy
+from gsy_e.external.rest_strategy import (
+    OrderInputRequest,
+    RestExternalStrategy,
+    RestStrategyServer,
+    configure_rest_server,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -48,17 +53,28 @@ def make_external_order_input(
     )
 
 
-def make_strategy(bid_inputs=None, offer_inputs=None, rest_port=8099) -> RestExternalStrategy:
+def make_strategy(bid_inputs=None, offer_inputs=None, area_name="house-1") -> RestExternalStrategy:
     strategy = RestExternalStrategy(
         bid_inputs=bid_inputs,
         offer_inputs=offer_inputs,
-        rest_port=rest_port,
     )
     area_mock = MagicMock()
     area_mock.now = SLOT_START
+    area_mock.name = area_name
     strategy.area = area_mock
     strategy._dispatcher = MagicMock()
     return strategy
+
+
+@pytest.fixture(autouse=True)
+def _reset_server_singleton():
+    """Ensure each test starts with a fresh, unstarted RestStrategyServer."""
+    RestStrategyServer._instance = None
+    yield
+    srv = RestStrategyServer._instance
+    if srv is not None and srv._uvicorn_server is not None:
+        srv._stop_server()
+    RestStrategyServer._instance = None
 
 
 # ---------------------------------------------------------------------------
@@ -107,11 +123,13 @@ class TestRestEndpoints:
 
     @pytest.fixture()
     def client(self):
-        strategy = make_strategy()
-        return TestClient(strategy._app), strategy
+        server = RestStrategyServer.instance()
+        strategy = make_strategy(area_name="house-1")
+        server._strategies["house-1"] = strategy
+        return TestClient(server._app), strategy, server
 
     def test_put_bids_replaces_pending_inputs(self, client):
-        tc, strategy = client
+        tc, strategy, _ = client
         payload = [
             {
                 "energy_kWh": 2.0,
@@ -121,14 +139,14 @@ class TestRestEndpoints:
                 "time_slot": SLOT_START_ISO,
             }
         ]
-        response = tc.put("/bids", json=payload)
+        response = tc.put("/house-1/bids", json=payload)
         assert response.status_code == 200
         assert response.json() == {"status": "ok", "count": 1}
         assert len(strategy._pending_bid_inputs) == 1
         assert strategy._pending_bid_inputs[0].energy_kWh == 2.0
 
     def test_put_offers_replaces_pending_inputs(self, client):
-        tc, strategy = client
+        tc, strategy, _ = client
         payload = [
             {
                 "energy_kWh": 3.0,
@@ -138,23 +156,23 @@ class TestRestEndpoints:
                 "time_slot": SLOT_START_ISO,
             }
         ]
-        response = tc.put("/offers", json=payload)
+        response = tc.put("/house-1/offers", json=payload)
         assert response.status_code == 200
         assert response.json() == {"status": "ok", "count": 1}
         assert len(strategy._pending_offer_inputs) == 1
         assert strategy._pending_offer_inputs[0].energy_kWh == 3.0
 
     def test_put_bids_with_empty_list_clears_inputs(self, client):
-        tc, strategy = client
+        tc, strategy, _ = client
         strategy._pending_bid_inputs = [make_external_order_input()]
-        response = tc.put("/bids", json=[])
+        response = tc.put("/house-1/bids", json=[])
         assert response.status_code == 200
         assert strategy._pending_bid_inputs == []
 
     def test_get_bids_returns_current_pending(self, client):
-        tc, strategy = client
+        tc, strategy, _ = client
         strategy._pending_bid_inputs = [make_external_order_input(energy_kWh=5.0)]
-        response = tc.get("/bids")
+        response = tc.get("/house-1/bids")
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 1
@@ -162,16 +180,16 @@ class TestRestEndpoints:
         assert data[0]["market_type"] == "SPOT"
 
     def test_get_offers_returns_current_pending(self, client):
-        tc, strategy = client
+        tc, strategy, _ = client
         strategy._pending_offer_inputs = [make_external_order_input(energy_kWh=7.0)]
-        response = tc.get("/offers")
+        response = tc.get("/house-1/offers")
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 1
         assert data[0]["energy_kWh"] == 7.0
 
     def test_put_bids_with_multiple_inputs(self, client):
-        tc, strategy = client
+        tc, strategy, _ = client
         payload = [
             {
                 "energy_kWh": 1.0,
@@ -188,9 +206,57 @@ class TestRestEndpoints:
                 "time_slot": SLOT_START_ISO,
             },
         ]
-        response = tc.put("/bids", json=payload)
+        response = tc.put("/house-1/bids", json=payload)
         assert response.json() == {"status": "ok", "count": 2}
         assert len(strategy._pending_bid_inputs) == 2
+
+    def test_put_bids_unknown_area_returns_404(self, client):
+        tc, _, _ = client
+        response = tc.put(
+            "/unknown-area/bids",
+            json=[
+                {
+                    "energy_kWh": 1.0,
+                    "min_price": 5.0,
+                    "max_price": 20.0,
+                    "market_type": "SPOT",
+                    "time_slot": SLOT_START_ISO,
+                }
+            ],
+        )
+        assert response.status_code == 404
+
+    def test_routes_dispatch_by_area_name(self):
+        server = RestStrategyServer.instance()
+        strategy_a = make_strategy(area_name="house-A")
+        strategy_b = make_strategy(area_name="house-B")
+        server._strategies["house-A"] = strategy_a
+        server._strategies["house-B"] = strategy_b
+        tc = TestClient(server._app)
+
+        payload_a = [
+            {
+                "energy_kWh": 1.0,
+                "min_price": 1.0,
+                "max_price": 10.0,
+                "market_type": "SPOT",
+                "time_slot": SLOT_START_ISO,
+            }
+        ]
+        payload_b = [
+            {
+                "energy_kWh": 2.0,
+                "min_price": 2.0,
+                "max_price": 20.0,
+                "market_type": "SPOT",
+                "time_slot": SLOT_START_ISO,
+            }
+        ]
+        tc.put("/house-A/bids", json=payload_a)
+        tc.put("/house-B/bids", json=payload_b)
+
+        assert strategy_a._pending_bid_inputs[0].energy_kWh == 1.0
+        assert strategy_b._pending_bid_inputs[0].energy_kWh == 2.0
 
 
 # ---------------------------------------------------------------------------
@@ -244,32 +310,71 @@ class TestRestExternalStrategyMarketCycle:
 
 
 # ---------------------------------------------------------------------------
-# Tests: server thread management
+# Tests: registration and shared server lifecycle
 # ---------------------------------------------------------------------------
 
 
-class TestRestExternalStrategyServerThread:
+class TestRestStrategyServerRegistration:
 
     @staticmethod
-    def test_event_activate_starts_server_thread():
-        strategy = make_strategy()
-        with patch.object(strategy, "_start_server") as mock_start:
+    def test_event_activate_registers_strategy_with_shared_server():
+        strategy = make_strategy(area_name="area-x")
+        with patch.object(RestStrategyServer, "_start_server"):
             strategy.event_activate()
-            mock_start.assert_called_once()
+        assert RestStrategyServer.instance()._strategies["area-x"] is strategy
 
     @staticmethod
-    def test_event_deactivate_stops_server():
-        strategy = make_strategy()
-        with patch.object(strategy, "_stop_server") as mock_stop:
+    def test_event_deactivate_deregisters_strategy():
+        strategy = make_strategy(area_name="area-x")
+        with patch.object(RestStrategyServer, "_start_server"), patch.object(
+            RestStrategyServer, "_stop_server"
+        ):
+            strategy.event_activate()
             strategy.event_deactivate()
-            mock_stop.assert_called_once()
+        assert "area-x" not in RestStrategyServer.instance()._strategies
+
+    @staticmethod
+    def test_first_registration_starts_server_subsequent_do_not():
+        server = RestStrategyServer.instance()
+        strategy_a = make_strategy(area_name="a")
+        strategy_b = make_strategy(area_name="b")
+        with patch.object(server, "_start_server") as mock_start:
+            server.register("a", strategy_a)
+            # Simulate a running server so the second register() does not start it.
+            server._uvicorn_server = MagicMock()
+            server.register("b", strategy_b)
+            assert mock_start.call_count == 1
+
+    @staticmethod
+    def test_last_deregistration_stops_server():
+        server = RestStrategyServer.instance()
+        strategy_a = make_strategy(area_name="a")
+        strategy_b = make_strategy(area_name="b")
+        server._strategies = {"a": strategy_a, "b": strategy_b}
+        server._uvicorn_server = MagicMock()
+        with patch.object(server, "_stop_server") as mock_stop:
+            server.deregister("a")
+            assert mock_stop.call_count == 0
+            server.deregister("b")
+            assert mock_stop.call_count == 1
+
+    @staticmethod
+    def test_duplicate_registration_with_different_strategy_raises():
+        server = RestStrategyServer.instance()
+        strategy_a = make_strategy(area_name="a")
+        strategy_a2 = make_strategy(area_name="a")
+        with patch.object(server, "_start_server"):
+            server.register("a", strategy_a)
+            with pytest.raises(ValueError):
+                server.register("a", strategy_a2)
+
+
+class TestRestStrategyServerLifecycle:
 
     @staticmethod
     def test_start_server_spawns_daemon_thread():
-        strategy = make_strategy(rest_port=19999)
+        server = RestStrategyServer(host="127.0.0.1", port=19999)
         mock_server = MagicMock()
-        # Block run() until we release the event so the thread stays alive long
-        # enough to inspect its properties.
         started = threading.Event()
         block = threading.Event()
 
@@ -279,23 +384,42 @@ class TestRestExternalStrategyServerThread:
 
         mock_server.run = slow_run
         with patch("uvicorn.Server", return_value=mock_server):
-            strategy._start_server()
+            server._start_server()
             started.wait(timeout=2)
-            assert strategy._server_thread is not None
-            assert strategy._server_thread.daemon is True
-            assert strategy._server_thread.is_alive()
+            assert server._server_thread is not None
+            assert server._server_thread.daemon is True
+            assert server._server_thread.is_alive()
         block.set()
-        strategy._server_thread.join(timeout=2)
+        server._server_thread.join(timeout=2)
 
     @staticmethod
     def test_stop_server_signals_exit_and_joins():
-        strategy = make_strategy()
+        server = RestStrategyServer()
         mock_thread = MagicMock(spec=threading.Thread)
-        strategy._server_thread = mock_thread
+        server._server_thread = mock_thread
         mock_uvicorn = MagicMock()
-        strategy._uvicorn_server = mock_uvicorn
+        server._uvicorn_server = mock_uvicorn
 
-        strategy._stop_server()
+        server._stop_server()
 
         assert mock_uvicorn.should_exit is True
         mock_thread.join.assert_called_once_with(timeout=5)
+        assert server._uvicorn_server is None
+        assert server._server_thread is None
+
+
+class TestConfigureRestServer:
+
+    @staticmethod
+    def test_configure_rest_server_sets_host_and_port():
+        server = configure_rest_server(host="127.0.0.1", port=9000)
+        assert server is RestStrategyServer.instance()
+        assert server._host == "127.0.0.1"
+        assert server._port == 9000
+
+    @staticmethod
+    def test_configure_rest_server_raises_after_startup():
+        server = RestStrategyServer.instance()
+        server._uvicorn_server = MagicMock()  # simulate running
+        with pytest.raises(RuntimeError):
+            configure_rest_server(host="127.0.0.1", port=9001)

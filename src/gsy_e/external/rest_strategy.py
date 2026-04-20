@@ -1,27 +1,31 @@
 """
 REST API extension for ExternalStrategyBase.
 
-Starts a FastAPI server in a background daemon thread so that bids and offers
-can be submitted over HTTP while a gsy-e simulation is running.  Incoming
-inputs are buffered behind a lock and flushed into the strategy at the
-beginning of every market cycle.
+A single FastAPI/uvicorn server is shared across every ``RestExternalStrategy``
+instance in the running simulation. Endpoints are namespaced by area name, so
+each incoming request is routed to the strategy whose ``area.name`` matches the
+path parameter. The server is started lazily on the first registration and
+stopped when the last strategy deregisters.
 """
 
 from __future__ import annotations
 
 import logging
 import threading
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import pendulum
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from gsy_framework.enums import AvailableMarketTypes
 from pydantic import BaseModel, Field
 
 from gsy_e.external.external_strategy import ExternalOrderInput, ExternalStrategyBase
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_REST_HOST = "0.0.0.0"
+DEFAULT_REST_PORT = 8080
 
 
 class OrderInputRequest(BaseModel):
@@ -64,127 +68,195 @@ class OrderInputRequest(BaseModel):
         )
 
 
-# pylint: disable=too-many-instance-attributes
-class RestExternalStrategy(ExternalStrategyBase):
+class RestStrategyServer:
     """
-    ExternalStrategyBase extended with a FastAPI REST server.
+    Shared FastAPI server that dispatches REST requests to the right strategy.
 
-    The server runs in a background daemon thread and exposes two endpoints:
+    Endpoints:
 
-    * ``PUT /bids``  – replace the pending bid inputs (list of :class:`OrderInputRequest`).
-    * ``PUT /offers`` – replace the pending offer inputs.
-    * ``GET /bids``  – return the currently pending bid inputs.
-    * ``GET /offers`` – return the currently pending offer inputs.
-
-    At the start of each market cycle the pending inputs are consumed and forwarded to
-    :meth:`update_bid_inputs` / :meth:`update_offer_inputs` before the parent cycle logic runs.
-
-    Args:
-        bid_inputs: Initial bid inputs (optional).
-        offer_inputs: Initial offer inputs (optional).
-        rest_host: Host address the server should bind to (default ``"0.0.0.0"``).
-        rest_port: TCP port the server should listen on (default ``8080``).
+    * ``PUT /{area_name}/bids``   – replace pending bid inputs for an area.
+    * ``PUT /{area_name}/offers`` – replace pending offer inputs for an area.
+    * ``GET /{area_name}/bids``   – return pending bid inputs for an area.
+    * ``GET /{area_name}/offers`` – return pending offer inputs for an area.
     """
 
-    def __init__(
-        self,
-        bid_inputs: Optional[List[ExternalOrderInput]] = None,
-        offer_inputs: Optional[List[ExternalOrderInput]] = None,
-        rest_host: str = "0.0.0.0",
-        rest_port: int = 8080,
-    ) -> None:
-        super().__init__(bid_inputs=bid_inputs, offer_inputs=offer_inputs)
-        self._rest_host = rest_host
-        self._rest_port = rest_port
+    _instance: Optional["RestStrategyServer"] = None
 
-        # Pending inputs written by the REST thread and consumed by the sim thread.
-        self._lock = threading.Lock()
-        self._pending_bid_inputs: List[ExternalOrderInput] = list(bid_inputs or [])
-        self._pending_offer_inputs: List[ExternalOrderInput] = list(offer_inputs or [])
-
+    def __init__(self, host: str = DEFAULT_REST_HOST, port: int = DEFAULT_REST_PORT) -> None:
+        self._host = host
+        self._port = port
+        self._registry_lock = threading.Lock()
+        self._strategies: Dict[str, "RestExternalStrategy"] = {}
         self._uvicorn_server: Optional[uvicorn.Server] = None
         self._server_thread: Optional[threading.Thread] = None
         self._app: FastAPI = self._build_app()
 
-    # ------------------------------------------------------------------
-    # gsy-e lifecycle hooks
-    # ------------------------------------------------------------------
+    @classmethod
+    def instance(cls) -> "RestStrategyServer":
+        """Return the process-wide singleton, creating it with defaults if needed."""
+        if cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
 
-    def event_activate(self, **kwargs) -> None:
-        super().event_activate(**kwargs)
-        self._start_server()
+    def register(self, area_name: str, strategy: "RestExternalStrategy") -> None:
+        """Add a strategy to the registry and start the server if not already running."""
+        with self._registry_lock:
+            existing = self._strategies.get(area_name)
+            if existing is not None and existing is not strategy:
+                raise ValueError(
+                    f"Area {area_name!r} is already registered with a different strategy."
+                )
+            self._strategies[area_name] = strategy
+            if self._uvicorn_server is None:
+                self._start_server()
 
-    def event_market_cycle(self) -> None:
-        """Flush pending REST inputs, then run the normal market-cycle logic."""
-        with self._lock:
-            self.update_bid_inputs(list(self._pending_bid_inputs))
-            self.update_offer_inputs(list(self._pending_offer_inputs))
-        super().event_market_cycle()
-
-    def event_deactivate(self) -> None:
-        """Deactivate event, stops the Uvicorn server."""
-        self._stop_server()
+    def deregister(self, area_name: str) -> None:
+        """Remove a strategy from the registry, stopping the server if it was the last."""
+        with self._registry_lock:
+            self._strategies.pop(area_name, None)
+            if not self._strategies:
+                self._stop_server()
 
     def _start_server(self) -> None:
         config = uvicorn.Config(
             self._app,
-            host=self._rest_host,
-            port=self._rest_port,
+            host=self._host,
+            port=self._port,
             log_level="warning",
         )
         self._uvicorn_server = uvicorn.Server(config)
         self._server_thread = threading.Thread(
             target=self._uvicorn_server.run,
-            name="RestExternalStrategy-API",
+            name="RestStrategyServer",
             daemon=True,
         )
         self._server_thread.start()
-        logger.info("REST API server started on %s:%d", self._rest_host, self._rest_port)
+        logger.info("REST strategy server started on %s:%d", self._host, self._port)
 
     def _stop_server(self) -> None:
         if self._uvicorn_server is not None:
             self._uvicorn_server.should_exit = True
         if self._server_thread is not None:
             self._server_thread.join(timeout=5)
-        logger.info("REST API server stopped")
+        self._uvicorn_server = None
+        self._server_thread = None
+        logger.info("REST strategy server stopped")
+
+    def _lookup(self, area_name: str) -> "RestExternalStrategy":
+        strategy = self._strategies.get(area_name)
+        if strategy is None:
+            raise HTTPException(status_code=404, detail=f"Unknown area: {area_name!r}")
+        return strategy
 
     def _build_app(self) -> FastAPI:
         app = FastAPI(
             title="ExternalStrategy REST API",
             description=(
                 "Submit bids and offers to the running gsy-e simulation. "
-                "Inputs are applied at the start of the next market cycle."
+                "Endpoints are namespaced by area name; inputs are applied at the "
+                "start of the next market cycle."
             ),
         )
 
-        @app.put("/bids", summary="Replace pending bid inputs")
-        def put_bids(inputs: List[OrderInputRequest]) -> dict:
-            parsed = [inp.to_external_order_input() for inp in inputs]
-            with self._lock:
-                self._pending_bid_inputs = parsed
-            return {"status": "ok", "count": len(parsed)}
+        @app.put("/{area_name}/bids", summary="Replace pending bid inputs")
+        def put_bids(area_name: str, inputs: List[OrderInputRequest]) -> dict:
+            return self._lookup(area_name).replace_pending_bids(inputs)
 
-        @app.put("/offers", summary="Replace pending offer inputs")
-        def put_offers(inputs: List[OrderInputRequest]) -> dict:
-            parsed = [inp.to_external_order_input() for inp in inputs]
-            with self._lock:
-                self._pending_offer_inputs = parsed
-            return {"status": "ok", "count": len(parsed)}
+        @app.put("/{area_name}/offers", summary="Replace pending offer inputs")
+        def put_offers(area_name: str, inputs: List[OrderInputRequest]) -> dict:
+            return self._lookup(area_name).replace_pending_offers(inputs)
 
-        @app.get("/bids", summary="Get current pending bid inputs")
-        def get_bids() -> List[OrderInputRequest]:
-            with self._lock:
-                return [
-                    OrderInputRequest.from_external_order_input(inp)
-                    for inp in self._pending_bid_inputs
-                ]
+        @app.get("/{area_name}/bids", summary="Get current pending bid inputs")
+        def get_bids(area_name: str) -> List[OrderInputRequest]:
+            return self._lookup(area_name).snapshot_pending_bids()
 
-        @app.get("/offers", summary="Get current pending offer inputs")
-        def get_offers() -> List[OrderInputRequest]:
-            with self._lock:
-                return [
-                    OrderInputRequest.from_external_order_input(inp)
-                    for inp in self._pending_offer_inputs
-                ]
+        @app.get("/{area_name}/offers", summary="Get current pending offer inputs")
+        def get_offers(area_name: str) -> List[OrderInputRequest]:
+            return self._lookup(area_name).snapshot_pending_offers()
 
         return app
+
+
+def configure_rest_server(
+    host: str = DEFAULT_REST_HOST, port: int = DEFAULT_REST_PORT
+) -> RestStrategyServer:
+    """
+    Configure the shared REST server's bind address before any strategies activate.
+
+    Call this at simulation setup time. Once the server has started (i.e. at
+    least one strategy has registered) the configuration is frozen and a fresh
+    call raises ``RuntimeError``.
+    """
+    # pylint: disable=protected-access
+    existing = RestStrategyServer._instance
+    if existing is not None and existing._uvicorn_server is not None:
+        raise RuntimeError("REST strategy server is already running; configure before activation.")
+    RestStrategyServer._instance = RestStrategyServer(host=host, port=port)
+    return RestStrategyServer._instance
+
+
+class RestExternalStrategy(ExternalStrategyBase):
+    """
+    ExternalStrategyBase extended with REST access via the shared RestStrategyServer.
+
+    On ``event_activate`` the strategy registers itself under ``self.area.name`` on
+    the shared server. Requests to ``/{area.name}/bids`` and
+    ``/{area.name}/offers`` are routed to this instance. At the start of every
+    market cycle the pending inputs are flushed into the parent strategy.
+    """
+
+    def __init__(
+        self,
+        bid_inputs: Optional[List[ExternalOrderInput]] = None,
+        offer_inputs: Optional[List[ExternalOrderInput]] = None,
+    ) -> None:
+        super().__init__(bid_inputs=bid_inputs, offer_inputs=offer_inputs)
+
+        self._pending_lock = threading.Lock()
+        self._pending_bid_inputs: List[ExternalOrderInput] = list(bid_inputs or [])
+        self._pending_offer_inputs: List[ExternalOrderInput] = list(offer_inputs or [])
+
+    def event_activate(self, **kwargs) -> None:
+        super().event_activate(**kwargs)
+        RestStrategyServer.instance().register(self.area.name, self)
+
+    def event_market_cycle(self) -> None:
+        """Flush pending REST inputs, then run the normal market-cycle logic."""
+        with self._pending_lock:
+            self.update_bid_inputs(list(self._pending_bid_inputs))
+            self.update_offer_inputs(list(self._pending_offer_inputs))
+        super().event_market_cycle()
+
+    def event_deactivate(self) -> None:
+        """Deregister from the shared server; the server stops when empty."""
+        RestStrategyServer.instance().deregister(self.area.name)
+
+    def replace_pending_bids(self, inputs: List[OrderInputRequest]) -> dict:
+        """Replace the pending bid inputs from a REST request body."""
+        parsed = [inp.to_external_order_input() for inp in inputs]
+        with self._pending_lock:
+            self._pending_bid_inputs = parsed
+        return {"status": "ok", "count": len(parsed)}
+
+    def replace_pending_offers(self, inputs: List[OrderInputRequest]) -> dict:
+        """Replace the pending offer inputs from a REST request body."""
+        parsed = [inp.to_external_order_input() for inp in inputs]
+        with self._pending_lock:
+            self._pending_offer_inputs = parsed
+        return {"status": "ok", "count": len(parsed)}
+
+    def snapshot_pending_bids(self) -> List[OrderInputRequest]:
+        """Return the pending bid inputs as serialisable request objects."""
+        with self._pending_lock:
+            return [
+                OrderInputRequest.from_external_order_input(inp)
+                for inp in self._pending_bid_inputs
+            ]
+
+    def snapshot_pending_offers(self) -> List[OrderInputRequest]:
+        """Return the pending offer inputs as serialisable request objects."""
+        with self._pending_lock:
+            return [
+                OrderInputRequest.from_external_order_input(inp)
+                for inp in self._pending_offer_inputs
+            ]

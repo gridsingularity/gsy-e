@@ -356,3 +356,10 @@ class StubConnection(Connection):
 
     def delete_offer(self, time_slot: DateTime, order_id: str) -> None:
         raise NotImplementedError("delete_offer is not yet implemented")
+
+    def subscribe(
+        self,
+        on_market_slot: Callable[[MarketSlotInfo], None] = None,
+        on_trade: Callable[[EnergyTrade], None] = None,
+    ) -> None:
+        raise NotImplementedError("subscribe is not yet implemented")
