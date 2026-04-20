@@ -59,10 +59,8 @@ class PCMTankState(TankStateBase):
         """Return serializable dict of class parameters."""
         return {
             "initial_temp_C": self._params.initial_temp_C,
-            "min_temp_htf_C": self._params.min_temp_htf_C,
-            "max_temp_htf_C": self._params.max_temp_htf_C,
-            "min_temp_pcm_C": self._params.min_temp_pcm_C,
-            "max_temp_pcm_C": self._params.max_temp_pcm_C,
+            "min_temp_C": self._params.min_temp_C,
+            "max_temp_C": self._params.max_temp_C,
             "type": self._params.type.value,
             "pcm_tank_type": self._params.pcm_tank_type.value,
         }
@@ -102,8 +100,25 @@ class PCMTankState(TankStateBase):
     def _set_heat_demand_kJ(self, energy_kJ: float, time_slot: DateTime):
         self._heat_demand_kJ[time_slot] = energy_kJ
 
-    def _set_condenser_temp_C(self, temp_C: float, time_slot: DateTime):
-        self._condenser_temp_C[time_slot] = temp_C
+    def _set_condenser_temp_C(self, condenser_temp_C: float, time_slot: DateTime):
+        if (self._params.min_temp_C - condenser_temp_C) > FLOATING_POINT_TOLERANCE:
+            log.warning(
+                "The PCM storage tank reached it's minimum (%s), discharging "
+                "condensor temperature of %s is limited to the minimum",
+                self._params.min_temp_C,
+                round(condenser_temp_C, 2),
+            )
+            condenser_temp_C = self._params.min_temp_C
+        if (condenser_temp_C - self._params.max_temp_C) > FLOATING_POINT_TOLERANCE:
+            log.warning(
+                "The PCM storage tank reached it's maximum (%s), charging "
+                "condensor temperature of %s is limited to the maximum",
+                self._params.max_temp_C,
+                round(condenser_temp_C, 2),
+            )
+            condenser_temp_C = self._params.max_temp_C
+
+        self._condenser_temp_C[time_slot] = condenser_temp_C
 
     def _get_condenser_temp_C(self, time_slot: DateTime):
         return self._condenser_temp_C.get(time_slot, self.get_htf_temp_C(time_slot))
@@ -133,25 +148,6 @@ class PCMTankState(TankStateBase):
         assert 0 < condenser_temp_C < 100, f"unrealistic condenser temp {condenser_temp_C}"
         return condenser_temp_C
 
-    def _limit_condenser_temp(self, condenser_temp_C: float) -> float:
-        if (self._params.min_temp_htf_C - condenser_temp_C) > FLOATING_POINT_TOLERANCE:
-            log.warning(
-                "The PCM storage tank reached it's minimum (%s), discharging "
-                "condensor temperature of %s is limited to the minimum",
-                self._params.min_temp_htf_C,
-                round(condenser_temp_C, 2),
-            )
-            return self._params.min_temp_htf_C
-        if (condenser_temp_C - self._params.max_temp_htf_C) > FLOATING_POINT_TOLERANCE:
-            log.warning(
-                "The PCM storage tank reached it's maximum (%s), charging "
-                "condensor temperature of %s is limited to the maximum",
-                self._params.max_temp_htf_C,
-                round(condenser_temp_C, 2),
-            )
-            return self._params.max_temp_htf_C
-        return condenser_temp_C
-
     def increase_tank_temp_from_heat_energy(self, heat_energy_kWh: float, time_slot: DateTime):
         """Increase the temperature of the water tank with the provided heat energy."""
         assert heat_energy_kWh > FLOATING_POINT_TOLERANCE
@@ -168,19 +164,26 @@ class PCMTankState(TankStateBase):
         )
         self._decrease_storage_temp_from_condenser_temp(temp_cond_C, time_slot)
 
+    def _limit_temps_after_dis_charging(self, temps: list[float]):
+        temps = [
+            temp if temp <= self._params.max_temp_C else self._params.max_temp_C for temp in temps
+        ]
+        return [
+            temp if temp >= self._params.min_temp_C else self._params.min_temp_C for temp in temps
+        ]
+
     def _increase_storage_temp_from_condenser_temp(
         self, condenser_temp_C: float, time_slot: DateTime
     ):
         """Increase storage temperatures for provided condenser temperature."""
-        condenser_temp_C = self._limit_condenser_temp(condenser_temp_C)
         self._set_condenser_temp_C(condenser_temp_C, time_slot)
         htf_temps, pcm_temps = self._pcm_charge_model.get_temp_after_charging(
             current_htf_temps_C=self._get_htf_temps_C(self._last_time_slot(time_slot)),
             current_pcm_temps_C=self._get_pcm_temps_C(self._last_time_slot(time_slot)),
             charging_temp=condenser_temp_C,
         )
-        self._htf_temps_C[time_slot] = htf_temps
-        self._pcm_temps_C[time_slot] = pcm_temps
+        self._htf_temps_C[time_slot] = self._limit_temps_after_dis_charging(htf_temps)
+        self._pcm_temps_C[time_slot] = self._limit_temps_after_dis_charging(pcm_temps)
 
         self._set_soc_after_charging(time_slot)
 
@@ -188,15 +191,14 @@ class PCMTankState(TankStateBase):
         self, condenser_temp_C: float, time_slot: DateTime
     ):
         """Decrease storage temperatures for provided condenser temperature."""
-        condenser_temp_C = self._limit_condenser_temp(condenser_temp_C)
         self._set_condenser_temp_C(condenser_temp_C, time_slot)
         htf_temps, pcm_temps = self._pcm_discharge_model.get_temp_after_discharging(
             current_htf_temps_C=self._get_htf_temps_C(self._last_time_slot(time_slot)),
             current_pcm_temps_C=self._get_pcm_temps_C(self._last_time_slot(time_slot)),
             discharging_temp=condenser_temp_C,
         )
-        self._htf_temps_C[time_slot] = htf_temps
-        self._pcm_temps_C[time_slot] = pcm_temps
+        self._htf_temps_C[time_slot] = self._limit_temps_after_dis_charging(htf_temps)
+        self._pcm_temps_C[time_slot] = self._limit_temps_after_dis_charging(pcm_temps)
 
         self._set_soc_after_discharging(time_slot)
 
@@ -241,10 +243,8 @@ class PCMTankState(TankStateBase):
         self._pcm_temps_C = convert_str_to_pendulum_in_dict(state_dict["pcm_temps_C"])
         self._condenser_temp_C = convert_str_to_pendulum_in_dict(state_dict["condenser_temp_C"])
         self._soc = convert_str_to_pendulum_in_dict(state_dict["soc"])
-        self._params.min_temp_htf_C = state_dict["min_temp_htf_C"]
-        self._params.max_temp_htf_C = state_dict["max_temp_htf_C"]
-        self._params.min_temp_pcm_C = state_dict["min_temp_pcm_C"]
-        self._params.max_temp_pcm_C = state_dict["max_temp_pcm_C"]
+        self._params.min_temp_C = state_dict["min_temp_C"]
+        self._params.max_temp_C = state_dict["max_temp_C"]
         self._params.initial_temp_C = state_dict["initial_temp_C"]
 
     def delete_past_state_values(self, current_time_slot: DateTime):
@@ -263,12 +263,12 @@ class PCMTankState(TankStateBase):
 
     def get_soc_energy_kJ(self, time_slot: DateTime) -> float:
         """Return the available energy stored in the tank."""
-        if self.get_pcm_temp_C(time_slot) - self._params.min_temp_pcm_C < FLOATING_POINT_TOLERANCE:
+        if self.get_pcm_temp_C(time_slot) - self._params.min_temp_C < FLOATING_POINT_TOLERANCE:
             return 0
 
         return convert_kWh_to_kJ(
             self._get_heat_demand_kWh_from_deltaT(
-                self.get_pcm_temp_C(time_slot) - self._params.min_temp_pcm_C
+                self.get_pcm_temp_C(time_slot) - self._params.min_temp_C
             )
         )
 
@@ -286,12 +286,12 @@ class PCMTankState(TankStateBase):
 
     def get_dod_energy_kJ(self, time_slot: DateTime) -> float:
         """Return depth of discharge as an energy value in kJ."""
-        if self._params.max_temp_pcm_C - self.get_pcm_temp_C(time_slot) < FLOATING_POINT_TOLERANCE:
+        if self._params.max_temp_C - self.get_pcm_temp_C(time_slot) < FLOATING_POINT_TOLERANCE:
             return 0
 
         return convert_kWh_to_kJ(
             self._get_heat_demand_kWh_from_deltaT(
-                self._params.max_temp_pcm_C - self.get_pcm_temp_C(time_slot)
+                self._params.max_temp_C - self.get_pcm_temp_C(time_slot)
             )
         )
 
