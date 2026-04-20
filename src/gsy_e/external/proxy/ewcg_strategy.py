@@ -8,7 +8,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 from decimal import Decimal
-from typing import List, Optional
+from typing import List, Optional, Callable
 
 from pendulum import DateTime, Duration, duration, now
 
@@ -29,7 +29,7 @@ EPSILON: float = 1e-5
 
 
 @dataclass
-class HttpOrderInput:
+class OrderInput:
     """
     Bid or offer parameters over one market slot. Caller of the class should provide them.
     """
@@ -68,24 +68,32 @@ class EWCGExternalStrategy:
       the already-traded volume.
     """
 
+    # pylint: disable=too-many-arguments,too-many-positional-arguments
     def __init__(
         self,
         connector: Connection,
-        bid_inputs: Optional[List[HttpOrderInput]] = None,
-        offer_inputs: Optional[List[HttpOrderInput]] = None,
+        bid_inputs: Optional[List[OrderInput]] = None,
+        offer_inputs: Optional[List[OrderInput]] = None,
         update_interval: Optional[Duration] = None,
+        trade_callback: Optional[Callable[[EnergyTrade], None]] = None,
+        new_market_callback: Optional[Callable[[MarketSlotInfo], None]] = None,
     ) -> None:
         self._connector = connector
-        self._bid_inputs: List[HttpOrderInput] = bid_inputs or []
-        self._offer_inputs: List[HttpOrderInput] = offer_inputs or []
+        self._bid_inputs: List[OrderInput] = bid_inputs or []
+        self._offer_inputs: List[OrderInput] = offer_inputs or []
         self._update_interval: Duration = update_interval or _DEFAULT_UPDATE_INTERVAL
         self._slot_states: List[MarketSlotState] = []
+        self._trade_callback = trade_callback
+        self._new_market_callback = new_market_callback
+        self._connector.subscribe(
+            on_market_slot=self.on_market_slot, on_trade=self.on_order_traded
+        )
 
-    def update_bid_inputs(self, bid_inputs: List[HttpOrderInput]) -> None:
+    def update_bid_inputs(self, bid_inputs: List[OrderInput]) -> None:
         """Replace the bid input list before the next market cycle."""
         self._bid_inputs = bid_inputs
 
-    def update_offer_inputs(self, offer_inputs: List[HttpOrderInput]) -> None:
+    def update_offer_inputs(self, offer_inputs: List[OrderInput]) -> None:
         """Replace the offer input list before the next market cycle."""
         self._offer_inputs = offer_inputs
 
@@ -101,6 +109,8 @@ class EWCGExternalStrategy:
         """
         self._clean_expired_slots()
         self._open_slot(market_slot_info)
+        if self._new_market_callback:
+            self._new_market_callback(market_slot_info)
 
     def on_tick(self) -> None:
         """
@@ -147,6 +157,9 @@ class EWCGExternalStrategy:
             state.remaining_offer_energy_kWh = max(
                 0.0, state.remaining_offer_energy_kWh - trade.energy_kWh
             )
+
+        if self._trade_callback:
+            self._trade_callback(trade)
 
     def _open_slot(self, market_slot_info: MarketSlotInfo) -> None:
         open_market_ids = [state.slot_info.market_id for state in self._slot_states]
@@ -202,8 +215,8 @@ class EWCGExternalStrategy:
     def _post_orders(
         self,
         state: MarketSlotState,
-        bids_for_slot: List[HttpOrderInput],
-        offers_for_slot: List[HttpOrderInput],
+        bids_for_slot: List[OrderInput],
+        offers_for_slot: List[OrderInput],
     ) -> None:
 
         total_bid_input = sum(bid.energy_kWh for bid in bids_for_slot)
@@ -254,12 +267,13 @@ class EWCGExternalStrategy:
 
 
 def create_strategy(
-    bid_inputs: Optional[List[HttpOrderInput]] = None,
-    offer_inputs: Optional[List[HttpOrderInput]] = None,
-    created_by: str = "ewds_strategy",
+    bid_inputs: Optional[List[OrderInput]] = None,
+    offer_inputs: Optional[List[OrderInput]] = None,
+    actor_id: str = "ewds_strategy",
+    actor_type: str = "Prosumer",
     update_interval: Optional[Duration] = None,
 ) -> EWCGExternalStrategy:
     """Create a new EWCGExternalStrategy."""
     return EWCGExternalStrategy(
-        EWClientGatewayConnection(created_by), bid_inputs, offer_inputs, update_interval
+        EWClientGatewayConnection(actor_id, actor_type), bid_inputs, offer_inputs, update_interval
     )

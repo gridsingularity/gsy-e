@@ -7,7 +7,7 @@ import pytest
 
 from gsy_e.external.proxy.ewcg_strategy import (
     EWCGExternalStrategy,
-    HttpOrderInput,
+    OrderInput,
     MarketSlotState,
 )
 from gsy_e.external.proxy.connection import StubConnection, MarketSlotInfo, EnergyTrade
@@ -44,16 +44,14 @@ def make_slot_info(
     )
 
 
-def make_bid_input(energy=BID_ENERGY, min_price=MIN_PRICE, max_price=MAX_PRICE) -> HttpOrderInput:
-    return HttpOrderInput(
+def make_bid_input(energy=BID_ENERGY, min_price=MIN_PRICE, max_price=MAX_PRICE) -> OrderInput:
+    return OrderInput(
         energy_kWh=energy, min_price=min_price, max_price=max_price, time_slot=DELIVERY_START
     )
 
 
-def make_offer_input(
-    energy=OFFER_ENERGY, min_price=MIN_PRICE, max_price=MAX_PRICE
-) -> HttpOrderInput:
-    return HttpOrderInput(
+def make_offer_input(energy=OFFER_ENERGY, min_price=MIN_PRICE, max_price=MAX_PRICE) -> OrderInput:
+    return OrderInput(
         energy_kWh=energy, min_price=min_price, max_price=max_price, time_slot=DELIVERY_START
     )
 
@@ -193,7 +191,8 @@ class TestStubConnection:
 
     @staticmethod
     def test_all_methods_raise_not_implemented():
-        connector = StubConnection(created_by="trader-1")
+        # pylint: disable=abstract-class-instantiated
+        connector = StubConnection(actor_id="trader-1", actor_type="prosumer")
         slot = SLOT_OPEN
         with pytest.raises(NotImplementedError):
             connector.post_bid(MARKET_ID, slot, 1.0, Decimal("20"))

@@ -153,7 +153,7 @@ execnet==2.1.2
     # via pytest-xdist
 fabric==3.2.3
     # via -r requirements/dev.txt
-fastapi==0.135.3
+fastapi==0.136.0
     # via -r requirements/dev.txt
 filelock==3.14.0
     # via
@@ -293,7 +293,7 @@ platformdirs==4.2.2
     #   pylint
     #   tox
     #   virtualenv
-plotly==6.6.0
+plotly==6.7.0
     # via -r requirements/dev.txt
 pluggy==1.5.0
     # via
@@ -321,12 +321,12 @@ pycparser==3.0
     # via
     #   -r requirements/dev.txt
     #   cffi
-pydantic==2.12.5
+pydantic==2.13.2
     # via
     #   -r requirements/dev.txt
     #   fastapi
     #   pylint-pydantic
-pydantic-core==2.41.5
+pydantic-core==2.46.2
     # via
     #   -r requirements/dev.txt
     #   pydantic
@@ -421,7 +421,7 @@ rpds-py==0.18.1
     #   gsy-framework
     #   jsonschema
     #   referencing
-rq==2.7.0
+rq==2.8.0
     # via -r requirements/dev.txt
 six==1.16.0
     # via

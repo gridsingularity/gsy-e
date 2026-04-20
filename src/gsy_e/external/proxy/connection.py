@@ -78,8 +78,9 @@ class EnergyTrade:
 class Connection(ABC):
     """Abstract interface for interaction with an external market via an API."""
 
-    def __init__(self, created_by: str) -> None:
-        self._created_by = created_by
+    def __init__(self, actor_id: str, actor_type: str) -> None:
+        self._actor_id = actor_id
+        self._actor_type = actor_type
 
     @abstractmethod
     def post_bid(
@@ -109,14 +110,22 @@ class Connection(ABC):
     def delete_offer(self, time_slot: DateTime, order_id: str) -> None:
         """Cancel an open offer."""
 
+    @abstractmethod
+    def subscribe(
+        self,
+        on_market_slot: Callable[[MarketSlotInfo], None] = None,
+        on_trade: Callable[[EnergyTrade], None] = None,
+    ) -> None:
+        """Define callbacks for market slot and trade events."""
+
 
 class EWClientGatewayConnection(Connection):
     """
     Connection class for interaction with an external market via the Energy Web Client Gateway.
     """
 
-    def __init__(self, created_by: str) -> None:
-        super().__init__(created_by)
+    def __init__(self, actor_id: str, actor_type: str) -> None:
+        super().__init__(actor_id, actor_type)
         self._ws_url = _CG_GATEWAY_URL.rstrip("/") + _CG_WS_PATH
         self._stop_event: threading.Event = threading.Event()
         self._subscription_thread: Optional[threading.Thread] = None
@@ -232,27 +241,27 @@ class EWClientGatewayConnection(Connection):
     @staticmethod
     def _parse_market_slot(data: dict) -> MarketSlotInfo:
         return MarketSlotInfo(
-            market_id=data["market_id"],
-            community_id=data["community_id"],
-            opening_time=pendulum.parse(data["opening_time"]),
-            closing_time=pendulum.parse(data["closing_time"]),
-            delivery_start_time=pendulum.parse(data["delivery_start_time"]),
-            delivery_end_time=pendulum.parse(data["delivery_end_time"]),
-            market_type=MarketType(data["market_type"]),
+            market_id=data["int:marketId"],
+            community_id=data["int:communityId"],
+            opening_time=pendulum.parse(data["int:openingTime"]),
+            closing_time=pendulum.parse(data["int:closingTime"]),
+            delivery_start_time=pendulum.parse(data["int:deliveryStartTime"]),
+            delivery_end_time=pendulum.parse(data["int:deliveryEndTime"]),
+            market_type=MarketType(data["int:marketType"]),
         )
 
     @staticmethod
     def _parse_trade(data: dict) -> EnergyTrade:
         return EnergyTrade(
-            offer_id=data["offerId"],
-            market_id=data["marketId"],
-            bid_id=data["bidId"],
-            price=data["price"],
-            energy_kWh=data["energy_kWh"],
-            seller=data["seller"],
-            buyer=data["buyer"],
-            residual_offer_id=data.get("residualOfferId"),
-            residual_bid_id=data.get("residualBidId"),
+            offer_id=data["int:offerId"],
+            market_id=data["int:marketId"],
+            bid_id=data["int:bidId"],
+            price=data["int:price"],
+            energy_kWh=data["int:energyKWh"],
+            seller=data["int:seller"],
+            buyer=data["int:buyer"],
+            residual_offer_id=data.get("int:residualOfferId"),
+            residual_bid_id=data.get("int:residualBidId"),
         )
 
     def post_bid(
@@ -267,12 +276,14 @@ class EWClientGatewayConnection(Connection):
         or None on failure.
         """
         payload = {
-            "createdBy": self._created_by,
-            "marketId": market_id,
-            "orderType": "Bid",
-            "quantity": energy_kWh,
-            "priceLimit": float(rate),
-            "timeSlot": int(time_slot.timestamp()),
+            "createdBy": {
+                "int:Actor": {"int:actorName": self._actor_id, "int:actorType": self._actor_type}
+            },
+            "int:marketId": market_id,
+            "int:orderType": "Bid",
+            "int:quantity": energy_kWh,
+            "int:priceLimit": float(rate),
+            "int:timeSlot": int(time_slot.timestamp()),
         }
         order_id = self._send_order(payload)
         if order_id:
@@ -291,12 +302,14 @@ class EWClientGatewayConnection(Connection):
         order ID, or ``None`` on failure.
         """
         payload = {
-            "createdBy": self._created_by,
-            "marketId": market_id,
-            "orderType": "Offer",
-            "quantity": energy_kWh,
-            "priceLimit": float(rate),
-            "timeSlot": int(time_slot.timestamp()),
+            "int:createdBy": {
+                "int:Actor": {"int:actorName": self._actor_id, "int:actorType": self._actor_type}
+            },
+            "int:marketId": market_id,
+            "int:orderType": "Offer",
+            "int:quantity": energy_kWh,
+            "int:priceLimit": float(rate),
+            "int:timeSlot": int(time_slot.timestamp()),
         }
         order_id = self._send_order(payload)
         if order_id:
@@ -306,18 +319,18 @@ class EWClientGatewayConnection(Connection):
     def delete_bid(self, time_slot: DateTime, order_id: str) -> None:
         """Send a request to delete a bid to the Client Gateway."""
         payload = {
-            "orderId": order_id,
-            "orderType": "Bid",
-            "timeSlot": int(time_slot.timestamp()),
+            "int:orderId": order_id,
+            "int:orderType": "Bid",
+            "int:timeSlot": int(time_slot.timestamp()),
         }
         self._send_order(payload)
 
     def delete_offer(self, time_slot: DateTime, order_id: str) -> None:
         """Send a request to delete an offer to the Client Gateway."""
         payload = {
-            "orderId": order_id,
-            "orderType": "Offer",
-            "timeSlot": int(time_slot.timestamp()),
+            "int:orderId": order_id,
+            "int:orderType": "Offer",
+            "int:timeSlot": int(time_slot.timestamp()),
         }
         self._send_order(payload)
 
