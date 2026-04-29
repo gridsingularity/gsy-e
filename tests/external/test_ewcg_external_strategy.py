@@ -10,7 +10,7 @@ from gsy_e.external.proxy.ewcg_strategy import (
     OrderInput,
     MarketSlotState,
 )
-from gsy_e.external.proxy.connection import StubConnection, MarketSlotInfo, EnergyTrade
+from gsy_e.external.proxy.dataclasses import MarketSlotInfo, EnergyTrade
 from gsy_e.external.proxy.price_updater import SlotPriceUpdater
 
 
@@ -185,23 +185,6 @@ class TestSlotPriceUpdater:
         )
         after = SLOT_CLOSE  # past effective_end
         assert updater.get_rate(after) == Decimal("50")
-
-
-class TestStubConnection:
-
-    @staticmethod
-    def test_all_methods_raise_not_implemented():
-        # pylint: disable=abstract-class-instantiated
-        connector = StubConnection(actor_id="trader-1", actor_type="prosumer")
-        slot = SLOT_OPEN
-        with pytest.raises(NotImplementedError):
-            connector.post_bid(MARKET_ID, slot, 1.0, Decimal("20"))
-        with pytest.raises(NotImplementedError):
-            connector.post_offer(MARKET_ID, slot, 1.0, Decimal("20"))
-        with pytest.raises(NotImplementedError):
-            connector.delete_bid(slot, "id")
-        with pytest.raises(NotImplementedError):
-            connector.delete_offer(slot, "id")
 
 
 class TestEWCGExternalStrategy:

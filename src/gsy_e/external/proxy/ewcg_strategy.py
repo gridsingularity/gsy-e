@@ -12,13 +12,12 @@ from typing import List, Optional, Callable
 
 from pendulum import DateTime, Duration, duration, now
 
-from gsy_e.external.proxy.connection import (
-    Connection,
+from gsy_e.external.proxy.dataclasses import (
     MarketSlotInfo,
     EnergyTrade,
     MarketType,
-    EWClientGatewayConnection,
 )
+from gsy_e.external.proxy.ewcg_connection import EWClientGatewayConnection
 from gsy_e.external.proxy.price_updater import SlotPriceUpdater
 
 logger = logging.getLogger(__name__)
@@ -71,7 +70,7 @@ class EWCGExternalStrategy:
     # pylint: disable=too-many-arguments,too-many-positional-arguments
     def __init__(
         self,
-        connector: Connection,
+        connector: EWClientGatewayConnection,
         bid_inputs: Optional[List[OrderInput]] = None,
         offer_inputs: Optional[List[OrderInput]] = None,
         update_interval: Optional[Duration] = None,
