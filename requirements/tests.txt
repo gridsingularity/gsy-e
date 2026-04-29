@@ -6,7 +6,7 @@
 #
 -e git+https://github.com/gridsingularity/gsy-framework@master#egg=gsy_framework
     # via -r requirements/dev.txt
-allure-python-commons==2.15.3
+allure-python-commons==2.16.0
     # via behavex
 annotated-doc==0.0.4
     # via
@@ -19,6 +19,7 @@ annotated-types==0.7.0
 anyio==4.13.0
     # via
     #   -r requirements/dev.txt
+    #   httpx
     #   starlette
     #   watchfiles
 astroid==4.0.4
@@ -64,6 +65,8 @@ certifi==2024.2.2
     # via
     #   -r requirements/dev.txt
     #   gsy-framework
+    #   httpcore
+    #   httpx
     #   requests
 cffi==2.0.0
     # via
@@ -113,7 +116,7 @@ croniter==6.2.2
     # via
     #   -r requirements/dev.txt
     #   rq
-cryptography==46.0.7
+cryptography==47.0.0
     # via
     #   -r requirements/dev.txt
     #   paramiko
@@ -153,7 +156,7 @@ execnet==2.1.2
     # via pytest-xdist
 fabric==3.2.3
     # via -r requirements/dev.txt
-fastapi==0.136.0
+fastapi==0.136.1
     # via -r requirements/dev.txt
 filelock==3.14.0
     # via
@@ -180,11 +183,16 @@ geopy==2.4.1
 h11==0.16.0
     # via
     #   -r requirements/dev.txt
+    #   httpcore
     #   uvicorn
+httpcore==1.0.9
+    # via httpx
 httptools==0.7.1
     # via
     #   -r requirements/dev.txt
     #   uvicorn
+httpx==0.28.1
+    # via -r requirements/tests.in
 hypothesis==4.38.0
     # via -r requirements/tests.in
 identify==2.5.36
@@ -197,6 +205,7 @@ idna==3.7
     #   -r requirements/dev.txt
     #   anyio
     #   gsy-framework
+    #   httpx
     #   requests
 iniconfig==2.3.0
     # via pytest
@@ -242,7 +251,7 @@ mpmath==1.3.0
     # via
     #   -r requirements/dev.txt
     #   sympy
-narwhals==2.19.0
+narwhals==2.20.0
     # via
     #   -r requirements/dev.txt
     #   plotly
@@ -321,12 +330,12 @@ pycparser==3.0
     # via
     #   -r requirements/dev.txt
     #   cffi
-pydantic==2.13.2
+pydantic==2.13.3
     # via
     #   -r requirements/dev.txt
     #   fastapi
     #   pylint-pydantic
-pydantic-core==2.46.2
+pydantic-core==2.46.3
     # via
     #   -r requirements/dev.txt
     #   pydantic
@@ -485,7 +494,7 @@ urllib3==1.26.18
     #   -r requirements/dev.txt
     #   gsy-framework
     #   requests
-uvicorn[standard]==0.44.0
+uvicorn[standard]==0.46.0
     # via -r requirements/dev.txt
 uvloop==0.22.1
     # via
