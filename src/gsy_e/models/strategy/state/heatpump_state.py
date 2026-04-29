@@ -106,11 +106,11 @@ class HeatPumpStateBase(StateInterface):
         self._heat_demand_kJ = convert_str_to_pendulum_in_dict(state_dict["heat_demand_kJ"])
 
     def get_results_dict(self, current_time_slot: DateTime) -> Dict:
-        retval = {
+        return {
             "cop": self.get_cop(current_time_slot),
             "heat_demand_kJ": self.get_heat_demand_kJ(current_time_slot),
+            "total_traded_energy_kWh": self._total_traded_energy_kWh,
         }
-        return retval
 
 
 class HeatPumpState(HeatPumpStateBase):
@@ -207,16 +207,14 @@ class HeatPumpState(HeatPumpStateBase):
         self._delete_time_slots(self._heat_demand_kJ, last_time_slot)
 
     def get_results_dict(self, current_time_slot: DateTime) -> Dict:
-        retval = {
+        return {
             **super().get_results_dict(current_time_slot),
             "energy_consumption_kWh": self.get_energy_consumption_kWh(current_time_slot),
             "max_energy_demand_kWh": self.get_max_energy_demand_kWh(current_time_slot),
             "min_energy_demand_kWh": self.get_min_energy_demand_kWh(current_time_slot),
             "cop": self.get_cop(current_time_slot),
-            "total_traded_energy_kWh": self._total_traded_energy_kWh,
             "heat_demand_kJ": self.get_heat_demand_kJ(current_time_slot),
         }
-        return retval
 
     def __str__(self):
         return self.__class__.__name__

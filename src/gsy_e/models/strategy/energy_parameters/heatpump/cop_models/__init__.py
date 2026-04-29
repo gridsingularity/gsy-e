@@ -2,7 +2,8 @@ from gsy_e.models.strategy.energy_parameters.heatpump.cop_models.cop_models impo
     COPModelType,
     cop_model_factory,
     BaseCOPModel,
+    UniversalCOPModel,
 )
 
 
-__all__ = ["COPModelType", "cop_model_factory", "BaseCOPModel"]
+__all__ = ["COPModelType", "cop_model_factory", "BaseCOPModel", "UniversalCOPModel"]
