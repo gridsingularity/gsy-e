@@ -17,6 +17,7 @@ annotated-types==0.7.0
 anyio==4.13.0
     # via
     #   -r requirements/base.txt
+    #   httpx
     #   starlette
     #   watchfiles
 astroid==4.0.4
@@ -46,6 +47,8 @@ certifi==2024.2.2
     # via
     #   -r requirements/base.txt
     #   gsy-framework
+    #   httpcore
+    #   httpx
     #   requests
 cffi==2.0.0
     # via
@@ -135,11 +138,18 @@ geopy==2.4.1
 h11==0.16.0
     # via
     #   -r requirements/base.txt
+    #   httpcore
     #   uvicorn
+httpcore==1.0.9
+    # via
+    #   -r requirements/base.txt
+    #   httpx
 httptools==0.7.1
     # via
     #   -r requirements/base.txt
     #   uvicorn
+httpx==0.28.1
+    # via -r requirements/base.txt
 identify==2.5.36
     # via
     #   -r requirements/base.txt
@@ -150,6 +160,7 @@ idna==3.7
     #   -r requirements/base.txt
     #   anyio
     #   gsy-framework
+    #   httpx
     #   requests
 invoke==2.2.1
     # via

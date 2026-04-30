@@ -12,6 +12,7 @@ annotated-types==0.7.0
     # via pydantic
 anyio==4.13.0
     # via
+    #   httpx
     #   starlette
     #   watchfiles
 attrs==23.2.0
@@ -33,6 +34,8 @@ cachetools==5.3.3
 certifi==2024.2.2
     # via
     #   gsy-framework
+    #   httpcore
+    #   httpx
     #   requests
 cfgv==3.4.0
     # via
@@ -92,9 +95,15 @@ geographiclib==2.0
 geopy==2.4.1
     # via gsy-framework
 h11==0.16.0
-    # via uvicorn
+    # via
+    #   httpcore
+    #   uvicorn
+httpcore==1.0.9
+    # via httpx
 httptools==0.7.1
     # via uvicorn
+httpx==0.28.1
+    # via -r requirements/base.in
 identify==2.5.36
     # via
     #   gsy-framework
@@ -103,6 +112,7 @@ idna==3.7
     # via
     #   anyio
     #   gsy-framework
+    #   httpx
     #   requests
 iso3166==2.1.1
     # via gsy-framework

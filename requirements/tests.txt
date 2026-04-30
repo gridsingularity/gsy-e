@@ -186,13 +186,17 @@ h11==0.16.0
     #   httpcore
     #   uvicorn
 httpcore==1.0.9
-    # via httpx
+    # via
+    #   -r requirements/dev.txt
+    #   httpx
 httptools==0.7.1
     # via
     #   -r requirements/dev.txt
     #   uvicorn
 httpx==0.28.1
-    # via -r requirements/tests.in
+    # via
+    #   -r requirements/dev.txt
+    #   -r requirements/tests.in
 hypothesis==4.38.0
     # via -r requirements/tests.in
 identify==2.5.36

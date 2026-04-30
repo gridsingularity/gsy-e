@@ -6,6 +6,7 @@ import uuid
 from decimal import Decimal
 from typing import Callable, Optional
 
+import httpx
 import pendulum
 from pendulum import DateTime
 from websockets.sync.client import connect as ws_connect
@@ -15,9 +16,11 @@ from gsy_e.external.proxy.dataclasses import MarketType, MarketSlotInfo, EnergyT
 logger = logging.getLogger(__name__)
 
 
-# DDHub Client Gateway base URL and WebSocket endpoint path.
+# DDHub Client Gateway base URL, WebSocket endpoint path (used by the listener),
+# and HTTP endpoint path (used to publish messages).
 _CG_GATEWAY_URL: str = "PLACEHOLDER_GATEWAY_URL"
 _CG_WS_PATH: str = "/events"
+_CG_HTTP_MESSAGES_PATH: str = "/messages"
 
 # WebSocket subprotocol required by the DDHub Client Gateway.
 _CG_WS_SUBPROTOCOL: str = "ddhub-protocol"
@@ -46,7 +49,9 @@ class EWClientGatewayConnection:
     def __init__(self, actor_id: str, actor_type: str) -> None:
         self._actor_id = actor_id
         self._actor_type = actor_type
-        self._ws_url = _CG_GATEWAY_URL.rstrip("/") + _CG_WS_PATH
+        base_url = _CG_GATEWAY_URL.rstrip("/")
+        self._ws_url = base_url + _CG_WS_PATH
+        self._http_url = base_url + _CG_HTTP_MESSAGES_PATH
         self._stop_event: threading.Event = threading.Event()
         self._subscription_thread: Optional[threading.Thread] = None
 
@@ -168,17 +173,16 @@ class EWClientGatewayConnection:
             "anonymousRecipient": [],
         }
         try:
-            with ws_connect(
-                self._ws_url,
-                subprotocols=[_CG_WS_SUBPROTOCOL],
-                additional_headers=self._auth_headers(),
-            ) as ws:
-                ws.send(json.dumps(envelope))
-                raw = ws.recv()
-            return json.loads(raw).get("clientGatewayMessageId")
+            response = httpx.post(
+                self._http_url,
+                json=envelope,
+                headers=self._auth_headers(),
+            )
+            response.raise_for_status()
+            return response.json().get("clientGatewayMessageId")
         # pylint: disable=broad-exception-caught
         except Exception:
-            logger.exception("Failed to send order via WebSocket (%s)", self._ws_url)
+            logger.exception("Failed to send order via HTTP (%s)", self._http_url)
             return None
 
     def _listener(

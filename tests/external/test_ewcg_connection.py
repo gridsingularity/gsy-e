@@ -4,6 +4,7 @@ import threading
 from decimal import Decimal
 from unittest.mock import MagicMock, patch
 
+import httpx
 import pendulum
 import pytest
 
@@ -46,6 +47,17 @@ def _ws_factory(recv_value=None, recv_side_effect=None):
     return MagicMock(return_value=ctx), ws
 
 
+def _httpx_post_mock(response_body=None, status_code=200, side_effect=None):
+    """Build a mock for ``httpx.post`` returning a response with the given JSON body."""
+    if side_effect is not None:
+        return MagicMock(side_effect=side_effect)
+    response = MagicMock()
+    response.json.return_value = response_body if response_body is not None else {}
+    response.status_code = status_code
+    response.raise_for_status = MagicMock()
+    return MagicMock(return_value=response)
+
+
 def _envelope(topic, payload):
     return json.dumps(
         {
@@ -78,33 +90,34 @@ class TestPostBid:
 
     @staticmethod
     def test_returns_client_gateway_message_id():
-        factory, _ws = _ws_factory(recv_value=json.dumps({"clientGatewayMessageId": "msg-123"}))
+        post = _httpx_post_mock(response_body={"clientGatewayMessageId": "msg-123"})
         conn = EWClientGatewayConnection("trader-1", "Prosumer")
-        with patch("gsy_e.external.proxy.ewcg_connection.ws_connect", factory):
+        with patch("gsy_e.external.proxy.ewcg_connection.httpx.post", post):
             result = conn.post_bid(MARKET_ID, DELIVERY_START, 1.0, Decimal("20"))
         assert result == "msg-123"
 
     @staticmethod
     def test_envelope_carries_order_topic_metadata():
-        factory, ws = _ws_factory(recv_value=json.dumps({"clientGatewayMessageId": "msg-123"}))
+        post = _httpx_post_mock(response_body={"clientGatewayMessageId": "msg-123"})
         conn = EWClientGatewayConnection("trader-1", "Prosumer")
-        with patch("gsy_e.external.proxy.ewcg_connection.ws_connect", factory):
+        with patch("gsy_e.external.proxy.ewcg_connection.httpx.post", post):
             conn.post_bid(MARKET_ID, DELIVERY_START, 1.5, Decimal("20"))
 
-        envelope = json.loads(ws.send.call_args[0][0])
+        envelope = post.call_args.kwargs["json"]
         assert envelope["topicName"] == ORDER_TOPIC
         assert envelope["topicVersion"] == "1.0.0"
         assert "transactionId" in envelope
         assert envelope["anonymousRecipient"] == []
+        assert post.call_args.kwargs["headers"] == {"x-api-key": "test-api-key"}
 
     @staticmethod
     def test_payload_has_expected_bid_fields():
-        factory, ws = _ws_factory(recv_value=json.dumps({"clientGatewayMessageId": "msg-123"}))
+        post = _httpx_post_mock(response_body={"clientGatewayMessageId": "msg-123"})
         conn = EWClientGatewayConnection("trader-1", "Prosumer")
-        with patch("gsy_e.external.proxy.ewcg_connection.ws_connect", factory):
+        with patch("gsy_e.external.proxy.ewcg_connection.httpx.post", post):
             conn.post_bid(MARKET_ID, DELIVERY_START, 1.5, Decimal("20"))
 
-        envelope = json.loads(ws.send.call_args[0][0])
+        envelope = post.call_args.kwargs["json"]
         payload = json.loads(envelope["payload"])
         assert payload["int:orderType"] == "Bid"
         assert payload["int:marketId"] == MARKET_ID
@@ -118,17 +131,17 @@ class TestPostBid:
         assert actor["int:actorType"] == "Prosumer"
 
     @staticmethod
-    def test_returns_none_on_websocket_failure():
+    def test_returns_none_on_http_failure():
         conn = EWClientGatewayConnection("trader-1", "Prosumer")
-        factory = MagicMock(side_effect=ConnectionError("boom"))
-        with patch("gsy_e.external.proxy.ewcg_connection.ws_connect", factory):
+        post = _httpx_post_mock(side_effect=httpx.ConnectError("boom"))
+        with patch("gsy_e.external.proxy.ewcg_connection.httpx.post", post):
             assert conn.post_bid(MARKET_ID, DELIVERY_START, 1.0, Decimal("20")) is None
 
     @staticmethod
     def test_returns_none_when_response_lacks_message_id():
-        factory, _ws = _ws_factory(recv_value=json.dumps({"unrelated": "field"}))
+        post = _httpx_post_mock(response_body={"unrelated": "field"})
         conn = EWClientGatewayConnection("trader-1", "Prosumer")
-        with patch("gsy_e.external.proxy.ewcg_connection.ws_connect", factory):
+        with patch("gsy_e.external.proxy.ewcg_connection.httpx.post", post):
             assert conn.post_bid(MARKET_ID, DELIVERY_START, 1.0, Decimal("20")) is None
 
 
@@ -136,20 +149,20 @@ class TestPostOffer:
 
     @staticmethod
     def test_returns_client_gateway_message_id():
-        factory, _ws = _ws_factory(recv_value=json.dumps({"clientGatewayMessageId": "msg-456"}))
+        post = _httpx_post_mock(response_body={"clientGatewayMessageId": "msg-456"})
         conn = EWClientGatewayConnection("trader-1", "Prosumer")
-        with patch("gsy_e.external.proxy.ewcg_connection.ws_connect", factory):
+        with patch("gsy_e.external.proxy.ewcg_connection.httpx.post", post):
             result = conn.post_offer(MARKET_ID, DELIVERY_START, 2.0, Decimal("30"))
         assert result == "msg-456"
 
     @staticmethod
     def test_payload_has_expected_offer_fields():
-        factory, ws = _ws_factory(recv_value=json.dumps({"clientGatewayMessageId": "msg-456"}))
+        post = _httpx_post_mock(response_body={"clientGatewayMessageId": "msg-456"})
         conn = EWClientGatewayConnection("trader-1", "Prosumer")
-        with patch("gsy_e.external.proxy.ewcg_connection.ws_connect", factory):
+        with patch("gsy_e.external.proxy.ewcg_connection.httpx.post", post):
             conn.post_offer(MARKET_ID, DELIVERY_START, 2.0, Decimal("30"))
 
-        envelope = json.loads(ws.send.call_args[0][0])
+        envelope = post.call_args.kwargs["json"]
         payload = json.loads(envelope["payload"])
         assert payload["int:orderType"] == "Offer"
         assert payload["int:marketId"] == MARKET_ID
@@ -166,12 +179,12 @@ class TestDeleteOrder:
 
     @staticmethod
     def test_delete_bid_sends_expected_payload():
-        factory, ws = _ws_factory(recv_value=json.dumps({}))
+        post = _httpx_post_mock(response_body={})
         conn = EWClientGatewayConnection("trader-1", "Prosumer")
-        with patch("gsy_e.external.proxy.ewcg_connection.ws_connect", factory):
+        with patch("gsy_e.external.proxy.ewcg_connection.httpx.post", post):
             conn.delete_bid(DELIVERY_START, "bid-id-001")
 
-        envelope = json.loads(ws.send.call_args[0][0])
+        envelope = post.call_args.kwargs["json"]
         payload = json.loads(envelope["payload"])
         assert payload == {
             "int:orderId": "bid-id-001",
@@ -181,12 +194,12 @@ class TestDeleteOrder:
 
     @staticmethod
     def test_delete_offer_sends_expected_payload():
-        factory, ws = _ws_factory(recv_value=json.dumps({}))
+        post = _httpx_post_mock(response_body={})
         conn = EWClientGatewayConnection("trader-1", "Prosumer")
-        with patch("gsy_e.external.proxy.ewcg_connection.ws_connect", factory):
+        with patch("gsy_e.external.proxy.ewcg_connection.httpx.post", post):
             conn.delete_offer(DELIVERY_START, "offer-id-001")
 
-        envelope = json.loads(ws.send.call_args[0][0])
+        envelope = post.call_args.kwargs["json"]
         payload = json.loads(envelope["payload"])
         assert payload == {
             "int:orderId": "offer-id-001",
