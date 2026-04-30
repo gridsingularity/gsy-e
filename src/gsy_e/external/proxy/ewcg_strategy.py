@@ -203,7 +203,6 @@ class EWCGExternalStrategy:
                     update_interval=self._update_interval,
                 )
             )
-            state.open_bid_ids.append(None)
 
         for offer_input in offers_for_slot:
             state.offer_updaters.append(
@@ -215,7 +214,6 @@ class EWCGExternalStrategy:
                     update_interval=self._update_interval,
                 )
             )
-            state.open_offer_ids.append(None)
 
         self._slot_states.append(state)
         self._post_orders(state, bids_for_slot, offers_for_slot)
@@ -250,21 +248,19 @@ class EWCGExternalStrategy:
 
     def _cancel_open_orders(self, state: MarketSlotState) -> None:
         slot = state.slot_info.delivery_start_time
-        for i, bid_id in enumerate(state.open_bid_ids):
+        for bid_id in state.open_bid_ids:
             if bid_id is not None:
                 try:
                     self._connector.delete_bid(slot, bid_id)
                 except Exception:  # pylint: disable=broad-except
                     logger.warning("Failed to delete bid %s for slot %s", bid_id, slot)
-                state.open_bid_ids[i] = None
 
-        for i, offer_id in enumerate(state.open_offer_ids):
+        for offer_id in state.open_offer_ids:
             if offer_id is not None:
                 try:
                     self._connector.delete_offer(slot, offer_id)
                 except Exception:  # pylint: disable=broad-except
                     logger.warning("Failed to delete offer %s for slot %s", offer_id, slot)
-                state.open_offer_ids[i] = None
 
     def _clean_expired_slots(self) -> None:
         self._slot_states = [
