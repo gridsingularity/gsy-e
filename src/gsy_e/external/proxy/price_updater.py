@@ -30,6 +30,7 @@ class SlotPriceUpdater:
         self._closing_time = closing_time
         self._update_interval = update_interval
         self._update_times: List[DateTime] = self._compute_update_times()
+        self.order_id = None
 
     def _compute_update_times(self) -> List[DateTime]:
         # The last update timepoint is one interval before closing so that the

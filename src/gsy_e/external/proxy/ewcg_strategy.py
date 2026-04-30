@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 
 _DEFAULT_UPDATE_INTERVAL: Duration = duration(minutes=5)
 EPSILON: float = 1e-5
+TIMEZONE: str = "UTC"
 
 
 @dataclass
@@ -47,10 +48,18 @@ class MarketSlotState:
     slot_info: MarketSlotInfo
     bid_updaters: List[SlotPriceUpdater] = field(default_factory=list)
     offer_updaters: List[SlotPriceUpdater] = field(default_factory=list)
-    open_bid_ids: List[Optional[str]] = field(default_factory=list)
-    open_offer_ids: List[Optional[str]] = field(default_factory=list)
     remaining_bid_energy_kWh: float = 0.0
     remaining_offer_energy_kWh: float = 0.0
+
+    @property
+    def open_bid_ids(self):
+        """Lists ids of all open bids."""
+        return [updater.order_id for updater in self.bid_updaters]
+
+    @property
+    def open_offer_ids(self):
+        """List ids of all open offers."""
+        return [updater.order_id for updater in self.offer_updaters]
 
 
 class EWCGExternalStrategy:
@@ -99,7 +108,7 @@ class EWCGExternalStrategy:
     @property
     def now(self) -> DateTime:
         """Return the current time."""
-        return now("UTC")
+        return now(TIMEZONE)
 
     def on_market_slot(self, market_slot_info: MarketSlotInfo) -> None:
         """
@@ -223,23 +232,21 @@ class EWCGExternalStrategy:
         market_id = state.slot_info.market_id
         time_slot = state.slot_info.delivery_start_time
 
-        for i, (updater, inp) in enumerate(zip(state.bid_updaters, bids_for_slot)):
+        for updater, inp in zip(state.bid_updaters, bids_for_slot):
             if total_bid_input > EPSILON:
                 energy = inp.energy_kWh * state.remaining_bid_energy_kWh / total_bid_input
             else:
                 energy = 0.0
             rate = updater.get_rate(self.now)
-            state.open_bid_ids[i] = self._connector.post_bid(market_id, time_slot, energy, rate)
+            updater.order_id = self._connector.post_bid(market_id, time_slot, energy, rate)
 
-        for i, (updater, inp) in enumerate(zip(state.offer_updaters, offers_for_slot)):
+        for updater, inp in zip(state.offer_updaters, offers_for_slot):
             if total_offer_input > EPSILON:
                 energy = inp.energy_kWh * state.remaining_offer_energy_kWh / total_offer_input
             else:
                 energy = 0.0
             rate = updater.get_rate(self.now)
-            state.open_offer_ids[i] = self._connector.post_offer(
-                market_id, time_slot, energy, rate
-            )
+            updater.order_id = self._connector.post_offer(market_id, time_slot, energy, rate)
 
     def _cancel_open_orders(self, state: MarketSlotState) -> None:
         slot = state.slot_info.delivery_start_time
