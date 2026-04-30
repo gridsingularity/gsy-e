@@ -102,22 +102,19 @@ class PCMTankState(TankStateBase):
 
     def _set_condenser_temp_C(self, condenser_temp_C: float, time_slot: DateTime):
         if (self._params.min_temp_C - condenser_temp_C) > FLOATING_POINT_TOLERANCE:
-            log.warning(
+            log.info(
                 "The PCM storage tank reached it's minimum (%s), discharging "
                 "condensor temperature of %s is limited to the minimum",
                 self._params.min_temp_C,
                 round(condenser_temp_C, 2),
             )
-            condenser_temp_C = self._params.min_temp_C
         if (condenser_temp_C - self._params.max_temp_C) > FLOATING_POINT_TOLERANCE:
-            log.warning(
+            log.info(
                 "The PCM storage tank reached it's maximum (%s), charging "
                 "condensor temperature of %s is limited to the maximum",
                 self._params.max_temp_C,
                 round(condenser_temp_C, 2),
             )
-            condenser_temp_C = self._params.max_temp_C
-
         self._condenser_temp_C[time_slot] = condenser_temp_C
 
     def _get_condenser_temp_C(self, time_slot: DateTime):
