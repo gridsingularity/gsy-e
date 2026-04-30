@@ -6,6 +6,7 @@ from unittest.mock import MagicMock, patch
 import pendulum
 import pytest
 from fastapi.testclient import TestClient
+from gsy_framework.constants_limits import TIME_ZONE
 from gsy_framework.enums import AvailableMarketTypes
 
 from gsy_e.external.external_strategy import ExternalOrderInput
@@ -17,11 +18,7 @@ from gsy_e.external.rest_strategy import (
 )
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-SLOT_START = pendulum.datetime(2024, 1, 1, 12, 0, tz="UTC")
+SLOT_START = pendulum.datetime(2024, 1, 1, 12, 0, tz=TIME_ZONE)
 SLOT_START_ISO = SLOT_START.isoformat()
 
 

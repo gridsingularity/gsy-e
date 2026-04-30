@@ -5,6 +5,7 @@ from unittest.mock import MagicMock
 
 import pendulum
 from gsy_framework.enums import AvailableMarketTypes
+from gsy_framework.constants_limits import TIME_ZONE
 
 from gsy_e.models.market import MarketSlotParams
 from gsy_e.external.external_strategy import (
@@ -16,11 +17,7 @@ from gsy_e.external.external_strategy import (
 )
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-SLOT_START = pendulum.datetime(2024, 1, 1, 12, 0, tz="UTC")
+SLOT_START = pendulum.datetime(2024, 1, 1, 12, 0, tz=TIME_ZONE)
 SLOT_END = SLOT_START.add(minutes=15)
 DELIVERY_START = SLOT_END
 DELIVERY_END = DELIVERY_START.add(minutes=15)

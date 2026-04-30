@@ -9,12 +9,13 @@ from gsy_e.external.proxy.ewcg_strategy import (
     EWCGExternalStrategy,
     OrderInput,
     MarketSlotState,
+    TIMEZONE,
 )
 from gsy_e.external.proxy.dataclasses import MarketSlotInfo, EnergyTrade
 from gsy_e.external.proxy.price_updater import SlotPriceUpdater
 
 
-SLOT_OPEN = pendulum.datetime(2024, 1, 1, 12, 0, tz="UTC")
+SLOT_OPEN = pendulum.datetime(2024, 1, 1, 12, 0, tz=TIMEZONE)
 SLOT_CLOSE = SLOT_OPEN.add(minutes=15)
 DELIVERY_START = SLOT_CLOSE
 DELIVERY_END = DELIVERY_START.add(minutes=15)

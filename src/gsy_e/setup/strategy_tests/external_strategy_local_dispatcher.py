@@ -21,7 +21,7 @@ Setup file for testing the LocalMarketOrderDispatcher via two ExternalStrategyBa
 """
 
 import pendulum
-from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings, TIME_ZONE
 from gsy_framework.enums import AvailableMarketTypes
 
 from gsy_e.external.external_strategy import (
@@ -33,7 +33,7 @@ from gsy_e.models.area import Area
 
 # Nominal time slot used as metadata in ExternalOrderInput; the actual delivery
 # slot is determined by the simulation's spot market at runtime.
-_NOMINAL_SLOT = pendulum.datetime(2024, 1, 1, 0, 0, tz="UTC")
+_NOMINAL_SLOT = pendulum.datetime(2024, 1, 1, 0, 0, tz=TIME_ZONE)
 
 
 def get_setup(config):
