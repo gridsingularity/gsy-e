@@ -14,7 +14,7 @@ from gsy_framework.utils import (
 )
 from pendulum import DateTime
 
-from gsy_e.constants import SorTesConfiguration, RETAIN_PAST_MARKET_STRATEGIES_STATE
+from gsy_e.constants import SorTesConfiguration, RETAIN_PAST_MARKET_STRATEGIES_STATE, DEFAULT_COP
 from gsy_e.models.strategy.energy_parameters.heatpump.cop_models import (
     COPModelType,
     cop_model_factory,
@@ -155,6 +155,7 @@ class SorTesTankState(HeatPumpStateBase):
     def activate(self):
         """Perform commands on event activate."""
         self._soc[GlobalConfig.start_date] = SorTesConfiguration.MIN_SOC_TOLERANCE
+        self._cop[GlobalConfig.start_date] = DEFAULT_COP
 
     def get_soc(self, time_slot: DateTime) -> float:
         """Return the soc value for the given time slot."""
@@ -438,6 +439,7 @@ class SorTesTankEnergyParameters:
         self._state.delete_past_state_values(time_slot)
         self._heat_demand_Q_J.read_or_rotate_profiles()
         self._ambient_temp_C.read_or_rotate_profiles()
+        self._target_temp_C.read_or_rotate_profiles()
 
     def _charge_or_discharge_tank(self, time_slot: DateTime):
         electricity_demand_kWh = self._get_total_electricity_demand_for_time_slot_kWh(
