@@ -107,3 +107,17 @@ HEAT_PUMP_SOC_MANAGEMENT_ALGORITHM = HeatPumpSOCManagementAlgorithm.PREFERRED_BU
 
 # Set the precision of the decimal numbers used in the simulation.
 getcontext().prec = 12
+
+
+class SorTesConfiguration:
+    """Collection of SorTes heat tank configuration parameters."""
+
+    MINUTES_BEFORE_SWITCH_ALLOWED = 2 * 60
+    MIN_SOC_TOLERANCE = 10
+    MAX_SOC_TOLERANCE = 90
+    CAPACITY_KWH = 25
+    COP_HEAT_SOURCE = 1
+    COP_CONDENSER = 1
+    COP_EVAPORATOR = 1
+    CONVERSION_CHARGE_CONDENSER_POWER = 1 / 1.2
+    CONVERSION_DISCHARGE_EVAPORATOR_POWER = 1 / 1.2
