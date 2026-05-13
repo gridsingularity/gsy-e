@@ -96,9 +96,7 @@ class TestSorTesTankMinimiseSwitchStrategy:
         GlobalConfig.start_date = self._original_start_date
 
     def _create_strategy(self, average_trade_rate=25.0):
-        strategy = SorTesTankMinimiseSwitchStrategy(self._energy_params_mock, average_trade_rate)
-        # print(strategy._average_trade_rate.profile)
-        return strategy
+        return SorTesTankMinimiseSwitchStrategy(self._energy_params_mock, average_trade_rate)
 
     def test_initial_state_is_maintain_soc(self):
         strategy = self._create_strategy()
@@ -463,7 +461,7 @@ class TestSorTesTankEnergyParameters:
         # Call _update_last_time_slot_data which also resets _bought_energy_kWh
         ep._ambient_temp_C.profile[START_TIME_SLOT] = AMBIENT_TEMP_C
         ep._charge_or_discharge_tank(NEXT_SLOT)
-        assert ep.get_soc(NEXT_SLOT) > SorTesConfiguration.MIN_SOC_TOLERANCE
+        assert ep.get_soc(NEXT_SLOT) == 13
 
     def test_discharge_decreases_soc(self):
         ep = self._create_energy_params()
@@ -478,7 +476,7 @@ class TestSorTesTankEnergyParameters:
         ep._bought_energy_kWh = -evaporator_kWh  # net negative
         ep._ambient_temp_C.profile[START_TIME_SLOT] = AMBIENT_TEMP_C
         ep._charge_or_discharge_tank(NEXT_SLOT)
-        assert ep.get_soc(NEXT_SLOT) < high_soc
+        assert ep.get_soc(NEXT_SLOT) == 45.7
 
 
 class TestHeatPumpWithSorTesTankStrategy:
