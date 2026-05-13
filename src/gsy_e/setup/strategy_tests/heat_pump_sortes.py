@@ -29,6 +29,8 @@ from gsy_e.models.strategy.pv import PVStrategy
 ConstSettings.MASettings.MARKET_TYPE = 2
 ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL = 5
 
+# Attention: Set the start date to 2026-05-12 for the average trading rate profile!
+
 
 def get_setup(config):
     area = Area(
@@ -40,9 +42,9 @@ def get_setup(config):
                     Area(
                         "Sortes",
                         strategy=HeatPumpWithSorTesTankStrategy(
-                            heat_demand_Q_profile=4.8 / 4 * 3600 * 1000,
+                            heat_demand_Q_profile=20 * 3600 * 1000,
                             ambient_temp_C_profile=10,
-                            target_temp_C_profile=35,
+                            target_temp_C_profile=30,
                             average_trade_rate=os.path.join(
                                 gsye_root_path, "resources", "average_trading_profile_sortes.csv"
                             ),

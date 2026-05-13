@@ -52,7 +52,7 @@ def is_heatpump_strategy_without_tanks(area: Area):
 
 
 def is_heatpump_strategy_with_sortes_tank(area: Area):
-    """todo"""
+    """Return if area has a heat pump strategy with Sortes tanks connected."""
     return isinstance(
         area.strategy,
         HeatPumpWithSorTesTankStrategy,
@@ -432,6 +432,7 @@ class HeatPumpWithSortesTankDataExporter(BaseDataExporter):
             "COP",
             "heat demand [kJ]",
             "soc %",
+            "total_charged_energy_kWh",
         ]
 
     @property
@@ -451,6 +452,7 @@ class HeatPumpWithSortesTankDataExporter(BaseDataExporter):
             round(hp_stats["cop"], ROUND_TOLERANCE_EXPORT),
             round(hp_stats["heat_demand_kJ"], ROUND_TOLERANCE_EXPORT),
             round(hp_stats["soc"], ROUND_TOLERANCE_EXPORT),
+            round(hp_stats["total_charge_energy_kWh"], ROUND_TOLERANCE_EXPORT),
         ]
         return rows
 

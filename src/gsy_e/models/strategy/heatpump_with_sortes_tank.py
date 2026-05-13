@@ -1,5 +1,6 @@
 from decimal import Decimal
 from typing import TYPE_CHECKING, Optional, Union
+from logging import getLogger
 
 import numpy as np
 from gsy_framework.constants_limits import GlobalConfig, ConstSettings, FLOATING_POINT_TOLERANCE
@@ -13,7 +14,7 @@ from gsy_framework.utils import (
 )
 from pendulum import DateTime
 
-import gsy_e.constants as constants
+from gsy_e.constants import SorTesConfiguration, RETAIN_PAST_MARKET_STRATEGIES_STATE
 from gsy_e.models.strategy.energy_parameters.heatpump.cop_models import (
     COPModelType,
     cop_model_factory,
@@ -23,14 +24,20 @@ from gsy_e.models.strategy.heat_pump_soc_management import (
     MinimiseHeatpumpSwitchStrategy,
     HeatPumpChargingState,
 )
-from gsy_e.models.strategy.state.heatpump_state import delete_time_slots_in_state
+from gsy_e.models.strategy.state.heatpump_state import (
+    HeatPumpStateBase,
+)
 from gsy_e.models.strategy.strategy_profile import profile_factory, StrategyProfileBase
 
 if TYPE_CHECKING:
     from gsy_e.models.market import MarketBase
 
+log = getLogger(__name__)
+
 
 class SorTesPerformanceMaps:
+    """Calculate the charging and discharging performance of the SorTES tank"""
+
     CHARGING_POWER_MAP = {
         5: 3.8,
         10: 3.5,
@@ -52,10 +59,12 @@ class SorTesPerformanceMaps:
 
     @classmethod
     def get_power_charging(cls, temperature: float) -> float:
+        """Return the charging power."""
         return cls._get_power(temperature, cls.CHARGING_POWER_MAP)
 
     @classmethod
     def get_power_discharging(cls, temperature: float) -> float:
+        """Return the discharging power."""
         return cls._get_power(temperature, cls.DISCHARGING_POWER_MAP)
 
     @classmethod
@@ -76,17 +85,19 @@ class SorTesPerformanceMaps:
             # Use the first two points for left extrapolation
             slope = (powers[1] - powers[0]) / (temps[1] - temps[0])
             return powers[0] + slope * (temperature - temps[0])
-        else:
-            # Use the last two points for right extrapolation
-            slope = (powers[-1] - powers[-2]) / (temps[-1] - temps[-2])
-            return powers[-1] + slope * (temperature - temps[-1])
+        # Use the last two points for right extrapolation
+        slope = (powers[-1] - powers[-2]) / (temps[-1] - temps[-2])
+        return powers[-1] + slope * (temperature - temps[-1])
 
 
 class SorTesTankMinimiseSwitchStrategy(MinimiseHeatpumpSwitchStrategy):
-    MINUTES_BEFORE_SWITCH_ALLOWED = constants.SorTesConfiguration.MINUTES_BEFORE_SWITCH_ALLOWED
-    MIN_SOC_TOLERANCE = constants.SorTesConfiguration.MIN_SOC_TOLERANCE
-    MAX_SOC_TOLERANCE = constants.SorTesConfiguration.MAX_SOC_TOLERANCE
+    """Minimise number of switches between charging and discharging of the SorTES tank"""
 
+    MINUTES_BEFORE_SWITCH_ALLOWED = SorTesConfiguration.MINUTES_BEFORE_SWITCH_ALLOWED
+    MIN_SOC_TOLERANCE = SorTesConfiguration.MIN_SOC_TOLERANCE
+    MAX_SOC_TOLERANCE = SorTesConfiguration.MAX_SOC_TOLERANCE
+
+    # pylint: disable=super-init-not-called
     def __init__(
         self,
         energy_params: "SorTesTankEnergyParameters",
@@ -101,6 +112,7 @@ class SorTesTankMinimiseSwitchStrategy(MinimiseHeatpumpSwitchStrategy):
 
     @property
     def current_state(self) -> HeatPumpChargingState:
+        """Return the current charging state of the tank."""
         return self._current_state
 
     def _get_tank_soc(self, time_slot: DateTime):
@@ -113,13 +125,18 @@ class SorTesTankMinimiseSwitchStrategy(MinimiseHeatpumpSwitchStrategy):
         )
 
     def event_activate(self):
+        """Perform commands on event activate."""
         self._average_trade_rate.read_or_rotate_profiles()
 
     def event_market_slot(self):
+        """Perform commands on event market cycle."""
         self._average_trade_rate.read_or_rotate_profiles()
 
 
-class SorTesTankState:
+class SorTesTankState(HeatPumpStateBase):
+    """State class of Sortes tank state."""
+
+    # pylint: disable=too-many-instance-attributes, super-init-not-called
 
     def __init__(self):
         self._soc: dict[DateTime, float] = {}
@@ -129,29 +146,23 @@ class SorTesTankState:
         self._min_energy_demand_kWh: dict[DateTime, float] = {}
         self._max_energy_demand_kWh: dict[DateTime, float] = {}
         self._total_traded_energy_kWh: float = 0  # for KPI calculation
+        self._total_charged_energy_kWh: float = 0
+
+    def update_total_charged_energy_kWh(self, charged_energy_kWh: float):
+        """Update the total charged energy."""
+        self._total_charged_energy_kWh += charged_energy_kWh
 
     def activate(self):
-        self._soc[GlobalConfig.start_date] = constants.SorTesConfiguration.MIN_SOC_TOLERANCE
-
-    def set_heat_demand_kJ(self, time_slot: DateTime, heat_demand_kJ: float):
-        """Set heat demand for the given time slot."""
-        self._heat_demand_kJ[time_slot] = heat_demand_kJ
-
-    def get_heat_demand_kJ(self, time_slot: DateTime) -> float:
-        """Return the heat demand in J for a given time slot."""
-        return self._heat_demand_kJ.get(time_slot, 0)
+        """Perform commands on event activate."""
+        self._soc[GlobalConfig.start_date] = SorTesConfiguration.MIN_SOC_TOLERANCE
 
     def get_soc(self, time_slot: DateTime) -> float:
+        """Return the soc value for the given time slot."""
         return self._soc.get(time_slot, 0)
 
     def set_soc(self, time_slot: DateTime, soc: float):
+        """Set soc value for the given time slot."""
         self._soc[time_slot] = soc
-
-    def get_cop(self, time_slot: DateTime) -> float:
-        return self._cop.get(time_slot, 0)
-
-    def set_cop(self, time_slot: DateTime, cop: float):
-        self._cop[time_slot] = cop
 
     def get_min_energy_demand_kWh(self, time_slot: DateTime) -> float:
         """Return the minimal energy demanded for a given time slot."""
@@ -161,10 +172,6 @@ class SorTesTankState:
         """Return the maximal energy demanded for a given time slot."""
         return self._max_energy_demand_kWh.get(time_slot, 0)
 
-    def get_energy_demand_kWh(self, time_slot: DateTime) -> float:
-        """Return the energy demanded for a given time slot."""
-        return self._energy_demand_kWh.get(time_slot, 0)
-
     def set_min_energy_demand_kWh(self, time_slot: DateTime, energy_kWh: float):
         """Set the minimal energy demanded for a given time slot."""
         self._min_energy_demand_kWh[time_slot] = energy_kWh
@@ -173,24 +180,24 @@ class SorTesTankState:
         """Set the maximal energy demanded for a given time slot."""
         self._max_energy_demand_kWh[time_slot] = energy_kWh
 
-    def set_energy_demand_kWh(self, time_slot: DateTime, energy_kWh: float):
-        """Set the minimal energy demanded for a given time slot."""
-        self._energy_demand_kWh[time_slot] = energy_kWh
-
     def delete_past_state_values(self, current_time_slot: Optional[DateTime] = None):
-        if not current_time_slot or constants.RETAIN_PAST_MARKET_STRATEGIES_STATE:
+        """Delete past state values."""
+        if not current_time_slot or RETAIN_PAST_MARKET_STRATEGIES_STATE:
             return
         last_time_slot = self._last_time_slot(current_time_slot)
         self._delete_time_slots(self._cop, last_time_slot)
+        self._delete_time_slots(self._soc, last_time_slot)
         self._delete_time_slots(self._energy_demand_kWh, last_time_slot)
         self._delete_time_slots(self._min_energy_demand_kWh, last_time_slot)
         self._delete_time_slots(self._max_energy_demand_kWh, last_time_slot)
+        self._delete_time_slots(self._heat_demand_kJ, last_time_slot)
 
     def increase_total_traded_energy_kWh(self, energy_kWh: float):
         """Add to the total traded energy of the heatpump for a given time slot."""
         self._total_traded_energy_kWh += energy_kWh
 
     def get_state(self) -> dict:
+        """Return the state."""
         return {
             "soc": convert_pendulum_to_str_in_dict(self._soc),
             "cop": convert_pendulum_to_str_in_dict(self._cop),
@@ -198,9 +205,11 @@ class SorTesTankState:
             "min_energy_demand_kWh": convert_pendulum_to_str_in_dict(self._min_energy_demand_kWh),
             "max_energy_demand_kWh": convert_pendulum_to_str_in_dict(self._max_energy_demand_kWh),
             "total_traded_energy_kWh": self._total_traded_energy_kWh,
+            "total_charge_energy_kWh": self._total_charged_energy_kWh,
         }
 
     def restore_state(self, state_dict: dict):
+        """Restore the state."""
         self._soc = convert_str_to_pendulum_in_dict(state_dict["soc"])
         self._cop = convert_str_to_pendulum_in_dict(state_dict["cop"])
         self._energy_demand_kWh = convert_str_to_pendulum_in_dict(state_dict["energy_demand_kWh"])
@@ -211,26 +220,23 @@ class SorTesTankState:
             state_dict["max_energy_demand_kWh"]
         )
         self._total_traded_energy_kWh = state_dict["total_traded_energy_kWh"]
+        self._total_charged_energy_kWh = state_dict["total_charge_energy_kWh"]
 
-    def get_results_dict(self, time_slot: DateTime) -> dict:
+    def get_results_dict(self, current_time_slot: DateTime) -> dict:
+        """Return the results of the given time slot."""
         return {
-            "cop": self.get_cop(time_slot),
-            "energy_demand_kWh": self.get_energy_demand_kWh(time_slot),
+            "cop": self.get_cop(current_time_slot),
             "total_traded_energy_kWh": self._total_traded_energy_kWh,
-            "heat_demand_kJ": self.get_heat_demand_kJ(time_slot),
-            "soc": self.get_soc(time_slot),
+            "heat_demand_kJ": self.get_heat_demand_kJ(current_time_slot),
+            "soc": self.get_soc(current_time_slot),
+            "total_charge_energy_kWh": self._total_charged_energy_kWh,
         }
-
-    @staticmethod
-    def _delete_time_slots(profile: dict, current_time_stamp: DateTime):
-        delete_time_slots_in_state(profile, current_time_stamp)
-
-    @staticmethod
-    def _last_time_slot(current_market_slot: DateTime) -> DateTime:
-        return current_market_slot - GlobalConfig.slot_length
 
 
 class SorTesTankEnergyParameters:
+    """Energy Parameters for the SorTes Tank heat pump"""
+
+    # pylint: disable=too-many-instance-attributes
 
     def __init__(
         self,
@@ -240,6 +246,7 @@ class SorTesTankEnergyParameters:
         average_trade_rate: Union[str, float, dict],
         source_type: HeatPumpSourceType = ConstSettings.HeatPumpSettings.SOURCE_TYPE,
     ):
+        # pylint: disable=too-many-arguments, too-many-positional-arguments
         self._state = SorTesTankState()
 
         self._heat_demand_Q_J: StrategyProfileBase = profile_factory(
@@ -251,7 +258,7 @@ class SorTesTankEnergyParameters:
         self._target_temp_C: StrategyProfileBase = profile_factory(
             target_temp_C_profile, None, profile_type=InputProfileTypes.IDENTITY
         )
-        self._capacity_kWh: float = constants.SorTesConfiguration.CAPACITY_KWH
+        self._capacity_kWh: float = SorTesConfiguration.CAPACITY_KWH
         self._cop_model = cop_model_factory(COPModelType.UNIVERSAL, source_type)
         self._bought_energy_kWh = 0.0
 
@@ -259,19 +266,23 @@ class SorTesTankEnergyParameters:
 
     @property
     def state(self) -> SorTesTankState:
+        """Return the state."""
         return self._state
 
     @property
     def soc_management(self) -> SorTesTankMinimiseSwitchStrategy:
+        """Return the soc management."""
         return self._soc_management
 
     def event_market_cycle(self, current_time_slot: DateTime):
+        """Runs on market_cycle event."""
         # Order matters here
         self._soc_management.event_market_slot()
         self._rotate_profiles(current_time_slot)
         self._populate_state(current_time_slot)
 
     def event_activate(self):
+        """Runs on activate event."""
         self._soc_management.event_activate()
         self._rotate_profiles()
         self._state.activate()
@@ -282,15 +293,19 @@ class SorTesTankEnergyParameters:
         self._decrement_posted_energy(time_slot, energy_kWh)
 
     def get_soc(self, time_slot: DateTime):
+        """Return the soc of the SorTes tank"""
         return self._state.get_soc(time_slot)
 
     def get_energy_demand_kWh(self, time_slot: DateTime):
+        """Return the energy_demand kWh."""
         return self._state.get_energy_demand_kWh(time_slot)
 
     def get_min_energy_demand_kWh(self, time_slot: DateTime):
+        """Return the min_energy_demand kWh."""
         return self._state.get_min_energy_demand_kWh(time_slot)
 
     def get_max_energy_demand_kWh(self, time_slot: DateTime):
+        """Return the max_energy_demand kWh."""
         return self._state.get_max_energy_demand_kWh(time_slot)
 
     def _populate_state(self, time_slot: DateTime):
@@ -337,44 +352,44 @@ class SorTesTankEnergyParameters:
 
     def _get_performance_energy_charge_kWh(self, time_slot: DateTime) -> float:
         charge_power_kW = SorTesPerformanceMaps.get_power_charging(
-            self._ambient_temp_C.get_value(time_slot) + 5
+            self._ambient_temp_C.get_value(time_slot) + 5  # todo: temp addition TDB
         )
         return convert_kW_to_kWh(charge_power_kW, GlobalConfig.slot_length)
 
     def _get_performance_energy_discharge_kWh(self, time_slot: DateTime) -> float:
         discharge_power_kW = SorTesPerformanceMaps.get_power_discharging(
-            self._ambient_temp_C.get_value(time_slot) + 5
+            self._ambient_temp_C.get_value(time_slot) + 5  # todo: temp addition TDB
         )
         return convert_kW_to_kWh(discharge_power_kW, GlobalConfig.slot_length)
 
     def _calc_condenser_electricity_kWh(self, charging_energy_kWh: float) -> float:
         return (
             charging_energy_kWh
-            / constants.SorTesConfiguration.COP_CONDENSER
-            * constants.SorTesConfiguration.CONVERSION_CHARGE_CONDENSER_POWER
+            / SorTesConfiguration.COP_CONDENSER
+            * SorTesConfiguration.CONVERSION_CHARGE_CONDENSER_POWER
         )
 
     def _calc_evaporator_electricity_kWh(self, discharging_energy_kWh: float) -> float:
         return (
             discharging_energy_kWh
-            / constants.SorTesConfiguration.COP_EVAPORATOR
-            * constants.SorTesConfiguration.CONVERSION_DISCHARGE_EVAPORATOR_POWER
+            / SorTesConfiguration.COP_EVAPORATOR
+            * SorTesConfiguration.CONVERSION_DISCHARGE_EVAPORATOR_POWER
         )
 
     def _get_total_electricity_demand_for_time_slot_kWh(self, time_slot: DateTime) -> float:
+        # we need this function in order to also access the demand after trading
         return convert_kJ_to_kWh(self._state.get_heat_demand_kJ(time_slot)) / self._state.get_cop(
             time_slot
         )
 
     def _calc_heat_capacity_into_electricity_kWh(self, heat_capacity: float) -> float:
-        return heat_capacity / constants.SorTesConfiguration.COP_HEAT_SOURCE
+        return heat_capacity / SorTesConfiguration.COP_HEAT_SOURCE
 
     def _calc_available_free_storage_kWh(self, time_slot: DateTime) -> float:
         charge_energy_kWh = self._get_performance_energy_charge_kWh(time_slot)
-        # add the charge energy to the capacity be able to charge above the maximum
+        # add the charge energy to the capacity be able to reach the maximum SOC tolerance
         available_heat_storage_kWh = (
-            (constants.SorTesConfiguration.MAX_SOC_TOLERANCE - self._state.get_soc(time_slot))
-            / 100
+            (SorTesConfiguration.MAX_SOC_TOLERANCE - self._state.get_soc(time_slot)) / 100
         ) * self._capacity_kWh + charge_energy_kWh
 
         if available_heat_storage_kWh < charge_energy_kWh:
@@ -383,10 +398,9 @@ class SorTesTankEnergyParameters:
 
     def _calc_available_stored_heat_kWh(self, time_slot: DateTime) -> float:
         discharge_energy_kWh = self._get_performance_energy_discharge_kWh(time_slot)
-        # add the discharge energy to the capacity be able to discharge below the minimum
+        # add the discharge energy to the capacity be able to reach the minimum SOC tolerance
         stored_heat_kWh = (
-            (self._state.get_soc(time_slot) - constants.SorTesConfiguration.MIN_SOC_TOLERANCE)
-            / 100
+            (self._state.get_soc(time_slot) - SorTesConfiguration.MIN_SOC_TOLERANCE) / 100
         ) * self._capacity_kWh + discharge_energy_kWh
 
         if stored_heat_kWh < discharge_energy_kWh:
@@ -403,13 +417,18 @@ class SorTesTankEnergyParameters:
 
     def _calc_energy_to_buy_minimum(self, time_slot: DateTime) -> float:
         available_stored_heat_kWh = self._calc_available_stored_heat_kWh(time_slot)
-        energy_to_be_bought_for_heat = min(
-            0,
-            abs(
-                self._get_total_electricity_demand_for_time_slot_kWh(time_slot)
-                - self._calc_heat_capacity_into_electricity_kWh(available_stored_heat_kWh)
-            ),
-        )
+        energy_to_be_bought_for_heat = self._get_total_electricity_demand_for_time_slot_kWh(
+            time_slot
+        ) - self._calc_heat_capacity_into_electricity_kWh(available_stored_heat_kWh)
+
+        if energy_to_be_bought_for_heat < FLOATING_POINT_TOLERANCE:
+            # corner case when the demand is lower than the discharging energy
+            log.warning(
+                "The heat demand is lower than the discharging energy: %s, %s",
+                self._get_total_electricity_demand_for_time_slot_kWh(time_slot),
+                self._calc_heat_capacity_into_electricity_kWh(available_stored_heat_kWh),
+            )
+            energy_to_be_bought_for_heat = 0
 
         return energy_to_be_bought_for_heat + self._calc_evaporator_electricity_kWh(
             available_stored_heat_kWh
@@ -431,37 +450,39 @@ class SorTesTankEnergyParameters:
             and net_traded_energy_kWh > FLOATING_POINT_TOLERANCE
         ):
             self._charge(net_traded_energy_kWh, time_slot)
-        elif (
-            self.soc_management.current_state == HeatPumpChargingState.DISCHARGE
-            and net_traded_energy_kWh > FLOATING_POINT_TOLERANCE
-        ):
-            self._discharge(self._bought_energy_kWh, time_slot)
-        else:
+        elif self.soc_management.current_state == HeatPumpChargingState.DISCHARGE:
+            self._discharge(net_traded_energy_kWh, time_slot)
+        elif self.soc_management.current_state == HeatPumpChargingState.MAINTAIN_SOC:
             self._no_charge(time_slot)
+        else:
+            assert False, "should never reach this point"
 
-    def _charge(self, energy_kWh: float, time_slot: DateTime):
-        charge_energy = self._get_performance_energy_charge_kWh(self.last_time_slot(time_slot))
+    def _charge(self, net_traded_energy_kWh: float, time_slot: DateTime):
+        charge_energy_kWh = self._get_performance_energy_charge_kWh(self.last_time_slot(time_slot))
         condenser_energy_kWh = (
-            charge_energy * constants.SorTesConfiguration.CONVERSION_CHARGE_CONDENSER_POWER
+            charge_energy_kWh * SorTesConfiguration.CONVERSION_CHARGE_CONDENSER_POWER
         )
-        heat_energy_kWh = energy_kWh * constants.SorTesConfiguration.COP_HEAT_SOURCE
+        heat_energy_kWh = net_traded_energy_kWh * SorTesConfiguration.COP_HEAT_SOURCE
         assert (
-            abs(condenser_energy_kWh + charge_energy - heat_energy_kWh) < FLOATING_POINT_TOLERANCE
+            abs(condenser_energy_kWh + charge_energy_kWh - heat_energy_kWh)
+            < FLOATING_POINT_TOLERANCE
         )
 
-        self._update_soc(time_slot, charge_energy)
+        self._update_soc(time_slot, charge_energy_kWh)
+        self._state.update_total_charged_energy_kWh(charge_energy_kWh)
 
-    def _discharge(self, energy_kWh: float, time_slot: DateTime):
+    def _discharge(self, net_traded_energy_kWh: float, time_slot: DateTime):
+        assert net_traded_energy_kWh < FLOATING_POINT_TOLERANCE
         discharge_energy_kWh = self._get_performance_energy_discharge_kWh(
             self.last_time_slot(time_slot)
         )
         evaporator_energy_kWh = (
-            discharge_energy_kWh
-            * constants.SorTesConfiguration.CONVERSION_DISCHARGE_EVAPORATOR_POWER
+            discharge_energy_kWh * SorTesConfiguration.CONVERSION_DISCHARGE_EVAPORATOR_POWER
         )
-        assert energy_kWh == evaporator_energy_kWh
+        assert (net_traded_energy_kWh - evaporator_energy_kWh) < FLOATING_POINT_TOLERANCE
 
         self._update_soc(time_slot, -discharge_energy_kWh)
+        self._state.update_total_charged_energy_kWh(-discharge_energy_kWh)
 
     def _update_soc(self, time_slot: DateTime, heat_energy_kWh: float):
         old_charge = self._state.get_soc(self.last_time_slot(time_slot)) / 100 * self._capacity_kWh
@@ -487,6 +508,7 @@ class SorTesTankEnergyParameters:
 
 
 class HeatPumpWithSorTesTankStrategy(HeatPumpStrategyBase):
+    """Strategy class for a heat pump that is connected to a SorTES tank"""
 
     def __init__(
         self,
@@ -499,6 +521,7 @@ class HeatPumpWithSorTesTankStrategy(HeatPumpStrategyBase):
             AvailableMarketTypes, HeatPumpOrderUpdaterParameters
         ] = None,
     ):
+        # pylint: disable=too-many-arguments, too-many-positional-arguments, super-init-not-called
 
         self._init_price_params(order_updater_parameters)
 
@@ -522,6 +545,10 @@ class HeatPumpWithSorTesTankStrategy(HeatPumpStrategyBase):
         )
         self._post_order(market, market_slot, order_energy_kWh, order_rate)
 
+    @property
+    def state(self) -> SorTesTankState:
+        return self._energy_params.state
+
     def _init_price_params(self, order_updater_parameters):
         if not order_updater_parameters:
             order_updater_parameters = {
@@ -529,7 +556,3 @@ class HeatPumpWithSorTesTankStrategy(HeatPumpStrategyBase):
             }
 
         super().__init__(order_updater_parameters=order_updater_parameters)
-
-    @property
-    def state(self) -> SorTesTankState:
-        return self._energy_params.state
