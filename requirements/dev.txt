@@ -6,7 +6,21 @@
 #
 -e git+https://github.com/gridsingularity/gsy-framework@master#egg=gsy_framework
     # via -r requirements/base.txt
-astroid==3.3.10
+annotated-doc==0.0.4
+    # via
+    #   -r requirements/base.txt
+    #   fastapi
+annotated-types==0.7.0
+    # via
+    #   -r requirements/base.txt
+    #   pydantic
+anyio==4.13.0
+    # via
+    #   -r requirements/base.txt
+    #   httpx
+    #   starlette
+    #   watchfiles
+astroid==4.0.4
     # via pylint
 attrs==23.2.0
     # via
@@ -20,7 +34,7 @@ avro==1.11.3
     #   gsy-framework
 awesome-slugify==1.6.5
     # via -r requirements/base.txt
-bcrypt==4.3.0
+bcrypt==5.0.0
     # via paramiko
 cached-property==2.0.1
     # via -r requirements/base.txt
@@ -33,8 +47,10 @@ certifi==2024.2.2
     # via
     #   -r requirements/base.txt
     #   gsy-framework
+    #   httpcore
+    #   httpx
     #   requests
-cffi==1.17.1
+cffi==2.0.0
     # via
     #   cryptography
     #   pynacl
@@ -60,6 +76,7 @@ click==8.1.7
     #   geocoder
     #   gsy-framework
     #   rq
+    #   uvicorn
 click-default-group==1.2.4
     # via -r requirements/base.txt
 colorama==0.4.6
@@ -69,7 +86,11 @@ colorama==0.4.6
     #   tox
 colorlog==4.7.2
     # via -r requirements/base.txt
-cryptography==45.0.3
+croniter==6.2.2
+    # via
+    #   -r requirements/base.txt
+    #   rq
+cryptography==47.0.0
     # via paramiko
 decorator==5.1.1
     # via
@@ -77,9 +98,9 @@ decorator==5.1.1
     #   fabric
     #   gsy-framework
     #   ratelim
-deprecated==1.2.18
+deprecated==1.3.1
     # via fabric
-dill==0.4.0
+dill==0.4.1
     # via pylint
 distlib==0.3.8
     # via
@@ -91,8 +112,10 @@ et-xmlfile==1.1.0
     #   -r requirements/base.txt
     #   gsy-framework
     #   openpyxl
-fabric==3.2.2
+fabric==3.2.3
     # via -r requirements/dev.in
+fastapi==0.136.1
+    # via -r requirements/base.txt
 filelock==3.14.0
     # via
     #   -r requirements/base.txt
@@ -112,6 +135,21 @@ geopy==2.4.1
     # via
     #   -r requirements/base.txt
     #   gsy-framework
+h11==0.16.0
+    # via
+    #   -r requirements/base.txt
+    #   httpcore
+    #   uvicorn
+httpcore==1.0.9
+    # via
+    #   -r requirements/base.txt
+    #   httpx
+httptools==0.7.1
+    # via
+    #   -r requirements/base.txt
+    #   uvicorn
+httpx==0.28.1
+    # via -r requirements/base.txt
 identify==2.5.36
     # via
     #   -r requirements/base.txt
@@ -120,15 +158,19 @@ identify==2.5.36
 idna==3.7
     # via
     #   -r requirements/base.txt
+    #   anyio
     #   gsy-framework
+    #   httpx
     #   requests
-invoke==2.2.0
-    # via fabric
+invoke==2.2.1
+    # via
+    #   fabric
+    #   paramiko
 iso3166==2.1.1
     # via
     #   -r requirements/base.txt
     #   gsy-framework
-isort==6.0.1
+isort==8.0.1
     # via pylint
 jsonschema==4.22.0
     # via
@@ -149,7 +191,7 @@ mpmath==1.3.0
     # via
     #   -r requirements/base.txt
     #   sympy
-narwhals==1.41.0
+narwhals==2.20.0
     # via
     #   -r requirements/base.txt
     #   plotly
@@ -158,7 +200,7 @@ nodeenv==1.8.0
     #   -r requirements/base.txt
     #   gsy-framework
     #   pre-commit
-numpy==2.2.6
+numpy==2.4.4
     # via -r requirements/base.txt
 openpyxl==3.0.10
     # via
@@ -171,7 +213,7 @@ packaging==24.0
     #   plotly
     #   pyproject-api
     #   tox
-paramiko==3.5.1
+paramiko==4.0.0
     # via fabric
 pendulum==3.0.0
     # via
@@ -184,7 +226,7 @@ platformdirs==4.2.2
     #   pylint
     #   tox
     #   virtualenv
-plotly==6.1.2
+plotly==6.7.0
     # via -r requirements/base.txt
 pluggy==1.5.0
     # via
@@ -197,17 +239,33 @@ pre-commit==3.5.0
     # via
     #   -r requirements/base.txt
     #   gsy-framework
-psutil==7.0.0
+psutil==7.2.2
     # via -r requirements/dev.in
 psycopg2==2.9.10
     # via -r requirements/base.txt
 psycopg2-binary==2.9.10
     # via -r requirements/base.txt
-pycparser==2.22
+pycparser==3.0
     # via cffi
-pylint==3.3.7
+pydantic==2.13.3
+    # via
+    #   -r requirements/base.txt
+    #   fastapi
+    #   pylint-pydantic
+pydantic-core==2.46.3
+    # via
+    #   -r requirements/base.txt
+    #   pydantic
+pylint==4.0.5
+    # via
+    #   -r requirements/dev.in
+    #   pylint-plugin-utils
+    #   pylint-pydantic
+pylint-plugin-utils==0.9.0
+    # via pylint-pydantic
+pylint-pydantic==0.4.1
     # via -r requirements/dev.in
-pynacl==1.5.0
+pynacl==1.6.2
     # via paramiko
 pyproject-api==1.6.1
     # via
@@ -217,12 +275,17 @@ pyproject-api==1.6.1
 python-dateutil==2.9.0.post0
     # via
     #   -r requirements/base.txt
+    #   croniter
     #   gsy-framework
     #   pendulum
     #   time-machine
+python-dotenv==1.2.2
+    # via
+    #   -r requirements/base.txt
+    #   uvicorn
 python-rex==0.4
     # via -r requirements/base.txt
-pytz==2025.2
+pytz==2026.1.post1
     # via -r requirements/base.txt
 pyyaml==6.0.1
     # via
@@ -230,6 +293,7 @@ pyyaml==6.0.1
     #   -r requirements/dev.in
     #   gsy-framework
     #   pre-commit
+    #   uvicorn
 ratelim==0.1.6
     # via
     #   -r requirements/base.txt
@@ -246,7 +310,7 @@ referencing==0.35.1
     #   gsy-framework
     #   jsonschema
     #   jsonschema-specifications
-regex==2024.11.6
+regex==2026.4.4
     # via
     #   -r requirements/base.txt
     #   awesome-slugify
@@ -261,7 +325,7 @@ rpds-py==0.18.1
     #   gsy-framework
     #   jsonschema
     #   referencing
-rq==2.3.3
+rq==2.8.0
     # via -r requirements/base.txt
 six==1.16.0
     # via
@@ -272,6 +336,10 @@ six==1.16.0
     #   python-rex
 sortedcontainers==2.4.0
     # via -r requirements/base.txt
+starlette==1.0.0
+    # via
+    #   -r requirements/base.txt
+    #   fastapi
 sympy==1.14.0
     # via -r requirements/base.txt
 tabulate==0.9.0
@@ -283,12 +351,26 @@ time-machine==2.16.0
     #   -r requirements/base.txt
     #   gsy-framework
     #   pendulum
-tomlkit==0.13.2
+tomlkit==0.14.0
     # via pylint
 tox==4.15.0
     # via
     #   -r requirements/base.txt
     #   gsy-framework
+typing-extensions==4.15.0
+    # via
+    #   -r requirements/base.txt
+    #   anyio
+    #   fastapi
+    #   pydantic
+    #   pydantic-core
+    #   starlette
+    #   typing-inspection
+typing-inspection==0.4.2
+    # via
+    #   -r requirements/base.txt
+    #   fastapi
+    #   pydantic
 tzdata==2025.2
     # via
     #   -r requirements/base.txt
@@ -303,17 +385,28 @@ urllib3==1.26.18
     #   -r requirements/base.txt
     #   gsy-framework
     #   requests
+uvicorn[standard]==0.46.0
+    # via -r requirements/base.txt
+uvloop==0.22.1
+    # via
+    #   -r requirements/base.txt
+    #   uvicorn
 virtualenv==20.26.2
     # via
     #   -r requirements/base.txt
     #   gsy-framework
     #   pre-commit
     #   tox
+watchfiles==1.1.1
+    # via
+    #   -r requirements/base.txt
+    #   uvicorn
 websockets==12.0
     # via
     #   -r requirements/base.txt
     #   gsy-framework
-wrapt==1.17.2
+    #   uvicorn
+wrapt==2.1.2
     # via deprecated
 
 # The following packages are considered to be unsafe in a requirements file:
