@@ -120,9 +120,15 @@ class SorTesTankMinimiseSwitchStrategy(MinimiseHeatpumpSwitchStrategy):
         return self._energy_params.get_soc(time_slot)
 
     def _is_energy_affordable(self, time_slot: DateTime, _buy_rate: float) -> bool:
-        return (
-            self._average_trade_rate.get_value(time_slot)
-            < GlobalConfig.market_maker_rate[time_slot]
+        rates_in_time_horizont = [
+            value
+            for ts, value in self._average_trade_rate.profile.items()
+            if time_slot
+            <= ts
+            < time_slot.add(minutes=SorTesConfiguration.MINUTES_TIME_HORIZONT_LOW_RATES)
+        ]
+        return all(
+            value < GlobalConfig.market_maker_rate[time_slot] for value in rates_in_time_horizont
         )
 
     def event_activate(self):
