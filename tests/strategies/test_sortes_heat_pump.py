@@ -476,7 +476,7 @@ class TestSorTesTankEnergyParameters:
         ep._bought_energy_kWh = -evaporator_kWh  # net negative
         ep._ambient_temp_C.profile[START_TIME_SLOT] = AMBIENT_TEMP_C
         ep._charge_or_discharge_tank(NEXT_SLOT)
-        assert ep.get_soc(NEXT_SLOT) == 45.7
+        assert ep.get_soc(NEXT_SLOT) == 46.5
 
 
 class TestHeatPumpWithSorTesTankStrategy:

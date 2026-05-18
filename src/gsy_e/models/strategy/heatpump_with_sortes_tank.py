@@ -1,6 +1,7 @@
 from decimal import Decimal
 from typing import TYPE_CHECKING, Optional, Union
 from logging import getLogger
+from math import isclose
 
 import numpy as np
 from gsy_framework.constants_limits import GlobalConfig, ConstSettings, FLOATING_POINT_TOLERANCE
@@ -353,13 +354,15 @@ class SorTesTankEnergyParameters:
 
     def _get_performance_energy_charge_kWh(self, time_slot: DateTime) -> float:
         charge_power_kW = SorTesPerformanceMaps.get_power_charging(
-            self._ambient_temp_C.get_value(time_slot) + 5  # todo: temp addition TDB
+            self._ambient_temp_C.get_value(time_slot)
+            + SorTesConfiguration.AMBIENT_TEMPERATURE_CORRECTION
         )
         return convert_kW_to_kWh(charge_power_kW, GlobalConfig.slot_length)
 
     def _get_performance_energy_discharge_kWh(self, time_slot: DateTime) -> float:
         discharge_power_kW = SorTesPerformanceMaps.get_power_discharging(
-            self._ambient_temp_C.get_value(time_slot) + 5  # todo: temp addition TDB
+            self._ambient_temp_C.get_value(time_slot)
+            - SorTesConfiguration.AMBIENT_TEMPERATURE_CORRECTION
         )
         return convert_kW_to_kWh(discharge_power_kW, GlobalConfig.slot_length)
 
@@ -418,9 +421,11 @@ class SorTesTankEnergyParameters:
 
     def _calc_energy_to_buy_minimum(self, time_slot: DateTime) -> float:
         available_stored_heat_kWh = self._calc_available_stored_heat_kWh(time_slot)
-        energy_to_be_bought_for_heat = self._get_total_electricity_demand_for_time_slot_kWh(
-            time_slot
-        ) - self._calc_heat_capacity_into_electricity_kWh(available_stored_heat_kWh)
+        electricity_demand_kWh = self._get_total_electricity_demand_for_time_slot_kWh(time_slot)
+        energy_to_be_bought_for_heat = (
+            electricity_demand_kWh
+            - self._calc_heat_capacity_into_electricity_kWh(available_stored_heat_kWh)
+        )
 
         if energy_to_be_bought_for_heat < FLOATING_POINT_TOLERANCE:
             # corner case when the demand is lower than the discharging energy
@@ -429,7 +434,7 @@ class SorTesTankEnergyParameters:
                 self._get_total_electricity_demand_for_time_slot_kWh(time_slot),
                 self._calc_heat_capacity_into_electricity_kWh(available_stored_heat_kWh),
             )
-            energy_to_be_bought_for_heat = 0
+            return electricity_demand_kWh
 
         return energy_to_be_bought_for_heat + self._calc_evaporator_electricity_kWh(
             available_stored_heat_kWh
@@ -447,6 +452,13 @@ class SorTesTankEnergyParameters:
         )
         net_traded_energy_kWh = self._bought_energy_kWh - electricity_demand_kWh
 
+        def _is_net_traded_energy_zero():
+            return isclose(net_traded_energy_kWh, 0, abs_tol=FLOATING_POINT_TOLERANCE)
+
+        if _is_net_traded_energy_zero():
+            self._no_charge(time_slot)
+            return
+
         if (
             self.soc_management.current_state == HeatPumpChargingState.CHARGE
             and net_traded_energy_kWh > FLOATING_POINT_TOLERANCE
@@ -454,8 +466,6 @@ class SorTesTankEnergyParameters:
             self._charge(net_traded_energy_kWh, time_slot)
         elif self.soc_management.current_state == HeatPumpChargingState.DISCHARGE:
             self._discharge(net_traded_energy_kWh, time_slot)
-        elif self.soc_management.current_state == HeatPumpChargingState.MAINTAIN_SOC:
-            self._no_charge(time_slot)
         else:
             assert False, "should never reach this point"
 
