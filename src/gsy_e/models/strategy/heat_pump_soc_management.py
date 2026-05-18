@@ -113,7 +113,11 @@ class MinimiseHeatpumpSwitchStrategy(HeatPumpSOCManagement):
             # occurred yet. Change state if needed.
             self._last_switch = time_slot
             return True
-        if time_slot - self._last_switch < duration(minutes=self.MINUTES_BEFORE_SWITCH_ALLOWED):
+        if (
+            self._current_state != HeatPumpChargingState.MAINTAIN_SOC
+            and time_slot - self._last_switch
+            < duration(minutes=self.MINUTES_BEFORE_SWITCH_ALLOWED)
+        ):
             # If not enough time has passed since the last switch, do not allow state change.
             return False
         # Otherwise, allow the state change.
