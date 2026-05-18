@@ -5,6 +5,7 @@ import threading
 import uuid
 from decimal import Decimal
 from typing import Callable, Optional
+from urllib.parse import urljoin
 
 import httpx
 import pendulum
@@ -50,8 +51,8 @@ class EWClientGatewayConnection:
         self._actor_id = actor_id
         self._actor_type = actor_type
         base_url = _CG_GATEWAY_URL.rstrip("/")
-        self._ws_url = base_url + _CG_WS_PATH
-        self._http_url = base_url + _CG_HTTP_MESSAGES_PATH
+        self._ws_url = urljoin(base_url, _CG_WS_PATH)
+        self._http_url = urljoin(base_url, _CG_HTTP_MESSAGES_PATH)
         self._stop_event: threading.Event = threading.Event()
         self._subscription_thread: Optional[threading.Thread] = None
 
