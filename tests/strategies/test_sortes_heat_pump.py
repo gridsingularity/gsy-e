@@ -114,14 +114,14 @@ class TestSorTesTankMinimiseSwitchStrategy:
         assert math.isclose(soc, 42.0)
         self._energy_params_mock.get_soc.assert_called_once_with(START_TIME_SLOT)
 
-    def test_is_energy_affordable_true_when_avg_rate_below_market_maker_rate(self):
-        # average_trade_rate=25, market_maker_rate[START_TIME_SLOT]=30 → 25 < 30 → True
-        strategy = self._create_strategy(average_trade_rate=25.0)
+    def test_is_energy_affordable_true_when_avg_rate_below_preferred_buying_rate(self):
+        # average_trade_rate=19, preferred_buying_rate=20 → 19 < 20 → True
+        strategy = self._create_strategy(average_trade_rate=19.0)
         strategy.event_activate()
         assert strategy._is_energy_affordable(START_TIME_SLOT, 0.0) is True
 
-    def test_is_energy_affordable_false_when_avg_rate_above_market_maker_rate(self):
-        # average_trade_rate=35, market_maker_rate[START_TIME_SLOT]=30 → 35 < 30 → False
+    def test_is_energy_affordable_false_when_avg_rate_above_preferred_buying_rate(self):
+        # average_trade_rate=35, preferred_buying_rate=20 → 35 < 20 → False
         strategy = self._create_strategy(average_trade_rate=35.0)
         strategy.event_activate()
         assert strategy._is_energy_affordable(START_TIME_SLOT, 0.0) is False
@@ -508,7 +508,7 @@ class TestHeatPumpWithSorTesTankStrategy:
             "heat_demand_Q_profile": {START_TIME_SLOT: 3600.0, NEXT_SLOT: 3600.0},
             "ambient_temp_C_profile": {START_TIME_SLOT: AMBIENT_TEMP_C, NEXT_SLOT: AMBIENT_TEMP_C},
             "target_temp_C_profile": {START_TIME_SLOT: TARGET_TEMP_C, NEXT_SLOT: TARGET_TEMP_C},
-            "average_trade_rate": 25.0,
+            "average_trade_rate": 19.0,
         }
         defaults.update(kwargs)
         return HeatPumpWithSorTesTankStrategy(**defaults)

@@ -112,8 +112,9 @@ getcontext().prec = 12
 class SorTesConfiguration:
     """Collection of SorTes heat tank configuration parameters."""
 
-    MINUTES_BEFORE_SWITCH_ALLOWED = 2 * 60
+    MINUTES_BEFORE_SWITCH_ALLOWED = 1 * 60
     MINUTES_TIME_HORIZONT_LOW_RATES = 1 * 60
+    PREFERRED_BUYING_RATE = 20
     MIN_SOC_TOLERANCE = 10
     MAX_SOC_TOLERANCE = 90
     CAPACITY_KWH = 25

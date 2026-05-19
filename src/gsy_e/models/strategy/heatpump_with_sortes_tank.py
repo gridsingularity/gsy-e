@@ -128,7 +128,7 @@ class SorTesTankMinimiseSwitchStrategy(MinimiseHeatpumpSwitchStrategy):
             < time_slot.add(minutes=SorTesConfiguration.MINUTES_TIME_HORIZONT_LOW_RATES)
         ]
         return all(
-            value < GlobalConfig.market_maker_rate[time_slot] for value in rates_in_time_horizont
+            value < SorTesConfiguration.PREFERRED_BUYING_RATE for value in rates_in_time_horizont
         )
 
     def event_activate(self):
