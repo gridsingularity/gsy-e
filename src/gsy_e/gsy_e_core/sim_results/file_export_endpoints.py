@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-# pylint: disable=too-many-return-statements, broad-exception-raised
+# pylint: disable=too-many-return-statements, broad-exception-raised, too-many-locals
 from abc import ABC, abstractmethod
 from typing import Dict, List
 
@@ -431,7 +431,7 @@ class HeatPumpWithSortesTankDataExporter(BaseDataExporter):
             "energy traded [kWh]",
             "COP",
             "heat demand [kJ]",
-            "soc %",
+            "SOC",
             "total_charged_energy_kWh",
         ]
 
