@@ -477,9 +477,7 @@ class SorTesTankEnergyParameters:
 
     def _charge(self, net_traded_energy_kWh: float, time_slot: DateTime):
         charge_energy_kWh = self._get_performance_energy_charge_kWh(self.last_time_slot(time_slot))
-        condenser_energy_kWh = (
-            charge_energy_kWh * SorTesConfiguration.CONVERSION_CHARGE_CONDENSER_POWER
-        )
+        condenser_energy_kWh = self._calc_condenser_electricity_kWh(charge_energy_kWh)
         heat_energy_kWh = net_traded_energy_kWh * SorTesConfiguration.COP_HEAT_SOURCE
         assert (
             abs(condenser_energy_kWh + charge_energy_kWh - heat_energy_kWh)
@@ -494,9 +492,7 @@ class SorTesTankEnergyParameters:
         discharge_energy_kWh = self._get_performance_energy_discharge_kWh(
             self.last_time_slot(time_slot)
         )
-        evaporator_energy_kWh = (
-            discharge_energy_kWh * SorTesConfiguration.CONVERSION_DISCHARGE_EVAPORATOR_POWER
-        )
+        evaporator_energy_kWh = self._calc_evaporator_electricity_kWh(discharge_energy_kWh)
         assert (net_traded_energy_kWh - evaporator_energy_kWh) < FLOATING_POINT_TOLERANCE
 
         self._update_soc(time_slot, -discharge_energy_kWh)

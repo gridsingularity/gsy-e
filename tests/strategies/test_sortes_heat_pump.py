@@ -456,7 +456,11 @@ class TestSorTesTankEnergyParameters:
         # charge_energy = 0.75 kWh; condenser = charge * CONVERSION_CHARGE_CONDENSER = 0.625 kWh
         # heat_energy = net_traded * COP_HEAT_SOURCE = (condenser + charge) * 1 = 1.375 kWh
         charge_kWh = EXPECTED_CHARGE_ENERGY_KWH
-        condenser_kWh = charge_kWh * SorTesConfiguration.CONVERSION_CHARGE_CONDENSER_POWER
+        condenser_kWh = (
+            charge_kWh
+            * SorTesConfiguration.CONVERSION_CHARGE_CONDENSER_POWER
+            / SorTesConfiguration.COP_CONDENSER
+        )
         ep._bought_energy_kWh = charge_kWh + condenser_kWh  # net positive after heat demand
         # Call _update_last_time_slot_data which also resets _bought_energy_kWh
         ep._ambient_temp_C.profile[START_TIME_SLOT] = AMBIENT_TEMP_C
@@ -472,7 +476,11 @@ class TestSorTesTankEnergyParameters:
         ep.soc_management._current_state = HeatPumpChargingState.DISCHARGE
         # Simulate negative net energy (bought less than needed)
         discharge_kWh = EXPECTED_DISCHARGE_ENERGY_KWH
-        evaporator_kWh = discharge_kWh * SorTesConfiguration.CONVERSION_DISCHARGE_EVAPORATOR_POWER
+        evaporator_kWh = (
+            discharge_kWh
+            * SorTesConfiguration.CONVERSION_DISCHARGE_EVAPORATOR_POWER
+            / SorTesConfiguration.COP_EVAPORATOR
+        )
         ep._bought_energy_kWh = -evaporator_kWh  # net negative
         ep._ambient_temp_C.profile[START_TIME_SLOT] = AMBIENT_TEMP_C
         ep._charge_or_discharge_tank(NEXT_SLOT)
