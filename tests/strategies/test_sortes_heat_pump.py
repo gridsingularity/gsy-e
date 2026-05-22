@@ -427,6 +427,31 @@ class TestSorTesTankEnergyParameters:
             ep.state.get_heat_demand_kJ(START_TIME_SLOT), heat_demand_J / 1000.0, abs_tol=1e-9
         )
 
+    def test_serialize_contains_required_keys(self):
+        ep = self._create_energy_params()
+        result = ep.serialize()
+        for key in ("heat_demand_Q_J", "ambient_temp_C", "target_temp_C", "source_type"):
+            assert key in result
+
+    def test_serialize_source_type_matches_default(self):
+        ep = self._create_energy_params()
+        result = ep.serialize()
+        assert result["source_type"] == ConstSettings.HeatPumpSettings.SOURCE_TYPE
+
+    def test_serialize_input_profiles_match_constructor_arguments(self):
+        heat_profile = {START_TIME_SLOT: 1000.0, NEXT_SLOT: 2000.0}
+        ambient_profile = {START_TIME_SLOT: 10.0, NEXT_SLOT: 12.0}
+        target_profile = {START_TIME_SLOT: 45.0, NEXT_SLOT: 50.0}
+        ep = self._create_energy_params(
+            heat_demand_Q_profile=heat_profile,
+            ambient_temp_C_profile=ambient_profile,
+            target_temp_C_profile=target_profile,
+        )
+        result = ep.serialize()
+        assert result["heat_demand_Q_J"] == heat_profile
+        assert result["ambient_temp_C"] == ambient_profile
+        assert result["target_temp_C"] == target_profile
+
     def test_event_market_cycle_min_demand_not_greater_than_max_demand(self):
         ep = self._create_energy_params()
         ep.event_activate()
@@ -598,3 +623,25 @@ class TestHeatPumpWithSorTesTankStrategy:
     def test_state_is_same_object_as_energy_params_state(self):
         strategy = self._create_strategy()
         assert strategy.state is strategy._energy_params.state
+
+    def test_serialize_contains_all_energy_param_keys(self):
+        strategy = self._create_strategy()
+        result = strategy.serialize()
+        for key in ("heat_demand_Q_J", "ambient_temp_C", "target_temp_C", "source_type"):
+            assert key in result
+
+    def test_serialize_contains_all_order_updater_keys(self):
+        strategy = self._create_strategy()
+        result = strategy.serialize()
+        for key in (
+            "update_interval",
+            "initial_buying_rate",
+            "final_buying_rate",
+            "use_market_maker_rate",
+        ):
+            assert key in result
+
+    def test_serialize_source_type_matches_default(self):
+        strategy = self._create_strategy()
+        result = strategy.serialize()
+        assert result["source_type"] == ConstSettings.HeatPumpSettings.SOURCE_TYPE

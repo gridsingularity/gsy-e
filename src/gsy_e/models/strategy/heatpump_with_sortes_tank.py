@@ -256,7 +256,7 @@ class SorTesTankEnergyParameters:
     ):
         # pylint: disable=too-many-arguments, too-many-positional-arguments
         self._state = SorTesTankState()
-
+        self._source_type = source_type
         self._heat_demand_Q_J: StrategyProfileBase = profile_factory(
             heat_demand_Q_profile, None, profile_type=InputProfileTypes.IDENTITY
         )
@@ -276,6 +276,15 @@ class SorTesTankEnergyParameters:
     def state(self) -> SorTesTankState:
         """Return the state."""
         return self._state
+
+    def serialize(self):
+        """Return dict with the current energy parameter values."""
+        return {
+            "heat_demand_Q_J": self._heat_demand_Q_J.input_profile,
+            "ambient_temp_C": self._ambient_temp_C.input_profile,
+            "target_temp_C": self._target_temp_C.input_profile,
+            "source_type": self._source_type,
+        }
 
     @property
     def soc_management(self) -> SorTesTankMinimiseSwitchStrategy:
@@ -546,6 +555,13 @@ class HeatPumpWithSorTesTankStrategy(HeatPumpStrategyBase):
             average_trade_rate=average_trade_rate,
             source_type=source_type,
         )
+
+    def serialize(self):
+        """Serialize strategy parameters."""
+        return {
+            **self._energy_params.serialize(),
+            **self._order_updater_params.get(AvailableMarketTypes.SPOT).serialize(),
+        }
 
     def post_order(
         self, market: "MarketBase", market_slot: DateTime, order_rate: float = None, **kwargs
