@@ -428,17 +428,17 @@ class SorTesTankEnergyParameters:
     def _calc_energy_to_buy_minimum(self, time_slot: DateTime) -> float:
         available_stored_heat_kWh = self._calc_available_stored_heat_kWh(time_slot)
         electricity_demand_kWh = self._get_total_electricity_demand_for_time_slot_kWh(time_slot)
-        energy_to_be_bought_for_heat = (
-            electricity_demand_kWh
-            - self._calc_heat_capacity_into_electricity_kWh(available_stored_heat_kWh)
+        storage_capacity_electric_kWh = self._calc_heat_capacity_into_electricity_kWh(
+            available_stored_heat_kWh
         )
+        energy_to_be_bought_for_heat = electricity_demand_kWh - storage_capacity_electric_kWh
 
-        if energy_to_be_bought_for_heat < FLOATING_POINT_TOLERANCE:
+        if energy_to_be_bought_for_heat < FLOATING_POINT_TOLERANCE < storage_capacity_electric_kWh:
             # corner case when the demand is lower than the discharging energy
             log.warning(
                 "The heat demand is lower than the discharging energy: %s, %s",
-                self._get_total_electricity_demand_for_time_slot_kWh(time_slot),
-                self._calc_heat_capacity_into_electricity_kWh(available_stored_heat_kWh),
+                electricity_demand_kWh,
+                storage_capacity_electric_kWh,
             )
             return electricity_demand_kWh
 
