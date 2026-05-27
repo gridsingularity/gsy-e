@@ -473,11 +473,12 @@ class SorTesTankEnergyParameters:
 
         if energy_to_be_bought_for_heat < FLOATING_POINT_TOLERANCE < storage_capacity_electric_kWh:
             # corner case when the demand is lower than the discharging energy
-            log.warning(
-                "The heat demand is lower than the discharging energy: %s, %s",
-                electricity_demand_kWh,
-                storage_capacity_electric_kWh,
-            )
+            if energy_to_be_bought_for_heat > FLOATING_POINT_TOLERANCE:
+                log.warning(
+                    "The heat demand is lower than the discharging energy: %s, %s",
+                    electricity_demand_kWh,
+                    storage_capacity_electric_kWh,
+                )
             return electricity_demand_kWh
 
         return energy_to_be_bought_for_heat + self._calc_evaporator_electricity_kWh(
