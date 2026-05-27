@@ -83,16 +83,7 @@ class MinimiseHeatpumpSwitchStrategy(HeatPumpSOCManagement):
         if not self._is_time_for_state_change(time_slot):
             # If state change is not possible, but at the same time the soc is below the min or
             # above the max SOC value of the tank, then maintain the SOC.
-            if (
-                self._get_tank_soc(time_slot) >= self.MAX_SOC_TOLERANCE
-                and self._current_state == HeatPumpChargingState.CHARGE
-            ):
-                target_state = HeatPumpChargingState.MAINTAIN_SOC
-            if (
-                self._get_tank_soc(time_slot) <= self.MIN_SOC_TOLERANCE
-                and self._current_state == HeatPumpChargingState.DISCHARGE
-            ):
-                target_state = HeatPumpChargingState.MAINTAIN_SOC
+            target_state = self._handle_state_at_soc_limits(time_slot, target_state)
         else:
             # If the state change is possible, check the market maker rate to set the new state
             target_state = self._should_charge_or_discharge(time_slot, buy_rate)
@@ -103,6 +94,18 @@ class MinimiseHeatpumpSwitchStrategy(HeatPumpSOCManagement):
                 self._last_switch = time_slot
 
         return self._get_energy_from_target_state(target_state, time_slot)
+
+    def _handle_state_at_soc_limits(
+        self, time_slot: DateTime, current_state: HeatPumpChargingState
+    ) -> HeatPumpChargingState:
+        # If state change is not possible, but at the same time the soc is below the min or
+        # above the max SOC value of the tank, then maintain the SOC.
+        target_state = current_state
+        if self._get_tank_soc(time_slot) >= self.MAX_SOC_TOLERANCE:
+            target_state = HeatPumpChargingState.MAINTAIN_SOC
+        if self._get_tank_soc(time_slot) <= self.MIN_SOC_TOLERANCE:
+            target_state = HeatPumpChargingState.MAINTAIN_SOC
+        return target_state
 
     def _get_tank_soc(self, time_slot: DateTime) -> float:
         return self._charger.get_average_soc(time_slot)

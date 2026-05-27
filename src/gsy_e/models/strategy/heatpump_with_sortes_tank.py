@@ -139,6 +139,22 @@ class SorTesTankMinimiseSwitchStrategy(MinimiseHeatpumpSwitchStrategy):
         """Perform commands on event market cycle."""
         self._average_trade_rate.read_or_rotate_profiles()
 
+    def _handle_state_at_soc_limits(
+        self, time_slot: DateTime, current_state: HeatPumpChargingState
+    ) -> HeatPumpChargingState:
+        target_state = current_state
+        if (
+            self._get_tank_soc(time_slot) >= self.MAX_SOC_TOLERANCE
+            and self._current_state == HeatPumpChargingState.CHARGE
+        ):
+            target_state = HeatPumpChargingState.MAINTAIN_SOC
+        if (
+            self._get_tank_soc(time_slot) <= self.MIN_SOC_TOLERANCE
+            and self._current_state == HeatPumpChargingState.DISCHARGE
+        ):
+            target_state = HeatPumpChargingState.MAINTAIN_SOC
+        return target_state
+
 
 class SorTesTankState(HeatPumpStateBase):
     """State class of Sortes tank state."""
