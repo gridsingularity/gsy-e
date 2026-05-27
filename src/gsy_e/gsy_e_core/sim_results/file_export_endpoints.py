@@ -432,7 +432,8 @@ class HeatPumpWithSortesTankDataExporter(BaseDataExporter):
             "COP",
             "heat demand [kJ]",
             "SOC",
-            "total_charged_energy_kWh",
+            "auxiliary_energy_kWh",
+            "energy_used_for_dis_charging_kWh",
         ]
 
     @property
@@ -452,7 +453,8 @@ class HeatPumpWithSortesTankDataExporter(BaseDataExporter):
             round(hp_stats["cop"], ROUND_TOLERANCE_EXPORT),
             round(hp_stats["heat_demand_kJ"], ROUND_TOLERANCE_EXPORT),
             round(hp_stats["soc"], ROUND_TOLERANCE_EXPORT),
-            round(hp_stats["total_charge_energy_kWh"], ROUND_TOLERANCE_EXPORT),
+            round(hp_stats["auxiliary_energy_kWh"], 4),
+            round(hp_stats["energy_used_for_dis_charging_kWh"], 4),
         ]
         return rows
 

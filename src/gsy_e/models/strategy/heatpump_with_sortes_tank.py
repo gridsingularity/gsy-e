@@ -166,19 +166,31 @@ class SorTesTankState(HeatPumpStateBase):
         self._cop: dict[DateTime, float] = {}  # in percent
         self._energy_demand_kWh: dict[DateTime, float] = {}  # electricity
         self._heat_demand_kJ: dict[DateTime, float] = {}
+        self._auxiliary_energy_kWh: dict[DateTime, float] = {}
+        self._energy_used_for_dis_charging_kWh: dict[DateTime, float] = {}
         self._min_energy_demand_kWh: dict[DateTime, float] = {}
         self._max_energy_demand_kWh: dict[DateTime, float] = {}
         self._total_traded_energy_kWh: float = 0  # for KPI calculation
-        self._total_charged_energy_kWh: float = 0
-
-    def update_total_charged_energy_kWh(self, charged_energy_kWh: float):
-        """Update the total charged energy."""
-        self._total_charged_energy_kWh += charged_energy_kWh
 
     def activate(self):
         """Perform commands on event activate."""
         self._soc[GlobalConfig.start_date] = SorTesConfiguration.MIN_SOC_TOLERANCE
         self._cop[GlobalConfig.start_date] = DEFAULT_COP
+
+    def set_auxiliary_energy_kWh(self, time_slot: DateTime, energy_kWh):
+        """Set auxiliary energy."""
+        self._auxiliary_energy_kWh[time_slot] = energy_kWh
+
+    def _get_auxiliary_energy_kWh(self, time_slot: DateTime) -> float:
+        return self._auxiliary_energy_kWh.get(time_slot, 0)
+
+    def update_energy_used_for_dis_charging_kWh(self, time_slot: DateTime, energy_kWh: float):
+        """Update the charged or discharged energy."""
+        self._energy_used_for_dis_charging_kWh[time_slot] = energy_kWh
+
+    def _get_energy_used_for_dis_charging_kWh(self, time_slot: DateTime) -> float:
+        """Get the charged or discharged energy."""
+        return self._energy_used_for_dis_charging_kWh.get(time_slot, 0)
 
     def get_soc(self, time_slot: DateTime) -> float:
         """Return the soc value for the given time slot."""
@@ -229,7 +241,6 @@ class SorTesTankState(HeatPumpStateBase):
             "min_energy_demand_kWh": convert_pendulum_to_str_in_dict(self._min_energy_demand_kWh),
             "max_energy_demand_kWh": convert_pendulum_to_str_in_dict(self._max_energy_demand_kWh),
             "total_traded_energy_kWh": self._total_traded_energy_kWh,
-            "total_charge_energy_kWh": self._total_charged_energy_kWh,
         }
 
     def restore_state(self, state_dict: dict):
@@ -244,7 +255,6 @@ class SorTesTankState(HeatPumpStateBase):
             state_dict["max_energy_demand_kWh"]
         )
         self._total_traded_energy_kWh = state_dict["total_traded_energy_kWh"]
-        self._total_charged_energy_kWh = state_dict["total_charge_energy_kWh"]
 
     def get_results_dict(self, current_time_slot: DateTime) -> dict:
         """Return the results of the given time slot."""
@@ -253,7 +263,10 @@ class SorTesTankState(HeatPumpStateBase):
             "total_traded_energy_kWh": self._total_traded_energy_kWh,
             "heat_demand_kJ": self.get_heat_demand_kJ(current_time_slot),
             "soc": self.get_soc(current_time_slot),
-            "total_charge_energy_kWh": self._total_charged_energy_kWh,
+            "energy_used_for_dis_charging_kWh": self._get_energy_used_for_dis_charging_kWh(
+                current_time_slot
+            ),
+            "auxiliary_energy_kWh": self._get_auxiliary_energy_kWh(current_time_slot),
         }
 
 
@@ -510,7 +523,8 @@ class SorTesTankEnergyParameters:
         )
 
         self._update_soc(time_slot, charge_energy_kWh)
-        self._state.update_total_charged_energy_kWh(charge_energy_kWh)
+        self._state.update_energy_used_for_dis_charging_kWh(time_slot, charge_energy_kWh)
+        self._state.set_auxiliary_energy_kWh(time_slot, condenser_energy_kWh)
 
     def _discharge(self, net_traded_energy_kWh: float, time_slot: DateTime):
         assert net_traded_energy_kWh < FLOATING_POINT_TOLERANCE
@@ -521,9 +535,11 @@ class SorTesTankEnergyParameters:
         assert (net_traded_energy_kWh - evaporator_energy_kWh) < FLOATING_POINT_TOLERANCE
 
         self._update_soc(time_slot, -discharge_energy_kWh)
-        self._state.update_total_charged_energy_kWh(-discharge_energy_kWh)
+        self._state.update_energy_used_for_dis_charging_kWh(time_slot, -discharge_energy_kWh)
+        self._state.set_auxiliary_energy_kWh(time_slot, evaporator_energy_kWh)
 
     def _update_soc(self, time_slot: DateTime, heat_energy_kWh: float):
+        # heat_energy_kWh can be both positive (charging) and negative (discharging)
         old_charge = self._state.get_soc(self.last_time_slot(time_slot)) / 100 * self._capacity_kWh
         new_charge = old_charge + heat_energy_kWh
         new_soc = new_charge / self._capacity_kWh

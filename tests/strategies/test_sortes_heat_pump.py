@@ -155,6 +155,83 @@ class TestSorTesTankMinimiseSwitchStrategy:
             == SorTesConfiguration.MAX_SOC_TOLERANCE
         )
 
+    def test_handle_state_at_soc_limits_charge_at_max_soc_returns_maintain_soc(self):
+        strategy = self._create_strategy()
+        strategy._current_state = HeatPumpChargingState.CHARGE
+        self._energy_params_mock.get_soc = MagicMock(
+            return_value=SorTesConfiguration.MAX_SOC_TOLERANCE
+        )
+        result = strategy._handle_state_at_soc_limits(
+            START_TIME_SLOT, HeatPumpChargingState.CHARGE
+        )
+        assert result == HeatPumpChargingState.MAINTAIN_SOC
+
+    def test_handle_state_at_soc_limits_charge_above_max_soc_returns_maintain_soc(self):
+        strategy = self._create_strategy()
+        strategy._current_state = HeatPumpChargingState.CHARGE
+        self._energy_params_mock.get_soc = MagicMock(
+            return_value=SorTesConfiguration.MAX_SOC_TOLERANCE + 1
+        )
+        result = strategy._handle_state_at_soc_limits(
+            START_TIME_SLOT, HeatPumpChargingState.CHARGE
+        )
+        assert result == HeatPumpChargingState.MAINTAIN_SOC
+
+    def test_handle_state_at_soc_limits_discharge_at_min_soc_returns_maintain_soc(self):
+        strategy = self._create_strategy()
+        strategy._current_state = HeatPumpChargingState.DISCHARGE
+        self._energy_params_mock.get_soc = MagicMock(
+            return_value=SorTesConfiguration.MIN_SOC_TOLERANCE
+        )
+        result = strategy._handle_state_at_soc_limits(
+            START_TIME_SLOT, HeatPumpChargingState.DISCHARGE
+        )
+        assert result == HeatPumpChargingState.MAINTAIN_SOC
+
+    def test_handle_state_at_soc_limits_discharge_below_min_soc_returns_maintain_soc(self):
+        strategy = self._create_strategy()
+        strategy._current_state = HeatPumpChargingState.DISCHARGE
+        self._energy_params_mock.get_soc = MagicMock(
+            return_value=SorTesConfiguration.MIN_SOC_TOLERANCE - 1
+        )
+        result = strategy._handle_state_at_soc_limits(
+            START_TIME_SLOT, HeatPumpChargingState.DISCHARGE
+        )
+        assert result == HeatPumpChargingState.MAINTAIN_SOC
+
+    def test_handle_state_at_soc_limits_within_bounds_returns_input_state(self):
+        strategy = self._create_strategy()
+        strategy._current_state = HeatPumpChargingState.CHARGE
+        self._energy_params_mock.get_soc = MagicMock(return_value=50.0)
+        result = strategy._handle_state_at_soc_limits(
+            START_TIME_SLOT, HeatPumpChargingState.CHARGE
+        )
+        assert result == HeatPumpChargingState.CHARGE
+
+    def test_handle_state_at_soc_limits_max_soc_but_not_charging_preserves_state(self):
+        # At max SOC but internal state is MAINTAIN_SOC → no override
+        strategy = self._create_strategy()
+        strategy._current_state = HeatPumpChargingState.MAINTAIN_SOC
+        self._energy_params_mock.get_soc = MagicMock(
+            return_value=SorTesConfiguration.MAX_SOC_TOLERANCE
+        )
+        result = strategy._handle_state_at_soc_limits(
+            START_TIME_SLOT, HeatPumpChargingState.MAINTAIN_SOC
+        )
+        assert result == HeatPumpChargingState.MAINTAIN_SOC
+
+    def test_handle_state_at_soc_limits_min_soc_but_not_discharging_preserves_state(self):
+        # At min SOC but internal state is CHARGE → no discharge override fires
+        strategy = self._create_strategy()
+        strategy._current_state = HeatPumpChargingState.CHARGE
+        self._energy_params_mock.get_soc = MagicMock(
+            return_value=SorTesConfiguration.MIN_SOC_TOLERANCE
+        )
+        result = strategy._handle_state_at_soc_limits(
+            START_TIME_SLOT, HeatPumpChargingState.CHARGE
+        )
+        assert result == HeatPumpChargingState.CHARGE
+
 
 class TestSorTesTankState:
 
@@ -196,10 +273,29 @@ class TestSorTesTankState:
     def test_get_max_energy_demand_kWh_returns_zero_for_unknown_time_slot(self):
         assert self._state.get_max_energy_demand_kWh(START_TIME_SLOT) == 0.0
 
-    def test_update_total_charged_energy_kWh_accumulates_over_calls(self):
-        self._state.update_total_charged_energy_kWh(2.0)
-        self._state.update_total_charged_energy_kWh(3.0)
-        assert math.isclose(self._state.get_state()["total_charge_energy_kWh"], 5.0)
+    def test_set_and_get_auxiliary_energy_kWh(self):
+        self._state.set_auxiliary_energy_kWh(START_TIME_SLOT, 1.25)
+        result = self._state.get_results_dict(START_TIME_SLOT)
+        assert math.isclose(result["auxiliary_energy_kWh"], 1.25)
+
+    def test_get_auxiliary_energy_kWh_returns_zero_for_unknown_time_slot(self):
+        result = self._state.get_results_dict(START_TIME_SLOT)
+        assert result["auxiliary_energy_kWh"] == 0.0
+
+    def test_update_and_get_energy_used_for_dis_charging_kWh(self):
+        self._state.update_energy_used_for_dis_charging_kWh(START_TIME_SLOT, 2.5)
+        result = self._state.get_results_dict(START_TIME_SLOT)
+        assert math.isclose(result["energy_used_for_dis_charging_kWh"], 2.5)
+
+    def test_get_energy_used_for_dis_charging_kWh_returns_zero_for_unknown_time_slot(self):
+        result = self._state.get_results_dict(START_TIME_SLOT)
+        assert result["energy_used_for_dis_charging_kWh"] == 0.0
+
+    def test_update_energy_used_for_dis_charging_kWh_supports_negative_values(self):
+        # discharging stores negative values
+        self._state.update_energy_used_for_dis_charging_kWh(START_TIME_SLOT, -1.5)
+        result = self._state.get_results_dict(START_TIME_SLOT)
+        assert math.isclose(result["energy_used_for_dis_charging_kWh"], -1.5)
 
     def test_increase_total_traded_energy_kWh_accumulates_over_calls(self):
         self._state.increase_total_traded_energy_kWh(4.0)
@@ -228,7 +324,6 @@ class TestSorTesTankState:
             "min_energy_demand_kWh",
             "max_energy_demand_kWh",
             "total_traded_energy_kWh",
-            "total_charge_energy_kWh",
         ):
             assert key in state
 
@@ -239,7 +334,6 @@ class TestSorTesTankState:
         self._state.set_min_energy_demand_kWh(START_TIME_SLOT, 0.5)
         self._state.set_max_energy_demand_kWh(START_TIME_SLOT, 2.0)
         self._state.increase_total_traded_energy_kWh(3.0)
-        self._state.update_total_charged_energy_kWh(2.0)
 
         state_dict = self._state.get_state()
         restored = SorTesTankState()
@@ -252,18 +346,20 @@ class TestSorTesTankState:
         assert math.isclose(restored.get_max_energy_demand_kWh(START_TIME_SLOT), 2.0)
         restored_dict = restored.get_state()
         assert math.isclose(restored_dict["total_traded_energy_kWh"], 3.0)
-        assert math.isclose(restored_dict["total_charge_energy_kWh"], 2.0)
 
     def test_get_results_dict_returns_correct_values(self):
         self._state.set_cop(START_TIME_SLOT, 3.2)
         self._state.set_soc(START_TIME_SLOT, 55.0)
         self._state.set_heat_demand_kJ(START_TIME_SLOT, 100.0)
+        self._state.update_energy_used_for_dis_charging_kWh(START_TIME_SLOT, 1.0)
+        self._state.set_auxiliary_energy_kWh(START_TIME_SLOT, 0.5)
         result = self._state.get_results_dict(START_TIME_SLOT)
         assert math.isclose(result["cop"], 3.2)
         assert math.isclose(result["soc"], 55.0)
         assert math.isclose(result["heat_demand_kJ"], 100.0)
         assert "total_traded_energy_kWh" in result
-        assert "total_charge_energy_kWh" in result
+        assert math.isclose(result["energy_used_for_dis_charging_kWh"], 1.0)
+        assert math.isclose(result["auxiliary_energy_kWh"], 0.5)
 
     def test_delete_past_state_values_clears_all_time_series_attributes(self):
         self._state.set_soc(START_TIME_SLOT, 50.0)
