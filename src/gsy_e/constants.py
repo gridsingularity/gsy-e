@@ -119,7 +119,7 @@ class SorTesConfiguration:
     MAX_SOC_TOLERANCE = 90
     CAPACITY_KWH = 25
     COP_HEAT_SOURCE = 1
-    COP_CONDENSER = 5  # todo: to be updated
+    COP_CONDENSER = 35  # nominal value for SHSL-D1-005-1x350
     COP_EVAPORATOR = 1
     CONVERSION_CHARGE_CONDENSER_POWER = 1 / 1.2
     CONVERSION_DISCHARGE_EVAPORATOR_POWER = 1 / 1.2
