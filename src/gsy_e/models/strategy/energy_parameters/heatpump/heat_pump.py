@@ -383,7 +383,8 @@ class HeatPumpEnergyParametersBase(ABC):
         """Combined heatpump and tanks state."""
         return self._state
 
-    def last_time_slot(self, current_market_slot: DateTime) -> DateTime:
+    @staticmethod
+    def last_time_slot(current_market_slot: DateTime) -> DateTime:
         """Calculate the previous time slot from the current one."""
         return current_market_slot - GlobalConfig.slot_length
 

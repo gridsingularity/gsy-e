@@ -73,7 +73,7 @@ class MinimiseHeatpumpSwitchStrategy(HeatPumpSOCManagement):
         else:
             assert False, "GlobalConfig.market_maker_rate was not initiated yet."
 
-    def calculate(self, time_slot: DateTime, _buy_rate: float = 0.0):
+    def calculate(self, time_slot: DateTime, buy_rate: float = 0.0):
         """
         Calculate the bid energy depending on the current state of the heat pump, the current SOC
         and whether the market maker rate is cheap or expensive compared to the average market
@@ -83,13 +83,10 @@ class MinimiseHeatpumpSwitchStrategy(HeatPumpSOCManagement):
         if not self._is_time_for_state_change(time_slot):
             # If state change is not possible, but at the same time the soc is below the min or
             # above the max SOC value of the tank, then maintain the SOC.
-            if self._charger.get_average_soc(time_slot) >= self.MAX_SOC_TOLERANCE:
-                target_state = HeatPumpChargingState.MAINTAIN_SOC
-            if self._charger.get_average_soc(time_slot) <= self.MIN_SOC_TOLERANCE:
-                target_state = HeatPumpChargingState.MAINTAIN_SOC
+            target_state = self._handle_state_at_soc_limits(time_slot, target_state)
         else:
             # If the state change is possible, check the market maker rate to set the new state
-            target_state = self._should_charge_or_discharge(time_slot)
+            target_state = self._should_charge_or_discharge(time_slot, buy_rate)
             if self._current_state != target_state:
                 # If the target state is the same as the current state, do nothing. Otherwise,
                 # update the current state and the last switch timestamp.
@@ -98,13 +95,32 @@ class MinimiseHeatpumpSwitchStrategy(HeatPumpSOCManagement):
 
         return self._get_energy_from_target_state(target_state, time_slot)
 
+    def _handle_state_at_soc_limits(
+        self, time_slot: DateTime, current_state: HeatPumpChargingState
+    ) -> HeatPumpChargingState:
+        # If state change is not possible, but at the same time the soc is below the min or
+        # above the max SOC value of the tank, then maintain the SOC.
+        target_state = current_state
+        if self._get_tank_soc(time_slot) >= self.MAX_SOC_TOLERANCE:
+            target_state = HeatPumpChargingState.MAINTAIN_SOC
+        if self._get_tank_soc(time_slot) <= self.MIN_SOC_TOLERANCE:
+            target_state = HeatPumpChargingState.MAINTAIN_SOC
+        return target_state
+
+    def _get_tank_soc(self, time_slot: DateTime) -> float:
+        return self._charger.get_average_soc(time_slot)
+
     def _is_time_for_state_change(self, time_slot: DateTime) -> bool:
         if not self._last_switch:
             # If the last_switch has not been set yet, the simulation is starting and no switch has
             # occurred yet. Change state if needed.
             self._last_switch = time_slot
             return True
-        if time_slot - self._last_switch < duration(minutes=self.MINUTES_BEFORE_SWITCH_ALLOWED):
+        if (
+            self._current_state != HeatPumpChargingState.MAINTAIN_SOC
+            and time_slot - self._last_switch
+            < duration(minutes=self.MINUTES_BEFORE_SWITCH_ALLOWED)
+        ):
             # If not enough time has passed since the last switch, do not allow state change.
             return False
         # Otherwise, allow the state change.
@@ -119,19 +135,25 @@ class MinimiseHeatpumpSwitchStrategy(HeatPumpSOCManagement):
             return self._energy_params.get_min_energy_demand_kWh(time_slot)
         return self._energy_params.get_energy_demand_kWh(time_slot)
 
-    def _should_charge_or_discharge(self, time_slot: DateTime) -> HeatPumpChargingState:
-        if GlobalConfig.market_maker_rate[time_slot] <= self._average_rate:
+    def _should_charge_or_discharge(
+        self, time_slot: DateTime, buy_rate: float
+    ) -> HeatPumpChargingState:
+
+        if self._is_energy_affordable(time_slot, buy_rate):
             # If the market maker rate is lower than the average rate, charge except if the SOC is
             # too high.
-            if self._charger.get_average_soc(time_slot) >= self.MAX_SOC_TOLERANCE:
+            if self._get_tank_soc(time_slot) >= self.MAX_SOC_TOLERANCE:
                 return HeatPumpChargingState.MAINTAIN_SOC
             return HeatPumpChargingState.CHARGE
 
         # If the market maker rate is higher than the average rate, discharge except if the SOC
         # is too low.
-        if self._charger.get_average_soc(time_slot) > self.MIN_SOC_TOLERANCE:
+        if self._get_tank_soc(time_slot) > self.MIN_SOC_TOLERANCE:
             return HeatPumpChargingState.DISCHARGE
         return HeatPumpChargingState.MAINTAIN_SOC
+
+    def _is_energy_affordable(self, time_slot: DateTime, _buy_rate: float) -> bool:
+        return GlobalConfig.market_maker_rate[time_slot] <= self._average_rate
 
 
 def heat_pump_soc_management_factory(
