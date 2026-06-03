@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../img/Profile.png">
-      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-4.0.2">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-4.0.2">
     
     
       
@@ -1710,26 +1710,30 @@
 <p>To actively manage grid congestion by applying different grid fees for each market slot for select markets at different levels of the grid, please follow the following steps:</p>
 <p>First, please install the Grid Singularity Exchange SDK on your computer by launching the following commands on your terminal window:</p>
 <p><strong>Install gsy-e-sdk</strong></p>
-<pre class="codehilite"><code>mkvirtualenv gsy-e-sdk
-pip install https://github.com/gridsingularity/gsy-e-sdk.git</code></pre>
-
+<div class="codehilite"><pre><span></span><code>mkvirtualenv gsy-e-sdk
+pip install https://github.com/gridsingularity/gsy-e-sdk.git
+</code></pre></div>
 
 <p><strong>Update gsy-e-sdk (needed when an update is deployed)</strong></p>
-<pre class="codehilite"><code>pip uninstall -y gsy-e-sdk
-pip install git+https://github.com/gridsingularity/gsy-e-sdk.git</code></pre>
-
+<div class="codehilite"><pre><span></span><code>pip uninstall -y gsy-e-sdk
+pip install git+https://github.com/gridsingularity/gsy-e-sdk.git
+</code></pre></div>
 
 <p><strong>Install the following Python packages</strong></p>
-<pre class="codehilite"><code>pip install pandas
-pip install openpyxl</code></pre>
-
+<div class="codehilite"><pre><span></span><code>pip install pandas
+pip install openpyxl
+</code></pre></div>
 
 <ol>
-<li>For connecting to a specific Collaboration/Canary Network, the owner/Exchange Operator has to invite and grant access as Grid operator in the Registry panel:
-   <figure markdown>
-     <img _text-align:center=";text-align:center" alt="alt_text" src="../img/set_user_roles_colab.png" style="height:340px;width:300px" />
-   </figure></li>
-<li>Edit the <a href="https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/grid_operator_api_scripts/rest_grid_fees.py" target="_blank">Grid Operator SDK Script template</a> to experiment with different grid fee models and launch it.</li>
+<li>
+<p>For connecting to a specific Collaboration/Canary Network, the owner/Exchange Operator has to invite and grant access as Grid operator in the Registry panel:
+   <figure markdown="block">
+     ![alt_text](img/set_user_roles_colab.png){:style="height:340px;width:300px";text-align:center}
+   </figure></p>
+</li>
+<li>
+<p>Edit the <a href="https://github.com/gridsingularity/gsy-e-sdk/blob/master/gsy_e_sdk/setups/grid_operator_api_scripts/rest_grid_fees.py" target="_blank">Grid Operator SDK Script template</a> to experiment with different grid fee models and launch it.</p>
+</li>
 <li>Run the Collaboration or notify the <a href="../collaboration/#exchange-operator">exchange operator</a> that you are ready.</li>
 </ol>
                 
@@ -1819,7 +1823,7 @@ pip install openpyxl</code></pre>
     
       <script src="../assets/javascripts/application.05d1c8d6.js"></script>
       
-      <script>app.initialize({version:"1.4.2",url:{base:".."}})</script>
+      <script>app.initialize({version:"1.6.1",url:{base:".."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
       

@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../img/Profile.png">
-      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-4.0.2">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-4.0.2">
     
     
       
@@ -1804,8 +1804,9 @@ Its main functionalities are the following:</p>
 <p>The following illustration shows a sample grid setup and the role of the Market Agent in the market hierarchy in the Grid Singularity Exchange during one time slot:</p>
 <figure>
 <p><img alt="alt_text" src="../img/marketagent-1.png" text-align:center_="text-align:center&quot;" />
-  <figcaption><b>Figure 3.1</b>: Market Agents and bids / offers propagation in the Grid Singularity Exchange
-</figcaption></p>
+  </p>
+<figcaption><b>Figure 3.1</b>: Market Agents and bids / offers propagation in the Grid Singularity Exchange
+</figcaption>
 </figure>
 <h3 id="bidoffer-attributes-and-requirements-for-trading-preferences-degrees-of-freedom">Bid/Offer Attributes and Requirements for Trading Preferences (Degrees of Freedom)<a class="headerlink" href="#bidoffer-attributes-and-requirements-for-trading-preferences-degrees-of-freedom" title="Permanent link">&para;</a></h3>
 <p>Bids and offers for energy include a set of attributes (e.g. encrypted unique asset ID, asset location, type of energy produced e.g. solar energy) and diverse requirements that reflect trading preferences (termed degrees of freedom), such as energy quantity, price range, energy source, geographic distance, or preferred trading partner.</p>
@@ -1813,8 +1814,9 @@ Its main functionalities are the following:</p>
 <p>An example of a bid and offer with attributes and requirements is shown in the figure below. The bid submits three sets of conditions. As the second condition is fulfilled by the offer, the two orders are successfully matched, in this case for 0.8 kWh of photovoltaic (PV) energy (at a price between 21 and 25 cents as determined by the matching algorithm). A verification function performs this check. The function accepts a bid / offer pair as input, returns a <True> (green check) if there is a valid match, and returns a <False> (red x) if requirements are not met. If the function returns <True>, a trade is created. In a near-term centralised implementation, this verification function is integrated into the exchange code. In a <a href="../blockchain/">blockchain implementation</a>, it is to be deployed as a module of the parachain’s protocol.</p>
 <figure>
 <p><img alt="alt_text" src="../img/degrees-of-freedom.png" text-align:center_="text-align:center&quot;" />
-  <figcaption><b>Figure 3.2</b>: Example of a bid and offer with attributes and requirements
-</figcaption></p>
+  </p>
+<figcaption><b>Figure 3.2</b>: Example of a bid and offer with attributes and requirements
+</figcaption>
 </figure>
 <h3 id="asset-trading-strategies">Asset Trading Strategies<a class="headerlink" href="#asset-trading-strategies" title="Permanent link">&para;</a></h3>
 <p>Generation assets can select one of five trading settings when posting market offers:</p>
@@ -1828,8 +1830,9 @@ Its main functionalities are the following:</p>
 <p>The following plot shows the changing energy rate in a spot market slot (slot_length = 15 min) for the first four trading settings of an example PV asset.</p>
 <figure>
 <p><img alt="alt_text" src="../img/default-trading-2.png" text-align:center_="text-align:center&quot;" />
-  <figcaption><b>Figure 3.3</b>: Four different trading settings of an example PV asset in a spot market slot (slot_length = 15 min)
-</figcaption></p>
+  </p>
+<figcaption><b>Figure 3.3</b>: Four different trading settings of an example PV asset in a spot market slot (slot_length = 15 min)
+</figcaption>
 </figure>
 <p>If the fourth trading setting is selected and linear_pricing set to <code>True</code>, <code>energy_rate_decrease_per_update</code> is ignored and a rate decrease per time is calculated, starting at initial_selling_rate and ending at final_selling_rate while updating the rate at each update_interval.</p>
 <p>Similarly, consuming assets (loads and/or storages) can select of the following five trading settings when posting bids:</p>
@@ -1843,8 +1846,9 @@ Its main functionalities are the following:</p>
 <p>The following plot shows the energy rate change in a spot market slot (slot_length = 15 min) for the first four trading strategies of an example load asset. If the fifth trading strategy is selected and linear_pricing set to True, energy_rate_increase_per_update is ignored and a rate increase per time is calculated that starts at initial_buying_rate and ends at final_buying_rate while updating the rate at each update_interval.</p>
 <figure>
 <p><img alt="alt_text" src="../img/default-trading-1.png" text-align:center_="text-align:center&quot;" />
-  <figcaption><b>Figure 3.4</b>: Four different trading settings of an example PV asset in a spot market slot (slot_length = 15 min)
-</figcaption></p>
+  </p>
+<figcaption><b>Figure 3.4</b>: Four different trading settings of an example PV asset in a spot market slot (slot_length = 15 min)
+</figcaption>
 </figure>
 <p>Assets can also deploy more intelligent trading strategies, as demonstrated in the 2020 Energy Singularity Challenge, described in the following two articles:</p>
 <ul>
@@ -1938,7 +1942,7 @@ Its main functionalities are the following:</p>
     
       <script src="../assets/javascripts/application.05d1c8d6.js"></script>
       
-      <script>app.initialize({version:"1.4.2",url:{base:".."}})</script>
+      <script>app.initialize({version:"1.6.1",url:{base:".."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
       

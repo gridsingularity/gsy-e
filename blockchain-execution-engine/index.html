@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../img/Profile.png">
-      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-4.0.2">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-4.0.2">
     
     
       
@@ -1861,17 +1861,17 @@
 <ul>
 <li>
 <p>For the buyer of the trade, if the delivered energy exceeds the traded energy, the engine calculates the penalty as:</p>
-<pre class="codehilite"><code>delta_consumed = measured_energy - traded_energy
-penalty = delta_consumed * penalty_rate</code></pre>
-
+<div class="codehilite"><pre><span></span><code>delta_consumed = measured_energy - traded_energy
+penalty = delta_consumed * penalty_rate
+</code></pre></div>
 
 <p>and the penalty is assigned to the buyer.</p>
 </li>
 <li>
 <p>For the seller of the trade, if the delivered energy is less than the traded energy, the penalty is calculated as:</p>
-<pre class="codehilite"><code>delta_produced = traded_energy - measured_energy
-penalty = delta_produced * penalty_rate</code></pre>
-
+<div class="codehilite"><pre><span></span><code>delta_produced = traded_energy - measured_energy
+penalty = delta_produced * penalty_rate
+</code></pre></div>
 
 <p>and the penalty is assigned to the seller.</p>
 </li>
@@ -1890,8 +1890,9 @@ penalty = delta_produced * penalty_rate</code></pre>
 </ul>
 <figure>
 <p><img alt="alt_text" src="../img/blockchain-execution-engine-dataflow.png" text-align:center_="text-align:center&quot;" />
-  <figcaption><b>Figure 6.19</b>: GSY DEX Key Components and Dataflow
-</figcaption></p>
+  </p>
+<figcaption><b>Figure 6.19</b>: GSY DEX Key Components and Dataflow
+</figcaption>
 </figure>
 <p>The GSY DEX Execution Engine is highly configurable via the following command-line arguments:</p>
 <ul>
@@ -1907,8 +1908,9 @@ penalty = delta_produced * penalty_rate</code></pre>
 <h3 id="gsy-dex-execution-engine-communication-protocol">GSY DEX Execution Engine Communication Protocol<a class="headerlink" href="#gsy-dex-execution-engine-communication-protocol" title="Permanent link">&para;</a></h3>
 <figure>
 <p><img alt="alt_text" src="../img/blockchain-execution-engine-communication-protocol.png" text-align:center_="text-align:center&quot;" />
-  <figcaption><b>Figure 6.20</b>: GSY DEX Execution Engine Communication Protocol
-</figcaption></p>
+  </p>
+<figcaption><b>Figure 6.20</b>: GSY DEX Execution Engine Communication Protocol
+</figcaption>
 </figure>
 <p>As described above, the GSY DEX Execution Engine is designed to operate as an autonomous service within the <a href="../blockchain/" target="_blank">GSY DEX</a> platform, ensuring that the energy delivered in a trade accurately corresponds to the energy bid or offered upon trade match. The following sections describe the data communication protocol between the GSY DEX Execution Engine and other GSY DEX system components, with a high level overview provided here below.</p>
 <p>To operate, the GSY DEX Execution Engine reads the matched trades by calling the GET <code>/trades?start_time={start_time}&amp;end_time={end_time}</code>  REST API endpoint of the GSY DEX Off-Chain Storage. Additionally, energy measurements are retrieved from the Off-Chain Storage by calling the GET  <code>/measurements?start_time={start_time}&amp;end_time={end_time}</code> REST API endpoint of the Off-Chain Storage. The endpoints return lists of JSON objects containing trades and energy measurements for the period defined by the endpoints’ arguments. The start and end times define a fixed market slot (derived by rounding down the current timestamp to the nearest 900-second boundary and adding 899 seconds to define the interval). This results in 15-minute time periods (or another selected trade interval), corresponding to the time when each market is open. The time-based processing ensures that trades and measurements are handled within consistent market intervals, minimising discrepancies and simplifying penalty calculations.</p>
@@ -2020,7 +2022,7 @@ penalty = delta_produced * penalty_rate</code></pre>
     
       <script src="../assets/javascripts/application.05d1c8d6.js"></script>
       
-      <script>app.initialize({version:"1.4.2",url:{base:".."}})</script>
+      <script>app.initialize({version:"1.6.1",url:{base:".."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
       

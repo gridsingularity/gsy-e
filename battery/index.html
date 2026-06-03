@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../img/Profile.png">
-      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-4.0.2">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-4.0.2">
     
     
       
@@ -1885,8 +1885,9 @@
 <p>In the advanced battery configuration mode, the following settings are available as shown in the figure and explained below:</p>
 <figure>
 <p><img _text-align:center_=";text-align:center&quot;" alt="alt_text" src="../img/battery-advanced.png" style="height:600px;width:300px" />
-  <figcaption><b>Figure 2.13</b>: Battery (Storage) Advanced Configuration Options in the Grid Singularity Exchange web-based interface (Singularity Map)
-</figcaption></p>
+  </p>
+<figcaption><b>Figure 2.13</b>: Battery (Storage) Advanced Configuration Options in the Grid Singularity Exchange web-based interface (Singularity Map)
+</figcaption>
 </figure>
 <ol>
 <li>Battery capacity: set the total energy capacity in kWh</li>
@@ -1914,7 +1915,7 @@
 <p>Note: The default setting of the battery component is 100% energy conversion efficiency.  It is not possible to change this setting at the moment but it may be in the future versions of the software. Interested contributors may propose such additions to our open source code on <a href="https://github.com/gridsingularity/gsy-e" target="_blank">GitHub</a>.</p>
 <h2 id="storage-behaviour-in-local-energy-markets">Storage Behaviour in Local Energy Markets<a class="headerlink" href="#storage-behaviour-in-local-energy-markets" title="Permanent link">&para;</a></h2>
 <p>In general all bids and offers follow the physical constraint of the set `max_abs_battery_power_kW value. The accumulated energy per market slot cannot exceed this power value times the length of the market slot, in hours. Energy sold and bought cancel each other out, meaning that if 2kWh are both sold and bought in the same market slot, the relative power remains 0kW.</p>
-<p>For the buying rate increase and selling rate decrease behaviour, please see the <a href="trading-agents-and-strategies">Trading Strategies page</a>.</p>
+<p>For the buying rate increase and selling rate decrease behaviour, please see the <a href="../trading-agents-and-strategies/">Trading Strategies page</a>.</p>
 <h3 id="buying-energy-in-the-one-sided-market">Buying energy in the <a href="../market-types/#one-sided-pay-as-offer-market">One-Sided Market</a><a class="headerlink" href="#buying-energy-in-the-one-sided-market" title="Permanent link">&para;</a></h3>
 <p>On each tick, the storage scans the connected market for affordable offers* if there is storage space to be filled (if the current SOC is lower than 100%). Once an offer is found, it is either fully or partially accepted, depending on the demand. The storage always seeks 100% SOC when buying energy.</p>
 <p>*affordable offers are offers that have a price lower or equal to the current acceptable energy rate. The acceptable energy rate changes during a market slot depending on the <code>initial_buying_rate, final_buying_rate, energy_rate_decrease_per_update</code> and `update_interval setting.</p>
@@ -2009,7 +2010,7 @@
     
       <script src="../assets/javascripts/application.05d1c8d6.js"></script>
       
-      <script>app.initialize({version:"1.4.2",url:{base:".."}})</script>
+      <script>app.initialize({version:"1.6.1",url:{base:".."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
       

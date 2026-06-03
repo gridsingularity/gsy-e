@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../img/Profile.png">
-      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-4.0.2">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-4.0.2">
     
     
       
@@ -2153,8 +2153,9 @@
 <p>The current implementation of Grid Singularity Exchange focuses on peer-to-peer spot and balancing markets, with a commercial peer-to-market community trading application available via <a href="https://gridsingularity.com/scm" target="_blank">Grid Singularity’s Social Community Manager</a>. Balancing markets take place immediately after each spot market slot (if enabled). The duration of the markets can be configured.</p>
 <figure>
 <p><img alt="alt_text" src="../img/market-types.png" text-align:center_="text-align:center&quot;" />
-  <figcaption><b>Figure 3.5</b>: Market Types implemented in the Grid Singularity Exchange
-</figcaption></p>
+  </p>
+<figcaption><b>Figure 3.5</b>: Market Types implemented in the Grid Singularity Exchange
+</figcaption>
 </figure>
 <h4 id="simulated-time">Simulated Time<a class="headerlink" href="#simulated-time" title="Permanent link">&para;</a></h4>
 <p>Simulated time is the time unit within a simulation as opposed to real-time which is the real-life time that the simulation takes (seven days of trading can be simulated in minutes or hours).</p>
@@ -2181,8 +2182,9 @@
 <p>The market constantly triggers the matching between bids and offers according to the matching algorithm as illustrated in the figure below.</p>
 <figure>
 <p><img alt="alt_text" src="../img/pay-as-bid-1.png" text-align:center_="text-align:center&quot;" />
-  <figcaption><b>Figure 3.6</b>: Two-Sided Pay-as-Bid Market Mechanism in the Grid Singularity  Exchange
-</figcaption></p>
+  </p>
+<figcaption><b>Figure 3.6</b>: Two-Sided Pay-as-Bid Market Mechanism in the Grid Singularity  Exchange
+</figcaption>
 </figure>
 <h3 id="two-sided-pay-as-clear-market">Two-Sided Pay-as-Clear Market<a class="headerlink" href="#two-sided-pay-as-clear-market" title="Permanent link">&para;</a></h3>
 <p>In the Two-Sided Pay-as-Clear market, buyers are able to place bids in the market alongside the offers placed by sellers.</p>
@@ -2190,8 +2192,9 @@
 <p>Currently, there is a merit-order-effect mechanism implemented for bid and offer matching where bids and offers are aggregated and cleared in a specified clearing interval. At the end of each interval, bids are arranged in a descending order, offers in an ascending order and the equilibrium quantity of energy and price is calculated. The clearing point (the quantity of energy that is accepted trade volume for a specific energy rate clearing price) is determined by the point where the arranged bid curve for the buyers drops below the offer curve for the sellers.</p>
 <figure>
 <p><img alt="alt_text" src="../img/pay-as-clear-1.png" text-align:center_="text-align:center&quot;" />
-  <figcaption><b>Figure 3.7</b>: Two-Sided Pay-as-Clear Market Mechanism in the Grid Singularity Exchange
-</figcaption></p>
+  </p>
+<figcaption><b>Figure 3.7</b>: Two-Sided Pay-as-Clear Market Mechanism in the Grid Singularity Exchange
+</figcaption>
 </figure>
 <p>The highest bids are matched with the lowest offers. The matching rate is the clearing price (cents/kWh). The remaining bids and offers (right of the clearing point in the plot above) are not cleared at this clearing point and remain in the market for later matching.</p>
 <h2 id="balancing-market">Balancing Market<a class="headerlink" href="#balancing-market" title="Permanent link">&para;</a></h2>
@@ -2206,15 +2209,17 @@
 </ol>
 <figure>
 <p><img alt="alt_text" src="../img/balancing-market-structure-1.png" text-align:center_="text-align:center&quot;" />
-  <figcaption><b>Figure 3.8</b>: The three tiers of grid control and its activation structure (source: Karel de Brabandere, <a href="https://www.semanticscholar.org/paper/Voltage-and-Frequency-Droop-Control-in-Low-Voltage-Brabandere/b0e2b215c34f3a88318376d29188c34eb913d5b5">Voltage and Frequency Droop Control in Low Voltage Grids by Distributed Generators with Inverter Front-End</a>, Engineering, 2006)
-</figcaption></p>
+  </p>
+<figcaption><b>Figure 3.8</b>: The three tiers of grid control and its activation structure (source: Karel de Brabandere, <a href="https://www.semanticscholar.org/paper/Voltage-and-Frequency-Droop-Control-in-Low-Voltage-Brabandere/b0e2b215c34f3a88318376d29188c34eb913d5b5">Voltage and Frequency Droop Control in Low Voltage Grids by Distributed Generators with Inverter Front-End</a>, Engineering, 2006)
+</figcaption>
 </figure>
 <p>In conventional grid structures:</p>
 <p><strong>Primary control</strong> is an automatic function that is almost instantaneously activated to stabilise the frequency drops/spikes. It is the fastest type of frequency control with a response time of a few seconds and operates using a joint process involving all TSOs of the synchronous area. This is shown in the figure below. For example, if there is an increase in demand, the energy used to compensate for this demand comes from the kinetic energy stored in large rotating synchronous generators that start decreasing its velocity. This is referred to as <a href="https://eepower.com/technical-articles/frequency-control-in-a-power-system/#" target="_blank">inertial response</a>. For the generators to recover the speed, the speed controller of each generator acts to increase the generator power to clear the imbalance. Within a period of 30 seconds, each generating unit is able to generate the required power and stabilise this production for at least 15 minutes or depending on the requirements of the TSO within the synchronous region. Primary control is done using generation plants that are connected to the high voltage power supply with the exception of renewable energy sources which are non-schedulable due to its intermittent nature.</p>
 <figure>
 <p><img alt="alt_text" src="../img/balancing-market-structure-2.png" text-align:center_="text-align:center&quot;" />
-  <figcaption><b>Figure 3.9</b>: Recovery of the system from a contingency event and action by primary frequency control (source: Paul Denholm, Trieu Mai, Rick Wallace Kenyon, Ben Kroposki, and Mark O’Malley, National Renewable Energy Laboratory, <a href="https://www.nrel.gov/news/program/2020/inertia-and-the-power-grid-a-guide-without-the-spin.html">Inertia and the Power Grid: A Guide Without the Spin</a>, May 2020)
-</figcaption></p>
+  </p>
+<figcaption><b>Figure 3.9</b>: Recovery of the system from a contingency event and action by primary frequency control (source: Paul Denholm, Trieu Mai, Rick Wallace Kenyon, Ben Kroposki, and Mark O’Malley, National Renewable Energy Laboratory, <a href="https://www.nrel.gov/news/program/2020/inertia-and-the-power-grid-a-guide-without-the-spin.html">Inertia and the Power Grid: A Guide Without the Spin</a>, May 2020)
+</figcaption>
 </figure>
 <p><strong>Secondary control</strong> is performed automatically by all the generators to restore the nominal frequency, the power exchanges and reserve of the generators used in primary control. The generators involved in this regulation function through dedicated reserve power that are set in conjunction with central controllers. The reserve control power is negotiated in a contract conjunction with the TSO and is a percentage of the maximum available power with a predefined minimum value to ensure that it can be dispatched whenever needed. This service is remunerated according to the set contracts.</p>
 <p><strong>Tertiary control</strong> is not an automatic function and is executed upon request by the grid operator. The reserve margins used for the secondary control are restored through tertiary control.
@@ -2280,8 +2285,9 @@ The Balancing Agent is responsible for monitoring power imbalances in the segmen
 <h3 id="balancing-market-implementation-in-the-grid-singularity-exchange">Balancing Market Implementation in the Grid Singularity Exchange<a class="headerlink" href="#balancing-market-implementation-in-the-grid-singularity-exchange" title="Permanent link">&para;</a></h3>
 <figure>
 <p><img alt="alt_text" src="../img/balancing-market-implementation-1.png" text-align:center_="text-align:center&quot;" />
-  <figcaption><b>Figure 3.10</b>: Structure of Balancing Market in Grid Singularity Exchange
-</figcaption></p>
+  </p>
+<figcaption><b>Figure 3.10</b>: Structure of Balancing Market in Grid Singularity Exchange
+</figcaption>
 </figure>
 <h4 id="balancing-assets">Balancing Assets<a class="headerlink" href="#balancing-assets" title="Permanent link">&para;</a></h4>
 <p>In the Grid Singularity Exchange, balancing has been implemented using:</p>
@@ -2293,13 +2299,13 @@ The Balancing Agent is responsible for monitoring power imbalances in the segmen
 <p>The trading strategies of <a href="../configuration/">energy assets</a> can be used to balance the grid by placing balancing offers. These assets participate in the balancing market only if they are registered in the Balancing Asset Registry.</p>
 <h4 id="balancing-asset-registry">Balancing Asset Registry<a class="headerlink" href="#balancing-asset-registry" title="Permanent link">&para;</a></h4>
 <p>The Balancing Asset Registry is a dictionary that contains the names of assets as keys and the balancing rates as tuple values: (demand balancing rate, supply balancing rate).</p>
-<pre class="codehilite"><code class="language-python">asset_registry_dict = {
-    &quot;H1 General Load&quot;: (33, 35),
-    &quot;H2 General Load&quot;: (33, 35),
-    &quot;H1 Storage1&quot;: (33, 35),
-    &quot;H1 Storage2&quot;: (33, 35),
-}</code></pre>
-
+<div class="codehilite"><pre><span></span><code><span class="n">asset_registry_dict</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;H1 General Load&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">33</span><span class="p">,</span> <span class="mi">35</span><span class="p">),</span>
+    <span class="s2">&quot;H2 General Load&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">33</span><span class="p">,</span> <span class="mi">35</span><span class="p">),</span>
+    <span class="s2">&quot;H1 Storage1&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">33</span><span class="p">,</span> <span class="mi">35</span><span class="p">),</span>
+    <span class="s2">&quot;H1 Storage2&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">33</span><span class="p">,</span> <span class="mi">35</span><span class="p">),</span>
+<span class="p">}</span>
+</code></pre></div>
 
 <h4 id="balancing-market-type">Balancing Market Type<a class="headerlink" href="#balancing-market-type" title="Permanent link">&para;</a></h4>
 <p>The present balancing market type setting is a <a href="./#one-sided-pay-as-offer-market">One-Sided Pay-as-Offer market</a>, which accepts <em>balancing_offers</em> from energy assets and connected hierarchies of <em>balancing_market</em>. <em>balancing_offers</em> could be positive or negative. It also facilitates the <em>balancing_trade</em>.</p>
@@ -2319,8 +2325,9 @@ The Balancing Agent is responsible for monitoring power imbalances in the segmen
 <p>Deviations between energy physically produced/consumed and energy purchased in the spot or futures market can be traded post-delivery by submitting a time slot in the past as a requirement attached to a bid or offer, creating a settlement market (figure 3.8). Bids and offers will be matched leveraging the <a href="./#two-sided-pay-as-bid-market">Two-Sided Pay-as-Bid matching mechanism</a>. This allows local deviations to balance without penalty (e.g. a local solar panel that overproduces matches their deviation to a local load that over-consumed), with the remainder filled at a market rate (likely a premium) by individual assets, balancing groups, or grid operators that provided balancing services during delivery. A specific limit may be introduced to represent the time interval in which post-delivery trading can be conducted.</p>
 <figure>
 <p><img alt="alt_text" src="../img/settlement-market-structure.png" text-align:center_="text-align:center&quot;" />
-  <figcaption><b>Figure 3.11</b>: Energy deviations (difference between purchased and delivered energy) can be traded in the settlement market instead of paying a penalty to the grid operator, reducing inefficient accounting. Any remaining deviance can still be penalised by the grid operator.
-</figcaption></p>
+  </p>
+<figcaption><b>Figure 3.11</b>: Energy deviations (difference between purchased and delivered energy) can be traded in the settlement market instead of paying a penalty to the grid operator, reducing inefficient accounting. Any remaining deviance can still be penalised by the grid operator.
+</figcaption>
 </figure>
 <h3 id="settlement-market-implementation-in-the-grid-singularity-exchange-backend">Settlement Market Implementation in the Grid Singularity Exchange backend<a class="headerlink" href="#settlement-market-implementation-in-the-grid-singularity-exchange-backend" title="Permanent link">&para;</a></h3>
 <h4 id="settlement-market-settings">Settlement Market Settings<a class="headerlink" href="#settlement-market-settings" title="Permanent link">&para;</a></h4>
@@ -2328,8 +2335,9 @@ The Balancing Agent is responsible for monitoring power imbalances in the segmen
 <p>Spot and settlement markets are functionally connected.By accessing trades of the corresponding spot market for the energy delivery period, the settlement market reads the traded energy by each asset and compares it with energy measurements of each asset, calculating any energy deviation of the expected consumed or produced energy.</p>
 <figure>
 <p><img alt="alt_text" src="../img/market-rotation.png" text-align:center_="text-align:center&quot;" />
-  <figcaption><b>Figure 3.12</b>: Example of settlement markets available for each market slot and their time rotation in the Grid Singularity Exchange
-</figcaption></p>
+  </p>
+<figcaption><b>Figure 3.12</b>: Example of settlement markets available for each market slot and their time rotation in the Grid Singularity Exchange
+</figcaption>
 </figure>
 <h4 id="asset-trading-strategies-in-settlement-markets">Asset Trading Strategies in Settlement Markets<a class="headerlink" href="#asset-trading-strategies-in-settlement-markets" title="Permanent link">&para;</a></h4>
 <p>Prosumer assets can post orders (bids/offers) of their energy deviations to the settlement market in order to get compensated by another entity that deviated inversely. Energy deviations are calculated as the difference between the forecasted and measured production or consumption.</p>
@@ -2337,8 +2345,9 @@ The Balancing Agent is responsible for monitoring power imbalances in the segmen
 <p>Posting and updating bids and offers in settlement markets functions in  the same way as in the spot markets. The asset can provide its desired energy delivery period for which it wants to contribute to the settlement operation, by using the <em>time_slot</em> attribute of the bid and the offer. The asset can also define the settlement energy that it is willing to procure or sell, which is at most the amount of energy deviation of the asset for the energy delivery period.</p>
 <figure>
 <p><img alt="alt_text" src="../img/assets-strategies-1.png" text-align:center_="text-align:center&quot;" />
-  <figcaption><b>Figure 3.13</b>: Settlement market posting energy deviations mechanism with external asset strategies
-</figcaption></p>
+  </p>
+<figcaption><b>Figure 3.13</b>: Settlement market posting energy deviations mechanism with external asset strategies
+</figcaption>
 </figure>
 <h4 id="integrated-asset-strategies-in-settlement-markets">Integrated Asset Strategies in Settlement Markets<a class="headerlink" href="#integrated-asset-strategies-in-settlement-markets" title="Permanent link">&para;</a></h4>
 <p>The Grid Singularity Exchange includes integrated trading strategies for the settlement market for all supported assets, enabling their automated participation to the settlement market without any intervention from the asset owner.  The settlement trading strategies are extensions of the <a href="../trading-agents-and-strategies/#asset-trading-strategies">asset trading strategies</a>, with the additional abilities to measure the energy deviation of the asset prosumption and to use this deviation for posting bids and offers to the settlement markets.
@@ -2346,8 +2355,9 @@ Since they are extensions of the asset trading strategies, the settlement tradin
 <p>As the settlement market will stay available for longer than the normal spot market (configurable by <a href="https://github.com/gridsingularity/gsy-framework/blob/175a9c3c3295b78e3b5d7610e221b6f2ea72f6ec/gsy_framework/constants_limits.py#L69" target="_blank"><code>Const.Settings.SettlementMarketSettings.MAX_AGE_SETTLEMENT_MARKET_HOURS</code></a>, please also see <a href="./#settlement-market-implementation-in-the-grid-singularity-exchange-backend-">here</a>), the template strategy will not update the orders as frequently as in the normal spot market, but following the time interval set by the parameter  <a href="https://github.com/gridsingularity/gsy-e/blob/7f5d2866cfd8b8327e590a1377db2d9bd2909746/src/gsy_e/constants.py#L72"><code>SettlementTemplateStrategiesConstants.UPDATE_INTERVAL_MIN</code></a>.</p>
 <figure>
 <p><img alt="alt_text" src="../img/assets-strategies-2.png" text-align:center_="text-align:center&quot;" />
-  <figcaption><b>Figure 3.14</b>: Settlement market posting energy deviations mechanism with template asset strategies
-</figcaption></p>
+  </p>
+<figcaption><b>Figure 3.14</b>: Settlement market posting energy deviations mechanism with template asset strategies
+</figcaption>
 </figure>
 <h2 id="community-trading-market">Community Trading Market<a class="headerlink" href="#community-trading-market" title="Permanent link">&para;</a></h2>
 <p>Currently, EU members like Spain support peer-to-market energy trading, meaning that the regulator determines a single trading price for the community. The community manager in this type of jurisdiction can choose to enable community trading or to exclusively allow energy sharing of local generation. The latter is also known as a collective self-consumption scheme, where the energy generation in the community is aggregated and then allocated in a predetermined allocation coefficient to each member. These coefficients are set by the energy community manager and are usually based on the share of generation that is owned or leased by the individual community member. The price of external energy supply to match any demand that is not satisfied locally is determined by the supplier (utility rate) and the price of local generation sold to the grid by the applicable feed-in-tariffs. Other charges include grid fees and taxes to account for network costs and in some EU countries these are subsidised. Finally, there are fees applied by the energy community manager that also include the cost of the SCM tool provided by Grid Singularity and may include additional charges for supplying data measurement devices or any support services. To this the cost of leasing any renewable energy like solar is added for those who use that service. All of these components are illustrated in the energy community member application interface.</p>
@@ -2438,7 +2448,7 @@ Since they are extensions of the asset trading strategies, the settlement tradin
     
       <script src="../assets/javascripts/application.05d1c8d6.js"></script>
       
-      <script>app.initialize({version:"1.4.2",url:{base:".."}})</script>
+      <script>app.initialize({version:"1.6.1",url:{base:".."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
       

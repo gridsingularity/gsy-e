@@ -38,7 +38,7 @@
         <meta name="lang:search.tokenizer" content="[\s\-]+">
       
       <link rel="shortcut icon" href="../img/Profile.png">
-      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-4.0.2">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-4.0.2">
     
     
       
@@ -1989,14 +1989,14 @@ GSY Node Order Book pallets are described below, while the <a href="../blockchai
 <h4 id="gsy-node-order-book-registry-pallet">GSY Node Order Book Registry Pallet<a class="headerlink" href="#gsy-node-order-book-registry-pallet" title="Permanent link">&para;</a></h4>
 <p>The Order Book Registry Pallet provides a decentralised order book management system that incorporates user management functionalities. It enables exchange operators, aggregators or grid operators to register participants and their assets, as well as to set up proxy accounts for delegating order management. They can then insert new orders and delete existing orders that were previously inserted, as needed. The orders are generated and logged using on-chain timestamping, with a unique identifier (hash) automatically assigned to each order. This ensures order immutability, facilitating transparency, auditability and any dispute resolution.</p>
 <p>The following are the components of the Order Book Registry Pallet:</p>
-<h5>Order Book Registry Pallet Storage Items</h5>
+<h5 id="order-book-registry-pallet-storage-items">Order Book Registry Pallet Storage Items<a class="headerlink" href="#order-book-registry-pallet-storage-items" title="Permanent link">&para;</a></h5>
 <ul>
 <li><code>RegisteredUser</code>: Maps an AccountId to a Hash for registered users.</li>
 <li><code>RegisteredMatchingEngine</code>: Maps an AccountId to a Hash for registered matching engine operators.</li>
 <li><code>ProxyAccounts</code>: Maps an AccountId to a BoundedVec of ProxyDefinition for the registered proxy accounts.</li>
 <li><code>OrdersRegistry</code>: Maps an OrderReference to an OrderStatus.</li>
 </ul>
-<h5>Order Book Registry Pallet Events</h5>
+<h5 id="order-book-registry-pallet-events">Order Book Registry Pallet Events<a class="headerlink" href="#order-book-registry-pallet-events" title="Permanent link">&para;</a></h5>
 <ul>
 <li><code>MatchingEngineOperatorRegistered</code>: Emitted when a new matching engine operator is registered.</li>
 <li><code>NewOrderInserted</code>: Emitted when a new order is inserted.</li>
@@ -2007,7 +2007,7 @@ GSY Node Order Book pallets are described below, while the <a href="../blockchai
 <li><code>ProxyAccountUnregistered</code>: Emitted when a proxy account is deregistered.</li>
 <li><code>UserRegistered</code>: Emitted when a new user is registered.</li>
 </ul>
-<h5>Order Book Registry Pallet Errors</h5>
+<h5 id="order-book-registry-pallet-errors">Order Book Registry Pallet Errors<a class="headerlink" href="#order-book-registry-pallet-errors" title="Permanent link">&para;</a></h5>
 <ul>
 <li><code>AlreadyRegistered</code>: Returned when an account is already registered.</li>
 <li><code>AlreadyRegisteredProxyAccount</code>: Returned when a proxy account is already registered.</li>
@@ -2023,7 +2023,7 @@ GSY Node Order Book pallets are described below, while the <a href="../blockchai
 <li><code>OrderAlreadyInserted</code>: Returned when an order is already inserted.</li>
 <li><code>ProxyAccountsLimitReached</code>: Returned when the proxy accounts limit has been reached.</li>
 </ul>
-<h5>Order Book Registry Pallet Dispatchable Functions</h5>
+<h5 id="order-book-registry-pallet-dispatchable-functions">Order Book Registry Pallet Dispatchable Functions<a class="headerlink" href="#order-book-registry-pallet-dispatchable-functions" title="Permanent link">&para;</a></h5>
 <ul>
 <li><code>insert_orders</code>: Insert an order with a given order hash for a registered user account.</li>
 <li><code>insert_orders_by_proxy</code>: Insert an order with a given order hash for a registered user account by a registered proxy account.</li>
@@ -2034,7 +2034,7 @@ GSY Node Order Book pallets are described below, while the <a href="../blockchai
 <li><code>register_user</code>: Register a new user account.</li>
 <li><code>unregister_proxy_account</code>: Unregister a proxy account for a registered user account.</li>
 </ul>
-<h5>Order Book Registry Pallet Helper Functions</h5>
+<h5 id="order-book-registry-pallet-helper-functions">Order Book Registry Pallet Helper Functions<a class="headerlink" href="#order-book-registry-pallet-helper-functions" title="Permanent link">&para;</a></h5>
 <ul>
 <li><code>add_matching_engine_operator</code>: Add a matching engine operator account.</li>
 <li><code>add_proxy_account</code>: Add a proxy account for a registered user account.</li>
@@ -2057,17 +2057,17 @@ GSY Node Order Book pallets are described below, while the <a href="../blockchai
 <li><a href="../blockchain-off-chain-storage/" target="_blank">GSY DEX Off-Chain Storage</a>: The Order Book Worker Pallet works closely with the off-chain storage service to manage the order book. It broadcasts orders to the off-chain order book storage component. This interaction ensures that the order book data is always up-to-date and readily available for subsequent processing by the GSY DEX Matching Engine.</li>
 </ul>
 <p>The following are the components of the Order Book Worker Pallet:</p>
-<h5>Order Book Worker Pallet Storage Items</h5>
+<h5 id="order-book-worker-pallet-storage-items">Order Book Worker Pallet Storage Items<a class="headerlink" href="#order-book-worker-pallet-storage-items" title="Permanent link">&para;</a></h5>
 <ul>
 <li><code>Orderbook</code>: A storage map that temporarily contains the orders in the order book.</li>
 <li><code>UserNonce</code>: A storage map that contains nonces for each user.</li>
 </ul>
-<h5>Order Book Worker Pallet Events</h5>
+<h5 id="order-book-worker-pallet-events">Order Book Worker Pallet Events<a class="headerlink" href="#order-book-worker-pallet-events" title="Permanent link">&para;</a></h5>
 <ul>
 <li><code>OrderRemoved</code>: Emitted when an order is removed from the order book storage.</li>
 <li><code>NewOrderInserted</code>: Emitted when a new order is inserted into the order book storage.</li>
 </ul>
-<h5>Order Book Worker Pallet Errors</h5>
+<h5 id="order-book-worker-pallet-errors">Order Book Worker Pallet Errors<a class="headerlink" href="#order-book-worker-pallet-errors" title="Permanent link">&para;</a></h5>
 <ul>
 <li><code>OffchainUnsignedTxError</code>: An error that occurs when processing an unsigned transaction.</li>
 <li><code>OffchainSignedTxError</code>: An error that occurs when processing a signed transaction.</li>
@@ -2078,7 +2078,7 @@ GSY Node Order Book pallets are described below, while the <a href="../blockchai
 <li><code>NotARootUser</code>: Returned when the user is not a root user.</li>
 <li><code>InvalidNonce</code>: Returned when the nonce is invalid.</li>
 </ul>
-<h5>Order Book Worker Pallet Dispatchable Functions</h5>
+<h5 id="order-book-worker-pallet-dispatchable-functions">Order Book Worker Pallet Dispatchable Functions<a class="headerlink" href="#order-book-worker-pallet-dispatchable-functions" title="Permanent link">&para;</a></h5>
 <ul>
 <li><code>insert_orders</code>: Insert a vector of orders into the order book.</li>
 <li><code>insert_orders_by_proxy</code>: Insert a vector of orders into the order book on behalf of a delegator.</li>
@@ -2086,7 +2086,7 @@ GSY Node Order Book pallets are described below, while the <a href="../blockchai
 <li><code>remove_orders_by_order_reference</code>: Remove an order from the order book by its order reference. This function requires an unsigned transaction and provides an interface for the off-chain workers.</li>
 <li><code>remove_orders_by_proxy</code>:  Remove a vector of orders from the order book on behalf of a delegator.</li>
 </ul>
-<h5>Order Book Worker Pallet Hooks</h5>
+<h5 id="order-book-worker-pallet-hooks">Order Book Worker Pallet Hooks<a class="headerlink" href="#order-book-worker-pallet-hooks" title="Permanent link">&para;</a></h5>
 <ul>
 <li><code>offchain_worker</code>: An offchain worker that processes orders in the order book for broadcasting them to the off-chain storage and removes them from the on-chain storage.</li>
 </ul>
@@ -2112,7 +2112,7 @@ Here is an overview of the input data types (structs) for the GSY DEX:</p>
 <li><code>OrderStatus</code>: a type defined in the <code>orders</code> module that represents the status of a Bid or an Offer.
 mod orders: a module that exports the <code>OrderReference</code> and <code>OrderStatus</code> types.</li>
 </ul>
-<h5>GSY Node Orders Module</h5>
+<h5 id="gsy-node-orders-module">GSY Node Orders Module<a class="headerlink" href="#gsy-node-orders-module" title="Permanent link">&para;</a></h5>
 <p>The orders module defines several types:</p>
 <ul>
 <li><code>Order</code>: An enum representing the order in the GSY DEX, with two variants:</li>
@@ -2131,7 +2131,7 @@ mod orders: a module that exports the <code>OrderReference</code> and <code>Orde
 <li><code>OrderComponent</code>: A struct representing the common components of an order, including area UUID, market UUID, time slot, creation time, energy, and energy rate.</li>
 <li><code>OrderSchema</code>: A struct representing the schema of the order. It is needed in order to enforce the order book storage and other ancillary services to use the same schema/protocol for the <code>Order</code> struct as the GSY Node.</li>
 </ul>
-<h5>GSY Node Trades Module</h5>
+<h5 id="gsy-node-trades-module">GSY Node Trades Module<a class="headerlink" href="#gsy-node-trades-module" title="Permanent link">&para;</a></h5>
 <p>The <code>trades</code> module defines several types:</p>
 <ul>
 <li><code>Trade</code>: A struct representing a trade, including the seller, buyer, market ID, trade UUID, creation time, time slot, offer, offer hash, bid, bid hash, residual offer, residual bid, and trade parameters.</li>
@@ -2143,62 +2143,62 @@ mod orders: a module that exports the <code>OrderReference</code> and <code>Orde
 <h4 id="run-the-gsy-dex-code-using-docker-compose">Run the GSY DEX code using Docker Compose<a class="headerlink" href="#run-the-gsy-dex-code-using-docker-compose" title="Permanent link">&para;</a></h4>
 <p>First, install <a href="https://docs.docker.com/get-docker/" target="_blank">Docker</a> and <a href="https://docs.docker.com/compose/install/" target="_blank">Docker Compose</a>.</p>
 <p>Build and tag the docker image:</p>
-<pre class="codehilite"><code class="language-commandline">docker build -t gsy_dex_image .
-docker tag gsy_dex_image:latest gsy_dex_image:staging</code></pre>
-
+<div class="codehilite"><pre><span></span><code>docker build -t gsy_dex_image .
+docker tag gsy_dex_image:latest gsy_dex_image:staging
+</code></pre></div>
 
 <p>and start docker-compose:</p>
-<pre class="codehilite"><code class="language-commandline">docker-compose up</code></pre>
-
+<div class="codehilite"><pre><span></span><code>docker-compose up
+</code></pre></div>
 
 <h4 id="set-up-your-computer-for-substrate-development">Set up your computer for Substrate development<a class="headerlink" href="#set-up-your-computer-for-substrate-development" title="Permanent link">&para;</a></h4>
 <p>Please install Rust toolchain and the Developer Tools following the instructions from Substrate <a href="https://docs.substrate.io/main-docs/install/" target="_blank">here</a>.</p>
 <h4 id="run-the-gsy-dex-code">Run the GSY DEX code<a class="headerlink" href="#run-the-gsy-dex-code" title="Permanent link">&para;</a></h4>
 <p>The <code>cargo run</code> command will perform an initial build. Use the following command to build the node without launching it:</p>
-<pre class="codehilite"><code class="language-commandline">cd gsy-node
-cargo build --release</code></pre>
-
+<div class="codehilite"><pre><span></span><code>cd gsy-node
+cargo build --release
+</code></pre></div>
 
 <p>Once the build has been completed, the following command can be used to explore all parameters and subcommands:</p>
-<pre class="codehilite"><code class="language-commandline">./target/release/gsy-node -h</code></pre>
-
+<div class="codehilite"><pre><span></span><code>./target/release/gsy-node -h
+</code></pre></div>
 
 <p>The <code>cargo run</code> command will launch a temporary node and its state will be discarded after you terminate the process.
 This command will start the single-node development chain with persistent state. This is useful to maintain the state of the node once the node stops running:</p>
-<pre class="codehilite"><code class="language-commandline">./target/release/gsy-node --dev</code></pre>
-
+<div class="codehilite"><pre><span></span><code>./target/release/gsy-node --dev
+</code></pre></div>
 
 <p>Purge the development chain's state:</p>
-<pre class="codehilite"><code class="language-commandline">./target/release/gsy-node purge-chain --dev</code></pre>
-
+<div class="codehilite"><pre><span></span><code>./target/release/gsy-node purge-chain --dev
+</code></pre></div>
 
 <p>Start the development chain with detailed logging:</p>
-<pre class="codehilite"><code class="language-commandline">RUST_BACKTRACE=1 ./target/release/gsy-node -ldebug --dev</code></pre>
-
+<div class="codehilite"><pre><span></span><code>RUST_BACKTRACE=1 ./target/release/gsy-node -ldebug --dev
+</code></pre></div>
 
 <p>Integration with the non-decentralized version of the <a href="https://github.com/gridsingularity/gsy-e" target="_blank">GSY Energy Exchange</a> is also possible, with the objective of modelling, simulation and optimisation of energy marketplaces. To install, please refer to these <a href="https://github.com/gridsingularity/gsy-e#basic-setup">installation instructions</a>.</p>
 <p>Once installation is completed, a new energy marketplace can be modelled following the instructions <a href="../general-settings/#backend-simulation-configuration">here</a>. The same marketplace can also be simulated using the GSY DEX as the exchange engine.  In order to switch to the GSY DEX and enable blockchain operations, the command-line flag <code>--enable-bc</code> should be used. The mnemonic of the GSY DEX account should also be provided, in order to authorise the exchange engine to restore your key when needed and interact as bids and offers’ aggregator on your behalf with the blockchain. Finally, the <code>ENABLE_SUBSTRATE</code> parameter should be set to True.</p>
 <h4 id="co-develop-the-gsy-dex">Co-develop the GSY DEX<a class="headerlink" href="#co-develop-the-gsy-dex" title="Permanent link">&para;</a></h4>
 <p>To develop and extend the GSY DEX features and applications please follow this guide, which is based on the <a href="https://rustup.rs" target="_blank">rustup</a> installer tool for Rust toolchain management.</p>
 <p>First install and configure <code>rustup</code>:</p>
-<pre class="codehilite"><code class="language-commandline"># Install
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+<div class="codehilite"><pre><span></span><code># Install
+curl --proto &#39;=https&#39; --tlsv1.2 -sSf https://sh.rustup.rs | sh
 # Configure
-source ~/.cargo/env</code></pre>
-
+source ~/.cargo/env
+</code></pre></div>
 
 <p>Configure the Rust toolchain to default to the latest stable version, add nightly and the nightly wasm target:</p>
-<pre class="codehilite"><code class="language-commandline">rustup default stable
+<div class="codehilite"><pre><span></span><code>rustup default stable
 rustup update
 rustup update nightly
-rustup target add wasm32-unknown-unknown --toolchain nightly</code></pre>
-
+rustup target add wasm32-unknown-unknown --toolchain nightly
+</code></pre></div>
 
 <p>In order to test your setup, the best way to ensure that you have successfully prepared a computer for the <a href="./">GSY Node</a> development is to follow the steps in the <a href="https://docs.substrate.io/tutorials/">first Substrate tutorial</a>.</p>
 <p>In order to run the code in developer mode, use Rust's native <code>cargo</code> command to build and launch the <a href="./">GSY Node</a>:</p>
-<pre class="codehilite"><code class="language-commandline">cd gsy-node
-cargo run --release -- --dev --tmp</code></pre>
-
+<div class="codehilite"><pre><span></span><code>cd gsy-node
+cargo run --release -- --dev --tmp
+</code></pre></div>
 
 <p>You should always use the <code>--release</code> flag to build <a href="https://docs.substrate.io/build/build-process/" target="_blank">optimised artifacts</a>.</p>
 <p>The command-line options specify how you want the running node to operate. In this case, the <code>--dev</code> option specifies that the node runs in development mode using the predefined development chain specification.</p>
@@ -2206,7 +2206,7 @@ cargo run --release -- --dev --tmp</code></pre>
 <p>Using the <code>--dev</code> option ensures that you have a clean working state any time you stop and restart the node.</p>
 <p>Verify your node is up and running successfully by reviewing the output displayed in the terminal.</p>
 <p>The terminal should display output similar to this:</p>
-<pre class="codehilite"><code class="language-commandline">2022-08-16 13:43:58 Substrate Node
+<div class="codehilite"><pre><span></span><code>2022-08-16 13:43:58 Substrate Node
 2022-08-16 13:43:58 ✌️  version 4.0.0-dev-de262935ede
 2022-08-16 13:43:58 ❤️  by Substrate DevHub &lt;https://github.com/substrate-developer-hub&gt;, 2017-2022
 2022-08-16 13:43:58 📋 Chain specification: Development
@@ -2222,8 +2222,8 @@ cargo run --release -- --dev --tmp</code></pre>
 ...
 ...
 ...
-2022-08-16 13:54:26 💤 Idle (0 peers), best: #3 (0xcdac…26e5), finalized #1 (0x107c…9bae), ⬇ 0 ⬆ 0</code></pre>
-
+2022-08-16 13:54:26 💤 Idle (0 peers), best: #3 (0xcdac…26e5), finalized #1 (0x107c…9bae), ⬇ 0 ⬆ 0
+</code></pre></div>
 
 <p>If the block number, denoted by the logs that include the string <code>finalized #&lt;block-number&gt;</code>, is increasing, the <a href="./">GSY Node</a> is producing new blocks and its consensus algorithm is operating correctly.</p>
 <h4 id="connect-external-ui-to-the-gsy-dex">Connect external UI to the GSY DEX<a class="headerlink" href="#connect-external-ui-to-the-gsy-dex" title="Permanent link">&para;</a></h4>
@@ -2315,7 +2315,7 @@ cargo run --release -- --dev --tmp</code></pre>
     
       <script src="../assets/javascripts/application.05d1c8d6.js"></script>
       
-      <script>app.initialize({version:"1.4.2",url:{base:".."}})</script>
+      <script>app.initialize({version:"1.6.1",url:{base:".."}})</script>
       
         <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
       
