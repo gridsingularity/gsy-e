@@ -10,10 +10,7 @@ from gsy_e.models.strategy.energy_parameters.heatpump.constants import (
     WATER_DENSITY,
 )
 from gsy_e.models.strategy.state.heatpump_tank_states.all_tanks_state import AllTanksState
-from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import (
-    WaterTankParameters,
-    HeatpumpTankTypes,
-)
+from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import WaterTankParameters
 from gsy_e.models.strategy.state.heatpump_tank_states.water_tank_state import (
     WaterTankState,
 )
@@ -33,7 +30,7 @@ class VirtualHeatpumpTankState(WaterTankState):
     """
 
     def __init__(self, tank_parameters: WaterTankParameters):
-        assert tank_parameters.type == HeatpumpTankTypes.WATER, (
+        assert isinstance(tank_parameters, WaterTankParameters), (
             "only water tanks are allowed " "in the virtual heat pump "
         )
         super().__init__(tank_parameters)

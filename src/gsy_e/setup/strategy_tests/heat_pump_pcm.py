@@ -25,7 +25,6 @@ from gsy_e.models.area import Area
 from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import (
     WaterTankParameters,
     PCMTankParameters,
-    HeatpumpTankTypes,
 )
 from gsy_e.models.strategy.heat_pump import MultipleTankHeatPumpStrategy
 from gsy_e.models.strategy.infinite_bus import InfiniteBusStrategy
@@ -35,12 +34,6 @@ ConstSettings.MASettings.MARKET_TYPE = 2
 ConstSettings.GeneralSettings.DEFAULT_UPDATE_INTERVAL = 5
 
 preferred_buying_rate = 0
-
-MIN_HTF_TEMP_C = 33
-MAX_HTF_TEMP_C = 60
-
-MIN_PCM_TEMP_C = 40
-MAX_PCM_TEMP_C = 48
 
 
 def get_setup(config):
@@ -62,12 +55,9 @@ def get_setup(config):
                                 ),
                                 PCMTankParameters(
                                     name="pcm tank 1",
-                                    type=HeatpumpTankTypes.PCM,
-                                    initial_temp_C=MIN_PCM_TEMP_C,
-                                    max_temp_pcm_C=MAX_PCM_TEMP_C,
-                                    min_temp_pcm_C=MIN_PCM_TEMP_C,
-                                    max_temp_htf_C=MAX_HTF_TEMP_C,
-                                    min_temp_htf_C=MIN_HTF_TEMP_C,
+                                    initial_temp_C=40,
+                                    max_temp_C=48,
+                                    min_temp_C=40,
                                     volume_flow_rate_l_min=15,
                                     number_of_plates=23,
                                 ),
