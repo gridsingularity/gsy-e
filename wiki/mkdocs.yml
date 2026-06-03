@@ -183,7 +183,6 @@ markdown_extensions:
     - toc:
         permalink: true
         toc_depth: 4
-    - mdtooltips
     - attr_list
     - md_in_html
     - pymdownx.arithmatex:
@@ -198,6 +197,6 @@ plugins:
     - redirects:
         redirect_maps:
             # When trying to reach the root page, redirect to the documentation page
-            '': 'https://gridsingularity.github.io/gsy-e/documentation/'
+            'index.md': 'https://gridsingularity.github.io/gsy-e/documentation/'
             'blockchain-installation.md': 'gsy-node.md'
             'two-sided-pay-as-bid.md': 'https://gridsingularity.github.io/gsy-e/market-types/#two-sided-pay-as-bid-market'
