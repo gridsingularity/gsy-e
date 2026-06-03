@@ -103,12 +103,18 @@ class SorTesTankMinimiseSwitchStrategy(MinimiseHeatpumpSwitchStrategy):
         self,
         energy_params: "SorTesTankEnergyParameters",
         average_trade_rate: Union[str, float, dict],
+        preferred_buying_rate: Optional[float] = None,
     ):
         self._last_switch: Optional[DateTime] = None
         self._energy_params = energy_params
         self._current_state = HeatPumpChargingState.MAINTAIN_SOC
         self._average_trade_rate = profile_factory(
             average_trade_rate, None, profile_type=InputProfileTypes.IDENTITY
+        )
+        self._preferred_buying_rate = (
+            SorTesConfiguration.DEFAULT_PREFERRED_BUYING_RATE
+            if preferred_buying_rate is None
+            else preferred_buying_rate
         )
 
     @property
@@ -127,9 +133,7 @@ class SorTesTankMinimiseSwitchStrategy(MinimiseHeatpumpSwitchStrategy):
             <= ts
             < time_slot.add(minutes=SorTesConfiguration.MINUTES_TIME_HORIZONT_LOW_RATES)
         ]
-        return all(
-            value < SorTesConfiguration.PREFERRED_BUYING_RATE for value in rates_in_time_horizont
-        )
+        return all(value < self._preferred_buying_rate for value in rates_in_time_horizont)
 
     def event_activate(self):
         """Perform commands on event activate."""
@@ -279,8 +283,10 @@ class SorTesTankEnergyParameters:
         self,
         heat_demand_Q_profile: Union[str, float, dict],
         ambient_temp_C_profile: Union[str, float, dict],
+        source_temp_C_profile: Union[str, float, dict],
         target_temp_C_profile: Union[str, float, dict],
         average_trade_rate: Union[str, float, dict],
+        preferred_buying_rate: Optional[float] = None,
         source_type: HeatPumpSourceType = ConstSettings.HeatPumpSettings.SOURCE_TYPE,
     ):
         # pylint: disable=too-many-arguments, too-many-positional-arguments
@@ -292,6 +298,9 @@ class SorTesTankEnergyParameters:
         self._ambient_temp_C: StrategyProfileBase = profile_factory(
             ambient_temp_C_profile, None, profile_type=InputProfileTypes.IDENTITY
         )
+        self._source_temp_C: StrategyProfileBase = profile_factory(
+            source_temp_C_profile, None, profile_type=InputProfileTypes.IDENTITY
+        )
         self._target_temp_C: StrategyProfileBase = profile_factory(
             target_temp_C_profile, None, profile_type=InputProfileTypes.IDENTITY
         )
@@ -299,7 +308,15 @@ class SorTesTankEnergyParameters:
         self._cop_model = cop_model_factory(COPModelType.UNIVERSAL, source_type)
         self._bought_energy_kWh = 0.0
 
-        self._soc_management = SorTesTankMinimiseSwitchStrategy(self, average_trade_rate)
+        self._soc_management = SorTesTankMinimiseSwitchStrategy(
+            energy_params=self,
+            average_trade_rate=average_trade_rate,
+            preferred_buying_rate=preferred_buying_rate,
+        )
+
+        # for serializer
+        self._average_trade_rate = average_trade_rate
+        self._preferred_buying_rate = preferred_buying_rate
 
     @property
     def state(self) -> SorTesTankState:
@@ -311,8 +328,11 @@ class SorTesTankEnergyParameters:
         return {
             "heat_demand_Q_J": self._heat_demand_Q_J.input_profile,
             "ambient_temp_C": self._ambient_temp_C.input_profile,
+            "source_temp_C": self._source_temp_C.input_profile,
             "target_temp_C": self._target_temp_C.input_profile,
             "source_type": self._source_type,
+            "average_trade_rate": self._average_trade_rate,
+            "preferred_buying_rate": self._preferred_buying_rate,
         }
 
     @property
@@ -365,7 +385,7 @@ class SorTesTankEnergyParameters:
 
     def _calc_and_set_cop(self, time_slot: DateTime):
         cop = self._cop_model.calc_cop(
-            source_temp_C=self._ambient_temp_C.get_value(time_slot),
+            source_temp_C=self._source_temp_C.get_value(time_slot),
             condenser_temp_C=self._target_temp_C.get_value(time_slot),
         )
         self._state.set_cop(time_slot, cop)
@@ -489,6 +509,7 @@ class SorTesTankEnergyParameters:
         self._state.delete_past_state_values(time_slot)
         self._heat_demand_Q_J.read_or_rotate_profiles()
         self._ambient_temp_C.read_or_rotate_profiles()
+        self._source_temp_C.read_or_rotate_profiles()
         self._target_temp_C.read_or_rotate_profiles()
 
     def _charge_or_discharge_tank(self, time_slot: DateTime):
@@ -570,8 +591,10 @@ class HeatPumpWithSorTesTankStrategy(HeatPumpStrategyBase):
         self,
         heat_demand_Q_profile: Union[str, float, dict],
         ambient_temp_C_profile: Union[str, float, dict],
+        source_temp_C_profile: Union[str, float, dict],
         target_temp_C_profile: Union[str, float, dict],
         average_trade_rate: Union[str, float, dict],
+        preferred_buying_rate: Optional[float] = None,
         source_type: HeatPumpSourceType = ConstSettings.HeatPumpSettings.SOURCE_TYPE,
         order_updater_parameters: dict[
             AvailableMarketTypes, HeatPumpOrderUpdaterParameters
@@ -584,8 +607,10 @@ class HeatPumpWithSorTesTankStrategy(HeatPumpStrategyBase):
         self._energy_params = SorTesTankEnergyParameters(
             heat_demand_Q_profile=heat_demand_Q_profile,
             ambient_temp_C_profile=ambient_temp_C_profile,
+            source_temp_C_profile=source_temp_C_profile,
             target_temp_C_profile=target_temp_C_profile,
             average_trade_rate=average_trade_rate,
+            preferred_buying_rate=preferred_buying_rate,
             source_type=source_type,
         )
 
