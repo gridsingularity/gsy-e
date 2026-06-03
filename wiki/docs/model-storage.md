@@ -57,7 +57,7 @@ As an example, considering an `initial_selling_rate` of 30 cents/kWh and a `fina
 
 In general all bids and offers follow the physical constraint of the set `max_abs_battery_power_kW` value. The accumulated energy per market slot cannot exceed this power value times the length of the market slot. Energy sold and bought cancel each other out, meaning that if 2kWh are both sold and bought in the same market slot, the relative power remains 0kW.
 
-For the buying rate increase and selling rate decrease behaviour, please see the [Trading Strategies page](trading-agents-and-strategies).
+For the buying rate increase and selling rate decrease behaviour, please see the [Trading Strategies page](trading-agents-and-strategies.md).
 
 ###Buying Energy in [One-Sided Market](market-types.md#one-sided-pay-as-offer-market):
 
