@@ -14,7 +14,6 @@ from gsy_e.models.strategy.state.heatpump_tank_states.water_tank_state import (
 from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import (
     WaterTankParameters,
     PCMTankParameters,
-    HeatpumpTankTypes,
 )
 
 log = getLogger(__name__)
@@ -24,9 +23,9 @@ def heatpump_state_factory(
     tank_parameter: Union[WaterTankParameters, PCMTankParameters]
 ) -> TankStateBase:
     """Return correct Tank object from the type provided in the tank parameters."""
-    if tank_parameter.type == HeatpumpTankTypes.WATER:
+    if isinstance(tank_parameter, WaterTankParameters):
         return WaterTankState(tank_parameters=tank_parameter)
-    if tank_parameter.type == HeatpumpTankTypes.PCM:
+    if isinstance(tank_parameter, PCMTankParameters):
         return PCMTankState(tank_parameters=tank_parameter)
     assert False, f"Unsupported heat pump tank type {tank_parameter.type}"
 
