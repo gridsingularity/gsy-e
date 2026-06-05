@@ -1,4 +1,5 @@
 # pylint: disable=protected-access, attribute-defined-outside-init, too-many-public-methods
+# pylint: disable=too-many-arguments, too-many-positional-arguments
 import math
 from unittest.mock import MagicMock, patch
 
@@ -378,8 +379,10 @@ class TestSorTesTankState:
 
 
 AMBIENT_TEMP_C = 15.0
+SOURCE_TEMP_C = 15.0
 TARGET_TEMP_C = 50.0
 # delta = 35 → COP = 6.08 - 0.09*35 + 0.0005*35^2 = 6.08 - 3.15 + 0.6125 = 3.5425
+# delta uses SOURCE_TEMP_C (not ambient): TARGET_TEMP_C - SOURCE_TEMP_C = 50 - 15 = 35
 EXPECTED_COP = 6.08 - 0.09 * 35 + 0.0005 * 35**2
 
 # SorTesPerformanceMaps.get_power_charging(AMBIENT_TEMP_C + 5) = get_power_charging(20) = 3.0 kW
@@ -417,6 +420,7 @@ class TestSorTesTankEnergyParameters:
         self,
         heat_demand_Q_profile=None,
         ambient_temp_C_profile=None,
+        source_temp_C_profile=None,
         target_temp_C_profile=None,
         average_trade_rate=25.0,
     ):
@@ -424,11 +428,14 @@ class TestSorTesTankEnergyParameters:
             heat_demand_Q_profile = {START_TIME_SLOT: 3600.0, NEXT_SLOT: 3600.0}
         if ambient_temp_C_profile is None:
             ambient_temp_C_profile = {START_TIME_SLOT: AMBIENT_TEMP_C, NEXT_SLOT: AMBIENT_TEMP_C}
+        if source_temp_C_profile is None:
+            source_temp_C_profile = {START_TIME_SLOT: SOURCE_TEMP_C, NEXT_SLOT: SOURCE_TEMP_C}
         if target_temp_C_profile is None:
             target_temp_C_profile = {START_TIME_SLOT: TARGET_TEMP_C, NEXT_SLOT: TARGET_TEMP_C}
         return SorTesTankEnergyParameters(
             heat_demand_Q_profile=heat_demand_Q_profile,
             ambient_temp_C_profile=ambient_temp_C_profile,
+            source_temp_C_profile=source_temp_C_profile,
             target_temp_C_profile=target_temp_C_profile,
             average_trade_rate=average_trade_rate,
         )
@@ -526,7 +533,13 @@ class TestSorTesTankEnergyParameters:
     def test_serialize_contains_required_keys(self):
         ep = self._create_energy_params()
         result = ep.serialize()
-        for key in ("heat_demand_Q_J", "ambient_temp_C", "target_temp_C", "source_type"):
+        for key in (
+            "heat_demand_Q_J",
+            "ambient_temp_C",
+            "source_temp_C",
+            "target_temp_C",
+            "source_type",
+        ):
             assert key in result
 
     def test_serialize_source_type_matches_default(self):
@@ -537,15 +550,18 @@ class TestSorTesTankEnergyParameters:
     def test_serialize_input_profiles_match_constructor_arguments(self):
         heat_profile = {START_TIME_SLOT: 1000.0, NEXT_SLOT: 2000.0}
         ambient_profile = {START_TIME_SLOT: 10.0, NEXT_SLOT: 12.0}
+        source_profile = {START_TIME_SLOT: 8.0, NEXT_SLOT: 9.0}
         target_profile = {START_TIME_SLOT: 45.0, NEXT_SLOT: 50.0}
         ep = self._create_energy_params(
             heat_demand_Q_profile=heat_profile,
             ambient_temp_C_profile=ambient_profile,
+            source_temp_C_profile=source_profile,
             target_temp_C_profile=target_profile,
         )
         result = ep.serialize()
         assert result["heat_demand_Q_J"] == heat_profile
         assert result["ambient_temp_C"] == ambient_profile
+        assert result["source_temp_C"] == source_profile
         assert result["target_temp_C"] == target_profile
 
     def test_event_market_cycle_min_demand_not_greater_than_max_demand(self):
@@ -636,6 +652,7 @@ class TestHeatPumpWithSorTesTankStrategy:
         defaults = {
             "heat_demand_Q_profile": {START_TIME_SLOT: 3600.0, NEXT_SLOT: 3600.0},
             "ambient_temp_C_profile": {START_TIME_SLOT: AMBIENT_TEMP_C, NEXT_SLOT: AMBIENT_TEMP_C},
+            "source_temp_C_profile": {START_TIME_SLOT: SOURCE_TEMP_C, NEXT_SLOT: SOURCE_TEMP_C},
             "target_temp_C_profile": {START_TIME_SLOT: TARGET_TEMP_C, NEXT_SLOT: TARGET_TEMP_C},
             "average_trade_rate": 19.0,
         }
@@ -723,7 +740,13 @@ class TestHeatPumpWithSorTesTankStrategy:
     def test_serialize_contains_all_energy_param_keys(self):
         strategy = self._create_strategy()
         result = strategy.serialize()
-        for key in ("heat_demand_Q_J", "ambient_temp_C", "target_temp_C", "source_type"):
+        for key in (
+            "heat_demand_Q_J",
+            "ambient_temp_C",
+            "source_temp_C",
+            "target_temp_C",
+            "source_type",
+        ):
             assert key in result
 
     def test_serialize_contains_all_order_updater_keys(self):
