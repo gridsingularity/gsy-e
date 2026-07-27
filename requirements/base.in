@@ -16,5 +16,8 @@ sympy
 pony
 psycopg2==2.9.10
 psycopg2-binary==2.9.10
+fastapi
+httpx
+uvicorn[standard]
 
 -e git+https://github.com/gridsingularity/gsy-framework@master#egg=gsy_framework

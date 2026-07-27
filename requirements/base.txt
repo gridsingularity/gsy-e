@@ -6,6 +6,15 @@
 #
 -e git+https://github.com/gridsingularity/gsy-framework@master#egg=gsy_framework
     # via -r requirements/base.in
+annotated-doc==0.0.4
+    # via fastapi
+annotated-types==0.7.0
+    # via pydantic
+anyio==4.13.0
+    # via
+    #   httpx
+    #   starlette
+    #   watchfiles
 attrs==23.2.0
     # via
     #   -r requirements/base.in
@@ -25,6 +34,8 @@ cachetools==5.3.3
 certifi==2024.2.2
     # via
     #   gsy-framework
+    #   httpcore
+    #   httpx
     #   requests
 cfgv==3.4.0
     # via
@@ -45,6 +56,7 @@ click==8.1.7
     #   geocoder
     #   gsy-framework
     #   rq
+    #   uvicorn
 click-default-group==1.2.4
     # via -r requirements/base.in
 colorama==0.4.6
@@ -53,6 +65,8 @@ colorama==0.4.6
     #   tox
 colorlog==4.7.2
     # via -r requirements/base.in
+croniter==6.2.2
+    # via rq
 decorator==5.1.1
     # via
     #   gsy-framework
@@ -65,6 +79,8 @@ et-xmlfile==1.1.0
     # via
     #   gsy-framework
     #   openpyxl
+fastapi==0.136.1
+    # via -r requirements/base.in
 filelock==3.14.0
     # via
     #   gsy-framework
@@ -78,13 +94,25 @@ geographiclib==2.0
     #   gsy-framework
 geopy==2.4.1
     # via gsy-framework
+h11==0.16.0
+    # via
+    #   httpcore
+    #   uvicorn
+httpcore==1.0.9
+    # via httpx
+httptools==0.7.1
+    # via uvicorn
+httpx==0.28.1
+    # via -r requirements/base.in
 identify==2.5.36
     # via
     #   gsy-framework
     #   pre-commit
 idna==3.7
     # via
+    #   anyio
     #   gsy-framework
+    #   httpx
     #   requests
 iso3166==2.1.1
     # via gsy-framework
@@ -98,13 +126,13 @@ kafka-python==2.0.2
     # via gsy-framework
 mpmath==1.3.0
     # via sympy
-narwhals==1.41.0
+narwhals==2.20.0
     # via plotly
 nodeenv==1.8.0
     # via
     #   gsy-framework
     #   pre-commit
-numpy==2.2.6
+numpy==2.4.4
     # via -r requirements/base.in
 openpyxl==3.0.10
     # via gsy-framework
@@ -123,7 +151,7 @@ platformdirs==4.2.2
     #   gsy-framework
     #   tox
     #   virtualenv
-plotly==6.1.2
+plotly==6.7.0
     # via -r requirements/base.in
 pluggy==1.5.0
     # via
@@ -137,23 +165,31 @@ psycopg2==2.9.10
     # via -r requirements/base.in
 psycopg2-binary==2.9.10
     # via -r requirements/base.in
+pydantic==2.13.3
+    # via fastapi
+pydantic-core==2.46.3
+    # via pydantic
 pyproject-api==1.6.1
     # via
     #   gsy-framework
     #   tox
 python-dateutil==2.9.0.post0
     # via
+    #   croniter
     #   gsy-framework
     #   pendulum
     #   time-machine
+python-dotenv==1.2.2
+    # via uvicorn
 python-rex==0.4
     # via -r requirements/base.in
-pytz==2025.2
+pytz==2026.1.post1
     # via -r requirements/base.in
 pyyaml==6.0.1
     # via
     #   gsy-framework
     #   pre-commit
+    #   uvicorn
 ratelim==0.1.6
     # via
     #   geocoder
@@ -168,7 +204,7 @@ referencing==0.35.1
     #   gsy-framework
     #   jsonschema
     #   jsonschema-specifications
-regex==2024.11.6
+regex==2026.4.4
     # via awesome-slugify
 requests==2.31.0
     # via
@@ -179,7 +215,7 @@ rpds-py==0.18.1
     #   gsy-framework
     #   jsonschema
     #   referencing
-rq==2.3.3
+rq==2.8.0
     # via -r requirements/base.in
 six==1.16.0
     # via
@@ -189,6 +225,8 @@ six==1.16.0
     #   python-rex
 sortedcontainers==2.4.0
     # via -r requirements/base.in
+starlette==1.0.0
+    # via fastapi
 sympy==1.14.0
     # via -r requirements/base.in
 tabulate==0.9.0
@@ -199,6 +237,18 @@ time-machine==2.16.0
     #   pendulum
 tox==4.15.0
     # via gsy-framework
+typing-extensions==4.15.0
+    # via
+    #   anyio
+    #   fastapi
+    #   pydantic
+    #   pydantic-core
+    #   starlette
+    #   typing-inspection
+typing-inspection==0.4.2
+    # via
+    #   fastapi
+    #   pydantic
 tzdata==2025.2
     # via
     #   gsy-framework
@@ -209,13 +259,21 @@ urllib3==1.26.18
     # via
     #   gsy-framework
     #   requests
+uvicorn[standard]==0.46.0
+    # via -r requirements/base.in
+uvloop==0.22.1
+    # via uvicorn
 virtualenv==20.26.2
     # via
     #   gsy-framework
     #   pre-commit
     #   tox
+watchfiles==1.1.1
+    # via uvicorn
 websockets==12.0
-    # via gsy-framework
+    # via
+    #   gsy-framework
+    #   uvicorn
 
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools

@@ -168,7 +168,7 @@ class TestForwardStrategies:
         )
 
     @pytest.mark.parametrize(
-        "market_type, ",
+        "market_type",
         [
             AvailableMarketTypes.INTRADAY,
             AvailableMarketTypes.DAY_FORWARD,
