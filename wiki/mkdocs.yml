@@ -151,7 +151,6 @@ extra_javascript:
   - https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML
   - https://research.web3.foundation/en/latest/mathjax-config.js
   - javascripts/mathjax.js
-  - https://polyfill.io/v3/polyfill.min.js?features=es6
   - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
 
 # Repository that houses the source code for this site. This
@@ -184,7 +183,6 @@ markdown_extensions:
     - toc:
         permalink: true
         toc_depth: 4
-    - mdtooltips
     - attr_list
     - md_in_html
     - pymdownx.arithmatex:
@@ -199,6 +197,6 @@ plugins:
     - redirects:
         redirect_maps:
             # When trying to reach the root page, redirect to the documentation page
-            '': 'https://gridsingularity.github.io/gsy-e/documentation/'
+            'index.md': 'https://gridsingularity.github.io/gsy-e/documentation/'
             'blockchain-installation.md': 'gsy-node.md'
             'two-sided-pay-as-bid.md': 'https://gridsingularity.github.io/gsy-e/market-types/#two-sided-pay-as-bid-market'

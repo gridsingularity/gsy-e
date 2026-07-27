@@ -81,7 +81,8 @@ class HeatPumpStateBase(StateInterface):
         """Set cop for the given time slot."""
         self._cop[time_slot] = cop
 
-    def _last_time_slot(self, current_market_slot: DateTime) -> DateTime:
+    @staticmethod
+    def _last_time_slot(current_market_slot: DateTime) -> DateTime:
         return current_market_slot - GlobalConfig.slot_length
 
     @staticmethod

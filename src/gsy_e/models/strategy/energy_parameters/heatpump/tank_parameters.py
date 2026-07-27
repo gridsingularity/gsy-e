@@ -7,13 +7,6 @@ from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_e.constants import HeatPumpSettingsDefaultParameters
 
 
-class HeatpumpTankTypes(Enum):
-    """Supported types of heat tanks"""
-
-    WATER = 0
-    PCM = 1
-
-
 class PCMType(Enum):
     """Type if PCM material"""
 
@@ -27,7 +20,6 @@ class PCMType(Enum):
 class BaseTankParameters:
     """Base class for tank parameters"""
 
-    type: HeatpumpTankTypes = HeatpumpTankTypes.WATER
     name: str = ""
     initial_temp_C: float = ConstSettings.HeatPumpSettings.INIT_TEMP_C
     min_temp_C: float = ConstSettings.HeatPumpSettings.MIN_TEMP_C

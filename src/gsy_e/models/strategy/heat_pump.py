@@ -2,8 +2,7 @@ from dataclasses import dataclass
 from typing import Dict, TYPE_CHECKING, Optional, Union, List
 from decimal import Decimal
 
-from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.constants_limits import FLOATING_POINT_TOLERANCE
+from gsy_framework.constants_limits import ConstSettings, FLOATING_POINT_TOLERANCE
 from gsy_framework.data_classes import Trade, TraderDetails
 from gsy_framework.enums import AvailableMarketTypes
 from gsy_framework.exceptions import GSyException
@@ -272,8 +271,7 @@ class MultipleTankHeatPumpStrategy(HeatPumpStrategyBase):
         )
 
     def _init_price_params(self, order_updater_parameters, preferred_buying_rate):
-        self.use_default_updater_params: bool = not order_updater_parameters
-        if self.use_default_updater_params:
+        if not order_updater_parameters:
             order_updater_parameters = {
                 AvailableMarketTypes.SPOT: HeatPumpOrderUpdaterParameters()
             }
@@ -423,8 +421,7 @@ class HeatPumpStrategyWithoutTanks(HeatPumpStrategyBase):
         }
 
     def _init_price_params(self, order_updater_parameters):
-        self.use_default_updater_params: bool = not order_updater_parameters
-        if self.use_default_updater_params:
+        if not order_updater_parameters:
             order_updater_parameters = {
                 AvailableMarketTypes.SPOT: HeatPumpOrderUpdaterParameters()
             }
