@@ -144,7 +144,7 @@ The **HeatPumpStrategy** parameters can be set as follows:
   * **min_temp_C**: (default=50); minimum temperature of the heat pump storage. If the temperature drops below this point, the heat pump buys energy at any cost;
   * **max_temp_C**: (default=60); maximum temperature of the heat pump storage. If the temperature rises above this point, the heat pump does not buy any energy;
   * **initial_temp_C**: (default=50); initial temperature of the heat pump storage at the beginning of the simulation;
-  * **external_temp_C_profile**: (mandatory user input); external temperature that influences the efficiency of the heat pump. If this parameter is selected, the external temperature is constant for the whole simulation run;
+  * **source_temp_C_profile**: (mandatory user input); external temperature that influences the efficiency of the heat pump. If this parameter is selected, the external temperature is constant for the whole simulation run;
   * **tank_volume_l**: (default=50); volume/capacity of the thermal storage tank;
   * **consumption_kWh**: (mandatory user input); constant amount of energy the heat pump consumes to produce heat, in kWh (can be provided as a constant energy kWh value or as an energy consumption time-series profile, as a dictionary that follows the supported format);
   * **preferred_buying_rate**: (default=15); rate in cts/kWh that determines the [trading strategy](heat-pump.md#heat-pump-asset-trading-strategy);
@@ -159,7 +159,7 @@ Asset(name="Heat Pump", strategy=MultipleTankHeatPumpStrategy())
 ```
 The MultipleTankHeatPumpStrategy parameters can be set as follows:
 
-  * **tank_parameters**: (mandatory user input, list of TankParameters); list of parameters for each water tank connected to the heat pump. The parameters for each water tank are min_temp_C, max_temp_C, initial_temp_C, tank_volume_l with the same default values and behaviour as the corresponding parameters of the HeatPumpStrategy;
+  * **tank_parameters**: (mandatory user input, list of TankParameters) with configuration options provided below;maximum_power_rating_kW: same as HeatPumpStrategy;
   * **maximum_power_rating_kW**: same as HeatPumpStrategy;
   * **external_temp_C_profile**: same as HeatPumpStrategy;
   * **consumption_kWh**: same as HeatPumpStrategy;
@@ -168,8 +168,34 @@ The MultipleTankHeatPumpStrategy parameters can be set as follows:
   * **order_updater_parameters**: same as HeatPumpStrategy;
   * **heat_demand_Q_profile**: same as HeatPumpStrategy
 
+##### Tank Parameters Configuration
 
-#### Heat Pump Price Strategy Configuration
+Multiple tank types can be configured in the MultipleTankHeatPumpStrategy by adding the type name to the tank_parameters list in the heat pump configuration. Currently two tank types are supported in the tank_parameters list:
+
+* WaterTankParameters
+* PCMTankParameters
+
+Both types share the following general parameter:
+name: (default=””) name or label for the tank in order to be able to distinguish the exported results
+
+  * **minitial_temp_C**: (default=50) initial temperature of the tank
+  * **min_temp_C**: (default=50) minimum temperature of the tank
+  * **max_temp_C**: (default=60) maximum temperature of the tank
+  * **loss_per_day_percent**: (default=0): temperature loss per day in percent. If the temperature of the storage is 50 degrees and the loss_per_day_percent was set to 10%, the storage will lose 5 degrees within a day
+
+These are the type-specific parameters:
+**WaterTankParameters**
+
+* **tank_volume_l**: (default=50) volume of the tank
+
+**PCMTankParameters**
+
+  * **pcm_tank_type**: (default=PCMType.OM37) type of material inside the pcm tank
+  * **volume_flow_rate_l_min**: (default=10) volume flow rate of the heat transfer fluid in l/min
+  * **number_of_plates**: (default=15) number of heat exchanger plates that are situated in the PCM tank and connected in parallel
+
+
+#### Heat Pump Price Configuration
 
 In order to configure the heat pump bid pricing, the **order_updater_parameters**  should be set by assigning the **HeatPumpOrderUpdaterParameters** data class and its parameters to it:
 
@@ -213,13 +239,13 @@ The **VirtualHeatPumpStrategy** parameters can be set as follows:
   * **order_updater_parameters**: of type **HeatPumpOrderUpdaterParameters**. A template configuration can be seen [below](#heat-pump-price-strategy-configuration)
 
 The initial GSY virtual heat pump strategy assumes that the heat pump is connected to a single water tank. In order to simulate a virtual heat pump that is connected to multiple water tanks, a dedicated strategy, namely MultipleTankVirtualHeatPumpStrategy is also available:
-```
+```python
 Asset(name="Heat Pump", strategy=MultipleTankVirtualHeatPumpStrategy())
 ```
 
 The MultipleTankVirtualHeatPumpStrategy parameters can be set as follows:
 
-* **tank_parameters**: (mandatory user input, list of TankParameters); list of parameters for each water tank connected to the virtual heat pump. The parameters for each water tank are min_temp_C, max_temp_C, initial_temp_C, tank_volume_l with the same default values and behaviour as the corresponding parameters of the VirtualHeatPumpStrategy;
+* **tank_parameters**: (mandatory user input, list of WaterTankParameters); list of parameters for each water tank connected to the virtual heat pump. The parameters for each water tank are min_temp_C, max_temp_C, initial_temp_C, tank_volume_l with the same default values and behaviour as the corresponding parameters of the VirtualHeatPumpStrategy;
 * **maximum_power_rating_kW**: same as VirtualHeatPumpStrategy;
 * **water_supply_temp_C_profile**: same as VirtualHeatPumpStrategy;
 * **water_return_temp_C_profile**: same as VirtualHeatPumpStrategy;
@@ -227,3 +253,38 @@ The MultipleTankVirtualHeatPumpStrategy parameters can be set as follows:
 * **calibration_coefficient**: same as VirtualHeatPumpStrategy;
 * **preferred_buying_rate**: same as VirtualHeatPumpStrategy;
 * **order_updater_parameters**: same as VirtualHeatPumpStrategy
+
+#### Configuration of Heat Pumps without Tanks
+
+To configure a heat pump asset without any attached heat tanks in the Grid Singularity Exchange backend code, the following line is to be added to the children's list of one of the areas in the setup file:
+
+```python
+Asset(name="Heat Pump Without Tanks", strategy=HeatPumpStrategyWithoutTanks())
+```
+
+The HeatPumpStrategyWithoutTanks parameters can be set as follows:
+* **target_temp_C_profile**: (mandatory user input) Temperature profile of the targeted condenser temperature in °C
+* **source_temp_C_profile**: same as HeatPumpStrategy;
+* **heat_demand_Q_profile**: same as HeatPumpStrategy;
+* **consumption_kWh_profile**: same as HeatPumpStrategy;
+* **order_updater_parameters**: same as HeatPumpStrategy;
+* **source_type**: same as HeatPumpStrategy;
+* **cop_model_type**: same as HeatPumpStrategy;
+
+
+#### Configuration of Heat Pumps with SorTES Tanks
+To configure a heat pump asset that has a sorption-based heat tank attached in the Grid Singularity Exchange backend code, the following line is to be added to the children's list of one of the areas in the setup file:
+
+```python
+Asset(name="Heat Pump with SorTES tank", strategy=HeatPumpWithSorTesTankStrategy())
+```
+
+The HeatPumpWithSorTesTankStrategy parameters can be set as follows:
+* **heat_demand_Q_profile**: same as HeatPumpStrategy;
+* **target_temp_C_profile**: same as HeatPumpStrategyWithoutTanks;
+* **source_temp_C_profile**: same as HeatPumpStrategyWithoutTanks;
+* **ambient_temp_C_profile**: temperature profile of the air temperature at the location of the SorTES tank that is used for selecting the correct performance power of the SorTES tank
+* **preferred_buying_rate**: (default=20) energy rate in EUR/kWh that marks the border between affordable and expensive energy
+* **average_trade_rate**: (constant or profile) this parameter is used for the trading strategy of the heat-pump with SorTES tank. If the average trading rate is lower than the preferred_buying_rate, the SorTES tank is charging (more information here)
+* **source_type**: same as HeatPumpStrategy;
+* **order_updater_parameters**: same as HeatPumpStrategy;

@@ -23,6 +23,7 @@ nav:
             - 'Heat Pump & Virtual Heat Pump Overview': 'heat-pumps-general.md'
             - 'Heat Pump': 'heat-pump.md'
             - 'Virtual Heat Pump': 'virtual-heat-pump.md'
+            - 'Heat Storages': 'heat_storages.md'
         - 'Community Settings': 'community-settings.md'
         - 'Grid Market Settings': 'grid-market-settings.md'
         - 'Events (Adding, Removing Assets, etc.)': 'events.md'
