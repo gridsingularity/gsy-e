@@ -149,7 +149,7 @@ The **HeatPumpStrategy** parameters can be set as follows:
   * **consumption_kWh**: (mandatory user input); constant amount of energy the heat pump consumes to produce heat, in kWh (can be provided as a constant energy kWh value or as an energy consumption time-series profile, as a dictionary that follows the supported format);
   * **preferred_buying_rate**: (default=15); rate in cts/kWh that determines the [trading strategy](heat-pump.md#heat-pump-asset-trading-strategy);
   * **source_type**:  set how the heat exchange is conducted, either via air or water/ground, as it determines the COP calculation;
-  * **order_updater_parameters**: of type **HeatPumpOrderUpdaterParameters**. A template configuration can be seen [below](#heat-pump-price-strategy-configuration)
+  * **order_updater_parameters**: of type **HeatPumpOrderUpdaterParameters**. A template configuration can be seen [below](#heat-pump-price-configuration)
   * **heat_demand_Q_profile**: (optional user input); time-series profile of the heat demand that the heat pump has to produce, in Joules. Overrides consumption_kWh parameter.
   * **cop_model_type**: (optional user input; default: COPModelType.UNIVERSAL); select the type of COP model
 
@@ -236,7 +236,7 @@ The **VirtualHeatPumpStrategy** parameters can be set as follows:
   * **tank_volume_l**: (default=50); volume of the storage tank;
   * **calibration_coefficient**: (default=0.6); empirical calibration coefficient for water-to-water heat pumps;
   * **preferred_buying_rate**: (default=15); rate in cts/kWh that determines [the trading strategy](heat-pump.md#heat-pump-asset-trading-strategy);
-  * **order_updater_parameters**: of type **HeatPumpOrderUpdaterParameters**. A template configuration can be seen [below](#heat-pump-price-strategy-configuration)
+  * **order_updater_parameters**: of type **HeatPumpOrderUpdaterParameters**. A template configuration can be seen [below](#heat-pump-price-configuration)
 
 The initial GSY virtual heat pump strategy assumes that the heat pump is connected to a single water tank. In order to simulate a virtual heat pump that is connected to multiple water tanks, a dedicated strategy, namely MultipleTankVirtualHeatPumpStrategy is also available:
 ```python
@@ -254,6 +254,10 @@ The MultipleTankVirtualHeatPumpStrategy parameters can be set as follows:
 * **preferred_buying_rate**: same as VirtualHeatPumpStrategy;
 * **order_updater_parameters**: same as VirtualHeatPumpStrategy
 
+##### Virtual Heat Pump Price Configuration
+The virtual heat pump price configuration is the same as the [heat pump price configuration](#heat-pump-price-configuration).
+
+
 #### Configuration of Heat Pumps without Tanks
 
 To configure a heat pump asset without any attached heat tanks in the Grid Singularity Exchange backend code, the following line is to be added to the children's list of one of the areas in the setup file:
@@ -263,6 +267,7 @@ Asset(name="Heat Pump Without Tanks", strategy=HeatPumpStrategyWithoutTanks())
 ```
 
 The HeatPumpStrategyWithoutTanks parameters can be set as follows:
+
 * **target_temp_C_profile**: (mandatory user input) Temperature profile of the targeted condenser temperature in °C
 * **source_temp_C_profile**: same as HeatPumpStrategy;
 * **heat_demand_Q_profile**: same as HeatPumpStrategy;
@@ -280,11 +285,12 @@ Asset(name="Heat Pump with SorTES tank", strategy=HeatPumpWithSorTesTankStrategy
 ```
 
 The HeatPumpWithSorTesTankStrategy parameters can be set as follows:
+
 * **heat_demand_Q_profile**: same as HeatPumpStrategy;
 * **target_temp_C_profile**: same as HeatPumpStrategyWithoutTanks;
 * **source_temp_C_profile**: same as HeatPumpStrategyWithoutTanks;
 * **ambient_temp_C_profile**: temperature profile of the air temperature at the location of the SorTES tank that is used for selecting the correct performance power of the SorTES tank
 * **preferred_buying_rate**: (default=20) energy rate in EUR/kWh that marks the border between affordable and expensive energy
-* **average_trade_rate**: (constant or profile) this parameter is used for the trading strategy of the heat-pump with SorTES tank. If the average trading rate is lower than the preferred_buying_rate, the SorTES tank is charging (more information here)
+* **average_trade_rate**: (constant or profile) this parameter is used for the trading strategy of the heat-pump with SorTES tank. If the average trading rate is lower than the preferred_buying_rate, the SorTES tank is charging (more information [here](#sortes-tcm-storage-modelling))
 * **source_type**: same as HeatPumpStrategy;
 * **order_updater_parameters**: same as HeatPumpStrategy;

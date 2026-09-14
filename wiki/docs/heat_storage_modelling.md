@@ -1,4 +1,3 @@
-## Heat Storages
 
 While the heat pump digital twin in the Grid Singularity maps is limited to a single water tank for heat storage, the Grid Singularity Exchange backend code allows users to configure and add different types of heat storage tanks:
 Water tank
@@ -7,13 +6,13 @@ Water tank
 * FractLES short-duration latent thermal energy system, developed by the University of Birmingham (UoB), leverages Phase Change Materials (PCM) to store and release thermal energy by absorbing or releasing heat during their solid-to-liquid phase transition at a specific melting point
 * SorTES long-duration sorption thermal energy system, developed by National Research Council of Italy (Consiglio Nazionale delle Ricerche - CNR), leverages thermochemical sorption technology to efficiently store thermal energy and keep it unaffected for long duration.
 
-The following section describes the implementation methodologies of the FractLES and SorTES tanks, undertaken in the framework of the ThumbsUp project co-funded by the European Union's Horizon Europe Programme under Grant Agreement No. 101096921. Both storage types are available in the Grid Singularity Exchange backend code only; the Singularity Map interface continues to support a single water tank.
+The following section describes the implementation methodologies of the FractLES and SorTES tanks, undertaken in the framework of the ThumbsUp project co-funded by the European Union's Horizon Europe Programme under Grant Agreement No. 101096921. Both of these novel storage types are available in the Grid Singularity Exchange backend code only; the Singularity Map interface continues to support a single water tank.
 
 
 ### FractLES (PCM) Storage Modelling
 
 The FractLES tank contains an organic phase change material (PCM) that stores heat primarily as latent heat during the phase change between solid and liquid. The general design, drafted in Figure 2.24, consists of a container filled with PCM. Inside the container are multiple heat exchangers, also called plates, connected in parallel. These heat exchangers link the heat source (the heat pump) to the heat sink (such as the floor heating pipes or domestic hot water pipes).
-When the tank is charged, the heat transfer fluid, water heated by the heat pump, runs through the plates and warms the PCM, which changes phase from solid to liquid. When the storage is discharged, a valve is turned to connect the heat sink, whose return temperature is lower than the PCM's melting point, causing the PCM to solidify again. For more detailed physical explanations we refer to the FractLES temperature model developed by the University of Birmingham within the ThumbsUp Project [publication pending].
+When the tank is charged, the heat transfer fluid, water heated by the heat pump, runs through the plates and warms the PCM, which changes phase from solid to liquid. When the storage is discharged, a valve is turned to connect the heat sink, whose return temperature is lower than the PCM's melting point, causing the PCM to solidify again. For more detailed physical explanations we refer to the FractLES temperature model developed by the University of Birmingham within the ThumbsUp Project ([Bastida et al.](https://more.bham.ac.uk/ukhtc-2024/wp-content/uploads/sites/80/2024/09/UKHTC-2024_paper_37.pdf)).
 
 <figure markdown>
   ![alt_text](img/schematic_hp_fractles.png){:style="height:450px;width:600px";text-align:center"}
@@ -59,7 +58,7 @@ In addition, the heat storage should not transition to a charging or discharging
 
 ### SorTES (TCM) Storage Modelling
 
-The operational characteristics of the SorTES tank differ substantially from those of the FractLES. The general functionality of the SorTES thermal storage is outlined only at a high level, while its charging and discharging processes, which determine the trading strategy, are described in detail below. For more detailed information on this model, please see the following source [Gado et al., 2025](https://doi.org/10.1016/j.enconman.2025.119584){target=_blank}.
+The operational characteristics of the SorTES tank differ substantially from those of the FractLES. The general functionality of the SorTES thermal storage is outlined only at a high level, while its charging and discharging processes, which determine the trading strategy, are described in detail below. For more detailed information on this model, please see the following source: [Gado et al., 2025](https://doi.org/10.1016/j.enconman.2025.119584){target=_blank}.
 
 ##### Charging
 Due to inherent physical constraints, the thermochemical material requires elevated temperatures in the range of 60–90 °C to undergo charging, a temperature regime that cannot be supplied by a typical domestic heat pump. To circumvent this limitation, the digital twin implemented within the GSY simulation tool models the charging process via a resistive heater, which converts electrical energy into thermal energy with a COP=1. Following, the generated heat is transferred to the sorbent material, thereby driving the desorption of the adsorbate. In parallel, a dry cooler is operated to condense the released adsorbate in the condenser and to extract it from the sorbent matrix. Notably, the dry cooler exhibits a markedly higher efficiency than the resistive heater; the corresponding performance data have been supplied by CNR - Consiglio Nazionale delle Ricerche, the Italian National Research Council, as part of EU ThumbsUp project collaboration.
