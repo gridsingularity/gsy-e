@@ -2050,7 +2050,7 @@
 <p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/predefined_load.py" target="_blank">User upload Profile</a>:</p>
 <div class="codehilite"><pre><span></span><code><span class="n">user_profile_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">gsy_e_path</span><span class="p">,</span><span class="s2">&quot;assets/load.csv&quot;</span><span class="p">)</span>
 
-<span class="n">Asset</span><span class="p">(</span><span class="s1">&#39;Load&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">LoadProfileStrategy</span><span class="p">(</span><span class="n">daily_load_profile</span><span class="o">=</span><span class="n">user_profile_path</span><span class="p">,</span> <span class="n">initial_buying_rate</span><span class="p">)</span>
+<span class="n">Asset</span><span class="p">(</span><span class="s1">&#39;Load&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">LoadProfileStrategy</span><span class="p">(</span><span class="n">daily_load_profile</span><span class="o">=</span><span class="n">user_profile_path</span><span class="p">,</span> <span class="n">initial_buying_rate</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
 </code></pre></div>
 
 <h3 id="addendum-hrs_of_day-and-hrs_per_day">Addendum: <code>hrs_of_day</code> and <code>hrs_per_day</code><a class="headerlink" href="#addendum-hrs_of_day-and-hrs_per_day" title="Permanent link">&para;</a></h3>
@@ -2074,7 +2074,7 @@
 <p>Losses consist of three components:</p>
 <ul>
 <li>charging_loss_percent: reduction in charged energy due to charging (buying of energy) in percent of the charged energy in one market slot</li>
-<li>discharge_loss_percent: reduction in charged energy due to discharging (selling of energy) in percent of the charged energy in one market slot</li>
+<li>discharging_loss_percent: reduction in charged energy due to discharging (selling of energy) in percent of the charged energy in one market slot</li>
 <li>self_discharge_per_day_percent: reduction in charged energy due to self-discharge in one day in percent of the battery capacity</li>
 </ul>
 <h2 id="power-plant">Power Plant<a class="headerlink" href="#power-plant" title="Permanent link">&para;</a></h2>
@@ -2109,20 +2109,8 @@ The Market Maker asset strategy in the infinite bus mode is configured as follow
 <h3 id="addendum-storage-capacity-based-method">Addendum: Storage Capacity Based Method.<a class="headerlink" href="#addendum-storage-capacity-based-method" title="Permanent link">&para;</a></h3>
 <p>This method was created to sell energy at lower prices during high state of charge - SOC (when the battery has more energy stored) and at higher prices during low SOC (when the battery can afford to sell its stored energy for less).
 If the cap_price_strategy is True, the offer price for the storage is calculated according to:</p>
-<p><code>offer_rate = initial_selling_rate - ((initial_selling_rate - final_selling_rate)\*soc/100)</code></p>
-<p>As an example, considering an <code>initial_selling_rate</code> of 30 cts/kWh and a <code>final_selling_rate</code> of 20 cts/kWh, a storage with an SOC of 1% would sell its energy at 29.9 cts/kWh, and a battery at 100% SOC would sell its energy at 20 cts/kWh.
-To implement a power plant in a backend simulation, one option is available:</p>
-<p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/finite_power_plant.py" target="_blank">Finite Power Plant</a></p>
-<div class="codehilite"><pre><span></span><code><span class="n">profile_kW</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="mi">0</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
-    <span class="mi">8</span><span class="p">:</span> <span class="mf">0.15</span><span class="p">,</span>
-    <span class="mi">12</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span>
-    <span class="mi">19</span><span class="p">:</span> <span class="mf">0.15</span><span class="p">,</span>
-    <span class="mi">22</span><span class="p">:</span> <span class="mf">0.1</span>
-<span class="p">}</span>
-<span class="n">Asset</span><span class="p">(</span><span class="s2">&quot;Power Plant&quot;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">FinitePowerPlant</span><span class="p">(</span><span class="n">energy_rate</span><span class="o">=</span><span class="mf">31.3</span><span class="p">,</span> <span class="n">max_available_power_kW</span><span class="o">=</span><span class="n">profile_kW</span><span class="p">))</span>
-</code></pre></div>
-
+<p><code>offer_rate = initial_selling_rate - ((initial_selling_rate - final_selling_rate)*soc/100)</code></p>
+<p>As an example, considering an <code>initial_selling_rate</code> of 30 cts/kWh and a <code>final_selling_rate</code> of 20 cts/kWh, a storage with an SOC of 1% would sell its energy at 29.9 cts/kWh, and a battery at 100% SOC would sell its energy at 20 cts/kWh.</p>
 <h3 id="heat-pumps">Heat pumps<a class="headerlink" href="#heat-pumps" title="Permanent link">&para;</a></h3>
 <h4 id="heat-pump-code-configuration">Heat Pump Code Configuration<a class="headerlink" href="#heat-pump-code-configuration" title="Permanent link">&para;</a></h4>
 <p>To configure a heat pump asset in the backend code, the following lines are to be added to the children's list of one of the areas in the setup file:</p>
@@ -2145,14 +2133,14 @@ To implement a power plant in a backend simulation, one option is available:</p>
 <li><strong>cop_model_type</strong>: (optional user input; default: COPModelType.UNIVERSAL); select the type of COP model</li>
 </ul>
 <p>The initial GSY heat pump strategy assumes that the heat pump is connected to a single water tank. In order to simulate a heat pump that is connected to multiple water tanks, a dedicated strategy, namely MultipleTankHeatPumpStrategy is also available:</p>
-<div class="codehilite"><pre><span></span><code>Asset(name=&quot;Heat Pump&quot;, strategy=MultipleTankHeatPumpStrategy())
+<div class="codehilite"><pre><span></span><code><span class="n">Asset</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Heat Pump&quot;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">MultipleTankHeatPumpStrategy</span><span class="p">())</span>
 </code></pre></div>
 
 <p>The MultipleTankHeatPumpStrategy parameters can be set as follows:</p>
 <ul>
-<li><strong>tank_parameters</strong>: (mandatory user input, list of TankParameters) with configuration options provided below;maximum_power_rating_kW: same as HeatPumpStrategy;</li>
+<li><strong>tank_parameters</strong>: (mandatory user input, list of TankParameters) with configuration options provided below;</li>
 <li><strong>maximum_power_rating_kW</strong>: same as HeatPumpStrategy;</li>
-<li><strong>external_temp_C_profile</strong>: same as HeatPumpStrategy;</li>
+<li><strong>source_temp_C_profile</strong>: same as HeatPumpStrategy;</li>
 <li><strong>consumption_kWh</strong>: same as HeatPumpStrategy;</li>
 <li><strong>preferred_buying_rate</strong>: same as HeatPumpStrategy;</li>
 <li><strong>source_type</strong>: same as HeatPumpStrategy;</li>
@@ -2165,10 +2153,10 @@ To implement a power plant in a backend simulation, one option is available:</p>
 <li>WaterTankParameters</li>
 <li>PCMTankParameters</li>
 </ul>
-<p>Both types share the following general parameter:
-name: (default=””) name or label for the tank in order to be able to distinguish the exported results</p>
+<p>Both types share the following general parameters:</p>
 <ul>
-<li><strong>minitial_temp_C</strong>: (default=50) initial temperature of the tank</li>
+<li><strong>name</strong>: (default=””) name or label for the tank in order to be able to distinguish the exported results</li>
+<li><strong>initial_temp_C</strong>: (default=50) initial temperature of the tank</li>
 <li><strong>min_temp_C</strong>: (default=50) minimum temperature of the tank</li>
 <li><strong>max_temp_C</strong>: (default=60) maximum temperature of the tank</li>
 <li><strong>loss_per_day_percent</strong>: (default=0): temperature loss per day in percent. If the temperature of the storage is 50 degrees and the loss_per_day_percent was set to 10%, the storage will lose 5 degrees within a day</li>
@@ -2223,7 +2211,7 @@ If not set by the user, the following default values are used:</p>
 <li><strong>order_updater_parameters</strong>: of type <strong>HeatPumpOrderUpdaterParameters</strong>. A template configuration can be seen <a href="#heat-pump-price-configuration">below</a></li>
 </ul>
 <p>The initial GSY virtual heat pump strategy assumes that the heat pump is connected to a single water tank. In order to simulate a virtual heat pump that is connected to multiple water tanks, a dedicated strategy, namely MultipleTankVirtualHeatPumpStrategy is also available:</p>
-<div class="codehilite"><pre><span></span><code><span class="n">Asset</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Heat Pump&quot;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">MultipleTankVirtualHeatPumpStrategy</span><span class="p">())</span>
+<div class="codehilite"><pre><span></span><code><span class="n">Asset</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;Virtual Heat Pump&quot;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">MultipleTankVirtualHeatPumpStrategy</span><span class="p">())</span>
 </code></pre></div>
 
 <p>The MultipleTankVirtualHeatPumpStrategy parameters can be set as follows:</p>
@@ -2265,8 +2253,8 @@ If not set by the user, the following default values are used:</p>
 <li><strong>target_temp_C_profile</strong>: same as HeatPumpStrategyWithoutTanks;</li>
 <li><strong>source_temp_C_profile</strong>: same as HeatPumpStrategyWithoutTanks;</li>
 <li><strong>ambient_temp_C_profile</strong>: temperature profile of the air temperature at the location of the SorTES tank that is used for selecting the correct performance power of the SorTES tank</li>
-<li><strong>preferred_buying_rate</strong>: (default=20) energy rate in EUR/kWh that marks the border between affordable and expensive energy</li>
-<li><strong>average_trade_rate</strong>: (constant or profile) this parameter is used for the trading strategy of the heat-pump with SorTES tank. If the average trading rate is lower than the preferred_buying_rate, the SorTES tank is charging (more information <a href="#sortes-tcm-storage-modelling">here</a>)</li>
+<li><strong>preferred_buying_rate</strong>: (default=20) energy rate in cts/kWh that marks the border between affordable and expensive energy</li>
+<li><strong>average_trade_rate</strong>: (constant or profile) this parameter is used for the trading strategy of the heat-pump with SorTES tank. If the average trading rate is lower than the preferred_buying_rate, the SorTES tank is charging (more information <a href="../heat_storage_modelling/#sortes-tcm-storage-modelling">here</a>)</li>
 <li><strong>source_type</strong>: same as HeatPumpStrategy;</li>
 <li><strong>order_updater_parameters</strong>: same as HeatPumpStrategy;</li>
 </ul>
