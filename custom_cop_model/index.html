@@ -13,7 +13,7 @@
         <meta name="description" content="Documentation for the Grid Singularity Exchange">
       
       
-        <link rel="canonical" href="https://gridsingularity.github.io/gsy-e/documentation/model-storage/">
+        <link rel="canonical" href="https://gridsingularity.github.io/gsy-e/documentation/custom_cop_model/">
       
       
         <meta name="author" content="Grid Singularity">
@@ -42,7 +42,7 @@
     
     
       
-        <title>Model storage - Grid Singularity Wiki</title>
+        <title>Custom COP model - Grid Singularity Wiki</title>
       
     
     
@@ -110,7 +110,7 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
-      <a href="#user-interface-configuration" tabindex="1" class="md-skip">
+      <a href="#cop-model-training" tabindex="1" class="md-skip">
         Skip to content
       </a>
     
@@ -135,7 +135,7 @@
               Grid Singularity Wiki
             </span>
             <span class="md-header-nav__topic">
-              Model storage
+              Custom COP model
             </span>
           
         </div>
@@ -315,10 +315,12 @@
       
       
 
+  
 
-  <li class="md-nav__item md-nav__item--nested">
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2" type="checkbox" id="nav-2" checked>
     
     <label class="md-nav__link" for="nav-2">
       Set up a simulation of an active local energy market
@@ -334,10 +336,12 @@
           
           
 
+  
 
-  <li class="md-nav__item md-nav__item--nested">
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-1" type="checkbox" id="nav-2-1">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-1" type="checkbox" id="nav-2-1" checked>
     
     <label class="md-nav__link" for="nav-2-1">
       Instructions for running simulations using the Grid Singularity interface: Singularity Map
@@ -365,10 +369,12 @@
           
           
 
+  
 
-  <li class="md-nav__item md-nav__item--nested">
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-1-2" type="checkbox" id="nav-2-1-2">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-1-2" type="checkbox" id="nav-2-1-2" checked>
     
     <label class="md-nav__link" for="nav-2-1-2">
       Assets configuration
@@ -456,10 +462,12 @@
           
           
 
+  
 
-  <li class="md-nav__item md-nav__item--nested">
+
+  <li class="md-nav__item md-nav__item--active md-nav__item--nested">
     
-      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-1-2-7" type="checkbox" id="nav-2-1-2-7">
+      <input class="md-toggle md-nav__toggle" data-md-toggle="nav-2-1-2-7" type="checkbox" id="nav-2-1-2-7" checked>
     
     <label class="md-nav__link" for="nav-2-1-2-7">
       Heat Pumps and District Heating
@@ -523,11 +531,99 @@
           
           
 
+  
 
-  <li class="md-nav__item">
-    <a href="../custom_cop_model/" title="Custom COP model" class="md-nav__link">
+
+  <li class="md-nav__item md-nav__item--active">
+    
+    <input class="md-toggle md-nav__toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+    
+    
+      <label class="md-nav__link md-nav__link--active" for="__toc">
+        Custom COP model
+      </label>
+    
+    <a href="./" title="Custom COP model" class="md-nav__link md-nav__link--active">
       Custom COP model
     </a>
+    
+      
+<nav class="md-nav md-nav--secondary">
+  
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#cop-model-training" title="COP model training" class="md-nav__link">
+    COP model training
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#heat-pump-performance-data-characteristics" title="Heat Pump performance data characteristics" class="md-nav__link">
+    Heat Pump performance data characteristics
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#heat-production-data" title="Heat production data" class="md-nav__link">
+    Heat production data
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#electric-power-consumption-data" title="Electric power consumption data" class="md-nav__link">
+    Electric power consumption data
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#partial-load-data" title="Partial-load data" class="md-nav__link">
+    Partial-load data
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-to-train-cop-model-for-the-heat-pump-strategy" title="How to train COP model for the heat pump strategy" class="md-nav__link">
+    How to train COP model for the heat pump strategy
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-integrate-the-cop-model-into-the-gsy-e" title="How to integrate the COP model into the gsy-e" class="md-nav__link">
+    How to integrate the COP model into the gsy-e
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+    
   </li>
 
         
@@ -1722,57 +1818,63 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#user-interface-configuration" title="User Interface Configuration" class="md-nav__link">
-    User Interface Configuration
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#backend-configuration" title="Backend Configuration" class="md-nav__link">
-    Backend Configuration
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#addendum-storage-capacity-based-method" title="Addendum: Storage Capacity Based Method" class="md-nav__link">
-    Addendum: Storage Capacity Based Method
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#storage-behaviour-in-local-energy-markets" title="Storage Behaviour in Local Energy Markets" class="md-nav__link">
-    Storage Behaviour in Local Energy Markets
+  <a href="#cop-model-training" title="COP model training" class="md-nav__link">
+    COP model training
   </a>
   
     <nav class="md-nav">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#buying-energy-in-one-sided-market" title="Buying Energy in One-Sided Market:" class="md-nav__link">
-    Buying Energy in One-Sided Market:
+  <a href="#heat-pump-performance-data-characteristics" title="Heat Pump performance data characteristics" class="md-nav__link">
+    Heat Pump performance data characteristics
+  </a>
+  
+    <nav class="md-nav">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#heat-production-data" title="Heat production data" class="md-nav__link">
+    Heat production data
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#buying-energy-in-two-sided-market" title="Buying Energy in Two-Sided Market:" class="md-nav__link">
-    Buying Energy in Two-Sided Market:
+  <a href="#electric-power-consumption-data" title="Electric power consumption data" class="md-nav__link">
+    Electric power consumption data
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#selling-energy" title="Selling Energy" class="md-nav__link">
-    Selling Energy
+  <a href="#partial-load-data" title="Partial-load data" class="md-nav__link">
+    Partial-load data
   </a>
   
 </li>
         
       </ul>
     </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#how-to-train-cop-model-for-the-heat-pump-strategy" title="How to train COP model for the heat pump strategy" class="md-nav__link">
+    How to train COP model for the heat pump strategy
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-integrate-the-cop-model-into-the-gsy-e" title="How to integrate the COP model into the gsy-e" class="md-nav__link">
+    How to integrate the COP model into the gsy-e
+  </a>
   
 </li>
       
@@ -1792,65 +1894,40 @@
             <article class="md-content__inner md-typeset">
               
                 
-                  <a href="https://github.com/gridsingularity/gsy-e/wiki/edit/master/docs/model-storage.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                  <a href="https://github.com/gridsingularity/gsy-e/wiki/edit/master/docs/custom_cop_model.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
                 
                 
-                  <h1>Model storage</h1>
+                  <h1>Custom COP model</h1>
                 
-                <p>The storage simulates energy assets capable of storing or discharging energy (e.g. Lithium batteries, compressed air energy storage).</p>
-<h2 id="user-interface-configuration">User Interface Configuration<a class="headerlink" href="#user-interface-configuration" title="Permanent link">&para;</a></h2>
-<p>The following parameters can be configured:</p>
-<ul>
-<li><strong>Name</strong>: Must be unique</li>
-<li><strong>Battery capacity</strong>: Total energy capacity.</li>
-<li><strong>Initial capacity</strong>: Can be set in two ways:<ul>
-<li>Initial State of Charge - SOC (in %)</li>
-<li>Initial Energy (in kWh)</li>
-</ul>
-</li>
-<li><strong>Minimum SOC</strong>: Minimum energy to leave in the storage.</li>
-<li><strong>Max power rating for battery</strong>: Power limit for each market slot for sold and bought energy.</li>
-<li><strong>Initial selling rate</strong>: Initial energy rate for selling energy at the beginning of each market slot in cents/kWh.</li>
-<li><strong>Final selling rate</strong>: Final energy rate for selling energy at the end of each market slot in cents/kWh.</li>
-<li><strong>Rate decrease</strong>: Explicit rate decrease increment in cents/kWh.</li>
-<li><strong>Initial buying rate</strong>: Initial energy rate for buying energy at the beginning of each market slot in cents/kWh.</li>
-<li><strong>Final buying rate</strong>: Final energy rate for buying energy at the end of each market slot in cents/kWh.</li>
-<li><strong>Rate increase</strong>: Explicit rate increase increment in cents/kWh.</li>
-<li><strong>Fit to limits</strong>: Derive bidding behavior from a linear fitted curve of a buying rate between initial_buying_rate and final_buying_rate and a selling rate between initial_selling_rate and final_selling_rate within the bidding interval. If activated:<ul>
-<li>energy_rate_increase = (final_buying_rate - initial_buying_rate) / max(int((slot_length / update_interval) -1), 1)</li>
-<li>energy_rate_decrease_per_update = (initial_selling_rate - final_selling_rate) / max(int((slot_length / update_interval) -1), 1)</li>
-</ul>
-</li>
-<li><strong>Update interval</strong>: The frequency at which the rate is updated.</li>
-<li><strong>Capacity based method</strong>: The storage can trade energy based on a capacity dependent sell price (see addendum).</li>
-</ul>
-<p>Note: For the time being, the storage component has a 100% electric-to-electric efficiency by default. Changing this characteristic is not possible at the moment but it will be possible in the near future. Users are welcome to add additional features to our open source code base on GitHub.</p>
-<p>The storage configuration interface is shown below:</p>
-<p><img alt="alt_text" src="../img/model-storage-1.png" style="height:750px;width:250px" />
-<img alt="alt_text" src="../img/model-storage-2.png" style="height:250px;width:250px" /></p>
-<h2 id="backend-configuration">Backend Configuration<a class="headerlink" href="#backend-configuration" title="Permanent link">&para;</a></h2>
-<p>To implement the storage in a backend simulation one option is available:</p>
-<p><a href="https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/storage.py" target="_blank">Energy Storage System</a></p>
-<div class="codehilite"><pre><span></span><code><span class="n">Market</span><span class="p">(</span><span class="s1">&#39;Storage&#39;</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="n">StorageStrategy</span><span class="p">(</span><span class="n">initial_soc</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">energy_rate_decrease_per_update</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">battery_capacity_kWh</span><span class="o">=</span><span class="mf">1.2</span><span class="p">,</span> <span class="n">max_abs_battery_power_kW</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">final_buying_rate</span><span class="o">=</span><span class="mf">16.99</span><span class="p">,</span> <span class="n">final_selling_rate</span><span class="o">=</span> <span class="mf">17.01</span><span class="p">)))</span>
-</code></pre></div>
-
-<h2 id="addendum-storage-capacity-based-method">Addendum: Storage Capacity Based Method<a class="headerlink" href="#addendum-storage-capacity-based-method" title="Permanent link">&para;</a></h2>
-<p>This method was created to sell energy at lower prices during high state of charge - SOC (when the battery has more energy stored) and at higher prices during low SOC (when the battery can afford to sell its stored energy for less).</p>
-<p>If the <code>cap_price_strategy</code> is <code>True</code>, the offer price for the storage is calculated according to:</p>
-<p><code>offer_rate = initial_selling_rate - ((initial_selling_rate - final_selling_rate)\*soc/100)</code></p>
-<p>As an example, considering an <code>initial_selling_rate</code> of 30 cents/kWh and a <code>final_selling_rate</code> of 20 cents/kWh, a storage with an SOC of 1% would sell its energy at 29.9 cents/kWh, and a battery at 100% SOC would sell its energy at 20 cents/kWh.</p>
-<h2 id="storage-behaviour-in-local-energy-markets">Storage Behaviour in Local Energy Markets<a class="headerlink" href="#storage-behaviour-in-local-energy-markets" title="Permanent link">&para;</a></h2>
-<p>In general all bids and offers follow the physical constraint of the set <code>max_abs_battery_power_kW</code> value. The accumulated energy per market slot cannot exceed this power value times the length of the market slot. Energy sold and bought cancel each other out, meaning that if 2kWh are both sold and bought in the same market slot, the relative power remains 0kW.</p>
-<p>For the buying rate increase and selling rate decrease behaviour, please see the <a href="../trading-agents-and-strategies/">Trading Strategies page</a>.</p>
-<h3 id="buying-energy-in-one-sided-market">Buying Energy in <a href="../market-types/#one-sided-pay-as-offer-market">One-Sided Market</a>:<a class="headerlink" href="#buying-energy-in-one-sided-market" title="Permanent link">&para;</a></h3>
-<p>On each tick, the storage scans the connected market for affordable offers* if there is storage space to be filled (if the current SOC is lower than 100%). Once an offer is found, it is either fully or partially accepted, depending on the demand. The storage always seeks 100% SOC when buying energy.</p>
-<ul>
-<li>= affordable offers are offers that have a price lower or equal to the current acceptable energy rate. The acceptable energy rate changes during a market slot depending on the <code>initial_buying_rate</code>, <code>final_buying_rate</code>, <code>energy_rate_decrease_per_update</code> and <code>update_interval</code> setting.</li>
-</ul>
-<h3 id="buying-energy-in-two-sided-market">Buying Energy in <a href="../market-types/#two-sided-pay-as-bid-market">Two-Sided Market</a>:<a class="headerlink" href="#buying-energy-in-two-sided-market" title="Permanent link">&para;</a></h3>
-<p>On each tick, the storage either places a bid for the quantity of energy it needs to reach 100% SOC or updates the price of an existing bid in the market where the bid rate depends on the <code>initial_buying_rate</code>, <code>final_buying_rate</code>, <code>energy_rate_decrease_per_update</code> and <code>update_interval</code> setting.</p>
-<h3 id="selling-energy">Selling Energy<a class="headerlink" href="#selling-energy" title="Permanent link">&para;</a></h3>
-<p>At the beginning of each market slot, the storage places an offer for all the energy it has stored (not including the energy that is needed to keep the storage at least at min_allowed_soc). This offer is updated at each <code>update_interval</code> pursuant to the rate decrease settings. This mechanism applies in both one and two-sided market types. Consequently, it is possible for the storage to have both an offer and a bid placed in the same market.</p>
+                <p>This document describes how COP of arbitrary heat pump models can be modelled and integrated, based on the model developed by  <a href="https://www.tekniker.es/en/">Tekniker</a> by deploying the <a href="https://www.doe2.com/">DOE-2</a> building energy analysis program, to yield a statistical model by leveraging measurements of select heat pump manufacturers under predefined operational conditions.</p>
+<h2 id="cop-model-training">COP model training<a class="headerlink" href="#cop-model-training" title="Permanent link">&para;</a></h2>
+<p>The training of the Tekniker COP model produces a JSON file that contains the COP model parameters for a specific heat pump. This file will subsequently be used by the HeatPumpStrategy model in the Grid Singularity Exchange, in order to more accurately approximate the select heat pump COP model.
+To train the COP model, performance data for the selected heat pump is required, pursuant to the characteristics described in the following section.</p>
+<h3 id="heat-pump-performance-data-characteristics">Heat Pump performance data characteristics<a class="headerlink" href="#heat-pump-performance-data-characteristics" title="Permanent link">&para;</a></h3>
+<h4 id="heat-production-data">Heat production data<a class="headerlink" href="#heat-production-data" title="Permanent link">&para;</a></h4>
+<p>A table of heat production (Q) in kW needs to be provided for the full load operation of the heat pump. The heat production is represented as a function of air temperature and condenser temperature.
+The COP model will produce valid data only for the provided temperature range.
+Consequently, a wide range and a high resolution of input data will result in more realistic output values.</p>
+<h4 id="electric-power-consumption-data">Electric power consumption data<a class="headerlink" href="#electric-power-consumption-data" title="Permanent link">&para;</a></h4>
+<p>For the same data points as for the heat production data, the corresponding electrical power consumption (P) in kW under full load needs to be provided.</p>
+<h4 id="partial-load-data">Partial-load data<a class="headerlink" href="#partial-load-data" title="Permanent link">&para;</a></h4>
+<p>The partial-load data represents the full range of load to be simulated by the model.
+A combination of Q and P for different loads of the heat pump needs to be provided in table form.
+There must be a minimum of three distinct partial-load data points for the same temperature combination.</p>
+<h3 id="how-to-train-cop-model-for-the-heat-pump-strategy">How to train COP model for the heat pump strategy<a class="headerlink" href="#how-to-train-cop-model-for-the-heat-pump-strategy" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Install the software requirements with <code>pip install -r requirements.txt</code></li>
+<li>Create an Excel file in the <code>input_data</code> folder with 3 tabs each containing tables listed in the former section. Example files can be found in the <code>input_data</code> folder.</li>
+<li>Run <code>python cop_model_fitter.py</code> that will read all input data in excel files, fit the models and save the model parameters into JSON files.</li>
+</ol>
+<h2 id="how-to-integrate-the-cop-model-into-the-gsy-e">How to integrate the COP model into the gsy-e<a class="headerlink" href="#how-to-integrate-the-cop-model-into-the-gsy-e" title="Permanent link">&para;</a></h2>
+<ol>
+<li>Move the newly generated JSON file to <code>src/gsy_e/models/strategy/energy_parameters/heatpump/cop_models/model_data</code></li>
+<li>Add an entry in the <code>COPModelType</code> enum ** that is named after the heat pump model.</li>
+<li>Add entry in the <code>MODEL_TYPE_FILENAME_MAPPING</code>**  mapping where the value should be the JSON file name that contains the model parameters.</li>
+</ol>
+<p><code>**</code> = can be found in the <code>/strategy/energy_parameters/heatpump/cop_models/cop_models.py</code> module</p>
+<p>Now, the pre-trained COP model can be selected in the HeatPump strategies by providing the newly added enum to the <code>cop_model_type</code> input parameter.</p>
                 
                   
                 
@@ -1867,6 +1944,41 @@
       
         
 <footer class="md-footer">
+  
+    <div class="md-footer-nav">
+      <nav class="md-footer-nav__inner md-grid">
+        
+          <a href="../heat_storage_modelling/" title="Heat Storage Modelling" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
+            </div>
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Previous
+                </span>
+                Heat Storage Modelling
+              </span>
+            </div>
+          </a>
+        
+        
+          <a href="../community-settings/" title="Community Settings" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+            <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
+              <span class="md-flex__ellipsis">
+                <span class="md-footer-nav__direction">
+                  Next
+                </span>
+                Community Settings
+              </span>
+            </div>
+            <div class="md-flex__cell md-flex__cell--shrink">
+              <i class="md-icon md-icon--arrow-forward md-footer-nav__button"></i>
+            </div>
+          </a>
+        
+      </nav>
+    </div>
   
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
