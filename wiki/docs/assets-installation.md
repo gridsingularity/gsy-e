@@ -37,7 +37,7 @@ Asset(
 ```python
 user_profile_path = os.path.join(gsy_e_path,"assets/load.csv")
 
-Asset('Load', strategy=LoadProfileStrategy(daily_load_profile=user_profile_path, initial_buying_rate)
+Asset('Load', strategy=LoadProfileStrategy(daily_load_profile=user_profile_path, initial_buying_rate=0))
 ```
 ### Addendum: `hrs_of_day` and `hrs_per_day`
 
@@ -66,7 +66,7 @@ Asset(
 Losses consist of three components:
 
 - charging_loss_percent: reduction in charged energy due to charging (buying of energy) in percent of the charged energy in one market slot
-- discharge_loss_percent: reduction in charged energy due to discharging (selling of energy) in percent of the charged energy in one market slot
+- discharging_loss_percent: reduction in charged energy due to discharging (selling of energy) in percent of the charged energy in one market slot
 - self_discharge_per_day_percent: reduction in charged energy due to self-discharge in one day in percent of the battery capacity
 
 
@@ -111,23 +111,9 @@ Where _energy_buy_rate_ and _energy_sell_rate_ are inputs for constant rates and
 This method was created to sell energy at lower prices during high state of charge - SOC (when the battery has more energy stored) and at higher prices during low SOC (when the battery can afford to sell its stored energy for less).
 If the cap_price_strategy is True, the offer price for the storage is calculated according to:
 
-`offer_rate = initial_selling_rate - ((initial_selling_rate - final_selling_rate)\*soc/100)`
+`offer_rate = initial_selling_rate - ((initial_selling_rate - final_selling_rate)*soc/100)`
 
 As an example, considering an `initial_selling_rate` of 30 cts/kWh and a `final_selling_rate` of 20 cts/kWh, a storage with an SOC of 1% would sell its energy at 29.9 cts/kWh, and a battery at 100% SOC would sell its energy at 20 cts/kWh.
-To implement a power plant in a backend simulation, one option is available:
-
-[Finite Power Plant](https://github.com/gridsingularity/gsy-e/blob/master/src/gsy_e/models/strategy/finite_power_plant.py){target=_blank}
-
-```python
-profile_kW = {
-    0: 0.1,
-    8: 0.15,
-    12: 0.2,
-    19: 0.15,
-    22: 0.1
-}
-Asset("Power Plant", strategy=FinitePowerPlant(energy_rate=31.3, max_available_power_kW=profile_kW))
-```
 
 ### Heat pumps
 
@@ -154,14 +140,14 @@ The **HeatPumpStrategy** parameters can be set as follows:
   * **cop_model_type**: (optional user input; default: COPModelType.UNIVERSAL); select the type of COP model
 
 The initial GSY heat pump strategy assumes that the heat pump is connected to a single water tank. In order to simulate a heat pump that is connected to multiple water tanks, a dedicated strategy, namely MultipleTankHeatPumpStrategy is also available:
-```
+```python
 Asset(name="Heat Pump", strategy=MultipleTankHeatPumpStrategy())
 ```
 The MultipleTankHeatPumpStrategy parameters can be set as follows:
 
-  * **tank_parameters**: (mandatory user input, list of TankParameters) with configuration options provided below;maximum_power_rating_kW: same as HeatPumpStrategy;
+  * **tank_parameters**: (mandatory user input, list of TankParameters) with configuration options provided below;
   * **maximum_power_rating_kW**: same as HeatPumpStrategy;
-  * **external_temp_C_profile**: same as HeatPumpStrategy;
+  * **source_temp_C_profile**: same as HeatPumpStrategy;
   * **consumption_kWh**: same as HeatPumpStrategy;
   * **preferred_buying_rate**: same as HeatPumpStrategy;
   * **source_type**: same as HeatPumpStrategy;
@@ -175,10 +161,10 @@ Multiple tank types can be configured in the MultipleTankHeatPumpStrategy by add
 * WaterTankParameters
 * PCMTankParameters
 
-Both types share the following general parameter:
-name: (default=””) name or label for the tank in order to be able to distinguish the exported results
+Both types share the following general parameters:
 
-  * **minitial_temp_C**: (default=50) initial temperature of the tank
+  * **name**: (default=””) name or label for the tank in order to be able to distinguish the exported results
+  * **initial_temp_C**: (default=50) initial temperature of the tank
   * **min_temp_C**: (default=50) minimum temperature of the tank
   * **max_temp_C**: (default=60) maximum temperature of the tank
   * **loss_per_day_percent**: (default=0): temperature loss per day in percent. If the temperature of the storage is 50 degrees and the loss_per_day_percent was set to 10%, the storage will lose 5 degrees within a day
@@ -240,7 +226,7 @@ The **VirtualHeatPumpStrategy** parameters can be set as follows:
 
 The initial GSY virtual heat pump strategy assumes that the heat pump is connected to a single water tank. In order to simulate a virtual heat pump that is connected to multiple water tanks, a dedicated strategy, namely MultipleTankVirtualHeatPumpStrategy is also available:
 ```python
-Asset(name="Heat Pump", strategy=MultipleTankVirtualHeatPumpStrategy())
+Asset(name="Virtual Heat Pump", strategy=MultipleTankVirtualHeatPumpStrategy())
 ```
 
 The MultipleTankVirtualHeatPumpStrategy parameters can be set as follows:
@@ -290,7 +276,7 @@ The HeatPumpWithSorTesTankStrategy parameters can be set as follows:
 * **target_temp_C_profile**: same as HeatPumpStrategyWithoutTanks;
 * **source_temp_C_profile**: same as HeatPumpStrategyWithoutTanks;
 * **ambient_temp_C_profile**: temperature profile of the air temperature at the location of the SorTES tank that is used for selecting the correct performance power of the SorTES tank
-* **preferred_buying_rate**: (default=20) energy rate in EUR/kWh that marks the border between affordable and expensive energy
-* **average_trade_rate**: (constant or profile) this parameter is used for the trading strategy of the heat-pump with SorTES tank. If the average trading rate is lower than the preferred_buying_rate, the SorTES tank is charging (more information [here](#sortes-tcm-storage-modelling))
+* **preferred_buying_rate**: (default=20) energy rate in cts/kWh that marks the border between affordable and expensive energy
+* **average_trade_rate**: (constant or profile) this parameter is used for the trading strategy of the heat-pump with SorTES tank. If the average trading rate is lower than the preferred_buying_rate, the SorTES tank is charging (more information [here](heat_storage_modelling.md#sortes-tcm-storage-modelling))
 * **source_type**: same as HeatPumpStrategy;
 * **order_updater_parameters**: same as HeatPumpStrategy;

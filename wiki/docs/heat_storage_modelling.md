@@ -1,6 +1,5 @@
 
 While the heat pump digital twin in the Grid Singularity maps is limited to a single water tank for heat storage, the Grid Singularity Exchange backend code allows users to configure and add different types of heat storage tanks:
-Water tank
 
 * Water tank
 * FractLES short-duration latent thermal energy system, developed by the University of Birmingham (UoB), leverages Phase Change Materials (PCM) to store and release thermal energy by absorbing or releasing heat during their solid-to-liquid phase transition at a specific melting point
@@ -16,7 +15,7 @@ When the tank is charged, the heat transfer fluid, water heated by the heat pump
 
 <figure markdown>
   ![alt_text](img/schematic_hp_fractles.png){:style="height:450px;width:600px";text-align:center"}
-  <figcaption><b>Figure 2.24</b>: Schematics of Heat Pump with integrated FractLES Storage
+  <figcaption><b>Figure 2.30</b>: Schematics of Heat Pump with integrated FractLES Storage
 </figcaption>
 </figure>
 
@@ -25,14 +24,14 @@ In order to simulate the physical part of the FractLES tank, an external model w
 Since each material has different properties that affect heat charge and discharge potential, such as specific heat, phase change temperature, the GSY heat storage digital twin was parameterized to support multiple material types (OM37, OM42, OM46, OM50, OM55, OM65). This material type property selection feature of the GSY heat storage digital twin was implemented in a way that it would be open for extension, thereby facilitating the addition of more Organic Phase Change materials in the future.
 
 #### Heat Storage Flexibility Management Function
-For the FractLES tank, the default trading strategy is equal to the water tank [trading strategy](#heat-pump-asset-trading-strategy). However, the calculation of the energy that has to be bought by the heat pump is different, because the PCM temperature and the state of charge cannot be easily converted to heat energy (and subsequently electrical energy) due to the complexity of the FractLES model equations. The following simplified formula is used to estimate the heat energy:
+For the FractLES tank, the default trading strategy is equal to the water tank [trading strategy](heat-pump.md#heat-pump-asset-trading-strategy). However, the calculation of the energy that has to be bought by the heat pump is different, because the PCM temperature and the state of charge cannot be easily converted to heat energy (and subsequently electrical energy) due to the complexity of the FractLES model equations. The following simplified formula is used to estimate the heat energy:
 
 
 $$ Q = V * \rho_{reference} * c_p * (T_{PCMmax}-T_{PCMcurrent})$$
 
 Although this formula also introduced certain inaccuracies in estimating the available heat energy that can be stored in the heat storage, it was possible to mitigate and sufficiently limit the scope for error by continuously updating the energy estimate every 15 minutes throughout the course of the simulation.
 
-Following the heat storage model available heat energy estimation, the electrical energy that has to be produced by the heat pump digital twin is calculated with the following formula implemented in the GSY heat pump digital twin (for more, see the [related GSY Wiki Documentation](#heat-pumps-and-district-heating) where the COP calculation generally follows the model proposed by [Ruhnau et al.](https://www.nature.com/articles/s41597-019-0199-y){target=_blank} using the following input parameters (termed here Universal COP model):
+Following the heat storage model available heat energy estimation, the electrical energy that has to be produced by the heat pump digital twin is calculated with the following formula implemented in the GSY heat pump digital twin (for more, see the [related GSY Wiki Documentation](heat-pumps-general.md#heat-pumps-and-district-heating)) where the COP calculation generally follows the model proposed by [Ruhnau et al.](https://www.nature.com/articles/s41597-019-0199-y){target=_blank} using the following input parameters (termed here Universal COP model):
 
 $$E_{tobuy} =min(P_{max}∙ t_{slot}, Q / COP) $$
 
@@ -41,7 +40,7 @@ where:
 * $P_{max}$ is the maximum power rating
 * $t_{slot}$ is the slot length
 * $Q$ is the available heat energy estimated by the heat storage model
-* $COP$ is the coefficient of performance of the heat pump; depends on the heat pump type, and $T = T_{curr} - T_{ambient}$
+* $COP$ is the coefficient of performance of the heat pump; depends on the heat pump type, and $\Delta T = T_{curr} - T_{ambient}$
 
 Due to the physical properties of the PCM heat storages, they are not capable of optimally switching between charge and discharge states. To mitigate this limitation, the GSY heat pump trading strategy was extended to support a heat storage SOC management algorithm that would leverage the preferred buying rate in conjunction with the estimation of the volume of heat that can be stored, thereby minimising the state changes between charges and discharges. That way, the PCM heat storages operate in accordance to their physical properties, while maximising the monetary benefits from the heat storage operation.
 
@@ -51,7 +50,7 @@ In addition, the heat storage should not transition to a charging or discharging
 
 <figure markdown>
   ![alt_text](img/state_trans_diagram_soc_heat_storage.png){:style="height:450px;width:450px";text-align:center"}
-  <figcaption><b>Figure 2.25</b>: State transition diagram of the Grid Singularity heat storage SOC management algorithm, part of the GSY heat pump trading strategy
+  <figcaption><b>Figure 2.31</b>: State transition diagram of the Grid Singularity heat storage SOC management algorithm, part of the GSY heat pump trading strategy
 </figcaption>
 </figure>
 
@@ -70,7 +69,7 @@ These inputs informed the development of the heat pump model coupled with a SorT
 
 <figure markdown>
   ![alt_text](img/schematic_hp_sortes.png){:style="height:400px;width:700px";text-align:center"}
-  <figcaption><b>Figure 2.26</b>: Schematics of Heat Pump with integrated SorTES Storage
+  <figcaption><b>Figure 2.32</b>: Schematics of Heat Pump with integrated SorTES Storage
 
 </figcaption>
 </figure>
