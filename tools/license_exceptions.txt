@@ -1,0 +1,26 @@
+# License-check exceptions for tools/check_licenses.py
+#
+# One package name per line (case-insensitive), '#' starts a comment.
+# Every entry here must be backed by a reviewed, documented reason in
+# tools/LICENSE_EXCEPTIONS.md. Do not add a package here without adding
+# the matching row there first.
+#
+# Reviewed: 2026-09-16, dev@gridsingularity.com
+
+# GPL-licensed static-analysis/lint tooling. Declared only in
+# requirements/dev.txt and requirements/tests.txt (never in base.txt),
+# invoked as a standalone CLI during development/CI, not imported by any
+# gsy-e module, and not installed as part of the shipped package. See
+# "Dev/test-only tooling" in tools/LICENSE_EXCEPTIONS.md.
+pylint
+pylint-plugin-utils
+pylint-pydantic
+
+# pip-licenses reports this as "Artistic License; GNU General Public
+# License (GPL); GNU General Public License v2 or later (GPLv2+)" because
+# it concatenates all PyPI trove classifiers. The package's actual
+# declared License metadata field is "Artistic License" (permissive),
+# confirmed with `pip-licenses --from=meta`. Runtime dependency, pulled in
+# by python-slugify (requirements/base.txt). See "Misclassified /
+# multi-classifier packages" in tools/LICENSE_EXCEPTIONS.md.
+text-unidecode
