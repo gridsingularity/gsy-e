@@ -13,7 +13,7 @@
         <meta name="description" content="Documentation for the Grid Singularity Exchange">
       
       
-        <link rel="canonical" href="https://gridsingularity.github.io/gsy-e/documentation/custom_cop_model/">
+        <link rel="canonical" href="https://gridsingularity.github.io/gsy-e/documentation/heat-storage-modelling/">
       
       
         <meta name="author" content="Grid Singularity">
@@ -42,7 +42,7 @@
     
     
       
-        <title>Custom COP model - Grid Singularity Wiki</title>
+        <title>Heat Storage Modelling - Grid Singularity Wiki</title>
       
     
     
@@ -110,7 +110,7 @@
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
     
-      <a href="#cop-model-training" tabindex="1" class="md-skip">
+      <a href="#fractles-pcm-storage-modelling" tabindex="1" class="md-skip">
         Skip to content
       </a>
     
@@ -135,7 +135,7 @@
               Grid Singularity Wiki
             </span>
             <span class="md-header-nav__topic">
-              Custom COP model
+              Heat Storage Modelling
             </span>
           
         </div>
@@ -519,18 +519,6 @@
           
           
 
-
-  <li class="md-nav__item">
-    <a href="../heat_storage_modelling/" title="Heat Storage Modelling" class="md-nav__link">
-      Heat Storage Modelling
-    </a>
-  </li>
-
-        
-          
-          
-          
-
   
 
 
@@ -540,11 +528,11 @@
     
     
       <label class="md-nav__link md-nav__link--active" for="__toc">
-        Custom COP model
+        Heat Storage Modelling
       </label>
     
-    <a href="./" title="Custom COP model" class="md-nav__link md-nav__link--active">
-      Custom COP model
+    <a href="./" title="Heat Storage Modelling" class="md-nav__link md-nav__link--active">
+      Heat Storage Modelling
     </a>
     
       
@@ -556,50 +544,16 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#cop-model-training" title="COP model training" class="md-nav__link">
-    COP model training
+  <a href="#fractles-pcm-storage-modelling" title="FractLES (PCM) Storage Modelling" class="md-nav__link">
+    FractLES (PCM) Storage Modelling
   </a>
   
     <nav class="md-nav">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#heat-pump-performance-data-characteristics" title="Heat Pump performance data characteristics" class="md-nav__link">
-    Heat Pump performance data characteristics
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#heat-production-data" title="Heat production data" class="md-nav__link">
-    Heat production data
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#electric-power-consumption-data" title="Electric power consumption data" class="md-nav__link">
-    Electric power consumption data
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#partial-load-data" title="Partial-load data" class="md-nav__link">
-    Partial-load data
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#how-to-train-cop-model-for-the-heat-pump-strategy" title="How to train COP model for the heat pump strategy" class="md-nav__link">
-    How to train COP model for the heat pump strategy
+  <a href="#heat-storage-flexibility-management-function" title="Heat Storage Flexibility Management Function" class="md-nav__link">
+    Heat Storage Flexibility Management Function
   </a>
   
 </li>
@@ -610,8 +564,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#how-to-integrate-the-cop-model-into-the-gsy-e" title="How to integrate the COP model into the gsy-e" class="md-nav__link">
-    How to integrate the COP model into the gsy-e
+  <a href="#sortes-tcm-storage-modelling" title="SorTES (TCM) Storage Modelling" class="md-nav__link">
+    SorTES (TCM) Storage Modelling
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sortes-trading-strategy" title="SorTES Trading Strategy" class="md-nav__link">
+    SorTES Trading Strategy
   </a>
   
 </li>
@@ -624,6 +585,18 @@
   
 </nav>
     
+  </li>
+
+        
+          
+          
+          
+
+
+  <li class="md-nav__item">
+    <a href="../custom-cop-model/" title="Custom COP model" class="md-nav__link">
+      Custom COP model
+    </a>
   </li>
 
         
@@ -1818,50 +1791,16 @@
     <ul class="md-nav__list" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#cop-model-training" title="COP model training" class="md-nav__link">
-    COP model training
+  <a href="#fractles-pcm-storage-modelling" title="FractLES (PCM) Storage Modelling" class="md-nav__link">
+    FractLES (PCM) Storage Modelling
   </a>
   
     <nav class="md-nav">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#heat-pump-performance-data-characteristics" title="Heat Pump performance data characteristics" class="md-nav__link">
-    Heat Pump performance data characteristics
-  </a>
-  
-    <nav class="md-nav">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#heat-production-data" title="Heat production data" class="md-nav__link">
-    Heat production data
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#electric-power-consumption-data" title="Electric power consumption data" class="md-nav__link">
-    Electric power consumption data
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#partial-load-data" title="Partial-load data" class="md-nav__link">
-    Partial-load data
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#how-to-train-cop-model-for-the-heat-pump-strategy" title="How to train COP model for the heat pump strategy" class="md-nav__link">
-    How to train COP model for the heat pump strategy
+  <a href="#heat-storage-flexibility-management-function" title="Heat Storage Flexibility Management Function" class="md-nav__link">
+    Heat Storage Flexibility Management Function
   </a>
   
 </li>
@@ -1872,8 +1811,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#how-to-integrate-the-cop-model-into-the-gsy-e" title="How to integrate the COP model into the gsy-e" class="md-nav__link">
-    How to integrate the COP model into the gsy-e
+  <a href="#sortes-tcm-storage-modelling" title="SorTES (TCM) Storage Modelling" class="md-nav__link">
+    SorTES (TCM) Storage Modelling
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sortes-trading-strategy" title="SorTES Trading Strategy" class="md-nav__link">
+    SorTES Trading Strategy
   </a>
   
 </li>
@@ -1894,40 +1840,83 @@
             <article class="md-content__inner md-typeset">
               
                 
-                  <a href="https://github.com/gridsingularity/gsy-e/wiki/edit/master/docs/custom_cop_model.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                  <a href="https://github.com/gridsingularity/gsy-e/wiki/edit/master/docs/heat-storage-modelling.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
                 
                 
-                  <h1>Custom COP model</h1>
+                  <h1>Heat Storage Modelling</h1>
                 
-                <p>This document describes how COP of arbitrary heat pump models can be modelled and integrated, based on the model developed by  <a href="https://www.tekniker.es/en/">Tekniker</a> by deploying the <a href="https://www.doe2.com/">DOE-2</a> building energy analysis program, to yield a statistical model by leveraging measurements of select heat pump manufacturers under predefined operational conditions.</p>
-<h2 id="cop-model-training">COP model training<a class="headerlink" href="#cop-model-training" title="Permanent link">&para;</a></h2>
-<p>The training of the Tekniker COP model produces a JSON file that contains the COP model parameters for a specific heat pump. This file will subsequently be used by the HeatPumpStrategy model in the Grid Singularity Exchange, in order to more accurately approximate the select heat pump COP model.
-To train the COP model, performance data for the selected heat pump is required, pursuant to the characteristics described in the following section.</p>
-<h3 id="heat-pump-performance-data-characteristics">Heat Pump performance data characteristics<a class="headerlink" href="#heat-pump-performance-data-characteristics" title="Permanent link">&para;</a></h3>
-<h4 id="heat-production-data">Heat production data<a class="headerlink" href="#heat-production-data" title="Permanent link">&para;</a></h4>
-<p>A table of heat production (Q) in kW needs to be provided for the full load operation of the heat pump. The heat production is represented as a function of air temperature and condenser temperature.
-The COP model will produce valid data only for the provided temperature range.
-Consequently, a wide range and a high resolution of input data will result in more realistic output values.</p>
-<h4 id="electric-power-consumption-data">Electric power consumption data<a class="headerlink" href="#electric-power-consumption-data" title="Permanent link">&para;</a></h4>
-<p>For the same data points as for the heat production data, the corresponding electrical power consumption (P) in kW under full load needs to be provided.</p>
-<h4 id="partial-load-data">Partial-load data<a class="headerlink" href="#partial-load-data" title="Permanent link">&para;</a></h4>
-<p>The partial-load data represents the full range of load to be simulated by the model.
-A combination of Q and P for different loads of the heat pump needs to be provided in table form.
-There must be a minimum of three distinct partial-load data points for the same temperature combination.</p>
-<h3 id="how-to-train-cop-model-for-the-heat-pump-strategy">How to train COP model for the heat pump strategy<a class="headerlink" href="#how-to-train-cop-model-for-the-heat-pump-strategy" title="Permanent link">&para;</a></h3>
-<ol>
-<li>Install the software requirements with <code>pip install -r requirements.txt</code></li>
-<li>Create an Excel file in the <code>input_data</code> folder with 3 tabs each containing tables listed in the former section. Example files can be found in the <code>input_data</code> folder.</li>
-<li>Run <code>python cop_model_fitter.py</code> that will read all input data in excel files, fit the models and save the model parameters into JSON files.</li>
-</ol>
-<h2 id="how-to-integrate-the-cop-model-into-the-gsy-e">How to integrate the COP model into the gsy-e<a class="headerlink" href="#how-to-integrate-the-cop-model-into-the-gsy-e" title="Permanent link">&para;</a></h2>
-<ol>
-<li>Move the newly generated JSON file to <code>src/gsy_e/models/strategy/energy_parameters/heatpump/cop_models/model_data</code></li>
-<li>Add an entry in the <code>COPModelType</code> enum ** that is named after the heat pump model.</li>
-<li>Add entry in the <code>MODEL_TYPE_FILENAME_MAPPING</code>**  mapping where the value should be the JSON file name that contains the model parameters.</li>
-</ol>
-<p><code>**</code> = can be found in the <code>/strategy/energy_parameters/heatpump/cop_models/cop_models.py</code> module</p>
-<p>Now, the pre-trained COP model can be selected in the HeatPump strategies by providing the newly added enum to the <code>cop_model_type</code> input parameter.</p>
+                <p>While the heat pump digital twin in the Grid Singularity maps is limited to a single water tank for heat storage, the Grid Singularity Exchange backend code allows users to configure and add different types of heat storage tanks:</p>
+<ul>
+<li>Water tank</li>
+<li>FractLES short-duration latent thermal energy system, developed by the University of Birmingham (UoB), leverages Phase Change Materials (PCM) to store and release thermal energy by absorbing or releasing heat during their solid-to-liquid phase transition at a specific melting point</li>
+<li>SorTES long-duration sorption thermal energy system, developed by National Research Council of Italy (Consiglio Nazionale delle Ricerche - CNR), leverages thermochemical sorption technology to efficiently store thermal energy and keep it unaffected for long duration.</li>
+</ul>
+<p>The following section describes the implementation methodologies of the FractLES and SorTES tanks, undertaken in the framework of the ThumbsUp project co-funded by the European Union's Horizon Europe Programme under Grant Agreement No. 101096921. Both of these novel storage types are available in the Grid Singularity Exchange backend code only; the Singularity Map interface continues to support a single water tank.</p>
+<h3 id="fractles-pcm-storage-modelling">FractLES (PCM) Storage Modelling<a class="headerlink" href="#fractles-pcm-storage-modelling" title="Permanent link">&para;</a></h3>
+<p>The FractLES tank contains an organic phase change material (PCM) that stores heat primarily as latent heat during the phase change between solid and liquid. The general design, drafted in Figure 2.24, consists of a container filled with PCM. Inside the container are multiple heat exchangers, also called plates, connected in parallel. These heat exchangers link the heat source (the heat pump) to the heat sink (such as the floor heating pipes or domestic hot water pipes).
+When the tank is charged, the heat transfer fluid, water heated by the heat pump, runs through the plates and warms the PCM, which changes phase from solid to liquid. When the storage is discharged, a valve is turned to connect the heat sink, whose return temperature is lower than the PCM's melting point, causing the PCM to solidify again. For more detailed physical explanations we refer to the FractLES temperature model developed by the University of Birmingham within the ThumbsUp Project (<a href="https://more.bham.ac.uk/ukhtc-2024/wp-content/uploads/sites/80/2024/09/UKHTC-2024_paper_37.pdf" target="_blank">Bastida et al.</a>).</p>
+<figure>
+<p><img _text-align:center_=";text-align:center&quot;" alt="alt_text" src="../img/schematic_hp_fractles.png" style="height:450px;width:600px" />
+  </p>
+<figcaption><b>Figure 2.30</b>: Schematics of Heat Pump with integrated FractLES Storage
+</figcaption>
+</figure>
+<p>In order to simulate the physical part of the FractLES tank, an external model was used. The FractLES temperature model developed by UoB was implemented in the GSY heat pump digital twin by integrating the estimation of the temperature reached by a FractLES storage that was heated by a heat transfer fluid (HTF) with a specific temperature in  the GSY twin’s heat storage model. The UoB FractLES model is essentially a mathematical model that comprises a set of differential, energy balance equations, each of which calculates the heat transfer for one control volume (a subdivision of the heat exchanger plate). Different equations are employed for charging and discharging calculation, requiring a dedicated submodel to simulate each of these operations. The inputs to both charging and discharging models are the mass flow rate and the HTF inlet temperature, and its outputs are the outlet temperatures of the HTF and the PCM, as well as the average state-of-charge (SOC) of all control volumes.</p>
+<p>Since each material has different properties that affect heat charge and discharge potential, such as specific heat, phase change temperature, the GSY heat storage digital twin was parameterized to support multiple material types (OM37, OM42, OM46, OM50, OM55, OM65). This material type property selection feature of the GSY heat storage digital twin was implemented in a way that it would be open for extension, thereby facilitating the addition of more Organic Phase Change materials in the future.</p>
+<h4 id="heat-storage-flexibility-management-function">Heat Storage Flexibility Management Function<a class="headerlink" href="#heat-storage-flexibility-management-function" title="Permanent link">&para;</a></h4>
+<p>For the FractLES tank, the default trading strategy is equal to the water tank <a href="../heat-pump/#heat-pump-asset-trading-strategy" target="_blank">trading strategy</a>. However, the calculation of the energy that has to be bought by the heat pump is different, because the PCM temperature and the state of charge cannot be easily converted to heat energy (and subsequently electrical energy) due to the complexity of the FractLES model equations. The following simplified formula is used to estimate the heat energy:</p>
+<div class="arithmatex">\[ Q = V * \rho_{reference} * c_p * (T_{PCMmax}-T_{PCMcurrent})\]</div>
+<p>Although this formula also introduced certain inaccuracies in estimating the available heat energy that can be stored in the heat storage, it was possible to mitigate and sufficiently limit the scope for error by continuously updating the energy estimate every 15 minutes throughout the course of the simulation.</p>
+<p>Following the heat storage model available heat energy estimation, the electrical energy that has to be produced by the heat pump digital twin is calculated with the following formula implemented in the GSY heat pump digital twin (for more, see the <a href="../heat-pumps-general/#heat-pumps-and-district-heating" target="_blank">related GSY Wiki Documentation</a>) where the COP calculation generally follows the model proposed by <a href="https://www.nature.com/articles/s41597-019-0199-y" target="_blank">Ruhnau et al.</a> using the following input parameters (termed here Universal COP model):</p>
+<div class="arithmatex">\[E_{tobuy} =min(P_{max}∙ t_{slot}, Q / COP) \]</div>
+<p>where:</p>
+<ul>
+<li><span class="arithmatex">\(P_{max}\)</span> is the maximum power rating</li>
+<li><span class="arithmatex">\(t_{slot}\)</span> is the slot length</li>
+<li><span class="arithmatex">\(Q\)</span> is the available heat energy estimated by the heat storage model</li>
+<li><span class="arithmatex">\(COP\)</span> is the coefficient of performance of the heat pump; depends on the heat pump type, and <span class="arithmatex">\(\Delta T = T_{curr} - T_{ambient}\)</span></li>
+</ul>
+<p>Due to the physical properties of the PCM heat storages, they are not capable of optimally switching between charge and discharge states. To mitigate this limitation, the GSY heat pump trading strategy was extended to support a heat storage SOC management algorithm that would leverage the preferred buying rate in conjunction with the estimation of the volume of heat that can be stored, thereby minimising the state changes between charges and discharges. That way, the PCM heat storages operate in accordance to their physical properties, while maximising the monetary benefits from the heat storage operation.</p>
+<p>For the heat storage SOC management algorithm to adhere to the physical properties of the PCM heat storages (multiple hours required to fully charge), a time duration threshold is configured that guarantees the heat storage will not change its state from charging to discharging or discharging to charging for this duration, with two (2) hours as a default value. The algorithm has been programmed to follow the state change diagram illustrated in Figure 2.25 below.</p>
+<p>In addition, the heat storage should not transition to a charging or discharging state without ensuring that there is sufficient SOC for charging / discharging for the duration that the time threshold prevents the state change. For this reason, two configurable minimum and maximum SOC values have been determined that control the minimum and maximum SOC that will allow a transition to the discharging and charging state respectively. The minimum SOC limit is set to a default value of 5%, while the maximum SOC limit is set to 95%, to ensure that the heat storage will not reach the maximum or minimum SOC when entering the charging or the discharging state.  Moreover, to ensure that charging the heat storage is economical, the heat storage will only enter the charge state if the energy that the heat storage can procure is less expensive than the average energy rate of the energy provider. Thus, the heat storage SOC management algorithm ensures the maximization of the economic benefits of the heat storage, while safeguarding its operation.</p>
+<figure>
+<p><img _text-align:center_=";text-align:center&quot;" alt="alt_text" src="../img/state_trans_diagram_soc_heat_storage.png" style="height:450px;width:450px" />
+  </p>
+<figcaption><b>Figure 2.31</b>: State transition diagram of the Grid Singularity heat storage SOC management algorithm, part of the GSY heat pump trading strategy
+</figcaption>
+</figure>
+<h3 id="sortes-tcm-storage-modelling">SorTES (TCM) Storage Modelling<a class="headerlink" href="#sortes-tcm-storage-modelling" title="Permanent link">&para;</a></h3>
+<p>The operational characteristics of the SorTES tank differ substantially from those of the FractLES. The general functionality of the SorTES thermal storage is outlined only at a high level, while its charging and discharging processes, which determine the trading strategy, are described in detail below. For more detailed information on this model, please see the following source: <a href="https://doi.org/10.1016/j.enconman.2025.119584" target="_blank">Gado et al., 2025</a>.</p>
+<h5 id="charging">Charging<a class="headerlink" href="#charging" title="Permanent link">&para;</a></h5>
+<p>Due to inherent physical constraints, the thermochemical material requires elevated temperatures in the range of 60–90 °C to undergo charging, a temperature regime that cannot be supplied by a typical domestic heat pump. To circumvent this limitation, the digital twin implemented within the GSY simulation tool models the charging process via a resistive heater, which converts electrical energy into thermal energy with a COP=1. Following, the generated heat is transferred to the sorbent material, thereby driving the desorption of the adsorbate. In parallel, a dry cooler is operated to condense the released adsorbate in the condenser and to extract it from the sorbent matrix. Notably, the dry cooler exhibits a markedly higher efficiency than the resistive heater; the corresponding performance data have been supplied by CNR - Consiglio Nazionale delle Ricerche, the Italian National Research Council, as part of EU ThumbsUp project collaboration.</p>
+<h5 id="discharging">Discharging<a class="headerlink" href="#discharging" title="Permanent link">&para;</a></h5>
+<p>The discharging process is initiated by re-evaporating the adsorbate, which is subsequently re-adsorbed by the sorbent material. This exothermic adsorption reaction releases thermal energy that is recovered via a heat exchanger and delivered to the building's underfloor heating system. The temperatures extracted in this process typically range between 25 °C and 45 °C; for the purposes of the digital twin in the GSY simulation tool, a representative value of 35 °C was adopted. Evaporation of the adsorbate is achieved by means of a dry heater or resistive heater, again assumed to operate at a COP=1.
+Theoretical performance data provided by CNR encompass both the charging and discharging power values across a range of operating temperatures. In addition, the data include the heat consumed by the evaporator and the heat rejected by the condenser, both of which depend on the ambient temperature at the respective site.
+These inputs informed the development of the heat pump model coupled with a SorTES tank, as implemented in the GSY simulation tool and illustrated in Figure 2.26.</p>
+<figure>
+<p><img _text-align:center_=";text-align:center&quot;" alt="alt_text" src="../img/schematic_hp_sortes.png" style="height:400px;width:700px" />
+  </p>
+<figcaption><b>Figure 2.32</b>: Schematics of Heat Pump with integrated SorTES Storage
+
+</figcaption>
+</figure>
+<h5 id="charging_1">Charging<a class="headerlink" href="#charging_1" title="Permanent link">&para;</a></h5>
+<p>The total electrical energy that the heat pump strategy must procure in a single market slot to charge the SorTES tank, denoted <span class="arithmatex">\(E_{charge}\)</span> is given by:</p>
+<div class="arithmatex">\[E_{charge} = E_{heater} + E_{condenser} +E_{demand}\]</div>
+<p>where <span class="arithmatex">\(E_{heater}\)</span> denotes the energy required to operate the heater that charges the TCM, <span class="arithmatex">\(E_{condenser}\)</span> represents the energy consumed by the dry cooler for condensing the adsorbate, and <span class="arithmatex">\(E_{demand}\)</span> corresponds to the building's heat demand per market slot, converted into an equivalent electrical demand using the Universal COP model described previously.</p>
+<h5 id="discharging_1">Discharging<a class="headerlink" href="#discharging_1" title="Permanent link">&para;</a></h5>
+<p>Analogously, the electrical energy that the heat pump strategy must purchase in one market slot during the discharging phase, <span class="arithmatex">\(E_{discharge}\)</span> , is expressed as:</p>
+<div class="arithmatex">\[E_{discharge} = E_{demand} - E_{storage} + E_{evaporator}\]</div>
+<p>where <span class="arithmatex">\(E_{storage}\)</span> denotes the thermal energy that can be extracted from the TCM over the duration of one market slot, <span class="arithmatex">\(E_{evaporator}\)</span> is the energy required to operate the electric heater driving the evaporation of the adsorbate, and <span class="arithmatex">\(E_{demand}\)</span> is again the heat demand per market slot expressed as an electrical equivalent.</p>
+<h3 id="sortes-trading-strategy">SorTES Trading Strategy<a class="headerlink" href="#sortes-trading-strategy" title="Permanent link">&para;</a></h3>
+<p>The decision logic governing whether to charge, discharge, or operate the heat pump solely to meet the instantaneous heat demand of the building is implemented by a slightly modified variant of the <a href="#heat-storage-flexibility-management-function" target="_blank">Heat Storage Flexibility Management Function</a>. This function evaluates a user-configurable threshold for the energy price offered on the current market, together with a configurable number of future market intervals. Specifically, the trading strategy uses the forecasted average trading rate as its primary input: if the predicted average rate over the next n time slots falls below the specified threshold, the charging process is triggered. Conversely, if the average rate over the next n market slots exceeds the threshold and the storage is sufficiently charged, the discharging process is initiated. In the event that the storage is depleted and no affordable energy is available within the next n market slots, the strategy procures only the electrical energy strictly required by the heat pump to satisfy the building's heat demand.
+The principal inputs to the SorTES heat pump trading strategy are therefore:</p>
+<ul>
+<li>The average trading rate as a function of time, spanning the entire simulation period.</li>
+<li>The preferred buying rate, which serves as the threshold determining whether to charge or discharge.</li>
+</ul>
+<p>The trading strategy initiates a discharge event only under the condition that the prevailing thermal demand is greater than or equal to the quantity of thermal energy that can be extracted from the sorption thermal energy storage (SorTES) within a single market interval. Should this criterion fail to be satisfied, the discharging process is suspended for the duration of the corresponding market slot, and the heat pump is instead operated as the sole thermal supply unit, thereby covering the entirety of the heat demand during that interval.</p>
+<p>The SorTES tank digital twin only operates in energy space rather than incorporating electrochemical state variables.</p>
                 
                   
                 
@@ -1948,7 +1937,7 @@ There must be a minimum of three distinct partial-load data points for the same 
     <div class="md-footer-nav">
       <nav class="md-footer-nav__inner md-grid">
         
-          <a href="../heat_storage_modelling/" title="Heat Storage Modelling" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
+          <a href="../virtual-heat-pump/" title="Virtual Heat Pump" class="md-flex md-footer-nav__link md-footer-nav__link--prev" rel="prev">
             <div class="md-flex__cell md-flex__cell--shrink">
               <i class="md-icon md-icon--arrow-back md-footer-nav__button"></i>
             </div>
@@ -1957,19 +1946,19 @@ There must be a minimum of three distinct partial-load data points for the same 
                 <span class="md-footer-nav__direction">
                   Previous
                 </span>
-                Heat Storage Modelling
+                Virtual Heat Pump
               </span>
             </div>
           </a>
         
         
-          <a href="../community-settings/" title="Community Settings" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
+          <a href="../custom-cop-model/" title="Custom COP model" class="md-flex md-footer-nav__link md-footer-nav__link--next" rel="next">
             <div class="md-flex__cell md-flex__cell--stretch md-footer-nav__title">
               <span class="md-flex__ellipsis">
                 <span class="md-footer-nav__direction">
                   Next
                 </span>
-                Community Settings
+                Custom COP model
               </span>
             </div>
             <div class="md-flex__cell md-flex__cell--shrink">
