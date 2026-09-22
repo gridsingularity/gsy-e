@@ -23,7 +23,7 @@ nav:
             - 'Heat Pump & Virtual Heat Pump Overview': 'heat-pumps-general.md'
             - 'Heat Pump': 'heat-pump.md'
             - 'Virtual Heat Pump': 'virtual-heat-pump.md'
-            - 'Heat Storage Modelling': 'heat_storage_modelling.md'
+            - 'Heat Storage Modelling': 'heat-storage-modelling.md'
             - 'Custom COP model': 'custom-cop-model.md'
         - 'Community Settings': 'community-settings.md'
         - 'Grid Market Settings': 'grid-market-settings.md'

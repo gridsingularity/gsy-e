@@ -277,6 +277,6 @@ The HeatPumpWithSorTesTankStrategy parameters can be set as follows:
 * **source_temp_C_profile**: same as HeatPumpStrategyWithoutTanks;
 * **ambient_temp_C_profile**: temperature profile of the air temperature at the location of the SorTES tank that is used for selecting the correct performance power of the SorTES tank
 * **preferred_buying_rate**: (default=20) energy rate in cts/kWh that marks the border between affordable and expensive energy
-* **average_trade_rate**: (constant or profile) this parameter is used for the trading strategy of the heat-pump with SorTES tank. If the average trading rate is lower than the preferred_buying_rate, the SorTES tank is charging (more information [here](heat_storage_modelling.md#sortes-tcm-storage-modelling))
+* **average_trade_rate**: (constant or profile) this parameter is used for the trading strategy of the heat-pump with SorTES tank. If the average trading rate is lower than the preferred_buying_rate, the SorTES tank is charging (more information [here](heat-storage-modelling.md#sortes-tcm-storage-modelling))
 * **source_type**: same as HeatPumpStrategy;
 * **order_updater_parameters**: same as HeatPumpStrategy;
