@@ -1,4 +1,4 @@
-This document describes how COP of arbitrary heat pump models can be modelled and integrated, based on the model developed by  [Tekniker](https://www.tekniker.es/en/) by deploying the [DOE-2](https://www.doe2.com/) building energy analysis program, to yield a statistical model by leveraging measurements of select heat pump manufacturers under predefined operational conditions.
+This document describes how COP of arbitrary heat pump models can be modelled and integrated, based on the model developed by  [Tekniker](https://www.tekniker.es/en/){target=_blank} by deploying the [DOE-2](https://www.doe2.com/){target=_blank} building energy analysis program, to yield a statistical model by leveraging measurements of select heat pump manufacturers under predefined operational conditions.
 
 ## COP model training
 
