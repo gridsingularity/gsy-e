@@ -28,6 +28,7 @@ from numpy import random
 
 from gsy_e.gsy_e_core.exceptions import SimulationException
 from gsy_e.gsy_e_core.non_p2p_handler import NonP2PHandler
+from gsy_e.models import random_order
 from gsy_e.models.config import SimulationConfig
 
 if TYPE_CHECKING:
@@ -68,6 +69,7 @@ class SimulationSetup:
             seed = random_seed
             log.info("Random seed: %s", random_seed)
         self.seed = int(seed)
+        random_order.set_seed(self.seed)
 
     def _log_traversal_length(self, area: "Area") -> None:
         no_of_levels = self._get_setup_levels(area) + 1
