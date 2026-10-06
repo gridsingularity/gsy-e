@@ -56,6 +56,7 @@ class PVStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         energy_rate_decrease_per_update=None,
         capacity_kW: float = None,
         use_market_maker_rate: bool = False,
+        capital_cost_per_kwp: float = None,
     ):
         """
         Args:
@@ -66,8 +67,10 @@ class PVStrategy(BidEnabledStrategy, UseMarketMakerMixin):
              update_interval: Interval after which PV will update its offer
              energy_rate_decrease_per_update: Slope of PV Offer change per update
              capacity_kW: power rating of the predefined profiles
+             capital_cost_per_kwp: Installed cost per kWp, used only by the RoI results
         """
         super().__init__()
+        self.capital_cost_per_kwp = capital_cost_per_kwp
         self._energy_params = PVEnergyParameters(panel_count, capacity_kW)
         self.use_market_maker_rate = use_market_maker_rate
         self._init_price_update(
@@ -85,6 +88,7 @@ class PVStrategy(BidEnabledStrategy, UseMarketMakerMixin):
             **self._energy_params.serialize(),
             **self.offer_update.serialize(),
             "use_market_maker_rate": self.use_market_maker_rate,
+            "capital_cost_per_kwp": self.capital_cost_per_kwp,
         }
 
     @classmethod

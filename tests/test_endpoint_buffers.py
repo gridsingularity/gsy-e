@@ -643,3 +643,29 @@ class TestSimulationEndpointBufferForward:
                 assert child["non_p2p"]
             else:
                 assert "non_p2p" not in child
+
+
+def test_roi_results_are_reported_only_once_the_run_has_finished(general_setup):
+    # Given
+    area, slot_length = general_setup
+    area.children = []
+    endpoint_buffer = SimulationEndpointBuffer(
+        job_id="JOB_1", random_seed=41, area=area, should_export_plots=False
+    )
+    endpoint_buffer._populate_core_stats_and_sim_state = MagicMock()
+    endpoint_buffer.validate_results = MagicMock()
+    endpoint_buffer.roi_ledger = MagicMock()
+    endpoint_buffer.roi_ledger.results.return_value = {"PV": {"npv": 1.0}}
+    progress_info = MagicMock(eta=None, elapsed_time=pendulum.duration(), percentage_completed=1)
+
+    # When
+    endpoint_buffer.update_stats(area, "running", progress_info, {}, False)
+    running_report = endpoint_buffer._generate_result_report()
+    endpoint_buffer.update_stats(area, "finished", progress_info, {}, False)
+    finished_report = endpoint_buffer._generate_result_report()
+
+    # Then
+    assert "roi" not in running_report
+    assert finished_report["roi"] == {"PV": {"npv": 1.0}}
+    assert endpoint_buffer.generate_json_report()["roi"] == {"PV": {"npv": 1.0}}
+    endpoint_buffer.roi_ledger.results.assert_called_once_with(slot_length.total_seconds())

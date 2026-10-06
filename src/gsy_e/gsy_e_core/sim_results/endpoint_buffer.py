@@ -35,6 +35,7 @@ from pendulum import DateTime
 
 import gsy_e.constants
 from gsy_e.gsy_e_core.sim_results.offer_bids_trades_hr_stats import OfferBidTradeGraphStats
+from gsy_e.gsy_e_core.sim_results.roi_ledger import RoiLedger
 from gsy_e.gsy_e_core.util import (
     get_feed_in_tariff_rate_from_config,
     get_market_maker_rate_from_config,
@@ -102,6 +103,8 @@ class SimulationEndpointBuffer:
         }
 
         self.results_handler = self._create_results_handler(should_export_plots)
+        self.roi_ledger = RoiLedger()
+        self.roi_results: Dict = {}
         self.simulation_state = {"general": {}, "areas": {}}
 
         if (
@@ -136,6 +139,7 @@ class SimulationEndpointBuffer:
             "progress_info": self.simulation_progress,
             "simulation_state": self.simulation_state,
             "hierarchy_self_consumption_percent": self.hierarchy_self_consumption_percent,
+            **({"roi": self.roi_results} if self.roi_results else {}),
             **self.results_handler.all_raw_results,
         }
 
@@ -154,6 +158,9 @@ class SimulationEndpointBuffer:
         self._calculate_and_update_last_market_time_slot(area)
         self.simulation_state["general"] = sim_state
         self._populate_core_stats_and_sim_state(area)
+        self.roi_ledger.update(area)
+        if simulation_status == "finished":
+            self.roi_results = self.roi_ledger.results(area.config.slot_length.total_seconds())
         self.simulation_progress = {
             "eta_seconds": progress_info.eta.seconds if progress_info.eta else None,
             "elapsed_time_seconds": progress_info.elapsed_time.seconds,
@@ -248,6 +255,7 @@ class SimulationEndpointBuffer:
             "simulation_state": self.simulation_state,
             "simulation_raw_data": self.flattened_area_core_stats_dict,
             "configuration_tree": self.area_result_dict,
+            **({"roi": self.roi_results} if self.roi_results else {}),
         }
 
     @staticmethod
