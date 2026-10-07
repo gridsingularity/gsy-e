@@ -24,6 +24,7 @@ from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.enums import AvailableMarketTypes, SpotMarketTypeEnum
 from pendulum import DateTime, datetime, duration
 
+import gsy_e.constants
 from gsy_e.events.event_structures import AreaEvent, MarketEvent
 from gsy_e.models.area import Area
 from gsy_e.models.area.event_dispatcher import AreaDispatcher
@@ -252,3 +253,41 @@ class TestAreaDispatcher:
         else:
             (area_dispatcher._broadcast_notification_to_area_and_child_agents.
                 assert_called_once_with(expected_market_type, event_type, **kwargs))
+
+
+def _children_reached_per_tick(houses, ticks):
+    """Return the order in which each house dispatches a tick to its children."""
+    orders = {house.name: [] for house in houses}
+    for tick in range(ticks):
+        for house in houses:
+            house.current_tick = tick
+            for child in house.children:
+                child.dispatcher = Mock()
+                child.dispatcher.event_listener.side_effect = (
+                    lambda *_, name=child.name, house=house.name, **__: orders[house].append(name)
+                )
+            house.dispatcher.broadcast_notification(AreaEvent.TICK)
+    return orders
+
+
+def test_removing_a_pv_leaves_dispatch_order_of_another_house_unchanged(monkeypatch):
+    """With item-hash ordering, a run without one PV stays comparable with the run that has it.
+
+    The houses dispatch in turn, so a shared random stream would let the first house shift the
+    order seen by the second.
+    """
+    monkeypatch.setattr(gsy_e.constants, "ORDER_BY_ITEM_HASH", True)
+    with_pv = [
+        Area("House 1", children=[Area("H1 Load"), Area("H1 PV")]),
+        Area("House 2", children=[Area("H2 Load"), Area("H2 PV"), Area("H2 Storage")]),
+    ]
+    without_pv = [
+        Area("House 1", children=[Area("H1 Load")]),
+        Area("House 2", children=[Area("H2 Load"), Area("H2 PV"), Area("H2 Storage")]),
+    ]
+
+    reached_with_pv = _children_reached_per_tick(with_pv, ticks=30)["House 2"]
+    reached_without_pv = _children_reached_per_tick(without_pv, ticks=30)["House 2"]
+
+    assert reached_with_pv == reached_without_pv
+    assert len({tuple(reached_with_pv[i:i + 3]) for i in range(0, 90, 3)}) > 1

@@ -90,6 +90,7 @@ results_field_to_json_filename_mapping = {
     "trade_profile": "trade_profile",
     "imported_exported_energy": "imported_exported_energy",
     "hierarchy_self_consumption_percent": "hierarchy_self_consumption_percent",
+    "roi": "roi",
 }
 
 

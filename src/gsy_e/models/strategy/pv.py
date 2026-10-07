@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import traceback
 from logging import getLogger
+from typing import List
 
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import TraderDetails
@@ -34,6 +35,7 @@ from gsy_e.models.strategy import BidEnabledStrategy
 from gsy_e.models.strategy.energy_parameters.pv import PVEnergyParameters
 from gsy_e.models.strategy.future.strategy import future_market_strategy_factory
 from gsy_e.models.strategy.mixins import UseMarketMakerMixin
+from gsy_e.models.strategy.pv_roi_inputs import PVRoiInputs
 from gsy_e.models.strategy.settlement.strategy import settlement_market_strategy_factory
 from gsy_e.models.strategy.state import PVState
 from gsy_e.models.strategy.update_frequency import TemplateStrategyOfferUpdater
@@ -56,6 +58,10 @@ class PVStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         energy_rate_decrease_per_update=None,
         capacity_kW: float = None,
         use_market_maker_rate: bool = False,
+        capital_cost_per_kwp: float = None,
+        annual_generation_kWh: float = None,
+        ownership_member_uuids: List[str] = None,
+        ownership_shares: List[float] = None,
     ):
         """
         Args:
@@ -66,8 +72,19 @@ class PVStrategy(BidEnabledStrategy, UseMarketMakerMixin):
              update_interval: Interval after which PV will update its offer
              energy_rate_decrease_per_update: Slope of PV Offer change per update
              capacity_kW: power rating of the predefined profiles
+             capital_cost_per_kwp: Installed cost per kWp, used only by the RoI results
+             annual_generation_kWh: Modelled generation over a full year, which lets the RoI
+                 results annualise a short run by season rather than by days
+             ownership_member_uuids: Member areas that co-own the PV, for the RoI results
+             ownership_shares: Share of each member in ownership_member_uuids
         """
         super().__init__()
+        self.roi_inputs = PVRoiInputs.from_arguments(
+            capital_cost_per_kwp,
+            annual_generation_kWh,
+            ownership_member_uuids=ownership_member_uuids,
+            ownership_shares=ownership_shares,
+        )
         self._energy_params = PVEnergyParameters(panel_count, capacity_kW)
         self.use_market_maker_rate = use_market_maker_rate
         self._init_price_update(
@@ -85,6 +102,7 @@ class PVStrategy(BidEnabledStrategy, UseMarketMakerMixin):
             **self._energy_params.serialize(),
             **self.offer_update.serialize(),
             "use_market_maker_rate": self.use_market_maker_rate,
+            **self.roi_inputs.serialize(),
         }
 
     @classmethod

@@ -17,7 +17,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from typing import TYPE_CHECKING
 from gsy_framework.constants_limits import ConstSettings
-from numpy.random import random
 
 from gsy_e.models.strategy.market_agents.one_sided_agent import OneSidedAgent
 from gsy_e.models.strategy.market_agents.two_sided_engine import TwoSidedEngine
@@ -57,22 +56,22 @@ class TwoSidedAgent(OneSidedAgent):
 
     # pylint: disable=unused-argument
     def event_bid(self, *, market_id: str, bid: "Bid"):
-        for engine in sorted(self.engines, key=lambda _: random()):
+        for engine in self._engines_in_random_order("event_bid"):
             engine.event_bid(bid)
 
     # pylint: disable=unused-argument
     def event_bid_traded(self, *, market_id: str, bid_trade: "Trade"):
-        for engine in sorted(self.engines, key=lambda _: random()):
+        for engine in self._engines_in_random_order("event_bid_traded"):
             engine.event_bid_traded(bid_trade=bid_trade)
 
     # pylint: disable=unused-argument
     def event_bid_deleted(self, *, market_id: str, bid: "Bid"):
-        for engine in sorted(self.engines, key=lambda _: random()):
+        for engine in self._engines_in_random_order("event_bid_deleted"):
             engine.event_bid_deleted(bid=bid)
 
     def event_bid_split(self, *, market_id: str, original_bid: "Bid",
                         accepted_bid: "Bid", residual_bid: "Bid"):
-        for engine in sorted(self.engines, key=lambda _: random()):
+        for engine in self._engines_in_random_order("event_bid_split"):
             engine.event_bid_split(market_id=market_id,
                                    original_bid=original_bid,
                                    accepted_bid=accepted_bid,

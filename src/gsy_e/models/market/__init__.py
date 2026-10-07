@@ -31,10 +31,10 @@ from gsy_framework.constants_limits import (
     DATE_TIME_FORMAT,
 )
 from gsy_framework.data_classes import Offer, Trade, Bid
-from numpy.random import random
 from pendulum import DateTime, duration
 
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
+from gsy_e.models import random_order
 from gsy_e.gsy_e_core.util import (
     add_or_create_key,
     subtract_or_create_key,
@@ -233,7 +233,11 @@ class MarketBase:  # pylint: disable=too-many-instance-attributes
             self.redis_publisher.publish_event(event, **kwargs)
         else:
             # Deliver notifications in random order to ensure fairness
-            for listener in sorted(self.notification_listeners, key=lambda inp: random()):
+            for listener in random_order.shuffled(
+                self.notification_listeners,
+                salt=lambda: f"{self.name}|{self.time_slot_str}|{event}|{self.now}",
+                key=self.notification_listeners.index,
+            ):
                 listener(event, market_id=self.id, **kwargs)
 
     def _update_stats_after_trade(self, trade: Trade, order: Union[Offer, Bid]) -> None:
