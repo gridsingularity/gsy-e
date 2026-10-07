@@ -16,6 +16,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from dataclasses import replace
+from typing import List
+
 from gsy_framework.constants_limits import ConstSettings
 from pendulum import duration
 
@@ -40,6 +43,9 @@ class PVPredefinedStrategy(PVStrategy):
             use_market_maker_rate: bool = False,
             capacity_kW: float = None,
             capital_cost_per_kwp: float = None,
+            annual_generation_kWh: float = None,
+            ownership_member_uuids: List[str] = None,
+            ownership_shares: List[float] = None,
             ):
         """
         Constructor of PVPredefinedStrategy
@@ -57,7 +63,8 @@ class PVPredefinedStrategy(PVStrategy):
             update_interval: Interval after which PV will update its offer
             energy_rate_decrease_per_update: Slope of PV Offer change per update
             capacity_kW: power rating of the predefined profiles
-            capital_cost_per_kwp: Installed cost per kWp, used only by the RoI results
+            capital_cost_per_kwp, annual_generation_kWh, ownership_member_uuids,
+            ownership_shares: RoI inputs, as for PVStrategy
         """
 
         if update_interval is None:
@@ -73,6 +80,9 @@ class PVPredefinedStrategy(PVStrategy):
                          capacity_kW=capacity_kW,
                          use_market_maker_rate=use_market_maker_rate,
                          capital_cost_per_kwp=capital_cost_per_kwp,
+                         annual_generation_kWh=annual_generation_kWh,
+                         ownership_member_uuids=ownership_member_uuids,
+                         ownership_shares=ownership_shares,
                          )
 
         self._energy_params = PVPredefinedEnergyParameters(
@@ -121,6 +131,9 @@ class PVUserProfileStrategy(PVStrategy):
             power_measurement_uuid: str = None,
             capacity_kW: float = None,
             capital_cost_per_kwp: float = None,
+            annual_generation_kWh: float = None,
+            ownership_member_uuids: List[str] = None,
+            ownership_shares: List[float] = None,
     ):
         """
         Constructor of PVUserProfileStrategy
@@ -132,7 +145,8 @@ class PVUserProfileStrategy(PVStrategy):
             final_selling_rate: lower threshold for the PV sale price
             capacity_kW: Installed capacity, used only by the RoI results since the profile
                          sets the energy
-            capital_cost_per_kwp: Installed cost per kWp, used only by the RoI results
+            capital_cost_per_kwp, annual_generation_kWh, ownership_member_uuids,
+            ownership_shares: RoI inputs, as for PVStrategy
         """
         super().__init__(panel_count=panel_count,
                          initial_selling_rate=initial_selling_rate,
@@ -141,10 +155,13 @@ class PVUserProfileStrategy(PVStrategy):
                          update_interval=update_interval,
                          energy_rate_decrease_per_update=energy_rate_decrease_per_update,
                          use_market_maker_rate=use_market_maker_rate,
-                         capital_cost_per_kwp=capital_cost_per_kwp)
+                         capital_cost_per_kwp=capital_cost_per_kwp,
+                         annual_generation_kWh=annual_generation_kWh,
+                         ownership_member_uuids=ownership_member_uuids,
+                         ownership_shares=ownership_shares)
         self._energy_params = PVUserProfileEnergyParameters(
             panel_count, power_profile, power_profile_uuid, power_measurement_uuid)
-        self.roi_capacity_kW = capacity_kW
+        self.roi_inputs = replace(self.roi_inputs, capacity_kWp=capacity_kW)
 
         # needed for profile_handler
         self.power_profile_uuid = power_profile_uuid

@@ -654,8 +654,8 @@ def test_roi_results_are_reported_only_once_the_run_has_finished(general_setup):
     )
     endpoint_buffer._populate_core_stats_and_sim_state = MagicMock()
     endpoint_buffer.validate_results = MagicMock()
-    endpoint_buffer.roi_ledger = MagicMock()
-    endpoint_buffer.roi_ledger.results.return_value = {"PV": {"npv": 1.0}}
+    endpoint_buffer.roi_results_collector = MagicMock()
+    endpoint_buffer.roi_results_collector.results.return_value = {"PV": {"npv": 1.0}}
     progress_info = MagicMock(eta=None, elapsed_time=pendulum.duration(), percentage_completed=1)
 
     # When
@@ -668,4 +668,6 @@ def test_roi_results_are_reported_only_once_the_run_has_finished(general_setup):
     assert "roi" not in running_report
     assert finished_report["roi"] == {"PV": {"npv": 1.0}}
     assert endpoint_buffer.generate_json_report()["roi"] == {"PV": {"npv": 1.0}}
-    endpoint_buffer.roi_ledger.results.assert_called_once_with(slot_length.total_seconds())
+    endpoint_buffer.roi_results_collector.results.assert_called_once_with(
+        slot_length.total_seconds()
+    )
