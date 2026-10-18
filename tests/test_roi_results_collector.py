@@ -243,6 +243,18 @@ class TestRoiResultsCollector:
         assert "members" not in result
         assert "member_results_withheld" in result["basis"]["flags"]
 
+    def test_capacity_counts_every_panel(self, house):
+        # Given
+        pv = house.children[0].children[2]
+        pv.strategy._energy_params.panel_count = 4  # pylint: disable=protected-access
+        collector = RoiResultsCollector()
+
+        # When
+        _record(collector, house, FIRST_SLOT, [])
+
+        # Then
+        assert _only_result(collector)["basis"]["capacity_kWp"] == 20
+
     def test_profile_pv_takes_its_capacity_from_its_arguments(self):
         # Given / When
         strategy = PVUserProfileStrategy(power_profile={0: 0}, capacity_kW=3.5)

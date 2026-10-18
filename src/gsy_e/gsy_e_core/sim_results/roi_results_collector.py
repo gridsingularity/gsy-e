@@ -148,9 +148,13 @@ def _member_of(area: "Area", owner: "Area", member_uuids: Set[str]) -> Optional[
 
 
 def _capacity_kWp(strategy: PVStrategy) -> Optional[float]:
+    """Return the installed capacity, which is per panel in the energy parameters."""
     if strategy.roi_inputs.capacity_kWp is not None:
         return strategy.roi_inputs.capacity_kWp
-    return getattr(strategy._energy_params, "capacity_kW", None)  # pylint: disable=W0212
+    energy_params = strategy._energy_params  # pylint: disable=protected-access
+    if getattr(energy_params, "capacity_kW", None) is None:
+        return None
+    return energy_params.capacity_kW * energy_params.panel_count
 
 
 class RoiResultsCollector:
