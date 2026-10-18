@@ -30,7 +30,14 @@ from pendulum import datetime
 from gsy_e.gsy_e_core.sim_results.roi_results_collector import RoiResultsCollector
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.load_hours import LoadHoursStrategy
-from gsy_e.models.strategy.predefined_pv import PVUserProfileStrategy
+from gsy_e.models.strategy.external_strategies.pv import (
+    PVExternalStrategy,
+    PVForecastExternalStrategy,
+    PVPredefinedExternalStrategy,
+    PVUserProfileExternalStrategy,
+)
+from gsy_e.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
+from gsy_e.models.strategy.predefined_wind import WindUserProfileStrategy
 from gsy_e.models.strategy.pv import PVStrategy
 from gsy_e.models.strategy.storage import StorageStrategy
 
@@ -41,10 +48,15 @@ GENERATION_KWH = 2.0
 SLOT_LENGTH_SECONDS = 86400
 
 
-def _trade(seller, buyer, energy, price=0, fee=0, buyer_origin=None, seller_origin=None):
+def _trade(seller, buyer, energy, price=0, fee=0, buyer_origin=None, buyer_origin_name=None):
     return SimpleNamespace(
-        seller=SimpleNamespace(name=seller, origin=seller_origin or seller),
-        buyer=SimpleNamespace(name=buyer, origin=buyer_origin),
+        seller=SimpleNamespace(name=seller, uuid=seller, origin=seller, origin_uuid=seller),
+        buyer=SimpleNamespace(
+            name=buyer,
+            uuid=buyer,
+            origin=buyer_origin_name or buyer_origin,
+            origin_uuid=buyer_origin,
+        ),
         traded_energy=energy,
         trade_price=price,
         fee_price=fee,
@@ -52,7 +64,7 @@ def _trade(seller, buyer, energy, price=0, fee=0, buyer_origin=None, seller_orig
 
 
 def _pv(name, **roi_arguments):
-    pv = Area(name, strategy=PVStrategy(capacity_kW=5, **roi_arguments))
+    pv = Area(name, uuid=name, strategy=PVStrategy(capacity_kW=5, **roi_arguments))
     pv.strategy.state.get_energy_production_forecast_kWh = Mock(return_value=GENERATION_KWH)
     return pv
 
@@ -72,26 +84,41 @@ def flat_supplier_rate(monkeypatch):
 def fixture_house():
     house = Area(
         "House 1",
+        uuid="House 1",
         children=[
-            Area("H1 Load", strategy=LoadHoursStrategy(avg_power_W=100)),
+            Area("H1 Load", uuid="H1 Load", strategy=LoadHoursStrategy(avg_power_W=100)),
             Area(
                 "H1 Storage",
+                uuid="H1 Storage",
                 strategy=StorageStrategy(initial_soc=10, battery_capacity_kWh=10),
             ),
             _pv("H1 PV", capital_cost_per_kwp=1200),
         ],
         grid_fee_constant=2,
     )
-    return Area("Grid", children=[house], grid_fee_constant=1)
+    return Area("Grid", uuid="Grid", children=[house], grid_fee_constant=1)
 
 
 @pytest.fixture(name="community")
 def fixture_community():
     return Area(
         "Community",
+        uuid="Community",
         children=[
-            Area("House 1", children=[Area("H1 Load", strategy=LoadHoursStrategy(avg_power_W=1))]),
-            Area("House 2", children=[Area("H2 Load", strategy=LoadHoursStrategy(avg_power_W=1))]),
+            Area(
+                "House 1",
+                uuid="House 1",
+                children=[
+                    Area("H1 Load", uuid="H1 Load", strategy=LoadHoursStrategy(avg_power_W=1))
+                ],
+            ),
+            Area(
+                "House 2",
+                uuid="House 2",
+                children=[
+                    Area("H2 Load", uuid="H2 Load", strategy=LoadHoursStrategy(avg_power_W=1))
+                ],
+            ),
             _pv("Community PV"),
         ],
     )
@@ -243,6 +270,60 @@ class TestRoiResultsCollector:
         assert "members" not in result
         assert "member_results_withheld" in result["basis"]["flags"]
 
+    def test_sale_to_a_same_named_load_in_another_house_is_revenue(self):
+        # Given
+        pv = _pv("H1 PV")
+        grid = Area(
+            "Grid",
+            uuid="Grid",
+            children=[
+                Area(
+                    "House 1",
+                    uuid="House 1",
+                    children=[Area("Load", uuid="h1-load", strategy=LoadHoursStrategy(1)), pv],
+                ),
+                Area(
+                    "House 2",
+                    uuid="House 2",
+                    children=[Area("Load", uuid="h2-load", strategy=LoadHoursStrategy(1))],
+                ),
+            ],
+        )
+        collector = RoiResultsCollector()
+
+        # When
+        _record(
+            collector,
+            grid,
+            FIRST_SLOT,
+            [
+                _trade(
+                    "H1 PV",
+                    "House 1",
+                    energy=1.0,
+                    price=10,
+                    buyer_origin="h2-load",
+                    buyer_origin_name="Load",
+                )
+            ],
+        )
+
+        # Then
+        result = _only_result(collector)
+        assert result["self_consumption_ratio"] == 0
+
+    def test_wind_turbines_get_no_pv_result(self):
+        # Given
+        wind = Area("Wind", uuid="Wind", strategy=WindUserProfileStrategy(power_profile={0: 0}))
+        grid = Area("Grid", uuid="Grid", children=[Area("Farm", uuid="Farm", children=[wind])])
+        collector = RoiResultsCollector()
+
+        # When
+        _record(collector, grid, FIRST_SLOT, [])
+
+        # Then
+        assert collector.results(SLOT_LENGTH_SECONDS) == {}
+
     def test_capacity_counts_every_panel(self, house):
         # Given
         pv = house.children[0].children[2]
@@ -261,3 +342,34 @@ class TestRoiResultsCollector:
 
         # Then
         assert strategy.roi_inputs.capacity_kWp == 3.5
+
+
+@pytest.mark.parametrize(
+    "strategy_class",
+    [
+        PVStrategy,
+        PVPredefinedStrategy,
+        PVUserProfileStrategy,
+        PVExternalStrategy,
+        PVPredefinedExternalStrategy,
+        PVUserProfileExternalStrategy,
+        PVForecastExternalStrategy,
+    ],
+)
+def test_every_pv_strategy_accepts_the_roi_inputs(strategy_class):
+    # Given
+    profile = {"power_profile": {0: 0}} if "UserProfile" in strategy_class.__name__ else {}
+
+    # When
+    strategy = strategy_class(
+        capital_cost_per_kwp=1200,
+        annual_generation_kWh=5000,
+        ownership_member_uuids=["member"],
+        ownership_shares=[1.0],
+        **profile,
+    )
+
+    # Then
+    assert strategy.roi_inputs.capital_cost_per_kwp == 1200
+    assert strategy.roi_inputs.annual_generation_kWh == 5000
+    assert strategy.roi_inputs.ownership_shares == (1.0,)

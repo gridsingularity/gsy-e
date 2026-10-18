@@ -36,6 +36,7 @@ from pendulum import DateTime
 
 from gsy_e.gsy_e_core.util import get_market_maker_rate_from_time_slot
 from gsy_e.models.base import AssetType
+from gsy_e.models.strategy.predefined_wind import WindUserProfileStrategy
 from gsy_e.models.strategy.pv import PVStrategy
 from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
 from gsy_e.models.strategy.storage import StorageStrategy
@@ -132,6 +133,16 @@ def _leaves(area: "Area") -> Iterator["Area"]:
             yield child
 
 
+def _is_pv(area: "Area") -> bool:
+    return isinstance(area.strategy, PVStrategy) and not isinstance(
+        area.strategy, WindUserProfileStrategy
+    )
+
+
+def _trader_uuid(trader) -> str:
+    return trader.origin_uuid or trader.uuid
+
+
 def _is_consumer(area: "Area") -> bool:
     return (
         isinstance(area.strategy, SmartMeterStrategy)
@@ -176,7 +187,7 @@ class RoiResultsCollector:
     def update(self, root_area: "Area") -> None:
         """Record the current spot market slot, replacing an earlier record of the same slot."""
         leaves = list(_leaves(root_area))
-        pvs = [leaf for leaf in leaves if isinstance(leaf.strategy, PVStrategy)]
+        pvs = [leaf for leaf in leaves if _is_pv(leaf)]
         markets = [pv.parent.spot_market for pv in pvs if pv.parent.spot_market is not None]
         if not markets:
             return
@@ -187,13 +198,13 @@ class RoiResultsCollector:
         stored = deepcopy(self._stored_before_slot)
 
         flows = {pv.uuid: self._direct_flows(pv, time_slot) for pv in pvs if pv.parent.spot_market}
-        pv_by_name = {pv.name: pv for pv in pvs if pv.uuid in flows}
+        pv_by_uuid = {pv.uuid: pv for pv in pvs if pv.uuid in flows}
         for battery in leaves:
             if isinstance(battery.strategy, StorageStrategy) and battery.parent.spot_market:
-                self._battery_flows(battery, stored, pv_by_name, flows, time_slot)
+                self._battery_flows(battery, stored, pv_by_uuid, flows, time_slot)
         self._stored_after_slot = stored
 
-        for pv in pv_by_name.values():
+        for pv in pv_by_uuid.values():
             self._record(pv).slots[time_slot] = flows[pv.uuid]
 
     def results(
@@ -244,11 +255,11 @@ class RoiResultsCollector:
         owner = pv.parent
         record = self._record(pv)
         member_uuids = set(record.member_names)
-        consumers = {leaf.name: leaf for leaf in _leaves(owner) if _is_consumer(leaf)}
+        consumers = {leaf.uuid: leaf for leaf in _leaves(owner) if _is_consumer(leaf)}
         batteries = {
-            leaf.name for leaf in _leaves(owner) if isinstance(leaf.strategy, StorageStrategy)
+            leaf.uuid for leaf in _leaves(owner) if isinstance(leaf.strategy, StorageStrategy)
         }
-        if sum(isinstance(leaf.strategy, PVStrategy) for leaf in _leaves(owner)) > 1:
+        if sum(_is_pv(leaf) for leaf in _leaves(owner)) > 1:
             record.flags.add("not_separable")
         if owner.config.grid_fee_type != CONSTANT_GRID_FEE_TYPE:
             record.flags.add("percentage_grid_fees_excluded")
@@ -257,9 +268,9 @@ class RoiResultsCollector:
             generation_kWh=pv.strategy.state.get_energy_production_forecast_kWh(time_slot, 0.0)
         )
         for trade in owner.spot_market.trades:
-            if trade.seller.name != pv.name:
+            if trade.seller.uuid != pv.uuid:
                 continue
-            buyer = trade.buyer.origin or trade.buyer.name
+            buyer = _trader_uuid(trade.buyer)
             if buyer in consumers:
                 flows.add_own_consumption(
                     trade.traded_energy,
@@ -277,7 +288,7 @@ class RoiResultsCollector:
         self,
         battery: "Area",
         stored: Dict[str, _StoredEnergy],
-        pv_by_name: Dict[str, "Area"],
+        pv_by_uuid: Dict[str, "Area"],
         flows: Dict[str, _Flows],
         time_slot: DateTime,
     ) -> None:
@@ -288,19 +299,19 @@ class RoiResultsCollector:
         kept_on_discharge = 1 - losses.discharging_loss_percent / 100
 
         for trade in battery.parent.spot_market.trades:
-            if trade.buyer.name == battery.name:
-                source = trade.seller.origin or trade.seller.name
+            if trade.buyer.uuid == battery.uuid:
+                source = _trader_uuid(trade.seller)
                 energy.charge(
-                    source if source in pv_by_name else OTHER_SOURCE,
+                    source if source in pv_by_uuid else OTHER_SOURCE,
                     trade.traded_energy * kept_on_charge,
                 )
-            elif trade.seller.name == battery.name and kept_on_discharge > 0:
-                buyer = trade.buyer.origin or trade.buyer.name
+            elif trade.seller.uuid == battery.uuid and kept_on_discharge > 0:
+                buyer = _trader_uuid(trade.buyer)
                 drawn = energy.discharge(trade.traded_energy / kept_on_discharge)
                 for source, drawn_kWh in drawn.items():
-                    if source in pv_by_name:
+                    if source in pv_by_uuid:
                         self._credit_battery_delivery(
-                            pv_by_name[source],
+                            pv_by_uuid[source],
                             buyer,
                             drawn_kWh * kept_on_discharge,
                             flows,
@@ -320,7 +331,7 @@ class RoiResultsCollector:
     ) -> None:
         owner = pv.parent
         consumer = next(
-            (leaf for leaf in _leaves(owner) if leaf.name == buyer and _is_consumer(leaf)), None
+            (leaf for leaf in _leaves(owner) if leaf.uuid == buyer and _is_consumer(leaf)), None
         )
         if consumer is None:
             return
