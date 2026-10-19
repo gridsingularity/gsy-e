@@ -12,7 +12,7 @@ from pendulum import duration, instance, now
 
 import gsy_e.constants
 from gsy_e.gsy_e_core.non_p2p_handler import set_non_p2p_settings
-from gsy_e.gsy_e_core.sim_results.roi_baseline import RoiBaselineError
+from gsy_e.gsy_e_core.sim_results.roi_results_collector import RoiBaselineError
 from gsy_e.gsy_e_core.simulation import run_simulation
 from gsy_e.gsy_e_core.util import update_advanced_settings
 from gsy_e.models.config import SimulationConfig

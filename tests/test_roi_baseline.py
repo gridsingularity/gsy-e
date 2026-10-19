@@ -23,7 +23,7 @@ import pytest
 
 import gsy_e.constants
 from gsy_e.gsy_e_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
-from gsy_e.gsy_e_core.sim_results.roi_baseline import (
+from gsy_e.gsy_e_core.sim_results.roi_results_collector import (
     BASELINE_FILE_NAME,
     RoiBaselineError,
     load_baseline,

@@ -10,7 +10,7 @@ from gsy_framework.enums import ConfigurationType, CoefficientAlgorithm
 
 import gsy_e.constants
 from gsy_e.gsy_e_core.rq_job_handler import launch_simulation_from_rq_job
-from gsy_e.gsy_e_core.sim_results.roi_baseline import RoiBaselineError
+from gsy_e.gsy_e_core.sim_results.roi_results_collector import RoiBaselineError
 
 
 class TestRqJobHandler:

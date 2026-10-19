@@ -35,13 +35,13 @@ from pendulum import DateTime
 
 import gsy_e.constants
 from gsy_e.gsy_e_core.sim_results.offer_bids_trades_hr_stats import OfferBidTradeGraphStats
-from gsy_e.gsy_e_core.sim_results.roi_baseline import (
+from gsy_e.gsy_e_core.sim_results.roi_results_collector import (
     RoiBaselineError,
+    RoiResultsCollector,
     load_baseline,
     run_fingerprint,
     validate_fingerprint,
 )
-from gsy_e.gsy_e_core.sim_results.roi_results_collector import RoiResultsCollector
 from gsy_e.gsy_e_core.util import (
     get_feed_in_tariff_rate_from_config,
     get_market_maker_rate_from_config,

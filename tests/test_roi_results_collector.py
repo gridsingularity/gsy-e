@@ -28,8 +28,10 @@ from gsy_framework.sim_results.roi.parameters import DEFAULT_PARAMETER_SET
 from gsy_framework.sim_results.roi.serialization import serialize_result
 from pendulum import datetime, duration
 
-from gsy_e.gsy_e_core.sim_results.roi_baseline import RoiBaselineError
-from gsy_e.gsy_e_core.sim_results.roi_results_collector import RoiResultsCollector
+from gsy_e.gsy_e_core.sim_results.roi_results_collector import (
+    RoiBaselineError,
+    RoiResultsCollector,
+)
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.ev_charger import EVChargerStrategy
 from gsy_e.models.strategy.external_strategies.pv import (
