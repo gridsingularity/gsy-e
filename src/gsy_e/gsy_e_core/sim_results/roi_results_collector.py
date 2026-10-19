@@ -39,6 +39,7 @@ from gsy_framework.sim_results.roi.serialization import serialize_result
 from pendulum import DateTime, Duration
 
 import gsy_e.constants
+from gsy_e.constants import RandomOrder
 from gsy_e.gsy_e_core.util import get_market_maker_rate_from_time_slot
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
 from gsy_e.models.strategy.electrolyzer import ElectrolyzerStrategy
@@ -92,7 +93,7 @@ def run_fingerprint(root_area: "Area", seed: int) -> Dict:
         "market_type": ConstSettings.MASettings.MARKET_TYPE,
         "bid_offer_match_type": ConstSettings.MASettings.BID_OFFER_MATCH_TYPE,
         "grid_fee_type": config.grid_fee_type,
-        "ordered_by_item": gsy_e.constants.ORDER_BY_ITEM_HASH,
+        "random_order": gsy_e.constants.RANDOM_ORDER.value,
         "areas": {
             name_path(area): {
                 "type": type(area.strategy).__name__ if area.strategy else "Area",
@@ -132,8 +133,8 @@ def validate_fingerprint(
         for key, value in fingerprint.items()
         if key != "areas" and baseline_fingerprint.get(key) != value
     ]
-    if not baseline_fingerprint.get("ordered_by_item"):
-        problems.append("the baseline was not run with per-item ordering (--roi-comparable)")
+    if baseline_fingerprint.get("random_order") != RandomOrder.HASH.value:
+        problems.append("the baseline was not run with --random-order hash")
 
     baseline_areas = baseline_fingerprint.get("areas", {})
     areas = fingerprint["areas"]
@@ -230,8 +231,8 @@ def _trader_uuid(trader) -> str:
 
 def _capacity_kWp(strategy: PVStrategy) -> Optional[float]:
     """Return the installed capacity, which the energy parameters hold per panel."""
-    if strategy.roi_inputs.capacity_kWp is not None:
-        return strategy.roi_inputs.capacity_kWp
+    if isinstance(strategy, PVUserProfileStrategy) and strategy.capacity_kW is not None:
+        return strategy.capacity_kW
     energy_params = strategy._energy_params  # pylint: disable=protected-access
     if getattr(energy_params, "capacity_kW", None) is None:
         return None
@@ -328,7 +329,7 @@ class RoiResultsCollector:
     def _record(self, pv: "Area") -> _PVRecord:
         if pv.uuid not in self._records:
             owner = pv.parent
-            shares = pv.strategy.roi_inputs.ownership_shares
+            shares = pv.strategy.ownership_shares
             member_paths = {
                 area.name: name_path(area)
                 for area in all_areas(owner)
@@ -343,7 +344,7 @@ class RoiResultsCollector:
                 capacity_assumed=capacity is None
                 or (
                     isinstance(pv.strategy, PVUserProfileStrategy)
-                    and pv.strategy.roi_inputs.capacity_kWp is None
+                    and pv.strategy.capacity_kW is None
                 ),
                 strategy=pv.strategy,
                 member_paths=member_paths,
@@ -398,7 +399,7 @@ class RoiResultsCollector:
         return {
             name_path(leaf)
             for leaf in _leaves(root_area)
-            if _is_pv(leaf) and leaf.strategy.roi_inputs.is_shared
+            if _is_pv(leaf) and leaf.strategy.ownership_shares
         }
 
     def baseline_export(self, fingerprint: Dict) -> Dict:
@@ -423,7 +424,7 @@ class RoiResultsCollector:
                     raise RuntimeError(self._failure)
                 uses_baseline = (
                     baseline_paths is not None
-                    and record.strategy.roi_inputs.is_shared
+                    and bool(record.strategy.ownership_shares)
                     and record.path not in baseline_paths
                 )
                 results[uuid] = self._pv_result(record, window_days, uses_baseline, bills)
@@ -435,17 +436,17 @@ class RoiResultsCollector:
     def _pv_result(
         self, record: _PVRecord, window_days: float, uses_baseline: bool, bills: Dict[str, float]
     ) -> Dict:
-        roi_inputs = record.strategy.roi_inputs
+        strategy = record.strategy
         flows = record.total
         inputs = RoiInputs(
             capacity_kwp=record.capacity_kWp or 0.0,
-            capital_cost_per_kwp=roi_inputs.capital_cost_per_kwp or DEFAULT_CAPITAL_COST_PER_KWP,
+            capital_cost_per_kwp=strategy.capital_cost_per_kwp or DEFAULT_CAPITAL_COST_PER_KWP,
             ownership_share=1.0,
             avoided_purchase=flows.avoided_purchase,
             sales_revenue=flows.sales_revenue,
             window_generation_kwh=flows.generation_kWh,
             window_days=window_days,
-            annual_generation_kwh=roi_inputs.annual_generation_kWh,
+            annual_generation_kwh=strategy.annual_generation_kWh,
         )
         flags = set(record.flags)
         if uses_baseline:
@@ -455,7 +456,7 @@ class RoiResultsCollector:
                 for path in record.community_paths
             )
             inputs = replace(inputs, avoided_purchase=community_benefit - flows.sales_revenue)
-        elif roi_inputs.is_shared:
+        elif strategy.ownership_shares:
             flags.add("shared_asset_estimate")
 
         basis = self._basis(record, inputs, flags, uses_baseline)
@@ -464,7 +465,7 @@ class RoiResultsCollector:
         if uses_baseline and "member_results_withheld" not in flags:
             result["members"] = {
                 name: self._member_result(record, inputs, flows, basis, bills, name, share)
-                for name, share in roi_inputs.ownership_shares.items()
+                for name, share in strategy.ownership_shares.items()
             }
         return result
 
@@ -512,7 +513,7 @@ class RoiResultsCollector:
     ) -> Dict:
         assumed: List[str] = list(ASSUMED_INPUTS)
         observed: List[str] = list(OBSERVED_INPUTS)
-        if record.strategy.roi_inputs.capital_cost_per_kwp is None:
+        if record.strategy.capital_cost_per_kwp is None:
             assumed.append("capital_cost")
         (assumed if record.capacity_assumed else observed).append("capacity")
         rates = set(self._supplier_rates.values())

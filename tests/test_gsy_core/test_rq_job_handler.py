@@ -23,6 +23,7 @@ class TestRqJobHandler:
         self.original_sertsvr = gsy_e.constants.SEND_EVENTS_RESPONSES_TO_SDK_VIA_RQ
         self.original_connect_to_profiles_db = gsy_e.constants.CONNECT_TO_PROFILES_DB
         self.original_config_id = gsy_e.constants.CONFIGURATION_ID
+        self.original_random_order = gsy_e.constants.RANDOM_ORDER
         self.original_start_date = GlobalConfig.start_date
         self.original_slot_length = GlobalConfig.slot_length
 
@@ -35,6 +36,7 @@ class TestRqJobHandler:
         gsy_e.constants.SEND_EVENTS_RESPONSES_TO_SDK_VIA_RQ = self.original_sertsvr
         gsy_e.constants.CONNECT_TO_PROFILES_DB = self.original_connect_to_profiles_db
         gsy_e.constants.CONFIGURATION_ID = self.original_config_id
+        gsy_e.constants.RANDOM_ORDER = self.original_random_order
         ConstSettings.SCMSettings.MARKET_ALGORITHM = CoefficientAlgorithm.STATIC.value
         ConstSettings.SCMSettings.INTRACOMMUNITY_BASE_RATE_EUR = None
         ConstSettings.SCMSettings.GRID_FEES_REDUCTION = 0.28

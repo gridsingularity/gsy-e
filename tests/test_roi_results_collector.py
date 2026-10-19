@@ -314,9 +314,7 @@ class TestTwoRunMethod:
 
     def test_a_member_missing_from_the_area_withholds_member_results(self, community):
         # Given
-        community.children[2].strategy.roi_inputs = PVStrategy(
-            ownership_shares={"House 1": 0.6, "House 9": 0.4}
-        ).roi_inputs
+        community.children[2].strategy.ownership_shares = {"House 1": 0.6, "House 9": 0.4}
         collector = RoiResultsCollector(_baseline())
 
         # When
@@ -350,7 +348,7 @@ class TestTwoRunMethod:
         assert export["supplier_rates"] == {str(FIRST_SLOT): SUPPLIER_RATE}
 
 
-class TestPVRoiInputs:
+class TestPVRoiArguments:
 
     @pytest.mark.parametrize(
         "arguments",
@@ -377,7 +375,7 @@ class TestPVRoiInputs:
         )
 
         # Then
-        assert restored.roi_inputs.capacity_kWp == 3.5
+        assert restored.capacity_kW == 3.5
 
 
 @pytest.mark.parametrize(
@@ -405,6 +403,6 @@ def test_every_pv_strategy_accepts_the_roi_inputs(strategy_class):
     )
 
     # Then
-    assert strategy.roi_inputs.capital_cost_per_kwp == 1200
-    assert strategy.roi_inputs.annual_generation_kWh == 5000
-    assert strategy.roi_inputs.ownership_shares == {"House 1": 1.0}
+    assert strategy.capital_cost_per_kwp == 1200
+    assert strategy.annual_generation_kWh == 5000
+    assert strategy.ownership_shares == {"House 1": 1.0}

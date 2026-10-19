@@ -22,6 +22,7 @@ import pytest
 from numpy import random
 
 import gsy_e.constants
+from gsy_e.constants import RandomOrder
 from gsy_e.models import random_order
 from gsy_e.models.market import _listener_key
 
@@ -30,7 +31,7 @@ NAMES = [f"asset {index}" for index in range(12)]
 
 @pytest.fixture(name="item_hash_order")
 def fixture_item_hash_order(monkeypatch):
-    monkeypatch.setattr(gsy_e.constants, "ORDER_BY_ITEM_HASH", True)
+    monkeypatch.setattr(gsy_e.constants, "RANDOM_ORDER", RandomOrder.HASH)
     random_order.set_seed(0)
     yield
     random_order.set_seed(0)

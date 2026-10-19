@@ -28,6 +28,8 @@ from gsy_framework.constants_limits import ConstSettings, DATE_FORMAT, TIME_FORM
 from gsy_framework.exceptions import GSyException
 from gsy_framework.settings_validators import validate_global_settings
 from pendulum import today
+import gsy_e.constants
+from gsy_e.constants import RandomOrder
 from gsy_e.gsy_e_core.non_p2p_handler import set_non_p2p_settings
 
 from gsy_e.gsy_e_core.simulation import run_simulation
@@ -191,11 +193,12 @@ _setup_modules = available_simulation_scenarios
     "(example: ./src/gsy_e/resources/carbon_ratio_g_per_kWh.csv)",
 )
 @click.option(
-    "--roi-comparable",
-    is_flag=True,
-    default=False,
-    help="Order events per asset so that this run can serve as the RoI baseline of a run "
-    "that adds a shared PV.",
+    "--random-order",
+    type=Choice([mode.value for mode in RandomOrder]),
+    default=RandomOrder.SHARED.value,
+    show_default=True,
+    help="How events, notifications and offer choices are shuffled. 'hash' ranks each item by "
+    "its own name, so that a run without one area stays comparable with the full run.",
 )
 @click.option(
     "--roi-baseline",
@@ -217,7 +220,7 @@ def run(
     slot_length_realtime,
     enable_dof: bool,
     market_type: int,
-    roi_comparable: bool,
+    random_order: str,
     roi_baseline: str,
     **kwargs,
 ):
@@ -256,8 +259,7 @@ def run(
 
         if incremental:
             kwargs["incremental"] = incremental
-        if roi_comparable:
-            kwargs["roi_comparable"] = True
+        gsy_e.constants.RANDOM_ORDER = RandomOrder(random_order)
         if roi_baseline is not None:
             kwargs["roi_baseline"] = roi_baseline
 

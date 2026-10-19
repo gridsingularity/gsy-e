@@ -22,6 +22,7 @@ from copy import deepcopy
 import pytest
 
 import gsy_e.constants
+from gsy_e.constants import RandomOrder
 from gsy_e.gsy_e_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
 from gsy_e.gsy_e_core.sim_results.roi_results_collector import (
     BASELINE_FILE_NAME,
@@ -39,7 +40,7 @@ SHARED_PV = "Community/Community PV"
 
 @pytest.fixture(name="community")
 def fixture_community(monkeypatch):
-    monkeypatch.setattr(gsy_e.constants, "ORDER_BY_ITEM_HASH", True)
+    monkeypatch.setattr(gsy_e.constants, "RANDOM_ORDER", RandomOrder.HASH)
     return Area(
         "Community",
         children=[
@@ -72,7 +73,7 @@ class TestValidateFingerprint:
     def test_every_mismatch_is_listed(self, community):
         # Given
         baseline = _baseline_of(community)
-        baseline["fingerprint"]["ordered_by_item"] = False
+        baseline["fingerprint"]["random_order"] = RandomOrder.SHARED.value
         baseline["fingerprint"]["areas"]["Community/House 2"] = {"type": "Area"}
 
         # When
@@ -80,7 +81,7 @@ class TestValidateFingerprint:
 
         # Then
         assert any(problem.startswith("seed") for problem in problems)
-        assert any("per-item ordering" in problem for problem in problems)
+        assert any("--random-order hash" in problem for problem in problems)
         assert any("House 2 is in the baseline" in problem for problem in problems)
 
     def test_a_removed_area_must_be_a_shared_pv(self, community):

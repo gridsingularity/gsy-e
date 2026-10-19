@@ -16,10 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from dataclasses import replace
 from typing import Dict
 
 from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.validators import PVValidator
 from pendulum import duration
 
 from gsy_e.models.strategy.energy_parameters.pv import (
@@ -157,14 +157,15 @@ class PVUserProfileStrategy(PVStrategy):
                          ownership_shares=ownership_shares)
         self._energy_params = PVUserProfileEnergyParameters(
             panel_count, power_profile, power_profile_uuid, power_measurement_uuid)
-        self.roi_inputs = replace(self.roi_inputs, capacity_kWp=capacity_kW)
+        PVValidator.validate_energy(capacity_kW=capacity_kW)
+        self.capacity_kW = capacity_kW
 
         # needed for profile_handler
         self.power_profile_uuid = power_profile_uuid
         self.power_measurement_uuid = power_measurement_uuid
 
     def serialize(self):
-        return {**super().serialize(), "capacity_kW": self.roi_inputs.capacity_kWp}
+        return {**super().serialize(), "capacity_kW": self.capacity_kW}
 
     def set_produced_energy_forecast_in_state(self, reconfigure=True):
         time_slots = [self.area.spot_market.time_slot]

@@ -11,6 +11,7 @@ from gsy_framework.settings_validators import validate_global_settings
 from pendulum import duration, instance, now
 
 import gsy_e.constants
+from gsy_e.constants import RandomOrder
 from gsy_e.gsy_e_core.non_p2p_handler import set_non_p2p_settings
 from gsy_e.gsy_e_core.sim_results.roi_results_collector import RoiBaselineError
 from gsy_e.gsy_e_core.simulation import run_simulation
@@ -66,8 +67,9 @@ def launch_simulation_from_rq_job(
         scenario_name = "json_arg"
 
         kwargs = {"no_export": True, "seed": settings.get("random_seed", 0)}
-        if settings.get("roi_comparable"):
-            kwargs["roi_comparable"] = True
+        gsy_e.constants.RANDOM_ORDER = RandomOrder(
+            settings.get("random_order", RandomOrder.SHARED.value)
+        )
         if settings.get("roi_baseline") is not None:
             if not isinstance(settings["roi_baseline"], dict):
                 raise RoiBaselineError(["a web run takes the baseline as an object, not a path"])

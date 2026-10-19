@@ -25,6 +25,7 @@ from gsy_framework.enums import AvailableMarketTypes, SpotMarketTypeEnum
 from pendulum import DateTime, datetime, duration
 
 import gsy_e.constants
+from gsy_e.constants import RandomOrder
 from gsy_e.events.event_structures import AreaEvent, MarketEvent
 from gsy_e.models.area import Area
 from gsy_e.models.area.event_dispatcher import AreaDispatcher
@@ -276,7 +277,7 @@ def test_removing_a_pv_leaves_dispatch_order_of_another_house_unchanged(monkeypa
     The houses dispatch in turn, so a shared random stream would let the first house shift the
     order seen by the second.
     """
-    monkeypatch.setattr(gsy_e.constants, "ORDER_BY_ITEM_HASH", True)
+    monkeypatch.setattr(gsy_e.constants, "RANDOM_ORDER", RandomOrder.HASH)
     with_pv = [
         Area("House 1", children=[Area("H1 Load"), Area("H1 PV")]),
         Area("House 2", children=[Area("H2 Load"), Area("H2 PV"), Area("H2 Storage")]),

@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from typing import Optional, TYPE_CHECKING
 
 
+from gsy_e.events.event_structures import AreaEvent, MarketEvent
 from gsy_e.models.market import MarketBase
 from gsy_e.models.strategy.market_agents.market_agent import MarketAgent
 from gsy_e.models.strategy.market_agents.one_sided_engine import MAEngine
@@ -56,27 +57,27 @@ class OneSidedAgent(MarketAgent):
 
     def event_tick(self):
         area = self.owner
-        for engine in self._engines_in_random_order("event_tick"):
+        for engine in self._engines_in_random_order(AreaEvent.TICK):
             engine.tick(area=area)
 
     # pylint: disable=unused-argument
     def event_offer(self, *, market_id: str, offer: "Offer"):
-        for engine in self._engines_in_random_order("event_offer"):
+        for engine in self._engines_in_random_order(MarketEvent.OFFER):
             engine.event_offer(offer=offer)
 
     # pylint: disable=unused-argument
     def event_offer_traded(self, *, market_id: str, trade: "Trade"):
-        for engine in self._engines_in_random_order("event_offer_traded"):
+        for engine in self._engines_in_random_order(MarketEvent.OFFER_TRADED):
             engine.event_offer_traded(trade=trade)
 
     # pylint: disable=unused-argument
     def event_offer_deleted(self, *, market_id: str, offer: "Offer"):
-        for engine in self._engines_in_random_order("event_offer_deleted"):
+        for engine in self._engines_in_random_order(MarketEvent.OFFER_DELETED):
             engine.event_offer_deleted(offer=offer)
 
     def event_offer_split(self, *, market_id: str,  original_offer: "Offer",
                           accepted_offer: "Offer", residual_offer: "Offer"):
-        for engine in self._engines_in_random_order("event_offer_split"):
+        for engine in self._engines_in_random_order(MarketEvent.OFFER_SPLIT):
             engine.event_offer_split(market_id=market_id,
                                      original_offer=original_offer,
                                      accepted_offer=accepted_offer,

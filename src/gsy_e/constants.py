@@ -59,11 +59,6 @@ CN_PROFILE_EXPANSION_DAYS = 7
 
 RUN_IN_REALTIME = False
 
-# Orders events, market notifications and offer choices by a hash of each item instead of the
-# shared numpy stream. A run with one asset removed then stays comparable with the run that has
-# it, which the RoI baseline of a shared PV needs. Off by default, so existing results are
-# unchanged.
-ORDER_BY_ITEM_HASH = False
 
 CONNECT_TO_PROFILES_DB = False
 SEND_EVENTS_RESPONSES_TO_SDK_VIA_RQ = False
@@ -94,6 +89,20 @@ class SettlementTemplateStrategiesConstants:
 
 class FutureTemplateStrategiesConstants(SettlementTemplateStrategiesConstants):
     """Constants related to the configuration of future template strategies"""
+
+
+class RandomOrder(Enum):
+    """How events, market notifications and offer choices are shuffled.
+
+    SHARED draws from the one numpy sequence, as gsy-e always has. HASH ranks each item by a hash
+    of the seed and its own name, so a run without one area stays comparable with the full run.
+    """
+
+    SHARED = "shared"
+    HASH = "hash"
+
+
+RANDOM_ORDER = RandomOrder.SHARED
 
 
 class HeatPumpSOCManagementAlgorithm(Enum):

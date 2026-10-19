@@ -74,7 +74,6 @@ class Simulation:
         incremental: bool = False,
         carbon_ratio_file: str = None,
         roi_baseline: Union[str, Dict] = None,
-        roi_comparable: bool = False,
     ):
         self.status = SimulationStatusManager(
             paused=paused,
@@ -94,7 +93,6 @@ class Simulation:
             started_from_cli=redis_job_id is None,
             config=simulation_config,
             roi_baseline=roi_baseline,
-            roi_comparable=roi_comparable,
         )
 
         self._results = self._results_manager_class(

@@ -22,6 +22,7 @@ from typing import Callable, Iterable, List, Sequence, TypeVar
 from numpy import random
 
 import gsy_e.constants
+from gsy_e.constants import RandomOrder
 
 T = TypeVar("T")
 
@@ -41,11 +42,11 @@ def _digest(salt: str, key: str) -> bytes:
 def shuffled(items: Iterable[T], salt: Callable[[], str], key: Callable[[T], str]) -> List[T]:
     """Return the items in a fair random order.
 
-    By default the order comes from the global numpy stream, as gsy-e has always done. With
-    ORDER_BY_ITEM_HASH set, each item is ranked on a hash of the run seed, the salt and its own
-    key, so removing one item leaves the relative order of the others unchanged.
+    The shared mode draws from the global numpy sequence, as gsy-e has always done. The hash mode
+    ranks each item on a hash of the run seed, the salt and its own key, so removing one item
+    leaves the relative order of the others unchanged.
     """
-    if not gsy_e.constants.ORDER_BY_ITEM_HASH:
+    if gsy_e.constants.RANDOM_ORDER is RandomOrder.SHARED:
         return sorted(items, key=lambda _: random.random())
     salt_text = salt()
     return sorted(items, key=lambda item: _digest(salt_text, key(item)))
@@ -53,6 +54,6 @@ def shuffled(items: Iterable[T], salt: Callable[[], str], key: Callable[[T], str
 
 def choice(items: Sequence[T], salt: Callable[[], str], key: Callable[[T], str]) -> T:
     """Return one item at random, with the same two modes as shuffled."""
-    if not gsy_e.constants.ORDER_BY_ITEM_HASH:
+    if gsy_e.constants.RANDOM_ORDER is RandomOrder.SHARED:
         return random.choice(items)
     return shuffled(items, salt, key)[0]
