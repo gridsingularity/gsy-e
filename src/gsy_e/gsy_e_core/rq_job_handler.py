@@ -12,6 +12,7 @@ from pendulum import duration, instance, now
 
 import gsy_e.constants
 from gsy_e.gsy_e_core.non_p2p_handler import set_non_p2p_settings
+from gsy_e.gsy_e_core.sim_results.roi_baseline import RoiBaselineError
 from gsy_e.gsy_e_core.simulation import run_simulation
 from gsy_e.gsy_e_core.util import update_advanced_settings
 from gsy_e.models.config import SimulationConfig
@@ -68,6 +69,8 @@ def launch_simulation_from_rq_job(
         if settings.get("roi_comparable"):
             kwargs["roi_comparable"] = True
         if settings.get("roi_baseline") is not None:
+            if not isinstance(settings["roi_baseline"], dict):
+                raise RoiBaselineError(["a web run takes the baseline as an object, not a path"])
             kwargs["roi_baseline"] = settings["roi_baseline"]
 
         if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
