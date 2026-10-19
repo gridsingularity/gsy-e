@@ -16,15 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from collections import deque
-from copy import deepcopy
-from dataclasses import dataclass, field, replace
-from math import isclose
-from typing import TYPE_CHECKING, Deque, Dict, Iterator, List, Optional, Set
+import logging
+from dataclasses import dataclass, field, fields, replace
+from typing import TYPE_CHECKING, Dict, Iterator, List, Optional, Set
 
-from gsy_framework.constants_limits import GlobalConfig
 from gsy_framework.sim_results.roi.appraisal import calculate_roi
-from gsy_framework.sim_results.roi.data_classes import RangeLevers, RoiInputs, RoiParameterSet
+from gsy_framework.sim_results.roi.data_classes import RoiInputs
 from gsy_framework.sim_results.roi.parameters import (
     DEFAULT_CAPITAL_COST_PER_KWP,
     DEFAULT_PARAMETER_SET,
@@ -34,24 +31,31 @@ from gsy_framework.sim_results.roi.range import calculate_range
 from gsy_framework.sim_results.roi.serialization import serialize_result
 from pendulum import DateTime
 
+from gsy_e.gsy_e_core.sim_results.roi_baseline import (
+    RoiBaselineError,
+    all_areas,
+    name_path,
+    validate_supplier_rate,
+)
 from gsy_e.gsy_e_core.util import get_market_maker_rate_from_time_slot
-from gsy_e.models.base import AssetType
+from gsy_e.models.strategy.commercial_producer import CommercialStrategy
+from gsy_e.models.strategy.electrolyzer import ElectrolyzerStrategy
+from gsy_e.models.strategy.ev_charger import EVChargerStrategy
+from gsy_e.models.strategy.predefined_pv import PVUserProfileStrategy
 from gsy_e.models.strategy.predefined_wind import WindUserProfileStrategy
 from gsy_e.models.strategy.pv import PVStrategy
-from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
 from gsy_e.models.strategy.storage import StorageStrategy
 
 if TYPE_CHECKING:
     from gsy_e.models.area import Area
 
+log = logging.getLogger(__name__)
+
 CENTS_PER_CURRENCY_UNIT = 100
 CONSTANT_GRID_FEE_TYPE = 1
 SECONDS_PER_DAY = 86400
-INITIAL_CHARGE = "initial charge"
-OTHER_SOURCE = "other source"
 
-ASSUMED_INPUTS = [
-    "capital_cost",
+ASSUMED_INPUTS = (
     "operating_cost",
     "degradation",
     "retail_escalation",
@@ -59,70 +63,44 @@ ASSUMED_INPUTS = [
     "discount_rate",
     "replacement_year",
     "replacement_cost",
-]
-OBSERVED_INPUTS = ["capacity", "ledger_flows", "generation", "self_consumption_ratio"]
+)
+OBSERVED_INPUTS = ("ledger_flows", "generation", "self_consumption_ratio")
 
 
 @dataclass
 class _Flows:
-    own_consumption_kWh: float = 0.0
+    own_use_kWh: float = 0.0
     avoided_purchase: float = 0.0
     sold_kWh: float = 0.0
     sales_revenue: float = 0.0
     generation_kWh: float = 0.0
-    member_own_consumption_kWh: Dict[str, float] = field(default_factory=dict)
-    member_avoided_purchase: Dict[str, float] = field(default_factory=dict)
 
-    def add_own_consumption(self, energy_kWh: float, value: float, member: Optional[str]):
-        self.own_consumption_kWh += energy_kWh
-        self.avoided_purchase += value
-        if member is not None:
-            self.member_own_consumption_kWh[member] = (
-                self.member_own_consumption_kWh.get(member, 0.0) + energy_kWh
-            )
-            self.member_avoided_purchase[member] = (
-                self.member_avoided_purchase.get(member, 0.0) + value
-            )
-
-
-class _StoredEnergy:
-    """Energy held by one battery, oldest first, labelled with the asset that supplied it."""
-
-    def __init__(self, initial_kWh: float):
-        self._blocks: Deque[List] = deque()
-        if initial_kWh > 0:
-            self._blocks.append([INITIAL_CHARGE, initial_kWh])
-
-    def charge(self, source: str, energy_kWh: float) -> None:
-        self._blocks.append([source, energy_kWh])
-
-    def discharge(self, energy_kWh: float) -> Dict[str, float]:
-        drawn: Dict[str, float] = {}
-        while energy_kWh > 0 and self._blocks:
-            source, available_kWh = self._blocks[0]
-            taken_kWh = min(available_kWh, energy_kWh)
-            drawn[source] = drawn.get(source, 0.0) + taken_kWh
-            energy_kWh -= taken_kWh
-            if taken_kWh == available_kWh:
-                self._blocks.popleft()
-            else:
-                self._blocks[0][1] = available_kWh - taken_kWh
-        return drawn
-
-    def self_discharge(self, fraction: float) -> None:
-        for block in self._blocks:
-            block[1] *= 1 - fraction
+    def __add__(self, other: "_Flows") -> "_Flows":
+        return _Flows(
+            **{
+                item.name: getattr(self, item.name) + getattr(other, item.name)
+                for item in fields(self)
+            }
+        )
 
 
 @dataclass
 class _PVRecord:
     name: str
+    path: str
     owner_name: str
     capacity_kWp: Optional[float]
+    capacity_assumed: bool
     strategy: PVStrategy
-    member_names: Dict[str, str]
-    slots: Dict[DateTime, _Flows] = field(default_factory=dict)
+    member_paths: Dict[str, str]
+    community_paths: Set[str]
     flags: Set[str] = field(default_factory=set)
+    done: _Flows = field(default_factory=_Flows)
+    slot: _Flows = field(default_factory=_Flows)
+
+    @property
+    def total(self) -> _Flows:
+        return self.done + self.slot
 
 
 def _leaves(area: "Area") -> Iterator["Area"]:
@@ -139,27 +117,18 @@ def _is_pv(area: "Area") -> bool:
     )
 
 
+def _is_battery(area: "Area") -> bool:
+    return isinstance(area.strategy, StorageStrategy) and not isinstance(
+        area.strategy, (EVChargerStrategy, ElectrolyzerStrategy)
+    )
+
+
 def _trader_uuid(trader) -> str:
     return trader.origin_uuid or trader.uuid
 
 
-def _is_consumer(area: "Area") -> bool:
-    return (
-        isinstance(area.strategy, SmartMeterStrategy)
-        or area.strategy.asset_type is AssetType.CONSUMER
-    )
-
-
-def _member_of(area: "Area", owner: "Area", member_uuids: Set[str]) -> Optional[str]:
-    while area is not None and area is not owner:
-        if area.uuid in member_uuids:
-            return area.uuid
-        area = area.parent
-    return None
-
-
 def _capacity_kWp(strategy: PVStrategy) -> Optional[float]:
-    """Return the installed capacity, which is per panel in the energy parameters."""
+    """Return the installed capacity, which the energy parameters hold per panel."""
     if strategy.roi_inputs.capacity_kWp is not None:
         return strategy.roi_inputs.capacity_kWp
     energy_params = strategy._energy_params  # pylint: disable=protected-access
@@ -169,279 +138,292 @@ def _capacity_kWp(strategy: PVStrategy) -> Optional[float]:
 
 
 class RoiResultsCollector:
-    """Collect, per PV and market slot, the totals of the trade-based RoI baseline.
+    """Collect the RoI inputs of every PV during a run and appraise them when it finishes.
 
-    The owner of a PV is the area that contains it. Energy that reaches a consumer inside that
-    area, directly or through a battery in it, is valued at the supplier rate plus the grid fees
-    the consumer would otherwise have paid (D7.3 equation 4a). Energy sold outside the area is
-    revenue (equation 4b). Battery energy is followed oldest first, so a discharge is credited
-    to the PV whose energy was stored earliest.
+    The owner of a PV is the area that contains it. A PV trade whose buyer is any asset inside
+    that area, a battery included, is own use valued at the supplier rate plus the grid fees the
+    buyer would otherwise have paid (D7.3 equation 4a). Any other PV trade is revenue (equation
+    4b). Each area's net bill in its parent market is kept too, so that a shared PV can be
+    appraised against a baseline run without it (D7.3 Section 3.5).
+
+    Totals are kept for completed slots plus the slot in progress, which a repeated publish of
+    the same slot replaces, so memory does not grow with the length of the run.
     """
 
-    def __init__(self):
+    def __init__(self, baseline: Optional[Dict] = None):
+        self._baseline = baseline
         self._records: Dict[str, _PVRecord] = {}
+        self._paths: Dict[str, str] = {}
         self._current_slot: Optional[DateTime] = None
-        self._stored_before_slot: Dict[str, _StoredEnergy] = {}
-        self._stored_after_slot: Dict[str, _StoredEnergy] = {}
+        self._completed_slots = 0
+        self._done_bills: Dict[str, float] = {}
+        self._slot_bills: Dict[str, float] = {}
+        self._supplier_rates: Dict[str, float] = {}
+        self._failure: Optional[str] = None
 
     def update(self, root_area: "Area") -> None:
         """Record the current spot market slot, replacing an earlier record of the same slot."""
-        leaves = list(_leaves(root_area))
-        pvs = [leaf for leaf in leaves if _is_pv(leaf)]
-        markets = [pv.parent.spot_market for pv in pvs if pv.parent.spot_market is not None]
-        if not markets:
+        try:
+            self._update(root_area)
+        except RoiBaselineError:
+            raise
+        except Exception as ex:  # pylint: disable=broad-except
+            if self._failure is None:
+                log.exception("RoI collection failed, so its results will be unavailable.")
+            self._failure = f"collection_failed: {ex}"
+
+    def _update(self, root_area: "Area") -> None:
+        if root_area.spot_market is None:
             return
-        time_slot = markets[0].time_slot
+        time_slot = root_area.spot_market.time_slot
         if time_slot != self._current_slot:
-            self._stored_before_slot = self._stored_after_slot
+            if self._current_slot is not None:
+                self._complete_slot()
             self._current_slot = time_slot
-        stored = deepcopy(self._stored_before_slot)
 
-        flows = {pv.uuid: self._direct_flows(pv, time_slot) for pv in pvs if pv.parent.spot_market}
-        pv_by_uuid = {pv.uuid: pv for pv in pvs if pv.uuid in flows}
-        for battery in leaves:
-            if isinstance(battery.strategy, StorageStrategy) and battery.parent.spot_market:
-                self._battery_flows(battery, stored, pv_by_uuid, flows, time_slot)
-        self._stored_after_slot = stored
+        supplier_rate = get_market_maker_rate_from_time_slot(time_slot) or 0.0
+        if self._baseline is not None:
+            validate_supplier_rate(self._baseline, str(time_slot), supplier_rate)
+        self._supplier_rates[str(time_slot)] = supplier_rate
 
-        for pv in pv_by_uuid.values():
-            self._record(pv).slots[time_slot] = flows[pv.uuid]
+        areas = list(all_areas(root_area))
+        self._paths.update({area.uuid: name_path(area) for area in areas})
+        self._slot_bills = self._area_bills(areas)
+        for leaf in _leaves(root_area):
+            if _is_pv(leaf) and leaf.parent.spot_market is not None:
+                record = self._record(leaf)
+                record.slot = self._slot_flows(leaf, record, supplier_rate)
 
-    def results(
-        self,
-        slot_length_seconds: float,
-        parameters: RoiParameterSet = None,
-        range_levers: RangeLevers = None,
-    ) -> Dict:
-        """Return the serialised RoI result of every PV, keyed by its uuid."""
-        parameters = parameters or DEFAULT_PARAMETER_SET
-        range_levers = range_levers or DEFAULT_RANGE_LEVERS
-        return {
-            uuid: self._pv_result(record, slot_length_seconds, parameters, range_levers)
-            for uuid, record in self._records.items()
-            if record.slots
-        }
+    def _complete_slot(self) -> None:
+        self._completed_slots += 1
+        for record in self._records.values():
+            record.done = record.total
+            record.slot = _Flows()
+        for uuid, bill in self._slot_bills.items():
+            self._done_bills[uuid] = self._done_bills.get(uuid, 0.0) + bill
+        self._slot_bills = {}
+
+    @staticmethod
+    def _area_bills(areas: List["Area"]) -> Dict[str, float]:
+        """Return what each area paid net in its parent market.
+
+        A market agent trades under its area uuid both in the parent market and in the area's
+        own market, so only trades of the market's children count, or the two would cancel.
+        """
+        bills: Dict[str, float] = {}
+        for area in areas:
+            if not area.children or area.spot_market is None:
+                continue
+            children = {child.uuid for child in area.children}
+            for trade in area.spot_market.trades:
+                if trade.buyer.uuid in children:
+                    paid = trade.trade_price / CENTS_PER_CURRENCY_UNIT
+                    bills[trade.buyer.uuid] = bills.get(trade.buyer.uuid, 0.0) + paid
+                if trade.seller.uuid in children:
+                    earned = (trade.trade_price - trade.fee_price) / CENTS_PER_CURRENCY_UNIT
+                    bills[trade.seller.uuid] = bills.get(trade.seller.uuid, 0.0) - earned
+        return bills
 
     def _record(self, pv: "Area") -> _PVRecord:
         if pv.uuid not in self._records:
-            roi_inputs = pv.strategy.roi_inputs
-            members = set(roi_inputs.ownership_member_uuids)
-            self._records[pv.uuid] = _PVRecord(
+            owner = pv.parent
+            shares = pv.strategy.roi_inputs.ownership_shares
+            member_paths = {
+                area.name: name_path(area)
+                for area in all_areas(owner)
+                if area is not owner and area.children and area.name in shares
+            }
+            capacity = _capacity_kWp(pv.strategy)
+            record = _PVRecord(
                 name=pv.name,
-                owner_name=pv.parent.name,
-                capacity_kWp=_capacity_kWp(pv.strategy),
+                path=name_path(pv),
+                owner_name=owner.name,
+                capacity_kWp=capacity,
+                capacity_assumed=capacity is None
+                or (
+                    isinstance(pv.strategy, PVUserProfileStrategy)
+                    and pv.strategy.roi_inputs.capacity_kWp is None
+                ),
                 strategy=pv.strategy,
-                member_names={
-                    area.uuid: area.name
-                    for area in self._areas_under(pv.parent)
-                    if area.uuid in members
+                member_paths=member_paths,
+                community_paths={
+                    name_path(child)
+                    for child in owner.children
+                    if not isinstance(child.strategy, CommercialStrategy)
                 },
             )
+            if set(member_paths) != set(shares):
+                record.flags.add("member_results_withheld")
+            self._records[pv.uuid] = record
         return self._records[pv.uuid]
 
     @staticmethod
-    def _areas_under(area: "Area") -> Iterator["Area"]:
-        for child in area.children:
-            yield child
-            yield from RoiResultsCollector._areas_under(child)
-
-    @staticmethod
-    def _avoided_purchase(consumer: "Area", energy_kWh: float, time_slot: DateTime) -> float:
-        supplier_rate = get_market_maker_rate_from_time_slot(time_slot) or 0
-        path_fee = consumer.parent.get_path_to_root_fees()
-        return energy_kWh * (supplier_rate + path_fee) / CENTS_PER_CURRENCY_UNIT
-
-    def _direct_flows(self, pv: "Area", time_slot: DateTime) -> _Flows:
+    def _slot_flows(pv: "Area", record: _PVRecord, supplier_rate: float) -> _Flows:
         owner = pv.parent
-        record = self._record(pv)
-        member_uuids = set(record.member_names)
-        consumers = {leaf.uuid: leaf for leaf in _leaves(owner) if _is_consumer(leaf)}
-        batteries = {
-            leaf.uuid for leaf in _leaves(owner) if isinstance(leaf.strategy, StorageStrategy)
-        }
-        if sum(_is_pv(leaf) for leaf in _leaves(owner)) > 1:
+        own_leaves = {leaf.uuid: leaf for leaf in _leaves(owner) if leaf.uuid != pv.uuid}
+        if any(_is_battery(leaf) for leaf in own_leaves.values()):
+            record.flags.add("storage_capex_excluded")
+        if any(_is_pv(leaf) for leaf in own_leaves.values()):
             record.flags.add("not_separable")
         if owner.config.grid_fee_type != CONSTANT_GRID_FEE_TYPE:
             record.flags.add("percentage_grid_fees_excluded")
 
         flows = _Flows(
-            generation_kWh=pv.strategy.state.get_energy_production_forecast_kWh(time_slot, 0.0)
+            generation_kWh=pv.strategy.state.get_energy_production_forecast_kWh(
+                owner.spot_market.time_slot, 0.0
+            )
         )
         for trade in owner.spot_market.trades:
             if trade.seller.uuid != pv.uuid:
                 continue
-            buyer = _trader_uuid(trade.buyer)
-            if buyer in consumers:
-                flows.add_own_consumption(
-                    trade.traded_energy,
-                    self._avoided_purchase(consumers[buyer], trade.traded_energy, time_slot),
-                    _member_of(consumers[buyer], owner, member_uuids),
+            buyer = own_leaves.get(_trader_uuid(trade.buyer))
+            if buyer is not None:
+                path_fee = buyer.parent.get_path_to_root_fees()
+                flows.own_use_kWh += trade.traded_energy
+                flows.avoided_purchase += (
+                    trade.traded_energy * (supplier_rate + path_fee) / CENTS_PER_CURRENCY_UNIT
                 )
-            elif buyer not in batteries:
+            else:
                 flows.sold_kWh += trade.traded_energy
                 flows.sales_revenue += (
                     trade.trade_price - trade.fee_price
                 ) / CENTS_PER_CURRENCY_UNIT
         return flows
 
-    def _battery_flows(
-        self,
-        battery: "Area",
-        stored: Dict[str, _StoredEnergy],
-        pv_by_uuid: Dict[str, "Area"],
-        flows: Dict[str, _Flows],
-        time_slot: DateTime,
-    ) -> None:
-        state = battery.strategy.state
-        losses = state.losses
-        energy = stored.setdefault(battery.uuid, _StoredEnergy(state.initial_capacity_kWh))
-        kept_on_charge = 1 - losses.charging_loss_percent / 100
-        kept_on_discharge = 1 - losses.discharging_loss_percent / 100
+    def _bills_by_path(self) -> Dict[str, float]:
+        totals = dict(self._done_bills)
+        for uuid, bill in self._slot_bills.items():
+            totals[uuid] = totals.get(uuid, 0.0) + bill
+        return {self._paths[uuid]: bill for uuid, bill in totals.items() if uuid in self._paths}
 
-        for trade in battery.parent.spot_market.trades:
-            if trade.buyer.uuid == battery.uuid:
-                source = _trader_uuid(trade.seller)
-                energy.charge(
-                    source if source in pv_by_uuid else OTHER_SOURCE,
-                    trade.traded_energy * kept_on_charge,
+    def shared_pv_paths(self, root_area: "Area") -> Set[str]:
+        """Return the name paths of every PV that has co-owners."""
+        return {
+            name_path(leaf)
+            for leaf in _leaves(root_area)
+            if _is_pv(leaf) and leaf.strategy.roi_inputs.is_shared
+        }
+
+    def baseline_export(self, fingerprint: Dict) -> Dict:
+        """Return what a later run needs to use this run as its RoI baseline."""
+        return {
+            "fingerprint": fingerprint,
+            "area_bills": self._bills_by_path(),
+            "supplier_rates": dict(self._supplier_rates),
+        }
+
+    def results(self, slot_length_seconds: float) -> Dict:
+        """Return the serialised RoI result of every PV, keyed by its uuid."""
+        window_days = (self._completed_slots + 1) * slot_length_seconds / SECONDS_PER_DAY
+        baseline_paths = (
+            set(self._baseline["fingerprint"]["areas"]) if self._baseline is not None else None
+        )
+        bills = self._bills_by_path() if self._baseline is not None else {}
+        results = {}
+        for uuid, record in self._records.items():
+            try:
+                if self._failure is not None:
+                    raise RuntimeError(self._failure)
+                uses_baseline = (
+                    baseline_paths is not None
+                    and record.strategy.roi_inputs.is_shared
+                    and record.path not in baseline_paths
                 )
-            elif trade.seller.uuid == battery.uuid and kept_on_discharge > 0:
-                buyer = _trader_uuid(trade.buyer)
-                drawn = energy.discharge(trade.traded_energy / kept_on_discharge)
-                for source, drawn_kWh in drawn.items():
-                    if source in pv_by_uuid:
-                        self._credit_battery_delivery(
-                            pv_by_uuid[source],
-                            buyer,
-                            drawn_kWh * kept_on_discharge,
-                            flows,
-                            time_slot,
-                        )
-
-        slot_days = battery.config.slot_length.total_seconds() / SECONDS_PER_DAY
-        energy.self_discharge(losses.self_discharge_per_day_percent / 100 * slot_days)
-
-    def _credit_battery_delivery(
-        self,
-        pv: "Area",
-        buyer: str,
-        energy_kWh: float,
-        flows: Dict[str, _Flows],
-        time_slot: DateTime,
-    ) -> None:
-        owner = pv.parent
-        consumer = next(
-            (leaf for leaf in _leaves(owner) if leaf.uuid == buyer and _is_consumer(leaf)), None
-        )
-        if consumer is None:
-            return
-        flows[pv.uuid].add_own_consumption(
-            energy_kWh,
-            self._avoided_purchase(consumer, energy_kWh, time_slot),
-            _member_of(consumer, owner, set(self._record(pv).member_names)),
-        )
+                results[uuid] = self._pv_result(record, window_days, uses_baseline, bills)
+            except Exception as ex:  # pylint: disable=broad-except
+                log.exception("RoI appraisal of %s failed.", record.name)
+                results[uuid] = {"unavailable": "calculation_failed", "error": str(ex)}
+        return results
 
     def _pv_result(
-        self,
-        record: _PVRecord,
-        slot_length_seconds: float,
-        parameters: RoiParameterSet,
-        range_levers: RangeLevers,
+        self, record: _PVRecord, window_days: float, uses_baseline: bool, bills: Dict[str, float]
     ) -> Dict:
-        slots = list(record.slots.values())
         roi_inputs = record.strategy.roi_inputs
-        capital_cost_per_kwp = roi_inputs.capital_cost_per_kwp or DEFAULT_CAPITAL_COST_PER_KWP
-        own_kWh = sum(slot.own_consumption_kWh for slot in slots)
-        sold_kWh = sum(slot.sold_kWh for slot in slots)
-        community_inputs = RoiInputs(
+        flows = record.total
+        inputs = RoiInputs(
             capacity_kwp=record.capacity_kWp or 0.0,
-            capital_cost_per_kwp=capital_cost_per_kwp,
+            capital_cost_per_kwp=roi_inputs.capital_cost_per_kwp or DEFAULT_CAPITAL_COST_PER_KWP,
             ownership_share=1.0,
-            avoided_purchase=sum(slot.avoided_purchase for slot in slots),
-            sales_revenue=sum(slot.sales_revenue for slot in slots),
-            window_generation_kwh=sum(slot.generation_kWh for slot in slots),
-            window_days=len(slots) * slot_length_seconds / SECONDS_PER_DAY,
+            avoided_purchase=flows.avoided_purchase,
+            sales_revenue=flows.sales_revenue,
+            window_generation_kwh=flows.generation_kWh,
+            window_days=window_days,
             annual_generation_kwh=roi_inputs.annual_generation_kWh,
         )
-        members = self._member_shares(record)
-        basis = self._basis(record, community_inputs, min(record.slots))
-        result = self._appraise(community_inputs, parameters, range_levers, own_kWh, sold_kWh)
-        result["basis"].update(basis)
+        flags = set(record.flags)
+        if uses_baseline:
+            baseline_bills = self._baseline["area_bills"]
+            community_benefit = sum(
+                baseline_bills.get(path, 0.0) - bills.get(path, 0.0)
+                for path in record.community_paths
+            )
+            inputs = replace(inputs, avoided_purchase=community_benefit - flows.sales_revenue)
+        elif roi_inputs.is_shared:
+            flags.add("shared_asset_estimate")
 
-        if members is not None:
-            result["members"] = {}
-            for member_uuid, share in members.items():
-                member_own_kWh = sum(
-                    slot.member_own_consumption_kWh.get(member_uuid, 0.0) for slot in slots
-                )
-                member_inputs = replace(
-                    community_inputs,
-                    ownership_share=share,
-                    benefit_is_apportioned=True,
-                    avoided_purchase=sum(
-                        slot.member_avoided_purchase.get(member_uuid, 0.0) for slot in slots
-                    ),
-                    sales_revenue=share * community_inputs.sales_revenue,
-                )
-                member_result = self._appraise(
-                    member_inputs, parameters, range_levers, member_own_kWh, share * sold_kWh
-                )
-                member_result["basis"].update(
-                    {
-                        **basis,
-                        "ownership_share": share,
-                        "member_uuid": member_uuid,
-                        "member_name": record.member_names[member_uuid],
-                    }
-                )
-                result["members"][member_uuid] = member_result
+        basis = self._basis(record, inputs, flags, uses_baseline)
+        result = self._appraise(inputs, flows.own_use_kWh, flows.sold_kWh)
+        result["basis"].update(basis)
+        if uses_baseline and "member_results_withheld" not in flags:
+            result["members"] = {
+                name: self._member_result(record, inputs, flows, basis, bills, name, share)
+                for name, share in roi_inputs.ownership_shares.items()
+            }
+        return result
+
+    def _member_result(
+        self,
+        record: _PVRecord,
+        inputs: RoiInputs,
+        flows: _Flows,
+        basis: Dict,
+        bills: Dict[str, float],
+        name: str,
+        share: float,
+    ) -> Dict:
+        path = record.member_paths[name]
+        member_inputs = replace(
+            inputs,
+            ownership_share=share,
+            benefit_is_apportioned=True,
+            avoided_purchase=self._baseline["area_bills"].get(path, 0.0) - bills.get(path, 0.0),
+            sales_revenue=share * flows.sales_revenue,
+        )
+        result = self._appraise(member_inputs, share * flows.own_use_kWh, share * flows.sold_kWh)
+        result["basis"].update(
+            {**basis, "ownership_share": share, "member_name": name, "member_path": path}
+        )
         return result
 
     @staticmethod
-    def _member_shares(record: _PVRecord) -> Optional[Dict[str, float]]:
-        roi_inputs = record.strategy.roi_inputs
-        if not roi_inputs.ownership_member_uuids:
-            return None
-        shares = dict(zip(roi_inputs.ownership_member_uuids, roi_inputs.ownership_shares))
-        if (
-            len(roi_inputs.ownership_member_uuids) != len(roi_inputs.ownership_shares)
-            or set(shares) != set(record.member_names)
-            or not all(0 < share <= 1 for share in shares.values())
-            or not isclose(sum(shares.values()), 1.0, abs_tol=1e-6)
-        ):
-            record.flags.add("member_results_withheld")
-            return None
-        return shares
-
-    @staticmethod
-    def _appraise(
-        inputs: RoiInputs,
-        parameters: RoiParameterSet,
-        range_levers: RangeLevers,
-        own_kWh: float,
-        sold_kWh: float,
-    ) -> Dict:
-        result = serialize_result(calculate_roi(inputs, parameters))
+    def _appraise(inputs: RoiInputs, own_use_kWh: float, sold_kWh: float) -> Dict:
+        result = serialize_result(calculate_roi(inputs, DEFAULT_PARAMETER_SET))
         result["self_consumption_ratio"] = (
-            own_kWh / inputs.window_generation_kwh if inputs.window_generation_kwh > 0 else None
+            own_use_kWh / inputs.window_generation_kwh
+            if inputs.window_generation_kwh > 0
+            else None
         )
         if result["unavailable"] is None:
-            cases = calculate_range(inputs, parameters, range_levers, own_kWh, sold_kWh)
+            cases = calculate_range(
+                inputs, DEFAULT_PARAMETER_SET, DEFAULT_RANGE_LEVERS, own_use_kWh, sold_kWh
+            )
             result["range"] = {case: serialize_result(roi) for case, roi in cases.items()}
         return result
 
-    @staticmethod
-    def _basis(record: _PVRecord, inputs: RoiInputs, window_start: DateTime) -> Dict:
-        assumed = list(ASSUMED_INPUTS)
-        if record.strategy.roi_inputs.capital_cost_per_kwp is not None:
-            assumed.remove("capital_cost")
+    def _basis(
+        self, record: _PVRecord, inputs: RoiInputs, flags: Set[str], uses_baseline: bool
+    ) -> Dict:
+        assumed: List[str] = list(ASSUMED_INPUTS)
+        observed: List[str] = list(OBSERVED_INPUTS)
+        if record.strategy.roi_inputs.capital_cost_per_kwp is None:
+            assumed.append("capital_cost")
+        (assumed if record.capacity_assumed else observed).append("capacity")
+        rates = set(self._supplier_rates.values())
         return {
-            "baseline_method": "analytical",
+            "baseline_method": "simulation" if uses_baseline else "analytical",
             "allocation_basis": "market_clearing",
-            "price_basis": (
-                "profile" if isinstance(GlobalConfig.market_maker_rate, dict) else "scalar"
-            ),
-            "window_start": window_start.isoformat(),
+            "price_basis": "profile" if len(rates) > 1 else "scalar",
+            "window_start": min(self._supplier_rates) if self._supplier_rates else None,
             "window_days": inputs.window_days,
             "window_is_metered": False,
             "ownership_share": inputs.ownership_share,
@@ -451,7 +433,7 @@ class RoiResultsCollector:
             "asset_name": record.name,
             "owner_name": record.owner_name,
             "last_realised_year": None,
-            "inputs_observed": list(OBSERVED_INPUTS),
+            "inputs_observed": observed,
             "inputs_assumed": assumed,
-            "flags": sorted(record.flags),
+            "flags": sorted(flags),
         }

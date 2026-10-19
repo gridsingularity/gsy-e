@@ -190,6 +190,20 @@ _setup_modules = available_simulation_scenarios
     help="Specify a path for the carbon ratio (gCO2eq/kWh) csv file, "
     "(example: ./src/gsy_e/resources/carbon_ratio_g_per_kWh.csv)",
 )
+@click.option(
+    "--roi-comparable",
+    is_flag=True,
+    default=False,
+    help="Order events per asset so that this run can serve as the RoI baseline of a run "
+    "that adds a shared PV.",
+)
+@click.option(
+    "--roi-baseline",
+    type=click.Path(exists=True),
+    default=None,
+    help="Export folder or roi_baseline.json of the same simulation without its shared PVs, "
+    "used to appraise them with the two-run method.",
+)
 def run(
     setup_module_name,
     settings_file,
@@ -203,6 +217,8 @@ def run(
     slot_length_realtime,
     enable_dof: bool,
     market_type: int,
+    roi_comparable: bool,
+    roi_baseline: str,
     **kwargs,
 ):
     """Configure settings and run a simulation."""
@@ -240,6 +256,10 @@ def run(
 
         if incremental:
             kwargs["incremental"] = incremental
+        if roi_comparable:
+            kwargs["roi_comparable"] = True
+        if roi_baseline is not None:
+            kwargs["roi_baseline"] = roi_baseline
 
         if pause_at is not None:
             kwargs["pause_after"] = convert_str_to_pause_after_interval(start_date, pause_at)

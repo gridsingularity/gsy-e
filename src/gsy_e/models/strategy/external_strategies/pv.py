@@ -17,7 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 import json
 import logging
-from typing import TYPE_CHECKING, Callable, Dict, List
+from typing import TYPE_CHECKING, Callable, Dict
 
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import Offer
@@ -403,8 +403,7 @@ class PVForecastExternalStrategy(ForecastExternalMixin, PVPredefinedExternalStra
             capacity_kW: float = None,
             capital_cost_per_kwp: float = None,
             annual_generation_kWh: float = None,
-            ownership_member_uuids: List[str] = None,
-            ownership_shares: List[float] = None,
+            ownership_shares: Dict[str, float] = None,
     ):
         """
         Constructor of PVForecastStrategy
@@ -418,7 +417,6 @@ class PVForecastExternalStrategy(ForecastExternalMixin, PVPredefinedExternalStra
                          use_market_maker_rate=use_market_maker_rate,
                          capital_cost_per_kwp=capital_cost_per_kwp,
                          annual_generation_kWh=annual_generation_kWh,
-                         ownership_member_uuids=ownership_member_uuids,
                          ownership_shares=ownership_shares)
 
     def update_energy_forecast(self) -> None:

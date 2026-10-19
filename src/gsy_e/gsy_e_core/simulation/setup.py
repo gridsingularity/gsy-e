@@ -21,11 +21,12 @@ from dataclasses import dataclass
 from importlib import import_module
 from logging import getLogger
 from types import ModuleType
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Dict, Optional, Union
 
 from gsy_framework.constants_limits import ConstSettings
 from numpy import random
 
+import gsy_e.constants
 from gsy_e.gsy_e_core.exceptions import SimulationException
 from gsy_e.gsy_e_core.non_p2p_handler import NonP2PHandler
 from gsy_e.models import random_order
@@ -48,9 +49,13 @@ class SimulationSetup:
     setup_module_name: str = ""
     started_from_cli: str = True
     config: SimulationConfig = None
+    roi_baseline: Optional[Union[str, Dict]] = None
+    roi_comparable: bool = False
 
     def __post_init__(self) -> None:
         self._set_random_seed(self.seed)
+        if self.roi_comparable or self.roi_baseline is not None:
+            gsy_e.constants.ORDER_BY_ITEM_HASH = True
 
     def load_setup_module(self) -> "Area":
         """Load setup module and create areas that are described on the setup."""

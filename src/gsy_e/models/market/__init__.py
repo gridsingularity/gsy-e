@@ -90,6 +90,12 @@ class MarketSlotParams:
         assert self.closing_time > self.opening_time
 
 
+def _listener_key(listener: Callable) -> str:
+    """Identify a listener by its area name, which stays stable when other listeners go."""
+    area = getattr(getattr(listener, "__self__", None), "area", None)
+    return area.name if area is not None else getattr(listener, "__qualname__", repr(listener))
+
+
 class MarketBase:  # pylint: disable=too-many-instance-attributes
     """
     Hold the common energy market models behaviors and states.
@@ -236,7 +242,7 @@ class MarketBase:  # pylint: disable=too-many-instance-attributes
             for listener in random_order.shuffled(
                 self.notification_listeners,
                 salt=lambda: f"{self.name}|{self.time_slot_str}|{event}|{self.now}",
-                key=self.notification_listeners.index,
+                key=_listener_key,
             ):
                 listener(event, market_id=self.id, **kwargs)
 

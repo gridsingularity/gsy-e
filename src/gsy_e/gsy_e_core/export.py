@@ -91,6 +91,7 @@ results_field_to_json_filename_mapping = {
     "imported_exported_energy": "imported_exported_energy",
     "hierarchy_self_consumption_percent": "hierarchy_self_consumption_percent",
     "roi": "roi",
+    "roi_baseline": "roi_baseline",
 }
 
 

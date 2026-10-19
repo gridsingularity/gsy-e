@@ -68,7 +68,11 @@ class SimulationResultsManager:
     ) -> None:
         """Construct objects that contain the simulation results for the broker and CSV output."""
         self._endpoint_buffer = SimulationEndpointBuffer(
-            redis_job_id, config_params.seed, area, self.export_results_on_finish
+            redis_job_id,
+            config_params.seed,
+            area,
+            self.export_results_on_finish,
+            roi_baseline=config_params.roi_baseline,
         )
 
         if self.export_results_on_finish:

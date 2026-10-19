@@ -20,7 +20,7 @@ import gc
 import os
 from logging import getLogger
 from time import sleep, time
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING, Dict, Union
 
 import psutil
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
@@ -73,6 +73,8 @@ class Simulation:
         slot_length_realtime: Duration = None,
         incremental: bool = False,
         carbon_ratio_file: str = None,
+        roi_baseline: Union[str, Dict] = None,
+        roi_comparable: bool = False,
     ):
         self.status = SimulationStatusManager(
             paused=paused,
@@ -91,6 +93,8 @@ class Simulation:
             setup_module_name=setup_module_name,
             started_from_cli=redis_job_id is None,
             config=simulation_config,
+            roi_baseline=roi_baseline,
+            roi_comparable=roi_comparable,
         )
 
         self._results = self._results_manager_class(

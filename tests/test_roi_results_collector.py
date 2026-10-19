@@ -17,25 +17,28 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from types import SimpleNamespace
-from unittest.mock import Mock, PropertyMock, patch
+from unittest.mock import Mock, patch
 
 import pytest
 from gsy_framework.constants_limits import GlobalConfig
+from gsy_framework.exceptions import GSyDeviceException
 from gsy_framework.sim_results.roi.appraisal import calculate_roi
 from gsy_framework.sim_results.roi.data_classes import RoiInputs
 from gsy_framework.sim_results.roi.parameters import DEFAULT_PARAMETER_SET
 from gsy_framework.sim_results.roi.serialization import serialize_result
 from pendulum import datetime
 
+from gsy_e.gsy_e_core.sim_results.roi_baseline import RoiBaselineError
 from gsy_e.gsy_e_core.sim_results.roi_results_collector import RoiResultsCollector
 from gsy_e.models.area import Area
-from gsy_e.models.strategy.load_hours import LoadHoursStrategy
+from gsy_e.models.strategy.ev_charger import EVChargerStrategy
 from gsy_e.models.strategy.external_strategies.pv import (
     PVExternalStrategy,
     PVForecastExternalStrategy,
     PVPredefinedExternalStrategy,
     PVUserProfileExternalStrategy,
 )
+from gsy_e.models.strategy.load_hours import LoadHoursStrategy
 from gsy_e.models.strategy.predefined_pv import PVPredefinedStrategy, PVUserProfileStrategy
 from gsy_e.models.strategy.predefined_wind import WindUserProfileStrategy
 from gsy_e.models.strategy.pv import PVStrategy
@@ -45,17 +48,22 @@ FIRST_SLOT = datetime(2026, 6, 15, 12)
 SECOND_SLOT = datetime(2026, 6, 15, 12, 15)
 SUPPLIER_RATE = 30
 GENERATION_KWH = 2.0
-SLOT_LENGTH_SECONDS = 86400
+DAY_SECONDS = 86400
 
 
-def _trade(seller, buyer, energy, price=0, fee=0, buyer_origin=None, buyer_origin_name=None):
+class _AssetWithoutType:
+    """A strategy that never defines asset_type, as a heat pump does."""
+
+    @property
+    def asset_type(self):
+        raise NotImplementedError
+
+
+def _trade(seller, buyer, energy, price=0, fee=0, buyer_origin=None):
     return SimpleNamespace(
         seller=SimpleNamespace(name=seller, uuid=seller, origin=seller, origin_uuid=seller),
         buyer=SimpleNamespace(
-            name=buyer,
-            uuid=buyer,
-            origin=buyer_origin_name or buyer_origin,
-            origin_uuid=buyer_origin,
+            name=buyer, uuid=buyer, origin=buyer_origin, origin_uuid=buyer_origin
         ),
         traded_energy=energy,
         trade_price=price,
@@ -69,10 +77,32 @@ def _pv(name, **roi_arguments):
     return pv
 
 
-def _record(collector, root, time_slot, trades):
-    market = SimpleNamespace(time_slot=time_slot, trades=trades)
-    with patch.object(Area, "spot_market", new_callable=PropertyMock, return_value=market):
+def _record(collector, root, time_slot, trades_by_area):
+    markets = {
+        uuid: SimpleNamespace(time_slot=time_slot, trades=trades)
+        for uuid, trades in trades_by_area.items()
+    }
+    markets.setdefault(root.uuid, SimpleNamespace(time_slot=time_slot, trades=[]))
+    for area in (root, *root.children):
+        if area.children:
+            markets.setdefault(area.uuid, SimpleNamespace(time_slot=time_slot, trades=[]))
+    with patch.object(Area, "spot_market", property(lambda area: markets.get(area.uuid))):
         collector.update(root)
+
+
+def _expected_cash_flow(**changes):
+    inputs = {
+        "capacity_kwp": 5,
+        "capital_cost_per_kwp": 1300,
+        "ownership_share": 1.0,
+        "avoided_purchase": 0.0,
+        "sales_revenue": 0.0,
+        "window_generation_kwh": GENERATION_KWH,
+        "window_days": 1.0,
+        **changes,
+    }
+    result = calculate_roi(RoiInputs(**inputs), DEFAULT_PARAMETER_SET)
+    return serialize_result(result)["cash_flow"]
 
 
 @pytest.fixture(autouse=True)
@@ -80,23 +110,26 @@ def flat_supplier_rate(monkeypatch):
     monkeypatch.setattr(GlobalConfig, "market_maker_rate", SUPPLIER_RATE)
 
 
-@pytest.fixture(name="house")
-def fixture_house():
+@pytest.fixture(name="grid")
+def fixture_grid():
     house = Area(
         "House 1",
         uuid="House 1",
         children=[
             Area("H1 Load", uuid="H1 Load", strategy=LoadHoursStrategy(avg_power_W=100)),
-            Area(
-                "H1 Storage",
-                uuid="H1 Storage",
-                strategy=StorageStrategy(initial_soc=10, battery_capacity_kWh=10),
-            ),
+            Area("H1 Battery", uuid="H1 Battery", strategy=StorageStrategy()),
+            Area("H1 EV", uuid="H1 EV", strategy=EVChargerStrategy()),
+            Area("H1 Heat Pump", uuid="H1 Heat Pump", strategy=_AssetWithoutType()),
             _pv("H1 PV", capital_cost_per_kwp=1200),
         ],
         grid_fee_constant=2,
     )
-    return Area("Grid", uuid="Grid", children=[house], grid_fee_constant=1)
+    other_house = Area(
+        "House 2",
+        uuid="House 2",
+        children=[Area("H2 Load", uuid="H2 Load", strategy=LoadHoursStrategy(1))],
+    )
+    return Area("Grid", uuid="Grid", children=[house, other_house], grid_fee_constant=1)
 
 
 @pytest.fixture(name="community")
@@ -108,209 +141,127 @@ def fixture_community():
             Area(
                 "House 1",
                 uuid="House 1",
-                children=[
-                    Area("H1 Load", uuid="H1 Load", strategy=LoadHoursStrategy(avg_power_W=1))
-                ],
+                children=[Area("H1 Load", uuid="H1 Load", strategy=LoadHoursStrategy(1))],
             ),
             Area(
                 "House 2",
                 uuid="House 2",
-                children=[
-                    Area("H2 Load", uuid="H2 Load", strategy=LoadHoursStrategy(avg_power_W=1))
-                ],
+                children=[Area("H2 Load", uuid="H2 Load", strategy=LoadHoursStrategy(1))],
             ),
-            _pv("Community PV"),
+            _pv("Community PV", ownership_shares={"House 1": 0.6, "House 2": 0.4}),
         ],
     )
 
 
+def _community_trades():
+    return {
+        "Community": [
+            _trade("Community PV", "House 1", 1.0, price=20, buyer_origin="H1 Load"),
+            _trade("Community PV", "House 2", 0.5, price=10, buyer_origin="H2 Load"),
+        ]
+    }
+
+
+def _baseline(**changes):
+    paths = ["Community", "Community/House 1", "Community/House 1/H1 Load"]
+    paths += ["Community/House 2", "Community/House 2/H2 Load"]
+    return {
+        "fingerprint": {"areas": {path: {} for path in paths}},
+        "area_bills": {"Community/House 1": 0.5, "Community/House 2": 0.3},
+        "supplier_rates": {},
+        **changes,
+    }
+
+
 def _only_result(collector):
-    return next(iter(collector.results(SLOT_LENGTH_SECONDS).values()))
+    return next(iter(collector.results(DAY_SECONDS).values()))
 
 
-class TestRoiResultsCollector:
+class TestOneRunMethod:
 
-    def test_values_each_pv_trade_by_where_its_energy_went(self, house):
+    def test_pv_energy_bought_by_any_asset_in_its_area_is_own_use(self, grid):
         # Given
         collector = RoiResultsCollector()
         trades = [
-            _trade("H1 PV", "H1 Load", energy=1.0, price=20),
-            _trade("H1 PV", "House 1", energy=0.5, price=10, fee=1, buyer_origin="H2 Load"),
-            _trade("H1 PV", "H1 Storage", energy=0.4, price=8),
-            _trade("Grid PV", "H1 Load", energy=3.0, price=90),
+            _trade("H1 PV", "H1 Load", 1.0, price=20),
+            _trade("H1 PV", "H1 Battery", 0.4, price=8),
+            _trade("H1 PV", "H1 EV", 0.6, price=12),
+            _trade("H1 PV", "H1 Heat Pump", 0.5, price=10),
+            _trade("H1 PV", "House 1", 0.5, price=10, fee=1, buyer_origin="H2 Load"),
+            _trade("Other PV", "H1 Load", 3.0, price=90),
         ]
 
         # When
-        _record(collector, house, FIRST_SLOT, trades)
+        _record(collector, grid, FIRST_SLOT, {"House 1": trades})
 
         # Then
         result = _only_result(collector)
-        expected_inputs = RoiInputs(
-            capacity_kwp=5,
-            capital_cost_per_kwp=1200,
-            ownership_share=1.0,
-            avoided_purchase=1.0 * (SUPPLIER_RATE + 3) / 100,
-            sales_revenue=(10 - 1) / 100,
-            window_generation_kwh=GENERATION_KWH,
-            window_days=SLOT_LENGTH_SECONDS / 86400,
+        assert result["cash_flow"] == pytest.approx(
+            _expected_cash_flow(
+                capital_cost_per_kwp=1200,
+                avoided_purchase=2.5 * (SUPPLIER_RATE + 3) / 100,
+                sales_revenue=(10 - 1) / 100,
+            )
         )
-        expected = serialize_result(calculate_roi(expected_inputs, DEFAULT_PARAMETER_SET))
-        assert result["cash_flow"] == pytest.approx(expected["cash_flow"])
-        assert result["self_consumption_ratio"] == pytest.approx(1.0 / GENERATION_KWH)
-        assert "capital_cost" not in result["basis"]["inputs_assumed"]
+        assert result["self_consumption_ratio"] == pytest.approx(2.5 / GENERATION_KWH)
+        assert result["basis"]["flags"] == ["storage_capex_excluded"]
+        assert result["basis"]["baseline_method"] == "analytical"
 
-    def test_battery_discharge_is_credited_to_the_pv_after_older_energy(self, house):
-        # Given the battery starts with 1 kWh of unknown origin
-        collector = RoiResultsCollector()
-        _record(collector, house, FIRST_SLOT, [_trade("H1 PV", "H1 Storage", energy=1.0)])
-
-        # When it delivers 1.5 kWh to the load in the next slot
-        _record(collector, house, SECOND_SLOT, [_trade("H1 Storage", "H1 Load", energy=1.5)])
-
-        # Then only the 0.5 kWh behind the initial charge came from the PV
-        result = _only_result(collector)
-        assert result["self_consumption_ratio"] == pytest.approx(0.5 / (2 * GENERATION_KWH))
-
-    def test_a_repeated_update_of_a_slot_does_not_store_energy_twice(self, house):
+    def test_a_repeated_slot_is_replaced_and_slots_add_up(self, grid):
         # Given
         collector = RoiResultsCollector()
-        charge = [_trade("H1 PV", "H1 Storage", energy=1.0)]
-        _record(collector, house, FIRST_SLOT, charge)
-        _record(collector, house, FIRST_SLOT, charge)
+        trades = {"House 1": [_trade("H1 PV", "H1 Load", 1.0)]}
 
         # When
-        _record(collector, house, SECOND_SLOT, [_trade("H1 Storage", "H1 Load", energy=3.0)])
+        _record(collector, grid, FIRST_SLOT, trades)
+        _record(collector, grid, FIRST_SLOT, trades)
+        _record(collector, grid, SECOND_SLOT, trades)
 
         # Then
         result = _only_result(collector)
-        assert result["self_consumption_ratio"] == pytest.approx(1.0 / (2 * GENERATION_KWH))
-        assert result["basis"]["window_days"] == pytest.approx(2 * SLOT_LENGTH_SECONDS / 86400)
+        assert result["basis"]["window_days"] == pytest.approx(2.0)
+        assert result["self_consumption_ratio"] == pytest.approx(2.0 / (2 * GENERATION_KWH))
 
-    def test_annual_generation_annualises_by_season(self, house):
+    def test_a_failure_gives_an_unavailable_result_instead_of_failing_the_run(self, grid):
         # Given
-        house.children[0].children[2].strategy.roi_inputs = PVStrategy(
-            annual_generation_kWh=7000
-        ).roi_inputs
         collector = RoiResultsCollector()
+        _record(collector, grid, FIRST_SLOT, {})
 
         # When
-        _record(collector, house, FIRST_SLOT, [])
+        with patch.object(RoiResultsCollector, "_slot_flows", side_effect=KeyError("boom")):
+            _record(collector, grid, SECOND_SLOT, {})
 
         # Then
-        basis = _only_result(collector)["basis"]
-        assert basis["annualisation_factor"] == pytest.approx(7000 / GENERATION_KWH)
-        assert basis["seasonally_unadjusted"] is False
+        assert _only_result(collector)["unavailable"] == "calculation_failed"
 
-    def test_range_brackets_the_central_case(self, house):
+    def test_price_basis_follows_whether_the_supplier_rate_varies(self, grid, monkeypatch):
         # Given
-        collector = RoiResultsCollector()
+        constant = RoiResultsCollector()
+        varying = RoiResultsCollector()
 
         # When
-        _record(
-            collector,
-            house,
-            FIRST_SLOT,
-            [
-                _trade("H1 PV", "H1 Load", energy=1.0),
-                _trade("H1 PV", "House 1", energy=1.0, price=10, buyer_origin="H2 Load"),
-            ],
-        )
+        _record(constant, grid, FIRST_SLOT, {})
+        _record(constant, grid, SECOND_SLOT, {})
+        monkeypatch.setattr(GlobalConfig, "market_maker_rate", {FIRST_SLOT: 20, SECOND_SLOT: 40})
+        _record(varying, grid, FIRST_SLOT, {})
+        _record(varying, grid, SECOND_SLOT, {})
 
         # Then
-        result = _only_result(collector)
-        assert result["range"]["low"]["npv"] < result["npv"] < result["range"]["high"]["npv"]
+        assert _only_result(constant)["basis"]["price_basis"] == "scalar"
+        assert _only_result(varying)["basis"]["price_basis"] == "profile"
 
-    def test_shared_pv_gets_a_result_per_member(self, community):
+    def test_shared_pv_without_a_baseline_gets_one_flagged_result(self, community):
         # Given
-        house_1, house_2, pv = community.children
-        pv.strategy.roi_inputs = PVStrategy(
-            ownership_member_uuids=[house_1.uuid, house_2.uuid], ownership_shares=[0.6, 0.4]
-        ).roi_inputs
-        collector = RoiResultsCollector()
-        trades = [
-            _trade("Community PV", "House 1", energy=1.0, buyer_origin="H1 Load"),
-            _trade("Community PV", "House 2", energy=0.5, buyer_origin="H2 Load"),
-            _trade("Community PV", "Grid", energy=1.0, price=10, buyer_origin="Market Maker"),
-        ]
-
-        # When
-        _record(collector, community, FIRST_SLOT, trades)
-
-        # Then
-        result = _only_result(collector)
-        member_1 = result["members"][house_1.uuid]
-        expected_inputs = RoiInputs(
-            capacity_kwp=5,
-            capital_cost_per_kwp=1300,
-            ownership_share=0.6,
-            avoided_purchase=1.0 * SUPPLIER_RATE / 100,
-            sales_revenue=0.6 * 10 / 100,
-            window_generation_kwh=GENERATION_KWH,
-            window_days=SLOT_LENGTH_SECONDS / 86400,
-            benefit_is_apportioned=True,
-        )
-        expected = serialize_result(calculate_roi(expected_inputs, DEFAULT_PARAMETER_SET))
-        assert member_1["cash_flow"] == pytest.approx(expected["cash_flow"])
-        assert member_1["basis"]["member_name"] == "House 1"
-        assert result["basis"]["ownership_share"] == 1.0
-
-    def test_shares_that_do_not_sum_to_one_withhold_member_results(self, community):
-        # Given
-        house_1, house_2, pv = community.children
-        pv.strategy.roi_inputs = PVStrategy(
-            ownership_member_uuids=[house_1.uuid, house_2.uuid], ownership_shares=[0.6, 0.3]
-        ).roi_inputs
         collector = RoiResultsCollector()
 
         # When
-        _record(collector, community, FIRST_SLOT, [])
+        _record(collector, community, FIRST_SLOT, _community_trades())
 
         # Then
         result = _only_result(collector)
         assert "members" not in result
-        assert "member_results_withheld" in result["basis"]["flags"]
-
-    def test_sale_to_a_same_named_load_in_another_house_is_revenue(self):
-        # Given
-        pv = _pv("H1 PV")
-        grid = Area(
-            "Grid",
-            uuid="Grid",
-            children=[
-                Area(
-                    "House 1",
-                    uuid="House 1",
-                    children=[Area("Load", uuid="h1-load", strategy=LoadHoursStrategy(1)), pv],
-                ),
-                Area(
-                    "House 2",
-                    uuid="House 2",
-                    children=[Area("Load", uuid="h2-load", strategy=LoadHoursStrategy(1))],
-                ),
-            ],
-        )
-        collector = RoiResultsCollector()
-
-        # When
-        _record(
-            collector,
-            grid,
-            FIRST_SLOT,
-            [
-                _trade(
-                    "H1 PV",
-                    "House 1",
-                    energy=1.0,
-                    price=10,
-                    buyer_origin="h2-load",
-                    buyer_origin_name="Load",
-                )
-            ],
-        )
-
-        # Then
-        result = _only_result(collector)
-        assert result["self_consumption_ratio"] == 0
+        assert "shared_asset_estimate" in result["basis"]["flags"]
+        assert result["basis"]["baseline_method"] == "analytical"
 
     def test_wind_turbines_get_no_pv_result(self):
         # Given
@@ -319,29 +270,113 @@ class TestRoiResultsCollector:
         collector = RoiResultsCollector()
 
         # When
-        _record(collector, grid, FIRST_SLOT, [])
+        _record(collector, grid, FIRST_SLOT, {})
 
         # Then
-        assert collector.results(SLOT_LENGTH_SECONDS) == {}
+        assert collector.results(DAY_SECONDS) == {}
 
-    def test_capacity_counts_every_panel(self, house):
+    def test_capacity_counts_every_panel(self, grid):
         # Given
-        pv = house.children[0].children[2]
+        pv = grid.children[0].children[4]
         pv.strategy._energy_params.panel_count = 4  # pylint: disable=protected-access
         collector = RoiResultsCollector()
 
         # When
-        _record(collector, house, FIRST_SLOT, [])
+        _record(collector, grid, FIRST_SLOT, {})
 
         # Then
         assert _only_result(collector)["basis"]["capacity_kWp"] == 20
 
-    def test_profile_pv_takes_its_capacity_from_its_arguments(self):
-        # Given / When
-        strategy = PVUserProfileStrategy(power_profile={0: 0}, capacity_kW=3.5)
+
+class TestTwoRunMethod:
+
+    def test_shared_pv_is_appraised_against_the_baseline_bills(self, community):
+        # Given
+        collector = RoiResultsCollector(_baseline())
+
+        # When
+        _record(collector, community, FIRST_SLOT, _community_trades())
 
         # Then
-        assert strategy.roi_inputs.capacity_kWp == 3.5
+        result = _only_result(collector)
+        community_benefit = (0.5 - 0.2) + (0.3 - 0.1) + (0 + 0.3)
+        assert result["basis"]["baseline_method"] == "simulation"
+        assert result["cash_flow"] == pytest.approx(
+            _expected_cash_flow(avoided_purchase=community_benefit)
+        )
+        assert result["members"]["House 1"]["cash_flow"] == pytest.approx(
+            _expected_cash_flow(
+                avoided_purchase=0.5 - 0.2, ownership_share=0.6, benefit_is_apportioned=True
+            )
+        )
+        assert result["members"]["House 2"]["basis"]["ownership_share"] == 0.4
+
+    def test_a_member_missing_from_the_area_withholds_member_results(self, community):
+        # Given
+        community.children[2].strategy.roi_inputs = PVStrategy(
+            ownership_shares={"House 1": 0.6, "House 9": 0.4}
+        ).roi_inputs
+        collector = RoiResultsCollector(_baseline())
+
+        # When
+        _record(collector, community, FIRST_SLOT, _community_trades())
+
+        # Then
+        result = _only_result(collector)
+        assert "members" not in result
+        assert "member_results_withheld" in result["basis"]["flags"]
+
+    def test_a_different_supplier_rate_stops_the_run(self, community):
+        # Given
+        baseline = _baseline(supplier_rates={str(FIRST_SLOT): SUPPLIER_RATE + 1})
+        collector = RoiResultsCollector(baseline)
+
+        # When / Then
+        with pytest.raises(RoiBaselineError, match="supplier rate"):
+            _record(collector, community, FIRST_SLOT, {})
+
+    def test_baseline_export_holds_bills_by_name_path(self, community):
+        # Given
+        collector = RoiResultsCollector()
+
+        # When
+        _record(collector, community, FIRST_SLOT, _community_trades())
+
+        # Then
+        export = collector.baseline_export({"seed": 7})
+        assert export["area_bills"]["Community/House 1"] == pytest.approx(0.2)
+        assert export["area_bills"]["Community/Community PV"] == pytest.approx(-0.3)
+        assert export["supplier_rates"] == {str(FIRST_SLOT): SUPPLIER_RATE}
+
+
+class TestPVRoiInputs:
+
+    @pytest.mark.parametrize(
+        "arguments",
+        [
+            {"capital_cost_per_kwp": 0},
+            {"capital_cost_per_kwp": -100},
+            {"annual_generation_kWh": -1},
+            {"ownership_shares": {"House 1": 0.6, "House 2": 0.3}},
+            {"ownership_shares": {"House 1": 1.5}},
+        ],
+    )
+    def test_invalid_inputs_stop_the_pv_from_being_built(self, arguments):
+        # When / Then
+        with pytest.raises(GSyDeviceException):
+            PVStrategy(**arguments)
+
+    def test_profile_pv_keeps_its_capacity_through_serialisation(self):
+        # Given
+        strategy = PVUserProfileStrategy(power_profile={8: 100}, capacity_kW=3.5)
+
+        # When
+        restored = PVUserProfileStrategy(
+            power_profile={8: 100}, capacity_kW=strategy.serialize()["capacity_kW"]
+        )
+
+        # Then
+        assert restored.roi_inputs.capacity_kWp == 3.5
 
 
 @pytest.mark.parametrize(
@@ -364,12 +399,11 @@ def test_every_pv_strategy_accepts_the_roi_inputs(strategy_class):
     strategy = strategy_class(
         capital_cost_per_kwp=1200,
         annual_generation_kWh=5000,
-        ownership_member_uuids=["member"],
-        ownership_shares=[1.0],
+        ownership_shares={"House 1": 1.0},
         **profile,
     )
 
     # Then
     assert strategy.roi_inputs.capital_cost_per_kwp == 1200
     assert strategy.roi_inputs.annual_generation_kWh == 5000
-    assert strategy.roi_inputs.ownership_shares == (1.0,)
+    assert strategy.roi_inputs.ownership_shares == {"House 1": 1.0}

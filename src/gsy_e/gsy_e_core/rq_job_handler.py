@@ -65,6 +65,10 @@ def launch_simulation_from_rq_job(
         scenario_name = "json_arg"
 
         kwargs = {"no_export": True, "seed": settings.get("random_seed", 0)}
+        if settings.get("roi_comparable"):
+            kwargs["roi_comparable"] = True
+        if settings.get("roi_baseline") is not None:
+            kwargs["roi_baseline"] = settings["roi_baseline"]
 
         if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value:
             kwargs.update({"scm_properties": scm_properties})

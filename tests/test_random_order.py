@@ -16,11 +16,14 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from types import SimpleNamespace
+
 import pytest
 from numpy import random
 
 import gsy_e.constants
 from gsy_e.models import random_order
+from gsy_e.models.market import _listener_key
 
 NAMES = [f"asset {index}" for index in range(12)]
 
@@ -75,3 +78,31 @@ def test_item_hash_order_changes_with_the_seed_and_the_salt():
 @pytest.mark.usefixtures("item_hash_order")
 def test_item_hash_choice_is_the_first_of_the_order():
     assert random_order.choice(NAMES, salt=lambda: "salt", key=str) == _order(NAMES)[0]
+
+
+@pytest.mark.usefixtures("item_hash_order")
+def test_market_listener_order_is_stable_when_one_listener_goes():
+    # Given
+    dispatchers = [
+        SimpleNamespace(area=SimpleNamespace(name=f"House {index}")) for index in range(6)
+    ]
+    listeners = [_bound_listener(dispatcher) for dispatcher in dispatchers]
+
+    # When
+    full = random_order.shuffled(listeners, salt=lambda: "market", key=_listener_key)
+    without_one = random_order.shuffled(
+        listeners[:2] + listeners[3:], salt=lambda: "market", key=_listener_key
+    )
+
+    # Then
+    assert without_one == [listener for listener in full if listener is not listeners[2]]
+
+
+def _bound_listener(dispatcher):
+    class _Dispatcher:
+        area = dispatcher.area
+
+        def broadcast_notification(self, *_):
+            pass
+
+    return _Dispatcher().broadcast_notification

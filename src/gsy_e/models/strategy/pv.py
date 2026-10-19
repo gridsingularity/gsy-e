@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import traceback
 from logging import getLogger
-from typing import List
+from typing import Dict
 
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import TraderDetails
@@ -60,8 +60,7 @@ class PVStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         use_market_maker_rate: bool = False,
         capital_cost_per_kwp: float = None,
         annual_generation_kWh: float = None,
-        ownership_member_uuids: List[str] = None,
-        ownership_shares: List[float] = None,
+        ownership_shares: Dict[str, float] = None,
     ):
         """
         Args:
@@ -75,15 +74,14 @@ class PVStrategy(BidEnabledStrategy, UseMarketMakerMixin):
              capital_cost_per_kwp: Installed cost per kWp, used only by the RoI results
              annual_generation_kWh: Modelled generation over a full year, which lets the RoI
                  results annualise a short run by season rather than by days
-             ownership_member_uuids: Member areas that co-own the PV, for the RoI results
-             ownership_shares: Share of each member in ownership_member_uuids
+             ownership_shares: Share of each co-owning member area, keyed by its name, for the
+                 RoI results
         """
         super().__init__()
-        self.roi_inputs = PVRoiInputs.from_arguments(
-            capital_cost_per_kwp,
-            annual_generation_kWh,
-            ownership_member_uuids=ownership_member_uuids,
-            ownership_shares=ownership_shares,
+        self.roi_inputs = PVRoiInputs(
+            capital_cost_per_kwp=capital_cost_per_kwp,
+            annual_generation_kWh=annual_generation_kWh,
+            ownership_shares=dict(ownership_shares or {}),
         )
         self._energy_params = PVEnergyParameters(panel_count, capacity_kW)
         self.use_market_maker_rate = use_market_maker_rate
