@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import hashlib
 import json
 import logging
 from dataclasses import dataclass, field, fields, replace
@@ -81,6 +82,22 @@ def all_areas(area: "Area") -> Iterator["Area"]:
         yield from all_areas(child)
 
 
+def _with_text_keys(value):
+    if isinstance(value, dict):
+        return {str(key): _with_text_keys(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_with_text_keys(item) for item in value]
+    return value
+
+
+def settings_digest(area: "Area") -> Optional[str]:
+    """Return a hash of the asset settings, which stays short however long its profiles are."""
+    if area.strategy is None:
+        return None
+    settings = json.dumps(_with_text_keys(area.strategy.serialize()), sort_keys=True, default=str)
+    return hashlib.sha256(settings.encode()).hexdigest()
+
+
 def run_fingerprint(root_area: "Area", seed: int) -> Dict:
     """Return the properties that two runs must share for their bills to be comparable."""
     config = root_area.config
@@ -99,6 +116,7 @@ def run_fingerprint(root_area: "Area", seed: int) -> Dict:
                 "type": type(area.strategy).__name__ if area.strategy else "Area",
                 "grid_fee_constant": area.grid_fee_constant,
                 "grid_fee_percentage": area.grid_fee_percentage,
+                "settings": settings_digest(area),
             }
             for area in all_areas(root_area)
         },
@@ -149,11 +167,14 @@ def validate_fingerprint(
     )
     if not removed:
         problems.append("the baseline has every area of this run, so no shared PV was removed")
-    problems.extend(
-        f"{path} differs between the runs: {baseline_areas[path]} against {areas[path]}"
-        for path in sorted(set(areas) & set(baseline_areas))
-        if baseline_areas[path] != areas[path]
-    )
+    for path in sorted(set(areas) & set(baseline_areas)):
+        differing = sorted(
+            key
+            for key in set(areas[path]) | set(baseline_areas[path])
+            if areas[path].get(key) != baseline_areas[path].get(key)
+        )
+        if differing:
+            problems.append(f"{path} differs between the two runs in {', '.join(differing)}")
     return problems
 
 
@@ -330,10 +351,14 @@ class RoiResultsCollector:
         if pv.uuid not in self._records:
             owner = pv.parent
             shares = pv.strategy.ownership_shares
-            member_paths = {
-                area.name: name_path(area)
+            candidates = [
+                area
                 for area in all_areas(owner)
                 if area is not owner and area.children and area.name in shares
+            ]
+            names = [area.name for area in candidates]
+            member_paths = {
+                area.name: name_path(area) for area in candidates if names.count(area.name) == 1
             }
             capacity = _capacity_kWp(pv.strategy)
             record = _PVRecord(

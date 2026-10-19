@@ -325,6 +325,19 @@ class TestTwoRunMethod:
         assert "members" not in result
         assert "member_results_withheld" in result["basis"]["flags"]
 
+    def test_a_member_name_used_twice_withholds_member_results(self, community):
+        # Given
+        community.children[1].children.append(Area("House 1", children=[Area("Inner Load")]))
+        collector = RoiResultsCollector(_baseline())
+
+        # When
+        _record(collector, community, FIRST_SLOT, _community_trades())
+
+        # Then
+        result = _only_result(collector)
+        assert "members" not in result
+        assert "member_results_withheld" in result["basis"]["flags"]
+
     def test_a_different_supplier_rate_stops_the_run(self, community):
         # Given
         baseline = _baseline(supplier_rates={str(FIRST_SLOT): SUPPLIER_RATE + 1})

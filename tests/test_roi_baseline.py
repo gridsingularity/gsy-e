@@ -97,6 +97,17 @@ class TestValidateFingerprint:
             "Community/House 1/H1 Load is missing from the baseline but is not a shared PV"
         ]
 
+    def test_a_changed_asset_setting_is_listed(self, community):
+        # Given
+        baseline = _baseline_of(community)
+        community.children[0].children[0].strategy = LoadHoursStrategy(2)
+
+        # When
+        problems = validate_fingerprint(baseline, run_fingerprint(community, 7), {SHARED_PV})
+
+        # Then
+        assert problems == ["Community/House 1/H1 Load differs between the two runs in settings"]
+
     def test_a_baseline_with_every_area_removes_no_shared_pv(self, community):
         # Given
         fingerprint = run_fingerprint(community, 7)
@@ -133,4 +144,11 @@ def test_an_invalid_baseline_stops_the_run_before_its_first_slot(community):
 
     # When / Then
     with pytest.raises(RoiBaselineError, match="seed"):
-        SimulationEndpointBuffer("job", 7, community, False, roi_baseline=baseline)
+        SimulationEndpointBuffer(
+            "job",
+            7,
+            community,
+            False,
+            roi_baseline=baseline,
+            roi_fingerprint=run_fingerprint(community, 7),
+        )

@@ -39,7 +39,6 @@ from gsy_e.gsy_e_core.sim_results.roi_results_collector import (
     RoiBaselineError,
     RoiResultsCollector,
     load_baseline,
-    run_fingerprint,
     validate_fingerprint,
 )
 from gsy_e.gsy_e_core.util import (
@@ -91,7 +90,15 @@ class SimulationEndpointBuffer:
     """Handles collecting and buffering of all results for all areas."""
 
     # pylint: disable=too-many-arguments, too-many-positional-arguments
-    def __init__(self, job_id, random_seed, area, should_export_plots, roi_baseline=None):
+    def __init__(
+        self,
+        job_id,
+        random_seed,
+        area,
+        should_export_plots,
+        roi_baseline=None,
+        roi_fingerprint: Dict = None,
+    ):
         self.job_id = job_id
         self.result_area_uuids = set()
         self.spot_market_time_slot_str = ""
@@ -110,8 +117,9 @@ class SimulationEndpointBuffer:
         }
 
         self.results_handler = self._create_results_handler(should_export_plots)
+        self._roi_fingerprint = roi_fingerprint
         self.roi_results_collector = self._create_roi_results_collector(
-            area, random_seed, roi_baseline
+            area, roi_fingerprint, roi_baseline
         )
         self.roi_results: Dict = {}
         self.roi_baseline: Dict = {}
@@ -172,9 +180,7 @@ class SimulationEndpointBuffer:
         self.roi_results_collector.update(area)
         if simulation_status == "finished":
             self.roi_results = self.roi_results_collector.results(area.config.slot_length)
-            self.roi_baseline = self.roi_results_collector.baseline_export(
-                run_fingerprint(area, self.random_seed)
-            )
+            self.roi_baseline = self.roi_results_collector.baseline_export(self._roi_fingerprint)
         self.simulation_progress = {
             "eta_seconds": progress_info.eta.seconds if progress_info.eta else None,
             "elapsed_time_seconds": progress_info.elapsed_time.seconds,
@@ -201,15 +207,13 @@ class SimulationEndpointBuffer:
 
     @staticmethod
     def _create_roi_results_collector(
-        area: "AreaBase", random_seed, roi_baseline
+        area: "AreaBase", fingerprint: Dict, roi_baseline
     ) -> RoiResultsCollector:
         if roi_baseline is None:
             return RoiResultsCollector()
         baseline = load_baseline(roi_baseline)
         collector = RoiResultsCollector(baseline)
-        problems = validate_fingerprint(
-            baseline, run_fingerprint(area, random_seed), collector.shared_pv_paths(area)
-        )
+        problems = validate_fingerprint(baseline, fingerprint, collector.shared_pv_paths(area))
         if problems:
             raise RoiBaselineError(problems)
         return collector
