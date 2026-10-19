@@ -17,6 +17,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import json
+from math import isclose
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, Iterable, Iterator, List, Union
 
@@ -29,7 +30,6 @@ if TYPE_CHECKING:
     from gsy_e.models.area import Area
 
 BASELINE_FILE_NAME = "roi_baseline.json"
-RATE_TOLERANCE = 1e-9
 
 
 class RoiBaselineError(GSyException):
@@ -135,7 +135,7 @@ def validate_fingerprint(
 def validate_supplier_rate(baseline: Dict, time_slot: str, rate: float) -> None:
     """Raise when the supplier rate of a slot differs from the baseline run."""
     baseline_rate = baseline.get("supplier_rates", {}).get(time_slot)
-    if baseline_rate is not None and abs(baseline_rate - rate) > RATE_TOLERANCE:
+    if baseline_rate is not None and not isclose(baseline_rate, rate):
         raise RoiBaselineError(
             [
                 f"the supplier rate at {time_slot} is {baseline_rate} in the baseline "

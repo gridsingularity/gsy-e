@@ -171,9 +171,7 @@ class SimulationEndpointBuffer:
         self._populate_core_stats_and_sim_state(area)
         self.roi_results_collector.update(area)
         if simulation_status == "finished":
-            self.roi_results = self.roi_results_collector.results(
-                area.config.slot_length.total_seconds()
-            )
+            self.roi_results = self.roi_results_collector.results(area.config.slot_length)
             self.roi_baseline = self.roi_results_collector.baseline_export(
                 run_fingerprint(area, self.random_seed)
             )

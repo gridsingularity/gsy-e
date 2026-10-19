@@ -26,7 +26,7 @@ from gsy_framework.sim_results.roi.appraisal import calculate_roi
 from gsy_framework.sim_results.roi.data_classes import RoiInputs
 from gsy_framework.sim_results.roi.parameters import DEFAULT_PARAMETER_SET
 from gsy_framework.sim_results.roi.serialization import serialize_result
-from pendulum import datetime
+from pendulum import datetime, duration
 
 from gsy_e.gsy_e_core.sim_results.roi_baseline import RoiBaselineError
 from gsy_e.gsy_e_core.sim_results.roi_results_collector import RoiResultsCollector
@@ -48,7 +48,6 @@ FIRST_SLOT = datetime(2026, 6, 15, 12)
 SECOND_SLOT = datetime(2026, 6, 15, 12, 15)
 SUPPLIER_RATE = 30
 GENERATION_KWH = 2.0
-DAY_SECONDS = 86400
 
 
 class _AssetWithoutType:
@@ -174,7 +173,7 @@ def _baseline(**changes):
 
 
 def _only_result(collector):
-    return next(iter(collector.results(DAY_SECONDS).values()))
+    return next(iter(collector.results(duration(days=1)).values()))
 
 
 class TestOneRunMethod:
@@ -273,7 +272,7 @@ class TestOneRunMethod:
         _record(collector, grid, FIRST_SLOT, {})
 
         # Then
-        assert collector.results(DAY_SECONDS) == {}
+        assert collector.results(duration(days=1)) == {}
 
     def test_capacity_counts_every_panel(self, grid):
         # Given

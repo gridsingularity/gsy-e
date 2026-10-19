@@ -668,6 +668,4 @@ def test_roi_results_are_reported_only_once_the_run_has_finished(general_setup):
     assert "roi" not in running_report
     assert finished_report["roi"] == {"PV": {"npv": 1.0}}
     assert endpoint_buffer.generate_json_report()["roi"] == {"PV": {"npv": 1.0}}
-    endpoint_buffer.roi_results_collector.results.assert_called_once_with(
-        slot_length.total_seconds()
-    )
+    endpoint_buffer.roi_results_collector.results.assert_called_once_with(slot_length)

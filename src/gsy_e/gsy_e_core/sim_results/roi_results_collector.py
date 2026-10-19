@@ -23,13 +23,15 @@ from typing import TYPE_CHECKING, Dict, Iterator, List, Optional, Set
 from gsy_framework.sim_results.roi.appraisal import calculate_roi
 from gsy_framework.sim_results.roi.data_classes import RoiInputs
 from gsy_framework.sim_results.roi.parameters import (
+    ASSUMED_INPUTS,
     DEFAULT_CAPITAL_COST_PER_KWP,
     DEFAULT_PARAMETER_SET,
     DEFAULT_RANGE_LEVERS,
+    OBSERVED_INPUTS,
 )
 from gsy_framework.sim_results.roi.range import calculate_range
 from gsy_framework.sim_results.roi.serialization import serialize_result
-from pendulum import DateTime
+from pendulum import DateTime, Duration
 
 from gsy_e.gsy_e_core.sim_results.roi_baseline import (
     RoiBaselineError,
@@ -50,21 +52,6 @@ if TYPE_CHECKING:
     from gsy_e.models.area import Area
 
 log = logging.getLogger(__name__)
-
-CENTS_PER_CURRENCY_UNIT = 100
-CONSTANT_GRID_FEE_TYPE = 1
-SECONDS_PER_DAY = 86400
-
-ASSUMED_INPUTS = (
-    "operating_cost",
-    "degradation",
-    "retail_escalation",
-    "export_escalation",
-    "discount_rate",
-    "replacement_year",
-    "replacement_cost",
-)
-OBSERVED_INPUTS = ("ledger_flows", "generation", "self_consumption_ratio")
 
 
 @dataclass
@@ -217,10 +204,10 @@ class RoiResultsCollector:
             children = {child.uuid for child in area.children}
             for trade in area.spot_market.trades:
                 if trade.buyer.uuid in children:
-                    paid = trade.trade_price / CENTS_PER_CURRENCY_UNIT
+                    paid = trade.trade_price / 100.0
                     bills[trade.buyer.uuid] = bills.get(trade.buyer.uuid, 0.0) + paid
                 if trade.seller.uuid in children:
-                    earned = (trade.trade_price - trade.fee_price) / CENTS_PER_CURRENCY_UNIT
+                    earned = (trade.trade_price - trade.fee_price) / 100.0
                     bills[trade.seller.uuid] = bills.get(trade.seller.uuid, 0.0) - earned
         return bills
 
@@ -265,7 +252,7 @@ class RoiResultsCollector:
             record.flags.add("storage_capex_excluded")
         if any(_is_pv(leaf) for leaf in own_leaves.values()):
             record.flags.add("not_separable")
-        if owner.config.grid_fee_type != CONSTANT_GRID_FEE_TYPE:
+        if owner.config.grid_fee_type != 1:
             record.flags.add("percentage_grid_fees_excluded")
 
         flows = _Flows(
@@ -280,14 +267,10 @@ class RoiResultsCollector:
             if buyer is not None:
                 path_fee = buyer.parent.get_path_to_root_fees()
                 flows.own_use_kWh += trade.traded_energy
-                flows.avoided_purchase += (
-                    trade.traded_energy * (supplier_rate + path_fee) / CENTS_PER_CURRENCY_UNIT
-                )
+                flows.avoided_purchase += trade.traded_energy * (supplier_rate + path_fee) / 100.0
             else:
                 flows.sold_kWh += trade.traded_energy
-                flows.sales_revenue += (
-                    trade.trade_price - trade.fee_price
-                ) / CENTS_PER_CURRENCY_UNIT
+                flows.sales_revenue += (trade.trade_price - trade.fee_price) / 100.0
         return flows
 
     def _bills_by_path(self) -> Dict[str, float]:
@@ -312,9 +295,9 @@ class RoiResultsCollector:
             "supplier_rates": dict(self._supplier_rates),
         }
 
-    def results(self, slot_length_seconds: float) -> Dict:
+    def results(self, slot_length: Duration) -> Dict:
         """Return the serialised RoI result of every PV, keyed by its uuid."""
-        window_days = (self._completed_slots + 1) * slot_length_seconds / SECONDS_PER_DAY
+        window_days = ((self._completed_slots + 1) * slot_length).total_days()
         baseline_paths = (
             set(self._baseline["fingerprint"]["areas"]) if self._baseline is not None else None
         )
