@@ -464,14 +464,14 @@ class RoiResultsCollector:
         strategy = record.strategy
         flows = record.total
         inputs = RoiInputs(
-            capacity_kwp=record.capacity_kWp or 0.0,
-            capital_cost_per_kwp=strategy.capital_cost_per_kwp or DEFAULT_CAPITAL_COST_PER_KWP,
+            capacity_kWp=record.capacity_kWp or 0.0,
+            capital_cost_per_kWp=strategy.capital_cost_per_kWp or DEFAULT_CAPITAL_COST_PER_KWP,
             ownership_share=1.0,
             avoided_purchase=flows.avoided_purchase,
             sales_revenue=flows.sales_revenue,
-            window_generation_kwh=flows.generation_kWh,
+            window_generation_kWh=flows.generation_kWh,
             window_days=window_days,
-            annual_generation_kwh=strategy.annual_generation_kWh,
+            annual_generation_kWh=strategy.annual_generation_kWh,
         )
         flags = set(record.flags)
         if uses_baseline:
@@ -522,8 +522,8 @@ class RoiResultsCollector:
     def _appraise(inputs: RoiInputs, own_use_kWh: float, sold_kWh: float) -> Dict:
         result = serialize_result(calculate_roi(inputs, DEFAULT_PARAMETER_SET))
         result["self_consumption_ratio"] = (
-            own_use_kWh / inputs.window_generation_kwh
-            if inputs.window_generation_kwh > 0
+            own_use_kWh / inputs.window_generation_kWh
+            if inputs.window_generation_kWh > 0
             else None
         )
         if result["unavailable"] is None:
@@ -538,7 +538,7 @@ class RoiResultsCollector:
     ) -> Dict:
         assumed: List[str] = list(ASSUMED_INPUTS)
         observed: List[str] = list(OBSERVED_INPUTS)
-        if record.strategy.capital_cost_per_kwp is None:
+        if record.strategy.capital_cost_per_kWp is None:
             assumed.append("capital_cost")
         (assumed if record.capacity_assumed else observed).append("capacity")
         rates = set(self._supplier_rates.values())
@@ -550,9 +550,9 @@ class RoiResultsCollector:
             "window_days": inputs.window_days,
             "window_is_metered": False,
             "ownership_share": inputs.ownership_share,
-            "capacity_kWp": inputs.capacity_kwp,
-            "capital_cost_per_kwp": inputs.capital_cost_per_kwp,
-            "annual_generation_kWh": inputs.annual_generation_kwh,
+            "capacity_kWp": inputs.capacity_kWp,
+            "capital_cost_per_kWp": inputs.capital_cost_per_kWp,
+            "annual_generation_kWh": inputs.annual_generation_kWh,
             "asset_name": record.name,
             "owner_name": record.owner_name,
             "last_realised_year": None,

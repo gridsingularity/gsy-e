@@ -93,12 +93,12 @@ def _record(collector, root, time_slot, trades_by_area):
 
 def _expected_cash_flow(**changes):
     inputs = {
-        "capacity_kwp": 5,
-        "capital_cost_per_kwp": 1300,
+        "capacity_kWp": 5,
+        "capital_cost_per_kWp": 1300,
         "ownership_share": 1.0,
         "avoided_purchase": 0.0,
         "sales_revenue": 0.0,
-        "window_generation_kwh": GENERATION_KWH,
+        "window_generation_kWh": GENERATION_KWH,
         "window_days": 1.0,
         **changes,
     }
@@ -121,7 +121,7 @@ def fixture_grid():
             Area("H1 Battery", uuid="H1 Battery", strategy=StorageStrategy()),
             Area("H1 EV", uuid="H1 EV", strategy=EVChargerStrategy()),
             Area("H1 Heat Pump", uuid="H1 Heat Pump", strategy=_AssetWithoutType()),
-            _pv("H1 PV", capital_cost_per_kwp=1200),
+            _pv("H1 PV", capital_cost_per_kWp=1200),
         ],
         grid_fee_constant=2,
     )
@@ -199,7 +199,7 @@ class TestOneRunMethod:
         result = _only_result(collector)
         assert result["cash_flow"] == pytest.approx(
             _expected_cash_flow(
-                capital_cost_per_kwp=1200,
+                capital_cost_per_kWp=1200,
                 avoided_purchase=2.5 * (SUPPLIER_RATE + 3) / 100,
                 sales_revenue=(10 - 1) / 100,
             )
@@ -366,8 +366,8 @@ class TestPVRoiArguments:
     @pytest.mark.parametrize(
         "arguments",
         [
-            {"capital_cost_per_kwp": 0},
-            {"capital_cost_per_kwp": -100},
+            {"capital_cost_per_kWp": 0},
+            {"capital_cost_per_kWp": -100},
             {"annual_generation_kWh": -1},
             {"ownership_shares": {"House 1": 0.6, "House 2": 0.3}},
             {"ownership_shares": {"House 1": 1.5}},
@@ -409,13 +409,13 @@ def test_every_pv_strategy_accepts_the_roi_inputs(strategy_class):
 
     # When
     strategy = strategy_class(
-        capital_cost_per_kwp=1200,
+        capital_cost_per_kWp=1200,
         annual_generation_kWh=5000,
         ownership_shares={"House 1": 1.0},
         **profile,
     )
 
     # Then
-    assert strategy.capital_cost_per_kwp == 1200
+    assert strategy.capital_cost_per_kWp == 1200
     assert strategy.annual_generation_kWh == 5000
     assert strategy.ownership_shares == {"House 1": 1.0}

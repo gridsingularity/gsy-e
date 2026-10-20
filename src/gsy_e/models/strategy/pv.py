@@ -57,7 +57,7 @@ class PVStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         energy_rate_decrease_per_update=None,
         capacity_kW: float = None,
         use_market_maker_rate: bool = False,
-        capital_cost_per_kwp: float = None,
+        capital_cost_per_kWp: float = None,
         annual_generation_kWh: float = None,
         ownership_shares: Dict[str, float] = None,
     ):
@@ -70,7 +70,7 @@ class PVStrategy(BidEnabledStrategy, UseMarketMakerMixin):
              update_interval: Interval after which PV will update its offer
              energy_rate_decrease_per_update: Slope of PV Offer change per update
              capacity_kW: power rating of the predefined profiles
-             capital_cost_per_kwp: Installed cost per kWp, used only by the RoI results
+             capital_cost_per_kWp: Installed cost per kWp, used only by the RoI results
              annual_generation_kWh: Modelled generation over a full year, which lets the RoI
                  results annualise a short run by season rather than by days
              ownership_shares: Share of each co-owning member area, keyed by its name, for the
@@ -78,11 +78,11 @@ class PVStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         """
         super().__init__()
         PVValidator.validate_roi(
-            capital_cost_per_kwp=capital_cost_per_kwp,
+            capital_cost_per_kWp=capital_cost_per_kWp,
             annual_generation_kWh=annual_generation_kWh,
             ownership_shares=ownership_shares,
         )
-        self.capital_cost_per_kwp = capital_cost_per_kwp
+        self.capital_cost_per_kWp = capital_cost_per_kWp
         self.annual_generation_kWh = annual_generation_kWh
         self.ownership_shares = dict(ownership_shares or {})
         self._energy_params = PVEnergyParameters(panel_count, capacity_kW)
@@ -102,7 +102,7 @@ class PVStrategy(BidEnabledStrategy, UseMarketMakerMixin):
             **self._energy_params.serialize(),
             **self.offer_update.serialize(),
             "use_market_maker_rate": self.use_market_maker_rate,
-            "capital_cost_per_kwp": self.capital_cost_per_kwp,
+            "capital_cost_per_kWp": self.capital_cost_per_kWp,
             "annual_generation_kWh": self.annual_generation_kWh,
             "ownership_shares": dict(self.ownership_shares),
         }
