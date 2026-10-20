@@ -27,7 +27,14 @@ from typing import TYPE_CHECKING, Dict, Iterable, Iterator, List, Optional, Set,
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.exceptions import GSyException
 from gsy_framework.sim_results.roi.appraisal import calculate_roi
-from gsy_framework.sim_results.roi.data_classes import RoiInputs
+from gsy_framework.sim_results.roi.data_classes import (
+    AllocationBasis,
+    BaselineMethod,
+    PriceBasis,
+    RoiFlag,
+    RoiInputs,
+    SuppressionCause,
+)
 from gsy_framework.sim_results.roi.parameters import (
     ASSUMED_INPUTS,
     DEFAULT_CAPITAL_COST_PER_KWP,
@@ -217,7 +224,7 @@ class _PVRecord:
     strategy: PVStrategy
     member_paths: Dict[str, str]
     community_paths: Set[str]
-    flags: Set[str] = field(default_factory=set)
+    flags: Set[RoiFlag] = field(default_factory=set)
     done: _Flows = field(default_factory=_Flows)
     slot: _Flows = field(default_factory=_Flows)
 
@@ -380,7 +387,7 @@ class RoiResultsCollector:
                 },
             )
             if set(member_paths) != set(shares):
-                record.flags.add("member_results_withheld")
+                record.flags.add(RoiFlag.MEMBER_RESULTS_WITHHELD)
             self._records[pv.uuid] = record
         return self._records[pv.uuid]
 
@@ -389,11 +396,11 @@ class RoiResultsCollector:
         owner = pv.parent
         own_leaves = {leaf.uuid: leaf for leaf in _leaves(owner) if leaf.uuid != pv.uuid}
         if any(_is_battery(leaf) for leaf in own_leaves.values()):
-            record.flags.add("storage_capex_excluded")
+            record.flags.add(RoiFlag.STORAGE_CAPEX_EXCLUDED)
         if any(_is_pv(leaf) for leaf in own_leaves.values()):
-            record.flags.add("not_separable")
+            record.flags.add(RoiFlag.NOT_SEPARABLE)
         if owner.config.grid_fee_type != 1:
-            record.flags.add("percentage_grid_fees_excluded")
+            record.flags.add(RoiFlag.PERCENTAGE_GRID_FEES_EXCLUDED)
 
         flows = _Flows(
             generation_kWh=pv.strategy.state.get_energy_production_forecast_kWh(
@@ -455,7 +462,10 @@ class RoiResultsCollector:
                 results[uuid] = self._pv_result(record, window_days, uses_baseline, bills)
             except Exception as ex:  # pylint: disable=broad-except
                 log.exception("RoI appraisal of %s failed.", record.name)
-                results[uuid] = {"unavailable": "calculation_failed", "error": str(ex)}
+                results[uuid] = {
+                    "unavailable": SuppressionCause.CALCULATION_FAILED.value,
+                    "error": str(ex),
+                }
         return results
 
     def _pv_result(
@@ -482,12 +492,12 @@ class RoiResultsCollector:
             )
             inputs = replace(inputs, avoided_purchase=community_benefit - flows.sales_revenue)
         elif strategy.ownership_shares:
-            flags.add("shared_asset_estimate")
+            flags.add(RoiFlag.SHARED_ASSET_ESTIMATE)
 
         basis = self._basis(record, inputs, flags, uses_baseline)
         result = self._appraise(inputs, flows.own_use_kWh, flows.sold_kWh)
         result["basis"].update(basis)
-        if uses_baseline and "member_results_withheld" not in flags:
+        if uses_baseline and RoiFlag.MEMBER_RESULTS_WITHHELD not in flags:
             result["members"] = {
                 name: self._member_result(record, inputs, flows, basis, bills, name, share)
                 for name, share in strategy.ownership_shares.items()
@@ -534,7 +544,7 @@ class RoiResultsCollector:
         return result
 
     def _basis(
-        self, record: _PVRecord, inputs: RoiInputs, flags: Set[str], uses_baseline: bool
+        self, record: _PVRecord, inputs: RoiInputs, flags: Set[RoiFlag], uses_baseline: bool
     ) -> Dict:
         assumed: List[str] = list(ASSUMED_INPUTS)
         observed: List[str] = list(OBSERVED_INPUTS)
@@ -543,9 +553,11 @@ class RoiResultsCollector:
         (assumed if record.capacity_assumed else observed).append("capacity")
         rates = set(self._supplier_rates.values())
         return {
-            "baseline_method": "simulation" if uses_baseline else "analytical",
-            "allocation_basis": "market_clearing",
-            "price_basis": "profile" if len(rates) > 1 else "scalar",
+            "baseline_method": (
+                BaselineMethod.SIMULATION if uses_baseline else BaselineMethod.ANALYTICAL
+            ).value,
+            "allocation_basis": AllocationBasis.MARKET_CLEARING.value,
+            "price_basis": (PriceBasis.PROFILE if len(rates) > 1 else PriceBasis.SCALAR).value,
             "window_start": min(self._supplier_rates) if self._supplier_rates else None,
             "window_days": inputs.window_days,
             "window_is_metered": False,
@@ -558,5 +570,5 @@ class RoiResultsCollector:
             "last_realised_year": None,
             "inputs_observed": observed,
             "inputs_assumed": assumed,
-            "flags": sorted(flags),
+            "flags": sorted(flag.value for flag in flags),
         }
