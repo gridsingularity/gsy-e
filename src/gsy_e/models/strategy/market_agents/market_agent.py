@@ -16,10 +16,12 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from enum import Enum
 from typing import Optional, TYPE_CHECKING
 
 from gsy_framework.constants_limits import ConstSettings, TIME_FORMAT
-from numpy.random import random
+
+from gsy_e.models import random_order
 from gsy_e.models.strategy import BaseStrategy, _TradeLookerUpper
 
 if TYPE_CHECKING:
@@ -65,6 +67,19 @@ class MarketAgent(BaseStrategy):
     def _create_engines(self):
         """Base method for creating the engines"""
 
+    def _engines_in_random_order(self, event: Optional[Enum] = None) -> list:
+        """Return the engines shuffled for this event and tick.
+
+        With --random-order hash, each engine is ranked by a hash of its name, so two setups
+        that differ by one area don't drift apart in how they trade. A run without that area
+        keeps the same sequence everywhere else.
+        """
+        return random_order.shuffled(
+            self.engines,
+            salt=lambda: f"{self.name}|{self.time_slot_str}|{event}|{self.owner.current_tick}",
+            key=lambda engine: engine.name,
+        )
+
     @property
     def time_slot_str(self) -> Optional[str]:
         """Return time_slot of the inter area agent. For future markets it is None."""
@@ -84,7 +99,7 @@ class MarketAgent(BaseStrategy):
             min_offer_age = kwargs["min_offer_age"]
             self._validate_constructor_arguments(min_offer_age)
             self.min_offer_age = min_offer_age
-            for engine in sorted(self.engines, key=lambda _: random()):
+            for engine in self._engines_in_random_order():
                 engine.min_offer_age = min_offer_age
 
     @property

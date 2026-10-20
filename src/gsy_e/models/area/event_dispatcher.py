@@ -21,7 +21,6 @@ from typing import Union, Dict, TYPE_CHECKING, Optional
 
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.enums import AvailableMarketTypes
-from numpy.random import random
 from pendulum import DateTime
 
 from gsy_e.events.event_structures import MarketEvent, AreaEvent
@@ -37,6 +36,7 @@ from gsy_e.models.area.redis_dispatcher.market_event_dispatcher import (
 from gsy_e.models.area.redis_dispatcher.market_notify_event_subscriber import (
     MarketNotifyEventSubscriber,
 )
+from gsy_e.models import random_order
 from gsy_e.models.market import MarketBase
 from gsy_e.models.strategy.market_agents.balancing_agent import BalancingAgent
 from gsy_e.models.strategy.market_agents.future_agent import FutureAgent
@@ -150,7 +150,11 @@ class AreaDispatcher:
         if not self.area.events.is_connected:
             return
 
-        for child in sorted(self.area.children, key=lambda _: random()):
+        for child in random_order.shuffled(
+            self.area.children,
+            salt=lambda: f"{self.area.name}|{event_type}|{self.area.current_tick}",
+            key=lambda child: child.name,
+        ):
             if not child.children:
                 continue
             self._broadcast_notification_to_single_agent(child, market_type, event_type, **kwargs)
@@ -184,7 +188,11 @@ class AreaDispatcher:
             return
 
         # Broadcast to children in random order to ensure fairness
-        for child in sorted(self.area.children, key=lambda _: random()):
+        for child in random_order.shuffled(
+            self.area.children,
+            salt=lambda: f"{self.area.name}|{event_type}|{self.area.current_tick}",
+            key=lambda child: child.name,
+        ):
             child.dispatcher.event_listener(event_type, **kwargs)
 
         # TODO: Enable the following block once GSYE-340 is implemented

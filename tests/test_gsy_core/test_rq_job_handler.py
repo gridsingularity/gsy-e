@@ -10,6 +10,7 @@ from gsy_framework.enums import ConfigurationType, CoefficientAlgorithm
 
 import gsy_e.constants
 from gsy_e.gsy_e_core.rq_job_handler import launch_simulation_from_rq_job
+from gsy_e.gsy_e_core.sim_results.roi_results_collector import RoiBaselineError
 
 
 class TestRqJobHandler:
@@ -22,6 +23,7 @@ class TestRqJobHandler:
         self.original_sertsvr = gsy_e.constants.SEND_EVENTS_RESPONSES_TO_SDK_VIA_RQ
         self.original_connect_to_profiles_db = gsy_e.constants.CONNECT_TO_PROFILES_DB
         self.original_config_id = gsy_e.constants.CONFIGURATION_ID
+        self.original_random_order = gsy_e.constants.RANDOM_ORDER
         self.original_start_date = GlobalConfig.start_date
         self.original_slot_length = GlobalConfig.slot_length
 
@@ -34,6 +36,7 @@ class TestRqJobHandler:
         gsy_e.constants.SEND_EVENTS_RESPONSES_TO_SDK_VIA_RQ = self.original_sertsvr
         gsy_e.constants.CONNECT_TO_PROFILES_DB = self.original_connect_to_profiles_db
         gsy_e.constants.CONFIGURATION_ID = self.original_config_id
+        gsy_e.constants.RANDOM_ORDER = self.original_random_order
         ConstSettings.SCMSettings.MARKET_ALGORITHM = CoefficientAlgorithm.STATIC.value
         ConstSettings.SCMSettings.INTRACOMMUNITY_BASE_RATE_EUR = None
         ConstSettings.SCMSettings.GRID_FEES_REDUCTION = 0.28
@@ -143,6 +146,17 @@ class TestRqJobHandler:
         assert publish_job_error_mock.call_count == 1
         assert publish_job_error_mock.call_args_list[0][0][0] == "id"
         assert "Fake Error" in publish_job_error_mock.call_args_list[0][0][1]
+
+    @staticmethod
+    @patch("gsy_e.gsy_e_core.rq_job_handler.run_simulation")
+    @patch("gsy_e.gsy_e_core.redis_connections.simulation.publish_job_error_output")
+    def test_a_baseline_path_is_refused_on_web_runs(publish_job_error_mock, run_sim_mock):
+        settings = {"roi_baseline": "/etc/passwd"}
+        scenario = {"configuration_uuid": "config_uuid"}
+        with pytest.raises(RoiBaselineError):
+            launch_simulation_from_rq_job(scenario, settings, None, {}, {}, {}, "id")
+        run_sim_mock.assert_not_called()
+        assert "not a path" in publish_job_error_mock.call_args_list[0][0][1]
 
     @staticmethod
     def test_launch_simulation_raises_if_config_uuid_not_provided():

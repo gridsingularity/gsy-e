@@ -28,6 +28,7 @@ from gsy_e.gsy_e_core.export import ExportAndPlot
 from gsy_e.gsy_e_core.sim_results.endpoint_buffer import (
     SimulationEndpointBuffer,
 )
+from gsy_e.gsy_e_core.sim_results.roi_results_collector import run_fingerprint
 
 if TYPE_CHECKING:
     from gsy_e.models.area import Area, AreaBase
@@ -68,7 +69,12 @@ class SimulationResultsManager:
     ) -> None:
         """Construct objects that contain the simulation results for the broker and CSV output."""
         self._endpoint_buffer = SimulationEndpointBuffer(
-            redis_job_id, config_params.seed, area, self.export_results_on_finish
+            redis_job_id,
+            config_params.seed,
+            area,
+            self.export_results_on_finish,
+            roi_baseline=config_params.roi_baseline,
+            roi_fingerprint=run_fingerprint(area, config_params.seed),
         )
 
         if self.export_results_on_finish:

@@ -35,6 +35,12 @@ from pendulum import DateTime
 
 import gsy_e.constants
 from gsy_e.gsy_e_core.sim_results.offer_bids_trades_hr_stats import OfferBidTradeGraphStats
+from gsy_e.gsy_e_core.sim_results.roi_results_collector import (
+    RoiBaselineError,
+    RoiResultsCollector,
+    load_baseline,
+    validate_fingerprint,
+)
 from gsy_e.gsy_e_core.util import (
     get_feed_in_tariff_rate_from_config,
     get_market_maker_rate_from_config,
@@ -83,7 +89,16 @@ class SimulationResultValidator:
 class SimulationEndpointBuffer:
     """Handles collecting and buffering of all results for all areas."""
 
-    def __init__(self, job_id, random_seed, area, should_export_plots):
+    # pylint: disable=too-many-arguments, too-many-positional-arguments
+    def __init__(
+        self,
+        job_id,
+        random_seed,
+        area,
+        should_export_plots,
+        roi_baseline=None,
+        roi_fingerprint: Dict = None,
+    ):
         self.job_id = job_id
         self.result_area_uuids = set()
         self.spot_market_time_slot_str = ""
@@ -102,6 +117,12 @@ class SimulationEndpointBuffer:
         }
 
         self.results_handler = self._create_results_handler(should_export_plots)
+        self._roi_fingerprint = roi_fingerprint
+        self.roi_results_collector = self._create_roi_results_collector(
+            area, roi_fingerprint, roi_baseline
+        )
+        self.roi_results: Dict = {}
+        self.roi_baseline: Dict = {}
         self.simulation_state = {"general": {}, "areas": {}}
 
         if (
@@ -136,6 +157,8 @@ class SimulationEndpointBuffer:
             "progress_info": self.simulation_progress,
             "simulation_state": self.simulation_state,
             "hierarchy_self_consumption_percent": self.hierarchy_self_consumption_percent,
+            **({"roi": self.roi_results} if self.roi_results else {}),
+            **({"roi_baseline": self.roi_baseline} if self.roi_baseline else {}),
             **self.results_handler.all_raw_results,
         }
 
@@ -154,6 +177,10 @@ class SimulationEndpointBuffer:
         self._calculate_and_update_last_market_time_slot(area)
         self.simulation_state["general"] = sim_state
         self._populate_core_stats_and_sim_state(area)
+        self.roi_results_collector.update(area)
+        if simulation_status == "finished":
+            self.roi_results = self.roi_results_collector.results(area.config.slot_length)
+            self.roi_baseline = self.roi_results_collector.baseline_export(self._roi_fingerprint)
         self.simulation_progress = {
             "eta_seconds": progress_info.eta.seconds if progress_info.eta else None,
             "elapsed_time_seconds": progress_info.elapsed_time.seconds,
@@ -177,6 +204,19 @@ class SimulationEndpointBuffer:
         self._update_results_area_uuids(area)
 
         self.validate_results()
+
+    @staticmethod
+    def _create_roi_results_collector(
+        area: "AreaBase", fingerprint: Dict, roi_baseline
+    ) -> RoiResultsCollector:
+        if roi_baseline is None:
+            return RoiResultsCollector()
+        baseline = load_baseline(roi_baseline)
+        collector = RoiResultsCollector(baseline)
+        problems = validate_fingerprint(baseline, fingerprint, collector.shared_pv_paths(area))
+        if problems:
+            raise RoiBaselineError(problems)
+        return collector
 
     def validate_results(self):
         """Validate updated stats and raise exceptions if they are not valid."""
@@ -248,6 +288,8 @@ class SimulationEndpointBuffer:
             "simulation_state": self.simulation_state,
             "simulation_raw_data": self.flattened_area_core_stats_dict,
             "configuration_tree": self.area_result_dict,
+            **({"roi": self.roi_results} if self.roi_results else {}),
+            **({"roi_baseline": self.roi_baseline} if self.roi_baseline else {}),
         }
 
     @staticmethod

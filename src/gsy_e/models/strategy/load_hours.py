@@ -28,13 +28,13 @@ from gsy_framework.utils import (
     is_time_slot_in_simulation_duration,
 )
 from gsy_framework.validators.load_validator import LoadValidator
-from numpy import random
 from pendulum import duration
 
 from gsy_e import constants
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
 from gsy_e.gsy_e_core.exceptions import MarketException
 from gsy_e.gsy_e_core.util import is_two_sided_market_simulation, is_one_sided_market_simulation
+from gsy_e.models import random_order
 from gsy_e.models.base import AssetType
 from gsy_e.models.market import MarketBase
 from gsy_e.models.strategy import BidEnabledStrategy
@@ -305,10 +305,12 @@ class LoadHoursStrategy(BidEnabledStrategy, UseMarketMakerMixin):
             self.bid_update.fit_to_limit,
         )
 
-    @staticmethod
-    def _find_acceptable_offer(market):
-        offers = market.most_affordable_offers
-        return random.choice(offers)
+    def _find_acceptable_offer(self, market):
+        return random_order.choice(
+            market.most_affordable_offers,
+            salt=lambda: f"{self.owner.name}|{market.time_slot_str}|{market.now}",
+            key=lambda offer: f"{offer.seller.origin}|{offer.seller.name}",
+        )
 
     def _offer_rate_can_be_accepted(self, offer: Offer, market_slot: MarketBase):
         """Check if the offer rate is less than what the device wants to pay."""

@@ -400,7 +400,10 @@ class PVForecastExternalStrategy(ForecastExternalMixin, PVPredefinedExternalStra
             energy_rate_decrease_per_update=None,
             use_market_maker_rate: bool = False,
             cloud_coverage: int = None,
-            capacity_kW: float = None
+            capacity_kW: float = None,
+            capital_cost_per_kWp: float = None,
+            annual_generation_kWh: float = None,
+            ownership_shares: Dict[str, float] = None,
     ):
         """
         Constructor of PVForecastStrategy
@@ -411,7 +414,10 @@ class PVForecastExternalStrategy(ForecastExternalMixin, PVPredefinedExternalStra
                          fit_to_limit=fit_to_limit,
                          update_interval=update_interval,
                          energy_rate_decrease_per_update=energy_rate_decrease_per_update,
-                         use_market_maker_rate=use_market_maker_rate)
+                         use_market_maker_rate=use_market_maker_rate,
+                         capital_cost_per_kWp=capital_cost_per_kWp,
+                         annual_generation_kWh=annual_generation_kWh,
+                         ownership_shares=ownership_shares)
 
     def update_energy_forecast(self) -> None:
         """Set energy forecast for future markets."""
