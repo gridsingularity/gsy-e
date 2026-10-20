@@ -21,11 +21,10 @@ from unittest.mock import MagicMock, Mock, call
 
 import pytest
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
-from gsy_framework.enums import AvailableMarketTypes, SpotMarketTypeEnum
+from gsy_framework.enums import AvailableMarketTypes, RandomOrder, SpotMarketTypeEnum
 from pendulum import DateTime, datetime, duration
 
 import gsy_e.constants
-from gsy_e.constants import RandomOrder
 from gsy_e.events.event_structures import AreaEvent, MarketEvent
 from gsy_e.models.area import Area
 from gsy_e.models.area.event_dispatcher import AreaDispatcher

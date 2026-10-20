@@ -19,10 +19,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import hashlib
 from typing import Callable, Iterable, List, Sequence, TypeVar
 
+from gsy_framework.enums import RandomOrder
 from numpy import random
 
 import gsy_e.constants
-from gsy_e.constants import RandomOrder
 
 T = TypeVar("T")
 

@@ -25,6 +25,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Dict, Iterable, Iterator, List, Optional, Set, Union
 
 from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.enums import RandomOrder
 from gsy_framework.exceptions import GSyException
 from gsy_framework.sim_results.roi.appraisal import calculate_roi
 from gsy_framework.sim_results.roi.data_classes import (
@@ -47,7 +48,6 @@ from gsy_framework.sim_results.roi.serialization import serialize_result
 from pendulum import DateTime, Duration
 
 import gsy_e.constants
-from gsy_e.constants import RandomOrder
 from gsy_e.gsy_e_core.util import get_market_maker_rate_from_time_slot
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
 from gsy_e.models.strategy.electrolyzer import ElectrolyzerStrategy

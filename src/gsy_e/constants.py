@@ -23,6 +23,8 @@ from enum import Enum
 from decimal import getcontext
 import os
 
+from gsy_framework.enums import RandomOrder
+
 ROUND_TOLERANCE_EXPORT = 2
 
 # Percentual standard deviation relative to the forecast energy, used to compute the (simulated)
@@ -59,7 +61,6 @@ CN_PROFILE_EXPANSION_DAYS = 7
 
 RUN_IN_REALTIME = False
 
-
 CONNECT_TO_PROFILES_DB = False
 SEND_EVENTS_RESPONSES_TO_SDK_VIA_RQ = False
 
@@ -89,17 +90,6 @@ class SettlementTemplateStrategiesConstants:
 
 class FutureTemplateStrategiesConstants(SettlementTemplateStrategiesConstants):
     """Constants related to the configuration of future template strategies"""
-
-
-class RandomOrder(Enum):
-    """How events, market notifications and offer choices are shuffled.
-
-    SHARED draws from the one numpy sequence, as gsy-e always has. HASH ranks each item by a hash
-    of the seed and its own name, so a run without one area stays comparable with the full run.
-    """
-
-    SHARED = "shared"
-    HASH = "hash"
 
 
 RANDOM_ORDER = RandomOrder.SHARED

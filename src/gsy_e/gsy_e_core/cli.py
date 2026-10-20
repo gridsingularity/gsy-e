@@ -25,11 +25,11 @@ from click.types import Choice
 from click_default_group import DefaultGroup
 from colorlog.colorlog import ColoredFormatter
 from gsy_framework.constants_limits import ConstSettings, DATE_FORMAT, TIME_FORMAT, TIME_ZONE
+from gsy_framework.enums import RandomOrder
 from gsy_framework.exceptions import GSyException
 from gsy_framework.settings_validators import validate_global_settings
 from pendulum import today
 import gsy_e.constants
-from gsy_e.constants import RandomOrder
 from gsy_e.gsy_e_core.non_p2p_handler import set_non_p2p_settings
 
 from gsy_e.gsy_e_core.simulation import run_simulation

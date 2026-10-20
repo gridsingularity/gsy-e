@@ -20,9 +20,9 @@ import json
 from copy import deepcopy
 
 import pytest
+from gsy_framework.enums import RandomOrder
 
 import gsy_e.constants
-from gsy_e.constants import RandomOrder
 from gsy_e.gsy_e_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
 from gsy_e.gsy_e_core.sim_results.roi_results_collector import (
     BASELINE_FILE_NAME,

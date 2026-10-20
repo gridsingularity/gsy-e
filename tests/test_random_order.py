@@ -19,10 +19,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from types import SimpleNamespace
 
 import pytest
+from gsy_framework.enums import RandomOrder
 from numpy import random
 
 import gsy_e.constants
-from gsy_e.constants import RandomOrder
 from gsy_e.models import random_order
 from gsy_e.models.market import _listener_key
 

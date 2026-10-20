@@ -6,12 +6,16 @@ from datetime import datetime, date
 from typing import Dict, Optional
 
 from gsy_framework.constants_limits import GlobalConfig, ConstSettings, TIME_ZONE
-from gsy_framework.enums import ConfigurationType, SpotMarketTypeEnum, CoefficientAlgorithm
+from gsy_framework.enums import (
+    ConfigurationType,
+    SpotMarketTypeEnum,
+    CoefficientAlgorithm,
+    RandomOrder,
+)
 from gsy_framework.settings_validators import validate_global_settings
 from pendulum import duration, instance, now
 
 import gsy_e.constants
-from gsy_e.constants import RandomOrder
 from gsy_e.gsy_e_core.non_p2p_handler import set_non_p2p_settings
 from gsy_e.gsy_e_core.sim_results.roi_results_collector import RoiBaselineError
 from gsy_e.gsy_e_core.simulation import run_simulation
