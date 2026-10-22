@@ -1,17 +1,17 @@
 # pylint: disable=protected-access
-from unittest.mock import Mock
 from math import isclose
+from unittest.mock import Mock, patch
 
 import pytest
 from gsy_framework.constants_limits import GlobalConfig, TIME_ZONE
 from gsy_framework.utils import generate_market_slot_list
 from pendulum import duration, today
 
+from gsy_e.models.strategy.energy_parameters.heatpump.cop_models import COPModelType
 from gsy_e.models.strategy.energy_parameters.heatpump.heat_pump import (
     HeatPumpEnergyParameters,
-    TankParameters,
 )
-from gsy_e.models.strategy.energy_parameters.heatpump.cop_models import COPModelType
+from gsy_e.models.strategy.energy_parameters.heatpump.tank_parameters import WaterTankParameters
 
 CURRENT_MARKET_SLOT = today(tz=TIME_ZONE)
 
@@ -34,7 +34,7 @@ def fixture_heatpump_energy_params() -> HeatPumpEnergyParameters:
     energy_params = HeatPumpEnergyParameters(
         maximum_power_rating_kW=30,
         tank_parameters=[
-            TankParameters(
+            WaterTankParameters(
                 min_temp_C=10,
                 max_temp_C=60,
                 initial_temp_C=20,
@@ -68,7 +68,7 @@ def fixture_heatpump_energy_params_heat_profile() -> HeatPumpEnergyParameters:
     energy_params = HeatPumpEnergyParameters(
         maximum_power_rating_kW=30,
         tank_parameters=[
-            TankParameters(
+            WaterTankParameters(
                 min_temp_C=10,
                 max_temp_C=60,
                 initial_temp_C=45,
@@ -94,6 +94,11 @@ class TestHeatPumpEnergyParameters:
         assert len(energy_params._source_temp_C.profile) == 24
 
     @staticmethod
+    @patch(
+        "gsy_e.models.strategy.energy_parameters.heatpump.heat_pump."
+        "HeatPumpEnergyParametersBase._populate_state",
+        Mock(),
+    )
     def test_event_market_cycle_populates_profiles(energy_params):
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
         assert len(energy_params._consumption_kWh.profile) == 24
@@ -101,14 +106,12 @@ class TestHeatPumpEnergyParameters:
 
     @staticmethod
     def test_event_market_cycle_populates_state(energy_params):
-        tank_state = energy_params._state.tanks._tanks_energy_parameters[0]._state
+        tank_state = energy_params._state._charger.tanks._tanks_states[0]
         heatpump_state = energy_params._state.heatpump
-        assert CURRENT_MARKET_SLOT not in tank_state._temp_decrease_K
-        assert CURRENT_MARKET_SLOT not in tank_state._storage_temp_C
         assert CURRENT_MARKET_SLOT not in heatpump_state._min_energy_demand_kWh
         assert CURRENT_MARKET_SLOT not in heatpump_state._max_energy_demand_kWh
+        energy_params.event_activate()
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
-        assert isclose(tank_state._temp_decrease_K[CURRENT_MARKET_SLOT], 56.4, abs_tol=1e-3)
         assert tank_state._storage_temp_C[CURRENT_MARKET_SLOT] == 20
         assert isclose(
             heatpump_state._min_energy_demand_kWh[CURRENT_MARKET_SLOT], 4.113, abs_tol=1e-3
@@ -120,6 +123,7 @@ class TestHeatPumpEnergyParameters:
     @staticmethod
     def test_event_traded_energy_decrements_posted_energy(energy_params):
         heatpump_state = energy_params._state.heatpump
+        energy_params.event_activate()
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
         traded_energy = 0.00001
         original_min_demand = heatpump_state._min_energy_demand_kWh[CURRENT_MARKET_SLOT]
@@ -135,21 +139,24 @@ class TestHeatPumpEnergyParameters:
         )
 
     @staticmethod
-    def test_event_traded_energy_updates_temp_increase(energy_params):
-        tank_state = energy_params._state.tanks._tanks_energy_parameters[0]._state
+    def test_event_market_cycle_updates_temp_increase_if_energy_was_traded(energy_params):
+        tank_state = energy_params._state._charger.tanks._tanks_states[0]
+        energy_params.event_activate()
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
-        traded_energy = 0.1
+        traded_energy = 6
         energy_params.event_traded_energy(CURRENT_MARKET_SLOT, traded_energy)
-        assert isclose(tank_state._temp_increase_K[CURRENT_MARKET_SLOT], 1.1280172413793106)
+        next_market_slot = CURRENT_MARKET_SLOT + GlobalConfig.slot_length
+        energy_params.event_market_cycle(next_market_slot)
+        assert isclose(tank_state._storage_temp_C[next_market_slot], 31.280, rel_tol=0.0001)
 
     @staticmethod
     @pytest.mark.parametrize(
         "current_temp, expected_demand",
         [
-            [10, 2],  # storage too cold, charging with _max_energy_consumption_kWh reached
-            [20, 1.739],  # storage too cold, charging
-            [30, 0.58],  # storage at min temp, only trade for heat demand
-            [32, 0.348],  # storage does not need to be charged, can drop to min
+            [10, 1.922],  # storage too cold, charging with _max_energy_consumption_kWh reached
+            [20, 1.329],  # storage too cold, charging
+            [30, 0.513],  # storage at min temp, only trade for heat demand
+            [32, 0.317],  # storage does not need to be charged, can drop to min
             [35, 0.0],  # temp decrease due to demand is equal to drop to min, do not trade
             [37, 0.0],  # temp decrease due to demand is higher than the drop to min, do not trade
         ],
@@ -158,22 +165,22 @@ class TestHeatPumpEnergyParameters:
         energy_params, current_temp, expected_demand
     ):
         energy_params._max_energy_consumption_kWh = 2
-        temp_decrease_consumption = 5
         energy_params._state.heatpump.get_cop = Mock(return_value=5)
-        for tank_states in energy_params._state.tanks._tanks_energy_parameters:
-            tank_states._state._min_storage_temp_C = 30
-            tank_states._state.get_storage_temp_C = Mock(return_value=current_temp)
-            tank_states._state.get_temp_decrease_K = Mock(return_value=temp_decrease_consumption)
+        energy_params._state.heatpump.get_heat_demand_kJ = Mock(return_value=10440)
+        for tank_state in energy_params._state._charger.tanks._tanks_states:
+            tank_state._params.min_temp_C = 30
+            tank_state.get_storage_temp_C = Mock(return_value=current_temp)
+        energy_params.event_activate()
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
         assert isclose(
             energy_params.get_min_energy_demand_kWh(CURRENT_MARKET_SLOT),
             expected_demand,
             abs_tol=1e-3,
         )
-        # assert False
 
     @staticmethod
     def test_get_max_energy_demand_kWh_returns_correct_value(energy_params):
+        energy_params.event_activate()
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
         energy_params.get_max_energy_demand_kWh(CURRENT_MARKET_SLOT)
         assert isclose(
@@ -183,7 +190,10 @@ class TestHeatPumpEnergyParameters:
     @staticmethod
     def test_event_market_cycle_calculates_and_sets_cop(energy_params):
         assert energy_params._state.heatpump._cop[CURRENT_MARKET_SLOT] == 0
+        energy_params.event_activate()
         energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
+        energy_params._bought_energy_kWh = 0.1
+        energy_params.event_market_cycle(CURRENT_MARKET_SLOT + duration(minutes=60))
         assert energy_params._state.heatpump._cop[CURRENT_MARKET_SLOT] == 6.5425
 
     @staticmethod
@@ -206,10 +216,63 @@ class TestHeatPumpEnergyParameters:
 
     @staticmethod
     def test_cop_model_is_correctly_selected(energy_params_heat_profile):
-        energy_params_heat_profile._source_temp_C.read_or_rotate_profiles = Mock()
+        energy_params_heat_profile.event_activate()
         energy_params_heat_profile.event_market_cycle(CURRENT_MARKET_SLOT)
+        energy_params_heat_profile._bought_energy_kWh = 1
+        energy_params_heat_profile.event_market_cycle(CURRENT_MARKET_SLOT + duration(minutes=60))
         assert isclose(
             energy_params_heat_profile._state.heatpump.get_cop(CURRENT_MARKET_SLOT),
-            4.8941,
+            3.979,
             abs_tol=0.001,
         )
+
+    @staticmethod
+    def test_event_market_cycle_triggers_delete_past_state_values(energy_params):
+        # Given
+        energy_params._state.delete_past_state_values = Mock()
+        energy_params._populate_state = Mock()
+        # When
+        energy_params.event_market_cycle(CURRENT_MARKET_SLOT)
+        # Then
+        energy_params._state.delete_past_state_values.assert_called_once()
+
+    @staticmethod
+    def test_event_market_cycle_populates_state_correctly(energy_params):
+        # Given
+        current_market_slot = CURRENT_MARKET_SLOT + duration(minutes=60)
+        last_market_slot = CURRENT_MARKET_SLOT
+        energy_params.event_activate()
+        energy_params._bought_energy_kWh = 5
+        energy_params.combined_state._cop_model.calc_q_from_p_kW = Mock(return_value=25)
+        energy_params.combined_state._cop_model.calc_cop = Mock(return_value=5)
+        # When
+        # Event market cycle has to be called twice in order to have a last_market_slot
+        energy_params.event_market_cycle(last_market_slot)
+        energy_params.event_market_cycle(current_market_slot)
+        # Then
+        assert energy_params.combined_state._hp_state._cop[last_market_slot] == 5
+        assert energy_params.combined_state._hp_state._cop[current_market_slot] == 5
+        assert energy_params._bought_energy_kWh == 0
+        assert energy_params._consumption_kWh.get_value(current_market_slot) == 5
+        assert energy_params.combined_state._hp_state._energy_demand_kWh[current_market_slot] == 5
+
+    @staticmethod
+    def test_event_market_cycle_populates_state_correctly_even_if_cop_model_fails(energy_params):
+        # Given
+        current_market_slot = CURRENT_MARKET_SLOT + duration(minutes=60)
+        last_market_slot = CURRENT_MARKET_SLOT
+        energy_params.event_activate()
+        energy_params._bought_energy_kWh = 1
+        energy_params.combined_state._cop_model.calc_q_from_p_kW = Mock(return_value=None)
+        energy_params.combined_state._cop_model.calc_cop = Mock(return_value=6)
+        energy_params.combined_state._hp_state.get_cop = Mock(return_value=6)
+        # When
+        # Event market cycle has to be called twice in order to have a last_market_slot
+        energy_params.event_market_cycle(last_market_slot)
+        energy_params.event_market_cycle(current_market_slot)
+        # Then
+        assert energy_params.combined_state._hp_state._cop[last_market_slot] == 6
+        assert energy_params.combined_state._hp_state._cop[current_market_slot] == 6
+        assert energy_params._bought_energy_kWh == 0
+        assert energy_params._consumption_kWh.get_value(current_market_slot) == 5
+        assert energy_params.combined_state._hp_state._energy_demand_kWh[current_market_slot] == 5

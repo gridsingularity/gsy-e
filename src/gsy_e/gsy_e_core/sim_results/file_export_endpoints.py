@@ -16,38 +16,60 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-# pylint: disable=too-many-return-statements, broad-exception-raised
+# pylint: disable=too-many-return-statements, broad-exception-raised, too-many-locals
 from abc import ABC, abstractmethod
-from statistics import mean
-from typing import TYPE_CHECKING, Dict, List
+from typing import Dict, List
 
 from gsy_framework.constants_limits import ConstSettings
-from gsy_framework.enums import AvailableMarketTypes, BidOfferMatchAlgoEnum, SpotMarketTypeEnum
+from gsy_framework.enums import AvailableMarketTypes, BidOfferMatchAlgoEnum
 
-from gsy_e.constants import ROUND_TOLERANCE
+from gsy_e.constants import ROUND_TOLERANCE_EXPORT
 from gsy_e.gsy_e_core.matching_engine_singleton import bid_offer_matcher
 from gsy_e.gsy_e_core.util import is_two_sided_market_simulation
 from gsy_e.models.area import Area
-from gsy_e.models.strategy.load_hours import LoadHoursStrategy
-from gsy_e.models.strategy.pv import PVStrategy
-from gsy_e.models.strategy.scm.load import SCMLoadHoursStrategy, SCMLoadProfileStrategy
-from gsy_e.models.strategy.scm.heat_pump import ScmHeatPumpStrategy
-from gsy_e.models.strategy.scm.pv import SCMPVUserProfile
-from gsy_e.models.strategy.storage import StorageStrategy
+from gsy_e.models.strategy.ev_charger import EVChargerStrategy
 from gsy_e.models.strategy.heat_pump import (
     HeatPumpStrategy,
     MultipleTankHeatPumpStrategy,
-    PCMHeatPump,
+    HeatPumpStrategyWithoutTanks,
 )
-from gsy_e.models.strategy.scm.storage import SCMStorageStrategy
+from gsy_e.models.strategy.heatpump_with_sortes_tank import HeatPumpWithSorTesTankStrategy
+from gsy_e.models.strategy.load_hours import LoadHoursStrategy
+from gsy_e.models.strategy.pv import PVStrategy
+from gsy_e.models.strategy.storage import StorageStrategy
 from gsy_e.models.strategy.virtual_heatpump import (
     VirtualHeatpumpStrategy,
     MultipleTankVirtualHeatpumpStrategy,
 )
 
-if TYPE_CHECKING:
-    from gsy_e.models.area import CoefficientArea
-    from gsy_e.models.area.scm_manager import SCMManager
+
+def is_heatpump_strategy_without_tanks(area: Area):
+    """Return if area has a heat pump strategy without tanks."""
+    return isinstance(
+        area.strategy,
+        HeatPumpStrategyWithoutTanks,
+    )
+
+
+def is_heatpump_strategy_with_sortes_tank(area: Area):
+    """Return if area has a heat pump strategy with Sortes tanks connected."""
+    return isinstance(
+        area.strategy,
+        HeatPumpWithSorTesTankStrategy,
+    )
+
+
+def is_heatpump_strategy_with_tanks(area: Area):
+    """Return if area has a heat pump strategy."""
+    return isinstance(
+        area.strategy,
+        (
+            MultipleTankHeatPumpStrategy,
+            MultipleTankVirtualHeatpumpStrategy,
+            HeatPumpStrategy,
+            VirtualHeatpumpStrategy,
+        ),
+    )
 
 
 class BaseDataExporter(ABC):
@@ -168,6 +190,15 @@ class LeafDataExporter(BaseDataExporter):
         ] + self._specific_labels()
 
     def _specific_labels(self):
+        if isinstance(self.area.strategy, EVChargerStrategy):
+            return [
+                "bought [kWh]",
+                "sold [kWh]",
+                "sessions",
+                "charge [kWh]",
+                "charge [%]",
+                "losses [kWh]",
+            ]
         if isinstance(self.area.strategy, StorageStrategy):
             return [
                 "bought [kWh]",
@@ -180,50 +211,6 @@ class LeafDataExporter(BaseDataExporter):
             return ["desired energy [kWh]", "deficit [kWh]"]
         if isinstance(self.area.strategy, PVStrategy):
             return ["produced [kWh]", "not sold [kWh]"]
-        # pylint: disable=unidiomatic-typecheck
-        if type(self.area.strategy) == HeatPumpStrategy:
-            return [
-                "unmatched demand [kWh]",
-                "storage temperature C",
-                "COP",
-                "heat demand J",
-            ]
-        # pylint: disable=unidiomatic-typecheck
-        if type(self.area.strategy) == PCMHeatPump:
-            return [
-                "unmatched heat demand [kWh]",
-                "COP",
-                "heat demand J",
-                "HTF temp C",
-                "PCM temp C",
-                "SOC %",
-            ]
-        if type(self.area.strategy) == VirtualHeatpumpStrategy:
-            return [
-                "unmatched demand [kWh]",
-                "storage temperature C",
-                "COP",
-                "heat demand J",
-                "condenser temperature C",
-            ]
-        if type(self.area.strategy) == MultipleTankHeatPumpStrategy:
-            return [
-                "unmatched demand [kWh]",
-                "storage temperature C",
-                "energy demand kWh",
-                "COP",
-                "heat demand J",
-            ]
-        # pylint: disable=unidiomatic-typecheck
-        if type(self.area.strategy) == MultipleTankVirtualHeatpumpStrategy:
-            return [
-                "unmatched demand [kWh]",
-                "storage temperature C",
-                "energy demand kWh",
-                "COP",
-                "condenser temperature C",
-            ]
-
         return []
 
     @property
@@ -242,6 +229,40 @@ class LeafDataExporter(BaseDataExporter):
         ] + self._specific_row(slot, market)
 
     def _specific_row(self, slot, market):
+        if isinstance(self.area.strategy, EVChargerStrategy):
+            state = self.area.strategy.state
+
+            # Read from historical snapshot instead of current session state
+            if slot not in state.session_energy_history:
+                return ["-", "-", "EV_NOT_CONNECTED", "-", "-", "-"]
+
+            sessions_at_slot = state.session_energy_history[slot]
+            if not sessions_at_slot:
+                return ["-", "-", "EV_NOT_CONNECTED", "-", "-", "-"]
+
+            bought = market.bought_energy(self.area.name)
+            total_losses = bought * state.losses.charging_loss_percent if bought > 0 else 0
+            loss_per_session = total_losses / len(sessions_at_slot)
+
+            session_ids = ""
+            charge_kWh = ""
+            charge_percent = ""
+            losses = ""
+            for idx, (session_id, session_history) in enumerate(sessions_at_slot.items()):
+                sep = "; " if idx > 0 else ""
+                session_ids += f"{sep}{session_id}"
+                charge_kWh += f"{sep}{session_history['energy_kWh']}"
+                charge_percent += f"{sep}{session_history['soc_percent']}"
+                losses += f"{sep}{loss_per_session}"
+
+            return [
+                bought,
+                market.sold_energy(self.area.name),
+                f"({session_ids})",
+                f"({charge_kWh})",
+                f"({charge_percent})",
+                f"({losses})",
+            ]
         if isinstance(self.area.strategy, StorageStrategy):
             s = self.area.strategy.state
             return [
@@ -259,81 +280,183 @@ class LeafDataExporter(BaseDataExporter):
             not_sold = self.area.strategy.state.get_available_energy_kWh(slot)
             produced = self.area.strategy.state.get_energy_production_forecast_kWh(slot, 0.0)
             return [produced, not_sold]
-        # pylint: disable=unidiomatic-typecheck
-        if type(self.area.strategy) == HeatPumpStrategy:
-            return [
-                round(
-                    self.area.strategy.state.tanks.get_unmatched_demand_kWh(slot),
-                    ROUND_TOLERANCE,
-                ),
-                round(
-                    self.area.strategy.state.tanks.get_average_tank_temperature(slot),
-                    ROUND_TOLERANCE,
-                ),
-                round(self.area.strategy.state.heatpump.get_cop(slot), ROUND_TOLERANCE),
-                round(self.area.strategy.state.heatpump.get_heat_demand(slot), ROUND_TOLERANCE),
-            ]
-        if type(self.area.strategy) == PCMHeatPump:
-            return [
-                round(
-                    self.area.strategy.state.heatpump.get_unmatched_demand_kWh(slot),
-                    ROUND_TOLERANCE,
-                ),
-                round(self.area.strategy.state.heatpump.get_cop(slot), ROUND_TOLERANCE),
-                round(self.area.strategy.state.heatpump.get_heat_demand(slot), ROUND_TOLERANCE),
-                round(self.area.strategy.state.tank.get_htf_temp_C(slot), ROUND_TOLERANCE),
-                round(self.area.strategy.state.tank.get_pcm_temp_C(slot), ROUND_TOLERANCE),
-                round(self.area.strategy.state.tank.get_soc(slot), 2) * 100,
-            ]
-        # pylint: disable=unidiomatic-typecheck
-        if type(self.area.strategy) == VirtualHeatpumpStrategy:
-            return [
-                round(
-                    self.area.strategy.state.tanks.get_unmatched_demand_kWh(slot), ROUND_TOLERANCE
-                ),
-                round(self.area.strategy.state.get_storage_temp_C(slot), ROUND_TOLERANCE),
-                round(self.area.strategy.state.get_cop(slot), ROUND_TOLERANCE),
-                round(self.area.strategy.state.get_heat_demand(slot), ROUND_TOLERANCE),
-                round(self.area.strategy.state.get_condenser_temp(slot), ROUND_TOLERANCE),
-            ]
-        # pylint: disable=unidiomatic-typecheck
-        if type(self.area.strategy) == MultipleTankHeatPumpStrategy:
-            cop = self.area.strategy.state.heatpump.get_cop(slot)
-            return [
-                round(
-                    self.area.strategy.state.tanks.get_unmatched_demand_kWh(slot), ROUND_TOLERANCE
-                ),
-                round(
-                    self.area.strategy.state.tanks.get_average_tank_temperature(slot),
-                    ROUND_TOLERANCE,
-                ),
-                round(
-                    self.area.strategy.state.tanks.get_min_energy_consumption(cop, slot),
-                    ROUND_TOLERANCE,
-                ),
-                round(cop, ROUND_TOLERANCE),
-                round(self.area.strategy.state.heatpump.get_heat_demand(slot), ROUND_TOLERANCE),
-            ]
-        # pylint: disable=unidiomatic-typecheck
-        if type(self.area.strategy) == MultipleTankVirtualHeatpumpStrategy:
-            cop = self.area.strategy.state.heatpump.get_cop(slot)
-            return [
-                round(
-                    self.area.strategy.state.tanks.get_unmatched_demand_kWh(slot), ROUND_TOLERANCE
-                ),
-                round(
-                    self.area.strategy.state.tanks.get_average_tank_temperature(slot),
-                    ROUND_TOLERANCE,
-                ),
-                round(
-                    self.area.strategy.state.tanks.get_min_energy_consumption(cop, slot),
-                    ROUND_TOLERANCE,
-                ),
-                round(cop, ROUND_TOLERANCE),
-                round(self.area.strategy.state.heatpump.get_condenser_temp(slot), ROUND_TOLERANCE),
-            ]
-
         return []
+
+
+class HeatPumpDataExporter(BaseDataExporter):
+    """Data exporter dedicated to heat pump areas"""
+
+    def __init__(self, area, past_markets):
+        assert is_heatpump_strategy_with_tanks(area)
+        self.area = area
+        self.past_markets = past_markets
+
+    @property
+    def labels(self) -> Dict[str, List]:
+        return {
+            "heat_pump": [
+                "slot",
+                "energy traded [kWh]",
+                "COP",
+                "heat demand [kJ]",
+                "average SOC",
+                "average tank temp [C]",
+                "storage inlet temperature [C]",
+                "net heat consumed [kJ]",
+            ],
+            "water_tanks": self._water_tank_labels,
+            "pcm_tanks": self._pcm_tank_labels,
+        }
+
+    @property
+    def rows(self) -> Dict[str, List]:
+        return {
+            "heat_pump": [
+                self._row(market.time_slot, market, "heat_pump") for market in self.past_markets
+            ],
+            "water_tanks": [
+                self._row(market.time_slot, market, "water_tanks") for market in self.past_markets
+            ],
+            "pcm_tanks": [
+                self._row(market.time_slot, market, "pcm_tanks") for market in self.past_markets
+            ],
+        }
+
+    def _traded(self, market):
+        return (
+            market.traded_energy[self.area.name] if self.area.name in market.traded_energy else 0
+        )
+
+    def _row(self, slot, market, file_key):
+        rows = [slot]
+        if file_key == "heat_pump":
+            hp_stats = self.area.strategy.state.get_results_dict(slot)
+            rows += [
+                round(self._traded(market), ROUND_TOLERANCE_EXPORT),
+                round(hp_stats["cop"], ROUND_TOLERANCE_EXPORT),
+                round(hp_stats["heat_demand_kJ"], ROUND_TOLERANCE_EXPORT),
+                round(hp_stats["average_soc"], ROUND_TOLERANCE_EXPORT),
+                round(hp_stats["average_tank_temp_C"], ROUND_TOLERANCE_EXPORT),
+                round(hp_stats["average_inlet_temperature_C"], ROUND_TOLERANCE_EXPORT),
+                round(hp_stats["net_heat_consumed_kJ"], ROUND_TOLERANCE_EXPORT),
+            ]
+        if file_key == "water_tanks":
+            for tank in self.area.strategy.state.get_results_dict(slot)["tanks"]:
+                if tank["type"] == "WATER":
+                    rows.append(round(tank["storage_temp_C"], ROUND_TOLERANCE_EXPORT))
+                    rows.append(round(tank["soc"], ROUND_TOLERANCE_EXPORT))
+        if file_key == "pcm_tanks":
+            for tank in self.area.strategy.state.get_results_dict(slot)["tanks"]:
+                if tank["type"] == "PCM":
+                    rows.append(round(tank["storage_temp_C"], ROUND_TOLERANCE_EXPORT))
+                    rows.append(round(tank["soc"], ROUND_TOLERANCE_EXPORT))
+        return rows
+
+    @property
+    def _water_tank_labels(self):
+        labels = ["slot"]
+        for number, tank in enumerate(self.area.strategy.state.get_results_dict()["tanks"]):
+            if tank["type"] == "WATER":
+                tank_name_str = tank["name"] if tank["name"] else f"tank {number + 1}"
+                labels.append(f"{tank_name_str} temperature C")
+                labels.append(f"{tank_name_str} SOC %")
+        if len(labels) == 1:
+            # case when no water tank was configured
+            return []
+        return labels
+
+    @property
+    def _pcm_tank_labels(self):
+        labels = ["slot"]
+        for number, tank in enumerate(self.area.strategy.state.get_results_dict()["tanks"]):
+            if tank["type"] == "PCM":
+                tank_name_str = tank["name"] if tank["name"] else f"tank {number + 1}"
+                labels.append(f"{tank_name_str} temperature C")
+                labels.append(f"{tank_name_str} SOC %")
+        if len(labels) == 1:
+            # case when no PCM tank was configured
+            return []
+        return labels
+
+
+class HeatPumpWithoutTanksDataExporter(BaseDataExporter):
+    """Data exporter dedicated to heat pump areas"""
+
+    def __init__(self, area, past_markets):
+        assert is_heatpump_strategy_without_tanks(area)
+        self.area = area
+        self.past_markets = past_markets
+
+    @property
+    def labels(self) -> List:
+        return [
+            "slot",
+            "energy traded [kWh]",
+            "COP",
+            "heat demand [kJ]",
+        ]
+
+    @property
+    def rows(self) -> List:
+        return [self._row(market.time_slot, market) for market in self.past_markets]
+
+    def _traded(self, market):
+        return (
+            market.traded_energy[self.area.name] if self.area.name in market.traded_energy else 0
+        )
+
+    def _row(self, slot, market):
+        rows = [slot]
+        hp_stats = self.area.strategy.state.get_results_dict(slot)
+        rows += [
+            round(self._traded(market), ROUND_TOLERANCE_EXPORT),
+            round(hp_stats["cop"], ROUND_TOLERANCE_EXPORT),
+            round(hp_stats["heat_demand_kJ"], ROUND_TOLERANCE_EXPORT),
+        ]
+        return rows
+
+
+class HeatPumpWithSortesTankDataExporter(BaseDataExporter):
+    """Data exporter dedicated to heat pump areas"""
+
+    def __init__(self, area, past_markets):
+        assert is_heatpump_strategy_with_sortes_tank(area)
+        self.area = area
+        self.past_markets = past_markets
+
+    @property
+    def labels(self) -> List:
+        return [
+            "slot",
+            "energy traded [kWh]",
+            "COP",
+            "heat demand [kJ]",
+            "SOC",
+            "auxiliary_energy_kWh",
+            "energy_used_for_dis_charging_kWh",
+        ]
+
+    @property
+    def rows(self) -> List:
+        return [self._row(market.time_slot, market) for market in self.past_markets]
+
+    def _traded(self, market):
+        return (
+            market.traded_energy[self.area.name] if self.area.name in market.traded_energy else 0
+        )
+
+    def _row(self, slot, market):
+        rows = [slot]
+        hp_stats = self.area.strategy.state.get_results_dict(slot)
+        rows += [
+            round(self._traded(market), ROUND_TOLERANCE_EXPORT),
+            round(hp_stats["cop"], ROUND_TOLERANCE_EXPORT),
+            round(hp_stats["heat_demand_kJ"], ROUND_TOLERANCE_EXPORT),
+            round(hp_stats["soc"], ROUND_TOLERANCE_EXPORT),
+            round(hp_stats["auxiliary_energy_kWh"], 4),
+            round(hp_stats["energy_used_for_dis_charging_kWh"], 4),
+        ]
+        return rows
 
 
 class FileExportEndpoints:
@@ -362,11 +485,15 @@ class FileExportEndpoints:
     ) -> BaseDataExporter:
         """Decide which data acquisition class to use."""
         if past_market_type == AvailableMarketTypes.SPOT:
-            return (
-                UpperLevelDataExporter(area.past_markets)
-                if len(area.children) > 0
-                else LeafDataExporter(area, area.parent.past_markets)
-            )
+            if len(area.children) > 0:
+                return UpperLevelDataExporter(area.past_markets)
+            if is_heatpump_strategy_with_tanks(area):
+                return HeatPumpDataExporter(area, area.parent.past_markets)
+            if is_heatpump_strategy_without_tanks(area):
+                return HeatPumpWithoutTanksDataExporter(area, area.parent.past_markets)
+            if is_heatpump_strategy_with_sortes_tank(area):
+                return HeatPumpWithSortesTankDataExporter(area, area.parent.past_markets)
+            return LeafDataExporter(area, area.parent.past_markets)
         if past_market_type == AvailableMarketTypes.BALANCING:
             return BalancingDataExporter(area.past_balancing_markets)
         if past_market_type == AvailableMarketTypes.SETTLEMENT:
@@ -411,6 +538,7 @@ class FileExportEndpoints:
                 self.clearing[area.slug][market.time_slot] = {}
                 clearing_state = bid_offer_matcher.matcher.match_algorithm.state
 
+            # pylint: disable=possibly-used-before-assignment
             self.cumulative_offers[area.slug][market.time_slot] = (
                 clearing_state.cumulative_offers.get(market.id, {})
             )
@@ -428,131 +556,3 @@ class FileExportEndpoints:
             )
         if ConstSettings.GeneralSettings.EXPORT_SUPPLY_DEMAND_PLOTS:
             self._populate_plots_stats_for_supply_demand_curve(area)
-
-
-def file_export_endpoints_factory():
-    """Return FileExportEndpoints class dependent on the market type."""
-    return (
-        CoefficientFileExportEndpoints()
-        if ConstSettings.MASettings.MARKET_TYPE == SpotMarketTypeEnum.COEFFICIENTS.value
-        else FileExportEndpoints()
-    )
-
-
-class CoefficientFileExportEndpoints(FileExportEndpoints):
-    """FileExportEndpoints for SCm simulations"""
-
-    def __init__(self):
-        super().__init__()
-        self._scm_manager = None
-
-    def __call__(self, area, scm_manager: "SCMManager" = None):
-        self._scm_manager = scm_manager
-        super().__call__(area)
-
-    def export_data_factory(
-        self, area: "CoefficientArea", past_market_type: AvailableMarketTypes
-    ) -> BaseDataExporter:
-        """Decide which data acquisition class to use."""
-        assert past_market_type == AvailableMarketTypes.SPOT, "SCM supports only spot market."
-        return (
-            CoefficientDataExporter(area, self._scm_manager)
-            if len(area.children) > 0
-            else CoefficientLeafDataExporter(area)
-        )
-
-    def _update_plot_stats(self, area: Area) -> None:
-        """
-        Method that calculates the stats for the plots. Should omit the balancing market and
-        supply demand plots for the SCM case.
-        """
-        self._get_stats_from_market_data(self.plot_stats, area, AvailableMarketTypes.SPOT)
-
-    def _populate_plots_stats_for_supply_demand_curve(self, area: Area) -> None:
-        """
-        Supply demand curve should not be implemented for SCM due to its dependency with 2-sided
-        pay as clear algorithm.
-        """
-        raise NotImplementedError
-
-
-class CoefficientDataExporter(BaseDataExporter):
-    """DataExporter for SCm simulations."""
-
-    def __init__(self, area: "CoefficientArea", scm_manager: "SCMManager" = None):
-        self._area = area
-        self._scm = scm_manager
-
-    @property
-    def labels(self) -> List:
-        return [
-            "slot",
-            "avg trade rate [ct./kWh]",
-            "min trade rate [ct./kWh]",
-            "max trade rate [ct./kWh]",
-            "# trades",
-            "total energy traded [kWh]",
-            "total trade volume [EURO ct.]",
-        ]
-
-    @property
-    def rows(self) -> List:
-
-        if not self._scm:
-            return []
-        area_results = self._scm.get_area_results(self._area.uuid, serializable=False)
-        if not area_results["after_meter_data"]:
-            return []
-        trade_rates = [t.trade_rate for t in area_results["after_meter_data"]["trades"]]
-        trade_prices = [t.trade_price for t in area_results["after_meter_data"]["trades"]]
-        trades_energy = [t.traded_energy for t in area_results["after_meter_data"]["trades"]]
-        return [
-            [
-                self._area.current_market_time_slot,
-                mean(trade_rates) if trade_rates else 0.0,
-                min(trade_rates) if trade_rates else 0.0,
-                max(trade_rates) if trade_rates else 0.0,
-                len(trade_rates) if trade_rates else 0.0,
-                sum(trades_energy) if trades_energy else 0.0,
-                sum(trade_prices) if trade_prices else 0.0,
-            ]
-        ]
-
-
-class CoefficientLeafDataExporter(BaseDataExporter):
-    # pylint: disable=protected-access
-    """LeafDataExporter for SCM simulations."""
-
-    def __init__(self, area: "CoefficientArea"):
-        self._area = area
-
-    @property
-    def labels(self) -> List:
-        if isinstance(self._area.strategy, SCMStorageStrategy):
-            return ["slot", "traded energy [kWh]"]
-        if isinstance(self._area.strategy, (SCMLoadHoursStrategy, SCMLoadProfileStrategy)):
-            return ["slot", "desired energy [kWh]", "deficit [kWh]"]
-        if isinstance(self._area.strategy, SCMPVUserProfile):
-            return ["slot", "produced [kWh]", "not sold [kWh]"]
-        return []
-
-    @property
-    def rows(self):
-        slot = self._area.current_market_time_slot
-        if slot is None:
-            return []
-        if isinstance(self._area.strategy, SCMStorageStrategy):
-            traded = self._area.strategy._energy_params.energy_profile.profile[slot]
-            return [[slot, traded]]
-        if isinstance(
-            self._area.strategy,
-            (SCMLoadHoursStrategy, SCMLoadProfileStrategy, ScmHeatPumpStrategy),
-        ):
-            desired = self._area.strategy.state.get_desired_energy_Wh(slot) / 1000
-            # All energy is traded in SCM
-            return [[slot, desired, 0.0]]
-        if isinstance(self._area.strategy, SCMPVUserProfile):
-            not_sold = self._area.strategy.state.get_available_energy_kWh(slot)
-            produced = self._area.strategy.state.get_energy_production_forecast_kWh(slot, 0.0)
-            return [[slot, produced, not_sold]]
-        return []

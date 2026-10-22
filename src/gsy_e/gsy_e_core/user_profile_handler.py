@@ -24,8 +24,12 @@ from datetime import datetime
 from typing import Dict, TYPE_CHECKING, List
 
 import pytz
-from gsy_framework.constants_limits import GlobalConfig
-from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from gsy_framework.constants_limits import (
+    GlobalConfig,
+    ProfileUuidScenarioKeyNames,
+    MeasurementProfileUuidScenarioKeyNames,
+)
+from gsy_framework.read_user_profile import UserProfileReader, InputProfileTypes
 from gsy_framework.utils import generate_market_slot_list
 from pendulum import DateTime, instance, duration
 from pony.orm import Database, Required, db_session, select, Optional
@@ -45,20 +49,20 @@ class ProfileDBConnectionException(Exception):
 
 
 PROFILE_UUID_NAMES = [
-    "daily_load_profile_uuid",
-    "power_profile_uuid",
-    "energy_rate_profile_uuid",
-    "smart_meter_profile_uuid",
-    "buying_rate_profile_uuid",
-    "consumption_kWh_profile_uuid",
-    "source_temp_C_profile_uuid",
-    "prosumption_kWh_profile_uuid",
-    "consumption_kWh_measurement_uuid",
-    "source_temp_C_measurement_uuid",
-    "prosumption_kWh_measurement_uuid",
-    "daily_load_measurement_uuid",
-    "power_measurement_uuid",
-    "smart_meter_measurement_uuid",
+    ProfileUuidScenarioKeyNames.LOAD_CONSUMPTION,
+    ProfileUuidScenarioKeyNames.PV_PRODUCTION,
+    ProfileUuidScenarioKeyNames.MARKET_MAKER_SELL_RATE,
+    ProfileUuidScenarioKeyNames.SMART_METER_PROSUMPTION,
+    ProfileUuidScenarioKeyNames.INFINITE_BUS_BUY_RATE,
+    ProfileUuidScenarioKeyNames.HEATPUMP_CONSUMPTION,
+    ProfileUuidScenarioKeyNames.HEATPUMP_SOURCE_TEMP,
+    ProfileUuidScenarioKeyNames.SCM_STORAGE_PROSUMPTION,
+    MeasurementProfileUuidScenarioKeyNames.HEATPUMP_CONSUMPTION,
+    MeasurementProfileUuidScenarioKeyNames.HEATPUMP_SOURCE_TEMP,
+    MeasurementProfileUuidScenarioKeyNames.SCM_STORAGE_PROSUMPTION,
+    MeasurementProfileUuidScenarioKeyNames.LOAD_CONSUMPTION,
+    MeasurementProfileUuidScenarioKeyNames.PV_PRODUCTION,
+    MeasurementProfileUuidScenarioKeyNames.SMART_METER_PROSUMPTION,
 ]
 
 
@@ -468,19 +472,23 @@ class ProfilesHandler:
                     timestamp, gsy_e.constants.CONFIGURATION_ID
                 )
 
-    def _read_new_datapoints_from_buffer_or_rotate_profile(
+    def read_new_datapoints_from_buffer_or_rotate_profile(
         self, profile, profile_uuid, profile_type
     ):
+        """
+        Read new datapoints from the profile buffer, and if the profile is not available rotate
+        the profile by reading from the DB.
+        """
         if should_read_profile_from_db(profile_uuid):
             db_profile = self.db.get_profile_from_db_buffer(profile_uuid)
             if not db_profile:
                 db_profile = self.db.get_first_data_from_profile(
                     profile_uuid, self.current_timestamp
                 )
-            return read_arbitrary_profile(
+            return UserProfileReader().read_arbitrary_profile(
                 profile_type, db_profile, current_timestamp=self.current_timestamp
             )
-        return read_arbitrary_profile(
+        return UserProfileReader().read_arbitrary_profile(
             profile_type, profile, current_timestamp=self.current_timestamp
         )
 
@@ -490,6 +498,7 @@ class ProfilesHandler:
         profile,
         profile_uuid: str = None,
         input_profile_path: str = None,
+        read_full_profile: bool = False,
     ) -> Dict[DateTime, float]:
         """Reads a new chunk of profile if the buffer does not contain the current time stamp
         Profile chunks are either generated from single values, input daily profiles or profiles
@@ -508,11 +517,11 @@ class ProfilesHandler:
         if profile_uuid is None and self.should_create_profile(profile):
             if input_profile_path:
                 profile = input_profile_path
-            return read_arbitrary_profile(
+            return UserProfileReader(read_full_profile).read_arbitrary_profile(
                 profile_type, profile, current_timestamp=self.current_timestamp
             )
         if self.time_to_rotate_profile(profile):
-            return self._read_new_datapoints_from_buffer_or_rotate_profile(
+            return self.read_new_datapoints_from_buffer_or_rotate_profile(
                 profile, profile_uuid, profile_type
             )
 

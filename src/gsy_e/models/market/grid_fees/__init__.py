@@ -15,8 +15,10 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+
 from abc import ABC, abstractmethod
 from typing import Tuple
+from decimal import Decimal
 
 from gsy_framework.data_classes import TradeBidOfferInfo, Bid, Offer
 
@@ -28,28 +30,37 @@ class BaseClassGridFees(ABC):
     This abstract class holds the interfaces for grid fees manager classes.
     """
 
-    def __init__(self, grid_fee_rate):
-        self.grid_fee_rate = grid_fee_rate
+    def __init__(self, grid_fee_rate: float):
+        self.grid_fee_rate = Decimal(grid_fee_rate)
 
     @abstractmethod
-    def update_incoming_bid_with_fee(self, source_rate: float, original_rate: float) -> float:
+    def update_incoming_bid_with_fee(
+        self, source_rate: Decimal, original_rate: Decimal
+    ) -> Decimal:
         """Add fees for bid's rate when posting it into a market."""
 
     @abstractmethod
-    def update_incoming_offer_with_fee(self, source_rate: float, original_rate: float) -> float:
+    def update_incoming_offer_with_fee(
+        self, source_rate: Decimal, original_rate: Decimal
+    ) -> Decimal:
         """Add fees for offer's rate when posting it into a market."""
 
     @abstractmethod
-    def update_forwarded_bid_with_fee(self, source_rate: float, original_rate: float) -> float:
+    def update_forwarded_bid_with_fee(
+        self, source_rate: Decimal, original_rate: Decimal
+    ) -> Decimal:
         """Add fees for bid's rate when it's forwarded by another market."""
 
     @abstractmethod
-    def update_forwarded_offer_with_fee(self, source_rate: float, original_rate: float) -> float:
+    def update_forwarded_offer_with_fee(
+        self, source_rate: Decimal, original_rate: Decimal
+    ) -> Decimal:
         """Add fees for offer's rate when it's forwarded by another market."""
 
     @abstractmethod
     def update_forwarded_bid_trade_original_info(
-            self, trade_original_info: TradeBidOfferInfo, market_bid: Bid) -> TradeBidOfferInfo:
+        self, trade_original_info: TradeBidOfferInfo, market_bid: Bid
+    ) -> TradeBidOfferInfo:
         """
         When a forwarded bid gets matched in a target market, it will also get matched in
         the source market with adjustments to the TradeBidOfferInfo of this trade.
@@ -63,7 +74,7 @@ class BaseClassGridFees(ABC):
 
     @abstractmethod
     def update_forwarded_offer_trade_original_info(
-            self, trade_original_info: TradeBidOfferInfo, market_offer: Offer
+        self, trade_original_info: TradeBidOfferInfo, market_offer: Offer
     ) -> TradeBidOfferInfo:
         """
         When a forwarded offer gets matched in a target market, it will also get matched in
@@ -95,16 +106,20 @@ class BaseClassGridFees(ABC):
         """
 
     @abstractmethod
-    def calculate_trade_price_and_fees(self, trade_bid_info: TradeBidOfferInfo
-                                       ) -> Tuple[float, float, float]:
+    def calculate_trade_price_and_fees(
+        self, trade_bid_info: TradeBidOfferInfo
+    ) -> Tuple[float, float, float]:
         """Return (revenue, grid fees, trade_price).
         revenue    : The actual amount that the offer seller will get
         grid fees  : The amount of fees the current market will get
         trade_price: The price the seller has to pay (revenue to the seller + grid fees)
         """
 
+    @staticmethod
+    @abstractmethod
     def calculate_original_trade_rate_from_clearing_rate(
-            self, original_bid_rate, propagated_bid_rate, clearing_rate):
+        original_bid_rate, propagated_bid_rate, clearing_rate
+    ):
         """
         Used for 2-sided pay as clear and matching engine matcher.
         The purpose of this function is to adapt the

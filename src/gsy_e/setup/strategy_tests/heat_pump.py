@@ -46,6 +46,8 @@ def get_setup(config):
                             source_temp_C_profile=os.path.join(
                                 gsye_root_path, "resources", "hp_external_temp_C.csv"
                             ),
+                            preferred_buying_rate=100,
+                            maximum_power_rating_kW=500,
                         ),
                     ),
                 ],

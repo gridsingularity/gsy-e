@@ -16,9 +16,16 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from gsy_e.models.area.event_types import EnableMarketEvent, DisableMarketEvent, \
-    ConnectMarketEvent, DisconnectMarketEvent, DisableIntervalMarketEvent, \
-    DisconnectIntervalMarketEvent, StrategyEvents, ConfigEvents
+from gsy_e.models.area.event_types import (
+    EnableMarketEvent,
+    DisableMarketEvent,
+    ConnectMarketEvent,
+    DisconnectMarketEvent,
+    DisableIntervalMarketEvent,
+    DisconnectIntervalMarketEvent,
+    StrategyEvents,
+    ConfigEvents,
+)
 
 
 class IndividualEvents:
@@ -30,7 +37,7 @@ class IndividualEvents:
     def tick(self, current_time):
         event_list = sorted(self.event_list, key=lambda e: e.event_time)
         past_events = list(filter(lambda e: e.event_time <= current_time.hour, event_list))
-        self._active = len(past_events) == 0 or type(past_events[-1]) == self.trigger_type
+        self._active = len(past_events) == 0 or type(past_events[-1]) is self.trigger_type
 
     @property
     def active(self):
@@ -94,8 +101,8 @@ class Events:
             [e for e in event_list if type(e) is DisconnectIntervalMarketEvent],
         )
 
-        self.strategy_events = [e for e in event_list if type(e) == StrategyEvents]
-        self.config_events = [e for e in event_list if type(e) == ConfigEvents]
+        self.strategy_events = [e for e in event_list if type(e) is StrategyEvents]
+        self.config_events = [e for e in event_list if type(e) is ConfigEvents]
 
     def update_events(self, current_time):
         self.enable_disable_events.update_events(current_time)

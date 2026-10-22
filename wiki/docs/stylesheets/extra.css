@@ -226,3 +226,25 @@ p{
   text-align: center;
   font-weight: bold;
 }
+
+.carbon-footprint-table {
+  font-family: inherit;
+  font-size: inherit;
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.carbon-footprint-table th, .carbon-footprint-table td {
+  border: 1px solid #66ee66;
+  padding: 0.5em;
+  padding: 8px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.carbon-footprint-table th {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  text-align: center;
+  font-weight: bold;
+}

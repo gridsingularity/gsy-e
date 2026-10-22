@@ -20,7 +20,7 @@ from logging import getLogger
 from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
 from gsy_framework.area_validator import validate_area
-from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.constants_limits import ConstSettings, TIME_FORMAT
 from gsy_framework.enums import AvailableMarketTypes
 from gsy_framework.exceptions import GSyAreaException, GSyDeviceException
 from gsy_framework.utils import key_in_dict_and_not_none
@@ -422,7 +422,7 @@ class Area(AreaBase):
     def __repr__(self):
         return (
             f"<Area '{self.name}' markets: "
-            f"{[t.format(gsy_e.constants.TIME_FORMAT) for t in self._markets.markets]}>"
+            f"{[t.format(TIME_FORMAT) for t in self._markets.markets]}>"
         )
 
     @property
@@ -629,6 +629,11 @@ class Area(AreaBase):
                 self.current_market.const_fee_rate if self.current_market is not None else 0.0
             ),
         }
+
+    def set_order_age(self, order_age: int):
+        """Set age of offers and bids before they are dispatched to higher areas."""
+        self._min_offer_age = order_age
+        self._min_bid_age = order_age
 
 
 class Market(Area):

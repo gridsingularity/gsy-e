@@ -16,11 +16,11 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from decimal import Decimal
 from collections import namedtuple
 from typing import Dict, Optional  # noqa
 
 from gsy_framework.data_classes import Offer, TraderDetails, TradeBidOfferInfo
-from gsy_framework.utils import limit_float_precision
 
 from gsy_framework.constants_limits import FLOATING_POINT_TOLERANCE
 from gsy_e.gsy_e_core.exceptions import MarketException, OfferNotFoundException
@@ -38,7 +38,7 @@ ResidualInfo = namedtuple("ResidualInfo", ("forwarded", "age"))
 class MAEngine:
     """Handle forwarding offers to the connected one-sided market."""
 
-    # pylint: disable=too-many-arguments,too-many-instance-attributes
+    # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-instance-attributes
 
     def __init__(self, name: str, market_1, market_2, min_offer_age: int, owner):
         self.name = name
@@ -62,28 +62,26 @@ class MAEngine:
         for requirement in offer.requirements or []:
             updated_requirement = {**requirement}
             if "price" in updated_requirement:
-                energy = updated_requirement.get("energy") or offer.energy
-                original_offer_price = updated_requirement["price"] + offer.accumulated_grid_fees
+                energy_dec = Decimal(updated_requirement.get("energy") or offer.energy)
+                updated_price_dec = Decimal(updated_requirement["price"])
+                original_offer_price_dec = updated_price_dec + Decimal(offer.accumulated_grid_fees)
                 updated_price = (
                     self.markets.target.fee_class.update_forwarded_offer_with_fee(
-                        updated_requirement["price"] / energy, original_offer_price / energy
+                        updated_price_dec / energy_dec, original_offer_price_dec / energy_dec
                     )
-                    * energy
+                    * energy_dec
                 )
-                updated_requirement["price"] = updated_price
+                updated_requirement["price"] = float(updated_price)
             requirements.append(updated_requirement)
         return requirements
 
     def _offer_in_market(self, offer):
-        updated_price = limit_float_precision(
-            self.markets.target.fee_class.update_forwarded_offer_with_fee(
-                offer.energy_rate, offer.original_energy_rate
-            )
-            * offer.energy
-        )
+        updated_price = self.markets.target.fee_class.update_forwarded_offer_with_fee(
+            Decimal(offer.energy_rate), Decimal(offer.original_energy_rate)
+        ) * Decimal(offer.energy)
 
         kwargs = {
-            "price": updated_price,
+            "price": float(updated_price),
             "energy": offer.energy,
             "seller": TraderDetails(
                 self.owner.name, self.owner.uuid, offer.seller.origin, offer.seller.origin_uuid
@@ -283,14 +281,14 @@ class MAEngine:
             # offer was split in target market, also split in source market
 
             local_offer = self.forwarded_offers[original_offer.id].source_offer
-            original_price = (
+            original_price = Decimal(
                 local_offer.original_price
                 if local_offer.original_price is not None
                 else local_offer.price
             )
 
             local_split_offer, local_residual_offer = self.markets.source.split_offer(
-                local_offer, accepted_offer.energy, original_price
+                local_offer, Decimal(accepted_offer.energy), original_price
             )
 
             #  add the new offers to forwarded_offers
@@ -307,14 +305,14 @@ class MAEngine:
 
             local_offer = self.forwarded_offers[original_offer.id].source_offer
 
-            original_price = (
+            original_price = Decimal(
                 local_offer.original_price
                 if local_offer.original_price is not None
                 else local_offer.price
             )
 
             local_split_offer, local_residual_offer = self.markets.target.split_offer(
-                local_offer, accepted_offer.energy, original_price
+                local_offer, Decimal(accepted_offer.energy), original_price
             )
 
             #  add the new offers to forwarded_offers

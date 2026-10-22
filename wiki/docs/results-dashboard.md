@@ -11,6 +11,8 @@ The following results (key performance indicators) are currently available for t
 
 - **[Self-Sufficiency and Self-Consumption](self-sufficiency-self-consumption.md)**
 
+- **[Carbon Footprint and Carbon Savings](carbon-footprint-savings.md)**
+
 - **[Trade Profile and Energy Peak Percentage](trade-profile.md)**
 
 - **[Aggregate Market Summary](aggregate-market-summary.md)**

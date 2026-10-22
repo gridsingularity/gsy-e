@@ -19,9 +19,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # Need to import required settings from gsy-framework in order to be available in d3a,
 # thus avoiding accessing the gsy-framework constants.
 # pylint: disable=unused-import
+from enum import Enum
+from decimal import getcontext
 import os
 
-ROUND_TOLERANCE = 5
+ROUND_TOLERANCE_EXPORT = 2
 
 # Percentual standard deviation relative to the forecast energy, used to compute the (simulated)
 # real energy produced/consumed by a device.
@@ -62,14 +64,15 @@ SEND_EVENTS_RESPONSES_TO_SDK_VIA_RQ = False
 
 RUN_IN_NON_P2P_MODE = False
 
-DEFAULT_SCM_COMMUNITY_NAME = "Community"
-DEFAULT_SCM_GRID_NAME = "Grid"
-SCM_DISABLE_HOME_SELF_CONSUMPTION = False
-
-
 FORWARD_MARKET_MAX_DURATION_YEARS = 6
 
 MIN_OFFER_BID_AGE_P2P_DISABLED = 360
+
+HP_MIN_COP = 1.0
+
+EV_CHARGER_DEFAULT_CHARGING_EFFICIENCY = 0.9
+
+DEFAULT_COP = 3
 
 
 class SettlementTemplateStrategiesConstants:
@@ -85,3 +88,39 @@ class SettlementTemplateStrategiesConstants:
 
 class FutureTemplateStrategiesConstants(SettlementTemplateStrategiesConstants):
     """Constants related to the configuration of future template strategies"""
+
+
+class HeatPumpSOCManagementAlgorithm(Enum):
+    """Selection of the Heat Storage SOC management algorithm."""
+
+    PREFERRED_BUYING_RATE = 0
+    MINIMISE_SWITCH_COUNT = 1
+
+
+class HeatPumpSettingsDefaultParameters:
+    """Collection of heat pump default parameter values."""
+
+    TANK_LOSS_PERCENT_DAY = 0
+
+
+HEAT_PUMP_SOC_MANAGEMENT_ALGORITHM = HeatPumpSOCManagementAlgorithm.PREFERRED_BUYING_RATE
+
+# Set the precision of the decimal numbers used in the simulation.
+getcontext().prec = 12
+
+
+class SorTesConfiguration:
+    """Collection of SorTes heat tank configuration parameters."""
+
+    MINUTES_BEFORE_SWITCH_ALLOWED = 1 * 60
+    MINUTES_TIME_HORIZONT_LOW_RATES = 1 * 60
+    DEFAULT_PREFERRED_BUYING_RATE = 20
+    MIN_SOC_TOLERANCE = 10
+    MAX_SOC_TOLERANCE = 90
+    CAPACITY_KWH = 25
+    COP_HEAT_SOURCE = 1
+    COP_CONDENSER = 35  # nominal value for SHSL-D1-005-1x350
+    COP_EVAPORATOR = 1
+    CONVERSION_CHARGE_CONDENSER_POWER = 1 / 1.2
+    CONVERSION_DISCHARGE_EVAPORATOR_POWER = 1 / 1.2
+    AMBIENT_TEMPERATURE_CORRECTION = 5

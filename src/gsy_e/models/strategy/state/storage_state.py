@@ -289,10 +289,14 @@ class StorageState(StateInterface):
             self.used_storage, self.capacity, rel_tol=1e-06
         ), f"Battery used_storage ({self.used_storage}) surpassed the capacity ({self.capacity})"
 
-        assert 0 <= limit_float_precision(self.offered_sell_kWh[time_slot]) <= max_value
-        assert 0 <= limit_float_precision(self.pledged_sell_kWh[time_slot]) <= max_value
-        assert 0 <= limit_float_precision(self.pledged_buy_kWh[time_slot]) <= max_value
-        assert 0 <= limit_float_precision(self.offered_buy_kWh[time_slot]) <= max_value
+        self._validate_energy_bounds(time_slot, max_value)
+
+    def _validate_energy_bounds(self, time_slot: DateTime, max_value_kWh: float) -> None:
+        """Validate that pledged/offered energy values are within reasonable bounds."""
+        assert 0 <= limit_float_precision(self.offered_sell_kWh[time_slot]) <= max_value_kWh
+        assert 0 <= limit_float_precision(self.pledged_sell_kWh[time_slot]) <= max_value_kWh
+        assert 0 <= limit_float_precision(self.pledged_buy_kWh[time_slot]) <= max_value_kWh
+        assert 0 <= limit_float_precision(self.offered_buy_kWh[time_slot]) <= max_value_kWh
 
     def _calculate_and_update_soc(self, time_slot: DateTime) -> None:
         """Calculate the soc of the storage and update the soc history."""

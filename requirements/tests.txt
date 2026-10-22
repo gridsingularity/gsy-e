@@ -6,13 +6,30 @@
 #
 -e git+https://github.com/gridsingularity/gsy-framework@master#egg=gsy_framework
     # via -r requirements/dev.txt
-astroid==3.2.1
+allure-python-commons==2.16.0
+    # via behavex
+annotated-doc==0.0.4
+    # via
+    #   -r requirements/dev.txt
+    #   fastapi
+annotated-types==0.7.0
+    # via
+    #   -r requirements/dev.txt
+    #   pydantic
+anyio==4.13.0
+    # via
+    #   -r requirements/dev.txt
+    #   httpx
+    #   starlette
+    #   watchfiles
+astroid==4.0.4
     # via
     #   -r requirements/dev.txt
     #   pylint
 attrs==23.2.0
     # via
     #   -r requirements/dev.txt
+    #   allure-python-commons
     #   gsy-framework
     #   hypothesis
     #   jsonschema
@@ -21,22 +38,21 @@ avro==1.11.3
     # via
     #   -r requirements/dev.txt
     #   gsy-framework
-awesome-slugify==1.6.5
-    # via -r requirements/dev.txt
-bcrypt==4.1.3
+bcrypt==5.0.0
     # via
     #   -r requirements/dev.txt
     #   paramiko
-beautifulsoup4==4.12.3
+behave==1.3.3
     # via
-    #   -r requirements/dev.txt
-    #   entsoe-py
-    #   gsy-framework
-behave==1.2.6
+    #   behavex
+    #   behavex-images
+behavex==4.6.0
+    # via
+    #   -r requirements/tests.in
+    #   behavex-images
+behavex-images==3.3.1
     # via behavex
-behavex==3.2.0
-    # via -r requirements/tests.in
-cached-property==1.5.2
+cached-property==2.0.1
     # via -r requirements/dev.txt
 cachetools==5.3.3
     # via
@@ -47,8 +63,10 @@ certifi==2024.2.2
     # via
     #   -r requirements/dev.txt
     #   gsy-framework
+    #   httpcore
+    #   httpx
     #   requests
-cffi==1.16.0
+cffi==2.0.0
     # via
     #   -r requirements/dev.txt
     #   cryptography
@@ -75,40 +93,50 @@ click==8.1.7
     #   geocoder
     #   gsy-framework
     #   rq
+    #   uvicorn
 click-default-group==1.2.4
     # via -r requirements/dev.txt
 colorama==0.4.6
     # via
     #   -r requirements/dev.txt
+    #   behave
     #   gsy-framework
     #   tox
 colorlog==4.7.2
     # via -r requirements/dev.txt
-configobj==5.0.8
+configobj==5.0.9
     # via behavex
-coverage[toml]==7.5.1
+coverage[toml]==7.13.5
     # via
     #   -r requirements/tests.in
     #   pytest-cov
-cryptography==42.0.7
+croniter==6.2.2
+    # via
+    #   -r requirements/dev.txt
+    #   rq
+cryptography==47.0.0
     # via
     #   -r requirements/dev.txt
     #   paramiko
 csscompressor==0.9.5
     # via behavex
+cucumber-expressions==19.0.0
+    # via behave
+cucumber-tag-expressions==9.1.0
+    # via behave
 decorator==5.1.1
     # via
     #   -r requirements/dev.txt
     #   fabric
     #   gsy-framework
     #   ratelim
-deepdiff==7.0.1
+deepdiff==9.0.0
     # via -r requirements/tests.in
-deprecated==1.2.14
+deprecated==1.3.1
     # via
     #   -r requirements/dev.txt
     #   fabric
-dill==0.3.8
+dill==0.4.1
     # via
     #   -r requirements/dev.txt
     #   pylint
@@ -117,26 +145,25 @@ distlib==0.3.8
     #   -r requirements/dev.txt
     #   gsy-framework
     #   virtualenv
-entsoe-py==0.6.2
-    # via
-    #   -r requirements/dev.txt
-    #   gsy-framework
 et-xmlfile==1.1.0
     # via
     #   -r requirements/dev.txt
     #   gsy-framework
     #   openpyxl
-execnet==2.1.1
+execnet==2.1.2
     # via pytest-xdist
-fabric==3.2.2
+fabric==3.2.3
+    # via -r requirements/dev.txt
+fastapi==0.136.1
     # via -r requirements/dev.txt
 filelock==3.14.0
     # via
     #   -r requirements/dev.txt
+    #   behavex-images
     #   gsy-framework
     #   tox
     #   virtualenv
-flake8==4.0.1
+flake8==7.3.0
     # via -r requirements/tests.in
 geocoder==1.17.5
     # via
@@ -151,8 +178,23 @@ geopy==2.4.1
     # via
     #   -r requirements/dev.txt
     #   gsy-framework
-htmlmin==0.1.12
-    # via behavex
+h11==0.16.0
+    # via
+    #   -r requirements/dev.txt
+    #   httpcore
+    #   uvicorn
+httpcore==1.0.9
+    # via
+    #   -r requirements/dev.txt
+    #   httpx
+httptools==0.7.1
+    # via
+    #   -r requirements/dev.txt
+    #   uvicorn
+httpx==0.28.1
+    # via
+    #   -r requirements/dev.txt
+    #   -r requirements/tests.in
 hypothesis==4.38.0
     # via -r requirements/tests.in
 identify==2.5.36
@@ -163,24 +205,27 @@ identify==2.5.36
 idna==3.7
     # via
     #   -r requirements/dev.txt
+    #   anyio
     #   gsy-framework
+    #   httpx
     #   requests
-iniconfig==2.0.0
+iniconfig==2.3.0
     # via pytest
-invoke==2.2.0
+invoke==2.2.1
     # via
     #   -r requirements/dev.txt
     #   fabric
+    #   paramiko
 iso3166==2.1.1
     # via
     #   -r requirements/dev.txt
     #   gsy-framework
-isort==5.13.2
+isort==8.0.1
     # via
     #   -r requirements/dev.txt
     #   -r requirements/tests.in
     #   pylint
-jinja2==3.1.4
+jinja2==3.1.6
     # via behavex
 jsonschema==4.22.0
     # via
@@ -195,62 +240,63 @@ kafka-python==2.0.2
     # via
     #   -r requirements/dev.txt
     #   gsy-framework
-markupsafe==2.1.5
+markupsafe==3.0.3
     # via jinja2
-mccabe==0.6.1
+mccabe==0.7.0
     # via
     #   -r requirements/dev.txt
     #   flake8
     #   pylint
+minify-html==0.18.1
+    # via behavex
 mpmath==1.3.0
     # via
     #   -r requirements/dev.txt
     #   sympy
+narwhals==2.20.0
+    # via
+    #   -r requirements/dev.txt
+    #   plotly
 nodeenv==1.8.0
     # via
     #   -r requirements/dev.txt
     #   gsy-framework
     #   pre-commit
-numpy==1.24.4
-    # via
-    #   -r requirements/dev.txt
-    #   gsy-framework
-    #   pandas
+numpy==2.4.4
+    # via -r requirements/dev.txt
 openpyxl==3.0.10
     # via
     #   -r requirements/dev.txt
     #   gsy-framework
-ordered-set==4.1.0
+orderly-set==5.5.0
     # via deepdiff
 packaging==24.0
     # via
     #   -r requirements/dev.txt
+    #   behavex
     #   gsy-framework
     #   plotly
     #   pyproject-api
     #   pytest
     #   tox
-pandas==1.4.2
-    # via
-    #   -r requirements/dev.txt
-    #   entsoe-py
-    #   gsy-framework
 parameterized==0.9.0
     # via -r requirements/tests.in
-paramiko==3.4.0
+paramiko==4.0.0
     # via
     #   -r requirements/dev.txt
     #   fabric
-parse==1.20.1
+parse==1.21.1
     # via
     #   behave
     #   parse-type
-parse-type==0.6.2
+parse-type==0.6.6
     # via behave
-pendulum==2.1.2
+pendulum==3.0.0
     # via
     #   -r requirements/dev.txt
     #   gsy-framework
+pillow==12.2.0
+    # via behavex-images
 platformdirs==4.2.2
     # via
     #   -r requirements/dev.txt
@@ -258,37 +304,59 @@ platformdirs==4.2.2
     #   pylint
     #   tox
     #   virtualenv
-plotly==5.22.0
+plotly==6.7.0
     # via -r requirements/dev.txt
 pluggy==1.5.0
     # via
     #   -r requirements/dev.txt
+    #   allure-python-commons
     #   gsy-framework
     #   pytest
+    #   pytest-cov
     #   tox
-pony==0.7.17
+pony==0.7.19
     # via -r requirements/dev.txt
 pre-commit==3.5.0
     # via
     #   -r requirements/dev.txt
     #   gsy-framework
-psutil==5.9.8
+psutil==7.2.2
     # via -r requirements/dev.txt
 psycopg2==2.9.10
     # via -r requirements/dev.txt
 psycopg2-binary==2.9.10
     # via -r requirements/dev.txt
-pycodestyle==2.8.0
+pycodestyle==2.14.0
     # via flake8
-pycparser==2.22
+pycparser==3.0
     # via
     #   -r requirements/dev.txt
     #   cffi
-pyflakes==2.4.0
+pydantic==2.13.3
+    # via
+    #   -r requirements/dev.txt
+    #   fastapi
+    #   pylint-pydantic
+pydantic-core==2.46.3
+    # via
+    #   -r requirements/dev.txt
+    #   pydantic
+pyflakes==3.4.0
     # via flake8
-pylint==3.2.0
+pygments==2.20.0
+    # via pytest
+pylint==4.0.5
+    # via
+    #   -r requirements/dev.txt
+    #   pylint-plugin-utils
+    #   pylint-pydantic
+pylint-plugin-utils==0.9.0
+    # via
+    #   -r requirements/dev.txt
+    #   pylint-pydantic
+pylint-pydantic==0.4.1
     # via -r requirements/dev.txt
-pynacl==1.5.0
+pynacl==1.6.2
     # via
     #   -r requirements/dev.txt
     #   paramiko
@@ -297,42 +365,41 @@ pyproject-api==1.6.1
     #   -r requirements/dev.txt
     #   gsy-framework
     #   tox
-pytest==8.2.0
+pytest==9.0.3
     # via
     #   -r requirements/tests.in
     #   pytest-cov
     #   pytest-random-order
     #   pytest-xdist
-pytest-cov==5.0.0
+pytest-cov==7.1.0
     # via -r requirements/tests.in
-pytest-random-order==1.1.1
+pytest-random-order==1.2.0
     # via -r requirements/tests.in
-pytest-xdist==3.6.1
+pytest-xdist==3.8.0
     # via -r requirements/tests.in
 python-dateutil==2.9.0.post0
     # via
     #   -r requirements/dev.txt
+    #   croniter
     #   gsy-framework
-    #   pandas
     #   pendulum
+    #   time-machine
+python-dotenv==1.2.2
+    # via
+    #   -r requirements/dev.txt
+    #   uvicorn
 python-rex==0.4
     # via -r requirements/dev.txt
-pytz==2024.2
-    # via
-    #   -r requirements/dev.txt
-    #   entsoe-py
-    #   gsy-framework
-    #   pandas
-pytzdata==2020.1
-    # via
-    #   -r requirements/dev.txt
-    #   gsy-framework
-    #   pendulum
+python-slugify==8.0.4
+    # via -r requirements/dev.txt
+pytz==2026.1.post1
+    # via -r requirements/dev.txt
 pyyaml==6.0.1
     # via
     #   -r requirements/dev.txt
     #   gsy-framework
     #   pre-commit
+    #   uvicorn
 ratelim==0.1.6
     # via
     #   -r requirements/dev.txt
@@ -349,14 +416,9 @@ referencing==0.35.1
     #   gsy-framework
     #   jsonschema
     #   jsonschema-specifications
-regex==2024.5.15
-    # via
-    #   -r requirements/dev.txt
-    #   awesome-slugify
 requests==2.31.0
     # via
     #   -r requirements/dev.txt
-    #   entsoe-py
     #   geocoder
     #   gsy-framework
     #   requests-mock
@@ -368,13 +430,12 @@ rpds-py==0.18.1
     #   gsy-framework
     #   jsonschema
     #   referencing
-rq==1.16.2
+rq==2.8.0
     # via -r requirements/dev.txt
 six==1.16.0
     # via
     #   -r requirements/dev.txt
     #   behave
-    #   configobj
     #   geocoder
     #   gsy-framework
     #   parse-type
@@ -382,22 +443,26 @@ six==1.16.0
     #   python-rex
 sortedcontainers==2.4.0
     # via -r requirements/dev.txt
-soupsieve==2.6
+starlette==1.0.0
     # via
     #   -r requirements/dev.txt
-    #   beautifulsoup4
-    #   gsy-framework
-sympy==1.12
+    #   fastapi
+sympy==1.14.0
     # via -r requirements/dev.txt
 tabulate==0.9.0
     # via
     #   -r requirements/dev.txt
     #   gsy-framework
-tenacity==8.3.0
+text-unidecode==1.3
     # via
     #   -r requirements/dev.txt
-    #   plotly
-tomlkit==0.12.5
+    #   python-slugify
+time-machine==2.16.0
+    # via
+    #   -r requirements/dev.txt
+    #   gsy-framework
+    #   pendulum
+tomlkit==0.14.0
     # via
     #   -r requirements/dev.txt
     #   pylint
@@ -405,26 +470,52 @@ tox==4.15.0
     # via
     #   -r requirements/dev.txt
     #   gsy-framework
-unidecode==0.4.21
+typing-extensions==4.15.0
     # via
     #   -r requirements/dev.txt
-    #   awesome-slugify
+    #   anyio
+    #   fastapi
+    #   pydantic
+    #   pydantic-core
+    #   starlette
+    #   typing-inspection
+typing-inspection==0.4.2
+    # via
+    #   -r requirements/dev.txt
+    #   fastapi
+    #   pydantic
+tzdata==2025.2
+    # via
+    #   -r requirements/dev.txt
+    #   gsy-framework
+    #   pendulum
 urllib3==1.26.18
     # via
     #   -r requirements/dev.txt
     #   gsy-framework
     #   requests
+uvicorn[standard]==0.46.0
+    # via -r requirements/dev.txt
+uvloop==0.22.1
+    # via
+    #   -r requirements/dev.txt
+    #   uvicorn
 virtualenv==20.26.2
     # via
     #   -r requirements/dev.txt
     #   gsy-framework
     #   pre-commit
     #   tox
+watchfiles==1.1.1
+    # via
+    #   -r requirements/dev.txt
+    #   uvicorn
 websockets==12.0
     # via
     #   -r requirements/dev.txt
     #   gsy-framework
-wrapt==1.16.0
+    #   uvicorn
+wrapt==2.1.2
     # via
     #   -r requirements/dev.txt
     #   deprecated

@@ -29,7 +29,7 @@ import pytest
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig, TIME_ZONE, TIME_FORMAT
 from gsy_framework.data_classes import Offer, TraderDetails
 from gsy_framework.exceptions import GSyDeviceException
-from gsy_framework.read_user_profile import read_arbitrary_profile, InputProfileTypes
+from gsy_framework.read_user_profile import UserProfileReader, InputProfileTypes
 from gsy_framework.utils import generate_market_slot_list
 from gsy_framework.enums import ConfigurationType
 from pendulum import DateTime, duration, datetime
@@ -427,7 +427,9 @@ def test_correct_interpolation_power_profile():
     original_slot_length = GlobalConfig.slot_length
     GlobalConfig.slot_length = duration(minutes=slot_length)
     profile_path = pathlib.Path(gsye_root_path + "/resources/Solar_Curve_W_sunny.csv")
-    profile = read_arbitrary_profile(InputProfileTypes.POWER_W, str(profile_path))
+    profile = UserProfileReader().read_arbitrary_profile(
+        InputProfileTypes.POWER_W, str(profile_path)
+    )
     times = list(profile)
     for ii in range(len(times) - 1):
         assert abs((times[ii] - times[ii + 1]).in_seconds()) == slot_length * 60
@@ -476,7 +478,9 @@ def test_profile_with_date_and_seconds_can_be_parsed(is_canary):
     profile_date = datetime(year=2019, month=3, day=2)
     GlobalConfig.start_date = profile_date
     profile_path = pathlib.Path(gsye_root_path + "/resources/datetime_seconds_profile.csv")
-    profile = read_arbitrary_profile(InputProfileTypes.POWER_W, str(profile_path))
+    profile = UserProfileReader().read_arbitrary_profile(
+        InputProfileTypes.POWER_W, str(profile_path)
+    )
     # After the 6th element the rest of the entries are populated with the last value
     if is_canary:
         expected_energy_values = [1.5]

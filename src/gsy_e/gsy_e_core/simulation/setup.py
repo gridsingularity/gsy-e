@@ -21,7 +21,7 @@ from dataclasses import dataclass
 from importlib import import_module
 from logging import getLogger
 from types import ModuleType
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Optional
 
 from gsy_framework.constants_limits import ConstSettings
 from numpy import random
@@ -31,7 +31,7 @@ from gsy_e.gsy_e_core.non_p2p_handler import NonP2PHandler
 from gsy_e.models.config import SimulationConfig
 
 if TYPE_CHECKING:
-    from gsy_e.models.area import Area, CoefficientArea
+    from gsy_e.models.area import Area
 
 log = getLogger(__name__)
 RANDOM_SEED_MAX_VALUE = 1000000
@@ -51,7 +51,7 @@ class SimulationSetup:
     def __post_init__(self) -> None:
         self._set_random_seed(self.seed)
 
-    def load_setup_module(self) -> Union["Area", "CoefficientArea"]:
+    def load_setup_module(self) -> "Area":
         """Load setup module and create areas that are described on the setup."""
         loaded_python_module = self._import_setup_module(self.setup_module_name)
         area = loaded_python_module.get_setup(self.config)
