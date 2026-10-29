@@ -82,7 +82,8 @@ class AreaBase:
     market trading.
     """
 
-    # pylint: disable=too-many-arguments,too-many-instance-attributes
+    # pylint: disable=too-many-arguments, too-many-instance-attributes
+    # pylint: disable=too-many-positional-arguments
     def __init__(
         self,
         name: str = None,
@@ -98,7 +99,7 @@ class AreaBase:
         self.log = TaggedLogWrapper(log, name)
         self.__name = name
         self.uuid = uuid if uuid is not None else str(uuid4())
-        self.slug = slugify(name, to_lower=True)
+        self.slug = slugify(name)
         self.parent = None
         if not children:
             children = []

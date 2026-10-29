@@ -3,7 +3,7 @@
     "sim_duration": "24h",
     "slot_length": "15m",
     "tick_length": "15s",
-    "start_date": "2024-10-30"
+    "start_date": "2026-09-03"
   },
   "advanced_settings": {
     "GeneralSettings": {
@@ -219,7 +219,7 @@
       ],
       "TEMP_C_LIMIT": [
         0.0,
-        200.0
+        100.0
       ],
       "TANK_VOLUME_L_LIMIT": [
         0,
@@ -248,6 +248,13 @@
         1
       ]
     },
+    "EVChargerSettings": {
+      "MAX_POWER_RATING_KW_LIMIT": [
+        0,
+        9223372036854775807
+      ],
+      "MAX_POWER_RATING_KW": 10
+    },
     "MASettings": {
       "GRID_FEE_TYPE": 1,
       "VALID_FEE_TYPES": [
@@ -256,7 +263,7 @@
       ],
       "MARKET_TYPE": 1,
       "MARKET_TYPE_LIMIT": [
-        1,
+        0,
         3
       ],
       "BID_OFFER_MATCH_TYPE": 1,
@@ -289,7 +296,8 @@
         1,
         3
       ],
-      "HOURS_OF_DELAY": 72
+      "HOURS_OF_DELAY": 72,
+      "SELF_CONSUMPTION_TYPE": 1
     }
   }
 }

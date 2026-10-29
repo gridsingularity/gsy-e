@@ -1,3 +1,4 @@
+# pylint: disable=too-many-positional-arguments
 """
 Copyright 2018 Grid Singularity
 This file is part of Grid Singularity Exchange.
@@ -16,6 +17,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+# pylint: disable=use-dict-literal
 import os
 
 import pendulum
@@ -33,10 +35,7 @@ from gsy_e.models.strategy.market_maker_strategy import MarketMakerStrategy
 from gsy_e.models.strategy.pv import PVStrategy
 from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
 from gsy_e.models.strategy.storage import StorageStrategy
-from gsy_e.models.strategy.scm.load import SCMLoadProfileStrategy, SCMLoadHoursStrategy
-from gsy_e.models.strategy.scm.pv import SCMPVUserProfile
-from gsy_e.models.strategy.scm.smart_meter import SCMSmartMeterStrategy
-from gsy_e.models.strategy.heat_pump import HeatPumpStrategy
+from gsy_e.models.strategy.heat_pump import HeatPumpStrategy, MultipleTankHeatPumpStrategy
 
 green = "rgba(20,150,20, alpha)"
 purple = "rgba(156, 110, 177, alpha)"
@@ -62,6 +61,7 @@ DEVICE_YAXIS = {
     "smart_meter_profile_kWh": "Smart Meter Profile [kWh]",
     "soc_history_%": "State of Charge [%]",
     "trade_price_eur": "Energy Rate [EUR/kWh]",
+    "average_soc": "Average SOC [%]",
 }
 
 OPAQUE_ALPHA = 1
@@ -226,6 +226,7 @@ class PlotlyGraph:
                 return
 
         layout = cls._common_layout(plot_desc, time_range, showlegend, hovermode=hovermode)
+        # pylint: disable=possibly-used-before-assignment
         fig = go.Figure(data=data, layout=layout)
         py.offline.plot(fig, filename=iname, auto_open=False)
 
@@ -487,7 +488,7 @@ class PlotlyGraph:
         """
         Adds a 10% margin to the y2_range
         """
-        data_max = max([abs(x) for x in list(device_dict[var_name].values()) if x is not None])
+        data_max = max(abs(x) for x in list(device_dict[var_name].values()) if x is not None)
         data_max_margin = data_max + data_max * 0.1
         if start_at_zero:
             return [0, abs(data_max_margin)]
@@ -522,9 +523,7 @@ class PlotlyGraph:
                 "overlay", f"{device_name}", "Time", yaxis_caption_list
             )
 
-        elif isinstance(
-            device_strategy, (LoadHoursStrategy, SCMLoadHoursStrategy, SCMLoadProfileStrategy)
-        ):
+        elif isinstance(device_strategy, LoadHoursStrategy):
             y1axis_key = "trade_price_eur"
             y2axis_key = trade_energy_var_name
             y3axis_key = "load_profile_kWh"
@@ -544,7 +543,7 @@ class PlotlyGraph:
                 "overlay", f"{device_name}", "Time", yaxis_caption_list
             )
 
-        elif isinstance(device_strategy, (SmartMeterStrategy, SCMSmartMeterStrategy)):
+        elif isinstance(device_strategy, SmartMeterStrategy):
             y1axis_key = "trade_price_eur"
             y2axis_key = trade_energy_var_name
             y3axis_key = "smart_meter_profile_kWh"
@@ -561,7 +560,7 @@ class PlotlyGraph:
             data += cls._plot_line_time_series(device_dict, y3axis_key)
             layout = cls._device_plot_layout("overlay", device_name, "Time", yaxis_caption_list)
 
-        elif isinstance(device_strategy, (PVStrategy, SCMPVUserProfile)):
+        elif isinstance(device_strategy, PVStrategy):
             y1axis_key = "trade_price_eur"
             y2axis_key = trade_energy_var_name
             y3axis_key = "pv_production_kWh"
@@ -581,10 +580,10 @@ class PlotlyGraph:
                 "overlay", f"{device_name}", "Time", yaxis_caption_list
             )
 
-        elif isinstance(device_strategy, HeatPumpStrategy):
+        elif isinstance(device_strategy, (HeatPumpStrategy, MultipleTankHeatPumpStrategy)):
             y1axis_key = "trade_price_eur"
             y2axis_key = trade_energy_var_name
-            y3axis_key = "storage_temp_C"
+            y3axis_key = "average_soc"
             yaxis_caption_list = [
                 DEVICE_YAXIS[y1axis_key],
                 DEVICE_YAXIS[y2axis_key],
@@ -601,7 +600,7 @@ class PlotlyGraph:
                 "overlay", f"{device_name}", "Time", yaxis_caption_list
             )
 
-        elif type(device_strategy) == FinitePowerPlant:
+        elif type(device_strategy) is FinitePowerPlant:
             y1axis_key = "trade_price_eur"
             y2axis_key = trade_energy_var_name
             y3axis_key = "production_kWh"
@@ -631,7 +630,7 @@ class PlotlyGraph:
             layout = cls._device_plot_layout(
                 "overlay", f"{device_name}", "Time", yaxis_caption_list
             )
-        elif type(device_strategy) == InfiniteBusStrategy:
+        elif type(device_strategy) is InfiniteBusStrategy:
             y1axis_key = "trade_price_eur"
             y2axis_key = sold_trade_energy_var_name
             y3axis_key = bought_trade_energy_var_name

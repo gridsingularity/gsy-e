@@ -18,13 +18,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from gsy_e.models.area.area import Area, Asset, Market
 from gsy_e.models.area.area_base import check_area_name_exists_in_parent_area
-from gsy_e.models.area.coefficient_area import CoefficientArea, CoefficientAreaException
 
 __all__ = [
     "Area",
-    "CoefficientArea",
     "Asset",
     "Market",
     "check_area_name_exists_in_parent_area",
-    "CoefficientAreaException"
 ]

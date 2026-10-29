@@ -16,6 +16,8 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from decimal import Decimal
+
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
 from gsy_framework.data_classes import TraderDetails
 from gsy_framework.read_user_profile import InputProfileTypes
@@ -57,6 +59,7 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
             buying_rate_profile_uuid,
             energy_buy_rate,
             profile_type=InputProfileTypes.IDENTITY,
+            read_full_profile=True,
         )
 
         # sell
@@ -70,6 +73,7 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
             energy_rate_profile_uuid,
             energy_sell_rate,
             profile_type=InputProfileTypes.IDENTITY,
+            read_full_profile=True,
         )
 
         # This is done to support the UI which handles the Infinite Bus only as a Market Maker.
@@ -136,8 +140,8 @@ class InfiniteBusStrategy(CommercialStrategy, BidEnabledStrategy):
         if is_two_sided_market_simulation():
             for market in self.area.all_markets:
                 try:
-                    buy_rate = self.energy_buy_profile.get_value(market.time_slot)
-                    self.post_bid(market, buy_rate * INF_ENERGY, INF_ENERGY)
+                    buy_rate = Decimal(self.energy_buy_profile.get_value(market.time_slot))
+                    self.post_bid(market, float(buy_rate * Decimal(INF_ENERGY)), INF_ENERGY)
                 except MarketException:
                     pass
 

@@ -20,7 +20,7 @@ import json
 
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig, TIME_ZONE
 from gsy_framework.exceptions import GSyException
-from gsy_framework.read_user_profile import InputProfileTypes, read_arbitrary_profile
+from gsy_framework.read_user_profile import InputProfileTypes, UserProfileReader
 from pendulum import DateTime, Duration, duration, today
 
 from gsy_e.gsy_e_core.redis_connections.area_market import external_redis_communicator_factory
@@ -133,7 +133,7 @@ class SimulationConfig:
         """
         Reads market_maker_rate from arbitrary input types
         """
-        self.market_maker_rate = read_arbitrary_profile(
+        self.market_maker_rate = UserProfileReader().read_arbitrary_profile(
             InputProfileTypes.IDENTITY, market_maker_rate
         )
 

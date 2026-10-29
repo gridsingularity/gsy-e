@@ -3,4 +3,5 @@
 fabric
 psutil
 pylint
+pylint-pydantic
 pyyaml>=4.2b1

@@ -23,6 +23,8 @@ nav:
             - 'Heat Pump & Virtual Heat Pump Overview': 'heat-pumps-general.md'
             - 'Heat Pump': 'heat-pump.md'
             - 'Virtual Heat Pump': 'virtual-heat-pump.md'
+            - 'Heat Storage Modelling': 'heat-storage-modelling.md'
+            - 'Custom COP model': 'custom-cop-model.md'
         - 'Community Settings': 'community-settings.md'
         - 'Grid Market Settings': 'grid-market-settings.md'
         - 'Events (Adding, Removing Assets, etc.)': 'events.md'
@@ -47,6 +49,7 @@ nav:
     - 'Results dashboard': 'results-dashboard'
     - 'Net Energy Traded, Energy Cost (Bill) and Energy Cost Savings': 'bills_savings.md'
     - 'Self-Sufficiency and Self-Consumption': 'self-sufficiency-self-consumption.md'
+    - 'Carbon Footprint and Carbon Savings': 'carbon-footprint-savings.md'
     - 'Trade Profile and Energy Peak Percentage': 'trade-profile.md'
     - 'Aggregate Market Summary': 'aggregate-market-summary.md'
     - 'Price Graph': 'price.md'
@@ -95,9 +98,10 @@ nav:
 - 'Blockchain Integration':
   - 'GSY DEX Overview': 'blockchain.md'
   - 'GSY DEX System Components Overview': 'blockchain-system-components-overview.md'
-  - 'GSY DEX Node Installation, Operation and Development': 'blockchain-installation.md'
+  - 'GSY DEX Node Installation, Operation and Development': 'gsy-node.md'
   - 'GSY DEX Off-Chain Storage': 'blockchain-off-chain-storage.md'
   - 'GSY DEX Matching Engine': 'blockchain-matching-engine.md'
+  - 'GSY DEX Execution Engine': 'blockchain-execution-engine.md'
 - 'References': 'references.md'
 - 'Releases Archive': 'releases.md'
 ## - 'Not included':
@@ -149,7 +153,6 @@ extra_javascript:
   - https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML
   - https://research.web3.foundation/en/latest/mathjax-config.js
   - javascripts/mathjax.js
-  - https://polyfill.io/v3/polyfill.min.js?features=es6
   - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
 
 # Repository that houses the source code for this site. This
@@ -181,7 +184,7 @@ markdown_extensions:
         guess_lang: false
     - toc:
         permalink: true
-    - mdtooltips
+        toc_depth: 4
     - attr_list
     - md_in_html
     - pymdownx.arithmatex:
@@ -196,4 +199,6 @@ plugins:
     - redirects:
         redirect_maps:
             # When trying to reach the root page, redirect to the documentation page
-            '': 'https://gridsingularity.github.io/gsy-e/documentation/'
+            'index.md': 'https://gridsingularity.github.io/gsy-e/documentation/'
+            'blockchain-installation.md': 'gsy-node.md'
+            'two-sided-pay-as-bid.md': 'https://gridsingularity.github.io/gsy-e/market-types/#two-sided-pay-as-bid-market'

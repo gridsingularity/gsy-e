@@ -1,10 +1,12 @@
 from abc import abstractmethod, ABC
 import logging
+from functools import cache
 from pendulum import DateTime
 
 from gsy_framework.read_user_profile import InputProfileTypes
 from gsy_framework.constants_limits import GlobalConfig
 from gsy_framework.utils import get_from_profile_same_weekday_and_time
+from gsy_framework.validators.profile_validator import ProfileValidator
 
 from gsy_e.gsy_e_core.global_objects_singleton import global_objects
 from gsy_e.gsy_e_core.util import should_read_profile_from_db
@@ -60,9 +62,9 @@ class StrategyProfile(StrategyProfileBase):
         input_profile_uuid=None,
         input_energy_rate=None,
         profile_type: InputProfileTypes = None,
+        read_full_profile=False,
     ):
         # pylint: disable=super-init-not-called
-
         self.input_profile = input_profile
         self.input_profile_uuid = input_profile_uuid
         self.input_energy_rate = input_energy_rate
@@ -80,6 +82,7 @@ class StrategyProfile(StrategyProfileBase):
         self.profile = {}
 
         self.profile_type = profile_type
+        self._read_full_profile = read_full_profile
 
     def get_value(self, time_slot: DateTime) -> float:
         if not self.profile:
@@ -114,6 +117,20 @@ class StrategyProfile(StrategyProfileBase):
         else:
             self.profile_type = InputProfileTypes.POWER_W
 
+    def _add_last_slot_value_to_new_profile_rotation(self, new_profile_chunk: dict):
+        if new_profile_chunk is None:
+            return self.profile
+
+        if not self.profile:
+            return new_profile_chunk
+
+        last_timestamp = list(self.profile.keys())[-1]
+        last_profile_element = {last_timestamp: self.profile[last_timestamp]}
+        if last_timestamp in new_profile_chunk:
+            # case when the profile was already populated but rotation was triggered again
+            return new_profile_chunk
+        return {**last_profile_element, **new_profile_chunk}
+
     def read_or_rotate_profiles(self, reconfigure=False):
         if self.profile_type is None:
             self._read_input_profile_type()
@@ -127,12 +144,30 @@ class StrategyProfile(StrategyProfileBase):
         else:
             profile = self.profile
 
-        self.profile = global_objects.profiles_handler.rotate_profile(
+        new_profile_chunk = global_objects.profiles_handler.rotate_profile(
             profile_type=self.profile_type,
             profile=profile,
             profile_uuid=self.input_profile_uuid,
             input_profile_path=self.input_profile,
+            read_full_profile=self._read_full_profile,
         )
+
+        self.profile = self._add_last_slot_value_to_new_profile_rotation(new_profile_chunk)
+        self._validate_and_log_profile()
+
+    def _validate_and_log_profile(self):
+        try:
+            ProfileValidator(self.profile, slot_length=GlobalConfig.slot_length).validate()
+        except AssertionError as exc:
+            self._log_once(
+                f"Validation of profile time slot fails for profile {self.input_profile_uuid} "
+                f"({str(exc)})"
+            )
+
+    @staticmethod
+    @cache
+    def _log_once(msg: str):
+        log.error(msg)
 
 
 def profile_factory(
