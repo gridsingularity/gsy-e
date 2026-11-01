@@ -235,7 +235,7 @@ class TestOneRunMethod:
         _record(collector, grid, FIRST_SLOT, {})
 
         # When
-        with patch.object(RoiResultsCollector, "_slot_flows", side_effect=KeyError("boom")):
+        with patch.object(RoiResultsCollector, "_slot_stats", side_effect=KeyError("boom")):
             _record(collector, grid, SECOND_SLOT, {})
 
         # Then
