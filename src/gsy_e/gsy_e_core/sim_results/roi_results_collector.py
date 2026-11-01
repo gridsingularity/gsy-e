@@ -38,7 +38,6 @@ from gsy_framework.sim_results.roi.data_classes import (
     RoiFlag,
     RoiInputs,
     SimulationFingerprint,
-    SuppressionCause,
 )
 from gsy_framework.sim_results.roi.parameters import (
     ASSUMED_INPUTS,
@@ -48,7 +47,7 @@ from gsy_framework.sim_results.roi.parameters import (
     OBSERVED_INPUTS,
 )
 from gsy_framework.sim_results.roi.range import calculate_range
-from gsy_framework.sim_results.roi.serialization import serialize_result
+from gsy_framework.sim_results.roi.report import FailedPVRoiReport, PVRoiReport, RoiBasis
 from pendulum import DateTime, Duration
 
 import gsy_e.constants
@@ -475,18 +474,16 @@ class RoiResultsCollector:
                     and bool(record.strategy.roi_parameters.ownership_shares)
                     and record.path not in baseline_paths
                 )
-                results[uuid] = self._pv_result(record, window_days, uses_baseline, bills)
+                report = self._pv_report(record, window_days, uses_baseline, bills)
+                results[uuid] = report.serializable_dict()
             except Exception as ex:  # pylint: disable=broad-except
                 log.exception("RoI appraisal of %s failed.", record.name)
-                results[uuid] = {
-                    "unavailable": SuppressionCause.CALCULATION_FAILED.value,
-                    "error": str(ex),
-                }
+                results[uuid] = FailedPVRoiReport(str(ex)).serializable_dict()
         return results
 
-    def _pv_result(
+    def _pv_report(
         self, record: _PVRecord, window_days: float, uses_baseline: bool, bills: Dict[str, float]
-    ) -> Dict:
+    ) -> PVRoiReport:
         strategy = record.strategy
         stats = record.total
         inputs = RoiInputs(
@@ -512,25 +509,27 @@ class RoiResultsCollector:
             flags.add(RoiFlag.SHARED_ASSET_ESTIMATE)
 
         basis = self._basis(record, inputs, flags, uses_baseline)
-        result = self._appraise(inputs, stats.own_use_kWh, stats.sold_kWh)
-        result["basis"].update(basis)
+        report = self._appraise(inputs, basis, stats.own_use_kWh, stats.sold_kWh)
         if uses_baseline and RoiFlag.MEMBER_RESULTS_WITHHELD not in flags:
-            result["members"] = {
-                name: self._member_result(record, inputs, stats, basis, bills, name, share)
-                for name, share in strategy.roi_parameters.ownership_shares.items()
-            }
-        return result
+            report = replace(
+                report,
+                members={
+                    name: self._member_report(record, inputs, stats, basis, bills, name, share)
+                    for name, share in strategy.roi_parameters.ownership_shares.items()
+                },
+            )
+        return report
 
-    def _member_result(
+    def _member_report(
         self,
         record: _PVRecord,
         inputs: RoiInputs,
         stats: _PVStats,
-        basis: Dict,
+        basis: RoiBasis,
         bills: Dict[str, float],
         name: str,
         share: float,
-    ) -> Dict:
+    ) -> PVRoiReport:
         path = record.member_paths[name]
         member_inputs = replace(
             inputs,
@@ -539,53 +538,59 @@ class RoiResultsCollector:
             avoided_purchase=self._baseline.area_bills.get(path, 0.0) - bills.get(path, 0.0),
             sales_revenue=share * stats.sales_revenue,
         )
-        result = self._appraise(member_inputs, share * stats.own_use_kWh, share * stats.sold_kWh)
-        result["basis"].update(
-            {**basis, "ownership_share": share, "member_name": name, "member_path": path}
+        member_basis = replace(basis, ownership_share=share, member_name=name, member_path=path)
+        return self._appraise(
+            member_inputs, member_basis, share * stats.own_use_kWh, share * stats.sold_kWh
         )
-        return result
 
     @staticmethod
-    def _appraise(inputs: RoiInputs, own_use_kWh: float, sold_kWh: float) -> Dict:
-        result = serialize_result(calculate_roi(inputs, DEFAULT_PARAMETER_SET))
-        result["self_consumption_ratio"] = (
-            own_use_kWh / inputs.window_generation_kWh
-            if inputs.window_generation_kWh > 0
-            else None
+    def _appraise(
+        inputs: RoiInputs, basis: RoiBasis, own_use_kWh: float, sold_kWh: float
+    ) -> PVRoiReport:
+        result = calculate_roi(inputs, DEFAULT_PARAMETER_SET)
+        return PVRoiReport(
+            result=result,
+            basis=basis,
+            self_consumption_ratio=(
+                own_use_kWh / inputs.window_generation_kWh
+                if inputs.window_generation_kWh > 0
+                else None
+            ),
+            range=(
+                calculate_range(
+                    inputs, DEFAULT_PARAMETER_SET, DEFAULT_RANGE_LEVERS, own_use_kWh, sold_kWh
+                )
+                if result.unavailable is None
+                else None
+            ),
         )
-        if result["unavailable"] is None:
-            cases = calculate_range(
-                inputs, DEFAULT_PARAMETER_SET, DEFAULT_RANGE_LEVERS, own_use_kWh, sold_kWh
-            )
-            result["range"] = {case: serialize_result(roi) for case, roi in cases.items()}
-        return result
 
     def _basis(
         self, record: _PVRecord, inputs: RoiInputs, flags: Set[RoiFlag], uses_baseline: bool
-    ) -> Dict:
+    ) -> RoiBasis:
         assumed: List[str] = list(ASSUMED_INPUTS)
         observed: List[str] = list(OBSERVED_INPUTS)
         if record.strategy.roi_parameters.capital_cost_per_kWp is None:
             assumed.append("capital_cost")
         (assumed if record.capacity_assumed else observed).append("capacity")
         rates = set(self._supplier_rates.values())
-        return {
-            "baseline_method": (
+        return RoiBasis(
+            baseline_method=(
                 BaselineMethod.SIMULATION if uses_baseline else BaselineMethod.ANALYTICAL
-            ).value,
-            "allocation_basis": AllocationBasis.MARKET_CLEARING.value,
-            "price_basis": (PriceBasis.PROFILE if len(rates) > 1 else PriceBasis.SCALAR).value,
-            "window_start": min(self._supplier_rates) if self._supplier_rates else None,
-            "window_days": inputs.window_days,
-            "window_is_metered": False,
-            "ownership_share": inputs.ownership_share,
-            "capacity_kWp": inputs.capacity_kWp,
-            "capital_cost_per_kWp": inputs.capital_cost_per_kWp,
-            "annual_generation_kWh": inputs.annual_generation_kWh,
-            "asset_name": record.name,
-            "owner_name": record.owner_name,
-            "last_realised_year": None,
-            "inputs_observed": observed,
-            "inputs_assumed": assumed,
-            "flags": sorted(flag.value for flag in flags),
-        }
+            ),
+            allocation_basis=AllocationBasis.MARKET_CLEARING,
+            price_basis=PriceBasis.PROFILE if len(rates) > 1 else PriceBasis.SCALAR,
+            window_start=min(self._supplier_rates) if self._supplier_rates else None,
+            window_days=inputs.window_days,
+            window_is_metered=False,
+            ownership_share=inputs.ownership_share,
+            capacity_kWp=inputs.capacity_kWp,
+            capital_cost_per_kWp=inputs.capital_cost_per_kWp,
+            annual_generation_kWh=inputs.annual_generation_kWh,
+            asset_name=record.name,
+            owner_name=record.owner_name,
+            last_realised_year=None,
+            inputs_observed=observed,
+            inputs_assumed=assumed,
+            flags=list(flags),
+        )
