@@ -25,6 +25,7 @@ from gsy_framework.enums import SpotMarketTypeEnum
 
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.commercial_producer import CommercialStrategy
+from gsy_e.models.strategy.ev_charger import EVChargerStrategy
 from gsy_e.models.strategy.external_strategies.load import (
     LoadHoursForecastExternalStrategy,
     LoadProfileForecastExternalStrategy,
@@ -229,6 +230,10 @@ class ForwardPV(Leaf):
 
 class HeatPump(Leaf):
     strategy_type = HeatPumpStrategy
+
+
+class EVCharger(Leaf):
+    strategy_type = EVChargerStrategy
 
 
 class FiniteDieselGenerator(Leaf):

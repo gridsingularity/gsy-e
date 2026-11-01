@@ -21,13 +21,15 @@ from datetime import datetime
 
 import pytest
 from gsy_framework.constants_limits import ConstSettings, GlobalConfig
-from pendulum import duration, instance
+from gsy_framework.enums import GridIntegrationType
+from pendulum import datetime as pendulum_datetime, duration, instance
 
 from gsy_e.gsy_e_core.area_serializer import are_all_areas_unique, area_from_string, area_to_string
 from gsy_e.models.area import Area
 from gsy_e.models.config import SimulationConfig
 from gsy_e.models.leaves import (
     PV,
+    EVCharger,
     LoadHours,
     SmartMeter,
     Storage,
@@ -36,6 +38,7 @@ from gsy_e.models.strategy.external_strategies.load import LoadHoursExternalStra
 from gsy_e.models.strategy.external_strategies.pv import PVExternalStrategy
 from gsy_e.models.strategy.external_strategies.storage import StorageExternalStrategy
 from gsy_e.models.strategy.pv import PVStrategy
+from gsy_e.models.strategy.state.evcharger_state import EVChargingSession
 from gsy_e.models.strategy.smart_meter import SmartMeterStrategy
 from gsy_e.models.strategy.forward.pv import ForwardPVStrategy
 from gsy_e.models.strategy.forward.load import ForwardLoadStrategy
@@ -227,6 +230,105 @@ def test_roundtrip_with_leaf(_fixture_with_leaves):
     assert isinstance(recovered.children[0].strategy, PVStrategy)
     assert isinstance(recovered.children[1].strategy, PVStrategy)
     assert isinstance(recovered.children[2].strategy, SmartMeterStrategy)
+
+
+def test_ev_charger_leaf_deserialization():
+    recovered = area_from_string(
+        """{
+             "name": "house",
+             "children":[
+                 {"name": "ev charger", "type": "EVCharger", "display_type": "EVCharger",
+                  "grid_integration": 1, "maximum_power_rating_kW": 22,
+                  "preferred_charging_power": 11, "charging_efficiency": null,
+                  "charging_sessions": [
+                      {"plug_in_time": "2024-01-30T08:00", "duration_minutes": 60,
+                       "initial_soc_percent": 20, "min_soc_percent": 80,
+                       "battery_capacity_kWh": 60},
+                      {"plug_in_time": "2024-01-30T18:00", "duration_minutes": 90,
+                       "initial_soc_percent": null, "min_soc_percent": null,
+                       "battery_capacity_kWh": null}
+                  ]}
+             ]
+           }
+        """,
+        _create_config(),
+    )
+
+    ev_charger = recovered.children[0]
+    assert isinstance(ev_charger, EVCharger)
+    assert ev_charger.display_type == "EVCharger"
+    strategy = ev_charger.strategy
+    assert strategy.grid_integration == GridIntegrationType.BIDIRECTIONAL
+    assert strategy.maximum_power_rating_kW == 22
+    assert strategy.preferred_charging_power == 11
+    configured_session, default_session = strategy.charging_sessions
+    assert isinstance(configured_session, EVChargingSession)
+    assert configured_session.plug_in_time == pendulum_datetime(2024, 1, 30, 8)
+    assert configured_session.duration_minutes == 60
+    assert configured_session.initial_soc_percent == 20
+    assert configured_session.min_soc_percent == 80
+    assert configured_session.battery_capacity_kWh == 60
+    assert default_session.plug_in_time == pendulum_datetime(2024, 1, 30, 18)
+    assert default_session.initial_soc_percent == 20.0
+    assert default_session.min_soc_percent == 50.0
+    assert default_session.battery_capacity_kWh == 100.0
+
+
+def test_ev_charger_roundtrip_keeps_charging_sessions():
+    area = Area(
+        "house",
+        [
+            EVCharger(
+                "ev charger",
+                grid_integration=GridIntegrationType.UNIDIRECTIONAL,
+                maximum_power_rating_kW=11,
+                preferred_charging_power=5,
+                charging_efficiency=0.8,
+                charging_sessions=[
+                    EVChargingSession(
+                        plug_in_time=pendulum_datetime(2024, 1, 30, 8),
+                        duration_minutes=60,
+                        initial_soc_percent=30,
+                        min_soc_percent=70,
+                        battery_capacity_kWh=40,
+                    )
+                ],
+                config=_create_config(),
+            )
+        ],
+    )
+
+    recovered = area_from_string(area_to_string(area), _create_config())
+
+    assert (
+        not {
+            "initial_soc",
+            "min_allowed_soc",
+            "battery_capacity_kWh",
+            "max_abs_battery_power_kW",
+        }
+        & area.children[0].parameters.keys()
+    )
+    strategy = recovered.children[0].strategy
+    assert strategy.grid_integration == GridIntegrationType.UNIDIRECTIONAL
+    assert strategy.maximum_power_rating_kW == 11
+    assert strategy.preferred_charging_power == 5
+    assert strategy.charging_efficiency == 0.8
+    [session] = strategy.charging_sessions
+    assert session.plug_in_time == pendulum_datetime(2024, 1, 30, 8)
+    assert session.duration_minutes == 60
+    assert session.initial_soc_percent == 30
+    assert session.min_soc_percent == 70
+    assert session.battery_capacity_kWh == 40
+
+
+def test_ev_charger_normalises_int_grid_integration():
+    area = Area("house", [EVCharger("ev charger", grid_integration=0, config=_create_config())])
+
+    serialized = area_to_string(area)
+
+    assert area.children[0].strategy.grid_integration is GridIntegrationType.UNIDIRECTIONAL
+    assert '"grid_integration": 0' in serialized
 
 
 def test_area_does_not_allow_duplicate_subarea_names():

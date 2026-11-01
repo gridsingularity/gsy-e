@@ -23,7 +23,12 @@ from pendulum import DateTime, duration
 
 from gsy_framework.constants_limits import ConstSettings, FLOATING_POINT_TOLERANCE
 from gsy_framework.enums import EVChargerStatus
-from gsy_framework.utils import convert_kW_to_kWh, limit_float_precision
+from gsy_framework.utils import (
+    convert_kW_to_kWh,
+    format_datetime,
+    limit_float_precision,
+    str_to_pendulum_datetime,
+)
 
 from gsy_e.models.strategy.state.storage_state import (
     StorageState,
@@ -37,9 +42,10 @@ EVChargerSettings = ConstSettings.EVChargerSettings
 class EVChargingSession:
     """Class to represent an EV charging/discharging session."""
 
+    # pylint: disable=too-many-arguments,too-many-positional-arguments
     def __init__(
         self,
-        plug_in_time: str,
+        plug_in_time: DateTime,
         duration_minutes: int,
         initial_soc_percent: float = 20.0,
         min_soc_percent: float = 50.0,
@@ -54,6 +60,24 @@ class EVChargingSession:
         # Internal state tracking for the session
         self._current_soc_percent = initial_soc_percent
         self._current_energy_kWh = (initial_soc_percent / 100.0) * battery_capacity_kWh
+
+    @classmethod
+    def from_dict(cls, session: Dict) -> "EVChargingSession":
+        """Build a session from its JSON form, leaving null fields at their defaults."""
+        fields = {key: value for key, value in session.items() if value is not None}
+        if isinstance(fields.get("plug_in_time"), str):
+            fields["plug_in_time"] = str_to_pendulum_datetime(fields["plug_in_time"])
+        return cls(**fields)
+
+    def serialize(self) -> Dict:
+        """Return the JSON form of the session that from_dict reads back."""
+        return {
+            "plug_in_time": format_datetime(self.plug_in_time),
+            "duration_minutes": self.duration_minutes,
+            "initial_soc_percent": self.initial_soc_percent,
+            "min_soc_percent": self.min_soc_percent,
+            "battery_capacity_kWh": self.battery_capacity_kWh,
+        }
 
     @property
     def session_id(self) -> str:
@@ -246,6 +270,7 @@ class EVSessionsManager:
 class EVChargerState(StorageState):
     """State for the EV charger asset."""
 
+    # pylint: disable=too-many-positional-arguments
     def __init__(
         self,
         maximum_power_rating_kW: float,

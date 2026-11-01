@@ -77,9 +77,10 @@ class EVChargerStrategy(StorageStrategy):
 
         super().__init__(**kwargs)
 
-        self.grid_integration = grid_integration
+        self.grid_integration = GridIntegrationType(grid_integration)
         self.maximum_power_rating_kW = maximum_power_rating_kW
         self.preferred_charging_power = preferred_charging_power
+        self.charging_efficiency = charging_efficiency
         self.charging_sessions = sorted(charging_sessions, key=lambda s: s.plug_in_time)
         self.status = EVChargerStatus.IDLE
 
@@ -97,6 +98,35 @@ class EVChargerStrategy(StorageStrategy):
             slot_length=GlobalConfig.slot_length,
             losses=losses,
         )
+
+    def serialize(self):
+        storage_fields = super().serialize()
+        for placeholder_field in (
+            "initial_soc",
+            "min_allowed_soc",
+            "battery_capacity_kWh",
+            "max_abs_battery_power_kW",
+        ):
+            del storage_fields[placeholder_field]
+        return {
+            **storage_fields,
+            "grid_integration": self.grid_integration.value,
+            "maximum_power_rating_kW": self.maximum_power_rating_kW,
+            "preferred_charging_power": self.preferred_charging_power,
+            "charging_efficiency": self.charging_efficiency,
+            "charging_sessions": [session.serialize() for session in self.charging_sessions],
+        }
+
+    @staticmethod
+    def deserialize_args(constructor_args: Dict) -> Dict:
+        """Convert the JSON values of an EV charger into the types its constructor expects."""
+        constructor_args = StorageStrategy.deserialize_args(constructor_args)
+        if constructor_args.get("charging_sessions"):
+            constructor_args["charging_sessions"] = [
+                EVChargingSession.from_dict(session)
+                for session in constructor_args["charging_sessions"]
+            ]
+        return constructor_args
 
     @property
     def state(self) -> EVChargerState:
