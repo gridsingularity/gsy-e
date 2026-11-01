@@ -17,6 +17,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.sim_results.roi.data_classes import PVRoiParameters
+from gsy_framework.validators import PVValidator
 from pendulum import duration
 
 from gsy_e.models.strategy.energy_parameters.pv import (
@@ -39,6 +41,7 @@ class PVPredefinedStrategy(PVStrategy):
             energy_rate_decrease_per_update=None,
             use_market_maker_rate: bool = False,
             capacity_kW: float = None,
+            roi_parameters: PVRoiParameters = None,
             ):
         """
         Constructor of PVPredefinedStrategy
@@ -56,6 +59,7 @@ class PVPredefinedStrategy(PVStrategy):
             update_interval: Interval after which PV will update its offer
             energy_rate_decrease_per_update: Slope of PV Offer change per update
             capacity_kW: power rating of the predefined profiles
+            roi_parameters: Inputs that only the RoI results use, as for PVStrategy
         """
 
         if update_interval is None:
@@ -69,7 +73,8 @@ class PVPredefinedStrategy(PVStrategy):
                          update_interval=update_interval,
                          energy_rate_decrease_per_update=energy_rate_decrease_per_update,
                          capacity_kW=capacity_kW,
-                         use_market_maker_rate=use_market_maker_rate
+                         use_market_maker_rate=use_market_maker_rate,
+                         roi_parameters=roi_parameters,
                          )
 
         self._energy_params = PVPredefinedEnergyParameters(
@@ -115,7 +120,9 @@ class PVUserProfileStrategy(PVStrategy):
             energy_rate_decrease_per_update=None,
             use_market_maker_rate: bool = False,
             power_profile_uuid: str = None,
-            power_measurement_uuid: str = None
+            power_measurement_uuid: str = None,
+            capacity_kW: float = None,
+            roi_parameters: PVRoiParameters = None,
     ):
         """
         Constructor of PVUserProfileStrategy
@@ -125,6 +132,9 @@ class PVUserProfileStrategy(PVStrategy):
                            or a dict with arbitrary time data (Dict[str, float])
             panel_count: number of solar panels for this PV plant
             final_selling_rate: lower threshold for the PV sale price
+            capacity_kW: Installed capacity, used only by the RoI results since the profile
+                         sets the energy
+            roi_parameters: Inputs that only the RoI results use, as for PVStrategy
         """
         super().__init__(panel_count=panel_count,
                          initial_selling_rate=initial_selling_rate,
@@ -132,13 +142,19 @@ class PVUserProfileStrategy(PVStrategy):
                          fit_to_limit=fit_to_limit,
                          update_interval=update_interval,
                          energy_rate_decrease_per_update=energy_rate_decrease_per_update,
-                         use_market_maker_rate=use_market_maker_rate)
+                         use_market_maker_rate=use_market_maker_rate,
+                         roi_parameters=roi_parameters)
         self._energy_params = PVUserProfileEnergyParameters(
             panel_count, power_profile, power_profile_uuid, power_measurement_uuid)
+        PVValidator.validate_energy(capacity_kW=capacity_kW)
+        self.capacity_kW = capacity_kW
 
         # needed for profile_handler
         self.power_profile_uuid = power_profile_uuid
         self.power_measurement_uuid = power_measurement_uuid
+
+    def serialize(self):
+        return {**super().serialize(), "capacity_kW": self.capacity_kW}
 
     def set_produced_energy_forecast_in_state(self, reconfigure=True):
         time_slots = [self.area.spot_market.time_slot]

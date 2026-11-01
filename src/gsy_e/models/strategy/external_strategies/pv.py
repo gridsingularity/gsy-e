@@ -20,6 +20,7 @@ import logging
 from typing import TYPE_CHECKING, Callable, Dict
 
 from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.sim_results.roi.data_classes import PVRoiParameters
 from gsy_framework.data_classes import Offer
 from gsy_framework.utils import str_to_pendulum_datetime
 from pendulum import duration
@@ -400,7 +401,8 @@ class PVForecastExternalStrategy(ForecastExternalMixin, PVPredefinedExternalStra
             energy_rate_decrease_per_update=None,
             use_market_maker_rate: bool = False,
             cloud_coverage: int = None,
-            capacity_kW: float = None
+            capacity_kW: float = None,
+            roi_parameters: PVRoiParameters = None,
     ):
         """
         Constructor of PVForecastStrategy
@@ -411,7 +413,8 @@ class PVForecastExternalStrategy(ForecastExternalMixin, PVPredefinedExternalStra
                          fit_to_limit=fit_to_limit,
                          update_interval=update_interval,
                          energy_rate_decrease_per_update=energy_rate_decrease_per_update,
-                         use_market_maker_rate=use_market_maker_rate)
+                         use_market_maker_rate=use_market_maker_rate,
+                         roi_parameters=roi_parameters)
 
     def update_energy_forecast(self) -> None:
         """Set energy forecast for future markets."""

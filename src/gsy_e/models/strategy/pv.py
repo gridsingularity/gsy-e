@@ -18,11 +18,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import traceback
 from logging import getLogger
+from typing import Dict
 
 from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import TraderDetails
 from gsy_framework.exceptions import GSyException
 from gsy_framework.read_user_profile import InputProfileTypes, UserProfileReader
+from gsy_framework.sim_results.roi.data_classes import PVRoiParameters
 from gsy_framework.utils import key_in_dict_and_not_none
 from gsy_framework.validators import PVValidator
 from pendulum import duration
@@ -56,6 +58,7 @@ class PVStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         energy_rate_decrease_per_update=None,
         capacity_kW: float = None,
         use_market_maker_rate: bool = False,
+        roi_parameters: PVRoiParameters = None,
     ):
         """
         Args:
@@ -66,8 +69,12 @@ class PVStrategy(BidEnabledStrategy, UseMarketMakerMixin):
              update_interval: Interval after which PV will update its offer
              energy_rate_decrease_per_update: Slope of PV Offer change per update
              capacity_kW: power rating of the predefined profiles
+             roi_parameters: Inputs that only the RoI results use. A PV without them gets no
+                 RoI result
         """
         super().__init__()
+        PVValidator.validate_roi(roi_parameters=roi_parameters)
+        self.roi_parameters = roi_parameters
         self._energy_params = PVEnergyParameters(panel_count, capacity_kW)
         self.use_market_maker_rate = use_market_maker_rate
         self._init_price_update(
@@ -85,7 +92,21 @@ class PVStrategy(BidEnabledStrategy, UseMarketMakerMixin):
             **self._energy_params.serialize(),
             **self.offer_update.serialize(),
             "use_market_maker_rate": self.use_market_maker_rate,
+            "roi_parameters": (
+                self.roi_parameters.serializable_dict()
+                if self.roi_parameters is not None
+                else None
+            ),
         }
+
+    @staticmethod
+    def deserialize_args(constructor_args: Dict) -> Dict:
+        """Build the RoI parameters from the dict that a serialized setup holds."""
+        if isinstance(constructor_args.get("roi_parameters"), dict):
+            constructor_args["roi_parameters"] = PVRoiParameters.from_dict(
+                constructor_args["roi_parameters"]
+            )
+        return constructor_args
 
     @classmethod
     def _create_settlement_market_strategy(cls):

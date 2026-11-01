@@ -23,6 +23,8 @@ from enum import Enum
 from decimal import getcontext
 import os
 
+from gsy_framework.enums import RandomOrder
+
 ROUND_TOLERANCE_EXPORT = 2
 
 # Percentual standard deviation relative to the forecast energy, used to compute the (simulated)
@@ -88,6 +90,9 @@ class SettlementTemplateStrategiesConstants:
 
 class FutureTemplateStrategiesConstants(SettlementTemplateStrategiesConstants):
     """Constants related to the configuration of future template strategies"""
+
+
+RANDOM_ORDER = RandomOrder.SHARED
 
 
 class HeatPumpSOCManagementAlgorithm(Enum):

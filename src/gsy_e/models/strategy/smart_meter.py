@@ -22,12 +22,12 @@ from gsy_framework.data_classes import Offer, TraderDetails
 from gsy_framework.read_user_profile import InputProfileTypes
 from gsy_framework.utils import limit_float_precision
 from gsy_framework.validators.smart_meter_validator import SmartMeterValidator
-from numpy import random
 from pendulum import duration
 
 from gsy_e import constants
 from gsy_e.gsy_e_core.exceptions import GSyException, MarketException
 from gsy_e.gsy_e_core.util import is_one_sided_market_simulation, is_two_sided_market_simulation
+from gsy_e.models import random_order
 from gsy_e.models.base import AssetType
 from gsy_e.models.market import MarketBase
 from gsy_e.models.strategy import BidEnabledStrategy
@@ -574,10 +574,12 @@ class SmartMeterStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         except MarketException:
             self.log.exception("An Error occurred while buying an offer.")
 
-    @staticmethod
-    def _find_acceptable_offer(market):
-        offers = market.most_affordable_offers
-        return random.choice(offers)
+    def _find_acceptable_offer(self, market):
+        return random_order.choice(
+            market.most_affordable_offers,
+            salt=lambda: f"{self.owner.name}|{market.time_slot_str}|{market.now}",
+            key=lambda offer: f"{offer.seller.origin}|{offer.seller.name}",
+        )
 
     def event_balancing_market_cycle(self):
         # TODO: implement

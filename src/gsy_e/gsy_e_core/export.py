@@ -60,6 +60,7 @@ from gsy_e.gsy_e_core.sim_results.results_plots import (
     PlotUnmatchedLoads,
     PlotHPPhysicalStats,
 )
+from gsy_e.gsy_e_core.sim_results.roi_results_collector import BASELINE_FILE_NAME
 from gsy_e.gsy_e_core.util import constsettings_to_dict, is_two_sided_market_simulation
 from gsy_e.models.area import Area
 
@@ -90,6 +91,8 @@ results_field_to_json_filename_mapping = {
     "trade_profile": "trade_profile",
     "imported_exported_energy": "imported_exported_energy",
     "hierarchy_self_consumption_percent": "hierarchy_self_consumption_percent",
+    "roi": "roi",
+    "roi_baseline": pathlib.Path(BASELINE_FILE_NAME).stem,
 }
 
 

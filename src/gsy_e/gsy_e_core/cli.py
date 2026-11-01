@@ -25,9 +25,11 @@ from click.types import Choice
 from click_default_group import DefaultGroup
 from colorlog.colorlog import ColoredFormatter
 from gsy_framework.constants_limits import ConstSettings, DATE_FORMAT, TIME_FORMAT, TIME_ZONE
+from gsy_framework.enums import RandomOrder
 from gsy_framework.exceptions import GSyException
 from gsy_framework.settings_validators import validate_global_settings
 from pendulum import today
+import gsy_e.constants
 from gsy_e.gsy_e_core.non_p2p_handler import set_non_p2p_settings
 
 from gsy_e.gsy_e_core.simulation import run_simulation
@@ -190,6 +192,21 @@ _setup_modules = available_simulation_scenarios
     help="Specify a path for the carbon ratio (gCO2eq/kWh) csv file, "
     "(example: ./src/gsy_e/resources/carbon_ratio_g_per_kWh.csv)",
 )
+@click.option(
+    "--random-order",
+    type=Choice([mode.value for mode in RandomOrder]),
+    default=RandomOrder.SHARED.value,
+    show_default=True,
+    help="How events, notifications and offer choices are shuffled. 'hash' ranks each item by "
+    "its own name, so that a run without one area stays comparable with the full run.",
+)
+@click.option(
+    "--roi-baseline",
+    type=click.Path(exists=True),
+    default=None,
+    help="Export folder or roi_baseline.json of the same simulation without its shared PVs, "
+    "used to appraise them with the two-run method.",
+)
 def run(
     setup_module_name,
     settings_file,
@@ -203,6 +220,8 @@ def run(
     slot_length_realtime,
     enable_dof: bool,
     market_type: int,
+    random_order: str,
+    roi_baseline: str,
     **kwargs,
 ):
     """Configure settings and run a simulation."""
@@ -240,6 +259,9 @@ def run(
 
         if incremental:
             kwargs["incremental"] = incremental
+        gsy_e.constants.RANDOM_ORDER = RandomOrder(random_order)
+        if roi_baseline is not None:
+            kwargs["roi_baseline"] = roi_baseline
 
         if pause_at is not None:
             kwargs["pause_after"] = convert_str_to_pause_after_interval(start_date, pause_at)

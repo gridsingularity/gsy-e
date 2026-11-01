@@ -31,10 +31,10 @@ from gsy_framework.constants_limits import (
     DATE_TIME_FORMAT,
 )
 from gsy_framework.data_classes import Offer, Trade, Bid
-from numpy.random import random
 from pendulum import DateTime, duration
 
 from gsy_e.gsy_e_core.device_registry import DeviceRegistry
+from gsy_e.models import random_order
 from gsy_e.gsy_e_core.util import (
     add_or_create_key,
     subtract_or_create_key,
@@ -88,6 +88,12 @@ class MarketSlotParams:
         assert self.delivery_end_time > self.delivery_start_time
         assert self.closing_time <= self.delivery_start_time
         assert self.closing_time > self.opening_time
+
+
+def _listener_key(listener: Callable) -> str:
+    """Identify a listener by its area name, which stays stable when other listeners go."""
+    area = getattr(getattr(listener, "__self__", None), "area", None)
+    return area.name if area is not None else getattr(listener, "__qualname__", repr(listener))
 
 
 class MarketBase:  # pylint: disable=too-many-instance-attributes
@@ -233,7 +239,11 @@ class MarketBase:  # pylint: disable=too-many-instance-attributes
             self.redis_publisher.publish_event(event, **kwargs)
         else:
             # Deliver notifications in random order to ensure fairness
-            for listener in sorted(self.notification_listeners, key=lambda inp: random()):
+            for listener in random_order.shuffled(
+                self.notification_listeners,
+                salt=lambda: f"{self.name}|{self.time_slot_str}|{event}|{self.now}",
+                key=_listener_key,
+            ):
                 listener(event, market_id=self.id, **kwargs)
 
     def _update_stats_after_trade(self, trade: Trade, order: Union[Offer, Bid]) -> None:
