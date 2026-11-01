@@ -28,7 +28,7 @@ from gsy_e.gsy_e_core.sim_results.roi_results_collector import (
     BASELINE_FILE_NAME,
     RoiBaselineError,
     load_baseline,
-    run_fingerprint,
+    get_simulation_fingerprint,
     validate_fingerprint,
 )
 from gsy_e.models.area import Area
@@ -54,7 +54,7 @@ def fixture_community(monkeypatch):
 
 
 def _baseline_of(community):
-    fingerprint = deepcopy(run_fingerprint(community, 7))
+    fingerprint = deepcopy(get_simulation_fingerprint(community, 7))
     del fingerprint["areas"][SHARED_PV]
     return {"fingerprint": fingerprint, "area_bills": {}, "supplier_rates": {}}
 
@@ -64,7 +64,7 @@ class TestValidateFingerprint:
     def test_the_same_run_without_the_shared_pv_is_valid(self, community):
         # When
         problems = validate_fingerprint(
-            _baseline_of(community), run_fingerprint(community, 7), {SHARED_PV}
+            _baseline_of(community), get_simulation_fingerprint(community, 7), {SHARED_PV}
         )
 
         # Then
@@ -77,7 +77,9 @@ class TestValidateFingerprint:
         baseline["fingerprint"]["areas"]["Community/House 2"] = {"type": "Area"}
 
         # When
-        problems = validate_fingerprint(baseline, run_fingerprint(community, 8), {SHARED_PV})
+        problems = validate_fingerprint(
+            baseline, get_simulation_fingerprint(community, 8), {SHARED_PV}
+        )
 
         # Then
         assert any(problem.startswith("seed") for problem in problems)
@@ -90,7 +92,9 @@ class TestValidateFingerprint:
         del baseline["fingerprint"]["areas"]["Community/House 1/H1 Load"]
 
         # When
-        problems = validate_fingerprint(baseline, run_fingerprint(community, 7), {SHARED_PV})
+        problems = validate_fingerprint(
+            baseline, get_simulation_fingerprint(community, 7), {SHARED_PV}
+        )
 
         # Then
         assert problems == [
@@ -103,14 +107,16 @@ class TestValidateFingerprint:
         community.children[0].children[0].strategy = LoadHoursStrategy(2)
 
         # When
-        problems = validate_fingerprint(baseline, run_fingerprint(community, 7), {SHARED_PV})
+        problems = validate_fingerprint(
+            baseline, get_simulation_fingerprint(community, 7), {SHARED_PV}
+        )
 
         # Then
         assert problems == ["Community/House 1/H1 Load differs between the two runs in settings"]
 
     def test_a_baseline_with_every_area_removes_no_shared_pv(self, community):
         # Given
-        fingerprint = run_fingerprint(community, 7)
+        fingerprint = get_simulation_fingerprint(community, 7)
         baseline = {"fingerprint": deepcopy(fingerprint)}
 
         # When
@@ -150,5 +156,5 @@ def test_an_invalid_baseline_stops_the_run_before_its_first_slot(community):
             community,
             False,
             roi_baseline=baseline,
-            roi_fingerprint=run_fingerprint(community, 7),
+            roi_fingerprint=get_simulation_fingerprint(community, 7),
         )

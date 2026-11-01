@@ -105,7 +105,7 @@ def settings_digest(area: "Area") -> Optional[str]:
     return hashlib.sha256(settings.encode()).hexdigest()
 
 
-def run_fingerprint(root_area: "Area", seed: int) -> Dict:
+def get_simulation_fingerprint(root_area: "Area", seed: int) -> Dict:
     """Return the properties that two runs must share for their bills to be comparable."""
     config = root_area.config
     return {
