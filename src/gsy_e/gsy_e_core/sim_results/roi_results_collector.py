@@ -373,7 +373,7 @@ class RoiResultsCollector:
     def _record(self, pv: "Area") -> _PVRecord:
         if pv.uuid not in self._records:
             owner = pv.parent
-            shares = pv.strategy.ownership_shares
+            shares = pv.strategy.roi_parameters.ownership_shares
             candidates = [
                 area
                 for area in all_areas(owner)
@@ -447,7 +447,7 @@ class RoiResultsCollector:
         return {
             name_path(leaf)
             for leaf in _leaves(root_area)
-            if _is_pv(leaf) and leaf.strategy.ownership_shares
+            if _is_pv(leaf) and leaf.strategy.roi_parameters.ownership_shares
         }
 
     def baseline_export(self, fingerprint: SimulationFingerprint) -> Dict:
@@ -472,7 +472,7 @@ class RoiResultsCollector:
                     raise RuntimeError(self._failure)
                 uses_baseline = (
                     baseline_paths is not None
-                    and bool(record.strategy.ownership_shares)
+                    and bool(record.strategy.roi_parameters.ownership_shares)
                     and record.path not in baseline_paths
                 )
                 results[uuid] = self._pv_result(record, window_days, uses_baseline, bills)
@@ -491,13 +491,14 @@ class RoiResultsCollector:
         flows = record.total
         inputs = RoiInputs(
             capacity_kWp=record.capacity_kWp or 0.0,
-            capital_cost_per_kWp=strategy.capital_cost_per_kWp or DEFAULT_CAPITAL_COST_PER_KWP,
+            capital_cost_per_kWp=strategy.roi_parameters.capital_cost_per_kWp
+            or DEFAULT_CAPITAL_COST_PER_KWP,
             ownership_share=1.0,
             avoided_purchase=flows.avoided_purchase,
             sales_revenue=flows.sales_revenue,
             window_generation_kWh=flows.generation_kWh,
             window_days=window_days,
-            annual_generation_kWh=strategy.annual_generation_kWh,
+            annual_generation_kWh=strategy.roi_parameters.annual_generation_kWh,
         )
         flags = set(record.flags)
         if uses_baseline:
@@ -507,7 +508,7 @@ class RoiResultsCollector:
                 for path in record.community_paths
             )
             inputs = replace(inputs, avoided_purchase=community_benefit - flows.sales_revenue)
-        elif strategy.ownership_shares:
+        elif strategy.roi_parameters.ownership_shares:
             flags.add(RoiFlag.SHARED_ASSET_ESTIMATE)
 
         basis = self._basis(record, inputs, flags, uses_baseline)
@@ -516,7 +517,7 @@ class RoiResultsCollector:
         if uses_baseline and RoiFlag.MEMBER_RESULTS_WITHHELD not in flags:
             result["members"] = {
                 name: self._member_result(record, inputs, flows, basis, bills, name, share)
-                for name, share in strategy.ownership_shares.items()
+                for name, share in strategy.roi_parameters.ownership_shares.items()
             }
         return result
 
@@ -564,7 +565,7 @@ class RoiResultsCollector:
     ) -> Dict:
         assumed: List[str] = list(ASSUMED_INPUTS)
         observed: List[str] = list(OBSERVED_INPUTS)
-        if record.strategy.capital_cost_per_kWp is None:
+        if record.strategy.roi_parameters.capital_cost_per_kWp is None:
             assumed.append("capital_cost")
         (assumed if record.capacity_assumed else observed).append("capacity")
         rates = set(self._supplier_rates.values())

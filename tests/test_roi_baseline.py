@@ -21,7 +21,11 @@ from dataclasses import replace
 
 import pytest
 from gsy_framework.enums import RandomOrder
-from gsy_framework.sim_results.roi.data_classes import AreaFingerprint, RoiBaseline
+from gsy_framework.sim_results.roi.data_classes import (
+    AreaFingerprint,
+    PVRoiParameters,
+    RoiBaseline,
+)
 
 import gsy_e.constants
 from gsy_e.gsy_e_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
@@ -48,7 +52,10 @@ def fixture_community(monkeypatch):
             Area("House 1", children=[Area("H1 Load", strategy=LoadHoursStrategy(1))]),
             Area(
                 "Community PV",
-                strategy=PVStrategy(capacity_kW=5, ownership_shares={"House 1": 1.0}),
+                strategy=PVStrategy(
+                    capacity_kW=5,
+                    roi_parameters=PVRoiParameters(ownership_shares={"House 1": 1.0}),
+                ),
             ),
         ],
     )

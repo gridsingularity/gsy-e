@@ -24,7 +24,7 @@ import pytest
 from gsy_framework.constants_limits import GlobalConfig
 from gsy_framework.exceptions import GSyDeviceException
 from gsy_framework.sim_results.roi.appraisal import calculate_roi
-from gsy_framework.sim_results.roi.data_classes import RoiBaseline, RoiInputs
+from gsy_framework.sim_results.roi.data_classes import PVRoiParameters, RoiBaseline, RoiInputs
 from gsy_framework.sim_results.roi.parameters import DEFAULT_PARAMETER_SET
 from gsy_framework.sim_results.roi.serialization import serialize_result
 from pendulum import datetime, duration
@@ -75,7 +75,11 @@ def _trade(seller, buyer, energy, price=0, fee=0, buyer_origin=None):
 
 
 def _pv(name, **roi_arguments):
-    pv = Area(name, uuid=name, strategy=PVStrategy(capacity_kW=5, **roi_arguments))
+    pv = Area(
+        name,
+        uuid=name,
+        strategy=PVStrategy(capacity_kW=5, roi_parameters=PVRoiParameters(**roi_arguments)),
+    )
     pv.strategy.state.get_energy_production_forecast_kWh = Mock(return_value=GENERATION_KWH)
     return pv
 
@@ -316,7 +320,9 @@ class TestTwoRunMethod:
 
     def test_a_member_missing_from_the_area_withholds_member_results(self, community):
         # Given
-        community.children[2].strategy.ownership_shares = {"House 1": 0.6, "House 9": 0.4}
+        community.children[2].strategy.roi_parameters = PVRoiParameters(
+            ownership_shares={"House 1": 0.6, "House 9": 0.4}
+        )
         collector = RoiResultsCollector(_baseline(community))
 
         # When
@@ -378,7 +384,18 @@ class TestPVRoiArguments:
     def test_invalid_inputs_stop_the_pv_from_being_built(self, arguments):
         # When / Then
         with pytest.raises(GSyDeviceException):
-            PVStrategy(**arguments)
+            PVStrategy(roi_parameters=PVRoiParameters(**arguments))
+
+    def test_a_serialized_pv_keeps_its_roi_parameters(self):
+        # Given
+        parameters = PVRoiParameters(1200, 5000, {"House 1": 1.0})
+        serialized = PVStrategy(roi_parameters=parameters).serialize()
+
+        # When
+        restored = PVStrategy(**PVStrategy.deserialize_args(serialized))
+
+        # Then
+        assert restored.roi_parameters == parameters
 
     def test_profile_pv_keeps_its_capacity_through_serialisation(self):
         # Given
@@ -408,16 +425,10 @@ class TestPVRoiArguments:
 def test_every_pv_strategy_accepts_the_roi_inputs(strategy_class):
     # Given
     profile = {"power_profile": {0: 0}} if "UserProfile" in strategy_class.__name__ else {}
+    parameters = PVRoiParameters(1200, 5000, {"House 1": 1.0})
 
     # When
-    strategy = strategy_class(
-        capital_cost_per_kWp=1200,
-        annual_generation_kWh=5000,
-        ownership_shares={"House 1": 1.0},
-        **profile,
-    )
+    strategy = strategy_class(roi_parameters=parameters, **profile)
 
     # Then
-    assert strategy.capital_cost_per_kWp == 1200
-    assert strategy.annual_generation_kWh == 5000
-    assert strategy.ownership_shares == {"House 1": 1.0}
+    assert strategy.roi_parameters == parameters

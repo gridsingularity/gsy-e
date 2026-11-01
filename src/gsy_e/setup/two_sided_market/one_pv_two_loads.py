@@ -20,6 +20,7 @@ import csv
 import os
 
 from gsy_framework.constants_limits import ConstSettings
+from gsy_framework.sim_results.roi.data_classes import PVRoiParameters
 
 from gsy_e.gsy_e_core.util import gsye_root_path
 from gsy_e.models.area import Area
@@ -82,8 +83,9 @@ def get_setup(config):
                                     initial_selling_rate=COMMUNITY_SALE_RATE - 1,
                                     final_selling_rate=FEED_IN_RATE,
                                     capacity_kW=5,
-                                    capital_cost_per_kWp=1300,
-                                    annual_generation_kWh=4900,
+                                    roi_parameters=PVRoiParameters(
+                                        capital_cost_per_kWp=1300, annual_generation_kWh=4900
+                                    ),
                                 ),
                             ),
                             Area(

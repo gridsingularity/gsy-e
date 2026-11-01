@@ -24,6 +24,7 @@ from gsy_framework.constants_limits import ConstSettings
 from gsy_framework.data_classes import TraderDetails
 from gsy_framework.exceptions import GSyException
 from gsy_framework.read_user_profile import InputProfileTypes, UserProfileReader
+from gsy_framework.sim_results.roi.data_classes import PVRoiParameters
 from gsy_framework.utils import key_in_dict_and_not_none
 from gsy_framework.validators import PVValidator
 from pendulum import duration
@@ -57,9 +58,7 @@ class PVStrategy(BidEnabledStrategy, UseMarketMakerMixin):
         energy_rate_decrease_per_update=None,
         capacity_kW: float = None,
         use_market_maker_rate: bool = False,
-        capital_cost_per_kWp: float = None,
-        annual_generation_kWh: float = None,
-        ownership_shares: Dict[str, float] = None,
+        roi_parameters: PVRoiParameters = None,
     ):
         """
         Args:
@@ -70,21 +69,11 @@ class PVStrategy(BidEnabledStrategy, UseMarketMakerMixin):
              update_interval: Interval after which PV will update its offer
              energy_rate_decrease_per_update: Slope of PV Offer change per update
              capacity_kW: power rating of the predefined profiles
-             capital_cost_per_kWp: Installed cost per kWp, used only by the RoI results
-             annual_generation_kWh: Modelled generation over a full year, which lets the RoI
-                 results annualise a short run by season rather than by days
-             ownership_shares: Share of each co-owning member area, keyed by its name, for the
-                 RoI results
+             roi_parameters: Inputs that only the RoI results use
         """
         super().__init__()
-        PVValidator.validate_roi(
-            capital_cost_per_kWp=capital_cost_per_kWp,
-            annual_generation_kWh=annual_generation_kWh,
-            ownership_shares=ownership_shares,
-        )
-        self.capital_cost_per_kWp = capital_cost_per_kWp
-        self.annual_generation_kWh = annual_generation_kWh
-        self.ownership_shares = dict(ownership_shares or {})
+        PVValidator.validate_roi(roi_parameters=roi_parameters)
+        self.roi_parameters = roi_parameters or PVRoiParameters()
         self._energy_params = PVEnergyParameters(panel_count, capacity_kW)
         self.use_market_maker_rate = use_market_maker_rate
         self._init_price_update(
@@ -102,10 +91,17 @@ class PVStrategy(BidEnabledStrategy, UseMarketMakerMixin):
             **self._energy_params.serialize(),
             **self.offer_update.serialize(),
             "use_market_maker_rate": self.use_market_maker_rate,
-            "capital_cost_per_kWp": self.capital_cost_per_kWp,
-            "annual_generation_kWh": self.annual_generation_kWh,
-            "ownership_shares": dict(self.ownership_shares),
+            "roi_parameters": self.roi_parameters.serializable_dict(),
         }
+
+    @staticmethod
+    def deserialize_args(constructor_args: Dict) -> Dict:
+        """Build the RoI parameters from the dict that a serialized setup holds."""
+        if isinstance(constructor_args.get("roi_parameters"), dict):
+            constructor_args["roi_parameters"] = PVRoiParameters.from_dict(
+                constructor_args["roi_parameters"]
+            )
+        return constructor_args
 
     @classmethod
     def _create_settlement_market_strategy(cls):
