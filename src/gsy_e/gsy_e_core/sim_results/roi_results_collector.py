@@ -262,6 +262,22 @@ def _is_pv(area: "Area") -> bool:
     )
 
 
+def _has_roi_parameters(area: "Area") -> bool:
+    return _is_pv(area) and area.strategy.roi_parameters is not None
+
+
+def is_roi_collected(root_area: "Area", roi_baseline) -> bool:
+    """Return whether the run reports RoI results or bills that a later run can compare with.
+
+    A baseline run has no PV that asks for RoI, so --random-order hash is what marks it.
+    """
+    return (
+        roi_baseline is not None
+        or gsy_e.constants.RANDOM_ORDER is RandomOrder.HASH
+        or any(_has_roi_parameters(leaf) for leaf in _leaves(root_area))
+    )
+
+
 def _is_battery(area: "Area") -> bool:
     return isinstance(area.strategy, StorageStrategy) and not isinstance(
         area.strategy, (EVChargerStrategy, ElectrolyzerStrategy)
@@ -335,7 +351,7 @@ class RoiResultsCollector:
         self._paths.update({area.uuid: name_path(area) for area in areas})
         self._slot_bills = self._area_bills(areas)
         for leaf in _leaves(root_area):
-            if _is_pv(leaf) and leaf.parent.spot_market is not None:
+            if _has_roi_parameters(leaf) and leaf.parent.spot_market is not None:
                 record = self._record(leaf)
                 record.slot = self._slot_stats(leaf, record, supplier_rate)
 
@@ -446,7 +462,7 @@ class RoiResultsCollector:
         return {
             name_path(leaf)
             for leaf in _leaves(root_area)
-            if _is_pv(leaf) and leaf.strategy.roi_parameters.ownership_shares
+            if _has_roi_parameters(leaf) and leaf.strategy.roi_parameters.ownership_shares
         }
 
     def baseline_export(self, fingerprint: SimulationFingerprint) -> Dict:

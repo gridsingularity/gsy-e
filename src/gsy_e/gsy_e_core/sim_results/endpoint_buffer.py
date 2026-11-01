@@ -119,8 +119,10 @@ class SimulationEndpointBuffer:
 
         self.results_handler = self._create_results_handler(should_export_plots)
         self._roi_fingerprint = roi_fingerprint
-        self.roi_results_collector = self._create_roi_results_collector(
-            area, roi_fingerprint, roi_baseline
+        self.roi_results_collector = (
+            self._create_roi_results_collector(area, roi_fingerprint, roi_baseline)
+            if roi_fingerprint is not None
+            else None
         )
         self.roi_results: Dict = {}
         self.roi_baseline: Dict = {}
@@ -178,10 +180,13 @@ class SimulationEndpointBuffer:
         self._calculate_and_update_last_market_time_slot(area)
         self.simulation_state["general"] = sim_state
         self._populate_core_stats_and_sim_state(area)
-        self.roi_results_collector.update(area)
-        if simulation_status == "finished":
-            self.roi_results = self.roi_results_collector.results(area.config.slot_length)
-            self.roi_baseline = self.roi_results_collector.baseline_export(self._roi_fingerprint)
+        if self.roi_results_collector is not None:
+            self.roi_results_collector.update(area)
+            if simulation_status == "finished":
+                self.roi_results = self.roi_results_collector.results(area.config.slot_length)
+                self.roi_baseline = self.roi_results_collector.baseline_export(
+                    self._roi_fingerprint
+                )
         self.simulation_progress = {
             "eta_seconds": progress_info.eta.seconds if progress_info.eta else None,
             "elapsed_time_seconds": progress_info.elapsed_time.seconds,

@@ -27,12 +27,15 @@ from gsy_framework.sim_results.roi.appraisal import calculate_roi
 from gsy_framework.sim_results.roi.data_classes import PVRoiParameters, RoiBaseline, RoiInputs
 from gsy_framework.sim_results.roi.parameters import DEFAULT_PARAMETER_SET
 from gsy_framework.sim_results.roi.serialization import serialize_result
+from gsy_framework.enums import RandomOrder
 from pendulum import datetime, duration
 
+import gsy_e.constants
 from gsy_e.gsy_e_core.sim_results.roi_results_collector import (
     RoiBaselineError,
     RoiResultsCollector,
     get_simulation_fingerprint,
+    is_roi_collected,
 )
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.ev_charger import EVChargerStrategy
@@ -367,6 +370,40 @@ class TestTwoRunMethod:
         assert export["area_bills"]["Community/House 1"] == pytest.approx(0.2)
         assert export["area_bills"]["Community/Community PV"] == pytest.approx(-0.3)
         assert export["supplier_rates"] == {str(FIRST_SLOT): SUPPLIER_RATE}
+
+
+class TestRoiOptIn:
+
+    def test_a_pv_without_roi_parameters_gets_no_result(self, community):
+        # Given
+        community.children[2].strategy.roi_parameters = None
+        collector = RoiResultsCollector()
+
+        # When
+        _record(collector, community, FIRST_SLOT, _community_trades())
+
+        # Then
+        assert collector.results(duration(days=1)) == {}
+
+    @pytest.mark.parametrize(
+        "has_roi_parameters, roi_baseline, random_order, expected",
+        [
+            (True, None, RandomOrder.SHARED, True),
+            (False, None, RandomOrder.SHARED, False),
+            (False, {}, RandomOrder.SHARED, True),
+            (False, None, RandomOrder.HASH, True),
+        ],
+    )
+    def test_a_run_collects_only_when_a_pv_or_a_baseline_asks(
+        self, community, monkeypatch, has_roi_parameters, roi_baseline, random_order, expected
+    ):
+        # Given
+        monkeypatch.setattr(gsy_e.constants, "RANDOM_ORDER", random_order)
+        if not has_roi_parameters:
+            community.children[2].strategy.roi_parameters = None
+
+        # When / Then
+        assert is_roi_collected(community, roi_baseline) is expected
 
 
 class TestPVRoiArguments:

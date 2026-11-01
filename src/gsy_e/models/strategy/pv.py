@@ -69,11 +69,12 @@ class PVStrategy(BidEnabledStrategy, UseMarketMakerMixin):
              update_interval: Interval after which PV will update its offer
              energy_rate_decrease_per_update: Slope of PV Offer change per update
              capacity_kW: power rating of the predefined profiles
-             roi_parameters: Inputs that only the RoI results use
+             roi_parameters: Inputs that only the RoI results use. A PV without them gets no
+                 RoI result
         """
         super().__init__()
         PVValidator.validate_roi(roi_parameters=roi_parameters)
-        self.roi_parameters = roi_parameters or PVRoiParameters()
+        self.roi_parameters = roi_parameters
         self._energy_params = PVEnergyParameters(panel_count, capacity_kW)
         self.use_market_maker_rate = use_market_maker_rate
         self._init_price_update(
@@ -91,7 +92,11 @@ class PVStrategy(BidEnabledStrategy, UseMarketMakerMixin):
             **self._energy_params.serialize(),
             **self.offer_update.serialize(),
             "use_market_maker_rate": self.use_market_maker_rate,
-            "roi_parameters": self.roi_parameters.serializable_dict(),
+            "roi_parameters": (
+                self.roi_parameters.serializable_dict()
+                if self.roi_parameters is not None
+                else None
+            ),
         }
 
     @staticmethod
