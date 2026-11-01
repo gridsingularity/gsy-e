@@ -16,6 +16,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+from dataclasses import replace
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
@@ -23,7 +24,7 @@ import pytest
 from gsy_framework.constants_limits import GlobalConfig
 from gsy_framework.exceptions import GSyDeviceException
 from gsy_framework.sim_results.roi.appraisal import calculate_roi
-from gsy_framework.sim_results.roi.data_classes import RoiInputs
+from gsy_framework.sim_results.roi.data_classes import RoiBaseline, RoiInputs
 from gsy_framework.sim_results.roi.parameters import DEFAULT_PARAMETER_SET
 from gsy_framework.sim_results.roi.serialization import serialize_result
 from pendulum import datetime, duration
@@ -31,6 +32,7 @@ from pendulum import datetime, duration
 from gsy_e.gsy_e_core.sim_results.roi_results_collector import (
     RoiBaselineError,
     RoiResultsCollector,
+    get_simulation_fingerprint,
 )
 from gsy_e.models.area import Area
 from gsy_e.models.strategy.ev_charger import EVChargerStrategy
@@ -163,15 +165,15 @@ def _community_trades():
     }
 
 
-def _baseline(**changes):
-    paths = ["Community", "Community/House 1", "Community/House 1/H1 Load"]
-    paths += ["Community/House 2", "Community/House 2/H2 Load"]
-    return {
-        "fingerprint": {"areas": {path: {} for path in paths}},
-        "area_bills": {"Community/House 1": 0.5, "Community/House 2": 0.3},
-        "supplier_rates": {},
-        **changes,
-    }
+def _baseline(community, **changes):
+    fingerprint = get_simulation_fingerprint(community, 7)
+    areas = {path: area for path, area in fingerprint.areas.items() if "PV" not in path}
+    baseline = RoiBaseline(
+        fingerprint=replace(fingerprint, areas=areas),
+        area_bills={"Community/House 1": 0.5, "Community/House 2": 0.3},
+        supplier_rates={},
+    )
+    return replace(baseline, **changes)
 
 
 def _only_result(collector):
@@ -293,7 +295,7 @@ class TestTwoRunMethod:
 
     def test_shared_pv_is_appraised_against_the_baseline_bills(self, community):
         # Given
-        collector = RoiResultsCollector(_baseline())
+        collector = RoiResultsCollector(_baseline(community))
 
         # When
         _record(collector, community, FIRST_SLOT, _community_trades())
@@ -315,7 +317,7 @@ class TestTwoRunMethod:
     def test_a_member_missing_from_the_area_withholds_member_results(self, community):
         # Given
         community.children[2].strategy.ownership_shares = {"House 1": 0.6, "House 9": 0.4}
-        collector = RoiResultsCollector(_baseline())
+        collector = RoiResultsCollector(_baseline(community))
 
         # When
         _record(collector, community, FIRST_SLOT, _community_trades())
@@ -328,7 +330,7 @@ class TestTwoRunMethod:
     def test_a_member_name_used_twice_withholds_member_results(self, community):
         # Given
         community.children[1].children.append(Area("House 1", children=[Area("Inner Load")]))
-        collector = RoiResultsCollector(_baseline())
+        collector = RoiResultsCollector(_baseline(community))
 
         # When
         _record(collector, community, FIRST_SLOT, _community_trades())
@@ -340,7 +342,7 @@ class TestTwoRunMethod:
 
     def test_a_different_supplier_rate_stops_the_run(self, community):
         # Given
-        baseline = _baseline(supplier_rates={str(FIRST_SLOT): SUPPLIER_RATE + 1})
+        baseline = _baseline(community, supplier_rates={str(FIRST_SLOT): SUPPLIER_RATE + 1})
         collector = RoiResultsCollector(baseline)
 
         # When / Then
@@ -355,7 +357,7 @@ class TestTwoRunMethod:
         _record(collector, community, FIRST_SLOT, _community_trades())
 
         # Then
-        export = collector.baseline_export({"seed": 7})
+        export = collector.baseline_export(get_simulation_fingerprint(community, 7))
         assert export["area_bills"]["Community/House 1"] == pytest.approx(0.2)
         assert export["area_bills"]["Community/Community PV"] == pytest.approx(-0.3)
         assert export["supplier_rates"] == {str(FIRST_SLOT): SUPPLIER_RATE}

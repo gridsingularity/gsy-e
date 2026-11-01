@@ -20,6 +20,7 @@ import hashlib
 import json
 import logging
 from dataclasses import dataclass, field, fields, replace
+from enum import Enum
 from math import isclose
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, Iterable, Iterator, List, Optional, Set, Union
@@ -30,10 +31,13 @@ from gsy_framework.exceptions import GSyException
 from gsy_framework.sim_results.roi.appraisal import calculate_roi
 from gsy_framework.sim_results.roi.data_classes import (
     AllocationBasis,
+    AreaFingerprint,
     BaselineMethod,
     PriceBasis,
+    RoiBaseline,
     RoiFlag,
     RoiInputs,
+    SimulationFingerprint,
     SuppressionCause,
 )
 from gsy_framework.sim_results.roi.parameters import (
@@ -105,36 +109,42 @@ def settings_digest(area: "Area") -> Optional[str]:
     return hashlib.sha256(settings.encode()).hexdigest()
 
 
-def get_simulation_fingerprint(root_area: "Area", seed: int) -> Dict:
+def get_simulation_fingerprint(root_area: "Area", seed: int) -> SimulationFingerprint:
     """Return the properties that two runs must share for their bills to be comparable."""
     config = root_area.config
-    return {
-        "seed": None if seed in (None, "") else int(seed),
-        "start_date": str(config.start_date),
-        "sim_duration_seconds": config.sim_duration.total_seconds(),
-        "slot_length_seconds": config.slot_length.total_seconds(),
-        "tick_length_seconds": config.tick_length.total_seconds(),
-        "market_type": ConstSettings.MASettings.MARKET_TYPE,
-        "bid_offer_match_type": ConstSettings.MASettings.BID_OFFER_MATCH_TYPE,
-        "grid_fee_type": config.grid_fee_type,
-        "random_order": gsy_e.constants.RANDOM_ORDER.value,
-        "areas": {
-            name_path(area): {
-                "type": type(area.strategy).__name__ if area.strategy else "Area",
-                "grid_fee_constant": area.grid_fee_constant,
-                "grid_fee_percentage": area.grid_fee_percentage,
-                "settings": settings_digest(area),
-            }
+    return SimulationFingerprint(
+        seed=None if seed in (None, "") else int(seed),
+        start_date=str(config.start_date),
+        sim_duration_seconds=config.sim_duration.total_seconds(),
+        slot_length_seconds=config.slot_length.total_seconds(),
+        tick_length_seconds=config.tick_length.total_seconds(),
+        market_type=ConstSettings.MASettings.MARKET_TYPE,
+        bid_offer_match_type=ConstSettings.MASettings.BID_OFFER_MATCH_TYPE,
+        grid_fee_type=config.grid_fee_type,
+        random_order=gsy_e.constants.RANDOM_ORDER,
+        areas={
+            name_path(area): AreaFingerprint(
+                type=type(area.strategy).__name__ if area.strategy else "Area",
+                grid_fee_constant=area.grid_fee_constant,
+                grid_fee_percentage=area.grid_fee_percentage,
+                settings=settings_digest(area),
+            )
             for area in all_areas(root_area)
         },
-    }
+    )
 
 
-def load_baseline(source: Union[str, Path, Dict]) -> Dict:
+def load_baseline(source: Union[str, Path, Dict]) -> RoiBaseline:
     """Return the baseline from a dict, a roi_baseline.json file or an export folder."""
-    if isinstance(source, dict):
-        return source
-    path = Path(source)
+    if not isinstance(source, dict):
+        source = _read_baseline_file(Path(source))
+    try:
+        return RoiBaseline.from_dict(source)
+    except ValueError as ex:
+        raise RoiBaselineError([str(ex)]) from ex
+
+
+def _read_baseline_file(path: Path) -> Dict:
     if path.is_dir():
         matches = sorted(path.rglob(BASELINE_FILE_NAME))
         if len(matches) != 1:
@@ -148,21 +158,27 @@ def load_baseline(source: Union[str, Path, Dict]) -> Dict:
         return json.load(baseline_file)
 
 
+def _shown(value) -> str:
+    return repr(value.value if isinstance(value, Enum) else value)
+
+
 def validate_fingerprint(
-    baseline: Dict, fingerprint: Dict, shared_pv_paths: Iterable[str]
+    baseline: RoiBaseline, fingerprint: SimulationFingerprint, shared_pv_paths: Iterable[str]
 ) -> List[str]:
     """Return every reason why the baseline run is not this run without its shared PVs."""
-    baseline_fingerprint = baseline.get("fingerprint", {})
+    baseline_fingerprint = baseline.fingerprint
     problems = [
-        f"{key} is {baseline_fingerprint.get(key)!r} in the baseline and {value!r} in this run"
-        for key, value in fingerprint.items()
-        if key != "areas" and baseline_fingerprint.get(key) != value
+        f"{item.name} is {_shown(getattr(baseline_fingerprint, item.name))} in the baseline "
+        f"and {_shown(getattr(fingerprint, item.name))} in this run"
+        for item in fields(SimulationFingerprint)
+        if item.name != "areas"
+        and getattr(baseline_fingerprint, item.name) != getattr(fingerprint, item.name)
     ]
-    if baseline_fingerprint.get("random_order") != RandomOrder.HASH.value:
+    if baseline_fingerprint.random_order is not RandomOrder.HASH:
         problems.append("the baseline was not run with --random-order hash")
 
-    baseline_areas = baseline_fingerprint.get("areas", {})
-    areas = fingerprint["areas"]
+    baseline_areas = baseline_fingerprint.areas
+    areas = fingerprint.areas
     removed = set(areas) - set(baseline_areas)
     problems.extend(
         f"{path} is in the baseline but not in this run"
@@ -175,19 +191,19 @@ def validate_fingerprint(
     if not removed:
         problems.append("the baseline has every area of this run, so no shared PV was removed")
     for path in sorted(set(areas) & set(baseline_areas)):
-        differing = sorted(
-            key
-            for key in set(areas[path]) | set(baseline_areas[path])
-            if areas[path].get(key) != baseline_areas[path].get(key)
-        )
+        differing = [
+            item.name
+            for item in fields(AreaFingerprint)
+            if getattr(areas[path], item.name) != getattr(baseline_areas[path], item.name)
+        ]
         if differing:
             problems.append(f"{path} differs between the two runs in {', '.join(differing)}")
     return problems
 
 
-def validate_supplier_rate(baseline: Dict, time_slot: str, rate: float) -> None:
+def validate_supplier_rate(baseline: RoiBaseline, time_slot: str, rate: float) -> None:
     """Raise when the supplier rate of a slot differs from the baseline run."""
-    baseline_rate = baseline.get("supplier_rates", {}).get(time_slot)
+    baseline_rate = baseline.supplier_rates.get(time_slot)
     if baseline_rate is not None and not isclose(baseline_rate, rate):
         raise RoiBaselineError(
             [
@@ -280,7 +296,7 @@ class RoiResultsCollector:
     the same slot replaces, so memory does not grow with the length of the run.
     """
 
-    def __init__(self, baseline: Optional[Dict] = None):
+    def __init__(self, baseline: Optional[RoiBaseline] = None):
         self._baseline = baseline
         self._records: Dict[str, _PVRecord] = {}
         self._paths: Dict[str, str] = {}
@@ -434,19 +450,19 @@ class RoiResultsCollector:
             if _is_pv(leaf) and leaf.strategy.ownership_shares
         }
 
-    def baseline_export(self, fingerprint: Dict) -> Dict:
+    def baseline_export(self, fingerprint: SimulationFingerprint) -> Dict:
         """Return what a later run needs to use this run as its RoI baseline."""
-        return {
-            "fingerprint": fingerprint,
-            "area_bills": self._bills_by_path(),
-            "supplier_rates": dict(self._supplier_rates),
-        }
+        return RoiBaseline(
+            fingerprint=fingerprint,
+            area_bills=self._bills_by_path(),
+            supplier_rates=dict(self._supplier_rates),
+        ).serializable_dict()
 
     def results(self, slot_length: Duration) -> Dict:
         """Return the serialised RoI result of every PV, keyed by its uuid."""
         window_days = ((self._completed_slots + 1) * slot_length).total_days()
         baseline_paths = (
-            set(self._baseline["fingerprint"]["areas"]) if self._baseline is not None else None
+            set(self._baseline.fingerprint.areas) if self._baseline is not None else None
         )
         bills = self._bills_by_path() if self._baseline is not None else {}
         results = {}
@@ -485,7 +501,7 @@ class RoiResultsCollector:
         )
         flags = set(record.flags)
         if uses_baseline:
-            baseline_bills = self._baseline["area_bills"]
+            baseline_bills = self._baseline.area_bills
             community_benefit = sum(
                 baseline_bills.get(path, 0.0) - bills.get(path, 0.0)
                 for path in record.community_paths
@@ -519,7 +535,7 @@ class RoiResultsCollector:
             inputs,
             ownership_share=share,
             benefit_is_apportioned=True,
-            avoided_purchase=self._baseline["area_bills"].get(path, 0.0) - bills.get(path, 0.0),
+            avoided_purchase=self._baseline.area_bills.get(path, 0.0) - bills.get(path, 0.0),
             sales_revenue=share * flows.sales_revenue,
         )
         result = self._appraise(member_inputs, share * flows.own_use_kWh, share * flows.sold_kWh)

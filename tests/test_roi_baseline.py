@@ -17,10 +17,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 import json
-from copy import deepcopy
+from dataclasses import replace
 
 import pytest
 from gsy_framework.enums import RandomOrder
+from gsy_framework.sim_results.roi.data_classes import AreaFingerprint, RoiBaseline
 
 import gsy_e.constants
 from gsy_e.gsy_e_core.sim_results.endpoint_buffer import SimulationEndpointBuffer
@@ -53,10 +54,10 @@ def fixture_community(monkeypatch):
     )
 
 
-def _baseline_of(community):
-    fingerprint = deepcopy(get_simulation_fingerprint(community, 7))
-    del fingerprint["areas"][SHARED_PV]
-    return {"fingerprint": fingerprint, "area_bills": {}, "supplier_rates": {}}
+def _baseline_of(community, **fingerprint_changes):
+    fingerprint = get_simulation_fingerprint(community, 7)
+    areas = {path: area for path, area in fingerprint.areas.items() if path != SHARED_PV}
+    return RoiBaseline(replace(fingerprint, areas=areas, **fingerprint_changes), {}, {})
 
 
 class TestValidateFingerprint:
@@ -72,9 +73,8 @@ class TestValidateFingerprint:
 
     def test_every_mismatch_is_listed(self, community):
         # Given
-        baseline = _baseline_of(community)
-        baseline["fingerprint"]["random_order"] = RandomOrder.SHARED.value
-        baseline["fingerprint"]["areas"]["Community/House 2"] = {"type": "Area"}
+        baseline = _baseline_of(community, random_order=RandomOrder.SHARED)
+        baseline.fingerprint.areas["Community/House 2"] = AreaFingerprint("Area", 0, 0, None)
 
         # When
         problems = validate_fingerprint(
@@ -89,7 +89,7 @@ class TestValidateFingerprint:
     def test_a_removed_area_must_be_a_shared_pv(self, community):
         # Given
         baseline = _baseline_of(community)
-        del baseline["fingerprint"]["areas"]["Community/House 1/H1 Load"]
+        del baseline.fingerprint.areas["Community/House 1/H1 Load"]
 
         # When
         problems = validate_fingerprint(
@@ -117,7 +117,7 @@ class TestValidateFingerprint:
     def test_a_baseline_with_every_area_removes_no_shared_pv(self, community):
         # Given
         fingerprint = get_simulation_fingerprint(community, 7)
-        baseline = {"fingerprint": deepcopy(fingerprint)}
+        baseline = RoiBaseline(fingerprint, {}, {})
 
         # When
         problems = validate_fingerprint(baseline, fingerprint, {SHARED_PV})
@@ -128,14 +128,24 @@ class TestValidateFingerprint:
 
 class TestLoadBaseline:
 
-    def test_loads_from_an_export_folder(self, tmp_path):
+    def test_loads_from_an_export_folder(self, community, tmp_path):
         # Given
+        baseline = _baseline_of(community)
         nested = tmp_path / "2026-10-19T10:00:00" / "aggregated_results"
         nested.mkdir(parents=True)
-        (nested / BASELINE_FILE_NAME).write_text(json.dumps({"area_bills": {"A": 1.0}}))
+        (nested / BASELINE_FILE_NAME).write_text(json.dumps(baseline.serializable_dict()))
 
         # When / Then
-        assert load_baseline(str(tmp_path)) == {"area_bills": {"A": 1.0}}
+        assert load_baseline(str(tmp_path)) == baseline
+
+    def test_a_malformed_baseline_names_the_key(self, community):
+        # Given
+        baseline = _baseline_of(community).serializable_dict()
+        del baseline["area_bills"]
+
+        # When / Then
+        with pytest.raises(RoiBaselineError, match="area_bills is missing"):
+            load_baseline(baseline)
 
     def test_a_missing_baseline_stops_the_run(self, tmp_path):
         # When / Then
@@ -145,8 +155,7 @@ class TestLoadBaseline:
 
 def test_an_invalid_baseline_stops_the_run_before_its_first_slot(community):
     # Given
-    baseline = _baseline_of(community)
-    baseline["fingerprint"]["seed"] = 1
+    baseline = _baseline_of(community, seed=1)
 
     # When / Then
     with pytest.raises(RoiBaselineError, match="seed"):
@@ -155,6 +164,6 @@ def test_an_invalid_baseline_stops_the_run_before_its_first_slot(community):
             7,
             community,
             False,
-            roi_baseline=baseline,
+            roi_baseline=baseline.serializable_dict(),
             roi_fingerprint=get_simulation_fingerprint(community, 7),
         )

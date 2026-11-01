@@ -30,6 +30,7 @@ from gsy_framework.constants_limits import (
 from gsy_framework.enums import AvailableMarketTypes
 from gsy_framework.schema.validators import get_schema_validator
 from gsy_framework.sim_results.all_results import ResultsHandler
+from gsy_framework.sim_results.roi.data_classes import SimulationFingerprint
 from gsy_framework.utils import get_json_dict_memory_allocation_size
 from pendulum import DateTime
 
@@ -97,7 +98,7 @@ class SimulationEndpointBuffer:
         area,
         should_export_plots,
         roi_baseline=None,
-        roi_fingerprint: Dict = None,
+        roi_fingerprint: SimulationFingerprint = None,
     ):
         self.job_id = job_id
         self.result_area_uuids = set()
@@ -207,7 +208,7 @@ class SimulationEndpointBuffer:
 
     @staticmethod
     def _create_roi_results_collector(
-        area: "AreaBase", fingerprint: Dict, roi_baseline
+        area: "AreaBase", fingerprint: SimulationFingerprint, roi_baseline
     ) -> RoiResultsCollector:
         if roi_baseline is None:
             return RoiResultsCollector()
