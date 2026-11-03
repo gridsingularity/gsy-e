@@ -61,7 +61,6 @@ class PCMTankState(TankStateBase):
             "initial_temp_C": self._params.initial_temp_C,
             "min_temp_C": self._params.min_temp_C,
             "max_temp_C": self._params.max_temp_C,
-            "type": self._params.type.value,
             "pcm_tank_type": self._params.pcm_tank_type.value,
         }
 

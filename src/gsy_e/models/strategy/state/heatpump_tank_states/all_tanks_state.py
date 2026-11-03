@@ -27,7 +27,7 @@ def heatpump_state_factory(
         return WaterTankState(tank_parameters=tank_parameter)
     if isinstance(tank_parameter, PCMTankParameters):
         return PCMTankState(tank_parameters=tank_parameter)
-    assert False, f"Unsupported heat pump tank type {tank_parameter.type}"
+    assert False, f"Unsupported heat pump tank type {type(tank_parameter).__name__}"
 
 
 class AllTanksState:
